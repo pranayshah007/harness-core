@@ -10,6 +10,7 @@ package io.harness.engine.executions.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
+import static io.harness.pms.contracts.execution.Status.ERRORED;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -122,6 +123,11 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Override
   public PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status) {
     return updateStatus(planExecutionId, status, null);
+  }
+
+  @Override
+  public PlanExecution markPlanExecutionErrored(String planExecutionId) {
+    return updateStatus(planExecutionId, ERRORED, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
   }
 
   @Override

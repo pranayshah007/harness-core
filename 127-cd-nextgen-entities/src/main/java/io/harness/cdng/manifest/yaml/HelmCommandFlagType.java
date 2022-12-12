@@ -33,7 +33,9 @@ public enum HelmCommandFlagType {
   Add(HelmSubCommandType.REPO_ADD, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
       ManifestStoreType.HelmChartRepo),
   Update(HelmSubCommandType.REPO_UPDATE, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
-      ManifestStoreType.HelmChartRepo);
+      ManifestStoreType.HelmChartRepo),
+  Version(HelmSubCommandType.VERSION, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
+      ManifestStoreType.HelmAllRepo);
 
   private final HelmSubCommandType subCommandType;
   private final Set<String> serviceSpecTypes;

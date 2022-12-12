@@ -196,9 +196,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
+    if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
       adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     }
     // We need to swap the ids if strategy is present
@@ -225,12 +223,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
-    if (node.getDeploymentStageConfig().getGitOpsEnabled()) {
-      return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
-    }
-    if (node.getDeploymentStageConfig().getServices() != null
-        || node.getDeploymentStageConfig().getEnvironments() != null
-        || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+    if (MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(node)) {
       return identifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
     }
     return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
@@ -572,7 +565,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       List<EnvironmentYamlV2> envV2YamlsWithFilters) {
     List<EnvironmentYamlV2> filteredInfraList = new ArrayList<>();
     for (EnvironmentYamlV2 envYamlV2 : envV2YamlsWithFilters) {
-      // if (ParameterField.isNotNull(envYamlV2.getInfrastructureDefinitions())) {
       Set<InfrastructureEntity> infrastructureEntitySet =
           environmentInfraFilterHelper.getInfrastructureForEnvironmentList(
               accountIdentifier, orgIdentifier, projectIdentifier, envYamlV2.getEnvironmentRef().getValue());
@@ -580,7 +572,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       filteredInfraList = filterInfras(
           envYamlV2.getFilters().getValue(), envYamlV2.getEnvironmentRef().getValue(), infrastructureEntitySet);
       individualEnvironmentYamlV2.addAll(filteredInfraList);
-      //}
     }
     return filteredInfraList;
   }

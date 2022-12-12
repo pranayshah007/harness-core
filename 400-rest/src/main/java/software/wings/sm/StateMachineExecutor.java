@@ -717,7 +717,13 @@ public class StateMachineExecutor implements StateInspectionListener {
     log.info("startStateExecution for State {} of type {}", currentState.getName(), currentState.getStateType());
 
     if (stateExecutionInstance.getStateParams() != null) {
-      MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      } catch (org.modelmapper.MappingException e) {
+        log.error(String.format("Got model mapping exception during mapping the stateParams %s [currentState=%s]",
+                      stateExecutionInstance.getStateParams(), currentState),
+            e);
+      }
     }
     injector.injectMembers(currentState);
     return currentState;
@@ -1750,7 +1756,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
         }
       } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateparams {}",
+        log.error("Got model mapping exception during mapping the stateParams {}",
             stateExecutionInstance.getStateParams(), e);
       }
 

@@ -7,6 +7,8 @@
 
 package io.harness.ccm.graphql.dto.overview;
 
+import io.harness.ccm.commons.beans.currency.CurrencyPreferenceRecord;
+
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -31,4 +33,5 @@ public class CCMMetaData {
   String defaultAwsPerspectiveId;
   String defaultGcpPerspectiveId;
   String defaultClusterPerspectiveId;
+  CurrencyPreferenceRecord currencyPreference;
 }

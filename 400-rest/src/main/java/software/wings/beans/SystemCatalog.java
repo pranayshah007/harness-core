@@ -13,6 +13,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.ng.DbAliases;
 
+import software.wings.persistence.BaseFile;
 import software.wings.utils.ContainerFamily;
 import software.wings.utils.FileType;
 

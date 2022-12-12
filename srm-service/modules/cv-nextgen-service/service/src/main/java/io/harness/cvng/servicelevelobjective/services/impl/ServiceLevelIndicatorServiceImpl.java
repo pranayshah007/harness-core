@@ -41,12 +41,14 @@ import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
@@ -99,6 +101,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private SideKickService sideKickService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private CompositeSLOService compositeSLOService;
+
+  @Inject private SLIRecordService sliRecordService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
@@ -331,7 +335,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       updateOperations.inc(ServiceLevelIndicatorKeys.version);
       hPersistence.update(serviceLevelIndicator, updateOperations);
       Instant startTime = timePeriod.getStartTime(ZoneOffset.UTC).minus(INTERVAL_HOURS, ChronoUnit.HOURS);
+      SLIRecord firstSLIRecord = sliRecordService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTime);
       Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(clock.instant());
+      if (firstSLIRecord != null) {
+        startTime = startTime.isAfter(firstSLIRecord.getTimestamp()) ? startTime : firstSLIRecord.getTimestamp();
+      } else {
+        startTime = endTime;
+      }
       for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
         Instant intervalEndTime = intervalStartTime.plus(INTERVAL_HOURS, ChronoUnit.HOURS);
         if (intervalEndTime.isAfter(endTime)) {

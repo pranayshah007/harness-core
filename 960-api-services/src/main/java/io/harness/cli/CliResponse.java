@@ -19,6 +19,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(CDP)
 public class CliResponse {
+  String command;
   private CommandExecutionStatus commandExecutionStatus;
   private String output;
   private String error;

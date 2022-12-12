@@ -23,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
+import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.rule.Owner;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -52,6 +53,7 @@ public class LocalSchemaGetterTest {
   @Mock private ApprovalYamlSchemaService approvalYamlSchemaService;
   @Mock private FeatureFlagYamlService featureFlagYamlService;
   @Mock private CustomStageYamlSchemaService customStageYamlSchemaService;
+  @Mock private PipelineStageYamlSchemaService pipelineStageYamlSchemaService;
   @Mock private PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @InjectMocks LocalSchemaGetter localSchemaGetter;
 
@@ -70,6 +72,8 @@ public class LocalSchemaGetterTest {
         PartialSchemaDTO.builder().namespace("cf").moduleType(ModuleType.PMS).nodeName("cf").build();
     PartialSchemaDTO customStagePartialSchemaDTO =
         PartialSchemaDTO.builder().namespace("custom").moduleType(ModuleType.PMS).nodeName("custom").build();
+    PartialSchemaDTO pipelineStagePartialSchemaDTO =
+        PartialSchemaDTO.builder().namespace("pipeline").moduleType(ModuleType.PMS).nodeName("pipeline").build();
 
     doReturn(approvalPartialSchemaDTO)
         .when(approvalYamlSchemaService)
@@ -80,9 +84,12 @@ public class LocalSchemaGetterTest {
     doReturn(customStagePartialSchemaDTO)
         .when(customStageYamlSchemaService)
         .getCustomStageYamlSchema(any(), any(), any(), any(), any());
+    doReturn(pipelineStagePartialSchemaDTO)
+        .when(pipelineStageYamlSchemaService)
+        .getPipelineStageYamlSchema(any(), any(), any(), any(), any());
 
     List<PartialSchemaDTO> partialSchemaDTOList = localSchemaGetter.getSchema(Collections.emptyList());
-    assertEquals(partialSchemaDTOList.size(), 3);
+    assertEquals(partialSchemaDTOList.size(), 4);
     assertEquals(partialSchemaDTOList.get(1), cfPartialSchemaDTO);
     assertEquals(partialSchemaDTOList.get(2), customStagePartialSchemaDTO);
     assertEquals(partialSchemaDTOList.get(0), approvalPartialSchemaDTO);

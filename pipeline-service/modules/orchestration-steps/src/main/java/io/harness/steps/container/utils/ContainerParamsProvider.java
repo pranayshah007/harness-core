@@ -42,6 +42,7 @@ import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
+import io.harness.k8s.model.ImageDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
@@ -72,8 +73,8 @@ public class ContainerParamsProvider {
         .containerSecrets(
             ContainerSecrets.builder().plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars)).build())
         .imageDetailsWithConnector(
-            ImageDetailsWithConnector
-                .builder()
+            ImageDetailsWithConnector.builder()
+                .imageDetails(ImageDetails.builder().name(imageName).build())
                 //                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
                 .imageConnectorDetails(harnessInternalImageConnector)
                 .build())
@@ -173,8 +174,8 @@ public class ContainerParamsProvider {
         .envVars(envVars)
         .containerType(CIContainerType.ADD_ON)
         .imageDetailsWithConnector(
-            ImageDetailsWithConnector
-                .builder()
+            ImageDetailsWithConnector.builder()
+                .imageDetails(ImageDetails.builder().name(imageName).build())
                 //                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
                 .imageConnectorDetails(harnessInternalImageConnector)
                 .build())

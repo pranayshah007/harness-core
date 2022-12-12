@@ -13,6 +13,7 @@ GITHUB_TOKEN = environ.get('GITHUB_TOKEN')
 
 GITHUB_ORG = 'harness'
 DELEGATE_TEAM = 'del-team'
+HASHCHECK_TEAM = 'hashcheck-team'
 
 class codebaseHash(object):
 
@@ -27,11 +28,19 @@ class codebaseHash(object):
         pr_reviews = github.get_repo(GITHUB_REPO).get_pull(int(GITHUB_PULL)).get_reviews()
         org = github.get_organization(GITHUB_ORG)
         members = org.get_team_by_slug(DELEGATE_TEAM).get_members()
+        hashcheck_members = org.get_team_by_slug(HASHCHECK_TEAM).get_members()
 
-        delegate_team = []
+
+        delegate_team = set()
+        print("Adding ", members.totalCount, "del team members as approvers")
         for member in members:
             if member.email is not None:
-                delegate_team.append(member.email)
+                delegate_team.add(member.email)
+
+        print("Adding ", hashcheck_members.totalCount, "hashcheck team members as approvers")
+        for member in hashcheck_members:
+            if member.email is not None:
+                delegate_team.add(member.email)
 
         print(delegate_team)
 

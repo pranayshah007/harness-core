@@ -8,6 +8,7 @@
 package io.harness.delegate.task.ecs;
 
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.SAINATH;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.trim;
@@ -998,5 +999,56 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
     String targetGroupArnOutput = ecsCommandTaskNGHelper.getTargetGroupArnFromLoadBalancer(
         ecsInfraConfig, prodListenerArn, prodListenerRuleArn, loadBalancer, awsInternalConfig);
     assertThat(targetGroupArnOutput).isEqualTo(describeRulesResponse.rules().get(0).actions().get(0).targetGroupArn());
+  }
+
+  @Test
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testGetDefaultListenerRuleForListener() {
+    String defaultRuleArn = "defaultRuleArn";
+    List<Rule> rules = Arrays.asList(Rule.builder().ruleArn(defaultRuleArn).isDefault(true).build(),
+        Rule.builder().ruleArn("other").isDefault(false).build());
+
+    doReturn(rules).when(ecsCommandTaskNGHelper).getListenerRulesForListener(any(), any(), any());
+
+    assertThat(
+        ecsCommandTaskNGHelper.getDefaultListenerRuleForListener(awsInternalConfig, ecsInfraConfig, "listenerRuleArn"))
+        .isEqualTo(defaultRuleArn);
+  }
+
+  @Test(expected = Exception.class)
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testGetDefaultListenerRuleForListenerWithNoDefaultRule() {
+    List<Rule> rules = Arrays.asList(Rule.builder().ruleArn("other").isDefault(false).build());
+
+    doReturn(rules).when(ecsCommandTaskNGHelper).getListenerRulesForListener(any(), any(), any());
+
+    ecsCommandTaskNGHelper.getDefaultListenerRuleForListener(awsInternalConfig, ecsInfraConfig, "listenerRuleArn");
+  }
+
+  @Test
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testUpdateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty() {
+    String defaultRuleArn = "defaultRuleArn";
+
+    doReturn(defaultRuleArn).when(ecsCommandTaskNGHelper).getDefaultListenerRuleForListener(any(), any(), any());
+
+    EcsLoadBalancerConfig ecsLoadBalancerConfigWithEmptyListenerRules = EcsLoadBalancerConfig.builder()
+                                                                            .loadBalancer(loadBalancer)
+                                                                            .prodListenerArn(prodListenerArn)
+                                                                            .prodListenerRuleArn("")
+                                                                            .prodTargetGroupArn(targetGroupArn)
+                                                                            .stageListenerArn(stageListenerArn)
+                                                                            .stageListenerRuleArn("")
+                                                                            .stageTargetGroupArn(targetGroupArn)
+                                                                            .build();
+
+    ecsCommandTaskNGHelper.updateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty(
+        ecsLoadBalancerConfigWithEmptyListenerRules, awsInternalConfig, ecsInfraConfig, logCallback);
+
+    assertThat(ecsLoadBalancerConfigWithEmptyListenerRules.getProdListenerRuleArn()).isEqualTo(defaultRuleArn);
+    assertThat(ecsLoadBalancerConfigWithEmptyListenerRules.getStageListenerRuleArn()).isEqualTo(defaultRuleArn);
   }
 }

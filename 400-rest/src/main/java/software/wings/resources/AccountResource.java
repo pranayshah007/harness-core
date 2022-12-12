@@ -567,7 +567,7 @@ public class AccountResource {
   @Path("{accountId}/isRestrictedAccessEnabled")
   @AuthRule(permissionType = MANAGE_RESTRICTED_ACCESS)
   public RestResponse<Boolean> isRestrictedAccessEnabled(@PathParam("accountId") String accountId) {
-    return new RestResponse<>(accountService.isRestrictedAccessEnabled(accountId));
+    return new RestResponse<>(accountService.isHarnessSupportAccessDisabled(accountId));
   }
 
   @GET

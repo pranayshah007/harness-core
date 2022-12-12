@@ -124,6 +124,10 @@ import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
+import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.SumologicLogCVConfig.SumologicLogCVConfigBuilder;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig.SumologicMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
@@ -506,6 +510,33 @@ public class BuilderFactory {
         .connectorIdentifier("connectorRef")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public SumologicMetricCVConfigBuilder sumologicMetricCVConfigBuilder() {
+    return SumologicMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE); // TODO Fix Typing.
+  }
+
+  public SumologicLogCVConfigBuilder sumologicLogCVConfigBuilder() {
+    return SumologicLogCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .queryName(randomAlphabetic(10))
+        .query(randomAlphabetic(10))
+        .serviceInstanceIdentifier("hostname")
+        .enabled(true)
+        .category(CVMonitoringCategory.ERRORS)
+        .connectorIdentifier("connectorRef")
+        .productName(generateUuid())
+        .createdAt(clock.millis());
   }
 
   public ErrorTrackingCVConfigBuilder errorTrackingCVConfigBuilder() {

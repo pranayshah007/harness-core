@@ -138,10 +138,10 @@ public class PipelineStageHelper {
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
       NodeExecution nodeExecution) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
-    PmsStepParameters parameters = nodeExecution.getNode().getStepParameters();
+    PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
-    String orgId = parameters.getValue(PipelineStageStepParametersKeys.org);
-    String projectId = parameters.getValue(PipelineStageStepParametersKeys.project);
+    String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
+    String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
     return getExecutionDetailDTO(
         accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, childExecutionId, orgId, projectId);
   }

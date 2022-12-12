@@ -112,7 +112,7 @@ public class SLODashboardResource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>>
-  getSloHealthListView(@NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
+  getSloHealthListView(@Valid @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
       @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
@@ -129,7 +129,7 @@ public class SLODashboardResource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>>
-  getSloHealthListViewV2(@NotNull @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams,
+  getSloHealthListViewV2(@Valid @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams,
       @Valid @Body SLODashboardApiFilter filter) {
     return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
@@ -149,7 +149,7 @@ public class SLODashboardResource {
   getSloDashboardWidget(@Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(
                             required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
       @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime,
-      @NotNull @Valid @BeanParam ProjectParams projectParams) {
+      @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSloDashboardDetail(projectParams, identifier, startTime, endTime));
   }
@@ -169,7 +169,7 @@ public class SLODashboardResource {
   getSloConsumptionBreakdownView(@Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true)
                                  @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
       @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime,
-      @NotNull @Valid @BeanParam ProjectParams projectParams) {
+      @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSLOConsumptionBreakdownView(projectParams, identifier, startTime, endTime));
   }
@@ -189,7 +189,7 @@ public class SLODashboardResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<SLORiskCountResponse>
   getServiceLevelObjectivesRiskCount(
-      @NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter serviceLevelObjectiveFilter) {
+      @Valid @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter serviceLevelObjectiveFilter) {
     return ResponseDTO.newResponse(sloDashboardService.getRiskCount(projectParams, serviceLevelObjectiveFilter));
   }
 
@@ -201,7 +201,7 @@ public class SLODashboardResource {
       value = "get all monitored services associated with the slos", nickname = "getSLOAssociatedMonitoredServices")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MSDropdownResponse>>
-  getSLOAssociatedMonitoredServices(@NotNull @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+  getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(sloDashboardService.getSLOAssociatedMonitoredServices(projectParams, pageParams));
   }
 }

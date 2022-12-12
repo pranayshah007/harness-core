@@ -14,6 +14,7 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.XINGCHI_JIN;
 
@@ -34,6 +35,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -130,6 +132,35 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testMarkLongQueuedTasksWithTaskDataV2AndQueuedStatus() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .status(QUEUED)
+            .waitId(generateUuid())
+            .expiry(System.currentTimeMillis() - 10)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(true)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(1)
+                    .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIterator.markLongQueuedTasksAsFailed(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).count()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testMarkLongQueuedTasksWithAbortedStatus() {
@@ -150,6 +181,35 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
                       .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                       .timeout(1)
                       .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIterator.markLongQueuedTasksAsFailed(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).get()).isNull();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testMarkLongQueuedTasksWithTaskDataV2AndAbortedStatus() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .status(ABORTED)
+            .waitId(generateUuid())
+            .expiry(System.currentTimeMillis() - 10)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(true)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(1)
+                    .build())
             .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
             .build();
     persistence.save(delegateTask);
@@ -186,6 +246,35 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testMarkLongQueuedTasksWithTaskDataV2AndParkedStatus() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .status(PARKED)
+            .waitId(generateUuid())
+            .expiry(System.currentTimeMillis() - 10)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(true)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(1)
+                    .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIterator.markLongQueuedTasksAsFailed(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).get()).isNull();
+  }
+
+  @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testMarkTimedOutStartedTasksAsFailed() {
@@ -206,6 +295,35 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
                       .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                       .timeout(1)
                       .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIterator.markTimedOutTasksAsFailed(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).count()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testMarkTimedOutStartedTasksWithAtaskDataV2AsFailed() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .status(STARTED)
+            .waitId(generateUuid())
+            .expiry(System.currentTimeMillis() - 10)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(true)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(1)
+                    .build())
             .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
             .build();
     persistence.save(delegateTask);

@@ -29,7 +29,6 @@ import static io.harness.utils.Misc.generateSecretKey;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.NotificationGroup.NotificationGroupBuilder.aNotificationGroup;
@@ -39,6 +38,7 @@ import static software.wings.beans.RoleType.APPLICATION_ADMIN;
 import static software.wings.beans.RoleType.NON_PROD_SUPPORT;
 import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
@@ -117,7 +117,6 @@ import software.wings.beans.AccountEvent;
 import software.wings.beans.AccountPreferences;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.NotificationGroup;
@@ -147,6 +146,7 @@ import software.wings.features.GovernanceFeature;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.helpers.ext.mail.EmailData;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.AppContainer;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
@@ -962,9 +962,14 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds) {
+  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded) {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
                                .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
+    if (isNotEmpty(fieldsToBeIncluded)) {
+      for (String field : fieldsToBeIncluded) {
+        query.project(field, true);
+      }
+    }
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
@@ -2000,7 +2005,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public boolean isRestrictedAccessEnabled(String accountId) {
+  public boolean isHarnessSupportAccessDisabled(String accountId) {
     Account account = get(accountId);
     notNullCheck("Invalid Account for the given Id: " + accountId, account);
     if (account.isHarnessSupportAccessAllowed()) {

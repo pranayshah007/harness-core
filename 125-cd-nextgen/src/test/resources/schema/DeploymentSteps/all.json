@@ -2960,7 +2960,8 @@
             "Uninstall",
             "List",
             "Add",
-            "Update"
+            "Update",
+            "Version"
           ]
         },
         "flag": {

@@ -45,9 +45,12 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableMap;
@@ -114,6 +117,12 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private InstanceDataDao instanceDataDao;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private BatchMainConfig config;
+
+  @Mock private ClusterRecordService eventsClusterRecordService;
+
+  @Mock private CloudToHarnessMappingService cloudToHarnessMappingService;
+
+  @Mock private FeatureFlagService featureFlagService;
 
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
@@ -327,7 +336,7 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
             .harnessServiceInfo(getHarnessServiceInfo())
             .build();
 
-    when(instanceDataDao.getInstanceDataListsOfTypes(any(), anyInt(), any(), any(), any()))
+    when(instanceDataDao.getInstanceDataListsOfTypesAndClusterId(any(), anyInt(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(instanceData));
 
     RepeatStatus repeatStatus = instanceBillingDataTasklet.execute(null, chunkContext);

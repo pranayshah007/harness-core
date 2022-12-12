@@ -225,6 +225,22 @@ public class PipelinesApiImplTest extends CategoryTest {
     assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testNPEInPipelineGet() {
+    Optional<PipelineEntity> optional = Optional.ofNullable(entity);
+    doReturn(optional)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, null);
+    PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
+    assertEquals(yaml, responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
+  }
 
   @Test
   @Owner(developers = MANKRIT)

@@ -21,6 +21,7 @@ import io.harness.tasks.ProgressData;
 import io.harness.waiter.ProgressCallback;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import org.springframework.data.annotation.Transient;
 public class EngineProgressCallback implements ProgressCallback {
   @Inject @Transient NodeExecutionService nodeExecutionService;
   @Inject @Transient KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Transient ProgressEventPublisher progressEventPublisher;
 
   Ambiance ambiance;
@@ -44,11 +46,14 @@ public class EngineProgressCallback implements ProgressCallback {
     }
 
     // This is the new way of managing progress updates below code is only to maintain backward compatibility
-    progressEventPublisher.publishEvent(getNodeExecutionId(), (BinaryResponseData) progressData);
+    BinaryResponseData binaryResponseData = (BinaryResponseData) progressData;
+    progressEventPublisher.publishEvent(getNodeExecutionId(), binaryResponseData);
 
     try {
       // This code is only to maintain backward compatibility
-      ProgressData data = (ProgressData) kryoSerializer.asInflatedObject(((BinaryResponseData) progressData).getData());
+      ProgressData data = (ProgressData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (data instanceof UnitProgressData) {
         nodeExecutionService.updateV2(getNodeExecutionId(),
             ops -> ops.set(NodeExecutionKeys.unitProgresses, ((UnitProgressData) data).getUnitProgresses()));

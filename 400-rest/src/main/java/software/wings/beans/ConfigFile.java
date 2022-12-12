@@ -28,6 +28,7 @@ import software.wings.beans.yaml.YamlType;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.persistence.BaseFile;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.yaml.BaseEntityYaml;
 

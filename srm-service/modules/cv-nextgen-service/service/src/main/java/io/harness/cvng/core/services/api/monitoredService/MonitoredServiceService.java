@@ -48,6 +48,8 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   MonitoredServiceResponse update(String accountId, MonitoredServiceDTO monitoredServiceDTO);
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
+
+  List<MonitoredServiceResponse> get(String accountId, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
   MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,

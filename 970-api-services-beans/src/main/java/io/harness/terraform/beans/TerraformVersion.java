@@ -23,7 +23,7 @@ import lombok.Value;
 @Builder
 @OwnedBy(CDP)
 public class TerraformVersion {
-  private static final Pattern TF_VERSION_REGEX = Pattern.compile("Terraform v(\\d+).(\\d+).(\\d+)", CASE_INSENSITIVE);
+  public static final Pattern TF_VERSION_REGEX = Pattern.compile("v(\\d+).(\\d+).(\\d+)", CASE_INSENSITIVE);
 
   @Nullable Integer patch;
   @Nullable Integer minor;

@@ -20,6 +20,8 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerAuthType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -167,12 +169,34 @@ public class ConnectorUtils {
       case KUBERNETES_CLUSTER:
         connectorDetails = getK8sConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
+      case DOCKER:
+        connectorDetails = getDockerConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
       default:
         throw new InvalidArgumentsException(format("Unexpected connector type:[%s]", connectorType));
     }
     log.info("Successfully fetched encryption details for  connector id:[{}] type:[{}] scope:[{}]",
         connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     return connectorDetails;
+  }
+
+  private ConnectorDetails getDockerConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    DockerAuthType dockerAuthType = dockerConnectorDTO.getAuth().getAuthType();
+    if (dockerAuthType == DockerAuthType.USER_PASSWORD) {
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, dockerConnectorDTO.getAuth().getCredentials());
+      return connectorDetailsBuilder.executeOnDelegate(dockerConnectorDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
+    } else if (dockerAuthType == DockerAuthType.ANONYMOUS) {
+      return connectorDetailsBuilder.executeOnDelegate(dockerConnectorDTO.getExecuteOnDelegate()).build();
+    } else {
+      throw new InvalidArgumentsException(
+          format("Unsupported docker credential type:[%s] on connector:[%s]", dockerAuthType, dockerConnectorDTO));
+    }
   }
 
   private ConnectorDetails getK8sConnectorDetails(

@@ -227,6 +227,8 @@ public interface UserService extends OwnedByAccount {
 
   void loadSupportAccounts(User user);
 
+  void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded);
+
   /**
    * Gets user from cache or db.
    *
@@ -657,4 +659,6 @@ public interface UserService extends OwnedByAccount {
 
   io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm);
+
+  boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 }

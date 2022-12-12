@@ -321,11 +321,14 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
 
     try {
-      //  Add validation for not chaining of stages
       DeploymentStageNode stageElementConfig = YamlUtils.read(
           PlanCreatorUtils.getStageConfig(serviceField, stage).getNode().toString(), DeploymentStageNode.class);
       DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
       if (deploymentStage != null) {
+        if (deploymentStage.getService() != null && useFromStage(deploymentStage.getService())) {
+          throw new InvalidArgumentsException(
+              "Invalid identifier given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        }
         return deploymentStage.getService();
       } else {
         throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");

@@ -31,14 +31,14 @@ import io.harness.testframework.restutils.ArtifactRestUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.AzureArtifactsArtifactStream;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Status;
 
 import com.google.inject.Inject;
 import io.restassured.http.ContentType;

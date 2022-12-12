@@ -114,6 +114,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .infraIdentifier("infra1")
             .infraName("infra1")
+            .lastDeployedAt(2l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 2l, 3, "a"),
                     getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
@@ -122,6 +123,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .infraIdentifier("infra2")
             .infraName("infra2")
+            .lastDeployedAt(1l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a")))
             .build();
@@ -129,6 +131,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .infraIdentifier("infra2")
             .infraName("infra2")
+            .lastDeployedAt(1l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
             .build();
@@ -136,6 +139,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .clusterIdentifier("infra1")
             .agentIdentifier("infra1")
+            .lastDeployedAt(2l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 2l, 3, "a"),
                     getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
@@ -144,6 +148,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .clusterIdentifier("infra2")
             .agentIdentifier("infra2")
+            .lastDeployedAt(1l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a")))
             .build();
@@ -151,6 +156,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .clusterIdentifier("infra2")
             .agentIdentifier("infra2")
+            .lastDeployedAt(1l)
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
             .build();
@@ -159,14 +165,16 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2.builder()
             .envId("env1")
             .envName("env1")
+            .lastDeployedAt(2l)
             .instanceGroupedByInfraList(
-                Arrays.asList(instanceGroupedByInfrastructure2, instanceGroupedByInfrastructure1))
-            .instanceGroupedByClusterList(Arrays.asList(instanceGroupedByCluster2, instanceGroupedByCluster1))
+                Arrays.asList(instanceGroupedByInfrastructure1, instanceGroupedByInfrastructure2))
+            .instanceGroupedByClusterList(Arrays.asList(instanceGroupedByCluster1, instanceGroupedByCluster2))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2 instanceGroupedByEnvironment2 =
         InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2.builder()
             .envId("env2")
             .envName("env2")
+            .lastDeployedAt(1l)
             .instanceGroupedByInfraList(Arrays.asList(instanceGroupedByInfrastructure3))
             .instanceGroupedByClusterList(Arrays.asList(instanceGroupedByCluster3))
             .build();
@@ -176,12 +184,14 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .artifactVersion("1")
             .artifactPath("artifact1")
             .latest(true)
+            .lastDeployedAt(2l)
             .instanceGroupedByEnvironmentList(Arrays.asList(instanceGroupedByEnvironment1))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByArtifactV2 instanceGroupedByArtifact2 =
         InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
             .artifactVersion("2")
             .latest(false)
+            .lastDeployedAt(1l)
             .artifactPath("artifact2")
             .instanceGroupedByEnvironmentList(Arrays.asList(instanceGroupedByEnvironment2))
             .build();
@@ -190,6 +200,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByService.builder()
             .serviceName("svcN1")
             .serviceId("svc1")
+            .lastDeployedAt(2l)
             .instanceGroupedByArtifactList(Arrays.asList(instanceGroupedByArtifact1, instanceGroupedByArtifact2))
             .build();
     return Arrays.asList(instanceGroupedByService1);
