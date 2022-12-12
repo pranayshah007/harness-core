@@ -29,6 +29,7 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -278,7 +279,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
   private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null
+        && (licensesWithSummaryDTO.getEdition() == Edition.FREE
+            || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
           && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == QUEUED)) {
         ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
