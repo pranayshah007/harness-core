@@ -105,6 +105,8 @@ ciExecutionServiceConfig:
     images:
       - product: bandit_default
         image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
