@@ -47,6 +47,7 @@ import io.harness.resourcegroup.v2.model.ResourceSelector.ResourceSelectorKeys;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -133,7 +134,8 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     }
   }
 
-  private Criteria getResourceGroupFilterCriteria(ResourceGroupFilterDTO resourceGroupFilterDTO) {
+  @VisibleForTesting
+  protected Criteria getResourceGroupFilterCriteria(ResourceGroupFilterDTO resourceGroupFilterDTO) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(resourceGroupFilterDTO.getIdentifierFilter())) {
       criteria.and(ResourceGroupKeys.identifier).in(resourceGroupFilterDTO.getIdentifierFilter());
@@ -256,12 +258,12 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
     List<PermissionCheckDTO> permissionChecks =
         resourceGroups.stream()
-            .map(usergroup
+            .map(resourceGroup
                 -> PermissionCheckDTO.builder()
                        .permission(VIEW_RESOURCEGROUP_PERMISSION)
-                       .resourceIdentifier(usergroup.getIdentifier())
-                       .resourceScope(ResourceScope.of(usergroup.getAccountIdentifier(), usergroup.getOrgIdentifier(),
-                           usergroup.getProjectIdentifier()))
+                       .resourceIdentifier(resourceGroup.getIdentifier())
+                       .resourceScope(ResourceScope.of(resourceGroup.getAccountIdentifier(),
+                           resourceGroup.getOrgIdentifier(), resourceGroup.getProjectIdentifier()))
                        .resourceType(RESOURCE_GROUP)
                        .build())
             .collect(Collectors.toList());
