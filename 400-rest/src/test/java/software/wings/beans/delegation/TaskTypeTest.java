@@ -412,6 +412,12 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(372, "SERVERLESS_S3_FETCH_TASK_NG");
     taskTypeOrdinalMapping.put(373, "CONTAINER_INITIALIZATION");
     taskTypeOrdinalMapping.put(374, "AWS_ASG_CANARY_DEPLOY_TASK_NG");
+    taskTypeOrdinalMapping.put(375, "ELASTIGROUP_DEPLOY");
+    taskTypeOrdinalMapping.put(376, "ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG");
+    taskTypeOrdinalMapping.put(377, "ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(378, "ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(379, "ELASTIGROUP_ROLLBACK");
+    taskTypeOrdinalMapping.put(380, "ELASTIGROUP_PRE_FETCH_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

@@ -622,3 +622,11 @@ io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
 io.harness.cdng.infra.beans.AsgInfraMapping
 io.harness.cdng.infra.beans.AsgInfrastructureOutcome
 io.harness.cdng.infra.yaml.AsgInfrastructure
+io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchPassThroughData
+io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData
+io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome
+io.harness.cdng.elastigroup.CloudProvider
+io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml
+io.harness.cdng.elastigroup.LoadBalancer
+io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome
+io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig
