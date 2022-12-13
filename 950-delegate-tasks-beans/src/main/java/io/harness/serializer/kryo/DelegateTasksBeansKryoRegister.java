@@ -119,6 +119,7 @@ import io.harness.delegate.beans.ci.k8s.K8ExecCommandParams;
 import io.harness.delegate.beans.ci.k8s.K8ExecuteCommandTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
+import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.CIK8PodParams;
@@ -1408,6 +1409,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasApplicationInfo.class, 10000242);
     kryo.register(CfSwapRoutesRequestNG.class, 10000243);
     kryo.register(CfSwapRouteCommandResponseNG.class, 10000244);
+    kryo.register(CfSwapRollbackCommandRequestNG.class, 10000245);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
