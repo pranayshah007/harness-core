@@ -10,7 +10,6 @@ package io.harness.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
-
 import lombok.Getter;
 
 /**
@@ -529,7 +528,7 @@ public enum FeatureName {
 
   CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
-  ASG_NG("Supports for Amazon ASG for NG", HarnessTeam.CDP);
+  ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

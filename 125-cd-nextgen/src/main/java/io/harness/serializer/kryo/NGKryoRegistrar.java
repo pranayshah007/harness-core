@@ -7,13 +7,13 @@
 
 package io.harness.serializer.kryo;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-
+import com.esotericsoftware.kryo.Kryo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -100,7 +100,7 @@ import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
-import com.esotericsoftware.kryo.Kryo;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @OwnedBy(CDC)
 public class NGKryoRegistrar implements KryoRegistrar {
@@ -211,6 +211,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
 
-    kryo.register(AsgCanaryDeleteStepInfo.class, 12626);
+    kryo.register(AsgCanaryDeployStepInfo.class, 12626);
+    kryo.register(AsgCanaryDeleteStepInfo.class, 12627);
   }
 }

@@ -421,6 +421,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(381, "CONTAINER_LE_STATUS");
     taskTypeOrdinalMapping.put(382, "CONTAINER_CLEANUP");
     taskTypeOrdinalMapping.put(383, "CONTAINER_EXECUTE_STEP");
+    taskTypeOrdinalMapping.put(384, "AWS_ASG_CANARY_DELETE_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

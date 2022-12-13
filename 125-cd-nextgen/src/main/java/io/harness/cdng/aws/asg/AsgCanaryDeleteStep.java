@@ -7,12 +7,10 @@
 
 package io.harness.cdng.aws.asg;
 
-import static io.harness.exception.WingsException.USER;
-
+import com.google.inject.Inject;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.asg.beans.AsgExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -45,9 +43,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
-
-import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.exception.WingsException.USER;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j

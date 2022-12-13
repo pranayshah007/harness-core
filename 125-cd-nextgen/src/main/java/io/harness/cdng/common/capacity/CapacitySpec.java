@@ -7,18 +7,17 @@
 
 package io.harness.cdng.common.capacity;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.harness.annotations.dev.OwnedBy;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-
-import io.harness.annotations.dev.OwnedBy;
-
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
 public interface CapacitySpec {
   String getType();
-  Integer getInstances();
+  @JsonIgnore Integer getInstances();
 }
