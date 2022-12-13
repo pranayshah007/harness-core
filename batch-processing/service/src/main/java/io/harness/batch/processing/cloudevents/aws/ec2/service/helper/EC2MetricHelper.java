@@ -85,6 +85,7 @@ public class EC2MetricHelper {
       regionBasedInstanceMap.putIfAbsent(instance.getRegion(), new ArrayList<>());
       regionBasedInstanceMap.get(instance.getRegion()).add(instance);
     });
+    log.info("regionBasedInstanceMap: {}", regionBasedInstanceMap);
 
     if (!regionBasedInstanceMap.isEmpty()) {
       regionBasedInstanceMap.entrySet().forEach(entry -> {
@@ -104,6 +105,7 @@ public class EC2MetricHelper {
             }
           }
         });
+        log.info("fetching metric data");
         metricDataResultMap.putAll(awsCloudWatchHelperService
                                        .getMetricData(AwsCloudWatchMetricDataRequest.builder()
                                                           .region(entry.getKey())
@@ -118,7 +120,7 @@ public class EC2MetricHelper {
       });
     }
 
-    log.debug("metricDataResultMap = {}", metricDataResultMap);
+    log.info("metricDataResultMap: {}", metricDataResultMap);
     List<Ec2UtilzationData> utilizationMetrics = new ArrayList<>();
     for (AWSEC2Details instance : uniqueInstances) {
       utilizationMetrics.add(extractMetricResult(metricDataResultMap, instance.getInstanceId()));

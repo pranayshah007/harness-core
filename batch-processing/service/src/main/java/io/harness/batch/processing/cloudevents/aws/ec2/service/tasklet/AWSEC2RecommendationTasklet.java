@@ -72,15 +72,17 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     // call aws get-metric-data to get the cpu & memory utilisation data
     Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = ceawsConfigHelper.getCrossAccountAttributes(accountId);
+    log.info("infraAccCrossArnMap: {}", infraAccCrossArnMap);
 
     if (!infraAccCrossArnMap.isEmpty()) {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
+        log.info("Running job for aws accountId: {}", infraAccCrossArn.getKey());
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
         // fetching the aws ec2 recommendations
         EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
         Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
-        log.debug("Ec2RecommendationResponse size = {}", ec2RecommendationResponse);
+        log.info("ec2RecommendationResponse: {}", ec2RecommendationResponse);
 
         if (Objects.nonNull(ec2RecommendationResponse) && !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
           for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations :
@@ -112,13 +114,15 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
+              log.info("EC2Recommendation saved to mongoDB: {}", ec2Recommendation);
               saveRecommendationInTimeScaleDB(ec2Recommendation);
             }
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
+          log.info("instances for fetching utilMetrics: {}", instances);
           List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(
               infraAccCrossArn.getValue(), Date.from(now.minus(1, ChronoUnit.DAYS)), Date.from(now), instances);
+          log.info("utilizationData: {}", utilizationData);
           if (!utilizationData.isEmpty()) {
             saveUtilDataToTimescaleDB(accountId, utilizationData);
           }
