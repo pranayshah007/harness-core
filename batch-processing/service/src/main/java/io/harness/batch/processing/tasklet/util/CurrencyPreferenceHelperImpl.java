@@ -42,7 +42,8 @@ public class CurrencyPreferenceHelperImpl implements CurrencyPreferenceHelper {
   public Double getDestinationCurrencyConversionFactor(@NonNull final String accountId,
       @NonNull final CloudServiceProvider cloudServiceProvider, @NonNull final Currency sourceCurrency) {
     final CacheKey cacheKey = new CacheKey(accountId, cloudServiceProvider, sourceCurrency);
-    final Double destinationCurrencyConversionFactor = destinationCurrencyConversionFactorCache.getIfPresent(cacheKey);
+    final Double destinationCurrencyConversionFactor = currencyPreferenceService.getDestinationCurrencyConversionFactor(
+        accountId, cloudServiceProvider, sourceCurrency);
 
     if (Objects.isNull(destinationCurrencyConversionFactor)) {
       log.error("Unable to get destination currency conversion factor for key: {}", cacheKey);
