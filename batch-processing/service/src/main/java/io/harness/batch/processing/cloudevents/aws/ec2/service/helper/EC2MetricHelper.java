@@ -106,16 +106,17 @@ public class EC2MetricHelper {
           }
         });
         log.info("fetching metric data");
-        metricDataResultMap.putAll(awsCloudWatchHelperService
-                                       .getMetricData(AwsCloudWatchMetricDataRequest.builder()
-                                                          .region(entry.getKey())
-                                                          .awsCrossAccountAttributes(awsCrossAccountAttributes)
-                                                          .startTime(startTime)
-                                                          .endTime(endTime)
-                                                          .metricDataQueries(aggregatedQuery)
-                                                          .build())
-                                       .getMetricDataResults()
-                                       .stream()
+        List<MetricDataResult> list = awsCloudWatchHelperService
+            .getMetricData(AwsCloudWatchMetricDataRequest.builder()
+                .region(entry.getKey())
+                .awsCrossAccountAttributes(awsCrossAccountAttributes)
+                .startTime(startTime)
+                .endTime(endTime)
+                .metricDataQueries(aggregatedQuery)
+                .build())
+            .getMetricDataResults();
+        log.info("Metric Data Result: {}", list);
+        metricDataResultMap.putAll(list.stream()
                                        .collect(Collectors.toMap(MetricDataResult::getId, Function.identity())));
       });
     }
