@@ -88,7 +88,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
       InstanceSyncData instanceData = instanceFetcher.fetchRunningInstanceDetails(taskId.getId(), trackedDeployment);
       responseBuilder.addInstanceData(instanceData);
-      batchInstanceCount.addAndGet(instanceData.getInstanceDataCount());
+      batchInstanceCount.addAndGet(instanceData.getInstanceCount());
       batchReleaseDetailsCount.incrementAndGet();
 
       if (batchInstanceCount.get() > INSTANCE_COUNT_LIMIT || batchReleaseDetailsCount.get() > RELEASE_COUNT_LIMIT) {

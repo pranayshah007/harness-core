@@ -11,12 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sConstants.HARNESS_KUBERNETES_REVISION_LABEL_KEY;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
@@ -27,20 +30,22 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
-import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
+import software.wings.beans.infrastructure.instance.info.ContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
+import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
+import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
+import software.wings.service.intfc.ContainerService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -75,22 +80,23 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     try {
       K8sClusterConfig config =
           (K8sClusterConfig) kryoSerializer.asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
-      List<InstanceInfo> runningK8sPods = fetchRunningK8sPods(config, instanceSyncTaskDetails);
+      KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
+
+      DelegateTaskNotifyResponseData taskResponseData = instanceSyncTaskDetails.getIsHelm()
+          ? getContainerSyncResponse(instanceSyncTaskDetails, config)
+          : getK8sTaskResponse(instanceSyncTaskDetails, kubernetesConfig);
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
-          .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
-                                          .setReleaseName(instanceSyncTaskDetails.getReleaseName())
-                                          .setNamespace(instanceSyncTaskDetails.getNamespace())
-                                          .setIsHelm(instanceSyncTaskDetails.getIsHelm())
-                                          .setContainerServiceName(instanceSyncTaskDetails.getContainerServiceName())
-                                          .build()))
-          .setExecutionStatus(
-              runningK8sPods != null ? CommandExecutionStatus.SUCCESS.name() : CommandExecutionStatus.FAILURE.name())
-          .addAllInstanceData(runningK8sPods != null ? runningK8sPods.parallelStream()
-                                                           .map(pod -> ByteString.copyFrom(kryoSerializer.asBytes(pod)))
-                                                           .collect(toList())
-                                                     : null)
+          .setTaskResponse(ByteString.copyFrom(kryoSerializer.asBytes(taskResponseData)))
+          .setInstanceCount(instanceSyncTaskDetails.getIsHelm()
+                  ? ((ContainerSyncResponse) taskResponseData).getContainerInfoList().size()
+                  : ((K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse())
+                        .getK8sPodInfoList()
+                        .size())
+          .setExecutionStatus(instanceSyncTaskDetails.getIsHelm()
+                  ? ((ContainerSyncResponse) taskResponseData).getCommandExecutionStatus().name()
+                  : ((K8sTaskExecutionResponse) taskResponseData).getCommandExecutionStatus().name())
           .build();
     } catch (Exception e) {
       log.error(
@@ -105,12 +111,65 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     }
   }
 
-  public List<InstanceInfo> fetchRunningK8sPods(
+  private K8sTaskExecutionResponse getK8sTaskResponse(
+      DirectK8sInstanceSyncTaskDetails instanceSyncTaskDetails, KubernetesConfig kubernetesConfig) {
+    try {
+      long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);
+      String namespace = instanceSyncTaskDetails.getNamespace();
+      String releaseName = instanceSyncTaskDetails.getReleaseName();
+      List<K8sPod> k8sPodList =
+          k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutMillis);
+
+      return K8sTaskExecutionResponse.builder()
+          .k8sTaskResponse(K8sInstanceSyncResponse.builder()
+                               .k8sPodInfoList(k8sPodList)
+                               .releaseName(releaseName)
+                               .namespace(namespace)
+                               .build())
+          .commandExecutionStatus((k8sPodList != null) ? SUCCESS : FAILURE)
+          .build();
+
+    } catch (Exception exception) {
+      log.error(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
+                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
+          exception);
+      return K8sTaskExecutionResponse.builder()
+          .commandExecutionStatus(FAILURE)
+          .errorMessage(exception.getMessage())
+          .build();
+    }
+  }
+
+  private ContainerSyncResponse getContainerSyncResponse(
+      DirectK8sInstanceSyncTaskDetails instanceSyncTaskDetails, K8sClusterConfig config) {
+    try {
+      List<ContainerInfo> containerInfos = fetchRunningK8sPods(config, instanceSyncTaskDetails);
+      return ContainerSyncResponse.builder()
+          .containerInfoList(containerInfos)
+          .commandExecutionStatus((containerInfos != null) ? SUCCESS : FAILURE)
+          .controllerName(instanceSyncTaskDetails.getContainerServiceName())
+          .isEcs(false)
+          .releaseName(instanceSyncTaskDetails.getReleaseName())
+          .namespace(instanceSyncTaskDetails.getNamespace())
+          .build();
+    } catch (Exception exception) {
+      log.error(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
+                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
+          exception);
+
+      return ContainerSyncResponse.builder()
+          .commandExecutionStatus(FAILURE)
+          .errorMessage(exception.getMessage())
+          .build();
+    }
+  }
+
+  public List<ContainerInfo> fetchRunningK8sPods(
       K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     String containerServiceName = k8sInstanceSyncTaskDetails.getContainerServiceName();
     String accountId = kubernetesConfig.getAccountId();
-    List<InstanceInfo> result = new ArrayList<>();
+    List<ContainerInfo> result = new ArrayList<>();
     try {
       if (k8sInstanceSyncTaskDetails.getIsHelm()) {
         log.info("Kubernetes cluster config for account {}, controller: {}", accountId, containerServiceName);
