@@ -213,7 +213,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
         instanceBillingDataList.stream()
             .filter(instanceBillingData
                 -> ImmutableSet.of(InstanceType.K8S_POD_FARGATE.name(), InstanceType.K8S_POD.name())
-                       .contains(instanceBillingData.getInstanceType()))
+                        .contains(instanceBillingData.getInstanceType())
+                    && instanceBillingData.getUsageDurationSeconds() > 3000)
             .map(InstanceBillingData::getTaskId)
             .collect(Collectors.toSet());
 

@@ -92,7 +92,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
 
   @Before
   public void setup() {
-    InstanceBillingData instanceBillingData = createBillingData(NAME_0);
+    InstanceBillingData instanceBillingData = createBillingData(NAME_0, 2000d);
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(BATCH_SIZE).build());
     when(billingDataService.read(ACCOUNT_ID, Instant.ofEpochMilli(START_TIME_MILLIS),
              Instant.ofEpochMilli(END_TIME_MILLIS), BATCH_SIZE, 0, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY))
@@ -120,7 +120,8 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void testGetLabelMapForGroup() {
     mockGetWorkload();
     when(featureFlagService.isNotEnabled(CCM_WORKLOAD_LABELS_OPTIMISATION, ACCOUNT_ID)).thenReturn(true);
-    final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
+    final List<InstanceBillingData> instances =
+        ImmutableList.of(createBillingData(NAME_0, 3600d), createBillingData(NAME_1, 3600d));
     Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
         clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
             ClusterDataToBigQueryTasklet.AccountClusterKey.getAccountClusterKeyFromInstanceData(instances.get(0)));
@@ -133,8 +134,24 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   @Test
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
+  public void testGetLabelMapForEmptyGroup() {
+    mockGetWorkload();
+    when(featureFlagService.isNotEnabled(CCM_WORKLOAD_LABELS_OPTIMISATION, ACCOUNT_ID)).thenReturn(true);
+    final List<InstanceBillingData> instances =
+        ImmutableList.of(createBillingData(NAME_0, 2000d), createBillingData(NAME_1, 2000d));
+    Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
+        clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
+            ClusterDataToBigQueryTasklet.AccountClusterKey.getAccountClusterKeyFromInstanceData(instances.get(0)));
+    verify(workloadRepository, times(1));
+    assertEquals(labelMap, Collections.emptyMap());
+  }
+
+  @Test
+  @Owner(developers = TRUNAPUSHPA)
+  @Category(UnitTests.class)
   public void testGetLabelMapForGroupEmptyWorkloads() {
-    final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
+    final List<InstanceBillingData> instances =
+        ImmutableList.of(createBillingData(NAME_0, 3600d), createBillingData(NAME_1, 3600d));
     when(workloadRepository.getWorkload(any(), any(), any(), any())).thenReturn(Collections.emptyList());
     Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
         clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
@@ -149,7 +166,8 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void testGetClusterBillingDataForBatch() {
     mockGetWorkload();
     when(featureFlagService.isNotEnabled(CCM_WORKLOAD_LABELS_OPTIMISATION, ACCOUNT_ID)).thenReturn(true);
-    final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
+    final List<InstanceBillingData> instances =
+        ImmutableList.of(createBillingData(NAME_0, 3600d), createBillingData(NAME_1, 3600d));
     List<ClusterBillingData> clusterBillingData = clusterDataToBigQueryTasklet.getClusterBillingDataForBatch(
         ACCOUNT_ID, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY, instances);
     assertEquals(clusterBillingData.size(), instances.size());
@@ -184,7 +202,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
         .thenReturn(Collections.singletonList(workload));
   }
 
-  private InstanceBillingData createBillingData(@NotNull String name) {
+  private InstanceBillingData createBillingData(@NotNull String name, double usageDuration) {
     return InstanceBillingData.builder()
         .startTimestamp(START_TIME_MILLIS)
         .endTimestamp(END_TIME_MILLIS)
@@ -211,6 +229,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
         .storageBillingAmount(BigDecimal.ZERO)
         .storageActualIdleCost(BigDecimal.ZERO)
         .storageUnallocatedCost(BigDecimal.ZERO)
+        .usageDurationSeconds(usageDuration)
         .storageUtilizationValue(0D)
         .storageRequest(0D)
         .maxStorageUtilizationValue(0D)
