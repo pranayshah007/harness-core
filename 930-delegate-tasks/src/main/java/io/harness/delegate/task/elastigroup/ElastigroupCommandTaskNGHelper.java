@@ -111,6 +111,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroup;
 @Singleton
 @Slf4j
 public class ElastigroupCommandTaskNGHelper {
+  public static final int STEADY_STATE_INTERVAL_IN_SECONDS = 20;
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject protected ElbV2Client elbV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
@@ -560,13 +561,11 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public void logElastigroups(List<ElastiGroup> elastigroups, LogCallback logCallback) {
-    if(isEmpty(elastigroups)){
+    if (isEmpty(elastigroups)) {
       logCallback.saveExecutionLog("Found no Elastigroups");
     } else {
       logCallback.saveExecutionLog(format("Found following Elastigroup%s:", elastigroups.size() > 1 ? "s" : ""));
-      elastigroups.forEach(e -> {
-        logCallback.saveExecutionLog(format("- %s", getElastigroupString(e)));
-      });
+      elastigroups.forEach(e -> { logCallback.saveExecutionLog(format("- %s", getElastigroupString(e))); });
     }
   }
 
@@ -574,6 +573,7 @@ public class ElastigroupCommandTaskNGHelper {
       int steadyStateTimeOut, LogCallback lLogCallback) {
     lLogCallback.saveExecutionLog(
         format("Waiting for Elastigroup: %s to reach steady state", getElastigroupString(elastiGroup)));
+    lLogCallback.saveExecutionLog(format("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS));
     try {
       HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOut), () -> {
         while (true) {
@@ -581,7 +581,7 @@ public class ElastigroupCommandTaskNGHelper {
                   spotInstToken, spotInstAccountId, elastiGroup, lLogCallback, elastiGroup.getCapacity().getTarget())) {
             return true;
           }
-          sleep(ofSeconds(20));
+          sleep(ofSeconds(STEADY_STATE_INTERVAL_IN_SECONDS));
         }
       });
     } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
@@ -630,7 +630,7 @@ public class ElastigroupCommandTaskNGHelper {
     return false;
   }
 
-  public static String getElastigroupString(ElastiGroup elastiGroup){
+  public static String getElastigroupString(ElastiGroup elastiGroup) {
     return format("%s [%s]", elastiGroup.getId(), elastiGroup.getName());
   }
 }

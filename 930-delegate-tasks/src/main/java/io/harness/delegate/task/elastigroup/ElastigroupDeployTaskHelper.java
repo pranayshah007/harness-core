@@ -134,7 +134,7 @@ public class ElastigroupDeployTaskHelper {
     spotInstHelperServiceDelegate.updateElastiGroupCapacity(
         spotInstToken, spotInstAccountId, elastiGroup.getId(), elastiGroup);
 
-    logCallback.saveExecutionLog("Request Sent to update Elastigroup", INFO, SUCCESS);
+    logCallback.saveExecutionLog("Request sent to update Elastigroup", INFO, SUCCESS);
   }
 
   /**
