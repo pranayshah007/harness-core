@@ -283,14 +283,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     if (EmptyPredicate.isEmpty(previousReleases) || currentProdApplicationSummary == null) {
       return;
     }
-    String revision = "";
-    if (previousReleases.size() == 1) {
-      revision = "0";
-    } else {
-      //      String previousVersionedAppName = previousReleases.get(previousReleases.size() - 1).getName();
-      int latestVersionUsed = getHighestVersionAppName(previousReleases);
-      revision = latestVersionUsed == -1 ? "0" : String.valueOf(latestVersionUsed + 1);
-    }
+    int latestVersionUsed = getHighestVersionAppName(previousReleases);
+    String revision = latestVersionUsed == -1 ? "0" : String.valueOf(latestVersionUsed + 1);
 
     String appNamePrefix = basicSetupRequestNG.getReleaseNamePrefix();
     String newName = appNamePrefix + DELIMITER + revision;
@@ -301,7 +295,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
   private int getHighestVersionAppName(List<ApplicationSummary> previousReleases) {
     int maxVersion = -1;
-    int latestVersionUsed = -1;
+    int latestVersionUsed;
     for (ApplicationSummary previousApp : previousReleases) {
       latestVersionUsed = pcfCommandTaskBaseHelper.getRevisionFromReleaseName(previousApp.getName());
       maxVersion = Math.max(latestVersionUsed, maxVersion);
@@ -426,7 +420,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     cfRequestConfig.setApplicationName(applicationSummary.getName());
     try {
       cfDeploymentManager.deleteApplication(cfRequestConfig);
-      //      appsDeleted.add(applicationSummary.getName());
     } catch (PivotalClientApiException e) {
       executionLogCallback.saveExecutionLog("Failed while deleting application: "
               + encodeColor(applicationSummary.getName()) + ", Continuing for next one",
