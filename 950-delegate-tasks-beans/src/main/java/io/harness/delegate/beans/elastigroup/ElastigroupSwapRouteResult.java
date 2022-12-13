@@ -9,26 +9,20 @@ package io.harness.delegate.beans.elastigroup;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
-import io.harness.spotinst.model.ElastiGroup;
-
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupSetupResult {
-  ElastiGroup newElastigroup;
-  // Will be used during rollback, to restore this group to previous capacity
-  List<ElastiGroup> groupToBeDownsized;
-  Integer maxInstanceCount;
-  ResizeStrategy resizeStrategy;
-  boolean isBlueGreen;
-  String elastigroupNamePrefix;
-  boolean useCurrentRunningInstanceCount;
-  ElastiGroup elastigroupOriginalConfig;
-  List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
+public class ElastigroupSwapRouteResult {
+  private String downsizeOldElastiGroup;
+  private List<LoadBalancerDetailsForBGDeployment> lbDetails;
+  private String newElastiGroupId;
+  private String newElastiGroupName;
+  private String oldElastiGroupId;
+  private String oldElastiGroupName;
 }

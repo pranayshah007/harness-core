@@ -172,4 +172,7 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
+
+  String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
+  String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
 }

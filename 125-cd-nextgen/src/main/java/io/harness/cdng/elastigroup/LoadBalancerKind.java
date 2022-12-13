@@ -5,20 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.elastigroup.beans;
+package io.harness.cdng.elastigroup;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Builder;
-import lombok.Value;
-
 @OwnedBy(HarnessTeam.CDP)
-@Value
-@Builder
-public class ElastigroupStepExecutorParams {
-  boolean shouldOpenFetchFilesLogStream;
-  String startupScript;
-  String elastigroupConfiguration;
-  String image;
+public interface LoadBalancerKind {
+  String AWS_LOAD_BALANCER_CONFIG = "AWSLoadBalancerConfig";
 }

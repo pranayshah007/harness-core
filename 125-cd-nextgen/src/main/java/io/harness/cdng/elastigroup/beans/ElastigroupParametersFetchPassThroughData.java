@@ -7,18 +7,22 @@
 
 package io.harness.cdng.elastigroup.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-public class ElastigroupStepExecutorParams {
-  boolean shouldOpenFetchFilesLogStream;
+@TypeAlias("elastigroupParametersFetchPassThroughData")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchPassThroughData")
+public class ElastigroupParametersFetchPassThroughData implements PassThroughData {
+  InfrastructureOutcome infrastructureOutcome;
   String startupScript;
-  String elastigroupConfiguration;
-  String image;
 }
