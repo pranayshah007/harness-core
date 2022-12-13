@@ -2912,3 +2912,5 @@
 10000228:io.harness.delegate.beans.pcf.CfDeployCommandResult
 10000229:io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig
 10000230:io.harness.delegate.beans.pcf.TasApplicationInfo
+10000245:io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG
+10000246:io.harness.delegate.beans.pcf.CfRollbackCommandResult

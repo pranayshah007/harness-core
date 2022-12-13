@@ -36,12 +36,15 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -60,6 +63,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -170,7 +174,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
                                   .taskType(CF_COMMAND_TASK_NG.name())
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList(COMMAND_UNIT),
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Arrays.asList(COMMAND_UNIT, CfCommandUnitConstants.Upsize,
+                    CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -206,6 +211,13 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
+    }
+    if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      return StepResponse.builder()
+              .status(Status.FAILED)
+              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+              .build();
     }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

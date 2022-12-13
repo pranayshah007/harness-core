@@ -866,6 +866,16 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
+  public List<String> getAppNameBasedOnGuidForBlueGreen(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
+          throws PivotalClientApiException {
+    List<ApplicationSummary> previousReleases =
+            cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
+    return previousReleases.stream()
+            .filter(app -> app.getId().equalsIgnoreCase(appGuid))
+            .map(ApplicationSummary::getName)
+            .collect(toList());
+  }
+
   public List<String> getAppNameBasedOnGuidForBlueGreenDeployment(
       CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
     List<ApplicationSummary> previousReleases =
@@ -1057,10 +1067,27 @@ public class CfCommandTaskHelperNG {
   public void deleteNewApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG commandRollbackRequest,
       LogCallback logCallback) throws PivotalClientApiException {
     // app downsized - to be deleted
+    // app downsized - to be deleted
+    String cfAppNamePrefix = commandRollbackRequest.getCfAppNamePrefix();
     TasApplicationInfo newApp = commandRollbackRequest.getNewApplicationDetails();
+    String newAppGuid = newApp.getApplicationGuid();
     String newAppName = newApp.getApplicationName();
-    cfRequestConfig.setApplicationName(newAppName);
-    logCallback.saveExecutionLog("Deleting application " + encodeColor(newAppName));
-    cfDeploymentManager.deleteApplication(cfRequestConfig);
+    List<String> newApps = pcfCommandTaskBaseHelper.getAppNameBasedOnGuid(cfRequestConfig, cfAppNamePrefix, newAppGuid);
+
+    if (newApps.isEmpty()) {
+      logCallback.saveExecutionLog(
+              String.format("No new app found to delete with id - [%s] and name - [%s]", newAppGuid, newAppName));
+    } else if (newApps.size() == 1) {
+      String newAppToDelete = newApps.get(0);
+      cfRequestConfig.setApplicationName(newAppToDelete);
+      logCallback.saveExecutionLog("Deleting application " + encodeColor(newAppToDelete));
+      cfDeploymentManager.deleteApplication(cfRequestConfig);
+    } else {
+      String newAppToDelete = newApps.get(0);
+      String message = String.format(
+              "Found [%d] applications with with id - [%s] and name - [%s]. Skipping new app deletion. Kindly delete the invalid app manually",
+              newApps.size(), newAppGuid, newAppToDelete);
+      logCallback.saveExecutionLog(message, WARN);
+    }
   }
 }

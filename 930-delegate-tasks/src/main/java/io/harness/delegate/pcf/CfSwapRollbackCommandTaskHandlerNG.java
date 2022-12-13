@@ -10,9 +10,11 @@ package io.harness.delegate.pcf;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.ROLLBACK_OPERATOR;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.pcf.CfCommandUnitConstants.Downsize;
+import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
 
 import static software.wings.beans.LogColor.White;
@@ -46,6 +48,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
@@ -90,6 +93,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfSwapRollbackCommandRequestNG) cfCommandRequestNG;
+    cfRollbackCommandRequestNG.setSwapRouteOccured(true);
     File workingDirectory = null;
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
 
@@ -115,6 +119,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                                             .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
                                                 true, cfRollbackCommandRequestNG.getCfCliVersion()))
                                             .cfCliVersion(cfRollbackCommandRequestNG.getCfCliVersion())
+                                              .useCFCLI(true)
                                             .build();
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
@@ -127,6 +132,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                                             .stream()
                                             .map(CfAppSetupTimeDetails::getApplicationName)
                                             .collect(toList()))
+              .existingInActiveApplicationDetails(cfRollbackCommandRequestNG.getOldApplicationDetails() != null ? cfRollbackCommandRequestNG.getOldApplicationDetails().toCfAppSetupTimeDetails(): null)
               .tempRoutes(cfRollbackCommandRequestNG.getTempRouteMaps())
               .skipRollback(false)
               .isStandardBlueGreen(true)
@@ -160,6 +166,10 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                       : 10)
               .build();
 
+      executionLogCallback.saveExecutionLog("#---------- Successfully Completed", INFO, SUCCESS);
+
+      executionLogCallback = tasTaskHelperBase.getLogCallback(
+              iLogStreamingTaskClient, CfCommandUnitConstants.Upsize, true, commandUnitsProgress);
       // get Upsize Instance data
       List<CfServiceData> upsizeList = cfCommandTaskHelperNG.getUpsizeListForRollback(cfRollbackCommandRequestNG);
 
@@ -178,8 +188,12 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       //todo: change autoscaler data
       cfCommandTaskHelperNG.enableAutoscalerIfNeeded(cfRollbackCommandRequestNG.getNewApplicationDetails(), autoscalarRequestData, executionLogCallback);
+
       executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
 
+
+      executionLogCallback =
+              tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
       // Downsizing
       cfCommandTaskHelperNG.downSizeListOfInstances(executionLogCallback, cfServiceDataUpdated, cfRequestConfig,
           updateNewAppName(cfRequestConfig, cfRollbackCommandRequestNG, downSizeList), cfRollbackCommandRequestNG,
@@ -187,6 +201,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       // Deleting
       cfCommandTaskHelperNG.deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
+
+      executionLogCallback.saveExecutionLog("#---------- Downsizing Successfully Completed", INFO, SUCCESS);
 
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfRollbackCommandResult.setUpdatedValues(updateValues);
@@ -201,17 +217,22 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
-      executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage(), INFO, FAILURE);
       cfRollbackCommandResponseNG.setErrorMessage(sanitizedException.getMessage());
       cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
     } finally {
+      executionLogCallback =
+              tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
+      executionLogCallback.saveExecutionLog("#------- Deleting Temporary Files");
       try {
         if (workingDirectory != null) {
           FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
+          executionLogCallback.saveExecutionLog("Temporary Files Successfully deleted", INFO, SUCCESS);
         }
       } catch (IOException e) {
         log.warn("Failed to delete temp directory created for CF CLI login", e);
+        executionLogCallback.saveExecutionLog("Failed to delete temp directory created for CF CLI login", INFO, FAILURE);
       }
     }
     cfRollbackCommandResponseNG.setCfRollbackCommandResult(cfRollbackCommandResult);
@@ -251,7 +272,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, routeUpdateConfigData);
     }
     CfAppSetupTimeDetails newApplicationDetails = routeUpdateConfigData.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
         cfRequestConfig, routeUpdateConfigData.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     routeUpdateConfigData.setNewApplicationName(
         isEmpty(newApps) ? routeUpdateConfigData.getNewApplicationName() : newApps.get(0));
@@ -434,7 +455,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void performRouteUpdateForStandardBlueGreen(CfRequestConfig cfRequestConfig,
       CfRouteUpdateRequestConfigData data, LogCallback executionLogCallback) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreen(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 
@@ -491,11 +512,13 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       List<String> mapRouteForExistingApp = data.getFinalRoutes();
       List<String> unmapRouteForExistingApp = data.getTempRoutes();
       for (String existingAppName : data.getExistingApplicationNames()) {
-        cfCommandTaskHelperNG.mapRouteMaps(
-            existingAppName, mapRouteForExistingApp, cfRequestConfig, executionLogCallback);
-        cfCommandTaskHelperNG.unmapRouteMaps(
-            existingAppName, unmapRouteForExistingApp, cfRequestConfig, executionLogCallback);
-        updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, existingAppName, true);
+        if(isNotEmpty(existingAppName)) {
+          cfCommandTaskHelperNG.mapRouteMaps(
+                  existingAppName, mapRouteForExistingApp, cfRequestConfig, executionLogCallback);
+          cfCommandTaskHelperNG.unmapRouteMaps(
+                  existingAppName, unmapRouteForExistingApp, cfRequestConfig, executionLogCallback);
+          updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, existingAppName, true);
+        }
       }
     }
   }

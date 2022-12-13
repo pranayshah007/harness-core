@@ -119,6 +119,7 @@ import io.harness.delegate.beans.ci.k8s.K8ExecCommandParams;
 import io.harness.delegate.beans.ci.k8s.K8ExecuteCommandTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
+import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.CIK8PodParams;
@@ -667,6 +668,7 @@ import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResp
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.CfCommandResponse;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
@@ -1409,7 +1411,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasApplicationInfo.class, 10000242);
     kryo.register(CfSwapRoutesRequestNG.class, 10000243);
     kryo.register(CfSwapRouteCommandResponseNG.class, 10000244);
-    kryo.register(CfRollbackCommandResult.class, 10000245);
+    kryo.register(CfSwapRollbackCommandRequestNG.class, 10000245);
+    kryo.register(CfRollbackCommandResult.class, 10000246);
+    kryo.register(CfRollbackCommandResult.class, 10000247);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
