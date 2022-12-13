@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.pcf.request;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,25 +22,17 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 
-@Value
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class CfBlueGreenSetupRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
+@Data
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
   String releaseNamePrefix;
-  boolean isPackageArtifact;
-  @NotNull TasInfraConfig tasInfraConfig;
   TasArtifactConfig tasArtifactConfig;
-  boolean useCfCLI;
-  @NotNull CfCliVersion cfCliVersion;
-  @Expression(ALLOW_SECRETS) String manifestYaml;
-  Integer timeoutIntervalInMin;
   Integer olderActiveVersionCountToKeep;
   Integer maxCount;
   Integer currentRunningCount;
@@ -48,4 +41,25 @@ public class CfBlueGreenSetupRequestNG implements CfCommandRequestNG {
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoscalar;
   PcfManifestsPackage pcfManifestsPackage;
+
+  @Builder
+  public CfBlueGreenSetupRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
+      TasArtifactConfig tasArtifactConfig, Integer olderActiveVersionCountToKeep, Integer maxCount,
+      Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoscalar,
+      PcfManifestsPackage pcfManifestsPackage, List<String> tempRoutes) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+    this.releaseNamePrefix = releaseNamePrefix;
+    this.tasArtifactConfig = tasArtifactConfig;
+    this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
+    this.maxCount = maxCount;
+    this.currentRunningCount = currentRunningCount;
+    this.useCurrentCount = useCurrentCount;
+    this.routeMaps = routeMaps;
+    this.useAppAutoscalar = useAppAutoscalar;
+    this.pcfManifestsPackage = pcfManifestsPackage;
+    this.tempRoutes = tempRoutes;
+  }
 }

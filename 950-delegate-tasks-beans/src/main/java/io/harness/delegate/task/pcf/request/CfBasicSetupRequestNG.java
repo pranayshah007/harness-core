@@ -7,9 +7,9 @@
 
 package io.harness.delegate.task.pcf.request;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -21,30 +21,40 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
-import org.jetbrains.annotations.NotNull;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Value
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class CfBasicSetupRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
+@Data
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfBasicSetupRequestNG extends AbstractTasTaskRequest {
   String releaseNamePrefix;
-  boolean isPackageArtifact;
   TasArtifactConfig tasArtifactConfig;
-  @NotNull TasInfraConfig tasInfraConfig;
-  boolean useCfCLI;
-  @NotNull CfCliVersion cfCliVersion;
-  String manifestYaml;
-  Integer timeoutIntervalInMin;
   Integer olderActiveVersionCountToKeep;
   Integer maxCount;
   Integer currentRunningCount;
   boolean useCurrentCount;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
-  boolean useAppAutoscalar;
+  boolean useAppAutoScalar;
   PcfManifestsPackage pcfManifestsPackage;
+
+  @Builder
+  public CfBasicSetupRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
+      TasArtifactConfig tasArtifactConfig, Integer olderActiveVersionCountToKeep, Integer maxCount,
+      Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoScalar,
+      PcfManifestsPackage pcfManifestsPackage) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+    this.releaseNamePrefix = releaseNamePrefix;
+    this.tasArtifactConfig = tasArtifactConfig;
+    this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
+    this.maxCount = maxCount;
+    this.currentRunningCount = currentRunningCount;
+    this.useCurrentCount = useCurrentCount;
+    this.routeMaps = routeMaps;
+    this.useAppAutoScalar = useAppAutoScalar;
+    this.pcfManifestsPackage = pcfManifestsPackage;
+  }
 }
