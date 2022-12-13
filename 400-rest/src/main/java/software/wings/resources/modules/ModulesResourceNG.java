@@ -45,7 +45,6 @@ public class ModulesResourceNG {
 
   private Map<ModuleType, FeatureName> getModuleTypeFeatureNameMap() {
     Map<ModuleType, FeatureName> modules = new HashMap<>();
-    modules.put(ModuleType.CD, FeatureName.CDNG_ENABLED);
     modules.put(ModuleType.CE, FeatureName.CENG_ENABLED);
     modules.put(ModuleType.CF, FeatureName.CFNG_ENABLED);
     modules.put(ModuleType.CI, FeatureName.CING_ENABLED);
@@ -62,6 +61,11 @@ public class ModulesResourceNG {
         enabledModuleTypes.add(moduleType);
       }
     });
+    addEnabledModuleTypesByDefault(enabledModuleTypes);
     return new RestResponse<>(enabledModuleTypes);
+  }
+
+  private void addEnabledModuleTypesByDefault(List<ModuleType> enabledModuleTypes) {
+    enabledModuleTypes.add(ModuleType.CD);
   }
 }

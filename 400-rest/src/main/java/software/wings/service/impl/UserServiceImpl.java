@@ -597,13 +597,6 @@ public class UserServiceImpl implements UserService {
 
     Account createdAccount = accountService.save(account, false);
 
-    if (!featureFlagService.isEnabled(FeatureName.CDNG_ENABLED, createdAccount.getUuid())
-        && "CD".equalsIgnoreCase(userInvite.getIntent())) {
-      createdAccount.setDefaultExperience(DefaultExperience.CG);
-
-      accountService.update(createdAccount);
-    }
-
     // create user
     User user = User.Builder.anUser()
                     .email(userInvite.getEmail())
