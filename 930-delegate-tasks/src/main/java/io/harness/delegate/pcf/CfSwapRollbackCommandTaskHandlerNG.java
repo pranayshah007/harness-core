@@ -93,6 +93,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfSwapRollbackCommandRequestNG) cfCommandRequestNG;
+    cfRollbackCommandRequestNG.setSwapRouteOccured(true);
     File workingDirectory = null;
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
 

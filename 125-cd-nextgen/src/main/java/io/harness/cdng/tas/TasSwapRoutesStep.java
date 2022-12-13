@@ -39,6 +39,7 @@ import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -63,6 +64,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -192,7 +194,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
                                   .parameters(new Object[] {cfSwapRoutesRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Collections.singletonList(CfCommandTypeNG.SWAP_ROUTES.toString()), CF_COMMAND_TASK_NG.getDisplayName(),
+            Arrays.asList(CfCommandUnitConstants.SwapRoutesForNewApplication, CfCommandUnitConstants.SwapRoutesForExistingApplication,  CfCommandUnitConstants.Downsize,  CfCommandUnitConstants.Rename, CfCommandUnitConstants.Wrapup), CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRoutesStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
