@@ -146,7 +146,7 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER, true);
   }
 
-  @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
+  @Scheduled(cron = "0 */10 * * * ?") // 0 */10 * * * ?   for testing
   public void runCloudEfficiencyOutOfClusterECSJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);
   }
