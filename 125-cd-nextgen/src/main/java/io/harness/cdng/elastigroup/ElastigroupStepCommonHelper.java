@@ -384,45 +384,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
           unitProgressData, "Name not provided for new elastigroup to be created");
     }
     elastigroupNamePrefix = Misc.normalizeExpression(elastigroupNamePrefix);
-
-    //    ElastiGroup elastigroupConfig =
-    //            generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupConfiguration(),
-    //                    elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
-
-    //    List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments =
-    //        elastigroupStepCommonHelper.addLoadBalancerConfigAfterExpressionEvaluation(
-    //            elastigroupBGStageSetupStepParameters.getLoadBalancers()
-    //                .stream()
-    //                .map(loadBalancer -> (AwsLoadBalancerConfigYaml) loadBalancer.getSpec())
-    //                .collect(Collectors.toList()),
-    //            ambiance);
-    //
-    //    String awsConnectorRef = elastigroupStepCommonHelper.renderExpression(ambiance,
-    //        ((AwsCloudProviderBasicConfig)
-    //        elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec())
-    //            .getConnectorRef()
-    //            .getValue());
-    //
-    //    String awsRegion = elastigroupStepCommonHelper.renderExpression(ambiance,
-    //        ((AwsCloudProviderBasicConfig)
-    //        elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec())
-    //            .getRegion()
-    //            .getValue());
-
     executionPassThroughData.setElastigroupNamePrefix(elastigroupNamePrefix);
     executionPassThroughData.setSpotInstConfig(spotInstConfig);
-
-    //    executionPassThroughData.setResizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST);
-    //    executionPassThroughData.setBase64EncodedStartupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(
-    //            ambiance, elastigroupStepExecutorParams.getStartupScript()));
-    //    executionPassThroughData.setGeneratedElastigroupConfig(elastigroupConfig);
-    //    executionPassThroughData.setElastigroupConfiguration(elastigroupStepCommonHelper.renderExpression(
-    //            ambiance, elastigroupStepExecutorParams.getElastigroupConfiguration()));
-
-    //    executionPassThroughData.setAwsRegion(awsRegion);
-    //    executionPassThroughData.setConnectorRef(awsConnectorRef);
-    //    executionPassThroughData.setLoadBalancerDetailsForBGDeployments(loadBalancerDetailsForBGDeployments);
-
     ElastigroupPreFetchRequest preFetchRequest =
         ElastigroupPreFetchRequest.builder()
             .blueGreen(true)
