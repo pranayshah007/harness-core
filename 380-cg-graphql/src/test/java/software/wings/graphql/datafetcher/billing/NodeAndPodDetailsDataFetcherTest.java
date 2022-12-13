@@ -119,7 +119,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
     createAccount(ACCOUNT1_ID, getLicenseInfo());
     createApp(ACCOUNT1_ID, APP1_ID_ACCOUNT1, APP1_ID_ACCOUNT1, TAG_TEAM, TAG_VALUE_TEAM1);
     when(statsHelper.getEntityName(any(), anyString())).thenAnswer(i -> i.getArgument(1, String.class));
-    when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.singletonList(getTestInstanceData(INSTANCE_ID, INSTANCE_ID, K8S_POD)));
     Connection mockConnection = mock(Connection.class);
     Statement mockStatement = mock(Statement.class);
@@ -163,7 +163,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
   @Category(UnitTests.class)
   public void testFetchMethodForNodeDetails() {
     String[] clusterIdFilterValues = new String[] {CLUSTER_ID};
-    when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.singletonList(getTestInstanceData(INSTANCE_ID, INSTANCE_ID, K8S_NODE)));
 
     List<QLBillingDataFilter> filters = new ArrayList<>();
@@ -197,7 +197,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
   @Category(UnitTests.class)
   public void testFetchMethodNodeDetailsWithTTLedInstanceData() {
     final String defaultStringValue = "-";
-    when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.emptyList());
 
     String[] clusterIdFilterValues = new String[] {CLUSTER_ID};
@@ -235,7 +235,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
   @Category(UnitTests.class)
   public void testFetchMethodPodDetailsWithTTLedInstanceData() {
     final String defaultStringValue = "-";
-    when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.emptyList());
 
     List<QLBillingDataFilter> filters = new ArrayList<>();
@@ -271,7 +271,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testFetchMethodForPodDetails() {
-    when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.singletonList(getTestInstanceData(INSTANCE_ID, INSTANCE_ID, K8S_POD)));
 
     String[] clusterIdFilterValues = new String[] {CLUSTER_ID};
