@@ -131,6 +131,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                                             .stream()
                                             .map(CfAppSetupTimeDetails::getApplicationName)
                                             .collect(toList()))
+              .existingInActiveApplicationDetails(cfRollbackCommandRequestNG.getOldApplicationDetails() != null ? cfRollbackCommandRequestNG.getOldApplicationDetails().toCfAppSetupTimeDetails(): null)
               .tempRoutes(cfRollbackCommandRequestNG.getTempRouteMaps())
               .skipRollback(false)
               .isStandardBlueGreen(true)
@@ -453,7 +454,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void performRouteUpdateForStandardBlueGreen(CfRequestConfig cfRequestConfig,
       CfRouteUpdateRequestConfigData data, LogCallback executionLogCallback) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreen(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 
@@ -510,11 +511,13 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       List<String> mapRouteForExistingApp = data.getFinalRoutes();
       List<String> unmapRouteForExistingApp = data.getTempRoutes();
       for (String existingAppName : data.getExistingApplicationNames()) {
-        cfCommandTaskHelperNG.mapRouteMaps(
-            existingAppName, mapRouteForExistingApp, cfRequestConfig, executionLogCallback);
-        cfCommandTaskHelperNG.unmapRouteMaps(
-            existingAppName, unmapRouteForExistingApp, cfRequestConfig, executionLogCallback);
-        updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, existingAppName, true);
+        if(isNotEmpty(existingAppName)) {
+          cfCommandTaskHelperNG.mapRouteMaps(
+                  existingAppName, mapRouteForExistingApp, cfRequestConfig, executionLogCallback);
+          cfCommandTaskHelperNG.unmapRouteMaps(
+                  existingAppName, unmapRouteForExistingApp, cfRequestConfig, executionLogCallback);
+          updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, existingAppName, true);
+        }
       }
     }
   }
