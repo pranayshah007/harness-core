@@ -741,6 +741,7 @@ roles:
         - core_license_view
         - core_account_view
       managed: true
+      internal: true
       allowedScopeLevels:
         - account
     - identifier: _billing_admin

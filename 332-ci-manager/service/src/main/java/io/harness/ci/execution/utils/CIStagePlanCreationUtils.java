@@ -65,7 +65,7 @@ public class CIStagePlanCreationUtils {
         String day = yearMonth + "-" + startDate.getDayOfMonth();
         Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
         if (countPerDay != null) {
-          if (countPerDay.getOrDefault(day, 0L) >= 100) {
+          if (countPerDay.getOrDefault(day, 0L) >= 5) {
             log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
             throw new CIStageExecutionException(
                 "Execution limit has reached for the day, Please reach out to Harness support");

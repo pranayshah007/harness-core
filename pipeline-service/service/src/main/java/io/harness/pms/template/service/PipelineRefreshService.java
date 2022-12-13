@@ -18,7 +18,7 @@ public interface PipelineRefreshService {
   boolean refreshTemplateInputsInPipeline(String accountId, String orgId, String projectId, String pipelineIdentifier);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsInPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache);
 
   YamlDiffResponseDTO getYamlDiff(String accountId, String orgId, String projectId, String pipelineIdentifier);
 

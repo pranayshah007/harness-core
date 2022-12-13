@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
@@ -20,4 +21,6 @@ public interface DebugService {
 
   CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);
   DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier);
+
+  boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO);
 }

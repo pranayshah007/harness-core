@@ -2361,6 +2361,8 @@
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
 573568:io.harness.delegate.beans.terragrunt.request.TerragruntCommandType
+573571:io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest
+573572:io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2394,6 +2396,7 @@
 643308:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
+673567:java.util.concurrent.ConcurrentHashMap
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO

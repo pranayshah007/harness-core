@@ -222,6 +222,7 @@ type PendingEntriesRequest struct {
 	Group    string
 	Consumer string
 	Count    int
+	Idle     int
 }
 
 // ReadNewMessagesRequest Request Object for getting new entries from Redis Stream
@@ -263,9 +264,9 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 
 func (s *Store) GetPendingEntries(ctx context.Context, request *PendingEntriesRequest) ([]string, error) {
 	xPendingArgs := &redis.XPendingExtArgs{
-		Stream: request.Stream,
-		Group:  request.Group,
-		//Idle:     1000000000, // TODO Handle idle time passing
+		Stream:   request.Stream,
+		Group:    request.Group,
+		Idle:     time.Duration(request.Idle) * time.Millisecond,
 		Count:    int64(request.Count),
 		Start:    "-",
 		End:      "+",

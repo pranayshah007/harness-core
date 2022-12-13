@@ -8,6 +8,7 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.execution.ExecutionServiceConfig;
 
 import lombok.Builder;
@@ -26,17 +27,22 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
+  String queueServiceToken;
+  QueueServiceClient queueServiceClient;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
-      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits) {
+      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
+      String queueServiceToken, QueueServiceClient queueServiceClient) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
     this.stepConfig = stepConfig;
     this.cacheIntelligenceConfig = cacheIntelligenceConfig;
     this.executionLimits = executionLimits;
+    this.queueServiceClient = queueServiceClient;
+    this.queueServiceToken = queueServiceToken;
   }
 }

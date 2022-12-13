@@ -51,6 +51,7 @@ import org.apache.commons.lang3.StringUtils;
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntExecutionData")
 public class TerragruntExecutionData {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @NotNull @JsonProperty("configFiles") TerragruntConfigFilesWrapper terragruntConfigFilesWrapper;
   @JsonProperty("varFiles") List<TerragruntVarFileWrapper> terragruntVarFiles;
@@ -92,5 +93,7 @@ public class TerragruntExecutionData {
   void validateParams() {
     Validator.notNullCheck("Config files are null", terragruntConfigFilesWrapper);
     terragruntConfigFilesWrapper.validateParams();
+    Validator.notNullCheck("Module Config is null", terragruntModuleConfig);
+    terragruntModuleConfig.validateParams();
   }
 }

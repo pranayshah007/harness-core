@@ -194,6 +194,12 @@ public class SettingAttribute
                  .field(SettingAttributeKeys.name)
                  .field(SettingAttributeKeys.accountId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_appId_type")
+                 .field(SettingAttributeKeys.accountId)
+                 .field(SettingAttributeKeys.appId)
+                 .field(SettingAttributeKeys.value_type)
+                 .build())
         .build();
   }
 

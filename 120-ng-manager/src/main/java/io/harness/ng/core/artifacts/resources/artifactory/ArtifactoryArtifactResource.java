@@ -210,6 +210,10 @@ public class ArtifactoryArtifactResource {
         artifactoryConnectorIdentifier =
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
+
+      if (isEmpty(repositoryType)) {
+        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      }
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

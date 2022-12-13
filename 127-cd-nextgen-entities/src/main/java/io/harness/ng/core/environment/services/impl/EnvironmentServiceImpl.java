@@ -33,6 +33,7 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -440,9 +441,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
           "Error while deleting the Environment as was not able to check entity reference records.");
     }
     if (isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(String.format(
-          "Could not delete the Environment %s as it is referenced by other entities - " + referredByEntities,
-          environment.getIdentifier()));
+      throw new ReferencedEntityException(String.format(
+          "The environment %s cannot be deleted because it is being referenced in %d %s. To delete your environment, please remove the environment references from these entities.",
+          environment.getIdentifier(), referredByEntities.size(),
+          referredByEntities.size() > 1 ? "entities" : "entity"));
     }
   }
 

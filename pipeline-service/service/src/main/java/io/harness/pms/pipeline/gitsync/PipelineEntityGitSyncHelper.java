@@ -150,7 +150,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   protected PipelineConfig updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(entity, true);
+    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(entity, true, false);
     PipelineEntity pipelineEntity = pmsPipelineService.updateGitFilePath(entity, newFilePath);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }

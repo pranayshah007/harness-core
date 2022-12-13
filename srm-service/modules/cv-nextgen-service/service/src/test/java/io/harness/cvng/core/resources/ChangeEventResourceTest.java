@@ -246,9 +246,9 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
     assertThat(deploymentChanges.get(1).getEndTime()).isEqualTo(400000);
     List<TimeRangeDetail> infrastructureChanges =
         changeTimeline.getCategoryTimeline().get(ChangeCategory.INFRASTRUCTURE);
-    assertThat(infrastructureChanges).isNull();
+    assertThat(infrastructureChanges).isEmpty();
     List<TimeRangeDetail> alertChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.ALERTS);
-    assertThat(alertChanges).isNull();
+    assertThat(alertChanges).isEmpty();
   }
 
   @Test

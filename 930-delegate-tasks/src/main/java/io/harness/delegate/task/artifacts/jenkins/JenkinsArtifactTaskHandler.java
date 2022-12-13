@@ -25,7 +25,6 @@ import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryService;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.beans.ExecutionStatus;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -33,20 +32,15 @@ import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.GeneralException;
-import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.beans.JenkinsConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.jenkins.model.CustomBuildWithDetails;
 
@@ -350,10 +344,6 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
         .build();
   }
 
-  boolean isRegex(JenkinsArtifactDelegateRequest artifactDelegateRequest) {
-    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getBuildRegex());
-  }
-
   @Override
   public void decryptRequestDTOs(JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest) {
     if (jenkinsArtifactDelegateRequest.getJenkinsConnectorDTO().getAuth() != null) {
@@ -379,44 +369,6 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message);
     }
-  }
-
-  private Build waitForJobToStartExecution(
-      Jenkins jenkins, QueueReference queueReference, JenkinsConfig jenkinsConfig) {
-    Build jenkinsBuild = null;
-    int retry = 0;
-    do {
-      log.info(
-          "Waiting for job {} to start execution with URL {}", queueReference, queueReference.getQueueItemUrlPart());
-      sleep(Duration.ofSeconds(1));
-      try {
-        jenkinsBuild = jenkins.getBuild(queueReference, jenkinsConfig);
-        if (jenkinsBuild != null) {
-          log.info("Job started and Build No {}", jenkinsBuild.getNumber());
-        }
-      } catch (IOException e) {
-        log.error("Error occurred while waiting for Job to start execution.", e);
-        if (e instanceof HttpResponseException) {
-          if (((HttpResponseException) e).getStatusCode() == 401) {
-            throw new InvalidCredentialsException("Invalid Jenkins credentials", WingsException.USER);
-          } else if (((HttpResponseException) e).getStatusCode() == 403) {
-            throw new UnauthorizedException("User not authorized to access jenkins", WingsException.USER);
-          } else if (((HttpResponseException) e).getStatusCode() == 500) {
-            log.info("Failed to retrieve job details at url {}, Retrying (retry count {})  ",
-                queueReference.getQueueItemUrlPart(), retry);
-            if (retry < MAX_RETRY) {
-              retry++;
-              continue;
-            } else {
-              throw new GeneralException(String.format(
-                  "Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(), e.getMessage()));
-            }
-          }
-          throw new GeneralException(e.getMessage());
-        }
-      }
-    } while (jenkinsBuild == null);
-    return jenkinsBuild;
   }
 
   public BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
