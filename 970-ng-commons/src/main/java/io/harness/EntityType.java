@@ -447,14 +447,6 @@ public enum EntityType {
   IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
   IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
-
-  @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
-  ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
-  @JsonProperty(EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE)
-  ELASTIGROUP_SWAP_ROUTE_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE),
-
   @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
   CONTAINER_STEP(
       ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),

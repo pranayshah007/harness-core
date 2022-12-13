@@ -10,10 +10,6 @@ package io.harness.delegate.beans.elastigroup;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
-import lombok.Builder;
-import lombok.Data;
-
-import java.util.List;
 
 import java.util.List;
 import lombok.Builder;
