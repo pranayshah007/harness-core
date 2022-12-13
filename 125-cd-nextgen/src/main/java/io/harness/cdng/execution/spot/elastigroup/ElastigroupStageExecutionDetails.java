@@ -15,7 +15,6 @@ import io.harness.spotinst.model.ElastiGroup;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
