@@ -270,7 +270,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, routeUpdateConfigData);
     }
     CfAppSetupTimeDetails newApplicationDetails = routeUpdateConfigData.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
         cfRequestConfig, routeUpdateConfigData.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     routeUpdateConfigData.setNewApplicationName(
         isEmpty(newApps) ? routeUpdateConfigData.getNewApplicationName() : newApps.get(0));
