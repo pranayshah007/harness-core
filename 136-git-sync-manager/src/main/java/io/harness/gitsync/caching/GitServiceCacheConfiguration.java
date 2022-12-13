@@ -5,27 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.caching.beans;
+package io.harness.gitsync.caching;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
-import lombok.experimental.FieldDefaults;
+import lombok.Value;
 
-@Getter
+@Value
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-@ToString
-public class GitFileCacheKey {
-  String accountIdentifier;
-  GitProvider gitProvider;
-  String repoName;
-  String ref;
-  String completeFilePath;
-  boolean isDefaultBranch;
+public class GitServiceCacheConfiguration {
+  @JsonProperty("validCacheDurationInMillis") long validCacheDurationInMillis;
+  @JsonProperty("maxCacheDurationInMillis") long maxCacheDurationInMillis;
 }

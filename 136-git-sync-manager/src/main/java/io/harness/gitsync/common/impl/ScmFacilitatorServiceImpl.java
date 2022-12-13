@@ -761,9 +761,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private Optional<ScmGetFileResponseDTO> getFileCacheResponseIfApplicable(
       ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector) {
     if (scmGetFileByBranchRequestDTO.isUseCache()) {
-      GitFileCacheResponse gitFileCacheResponse =
-          getFileFromCache(getCacheKey(scmGetFileByBranchRequestDTO, scmConnector));
+      GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector);
+      GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
+        log.info("CACHE HIT for cacheKey : {}", cacheKey);
         return Optional.of(prepareScmGetFileCacheResponse(gitFileCacheResponse.getGitFileCacheObject().getFileContent(),
             scmGetFileByBranchRequestDTO.getBranchName(), gitFileCacheResponse.getGitFileCacheObject().getCommitId(),
             gitFileCacheResponse.getGitFileCacheObject().getObjectId(), gitFileCacheResponse.getCacheDetails()));

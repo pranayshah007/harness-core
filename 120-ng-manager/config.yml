@@ -204,6 +204,11 @@ gitSyncServerConfig:
       certFilePath: cert.pem
     - port: 13002
 
+gitService:
+  caching:
+    validCacheDurationInMillis: 600000
+    maxCacheDurationInMillis: 86400000
+
 shouldDeployWithGitSync: true
 
 fileServiceConfiguration:

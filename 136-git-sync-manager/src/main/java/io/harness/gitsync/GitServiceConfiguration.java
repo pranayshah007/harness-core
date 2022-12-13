@@ -5,23 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.caching;
+package io.harness.gitsync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.caching.GitServiceCacheConfiguration;
 
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Value;
 
-@Getter
+@Value
+@Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public enum GitFileCacheTTL {
-  VALID_CACHE_DURATION(5 * 60 * 1000L),
-  MAX_CACHE_DURATION(60 * 60 * 1000L),
-  ;
-
-  final long durationInMs;
-
-  GitFileCacheTTL(long durationInMs) {
-    this.durationInMs = durationInMs;
-  }
+public class GitServiceConfiguration {
+  @JsonProperty("caching") GitServiceCacheConfiguration gitServiceCacheConfiguration;
 }
