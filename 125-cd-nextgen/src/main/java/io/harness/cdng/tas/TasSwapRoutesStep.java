@@ -162,7 +162,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
           Collections.singletonList(tasSetupDataOutcome.getExistingApplicationDetails().getApplicationName());
     }
 
-    boolean downSizeOldApplication = false;
+    boolean downSizeOldApplication = tasSwapRoutesStepParameters.getDownSizeOldApplication().getValue();
     CfSwapRoutesRequestNG cfSwapRoutesRequestNG =
         CfSwapRoutesRequestNG.builder()
             .finalRoutes(tasSetupDataOutcome.getRouteMaps())

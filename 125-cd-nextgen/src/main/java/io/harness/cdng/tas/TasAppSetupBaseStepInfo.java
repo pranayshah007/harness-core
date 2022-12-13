@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("tasAppSetupBaseStepInfo")
 public class TasAppSetupBaseStepInfo {
-  @NotNull TasInstanceCountType tasInstanceCountType;
+  @NotNull TasInstanceCountType instanceCount;
   @NotNull
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})

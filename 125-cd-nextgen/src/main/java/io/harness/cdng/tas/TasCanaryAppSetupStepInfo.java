@@ -73,7 +73,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   @Override
   public SpecParameters getSpecParameters() {
     return TasCanaryAppSetupStepParameters.infoBuilder()
-        .tasInstanceCountType(this.tasInstanceCountType)
+        .tasInstanceCountType(this.instanceCount)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .resizeStrategy(this.resizeStrategy)

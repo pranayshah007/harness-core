@@ -32,8 +32,8 @@ public class InstanceDataServiceImpl implements InstanceDataService {
   }
 
   @Override
-  public List<InstanceData> fetchInstanceDataForGivenInstances(List<String> instanceIds) {
-    return instanceDataDao.fetchInstanceDataForGivenInstances(instanceIds);
+  public List<InstanceData> fetchInstanceDataForGivenInstances(String accountId, List<String> instanceIds) {
+    return instanceDataDao.fetchInstanceDataForGivenInstances(accountId, instanceIds);
   }
 
   @Override
@@ -41,11 +41,9 @@ public class InstanceDataServiceImpl implements InstanceDataService {
     try {
       Map<String, Map<String, String>> instanceIdLabelMap = new HashMap<>();
 
-      List<InstanceData> instanceDataList = instanceDataDao.fetchInstanceDataForGivenInstances(instanceIds);
+      List<InstanceData> instanceDataList = instanceDataDao.fetchInstanceDataForGivenInstances(accountId, instanceIds);
       for (InstanceData instanceData : instanceDataList) {
-        if (instanceData.getAccountId().equals(accountId)) {
-          instanceIdLabelMap.put(instanceData.getInstanceId(), getLabelMap(instanceData));
-        }
+        instanceIdLabelMap.put(instanceData.getInstanceId(), getLabelMap(instanceData));
       }
       return instanceIdLabelMap;
     } catch (Exception ex) {

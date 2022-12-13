@@ -33,12 +33,15 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -56,9 +59,7 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -89,24 +90,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TasRollbackStepParameters tasRollbackStepParameters = (TasRollbackStepParameters) stepParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(tasRollbackStepParameters.getTasResizeFqn())) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas rollback Step was not executed. Skipping .").build())
-          .build();
-    }
-
-    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
-
-    if (!tasAppResizeDataOptional.isFound()) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
-          .build();
-    }
-    TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
     OptionalSweepingOutput tasSetupDataOptional =
         tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
             tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),
@@ -116,16 +99,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .setSkipTaskRequest(
               SkipTaskRequest.newBuilder().setMessage("Tas Setup Step was not executed. Skipping .").build())
           .build();
-    }
-
-    List<CfServiceData> instanceData = new ArrayList<>();
-    if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
-      tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
-        Integer temp = cfServiceData.getDesiredCount();
-        cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
-        cfServiceData.setPreviousCount(temp);
-        instanceData.add(cfServiceData);
-      });
     }
 
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
@@ -139,7 +112,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .instanceData(instanceData)
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
@@ -154,7 +126,8 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
                                   .taskType(CF_COMMAND_TASK_NG.name())
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList(COMMAND_UNIT),
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Arrays.asList(CfCommandUnitConstants.Upsize,
+                    CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -190,6 +163,13 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
+    }
+    if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      return StepResponse.builder()
+              .status(Status.FAILED)
+              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+              .build();
     }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

@@ -356,7 +356,7 @@ public class BillingStatsFilterValuesDataFetcher
 
     if (!instanceIds.isEmpty()) {
       List<InstanceData> instanceData =
-          instanceDataService.fetchInstanceDataForGivenInstances(new ArrayList<>(instanceIds));
+          instanceDataService.fetchInstanceDataForGivenInstances(accountId, new ArrayList<>(instanceIds));
       Map<String, String> instanceIdToName = instanceData.stream().collect(Collectors.toMap(
           InstanceData::getInstanceId, InstanceData::getInstanceName, (entry1, entry2) -> { return entry1; }));
       instanceIds.forEach(instanceId
