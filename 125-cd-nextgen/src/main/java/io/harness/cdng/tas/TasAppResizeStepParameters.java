@@ -27,7 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
-@JsonTypeName(StepSpecTypeConstants.TAS_APP_RESIZE)
 @TypeAlias("TasAppResizeStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasAppResizeStepParameters")
 public class TasAppResizeStepParameters extends TasAppResizeBaseStepInfo implements SpecParameters {

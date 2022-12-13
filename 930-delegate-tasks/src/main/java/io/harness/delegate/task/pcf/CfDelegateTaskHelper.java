@@ -41,7 +41,7 @@ public class CfDelegateTaskHelper {
       return cfCommandResponseNG;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing ecs task [{}]",
+      log.error("Exception in processing cf task [{}]",
           cfCommandRequestNG.getCommandName() + ":" + cfCommandRequestNG.getCfCommandTypeNG(), sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);

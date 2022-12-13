@@ -11,6 +11,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.pcf.model.CfCliVersion;
 
 import lombok.Builder;
 import lombok.Value;
@@ -23,6 +24,7 @@ public class CfInfraMappingDataRequestNG implements CfCommandRequestNG {
   CfCommandTypeNG cfCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
+  CfCliVersion cfCliVersion;
   TasInfraConfig tasInfraConfig;
   Integer timeoutIntervalInMin;
   String host;

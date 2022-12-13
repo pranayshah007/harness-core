@@ -26,6 +26,7 @@ import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -76,7 +77,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   public static final String TAS_ROLLBACK = "TasRollback";
-  public static final String COMMAND_UNIT = "Tas Rollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
@@ -157,14 +157,14 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
       throws Exception {
     StepResponse.StepResponseBuilder builder = StepResponse.builder();
 
-    CfRollbackCommandResponseNG response;
+    CfDeployCommandResponseNG response;
     try {
-      response = (CfRollbackCommandResponseNG) responseDataSupplier.get();
+      response = (CfDeployCommandResponseNG) responseDataSupplier.get();
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
     }
-    if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+    if (!CommandExecutionStatus.SUCCESS.equals(response.getCommandExecutionStatus())) {
       return StepResponse.builder()
               .status(Status.FAILED)
               .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
