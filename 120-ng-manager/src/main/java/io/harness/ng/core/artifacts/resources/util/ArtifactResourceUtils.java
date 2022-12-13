@@ -34,18 +34,21 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -55,6 +58,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
 import io.harness.pms.merger.YamlConfig;
@@ -67,7 +71,10 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -76,6 +83,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -96,6 +104,7 @@ public class ArtifactResourceUtils {
   @Inject GARResourceService garResourceService;
   @Inject ArtifactoryResourceService artifactoryResourceService;
   @Inject AccessControlClient accessControlClient;
+  @Inject CustomResourceService customResourceService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -637,5 +646,91 @@ public class ArtifactResourceUtils {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return nexusResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, repositoryFormat);
+  }
+
+  public List<BuildDetails> getCustomGetBuildDetails(String arrayPath, String versionPath,
+      CustomScriptInfo customScriptInfo, String serviceRef, String accountId, String orgIdentifier,
+      String projectIdentifier, String fqnPath, String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    String script = customScriptInfo.getScript();
+    List<NGVariable> inputs = customScriptInfo.getInputs();
+    List<TaskSelectorYaml> delegateSelector = customScriptInfo.getDelegateSelector();
+    int secretFunctor = HashGenerator.generateIntegerHash();
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig customArtifactConfig =
+          (io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig) artifactSpecFromService;
+      if (isEmpty(customScriptInfo.getScript())) {
+        if (customArtifactConfig.getScripts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource() != null
+            && customArtifactConfig.getScripts()
+                    .getFetchAllArtifacts()
+                    .getShellScriptBaseStepInfo()
+                    .getSource()
+                    .getSpec()
+                != null) {
+          io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource customScriptInlineSource =
+              (io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource) customArtifactConfig
+                  .getScripts()
+                  .getFetchAllArtifacts()
+                  .getShellScriptBaseStepInfo()
+                  .getSource()
+                  .getSpec();
+          if (customScriptInlineSource.getScript() != null
+              && isNotEmpty(customScriptInlineSource.getScript().fetchFinalValue().toString())) {
+            script = customScriptInlineSource.getScript().fetchFinalValue().toString();
+          }
+        }
+        if (customScriptInfo.getInputs() != null && isEmpty(customScriptInfo.getInputs())) {
+          inputs = customArtifactConfig.getInputs();
+        }
+        if (customScriptInfo.getDelegateSelector() != null && isEmpty(customScriptInfo.getDelegateSelector())) {
+          delegateSelector =
+              (List<io.harness.plancreator.steps.TaskSelectorYaml>) customArtifactConfig.getDelegateSelectors()
+                  .fetchFinalValue();
+        }
+      }
+
+      if (isEmpty(script) || script.equalsIgnoreCase("<+input>")) {
+        return Collections.emptyList();
+      }
+
+      if (isEmpty(arrayPath) && customArtifactConfig.getScripts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath() != null) {
+        arrayPath = customArtifactConfig.getScripts()
+                        .getFetchAllArtifacts()
+                        .getArtifactsArrayPath()
+                        .fetchFinalValue()
+                        .toString();
+      }
+      if (isEmpty(versionPath) && customArtifactConfig.getScripts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath() != null) {
+        versionPath =
+            customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().fetchFinalValue().toString();
+      }
+    }
+
+    if (isEmpty(arrayPath) || arrayPath.equalsIgnoreCase("<+input>")) {
+      throw new io.harness.exception.HintException("Array path can not be empty");
+    }
+
+    if (isEmpty(versionPath) || versionPath.equalsIgnoreCase("<+input>")) {
+      throw new io.harness.exception.HintException("Version path can not be empty");
+    }
+    if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
+      script = getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
+      arrayPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo, serviceRef);
+      versionPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    }
+    return customResourceService.getBuilds(script, versionPath, arrayPath,
+        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
+        delegateSelector);
   }
 }

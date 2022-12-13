@@ -279,8 +279,10 @@ public class KmsServiceImpl extends AbstractSecretServiceImpl implements KmsServ
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, message, USER_SRE);
     }
 
-    Query<EncryptedData> deleteQuery =
-        wingsPersistence.createQuery(EncryptedData.class).field(PARENT_ID_KEY).hasThisOne(kmsConfigId);
+    Query<EncryptedData> deleteQuery = wingsPersistence.createQuery(EncryptedData.class)
+                                           .filter(EncryptedDataKeys.accountId, accountId)
+                                           .field(PARENT_ID_KEY)
+                                           .hasThisOne(kmsConfigId);
     wingsPersistence.delete(deleteQuery);
 
     return deleteSecretManagerAndGenerateAudit(accountId, kmsConfig);

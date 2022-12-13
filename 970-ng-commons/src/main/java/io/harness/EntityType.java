@@ -449,7 +449,10 @@ public enum EntityType {
   IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
   @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
   CONTAINER_STEP(
-      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP);
+      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DEPLOY)
+  ASG_CANARY_DEPLOY_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;

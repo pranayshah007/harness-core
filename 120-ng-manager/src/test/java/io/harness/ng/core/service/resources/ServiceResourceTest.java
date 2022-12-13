@@ -7,8 +7,31 @@
 
 package io.harness.ng.core.service.resources;
 
+import static io.harness.cdng.manifest.ManifestStoreType.BITBUCKET;
+import static io.harness.cdng.manifest.ManifestStoreType.CUSTOM_REMOTE;
+import static io.harness.cdng.manifest.ManifestStoreType.GCS;
+import static io.harness.cdng.manifest.ManifestStoreType.GIT;
+import static io.harness.cdng.manifest.ManifestStoreType.GITHUB;
+import static io.harness.cdng.manifest.ManifestStoreType.GITLAB;
+import static io.harness.cdng.manifest.ManifestStoreType.HTTP;
+import static io.harness.cdng.manifest.ManifestStoreType.OCI;
+import static io.harness.cdng.manifest.ManifestStoreType.S3;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Add;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Delete;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Fetch;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.History;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Install;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.List;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Pull;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Rollback;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Template;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Uninstall;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Update;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Upgrade;
+import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Version;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static software.wings.beans.Service.ServiceKeys;
 
@@ -23,7 +46,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -190,5 +215,102 @@ public class ServiceResourceTest extends CategoryTest {
     assertThat(content).isNotNull();
     assertThat(content.size()).isEqualTo(1);
     assertThat(content.get(0)).isEqualTo(serviceResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetHelmCommandFlagsForHelmServiceSpec() {
+    // V2
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, HTTP).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GCS).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, S3).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, OCI).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+    assertThat(
+        serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, CUSTOM_REMOTE).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GIT).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GITHUB).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GITLAB).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, BITBUCKET).getData())
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
+
+    // V3
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, HTTP).getData())
+        .containsExactlyInAnyOrder(
+            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GCS).getData())
+        .containsExactlyInAnyOrder(
+            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, S3).getData())
+        .containsExactlyInAnyOrder(
+            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, OCI).getData())
+        .containsExactlyInAnyOrder(
+            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+    assertThat(
+        serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, CUSTOM_REMOTE).getData())
+        .containsExactlyInAnyOrder(
+            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GIT).getData())
+        .containsExactlyInAnyOrder(History, Install, List, Template, Uninstall, Rollback, Upgrade, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GITHUB).getData())
+        .containsExactlyInAnyOrder(History, Install, List, Template, Uninstall, Rollback, Upgrade, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GITLAB).getData())
+        .containsExactlyInAnyOrder(History, Install, List, Template, Uninstall, Rollback, Upgrade, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, BITBUCKET).getData())
+        .containsExactlyInAnyOrder(History, Install, List, Template, Uninstall, Rollback, Upgrade, Version);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetHelmCommandFlagsForK8sServiceSpec() {
+    // V2
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, HTTP).getData())
+        .containsExactlyInAnyOrder(Fetch, Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GCS).getData())
+        .containsExactlyInAnyOrder(Fetch, Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, S3).getData())
+        .containsExactlyInAnyOrder(Fetch, Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, OCI).getData())
+        .containsExactlyInAnyOrder(Fetch, Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, CUSTOM_REMOTE).getData())
+        .containsExactlyInAnyOrder(Fetch, Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GIT).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GITHUB).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GITLAB).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, BITBUCKET).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+
+    // V3
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, HTTP).getData())
+        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GCS).getData())
+        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, S3).getData())
+        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, OCI).getData())
+        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, CUSTOM_REMOTE).getData())
+        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GIT).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GITHUB).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GITLAB).getData())
+        .containsExactlyInAnyOrder(Template, Version);
+    assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, BITBUCKET).getData())
+        .containsExactlyInAnyOrder(Template, Version);
   }
 }

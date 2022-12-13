@@ -12,10 +12,15 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +29,10 @@ import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
@@ -38,11 +47,15 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,6 +63,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -58,6 +72,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ClusterService clusterService;
+  @Mock EntitySetupUsageService entitySetupUsageService;
   @Inject @InjectMocks private EnvironmentServiceImpl environmentService;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -69,6 +84,13 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   private String actualEntityYamlPath;
   private String mergedInputYamlPath;
   private boolean isMergedYamlEmpty;
+
+  @Before
+  public void setup() {
+    Reflect.on(environmentService).set("entitySetupUsageService", entitySetupUsageService);
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(new PageImpl<>(Collections.emptyList()));
+  }
 
   public EnvironmentServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
       String mergedInputYamlPath, boolean isMergedYamlEmpty) {
@@ -185,6 +207,31 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(environment).isNotPresent();
     environment = environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, false);
     assertThat(environment).isNotPresent();
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteIfSetUpUsagesPresent() {
+    final String id = UUIDGenerator.generateUuid();
+    Environment createEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier(id)
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .build();
+    Environment createdEnvironment = environmentService.create(createEnvironmentRequest);
+
+    List<EntitySetupUsageDTO> referencedByEntities =
+        Arrays.asList(EntitySetupUsageDTO.builder().referredByEntity(EntityDetail.builder().build()).build());
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(new PageImpl<>(referencedByEntities));
+
+    assertThatThrownBy(() -> environmentService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L))
+        .isInstanceOf(ReferencedEntityException.class)
+        .hasMessageContaining(format(
+            "The environment %s cannot be deleted because it is being referenced in 1 entity. To delete your environment, please remove the environment references from these entities.",
+            id));
   }
 
   @Test

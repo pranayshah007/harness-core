@@ -18,5 +18,17 @@ import lombok.Value;
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public class BinaryResponseData implements ResponseData, ProgressData {
   byte[] data;
-  private boolean usingKryoWithoutReference;
+
+  private Boolean usingKryoWithoutReference;
+
+  public Boolean getUsingKryoWithoutReference() {
+    return isUsingKryoWithoutReference();
+  }
+
+  public boolean isUsingKryoWithoutReference() {
+    if (usingKryoWithoutReference == null) {
+      return false;
+    }
+    return usingKryoWithoutReference;
+  }
 }

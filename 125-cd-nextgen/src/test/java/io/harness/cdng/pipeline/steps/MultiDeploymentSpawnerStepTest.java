@@ -8,8 +8,10 @@
 package io.harness.cdng.pipeline.steps;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -19,6 +21,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.Status;
@@ -121,5 +124,32 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                 .build())
                                         .build())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testForEmptyInfrastructure() {
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.createValueField("env1"))
+            .infrastructureDefinitions(ParameterField.createExpressionField(true, null, null, true))
+            .build();
+
+    List<EnvironmentYamlV2> environmentYamlV2s = new ArrayList<>();
+
+    environmentYamlV2s.add(environmentYamlV2);
+
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environments(
+                EnvironmentsYaml.builder().values(ParameterField.createValueField(environmentYamlV2s)).build())
+            .build();
+
+    assertThatThrownBy(
+        () -> multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessageContaining("No infrastructure definition provided. Please provide atleast one value");
   }
 }

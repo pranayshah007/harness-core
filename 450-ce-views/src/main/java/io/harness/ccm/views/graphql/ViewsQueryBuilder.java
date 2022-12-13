@@ -1372,14 +1372,23 @@ public class ViewsQueryBuilder {
 
   private CustomSql getSQLCaseStatementBusinessMapping(BusinessMapping businessMapping) {
     CaseStatement caseStatement = new CaseStatement();
-    for (CostTarget costTarget : businessMapping.getCostTargets()) {
-      caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules()), costTarget.getName());
-    }
-    if (Objects.nonNull(businessMapping.getUnallocatedCost())
-        && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
-      caseStatement.addElse(businessMapping.getUnallocatedCost().getLabel());
+    if (Objects.nonNull(businessMapping.getCostTargets())) {
+      for (CostTarget costTarget : businessMapping.getCostTargets()) {
+        caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules()), costTarget.getName());
+      }
+      if (Objects.nonNull(businessMapping.getUnallocatedCost())
+          && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
+        caseStatement.addElse(businessMapping.getUnallocatedCost().getLabel());
+      } else {
+        caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
+      }
     } else {
-      caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
+      String unallocatedCostLabel = ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName();
+      if (Objects.nonNull(businessMapping.getUnallocatedCost())
+          && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
+        unallocatedCostLabel = businessMapping.getUnallocatedCost().getLabel();
+      }
+      return new CustomSql(String.format("'%s'", unallocatedCostLabel));
     }
     return new CustomSql(caseStatement);
   }

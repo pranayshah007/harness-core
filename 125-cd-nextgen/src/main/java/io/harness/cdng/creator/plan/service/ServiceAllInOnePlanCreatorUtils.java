@@ -70,7 +70,7 @@ public class ServiceAllInOnePlanCreatorUtils {
    */
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
-      ServiceDefinitionType serviceType) {
+      ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
@@ -88,6 +88,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .childrenNodeIds(childrenNodeIds)
             .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
             .deploymentType(serviceType)
+            .envGroupRef(envGroupRef)
             .build();
 
     return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);

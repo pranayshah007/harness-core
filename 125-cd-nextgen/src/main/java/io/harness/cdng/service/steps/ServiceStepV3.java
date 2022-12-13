@@ -25,6 +25,8 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
@@ -32,6 +34,7 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -132,6 +135,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject NgExpressionHelper ngExpressionHelper;
+  @Inject private EnvironmentGroupService environmentGroupService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
@@ -329,8 +333,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environment.get().getIdentifier()));
       entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
 
-      final EnvironmentOutcome environmentOutcome =
-          EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
+      Optional<EnvironmentGroupEntity> envGroupOpt = Optional.empty();
+      if (ParameterField.isNotNull(parameters.getEnvGroupRef())
+          && EmptyPredicate.isNotEmpty(parameters.getEnvGroupRef().getValue())) {
+        envGroupOpt =
+            environmentGroupService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance), parameters.getEnvGroupRef().getValue(), false);
+      }
+      final EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(
+          environment.get(), ngEnvironmentConfig, ngServiceOverrides, envGroupOpt.orElse(null));
 
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());

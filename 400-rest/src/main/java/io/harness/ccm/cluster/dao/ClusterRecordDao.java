@@ -130,7 +130,7 @@ public class ClusterRecordDao {
 
   public List<ClusterRecord> getByAccountId(String accountId) {
     Query<ClusterRecord> query =
-        persistence.createQuery(ClusterRecord.class).field(ClusterRecord.ClusterRecordKeys.accountId).equal(accountId);
+        persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId);
     return query.asList();
   }
 }

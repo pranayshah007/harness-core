@@ -411,6 +411,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(371, "ECS_S3_FETCH_TASK_NG");
     taskTypeOrdinalMapping.put(372, "SERVERLESS_S3_FETCH_TASK_NG");
     taskTypeOrdinalMapping.put(373, "CONTAINER_INITIALIZATION");
+    taskTypeOrdinalMapping.put(374, "AWS_ASG_CANARY_DEPLOY_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

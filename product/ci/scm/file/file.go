@@ -559,6 +559,10 @@ func getCustomListOptsFindFilesInBranch(ctx context.Context, fileRequest *pb.Fin
 		}
 	}
 
+	if fileRequest.GetPagination().GetSize() > 0 {
+		opts.Size = int(fileRequest.GetPagination().GetSize())
+	}
+
 	return *opts
 }
 
@@ -569,6 +573,10 @@ func getCustomListOptsFindFilesInCommit(ctx context.Context, fileRequest *pb.Fin
 		if fileRequest.GetPagination().GetUrl() != "" {
 			opts = &scm.ListOptions{URL: fileRequest.GetPagination().GetUrl()}
 		}
+	}
+
+	if fileRequest.GetPagination().GetSize() > 0 {
+		opts.Size = int(fileRequest.GetPagination().GetSize())
 	}
 
 	return *opts

@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "instrumentation",
+    srcs = ["instrumentation.go"],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs/instrumentation",
+    visibility = ["//visibility:public"],
+)

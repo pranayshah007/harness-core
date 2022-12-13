@@ -25,6 +25,7 @@ shared_dependencies = [
     "//960-persistence:module",
     "//999-annotations:module",
     "//clients/pipeline-service/pms-sdk:module",
+    "//clients/queue-service/java-client:module",
     "//product/ci/engine/proto:ciengine_java_proto",
     "//930-ng-license-manager:module",
     "//940-primary-version-manager:module",

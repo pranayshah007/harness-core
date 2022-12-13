@@ -186,7 +186,9 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   private ChangeTimeline getTimeline(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,
       String searchText, List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
       Instant startTime, Instant endTime, Integer pointCount) {
-    Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap = new HashMap<>();
+    Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap =
+        Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
 
     getTimelineObject(projectParams, monitoredServiceIdentifiers, searchText, changeCategories, changeSourceTypes,
@@ -212,6 +214,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         (key, value) -> changeTimelineBuilder.categoryTimeline(key, new ArrayList<>(value.values())));
     return changeTimelineBuilder.build();
   }
+
   @Override
   public ChangeTimeline getTimeline(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifiers, List<String> monitoredServiceIdentifiers, String searchText,
@@ -306,15 +309,35 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           countSoFar = countSoFar + timelineObject.count;
           changeCategoryToIndexToCount.get(changeCategory).put(timelineObject.id.index, countSoFar);
         });
+    long currentTotalCount =
+        changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();
+    long previousTotalCount =
+        changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(0, 0)).mapToLong(num -> num).sum();
+    CategoryCountDetails total = CategoryCountDetails.builder()
+                                     .count(currentTotalCount)
+                                     .countInPrecedingWindow(previousTotalCount)
+                                     .percentageChange(getPercentageChange(currentTotalCount, previousTotalCount))
+                                     .build();
+
     return ChangeSummaryDTO.builder()
+        .total(total)
         .categoryCountMap(changeCategoryToIndexToCount.entrySet().stream().collect(Collectors.toMap(entry
             -> entry.getKey(),
             entry
             -> CategoryCountDetails.builder()
                    .count(entry.getValue().getOrDefault(1, 0))
                    .countInPrecedingWindow(entry.getValue().getOrDefault(0, 0))
+                   .percentageChange(
+                       getPercentageChange(entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
                    .build())))
         .build();
+  }
+
+  private long getPercentageChange(long current, long previous) {
+    if (previous == 0) {
+      return 0;
+    }
+    return ((current - previous) * 100) / previous;
   }
 
   private List<Criteria> getCriterias(Query<Activity> q, ProjectParams projectParams,

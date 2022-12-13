@@ -315,6 +315,10 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   @VisibleForTesting
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
+    if (gcpSecretsManagerConfig.getCredentials() == null) {
+      throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
+          "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
+    }
     try {
       return GoogleCredentials
           .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
