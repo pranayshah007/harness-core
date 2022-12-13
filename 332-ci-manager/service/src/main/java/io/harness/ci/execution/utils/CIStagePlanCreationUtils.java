@@ -13,7 +13,6 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
@@ -56,9 +55,7 @@ public class CIStagePlanCreationUtils {
       CIAccountExecutionMetadataRepository accountExecutionMetadataRepository, CILicenseService ciLicenseService,
       String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null
-        && (licensesWithSummaryDTO.getEdition() == Edition.FREE
-            || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
+    if (licensesWithSummaryDTO != null && (licensesWithSummaryDTO.getEdition() == Edition.FREE)) {
       Optional<CIAccountExecutionMetadata> accountExecutionMetadata =
           accountExecutionMetadataRepository.findByAccountId(accountId);
 
