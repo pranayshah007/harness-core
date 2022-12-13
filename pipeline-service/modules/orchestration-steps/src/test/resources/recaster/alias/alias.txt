@@ -160,3 +160,4 @@ io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml
 io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration
 io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml
 io.harness.steps.plugin.infrastructure.volumes.HostPathYaml
+io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
