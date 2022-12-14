@@ -24,12 +24,8 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-// import io.harness.delegate.task.aws.asg.AsgInfraConfig;
-// import io.harness.delegate.task.aws.asg.AsgInfraType;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
-import io.harness.delegate.task.aws.asg.AsgInfraType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -60,15 +56,6 @@ public class AsgEntityHelper {
         } else {
           return emptyList();
         }
-      case ARTIFACTORY:
-        ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> artifactoryDecryptableEntities = artifactoryConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(artifactoryDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(
-              ngAccess, artifactoryConnectorDTO.getAuth().getCredentials());
-        } else {
-          return emptyList();
-        }
       default:
         throw new UnsupportedOperationException(
             format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
@@ -95,7 +82,6 @@ public class AsgEntityHelper {
         return AsgInfraConfig.builder()
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
-            .asgInfraType(AsgInfraType.ASG)
             .region(asgInfrastructureOutcome.getRegion())
             .infraStructureKey(asgInfrastructureOutcome.getInfrastructureKey())
             .build();

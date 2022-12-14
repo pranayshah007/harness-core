@@ -26,7 +26,6 @@ import lombok.experimental.NonFinal;
 public class AsgInfraConfig {
   AwsConnectorDTO awsConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
-  AsgInfraType asgInfraType;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   String infraStructureKey;
 }

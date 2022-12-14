@@ -201,7 +201,7 @@ public enum NGStepType {
       "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE(
-      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "Asg", StepSpecTypeConstants.ASG_CANARY_DELETE);
+      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

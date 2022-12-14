@@ -62,7 +62,7 @@ public class AsgCanaryDeleteStepInfo extends AsgCanaryDeleteBaseStepInfo impleme
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.TASK;
   }
 
   @Override

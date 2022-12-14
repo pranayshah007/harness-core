@@ -108,7 +108,7 @@ public enum ExecutionNodeType {
   TERRAGRUNT_ROLLBACK("TERRAGRUNT_ROLLBACK", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
 
   ASG_CANARY_DEPLOY("ASG_CANARY_DEPLOY", YamlTypes.ASG_CANARY_DEPLOY),
-  ASG_CANARY_DELETE("ASG_CANARY_DEPLOY", YamlTypes.ASG_CANARY_DELETE);
+  ASG_CANARY_DELETE("ASG_CANARY_DELETE", YamlTypes.ASG_CANARY_DELETE);
 
   private final String name;
   private final String yamlType;
