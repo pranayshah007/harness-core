@@ -19,6 +19,5 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCanaryDeployResult {
   private String region;
-  //private List<AsgTask> asgTasks;
   private String canaryAsgName;
 }

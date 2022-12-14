@@ -31,8 +31,8 @@ import org.springframework.data.annotation.TypeAlias;
 public class AsgCanaryDeleteStepParameters extends AsgCanaryDeleteBaseStepInfo implements AsgSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AsgCanaryDeleteStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFnq, String asgCanaryDeleteFnq) {
-    super(delegateSelectors, asgCanaryDeployFnq, asgCanaryDeleteFnq);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFqn, String asgCanaryDeleteFqn) {
+    super(delegateSelectors, asgCanaryDeployFqn, asgCanaryDeleteFqn);
   }
 
   public List<String> getCommandUnits() {

@@ -45,12 +45,12 @@ public class AsgCanaryDeleteStepPlanCreator extends CDPMSStepPlanCreatorV2<AsgCa
   protected StepParameters getStepParameters(PlanCreationContext ctx, AsgCanaryDeleteStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
-    String asgCanaryDeployFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DEPLOY);
-    String asgCanaryDeleteFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DELETE);
+    String asgCanaryDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DEPLOY);
+    String asgCanaryDeleteFqn = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DELETE);
     AsgCanaryDeleteStepParameters asgCanaryDeleteStepParameters =
         (AsgCanaryDeleteStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    asgCanaryDeleteStepParameters.setAsgCanaryDeployFnq(asgCanaryDeployFnq);
-    asgCanaryDeleteStepParameters.setAsgCanaryDeleteFnq(asgCanaryDeleteFnq);
+    asgCanaryDeleteStepParameters.setAsgCanaryDeployFqn(asgCanaryDeployFqn);
+    asgCanaryDeleteStepParameters.setAsgCanaryDeleteFqn(asgCanaryDeleteFqn);
 
     return stepParameters;
   }

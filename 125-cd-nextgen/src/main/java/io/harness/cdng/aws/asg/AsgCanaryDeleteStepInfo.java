@@ -51,8 +51,8 @@ public class AsgCanaryDeleteStepInfo extends AsgCanaryDeleteBaseStepInfo impleme
 
   @Builder(builderMethodName = "infoBuilder")
   public AsgCanaryDeleteStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFnq, String asgCanaryDeleteFnq) {
-    super(delegateSelectors, asgCanaryDeployFnq, asgCanaryDeleteFnq);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFqn, String asgCanaryDeleteFqn) {
+    super(delegateSelectors, asgCanaryDeployFqn, asgCanaryDeleteFqn);
   }
 
   @Override

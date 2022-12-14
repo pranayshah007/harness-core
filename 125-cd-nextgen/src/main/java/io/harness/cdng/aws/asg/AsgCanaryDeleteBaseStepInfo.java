@@ -36,6 +36,6 @@ public class AsgCanaryDeleteBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonIgnore String asgCanaryDeployFnq;
-  @JsonIgnore String asgCanaryDeleteFnq;
+  @JsonIgnore String asgCanaryDeployFqn;
+  @JsonIgnore String asgCanaryDeleteFqn;
 }

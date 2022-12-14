@@ -60,7 +60,7 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   public static final String ASG_CANARY_DELETE_COMMAND_NAME = "AsgCanaryDelete";
-  public static final String ASG_CANARY_DELETE_STEP_MISSING = "Canary Deploy step is not configured.";
+  public static final String ASG_CANARY_DEPLOY_STEP_MISSING = "Canary Deploy step is not configured.";
   public static final String ASG_CANARY_DELETE_STEP_ALREADY_EXECUTED =
       "Canary asg has already been deleted. Skipping delete canary asg in rollback";
   public static final String ASG_CANARY_DELETE_STEP_SKIPPED =
@@ -135,12 +135,12 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
     AsgCanaryDeleteStepParameters asgCanaryDeleteStepParameters =
         (AsgCanaryDeleteStepParameters) stepElementParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq())) {
-      throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
+    if (EmptyPredicate.isEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeployFqn())) {
+      throw new InvalidRequestException(ASG_CANARY_DEPLOY_STEP_MISSING, USER);
     }
 
     OptionalSweepingOutput asgCanaryDeployOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq() + "."
+        RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeployFqn() + "."
             + OutcomeExpressionConstants.ASG_CANARY_DEPLOY_OUTCOME));
 
     if (!asgCanaryDeployOptionalOutput.isFound()) {
@@ -148,9 +148,9 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
     }
 
     if (StepUtils.isStepInRollbackSection(ambiance)
-        && EmptyPredicate.isNotEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq())) {
+        && EmptyPredicate.isNotEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFqn())) {
       OptionalSweepingOutput existingCanaryDeleteOutput = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq() + "."
+          RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFqn() + "."
               + OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME));
       if (existingCanaryDeleteOutput.isFound()) {
         return TaskRequest.newBuilder()
@@ -189,7 +189,7 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
           .build();
     }
 
-    throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
+    throw new InvalidRequestException(ASG_CANARY_DEPLOY_STEP_MISSING, USER);
   }
 
   @Override
