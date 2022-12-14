@@ -1,3 +1,9 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
 package software.wings.service.delegate;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -59,7 +65,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId, "");
     when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(
             Arrays.asList(DelegateTask.builder()
                               .accountId(accountId)
@@ -94,7 +100,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
     DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
 
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(
             Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5, delegateTask6));
 
@@ -142,7 +148,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     DelegateTask delegateTask14 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
     DelegateTask delegateTask15 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
 
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5,
             delegateTask6, delegateTask7, delegateTask8, delegateTask9, delegateTask10, delegateTask11, delegateTask12,
             delegateTask13, delegateTask14, delegateTask15));
@@ -164,7 +170,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testOrderByTotalNumberOfTaskAssignedCriteria_NoDelegate() {
     String accountId = generateUuid();
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(
             Arrays.asList(DelegateTask.builder()
                               .accountId(accountId)
@@ -258,7 +264,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
     DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
 
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(
             Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5, delegateTask6));
 
@@ -313,7 +319,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     DelegateTask delegateTask14 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
     DelegateTask delegateTask15 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
 
-    when(delegateCache.getCurrentlyAssignedTask(accountId))
+    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
         .thenReturn(Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5,
             delegateTask6, delegateTask7, delegateTask8, delegateTask9, delegateTask10, delegateTask11, delegateTask12,
             delegateTask13, delegateTask14, delegateTask15));

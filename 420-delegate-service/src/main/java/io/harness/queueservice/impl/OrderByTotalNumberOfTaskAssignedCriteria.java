@@ -50,7 +50,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
 
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId) {
     Map<String, Integer> numberOfTaskAssigned = new HashMap<>();
-    getNumberOfTaskAssignedCache(accountId).forEach(delegateTask -> {
+    getTotalNumberOfTaskAssignedInDelegate(accountId).forEach(delegateTask -> {
       if (delegateTask.getDelegateId() != null) {
         numberOfTaskAssigned.put(
             delegateTask.getDelegateId(), numberOfTaskAssigned.getOrDefault(delegateTask.getDelegateId(), 0) + 1);
@@ -79,7 +79,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
     return delegateCache.get(accountId, delegateId, false);
   }
 
-  public List<DelegateTask> getNumberOfTaskAssignedCache(String accountId) {
+  public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(String accountId) {
     return persistence.createQuery(DelegateTask.class)
         .filter(DelegateTaskKeys.accountId, accountId)
         .filter(DelegateTaskKeys.status, QUEUED)
