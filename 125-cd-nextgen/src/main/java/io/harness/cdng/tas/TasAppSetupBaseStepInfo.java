@@ -8,11 +8,8 @@
 package io.harness.cdng.tas;
 
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("tasAppSetupBaseStepInfo")
 public class TasAppSetupBaseStepInfo {
-  @NotNull TasInstanceCountType instanceCount;
+  @NotNull TasInstanceCountType tasInstanceCountType;
   @NotNull
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
