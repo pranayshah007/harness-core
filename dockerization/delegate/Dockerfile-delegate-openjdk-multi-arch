@@ -27,6 +27,10 @@ COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.1
 ARG watcher_version
 RUN curl -#k https://app.harness.io/public/shared/watchers/builds/openjdk-8u242/$watcher_version/watcher.jar -o watcher.jar
 
+RUN mkdir -p letsencrypt/cert/
+RUN curl -#k https://app.harness.io/storage/harness-download/lets-encrypt-cert/isrg-root-x1.pem -o letsencrypt/cert/isrg-root-x1.pem
+RUN curl -#k https://app.harness.io/storage/harness-download/lets-encrypt-cert/isrg-root-x2.pem -o letsencrypt/cert/isrg-root-x2.pem
+
 CMD ./entrypoint.sh && bash -c ' \
     while [[ ! -e watcher.log ]]; do sleep 1s; done; tail -F watcher.log & \
     while [[ ! -e delegate.log ]]; do sleep 1s; done; tail -F delegate.log'
