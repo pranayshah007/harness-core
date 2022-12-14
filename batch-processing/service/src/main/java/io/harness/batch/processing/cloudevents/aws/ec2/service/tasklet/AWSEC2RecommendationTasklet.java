@@ -114,9 +114,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setAccountId(accountId);
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
-              EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.info("EC2Recommendation saved to mongoDB: {}", ec2Recommendation);
-              saveRecommendationInTimeScaleDB(ec2Recommendation);
+              try {
+                EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
+                log.info("EC2Recommendation saved to mongoDB: {}", ec2Recommendation);
+                saveRecommendationInTimeScaleDB(ec2Recommendation);
+              } catch (Exception e) {
+                log.warn("error while saving recommendation", e);
+              }
             }
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
