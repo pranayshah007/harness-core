@@ -167,7 +167,8 @@ public class NgUserServiceImpl implements NgUserService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
-      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService, DefaultUserGroupService defaultUserGroupService) {
+      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
+      DefaultUserGroupService defaultUserGroupService) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
