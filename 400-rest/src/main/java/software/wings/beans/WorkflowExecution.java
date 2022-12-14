@@ -125,6 +125,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.infraMappingIds)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 // this needs to be range field because some queries may not provide this value
                  .rangeField(WorkflowExecutionKeys.deployment)
                  .build())
         .add(CompoundMongoIndex.builder()
