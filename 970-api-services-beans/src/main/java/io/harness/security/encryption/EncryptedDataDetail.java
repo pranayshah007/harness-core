@@ -9,7 +9,6 @@ package io.harness.security.encryption;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +33,7 @@ public class EncryptedDataDetail {
   public SecretUniqueIdentifier getIdentifier() {
     String kmsId = isNotEmpty(encryptionConfig.getUuid()) ? encryptionConfig.getUuid() : encryptedData.getKmsId();
 
-    if (encryptionConfig.getEncryptionType() == CUSTOM) {
+    if (encryptionConfig.getEncryptionType() == EncryptionType.CUSTOM) {
       return ParameterizedSecretUniqueIdentifier.builder()
           .parameters(encryptedData.getParameters())
           .kmsId(kmsId)

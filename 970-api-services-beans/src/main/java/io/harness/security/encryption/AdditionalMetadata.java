@@ -7,8 +7,6 @@
 
 package io.harness.security.encryption;
 
-import io.harness.beans.SwaggerConstants;
-
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Map;
 import lombok.Builder;
@@ -20,5 +18,5 @@ import lombok.Value;
 @Builder
 @EqualsAndHashCode
 public class AdditionalMetadata {
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH) @Singular private Map<String, Object> values;
+  @ApiModelProperty(dataType = "Map[String,String]") @Singular private Map<String, Object> values;
 }

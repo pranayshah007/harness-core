@@ -12,8 +12,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//970-api-services-beans:module",
-        "//970-ng-commons:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:io_swagger_swagger_annotations",
