@@ -246,7 +246,7 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 		Consumer: r.Consumer,
 		Streams:  []string{r.Stream, ">"},
 		Count:    int64(r.Count),
-		Block:    r.MaxWaitDuration,
+		Block:    r.MaxWaitDuration * time.Millisecond,
 	}
 	result, err := s.Client.XReadGroup(ctx, xReadGroupArgs).Result()
 
@@ -264,9 +264,10 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 
 func (s *Store) GetPendingEntries(ctx context.Context, request *PendingEntriesRequest) ([]string, error) {
 	xPendingArgs := &redis.XPendingExtArgs{
-		Stream:   request.Stream,
-		Group:    request.Group,
-		Idle:     time.Duration(request.Idle) * time.Millisecond,
+		Stream: request.Stream,
+		Group:  request.Group,
+		// todo: use RegisterTopicMetadata instead of hardcoding
+		Idle:     10000 * time.Millisecond,
 		Count:    int64(request.Count),
 		Start:    "-",
 		End:      "+",
@@ -362,7 +363,7 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
 	// acknowledging the processed method
-	if _, err := s.Client.XAck(ctx, topicKey, request.ConsumerName, ids...).Result(); err != nil {
+	if _, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.ConsumerName), ids...).Result(); err != nil {
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	//deleting the method from queue
@@ -370,7 +371,6 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	return &store.AckResponse{ItemID: request.ItemID}, nil
-
 }
 
 // UnAck Method will add a specific topic to blockList processing list
