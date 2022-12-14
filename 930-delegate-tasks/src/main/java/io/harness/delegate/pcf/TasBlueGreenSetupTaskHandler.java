@@ -273,7 +273,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     ApplicationSummary currentActiveApplication =
         pcfCommandTaskBaseHelper.findCurrentActiveApplication(previousReleases, cfRequestConfig, logCallback);
     if (currentActiveApplication == null) {
-      return TasApplicationInfo.builder().build();
+      return null;
     }
 
     return TasApplicationInfo.builder()
@@ -290,7 +290,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     ApplicationSummary inActiveApplication =
         findCurrentInActiveApplication(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
     if (inActiveApplication == null) {
-      return TasApplicationInfo.builder().build();
+      return null;
     }
 
     return TasApplicationInfo.builder()
@@ -386,6 +386,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         logCallback.saveExecutionLog(
             "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
         deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        continue;
       }
 
       if (currentProdInfo != null && applicationSummary.getName().equals(currentProdInfo.getApplicationName())) {

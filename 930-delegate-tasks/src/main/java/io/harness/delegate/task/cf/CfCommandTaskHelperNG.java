@@ -706,13 +706,13 @@ public class CfCommandTaskHelperNG {
 
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 
-    CfAppSetupTimeDetails downsizeAppDetails = cfDeployCommandRequestNG.getDownsizeAppDetail();
-    if (downsizeAppDetails == null) {
+    TasApplicationInfo downsizeAppDetail = cfDeployCommandRequestNG.getDownsizeAppDetail();
+    if (downsizeAppDetail == null) {
       executionLogCallback.saveExecutionLog("# No Application is available for downsize");
       return;
     }
 
-    cfRequestConfig.setApplicationName(downsizeAppDetails.getApplicationName());
+    cfRequestConfig.setApplicationName(downsizeAppDetail.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
         applicationDetail.getName(), applicationDetail.getInstances(), updateCount));
@@ -733,7 +733,7 @@ public class CfCommandTaskHelperNG {
     }
 
     // First disable App Auto scalar if attached with application
-    if (cfDeployCommandRequestNG.isUseAppAutoscalar()) {
+    if (cfDeployCommandRequestNG.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
       appAutoscalarRequestData.setExpectedEnabled(true);
@@ -770,6 +770,7 @@ public class CfCommandTaskHelperNG {
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
     return applicationDetail;
   }
+
   void unmapRoutesIfAppDownsizedToZero(CfDeployCommandRequestNG cfCommandDeployRequest, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     if (cfCommandDeployRequest.isStandardBlueGreen() || cfCommandDeployRequest.getDownsizeAppDetail() == null
@@ -807,10 +808,11 @@ public class CfCommandTaskHelperNG {
   public void createYamlFileLocally(String filePath, String autoscalarManifestYml) throws IOException {
     pcfCommandTaskBaseHelper.createYamlFileLocally(filePath, autoscalarManifestYml);
   }
+
   private void configureAutoscalarIfNeeded(CfDeployCommandRequestNG cfCommandDeployRequest,
       ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
-    if (cfCommandDeployRequest.isUseAppAutoscalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
+    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
         && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())
         && cfCommandDeployRequest.getMaxCount() <= cfCommandDeployRequest.getUpsizeCount()) {
       // This is autoscalar file inside workingDirectory
@@ -832,16 +834,17 @@ public class CfCommandTaskHelperNG {
   }
 
   public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
-      CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo,
-      CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG cfRollbackCommandRequestNG)
-      throws PivotalClientApiException {
+      CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo, CfRequestConfig cfRequestConfig,
+      CfRollbackCommandRequestNG cfRollbackCommandRequestNG) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(oldApplicationInfo.getApplicationName());
     cfRequestConfig.setDesiredCount(oldApplicationInfo.getRunningCount());
     executionLogCallback.saveExecutionLog(color("# Upsizing application:", White, Bold));
-    executionLogCallback.saveExecutionLog(format("%s%s", CFLogCallbackFormatter.formatSameLineKeyValue(APPLICATION_NAME, encodeColor(oldApplicationInfo.getApplicationName())),
-            CFLogCallbackFormatter.formatNewLineKeyValue(DESIRED_INSTANCE_COUNT, oldApplicationInfo.getRunningCount())));
+    executionLogCallback.saveExecutionLog(format("%s%s",
+        CFLogCallbackFormatter.formatSameLineKeyValue(
+            APPLICATION_NAME, encodeColor(oldApplicationInfo.getApplicationName())),
+        CFLogCallbackFormatter.formatNewLineKeyValue(DESIRED_INSTANCE_COUNT, oldApplicationInfo.getRunningCount())));
     ApplicationDetail detailsAfterUpsize =
-            cfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
+        cfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
 
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
@@ -850,8 +853,7 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
       List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, List<CfServiceData> upsizeList,
-      List<CfInternalInstanceElement> cfInstanceElements, CfRollbackCommandRequestNG cfRollbackCommandRequestNG)
-      throws PivotalClientApiException {
+      List<CfInternalInstanceElement> cfInstanceElements) throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
         cfRequestConfig, upsizeList, cfInstanceElements);
   }
@@ -866,14 +868,14 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
-  public List<String> getAppNameBasedOnGuidForBlueGreen(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
-          throws PivotalClientApiException {
+  public List<String> getAppNameBasedOnGuidForBlueGreen(
+      CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
     List<ApplicationSummary> previousReleases =
-            cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
+        cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
     return previousReleases.stream()
-            .filter(app -> app.getId().equalsIgnoreCase(appGuid))
-            .map(ApplicationSummary::getName)
-            .collect(toList());
+        .filter(app -> app.getId().equalsIgnoreCase(appGuid))
+        .map(ApplicationSummary::getName)
+        .collect(toList());
   }
 
   public List<String> getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -887,9 +889,8 @@ public class CfCommandTaskHelperNG {
   }
 
   public void downSizeListOfInstances(LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
-      CfRequestConfig cfRequestConfig, List<CfServiceData> downSizeList,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
-      throws PivotalClientApiException {
+      CfRequestConfig cfRequestConfig, List<CfServiceData> downSizeList, boolean isUseAppAutoScalar,
+      CfAppAutoscalarRequestData autoscalarRequestData) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("\n");
     for (CfServiceData cfServiceData : downSizeList) {
       executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
@@ -899,7 +900,7 @@ public class CfCommandTaskHelperNG {
       cfRequestConfig.setApplicationName(cfServiceData.getName());
       cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
-      if (cfRollbackCommandRequestNG.isUseAppAutoscalar()) {
+      if (isUseAppAutoScalar) {
         ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
         autoscalarRequestData.setApplicationName(applicationDetail.getName());
         autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
@@ -918,25 +919,25 @@ public class CfCommandTaskHelperNG {
       CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
       throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("\n");
-      executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
-      executionLogCallback.saveExecutionLog(format("Downsizing the %s app to zero", newAppInfo.getApplicationName()));
+    executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
+    executionLogCallback.saveExecutionLog(format("Downsizing the %s app to zero", newAppInfo.getApplicationName()));
 
-      cfRequestConfig.setApplicationName(newAppInfo.getApplicationName());
-      cfRequestConfig.setDesiredCount(0);
+    cfRequestConfig.setApplicationName(newAppInfo.getApplicationName());
+    cfRequestConfig.setDesiredCount(0);
 
-      if (cfRollbackCommandRequestNG.isUseAppAutoscalar()) {
-        ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
-        autoscalarRequestData.setApplicationName(applicationDetail.getName());
-        autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
-        autoscalarRequestData.setExpectedEnabled(true);
-        pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
-      }
-      ApplicationDetail applicationDetail = cfDeploymentManager.resizeApplication(cfRequestConfig);
+    if (cfRollbackCommandRequestNG.isUseAppAutoScalar()) {
+      ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+      autoscalarRequestData.setApplicationName(applicationDetail.getName());
+      autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+      autoscalarRequestData.setExpectedEnabled(true);
+      pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
+    }
+    ApplicationDetail applicationDetail = cfDeploymentManager.resizeApplication(cfRequestConfig);
 
-      executionLogCallback.saveExecutionLog("# Downsizing successful");
-      executionLogCallback.saveExecutionLog("\n# App details after downsize:");
-      pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
-      unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig);
+    executionLogCallback.saveExecutionLog("# Downsizing successful");
+    executionLogCallback.saveExecutionLog("\n# App details after downsize:");
+    pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
+    unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig);
   }
 
   public ApplicationSummary findActiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
@@ -1002,16 +1003,16 @@ public class CfCommandTaskHelperNG {
         cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback, cfDeploymentManager, pcfCommandTaskBaseHelper);
   }
 
-  public List<CfServiceData> getUpsizeListForRollback(CfRollbackCommandRequestNG cfRollbackCommandRequestNG) {
-    return cfRollbackCommandRequestNG.getInstanceData()
-        .stream()
+  public List<CfServiceData> getUpsizeListForRollback(
+      List<CfServiceData> instanceData, TasApplicationInfo newApplicationDetails) {
+    return instanceData.stream()
         .filter(cfServiceData -> {
           if (cfServiceData.getDesiredCount() > cfServiceData.getPreviousCount()) {
             return true;
           } else if (cfServiceData.getDesiredCount() == cfServiceData.getPreviousCount()) {
             String newApplicationName = null;
-            if (!isNull(cfRollbackCommandRequestNG.getNewApplicationDetails())) {
-              newApplicationName = cfRollbackCommandRequestNG.getNewApplicationDetails().getApplicationName();
+            if (!isNull(newApplicationDetails)) {
+              newApplicationName = newApplicationDetails.getApplicationName();
             }
             return cfServiceData.getDesiredCount() == 0 && (!cfServiceData.getName().equals(newApplicationName));
           }
@@ -1022,11 +1023,11 @@ public class CfCommandTaskHelperNG {
 
   public void restoreRoutesForOldApplication(CfRollbackCommandRequestNG commandRollbackRequest,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (isNull(commandRollbackRequest.getOldApplicationDetails())) {
+    if (isNull(commandRollbackRequest.getActiveApplicationDetails())) {
       return;
     }
 
-    TasApplicationInfo tasApplicationInfo = commandRollbackRequest.getOldApplicationDetails();
+    TasApplicationInfo tasApplicationInfo = commandRollbackRequest.getActiveApplicationDetails();
     cfRequestConfig.setApplicationName(tasApplicationInfo.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
 
@@ -1040,6 +1041,7 @@ public class CfCommandTaskHelperNG {
           executionLogCallback);
     }
   }
+
   void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
       CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig)
       throws PivotalClientApiException {
@@ -1055,28 +1057,24 @@ public class CfCommandTaskHelperNG {
       pcfCommandTaskBaseHelper.unmapExistingRouteMaps(appDetail, cfRequestConfig, executionLogCallback);
     }
   }
+
   public void enableAutoscalerIfNeeded(TasApplicationInfo oldAppInfo, CfAppAutoscalarRequestData autoscalarRequestData,
       LogCallback logCallback) throws PivotalClientApiException {
-      autoscalarRequestData.setApplicationName(oldAppInfo.getApplicationName());
-      autoscalarRequestData.setApplicationGuid(oldAppInfo.getApplicationGuid());
-      autoscalarRequestData.setExpectedEnabled(false);
-      cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
-    }
+    autoscalarRequestData.setApplicationName(oldAppInfo.getApplicationName());
+    autoscalarRequestData.setApplicationGuid(oldAppInfo.getApplicationGuid());
+    autoscalarRequestData.setExpectedEnabled(false);
+    cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
+  }
 
-
-  public void deleteNewApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG commandRollbackRequest,
+  public void deleteNewApp(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, TasApplicationInfo newApp,
       LogCallback logCallback) throws PivotalClientApiException {
-    // app downsized - to be deleted
-    // app downsized - to be deleted
-    String cfAppNamePrefix = commandRollbackRequest.getCfAppNamePrefix();
-    TasApplicationInfo newApp = commandRollbackRequest.getNewApplicationDetails();
     String newAppGuid = newApp.getApplicationGuid();
     String newAppName = newApp.getApplicationName();
     List<String> newApps = pcfCommandTaskBaseHelper.getAppNameBasedOnGuid(cfRequestConfig, cfAppNamePrefix, newAppGuid);
 
     if (newApps.isEmpty()) {
       logCallback.saveExecutionLog(
-              String.format("No new app found to delete with id - [%s] and name - [%s]", newAppGuid, newAppName));
+          String.format("No new app found to delete with id - [%s] and name - [%s]", newAppGuid, newAppName));
     } else if (newApps.size() == 1) {
       String newAppToDelete = newApps.get(0);
       cfRequestConfig.setApplicationName(newAppToDelete);
@@ -1085,8 +1083,8 @@ public class CfCommandTaskHelperNG {
     } else {
       String newAppToDelete = newApps.get(0);
       String message = String.format(
-              "Found [%d] applications with with id - [%s] and name - [%s]. Skipping new app deletion. Kindly delete the invalid app manually",
-              newApps.size(), newAppGuid, newAppToDelete);
+          "Found [%d] applications with with id - [%s] and name - [%s]. Skipping new app deletion. Kindly delete the invalid app manually",
+          newApps.size(), newAppGuid, newAppToDelete);
       logCallback.saveExecutionLog(message, WARN);
     }
   }

@@ -31,6 +31,7 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
+import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
@@ -115,12 +116,14 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .useCFCLI(true)
               .build();
 
+      TasApplicationInfo activeApplicationDetails = cfSwapRoutesRequestNG.getActiveApplicationDetails();
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
               .isRollback(true)
-              .existingApplicationDetails(
-                  Collections.singletonList(cfSwapRoutesRequestNG.getExistingApplicationDetails()))
-              .cfAppNamePrefix(cfSwapRoutesRequestNG.getCfAppNamePrefix())
+              .existingApplicationDetails(activeApplicationDetails != null
+                      ? Collections.singletonList(activeApplicationDetails.toCfAppSetupTimeDetails())
+                      : null)
+              .cfAppNamePrefix(cfSwapRoutesRequestNG.getReleaseNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
               .tempRoutes(cfSwapRoutesRequestNG.getTempRoutes())
@@ -134,18 +137,20 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .isMapRoutesOperation(false)
               .build();
       // Swap routes
-      performRouteUpdateForStandardBlueGreen(cfRequestConfig, pcfRouteUpdateConfigData, iLogStreamingTaskClient, commandUnitsProgress, executionLogCallback);
+      performRouteUpdateForStandardBlueGreen(cfRequestConfig, pcfRouteUpdateConfigData, iLogStreamingTaskClient,
+          commandUnitsProgress, executionLogCallback);
 
       executionLogCallback = tasTaskHelperBase.getLogCallback(
-              iLogStreamingTaskClient, CfCommandUnitConstants.Downsize, true, commandUnitsProgress);
+          iLogStreamingTaskClient, CfCommandUnitConstants.Downsize, true, commandUnitsProgress);
       // if deploy and downsizeOld is true
       updateValues = downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG,
-          cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient, commandUnitsProgress);
+          cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient,
+          commandUnitsProgress);
 
       cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-      cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getCfAppNamePrefix());
+      cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getReleaseNamePrefix());
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
@@ -173,19 +178,21 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
   CfInBuiltVariablesUpdateValues downsizeOldAppDuringDeployAndRenameApps(LogCallback executionLogCallback,
       CfSwapRoutesRequestNG cfSwapRoutesRequestNG, CfRequestConfig cfRequestConfig,
-      CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, String configVarPath, ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, String configVarPath,
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
+      throws PivotalClientApiException {
     if (pcfRouteUpdateConfigData.isDownsizeOldApplication()) {
       resizeOldApplications(
           cfSwapRoutesRequestNG, cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback, configVarPath);
     } else {
       executionLogCallback.saveExecutionLog(
-              "Skipping as Downsize Old Application option is not set true", INFO, SUCCESS);
+          "Skipping as Downsize Old Application option is not set true", INFO, SUCCESS);
     }
     executionLogCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, CfCommandUnitConstants.Rename, true, commandUnitsProgress);
-    CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues = renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
-    executionLogCallback.saveExecutionLog(
-            "Renaming of Apps Completed", INFO, CommandExecutionStatus.SUCCESS);
+        iLogStreamingTaskClient, CfCommandUnitConstants.Rename, true, commandUnitsProgress);
+    CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues =
+        renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
+    executionLogCallback.saveExecutionLog("Renaming of Apps Completed", INFO, CommandExecutionStatus.SUCCESS);
     return cfInBuiltVariablesUpdateValues;
   }
 
@@ -227,7 +234,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
   @VisibleForTesting
   void resizeOldApplications(CfSwapRoutesRequestNG cfSwapRoutesRequestNG, CfRequestConfig cfRequestConfig,
-      CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, LogCallback executionLogCallback, String configVarPath) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, LogCallback executionLogCallback, String configVarPath)
+      throws PivotalClientApiException {
     String appNameBeingDownsized = null;
 
     List<CfAppSetupTimeDetails> existingApplicationDetails = pcfRouteUpdateConfigData.getExistingApplicationDetails();
@@ -237,25 +245,23 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         appNameBeingDownsized = existingAppDetails.getApplicationName();
         int count = 0;
 
-        if(isNotEmpty(appNameBeingDownsized)) {
-
+        if (isNotEmpty(appNameBeingDownsized)) {
           String msg = "Resizing Old Apps to 0 count as configured";
           executionLogCallback.saveExecutionLog(msg);
 
           cfRequestConfig.setApplicationName(appNameBeingDownsized);
           cfRequestConfig.setDesiredCount(count);
           executionLogCallback.saveExecutionLog(new StringBuilder()
-                  .append("Resizing Application: {")
-                  .append(encodeColor(appNameBeingDownsized))
-                  .append("} to Count: ")
-                  .append(count)
-                  .toString());
+                                                    .append("Resizing Application: {")
+                                                    .append(encodeColor(appNameBeingDownsized))
+                                                    .append("} to Count: ")
+                                                    .append(count)
+                                                    .toString());
 
           performResizing(cfSwapRoutesRequestNG, cfRequestConfig, configVarPath, executionLogCallback);
           executionLogCallback.saveExecutionLog("Resizing Completed", INFO, SUCCESS);
         } else {
-          executionLogCallback.saveExecutionLog(
-                  "Nothing to Downsize", INFO, SUCCESS);
+          executionLogCallback.saveExecutionLog("Nothing to Downsize", INFO, SUCCESS);
         }
       } catch (Exception e) {
         log.error("Failed to downsize PCF application: " + appNameBeingDownsized, e);
@@ -269,10 +275,9 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private CfAppAutoscalarRequestData performResizing(CfSwapRoutesRequestNG cfSwapRoutesRequestNG,
       CfRequestConfig cfRequestConfig, String configVarPath, LogCallback executionLogCallback)
       throws PivotalClientApiException {
-
     // If downsizing, disable auto-scalar
     CfAppAutoscalarRequestData appAutoscalarRequestData = null;
-    if (cfSwapRoutesRequestNG.isUseAppAutoscalar()) {
+    if (cfSwapRoutesRequestNG.isUseAppAutoScalar()) {
       ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
       appAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
                                      .applicationGuid(applicationDetail.getId())
@@ -281,7 +286,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                                      .configPathVar(configVarPath)
                                      .timeoutInMins(cfSwapRoutesRequestNG.getTimeoutIntervalInMin())
                                      .build();
-
 
       // Before downsizing, disable autoscalar if its enabled.
       appAutoscalarRequestData.setExpectedEnabled(true);
@@ -295,7 +299,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   private void performRouteUpdateForStandardBlueGreen(CfRequestConfig cfRequestConfig,
-      CfRouteUpdateRequestConfigData data, ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress, LogCallback executionLogCallback) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData data, ILogStreamingTaskClient iLogStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress, LogCallback executionLogCallback) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
     List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
@@ -304,9 +309,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     updateRoutesForNewApplication(cfRequestConfig, executionLogCallback, data);
     executionLogCallback.saveExecutionLog("Swapping Routes For New Applications Completed", INFO, SUCCESS);
 
-
     executionLogCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, CfCommandUnitConstants.SwapRoutesForExistingApplication, true, commandUnitsProgress);
+        iLogStreamingTaskClient, CfCommandUnitConstants.SwapRoutesForExistingApplication, true, commandUnitsProgress);
     updateRoutesForExistingApplication(cfRequestConfig, executionLogCallback, data);
   }
 

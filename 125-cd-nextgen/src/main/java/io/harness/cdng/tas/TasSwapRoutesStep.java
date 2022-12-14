@@ -20,6 +20,8 @@ import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -57,6 +59,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -109,29 +112,46 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
     }
+
+    TasSwapRoutesStepParameters tasSwapRoutesStepParameters = (TasSwapRoutesStepParameters) stepParameters.getSpec();
+
     if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME,
+          TasSwapRouteDataOutcome.builder()
+              .swapRouteOccurred(false)
+              .downsizeOldApplication(
+                  ParameterFieldHelper.getParameterFieldValue(tasSwapRoutesStepParameters.getDownSizeOldApplication()))
+              .build(),
+          StepCategory.STEP.name());
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
           .build();
     }
-    TasSwapRoutesStepParameters tasSwapRoutesStepParameters = (TasSwapRoutesStepParameters) stepParameters.getSpec();
+
     OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(
             tasSwapRoutesStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
 
-    if (!tasAppResizeDataOptional.isFound()) {
-      return StepResponse.builder()
-          .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder().setErrorMessage("App resize step was not completed").build())
-          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-          .build();
-    }
+    TasSwapRouteDataOutcome tasSwapRouteDataOutcome =
+        TasSwapRouteDataOutcome.builder()
+            .swapRouteOccurred(true)
+            .downsizeOldApplication(
+                ParameterFieldHelper.getParameterFieldValue(tasSwapRoutesStepParameters.getDownSizeOldApplication()))
+            .build();
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME,
+        tasSwapRouteDataOutcome, StepCategory.STEP.name());
+
     CfSwapRouteCommandResponseNG cfSwapRouteCommandResponseNG = (CfSwapRouteCommandResponseNG) response;
-    List<ServerInstanceInfo> serverInstanceInfoList =
-        getServerInstanceInfoList(cfSwapRouteCommandResponseNG.getNewApplicationName(),
-            (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput(), ambiance);
+
+    List<ServerInstanceInfo> serverInstanceInfoList = Collections.emptyList();
+    if (tasAppResizeDataOptional.isFound()) {
+      serverInstanceInfoList = getServerInstanceInfoList(cfSwapRouteCommandResponseNG.getNewApplicationName(),
+          (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput(), ambiance);
+    }
+
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
@@ -172,15 +192,13 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .existingApplicationNames(existingAppNames)
             .accountId(accountId)
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
-            .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails())
+            .releaseNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .commandName(CfCommandTypeNG.SWAP_ROUTES.toString())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .existingApplicationDetails(tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
-            .existingInActiveApplicationDetails(isNull(tasSetupDataOutcome.getOldApplicationDetails())
-                    ? null
-                    : tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
             .newApplicationName(getNewApplicationName(tasSetupDataOutcome))
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROUTES)
             .tasInfraConfig(tasInfraConfig)
@@ -194,7 +212,10 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
                                   .parameters(new Object[] {cfSwapRoutesRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-            Arrays.asList(CfCommandUnitConstants.SwapRoutesForNewApplication, CfCommandUnitConstants.SwapRoutesForExistingApplication,  CfCommandUnitConstants.Downsize,  CfCommandUnitConstants.Rename, CfCommandUnitConstants.Wrapup), CF_COMMAND_TASK_NG.getDisplayName(),
+        Arrays.asList(CfCommandUnitConstants.SwapRoutesForNewApplication,
+            CfCommandUnitConstants.SwapRoutesForExistingApplication, CfCommandUnitConstants.Downsize,
+            CfCommandUnitConstants.Rename, CfCommandUnitConstants.Wrapup),
+        CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRoutesStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
