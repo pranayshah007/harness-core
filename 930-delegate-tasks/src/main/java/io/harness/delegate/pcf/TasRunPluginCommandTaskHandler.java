@@ -1,8 +1,10 @@
 package io.harness.delegate.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
 
@@ -22,6 +24,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
+import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -29,10 +32,12 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.Misc;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
@@ -64,6 +69,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
   @Inject protected CfCommandTaskHelperNG cfCommandTaskHelperNG;
   @Inject PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
   @Inject CfDeploymentManager cfDeploymentManager;
+  @Inject TasTaskHelperBase tasTaskHelperBase;
 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
@@ -73,7 +79,8 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
           Pair.of("cfCommandRequestNG", "Must be instance of CfRunPluginCommandRequestNG"));
     }
 
-    LogCallback executionLogCallback = iLogStreamingTaskClient.obtainLogCallback(cfCommandRequestNG.getCommandName());
+    LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
+            iLogStreamingTaskClient, CfCommandUnitConstants.Pcfplugin, true, commandUnitsProgress);
     CfRunPluginCommandRequestNG pluginCommandRequest = (CfRunPluginCommandRequestNG) cfCommandRequestNG;
 
     executionLogCallback.saveExecutionLog(color("---------- Starting PCF Run Plugin Command Execution", White, Bold));
@@ -124,9 +131,12 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
       return TasRunPluginResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
     } catch (Exception e) {
-      return handleError(executionLogCallback, pluginCommandRequest, e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      return handleError(executionLogCallback, pluginCommandRequest, sanitizedException);
     } finally {
+      executionLogCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
       removeTempFilesCreated(executionLogCallback, workingDirectory);
+      executionLogCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
   }
   private TasRunPluginResponse handleError(

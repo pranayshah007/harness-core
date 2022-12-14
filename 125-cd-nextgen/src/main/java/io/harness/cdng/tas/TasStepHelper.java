@@ -27,8 +27,10 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.UnitStatus.RUNNING;
 import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
@@ -119,10 +121,12 @@ import io.harness.git.model.GitFile;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
@@ -257,6 +261,10 @@ public class TasStepHelper {
       throw new InvalidRequestException("Harness Store is only supported for TAS Command Scripts", USER);
     }
 
+    UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
+            .setStartTime(System.currentTimeMillis())
+            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
+
     logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
     TasManifestFileContents tasManifestFileContents = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance),
@@ -304,11 +312,15 @@ public class TasStepHelper {
                                                         .pathsFromScript(pathsFromScript)
                                                         .build();
 
+    unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
+    tasStepPassThroughData.setUnitProgresses(Arrays.asList(unitProgress.build()));
+
     //  fire task to fetch remote files
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
-        shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+            shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+    tasStepPassThroughData.setCommandUnits(getCommandUnitsForTanzuCommand(tasStepPassThroughData));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
   }
@@ -825,6 +837,22 @@ public class TasStepHelper {
     return commandUnits;
   }
 
+  public List<String> getCommandUnitsForTanzuCommand(TasStepPassThroughData tasStepPassThroughData) {
+    List<String> commandUnits = new ArrayList<>();
+    commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
+    if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchFiles);
+    }
+    if (tasStepPassThroughData.getShouldExecuteCustomFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchCustomFiles);
+    }
+    if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
+      commandUnits.add(K8sCommandUnitConstants.FetchFiles);
+    }
+    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+    return commandUnits;
+  }
+
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       StoreConfig storeConfig) {
@@ -930,8 +958,9 @@ public class TasStepHelper {
         && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
       for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
         if (entry.getFiles() != null) {
-          entry.getFiles().stream().map(
-              allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+          for (int iterate = 0; iterate < entry.getFiles().size(); iterate++) {
+              allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(), entry.getFiles().get(iterate).getFileContent());
+          }
         }
       }
     }
@@ -954,8 +983,9 @@ public class TasStepHelper {
         && tasStepPassThroughData.getCustomFetchContent().values() != null) {
       for (Collection<CustomSourceFile> customSourceFileCollection :
           tasStepPassThroughData.getCustomFetchContent().values()) {
-        customSourceFileCollection.stream().map(
-            allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+        for (CustomSourceFile customSourceFile: customSourceFileCollection) {
+          allFilesFetched.put(customSourceFile.getFilePath(),customSourceFile.getFileContent());
+        }
       }
     }
 
@@ -979,6 +1009,7 @@ public class TasStepHelper {
             .pathsFromScript(tasStepPassThroughData.getPathsFromScript())
             .allFilesFetched(allFilesFetched)
             .commandUnits(tasStepPassThroughData.getCommandUnits())
+            .rawScript(tasStepPassThroughData.getRawScript())
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
@@ -1462,6 +1493,36 @@ public class TasStepHelper {
     return artifactConfigBuilder.connectorConfig(connectorInfoDTO.getConnectorConfig())
         .encryptedDataDetails(encryptedDataDetails)
         .build();
+  }
+
+  public UnitProgressData completeUnitProgressData(
+          UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
+    if (currentProgressData == null) {
+      return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    }
+
+    List<UnitProgress> finalUnitProgressList =
+            currentProgressData.getUnitProgresses()
+                    .stream()
+                    .map(unitProgress -> {
+                      if (unitProgress.getStatus() == RUNNING) {
+                        LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
+                        logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
+                        return UnitProgress.newBuilder(unitProgress)
+                                .setStatus(UnitStatus.FAILURE)
+                                .setEndTime(System.currentTimeMillis())
+                                .build();
+                      }
+
+                      return unitProgress;
+                    })
+                    .collect(Collectors.toList());
+
+    return UnitProgressData.builder().unitProgresses(finalUnitProgressList).build();
+  }
+
+  public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
 
   public void closeLogStream(Ambiance ambiance) {

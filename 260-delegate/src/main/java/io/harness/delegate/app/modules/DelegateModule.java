@@ -12,6 +12,7 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
+import io.harness.delegate.pcf.TasRunPluginCommandTaskHandler;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.ArtifactoryNgService;
@@ -1987,6 +1988,7 @@ public class DelegateModule extends AbstractModule {
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.APP_RESIZE.name()).to(CfDeployCommandTaskHandlerNG.class);
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TAS_BG_SETUP.name()).to(TasBlueGreenSetupTaskHandler.class);
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.ROLLBACK.name()).to(CfRollbackCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TANZU_COMMAND.name()).to(TasRunPluginCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
   }

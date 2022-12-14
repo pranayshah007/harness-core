@@ -33,7 +33,6 @@ public class CfRunPluginCommandRequestNG implements CfCommandRequestNG {
   List<String> filePathsInScript;
   @Expression(ALLOW_SECRETS) List<FileData> fileDataList;
   @Expression(ALLOW_SECRETS) String repoRoot;
-  @NotNull CfCliVersionNG cfCliVersionNG;
-  CfCliVersion cfCliVersion;
+  @NotNull CfCliVersion cfCliVersion;
   List<EncryptedDataDetail> encryptedDataDetails;
 }
