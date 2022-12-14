@@ -99,6 +99,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   public NotifyResponse populateNotifyResponse(String correlationId, TestResponseData responseData) {
     return NotifyResponse.builder()
         .uuid(correlationId)
+        .usingKryoWithoutReference(null)
         .responseData(kryoSerializer.asDeflatedBytes(responseData))
         .error(false)
         .build();

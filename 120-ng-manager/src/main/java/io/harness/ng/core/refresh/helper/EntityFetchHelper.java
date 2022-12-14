@@ -31,7 +31,8 @@ public class EntityFetchHelper {
 
   public ServiceEntity getService(
       String accountId, String orgId, String projectId, String serviceRef, Map<String, PersistentEntity> cacheMap) {
-    IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgId, projectId);
+    IdentifierRef serviceIdentifierRef =
+        IdentifierRefHelper.getIdentifierRefOrThrowException(serviceRef, accountId, orgId, projectId, "service");
     String uniqueServiceIdentifier =
         generateUniqueIdentifier(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
             serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), EntityType.SERVICE);

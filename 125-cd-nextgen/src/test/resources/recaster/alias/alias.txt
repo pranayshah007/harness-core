@@ -34,6 +34,11 @@ io.harness.cdng.k8s.beans.K8sRollingReleaseOutput
 io.harness.cdng.k8s.DeleteResourcesWrapper
 io.harness.cdng.service.steps.ServiceConfigStepOutcome
 io.harness.cdng.service.beans.AsgServiceSpec
+io.harness.cdng.aws.asg.AsgExecutionPassThroughData
+io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData
+io.harness.cdng.aws.asg.AsgCanaryDeployStepNode
+io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
+io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo
 io.harness.cdng.provision.terraform.TerraformPlanStepParameters
 io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome
 io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData
@@ -602,6 +607,9 @@ io.harness.cdng.provision.terragrunt.TerragruntStepConfiguration
 io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters
 io.harness.cdng.provision.terragrunt.InlineTerragruntBackendConfigSpec
 io.harness.cdng.provision.terragrunt.RemoteTerragruntBackendConfigSpec
+io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome
+io.harness.cdng.provision.terragrunt.TerragruntInheritOutput
+io.harness.cdng.provision.terragrunt.TerragruntModuleConfig
 io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
@@ -614,3 +622,11 @@ io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
 io.harness.cdng.infra.beans.AsgInfraMapping
 io.harness.cdng.infra.beans.AsgInfrastructureOutcome
 io.harness.cdng.infra.yaml.AsgInfrastructure
+io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchPassThroughData
+io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData
+io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome
+io.harness.cdng.elastigroup.CloudProvider
+io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml
+io.harness.cdng.elastigroup.LoadBalancer
+io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome
+io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig

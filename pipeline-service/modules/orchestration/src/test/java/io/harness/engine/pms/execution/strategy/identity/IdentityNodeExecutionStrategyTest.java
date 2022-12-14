@@ -380,9 +380,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     doNothing().when(pmsGraphStepDetailsService).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     on(identityNodeExecutionStrategyHelper).set("nodeExecutionService", nodeExecutionService);
     on(identityNodeExecutionStrategyHelper).set("pmsGraphStepDetailsService", pmsGraphStepDetailsService);
-    doCallRealMethod()
-        .when(identityNodeExecutionStrategyHelper)
-        .createNodeExecution(any(), any(), any(), any(), any(), any());
+    doCallRealMethod().when(identityNodeExecutionStrategyHelper).createNodeExecution(any(), any(), any(), any(), any());
     NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     verify(pmsGraphStepDetailsService, times(1)).copyStepDetailsForRetry(anyString(), anyString(), anyString());

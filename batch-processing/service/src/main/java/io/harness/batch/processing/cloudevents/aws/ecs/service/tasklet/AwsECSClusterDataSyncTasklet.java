@@ -315,7 +315,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                                            .filter(task -> null != task.getContainerInstanceArn())
                                            .map(task -> getIdFromArn(task.getContainerInstanceArn()))
                                            .collect(Collectors.toSet());
-    Map<String, InstanceData> instanceDataMap = getInstanceDataMap(containerInstanceArn);
+    Map<String, InstanceData> instanceDataMap = getInstanceDataMap(accountId, containerInstanceArn);
     tasks.stream()
         .filter(task -> null != task.getPullStartedAt() && listTaskDesiredStatus().contains(task.getDesiredStatus()))
         .forEach(task -> {
@@ -503,8 +503,8 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     return null != task.getStartedBy() && null != deploymentIdServiceMap.get(task.getStartedBy());
   }
 
-  private Map<String, InstanceData> getInstanceDataMap(Set<String> instanceIds) {
-    return getInstanceDataMap(instanceDataDao.fetchInstanceData(instanceIds));
+  private Map<String, InstanceData> getInstanceDataMap(String accountId, Set<String> instanceIds) {
+    return getInstanceDataMap(instanceDataDao.fetchInstanceData(accountId, instanceIds));
   }
 
   private Map<String, InstanceData> getInstanceDataMap(

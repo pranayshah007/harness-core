@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
+import io.harness.cvng.notification.config.ErrorTrackingClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
@@ -92,6 +93,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("accessControlClientConfig") private AccessControlClientConfiguration accessControlClientConfiguration;
+  @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("distributedLockImplementation")
   private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
   private ServiceHttpClientConfig templateServiceClientConfig;

@@ -114,6 +114,7 @@ import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -133,6 +134,7 @@ import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCrea
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
+import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
@@ -347,6 +349,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
 
+    // ASG
+    planCreators.add(new AsgCanaryDeployStepPlanCreator());
+
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
@@ -450,6 +455,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
+
+    // ASG
+    variableCreators.add(new AsgCanaryDeployStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
@@ -661,7 +669,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsRollingDeploy =
         StepInfo.newBuilder()
-            .setName("Ecs Rolling Deploy")
+            .setName("ECS Rolling Deploy")
             .setType(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -669,7 +677,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsRollingRollack =
         StepInfo.newBuilder()
-            .setName("Ecs Rolling Rollback")
+            .setName("ECS Rolling Rollback")
             .setType(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -677,7 +685,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsCanaryDeploy =
         StepInfo.newBuilder()
-            .setName("Ecs Canary Deploy")
+            .setName("ECS Canary Deploy")
             .setType(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -685,7 +693,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsCanaryDelete =
         StepInfo.newBuilder()
-            .setName("Ecs Canary Delete")
+            .setName("ECS Canary Delete")
             .setType(StepSpecTypeConstants.ECS_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -693,7 +701,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsBlueGreenCreateService =
         StepInfo.newBuilder()
-            .setName("Ecs Blue Green Create Service")
+            .setName("ECS Blue Green Create Service")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -701,7 +709,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsBlueGreenSwapTargetGroups =
         StepInfo.newBuilder()
-            .setName("Ecs Blue Green Swap Target Groups")
+            .setName("ECS Blue Green Swap Target Groups")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -709,7 +717,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsBlueGreenRollback =
         StepInfo.newBuilder()
-            .setName("Ecs Blue Green Rollback")
+            .setName("ECS Blue Green Rollback")
             .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
@@ -717,10 +725,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo ecsRunTask =
         StepInfo.newBuilder()
-            .setName("Ecs Run Task")
+            .setName("ECS Run Task")
             .setType(StepSpecTypeConstants.ECS_RUN_TASK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+            .build();
+
+    StepInfo asgCanaryDeploy =
+        StepInfo.newBuilder()
+            .setName("Asg Canary Deploy")
+            .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
     StepInfo createStack = StepInfo.newBuilder()
@@ -966,6 +982,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsCanaryDeploy);
     stepInfos.add(ecsCanaryDelete);
     stepInfos.add(ecsRunTask);
+    stepInfos.add(asgCanaryDeploy);
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);

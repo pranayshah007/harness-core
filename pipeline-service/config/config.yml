@@ -474,18 +474,36 @@ orchestrationRestrictionConfiguration:
   useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
   planExecutionRestriction:
-     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-1}
-     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-5000}
-     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-10000}
+     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-2}
+     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-1000}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-2000}
+  #remove below restriction
   pipelineCreationRestriction:
     free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}
     team: ${PIPELINE_CREATION_RESTRICTION_TEAM:-10000}
     enterprise: ${PIPELINE_CREATION_RESTRICTION_ENTERPRISE:-10000}
+  #remove below restriction
   maxConcurrencyRestriction:
     free: ${MAX_CONCURRENCY_RESTRICTION_FREE:-2}
     team: ${MAX_CONCURRENCY_RESTRICTION_TEAM:-50}
     enterprise: ${MAX_CONCURRENCY_RESTRICTION_ENTERPRISE:-100}
+  # Parallelism hard limit on number of nodes at any place
   totalParallelismStopRestriction:
     free: ${TOTAL_PARALLELISM_RESTRICTION_FREE:-2}
-    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-1000}
-    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-5000}
+    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-256}
+    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-256}
+  #TODO(archit): Add passing timeout to all planCreators to adopt
+  maxPipelineTimeoutInHours:
+    free: ${MAX_PIPELINE_TIMEOUT_FREE:-1}
+    team: ${MAX_PIPELINE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_PIPELINE_TIMEOUT_ENTERPRISE:-840}
+  maxStageTimeoutInHours:
+    free: ${MAX_STAGE_TIMEOUT_FREE:-1}
+    team: ${MAX_STAGE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_STAGE_TIMEOUT_ENTERPRISE:-840}
+  # 0 means no limit
+  maxStepTimeoutInHours:
+    free: ${MAX_STEP_TIMEOUT_FREE:-1}
+    team: ${MAX_STEP_TIMEOUT_TEAM:-0}
+    enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
+

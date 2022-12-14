@@ -17,11 +17,13 @@ import lombok.Value;
 @Builder
 public class ChangeSummaryDTO {
   Map<ChangeCategory, CategoryCountDetails> categoryCountMap;
+  CategoryCountDetails total;
 
   @Value
   @Builder
   public static class CategoryCountDetails {
     long count;
     long countInPrecedingWindow;
+    long percentageChange;
   }
 }

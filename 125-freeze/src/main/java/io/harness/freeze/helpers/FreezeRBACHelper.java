@@ -11,6 +11,11 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.freeze.beans.EntityConfig;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
@@ -18,6 +23,9 @@ import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.PrincipalType;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.List;
@@ -59,12 +67,43 @@ public class FreezeRBACHelper {
     }
   }
 
+  public boolean checkIfUserHasFreezeOverrideAccessWithPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
+      String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
+      Principal principal = getPrincipalInfoFromSecurityContext();
+      PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);
+      return checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, projectId, orgId,
+          accessControlClient,
+          io.harness.accesscontrol.acl.api.Principal.of(
+              convertToAccessControlPrincipalType(principalType), principal.getName()));
+    }
+    return false;
+  }
+
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
       Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
       boolean overrideAccess = accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), resource,
           PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
+      if (overrideAccess) {
+        log.info("User had deployment freezeOverride Access");
+      }
+      return overrideAccess;
+    }
+    return false;
+  }
+
+  public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
+      String accountId, String projectId, String orgId, AccessControlClient accessControlClient,
+      io.harness.accesscontrol.acl.api.Principal principal) {
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
+      Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
+      boolean overrideAccess =
+          accessControlClient.hasAccess(io.harness.accesscontrol.acl.api.Principal.of(
+                                            principal.getPrincipalType(), principal.getPrincipalIdentifier()),
+              ResourceScope.of(accountId, orgId, projectId), resource,
+              PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
       if (overrideAccess) {
         log.info("User had deployment freezeOverride Access");
       }
@@ -97,5 +136,36 @@ public class FreezeRBACHelper {
       }
     }
     return Optional.ofNullable(result);
+  }
+
+  private Principal getPrincipalInfoFromSecurityContext() {
+    Principal principalInContext = SecurityContextBuilder.getPrincipal();
+    if (principalInContext == null || principalInContext.getName() == null || principalInContext.getType() == null) {
+      throw new AccessDeniedException("Principal cannot be null", ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+    return principalInContext;
+  }
+  private PrincipalType getPrincipalTypeFromSecurityContext(Principal principal) {
+    String principalName = principal.getName();
+    if (EmptyPredicate.isEmpty(principalName)) {
+      return null;
+    }
+    return principal.getType();
+  }
+
+  public io.harness.accesscontrol.principals.PrincipalType convertToAccessControlPrincipalType(
+      PrincipalType principalType) {
+    switch (principalType) {
+      case USER:
+        return io.harness.accesscontrol.principals.PrincipalType.USER;
+      case SERVICE:
+        return io.harness.accesscontrol.principals.PrincipalType.SERVICE;
+      case API_KEY:
+        return io.harness.accesscontrol.principals.PrincipalType.API_KEY;
+      case SERVICE_ACCOUNT:
+        return io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
+      default:
+        throw new InvalidRequestException("Unknown principal type found");
+    }
   }
 }

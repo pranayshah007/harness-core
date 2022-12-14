@@ -335,7 +335,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS) {
-        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, SUCCESS);
+        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
       } else {
         saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR);
       }

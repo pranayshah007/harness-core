@@ -18,6 +18,7 @@ cacheEntities {"name": "createdAt_1", "background": true} {"createdAt": 1}
 cacheEntities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
+executionInputInstance {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"expireAt": 1}
 executionInputInstance {"name": "nodeExecutionId_1", "unique": true} {"nodeExecutionId": 1}
 executionSweepingOutput {"name": "producedByRuntime_Idx", "background": true} {"producedBy.runtimeId": 1}
 executionSweepingOutput {"name": "unique_levelRuntimeIdUniqueIdx2", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}

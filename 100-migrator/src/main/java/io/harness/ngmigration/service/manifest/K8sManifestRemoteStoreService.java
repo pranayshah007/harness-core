@@ -13,6 +13,8 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -54,7 +56,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
     // Note: Special case handling for ECS task services
     if (StringUtils.isNotBlank(gitFileConfig.getServiceSpecFilePath())
         || StringUtils.isNotBlank(gitFileConfig.getTaskSpecFilePath())) {
-      return handleForEcs(applicationManifest, gitFileConfig, connector);
+      return handleForEcs(gitFileConfig, connector);
     }
 
     K8sManifest k8sManifest =
@@ -81,37 +83,44 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
   }
 
   // Note: Special case handling for ECS task services
-  private List<ManifestConfigWrapper> handleForEcs(
-      ApplicationManifest applicationManifest, GitFileConfig gitFileConfig, NgEntityDetail connector) {
+  private List<ManifestConfigWrapper> handleForEcs(GitFileConfig gitFileConfig, NgEntityDetail connector) {
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
     if (StringUtils.isNotBlank(gitFileConfig.getTaskSpecFilePath())) {
       final String identifier = "ecsTaskDefinition";
-      manifests.add(ManifestConfigWrapper.builder()
-                        .manifest(ManifestConfig.builder()
-                                      .identifier("ecsTaskDefinition")
-                                      .type(ManifestConfigType.ECS_TASK_DEFINITION)
-                                      .spec(getManifest(
-                                          gitFileConfig, connector, gitFileConfig.getTaskSpecFilePath(), identifier))
-                                      .build())
-                        .build());
+      manifests.add(
+          ManifestConfigWrapper.builder()
+              .manifest(
+                  ManifestConfig.builder()
+                      .identifier("ecsTaskDefinition")
+                      .type(ManifestConfigType.ECS_TASK_DEFINITION)
+                      .spec(EcsTaskDefinitionManifest.builder()
+                                .identifier(identifier)
+                                .store(getStoreConfig(gitFileConfig, connector, gitFileConfig.getTaskSpecFilePath()))
+                                .build())
+                      .build())
+              .build());
     }
     if (StringUtils.isNotBlank(gitFileConfig.getServiceSpecFilePath())) {
       final String identifier = "ecsServiceDefinition";
-      manifests.add(ManifestConfigWrapper.builder()
-                        .manifest(ManifestConfig.builder()
-                                      .identifier(identifier)
-                                      .type(ManifestConfigType.ECS_SERVICE_DEFINITION)
-                                      .spec(getManifest(
-                                          gitFileConfig, connector, gitFileConfig.getServiceSpecFilePath(), identifier))
-                                      .build())
-                        .build());
+      manifests.add(
+          ManifestConfigWrapper.builder()
+              .manifest(
+                  ManifestConfig.builder()
+                      .identifier(identifier)
+                      .type(ManifestConfigType.ECS_SERVICE_DEFINITION)
+                      .spec(EcsServiceDefinitionManifest.builder()
+                                .identifier(identifier)
+                                .store(getStoreConfig(gitFileConfig, connector, gitFileConfig.getServiceSpecFilePath()))
+                                .build())
+                      .build())
+              .build());
     }
     return manifests;
   }
 
   // Note: Special case handling for ECS task services
-  private static K8sManifest getManifest(
-      GitFileConfig gitFileConfig, NgEntityDetail connector, String path, String identifier) {
+  private static ParameterField<StoreConfigWrapper> getStoreConfig(
+      GitFileConfig gitFileConfig, NgEntityDetail connector, String path) {
     GitStore gitStore =
         GitStore.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
@@ -127,10 +136,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
       gitStore.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
     }
 
-    return K8sManifest.builder()
-        .identifier(identifier)
-        .store(ParameterField.createValueField(
-            StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(gitStore).build()))
-        .build();
+    return ParameterField.createValueField(
+        StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(gitStore).build());
   }
 }

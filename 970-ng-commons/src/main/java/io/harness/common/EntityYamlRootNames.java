@@ -168,6 +168,7 @@ public class EntityYamlRootNames {
   public static final String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   public static final String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   public static final String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
@@ -189,4 +190,6 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

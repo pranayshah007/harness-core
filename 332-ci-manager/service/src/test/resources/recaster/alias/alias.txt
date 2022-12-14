@@ -50,6 +50,7 @@ io.harness.beans.steps.outcome.StepArtifacts
 io.harness.plancreator.steps.common.StepElementParameters
 io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo
 io.harness.beans.yaml.extended.volumes.HostPathYaml
+io.harness.ci.config.HostedVmConfig
 io.harness.ci.config.CICacheIntelligenceConfig
 io.harness.beans.yaml.extended.infrastrucutre.OSType
 io.harness.beans.outcomes.VmDetailsOutcome

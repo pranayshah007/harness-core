@@ -110,7 +110,8 @@ public class PodCountComputationServiceImplTest extends CategoryTest {
     Set<String> podId = new HashSet<>();
     podId.add(POD_ID);
     NodePodId nodePodId = NodePodId.builder().nodeId(NODE_ID).clusterId(CLUSTER_ID).podId(podId).build();
-    when(instanceDataService.fetchInstanceDataForGivenInstances(podId)).thenReturn(getInstanceLifeCycleInfo());
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT_ID, podId))
+        .thenReturn(getInstanceLifeCycleInfo());
     boolean verified = podCountComputationService.computePodCountForNodes(
         ACCOUNT_ID, START_TIME.toEpochMilli(), END_TIME.toEpochMilli(), nodePodId);
     assertThat(verified).isTrue();

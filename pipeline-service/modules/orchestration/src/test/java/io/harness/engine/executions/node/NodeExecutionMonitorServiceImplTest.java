@@ -20,6 +20,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.execution.NodeExecution;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -38,6 +39,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionMonitorServiceImplTest extends OrchestrationTestBase {
@@ -75,8 +77,10 @@ public class NodeExecutionMonitorServiceImplTest extends OrchestrationTestBase {
                                                 SetupAbstractionKeys.projectIdentifier, "projId3"))
                                             .build())
                               .build());
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
     Page<NodeExecution> nodeExecutions = new PageImpl<>(nodeExecutionList, pageable, 1);
-    doReturn(nodeExecutions).when(nodeExecutionService).fetchAllNodeExecutionsByStatus(any(), any(), any());
+    doReturn(iterator).when(nodeExecutionService).fetchAllNodeExecutionsByStatusIteratorFromAnalytics(any(), any());
     nodeExecutionMonitorService.registerActiveExecutionMetrics();
     verify(metricService, times(3)).recordMetric(anyString(), anyDouble());
   }

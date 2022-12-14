@@ -27,12 +27,14 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCurrentGenActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityUpdatableEntity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.ActivityServiceImpl;
 import io.harness.cvng.activity.services.impl.DeploymentActivityUpdateHandler;
+import io.harness.cvng.activity.services.impl.InternalChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.KubernetesClusterActivityUpdateHandler;
 import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceService;
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
@@ -72,6 +74,8 @@ import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceRe
 import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
+import io.harness.cvng.client.ErrorTrackingService;
+import io.harness.cvng.client.ErrorTrackingServiceImpl;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
 import io.harness.cvng.client.VerificationManagerService;
@@ -138,6 +142,7 @@ import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.HostRecordService;
+import io.harness.cvng.core.services.api.InternalChangeConsumerService;
 import io.harness.cvng.core.services.api.LogRecordService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
@@ -194,6 +199,7 @@ import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
 import io.harness.cvng.core.services.impl.HealthSourceOnboardingServiceImpl;
 import io.harness.cvng.core.services.impl.HostRecordServiceImpl;
+import io.harness.cvng.core.services.impl.InternalChangeConsumerServiceImpl;
 import io.harness.cvng.core.services.impl.KubernetesChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.LogRecordServiceImpl;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
@@ -244,6 +250,7 @@ import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTrans
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventMetaDataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDCurrentGenChangeEventTransformer;
+import io.harness.cvng.core.transformer.changeEvent.InternalChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.KubernetesClusterChangeEventMetadataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
@@ -292,6 +299,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
 import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
@@ -494,6 +502,7 @@ public class CVServiceModule extends AbstractModule {
         .to(SLIDataCollectionTaskServiceImpl.class)
         .in(Scopes.SINGLETON);
     bind(VerificationManagerService.class).to(VerificationManagerServiceImpl.class);
+    bind(ErrorTrackingService.class).to(ErrorTrackingServiceImpl.class);
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(HeatMapService.class).to(HeatMapServiceImpl.class);
@@ -862,6 +871,9 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.FEATURE_FLAG)
+        .to(InternalChangeActivityUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
 
     MapBinder<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceUpdateHandler.class);
@@ -880,6 +892,9 @@ public class CVServiceModule extends AbstractModule {
     activityUpdateHandlerMapBinder.addBinding(ActivityType.DEPLOYMENT)
         .to(DeploymentActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
+    activityUpdateHandlerMapBinder.addBinding(ActivityType.FEATURE_FLAG)
+        .to(InternalChangeActivityUpdateHandler.class)
+        .in(Scopes.SINGLETON);
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
         MapBinder.newMapBinder(binder(), SLOTargetType.class, SLOTargetTransformer.class);
@@ -888,6 +903,7 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     sloTargetTypeSLOTargetTransformerMapBinder.addBinding(SLOTargetType.ROLLING).to(RollingSLOTargetTransformer.class);
     bind(ChangeEventService.class).to(ChangeEventServiceImpl.class).in(Scopes.SINGLETON);
+    bind(InternalChangeConsumerService.class).to(InternalChangeConsumerServiceImpl.class).in(Scopes.SINGLETON);
     bind(ChangeEventEntityAndDTOTransformer.class);
 
     MapBinder<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMapBinder =
@@ -931,6 +947,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
+        .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);
@@ -1019,6 +1038,9 @@ public class CVServiceModule extends AbstractModule {
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder
         .addBinding(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)
         .to(BurnRateTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CODE_ERRORS)
+        .to(ErrorTrackingTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();

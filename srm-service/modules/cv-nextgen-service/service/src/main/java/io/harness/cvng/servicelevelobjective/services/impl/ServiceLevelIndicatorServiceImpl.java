@@ -338,7 +338,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       SLIRecord firstSLIRecord = sliRecordService.getFirstSLIRecord(serviceLevelIndicator.getUuid(), startTime);
       Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(clock.instant());
       if (firstSLIRecord != null) {
-        startTime = startTime.isAfter(firstSLIRecord.getTimestamp()) ? startTime : firstSLIRecord.getTimestamp();
+        startTime = startTime.isBefore(firstSLIRecord.getTimestamp()) ? firstSLIRecord.getTimestamp() : startTime;
       } else {
         startTime = endTime;
       }

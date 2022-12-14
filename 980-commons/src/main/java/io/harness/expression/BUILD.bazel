@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/data/algorithm:module",
+        "//980-commons/src/main/java/io/harness/data/encoding:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler:module",
+        "//980-commons/src/main/java/io/harness/expression/common:module",
+        "//980-commons/src/main/java/io/harness/expression/functors:module",
+        "//980-commons/src/main/java/io/harness/security:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//980-commons/src/main/java/io/harness/text/resolver:module",
+        "//980-commons/src/main/java/software/wings/expression:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_collections_commons_collections",
+        "@maven//:commons_logging_commons_logging",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_apache_commons_commons_jexl3",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_commons_commons_text",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:xml_apis_xml_apis",
+    ],
+)
+
+run_analysis_per_module()

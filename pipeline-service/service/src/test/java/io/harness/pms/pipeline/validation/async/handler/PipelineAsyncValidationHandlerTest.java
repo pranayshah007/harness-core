@@ -70,7 +70,7 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
     doThrow(new NGTemplateResolveExceptionV2(
                 "template failed", null, ValidateTemplateInputsResponseDTO.builder().validYaml(false).build(), "yaml"))
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, true);
+        .resolveTemplateRefsInPipeline(pipelineEntity, true, false);
     pipelineAsyncValidationHandler.run();
     verify(validationService, times(1))
         .updateEvent("abc123", ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());
@@ -87,7 +87,9 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   public void testSuccessfulRun() {
     TemplateMergeResponseDTO templateMergeResponse =
         TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build();
-    doReturn(templateMergeResponse).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(pipelineEntity, true);
+    doReturn(templateMergeResponse)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity, true, false);
     doReturn(new HashSet<>(Arrays.asList("CD", "CI")))
         .when(pipelineTemplateHelper)
         .getTemplatesModuleInfo(templateMergeResponse);

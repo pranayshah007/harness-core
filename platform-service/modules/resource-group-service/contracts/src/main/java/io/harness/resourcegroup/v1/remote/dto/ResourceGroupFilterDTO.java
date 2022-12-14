@@ -10,7 +10,6 @@ package io.harness.resourcegroup.v1.remote.dto;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.resourcegroup.validator.ValidResourceGroupFilter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

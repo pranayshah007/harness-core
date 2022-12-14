@@ -19,6 +19,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.TimeGranularity;
+import io.harness.ccm.currency.Currency;
 import io.harness.rule.Owner;
 
 import com.slack.api.Slack;
@@ -121,7 +122,7 @@ public class SlackMessengerTest extends CategoryTest {
     anomalyList.add(gcpProjectAnomaly);
     anomalyList.add(awsAccountAnomaly);
 
-    List<LayoutBlock> blocks = slackMessageGenerator.generateDailyReport(anomalyList);
+    List<LayoutBlock> blocks = slackMessageGenerator.generateDailyReport(anomalyList, Currency.USD);
 
     WebhookResponse response =
         slack.send("https://hooks.slack.com/services/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",

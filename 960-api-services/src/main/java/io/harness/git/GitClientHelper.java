@@ -58,6 +58,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -549,20 +550,16 @@ public class GitClientHelper {
   }
 
   private static void checkInvalidCharacters(String url) {
-    // Currently adding % as invalid, these characters are making url hang.
-    // We will add more as we find out in the future.
-    String invalidUrlCharacters = "%";
-
     if (url.isEmpty()) {
       throw new InvalidRequestException(format("Url cannot be left blank"));
     }
     if (url.trim().contains(" ")) {
       throw new InvalidRequestException(format("Invalid repo url  %s, It should not contain spaces in between", url));
     }
-    for (char ch : url.toCharArray()) {
-      if (invalidUrlCharacters.contains(String.valueOf(ch))) {
-        throw new InvalidRequestException(format("Invalid repo url  %s, It should not contain %s in between", url, ch));
-      }
+    try {
+      URLDecoder.decode(url, StandardCharsets.UTF_8.name());
+    } catch (Exception e) {
+      throw new InvalidRequestException(format("Url %s is invalid", url));
     }
   }
 

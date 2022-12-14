@@ -41,7 +41,7 @@ public class TerragruntTestUtils {
   public static final String TG_WORKSPACE = "test-workspace";
   public static final String TG_TARGET = "test-target";
   public static final String TG_VAR_FILE_CONTENT = "test-varFileContent";
-  public static final String TG_VAR_FILE_NAME = "test-terragrunt-${UUID}.tgvars";
+  public static final String TG_VAR_FILE_NAME = "test-terragrunt-${UUID}.tfvars";
   public static final String TG_STATE_ID = "test-stateId";
   public static final String TG_TF_PLAN_JSON = "test-tfPlanJson";
   public static final String TG_BACKEND_FILE = "test-backendFile";

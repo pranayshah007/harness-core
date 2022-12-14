@@ -66,6 +66,7 @@ public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity 
   @NotEmpty final String principalIdentifier;
   @NotNull final PrincipalType principalType;
   @Getter(value = AccessLevel.NONE) final Boolean managed;
+  @Getter(value = AccessLevel.NONE) final Boolean internal;
   @Getter(value = AccessLevel.NONE) final Boolean disabled;
 
   public boolean isManaged() {
@@ -82,6 +83,10 @@ public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity 
 
   public Boolean getDisabled() {
     return disabled;
+  }
+
+  public boolean isInternal() {
+    return internal != null && internal;
   }
 
   @Setter @CreatedDate Long createdAt;

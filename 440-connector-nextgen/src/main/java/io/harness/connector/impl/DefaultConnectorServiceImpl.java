@@ -481,6 +481,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
       connectorEntityReferenceHelper.createSetupUsageForSecret(
           connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(
+          connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
       log.info("[SecretManagerCreate] Created secret Manager {}", savedConnectorEntity);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(format("Connector [%s] already exists", connectorEntity.getIdentifier()));
@@ -587,6 +589,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
       Connector updatedConnector = connectorRepository.save(newConnector, connectorRequest, gitChangeType, supplier);
       connectorEntityReferenceHelper.createSetupUsageForSecret(connector, accountIdentifier, true);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(connector, accountIdentifier, true);
       return getResponse(accountIdentifier, updatedConnector.getOrgIdentifier(),
           updatedConnector.getProjectIdentifier(), updatedConnector);
 

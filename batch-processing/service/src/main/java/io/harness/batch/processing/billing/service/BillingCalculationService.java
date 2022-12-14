@@ -14,12 +14,15 @@ import io.harness.batch.processing.pricing.InstancePricingStrategy;
 import io.harness.batch.processing.pricing.InstancePricingStrategyFactory;
 import io.harness.batch.processing.pricing.PricingData;
 import io.harness.batch.processing.pricing.PricingSource;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.ccm.commons.beans.CostAttribution;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.StorageResource;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -30,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,10 +43,13 @@ import org.springframework.stereotype.Service;
 public class BillingCalculationService {
   private final InstancePricingStrategyFactory instancePricingStrategyFactory;
   private final AtomicInteger atomicTripper = new AtomicInteger(0);
+  private final CurrencyPreferenceHelper currencyPreferenceHelper;
 
   @Autowired
-  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory) {
+  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory,
+      CurrencyPreferenceHelper currencyPreferenceHelper) {
     this.instancePricingStrategyFactory = instancePricingStrategyFactory;
+    this.currencyPreferenceHelper = currencyPreferenceHelper;
   }
 
   public String getInstanceClusterIdKey(String instanceId, String clusterId) {
@@ -80,14 +87,49 @@ public class BillingCalculationService {
       }
     }
 
-    io.harness.batch.processing.pricing.PricingData pricingData =
+    PricingData pricingData =
         getPricingData(instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
+
+    pricingData = getUpdatedPricingData(instanceData, pricingData);
 
     return getBillingAmount(instanceData, utilizationData, pricingData, instanceActiveSeconds);
   }
 
-  private io.harness.batch.processing.pricing.PricingData getPricingData(InstanceData instanceData, Instant startTime,
-      Instant endTime, double instanceActiveSeconds, double parentInstanceActiveSecond) {
+  private PricingData getUpdatedPricingData(InstanceData instanceData, PricingData pricingData) {
+    if (ImmutableList.of(PricingSource.PUBLIC_API, PricingSource.HARDCODED).contains(pricingData.getPricingSource())) {
+      Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+          instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD);
+      pricingData = updatePricingData(pricingData, conversionFactor);
+    }
+    return pricingData;
+  }
+
+  @NotNull
+  private CloudServiceProvider getCloudServiceProvider(InstanceData instanceData) {
+    CloudServiceProvider cloudServiceProvider;
+    try {
+      cloudServiceProvider = CloudServiceProvider.valueOf(instanceData.getMetaData().get("cloud_provider"));
+    } catch (Exception exception) {
+      cloudServiceProvider = CloudServiceProvider.AWS;
+    }
+    return cloudServiceProvider;
+  }
+
+  private PricingData updatePricingData(PricingData pricingData, Double conversionFactor) {
+    return PricingData.builder()
+        .networkCost(pricingData.getNetworkCost() * conversionFactor)
+        .pricePerHour(pricingData.getPricePerHour() * conversionFactor)
+        .cpuPricePerHour(pricingData.getCpuPricePerHour() * conversionFactor)
+        .memoryPricePerHour(pricingData.getMemoryPricePerHour() * conversionFactor)
+        .cpuUnit(pricingData.getCpuUnit())
+        .memoryMb(pricingData.getMemoryMb())
+        .storageMb(pricingData.getStorageMb())
+        .pricingSource(pricingData.getPricingSource())
+        .build();
+  }
+
+  private PricingData getPricingData(InstanceData instanceData, Instant startTime, Instant endTime,
+      double instanceActiveSeconds, double parentInstanceActiveSecond) {
     InstancePricingStrategy instancePricingStrategy =
         instancePricingStrategyFactory.getInstancePricingStrategy(instanceData.getInstanceType());
 
@@ -95,8 +137,8 @@ public class BillingCalculationService {
         instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
   }
 
-  BillingData getBillingAmount(InstanceData instanceData, UtilizationData utilizationData,
-      io.harness.batch.processing.pricing.PricingData pricingData, double instanceActiveSeconds) {
+  BillingData getBillingAmount(InstanceData instanceData, UtilizationData utilizationData, PricingData pricingData,
+      double instanceActiveSeconds) {
     Double cpuUnit = 0D;
     Double memoryMb = 0D;
     Double storageMb = 0D;

@@ -422,6 +422,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     long lastHeartBeat = groupDelegates.stream().mapToLong(Delegate::getLastHeartBeat).max().orElse(0);
     AtomicInteger countOfDelegatesConnected = new AtomicInteger();
     AtomicBoolean isDelegateTokenActiveAtGroupLevel = new AtomicBoolean(true);
+    List<Delegate> connectedDelegates = new ArrayList<>();
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
@@ -440,6 +441,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
               isDelegateTokenActiveAtGroupLevel.compareAndSet(!isTokenActive, false);
               if (isDelegateConnected) {
                 delegateId.set(delegate.getUuid());
+                connectedDelegates.add(delegate);
               }
               return DelegateGroupListing.DelegateInner.builder()
                   .uuid(delegate.getUuid())
@@ -460,8 +462,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       connectivityStatus = GROUP_STATUS_CONNECTED;
     }
 
-    String groupVersion =
-        groupDelegates.stream().min(Comparator.comparing(Delegate::getVersion)).map(Delegate::getVersion).orElse(null);
+    String groupVersion = connectedDelegates.stream()
+                              .min(Comparator.comparing(Delegate::getVersion))
+                              .map(Delegate::getVersion)
+                              .orElse(null);
 
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)

@@ -12,8 +12,10 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
+import static io.harness.beans.FeatureName.SPG_FETCH_ARTIFACT_FROM_DB;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
@@ -827,5 +829,47 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
     assertThat(((ArtifactCollectionExecutionData) executionResponse.getStateExecutionData()).getBuildNo()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldFetchArtifactFromDatabaseWhenArtifactStreamNotParameterizedAndFFisON() {
+    CustomArtifactStream artifactStream =
+        CustomArtifactStream.builder()
+            .appId(APP_ID)
+            .uuid(ARTIFACT_STREAM_ID)
+            .scripts(asList(CustomArtifactStream.Script.builder().scriptString("echo hi").build()))
+            .sourceName(ARTIFACT_SOURCE_NAME)
+            .settingId(SETTING_ID)
+            .serviceId(SERVICE_ID)
+            .build();
+    artifactStream.setArtifactStreamParameterized(false);
+
+    Artifact lastCollectedArtifact = Artifact.Builder.anArtifact().build();
+    lastCollectedArtifact.getMetadata().put(ArtifactMetadataKeys.buildNo, "1.1");
+    when(artifactService.getArtifactByBuildNumber(artifactStream, "1.1", false)).thenReturn(lastCollectedArtifact);
+
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(SPG_FETCH_ARTIFACT_FROM_DB), anyString())).thenReturn(true);
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    artifactCollectionState.setBuildNo("1.1");
+    when(artifactCollectionUtils.renderCustomArtifactScriptString(artifactStream))
+        .thenReturn(ArtifactStreamAttributes.builder().build());
+    when(artifactCollectionUtils.fetchCustomDelegateTask(
+             anyString(), any(), any(), eq(false), eq(BuildSourceParameters.BuildSourceRequestType.GET_BUILD), any()))
+        .thenReturn(DelegateTask.builder());
+
+    ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getDelegateTaskId()).isNull();
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(executionResponse.getStateExecutionData())
+        .isNotNull()
+        .isInstanceOf(ArtifactCollectionExecutionData.class);
+    ArtifactCollectionExecutionData executionData =
+        (ArtifactCollectionExecutionData) executionResponse.getStateExecutionData();
+    assertThat(executionData.getBuildNo()).isEqualTo("1.1");
   }
 }

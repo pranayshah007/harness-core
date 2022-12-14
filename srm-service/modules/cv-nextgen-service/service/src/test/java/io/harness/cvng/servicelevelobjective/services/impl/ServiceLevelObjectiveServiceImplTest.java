@@ -306,7 +306,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
@@ -719,7 +719,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "SLO  with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
