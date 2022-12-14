@@ -8,6 +8,7 @@
 package software.wings.beans.artifact;
 
 import software.wings.beans.Service;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 import lombok.Data;

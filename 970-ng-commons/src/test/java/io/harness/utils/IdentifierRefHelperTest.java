@@ -10,6 +10,7 @@ package io.harness.utils;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,6 +20,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -234,5 +236,150 @@ public class IdentifierRefHelperTest extends CategoryTest {
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef("account." + identifier, null, null, null))
         .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("AccountIdentifier cannot be empty for ACCOUNT scope");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProjectLevelParentAccLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("account.templ1", "Account", "Org", "Project", "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testOrgLevelParentAccLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("account.templ1", "Account", "Org", null, "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testAccLevelParentAccLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("account.templ1", "Account", null, null, "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProjectLevelParentOrgLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("org.templ1", "Account", "Org", "Project", "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testOrgLevelParentOrgLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("org.templ1", "Account", "Org", null, "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testAccLevelParentOrgLevelChildScope() {
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRefOrThrowException("org.templ1", "Account", null, null, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The org level template cannot be used at account level");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProjectLevelParentProjectLevelChildScope() {
+    IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", "Org", "Project", "template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testOrgLevelParentProjectLevelChildScope() {
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", "Org", null, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at org level");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testAccLevelParentProjectLevelChildScope() {
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", null, null, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at account level");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testAccLevelParentProjectLevelChildService() {
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRefOrThrowException("templ1", "Account", null, null, "service"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level service cannot be used at account level");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testEmptyIdentifierRefForIsEntityInAllowedScope() {
+    assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRefOrThrowException("", "Account", null, null, "service"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty identifier ref cannot be used for service");
+
+    assertThatThrownBy(
+        () -> IdentifierRefHelper.getIdentifierRefOrThrowException(null, "Account", null, null, "service"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty identifier ref cannot be used for service");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProjectLevelScopeIdentifierRefOrThrowExceptionWithEmptyIdentifiers() {
+    String accountIdentifier = "accountIdentifier";
+    String orgIdentifier = "orgIdentifier";
+    String projectIdentifier = "projectIdentifier";
+    String identifier = "identifier";
+
+    assertThatThrownBy(()
+                           -> IdentifierRefHelper.getIdentifierRefOrThrowException(
+                               identifier, accountIdentifier, orgIdentifier, "", "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at org level");
+
+    assertThatThrownBy(()
+                           -> IdentifierRefHelper.getIdentifierRefOrThrowException(
+                               identifier, accountIdentifier, "", projectIdentifier, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid Identifier Reference used for template");
+
+    assertThatThrownBy(()
+                           -> IdentifierRefHelper.getIdentifierRefOrThrowException(
+                               identifier, "", orgIdentifier, projectIdentifier, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid Identifier Reference used for template");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testOrgLevelScopeIdentifierRefOrThrowExceptionWithEmptyIdentifiers() {
+    String accountIdentifier = "accountIdentifier";
+    String orgIdentifier = "orgIdentifier";
+    String identifier = "identifier";
+
+    assertThatThrownBy(()
+                           -> IdentifierRefHelper.getIdentifierRefOrThrowException(
+                               "org." + identifier, accountIdentifier, "", null, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The org level template cannot be used at account level");
+
+    assertThatThrownBy(()
+                           -> IdentifierRefHelper.getIdentifierRefOrThrowException(
+                               "org." + identifier, "", orgIdentifier, null, "template"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid Identifier Reference used for template");
   }
 }

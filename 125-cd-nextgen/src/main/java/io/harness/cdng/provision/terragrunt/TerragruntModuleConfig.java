@@ -18,9 +18,11 @@ package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.validation.Validator;
 
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
@@ -31,9 +33,15 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
+@RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntModuleConfig")
 public class TerragruntModuleConfig {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 
   @NotNull TerragruntRunType terragruntRunType;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> path;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> path;
+
+  public void validateParams() {
+    Validator.notNullCheck("terragruntRunType cannot be null in moduleConfig", terragruntRunType);
+    Validator.notNullCheck("path cannot be null in moduleConfig", path);
+  }
 }

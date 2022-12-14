@@ -8,6 +8,7 @@
 package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.RAFAEL;
@@ -71,6 +72,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
   private static String approvalInstanceId = "approvalInstanceId";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
@@ -86,6 +88,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
     on(jiraApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(jiraApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     on(jiraApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
@@ -135,6 +138,55 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     jiraApprovalCallback.push(response);
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(kryoSerializer).asInflatedObject(any());
+    jiraApprovalCallback.push(response);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testPushUsingKryoWithoutReference() {
+    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
+    aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
+    Map<String, ResponseData> response = new HashMap<>();
+    response.put("data", BinaryResponseData.builder().usingKryoWithoutReference(true).build());
+    doReturn(JiraTaskNGResponse.builder().issue(new JiraIssueNG()).build())
+        .when(referenceFalseKryoSerializer)
+        .asInflatedObject(any());
+    doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+    doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
+    jiraApprovalCallback.push(response);
+    when(CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(false);
+    jiraApprovalCallback.push(response);
+    JexlCriteriaSpecDTO rejectionCriteria = JexlCriteriaSpecDTO.builder().build();
+    instance.setRejectionCriteria(CriteriaSpecWrapperDTO.builder().criteriaSpecDTO(rejectionCriteria).build());
+    when(CriteriaEvaluator.evaluateCriteria(any(), eq(rejectionCriteria))).thenReturn(true);
+    jiraApprovalCallback.push(response);
+    rejectionCriteria.setExpression("a==a");
+    jiraApprovalCallback.push(response);
+
+    when(CriteriaEvaluator.evaluateCriteria(any(), eq(rejectionCriteria)))
+        .thenThrow(new ApprovalStepNGException("", true));
+    jiraApprovalCallback.push(response);
+
+    // Testing the case when approval criteria not available
+    instance.setApprovalCriteria(null);
+    assertThatThrownBy(() -> jiraApprovalCallback.push(response)).isInstanceOf(HarnessJiraException.class);
+
+    doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    jiraApprovalCallback.push(response);
+    // To test case of error in kryo serialization
+    doReturn(ErrorNotifyResponseData.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    jiraApprovalCallback.push(response);
+    // To throw exception while casting the response to ResponseData and catch the exception
+    doReturn(null).when(referenceFalseKryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
   }
 

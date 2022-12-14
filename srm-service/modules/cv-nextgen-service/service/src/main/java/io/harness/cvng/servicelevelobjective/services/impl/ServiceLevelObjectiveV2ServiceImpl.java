@@ -236,10 +236,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       if (isNotEmpty(referencedCompositeSLOIdentifiers)
           && !sloTarget.equals(simpleServiceLevelObjective.getSloTarget())) {
         throw new InvalidRequestException(String.format(
-            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
+            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
+            String.join(", ", referencedCompositeSLOIdentifiers)));
       }
 
       serviceLevelIndicators = serviceLevelIndicatorService.update(projectParams,
@@ -354,10 +354,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .collect(Collectors.toList());
       if (isNotEmpty(referencedCompositeSLOIdentifiers)) {
         throw new InvalidRequestException(String.format(
-            "Can't delete SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
+            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
+            String.join(", ", referencedCompositeSLOIdentifiers)));
       }
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
@@ -573,7 +573,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = getEntity(projectParams, sloIdentifier);
     if (serviceLevelObjectiveV2 == null) {
       throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s  is not present.",
           sloIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
@@ -708,8 +708,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
     if (sum != 100) {
       throw new InvalidRequestException(String.format(
-          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
-          serviceLevelObjectiveDTO.getIdentifier()));
+          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
+          serviceLevelObjectiveDTO.getIdentifier(), sum));
     }
 
     Set<String> scopedReferencedSimpleSLOs =
@@ -740,7 +740,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
              .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
              .equals(serviceLevelObjective.getSloTarget())) {
       throw new InvalidRequestException(String.format(
-          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
           serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDetailsDTO.getAccountId(),
           serviceLevelObjectiveDTO.getOrgIdentifier(), serviceLevelObjectiveDTO.getProjectIdentifier()));
     }
@@ -750,8 +750,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present", identifier,
-          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
     return serviceLevelObjective;
@@ -762,7 +762,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresent(projectParams, identifier);
     if (serviceLevelObjective.getType() != type) {
       throw new InvalidRequestException(String.format(
-          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not a %s SLO.",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not a %s SLO.",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier(), type));
     }

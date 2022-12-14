@@ -151,17 +151,17 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   }
 
   private void createRoleAssignmentsForOrganization(String userGroupIdentifier, Scope scope) {
-    createRoleAssignment(userGroupIdentifier, scope, true, ORGANIZATION_VIEWER_ROLE,
+    createRoleAssignment(userGroupIdentifier, scope, true, false, ORGANIZATION_VIEWER_ROLE,
         DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
   }
 
   private void createRoleAssignmentForProject(String userGroupIdentifier, Scope scope) {
     createRoleAssignment(
-        userGroupIdentifier, scope, true, PROJECT_VIEWER_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+        userGroupIdentifier, scope, true, false, PROJECT_VIEWER_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
   }
 
-  private void createRoleAssignment(
-      String userGroupIdentifier, Scope scope, boolean managed, String roleIdentifier, String resourceGroupIdentifier) {
+  private void createRoleAssignment(String userGroupIdentifier, Scope scope, boolean managed, boolean internal,
+      String roleIdentifier, String resourceGroupIdentifier) {
     try {
       List<RoleAssignmentDTO> roleAssignmentDTOList = new ArrayList<>();
       roleAssignmentDTOList.add(
@@ -170,6 +170,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
               .roleIdentifier(roleIdentifier)
               .disabled(false)
               .managed(managed)
+              .internal(internal)
               .principal(PrincipalDTO.builder()
                              .identifier(userGroupIdentifier)
                              .scopeLevel(ScopeLevel
@@ -196,12 +197,12 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private void createRoleAssignmentsForAccount(
       String principalIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
     createRoleAssignment(
-        principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+        principalIdentifier, scope, true, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     boolean isAccountBasicFeatureFlagEnabled =
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
     if (!isAccountBasicFeatureFlagEnabled && createAccountViewerRoleBinding) {
-      createRoleAssignment(
-          principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+      createRoleAssignment(principalIdentifier, scope, false, false, ACCOUNT_VIEWER_ROLE,
+          DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     }
   }
 

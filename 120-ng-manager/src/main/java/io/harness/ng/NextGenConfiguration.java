@@ -26,6 +26,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
 import io.harness.gitops.GitopsResourceClientConfig;
 import io.harness.gitsync.GitSdkConfiguration;
+import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
@@ -240,6 +241,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

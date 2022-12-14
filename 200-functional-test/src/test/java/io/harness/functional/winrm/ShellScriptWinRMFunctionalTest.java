@@ -39,9 +39,9 @@ import software.wings.beans.PhaseStepType;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfraWinrm;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.StateType;
 
 import com.google.common.collect.ImmutableMap;

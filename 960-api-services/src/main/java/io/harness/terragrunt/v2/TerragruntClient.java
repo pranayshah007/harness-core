@@ -13,12 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cli.CliResponse;
 import io.harness.logging.LogCallback;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntPlanCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntShowCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntWorkspaceCliRequest;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nonnull;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @OwnedBy(CDP)
 public interface TerragruntClient {
@@ -27,14 +28,20 @@ public interface TerragruntClient {
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
+  CliResponse workspace(@Nonnull TerragruntWorkspaceCliRequest request, @Nonnull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException;
+
+  @Nonnull
   CliResponse refresh(@Nonnull TerragruntCliRequest request, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
-  CliResponse plan(@Nonnull TerragruntCliRequest request, LogOutputStream planOutputStream,
-      @Nonnull LogCallback logCallback) throws InterruptedException, TimeoutException, IOException;
+  CliResponse plan(@Nonnull TerragruntPlanCliRequest request, @Nonnull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
   CliResponse show(@Nonnull TerragruntShowCliRequest request, @Nonnull LogCallback logCallback)
       throws IOException, InterruptedException, TimeoutException;
+
+  @Nonnull String terragruntWorkingDirectory();
 }

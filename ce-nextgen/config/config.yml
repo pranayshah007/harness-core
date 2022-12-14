@@ -253,3 +253,6 @@ governanceConfig:
   packsInEnforcement: 30
   policiesInEnforcement: 30
   policiesInPack: 30
+
+currencyPreferences:
+  historicalUpdateMonthsCount: 6

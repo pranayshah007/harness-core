@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
+import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -35,6 +36,7 @@ import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.yaml.YamlConstants.CONN_STRINGS_FILE;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
+import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import static java.lang.String.format;
@@ -421,6 +423,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     ensureEnvironmentSafeToDelete(environment);
     cvConfigurationService.deleteConfigurationsForEnvironment(appId, envId);
     delete(environment);
+    if (featureFlagService.isEnabled(PURGE_DANGLING_APP_ENV_REFS, environment.getAccountId())) {
+      usageRestrictionsService.purgeDanglingAppEnvReferences(environment.getAccountId(), ALL);
+    }
   }
 
   @Override

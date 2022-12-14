@@ -21,7 +21,8 @@ public enum ChangeCategory {
   //@JsonProperty added for swagger as it doesnt understand @JsonValue
   @JsonProperty("Deployment") DEPLOYMENT("Deployment"),
   @JsonProperty("Infrastructure") INFRASTRUCTURE("Infrastructure"),
-  @JsonProperty("Alert") ALERTS("Alert");
+  @JsonProperty("Alert") ALERTS("Alert"),
+  @JsonProperty("FeatureFlag") FEATURE_FLAG("FeatureFlag");
 
   private static Map<String, ChangeCategory> STRING_TO_CHANGE_CATEGORY_MAP;
 

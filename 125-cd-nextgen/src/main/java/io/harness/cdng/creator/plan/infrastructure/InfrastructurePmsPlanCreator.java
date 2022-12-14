@@ -345,7 +345,7 @@ public class InfrastructurePmsPlanCreator {
     return actualInfraConfig.getInfrastructureDefinition().getProvisioner() != null;
   }
 
-  private PlanNode getProvisionerPlanNode(
+  public PlanNode getProvisionerPlanNode(
       YamlField provisionerYamlField, String childNodeId, String infraStepNodeId, KryoSerializer kryoSerializer) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Provisioner Section").build();

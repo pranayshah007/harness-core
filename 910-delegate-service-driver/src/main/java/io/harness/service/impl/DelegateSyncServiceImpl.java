@@ -125,7 +125,10 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
     }
 
     if (disableDeserialization) {
-      return (T) BinaryResponseData.builder().data(taskResponse.getResponseData()).build();
+      return (T) BinaryResponseData.builder()
+          .data(taskResponse.getResponseData())
+          .usingKryoWithoutReference(taskResponse.isUsingKryoWithoutReference())
+          .build();
     }
     // throw exception here
     Object response = taskResponse.isUsingKryoWithoutReference()

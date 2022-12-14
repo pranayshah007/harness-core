@@ -65,7 +65,7 @@ public class PodCountComputationServiceImpl {
 
   public boolean computePodCountForNodes(String accountId, long startTime, long endTime, NodePodId nodePodId) {
     List<InstanceLifecycleInfo> instanceLifecycleInfoList =
-        instanceDataService.fetchInstanceDataForGivenInstances(nodePodId.getPodId());
+        instanceDataService.fetchInstanceDataForGivenInstances(accountId, nodePodId.getPodId());
     Map<String, PodActivityInfo> podIdToActivityInfo = getPodActivityInfo(instanceLifecycleInfoList, startTime);
     return storePodCountForNode(accountId, startTime, endTime, nodePodId.getNodeId(), nodePodId.getClusterId(),
         nodePodId.getPodId(), podIdToActivityInfo);

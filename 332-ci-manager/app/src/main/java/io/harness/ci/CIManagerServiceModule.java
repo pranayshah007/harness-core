@@ -234,6 +234,13 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setNameFormat("ci-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("pluginMetadataPublishExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("plugin-metadata-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
     registerEventListeners();
     try {

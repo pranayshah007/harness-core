@@ -38,12 +38,12 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.AmiArtifactStream;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream.Action;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import org.junit.Before;

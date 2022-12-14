@@ -2118,6 +2118,13 @@
 543360:io.harness.delegate.task.gcp.response.GcpBucketDetails
 543361:io.harness.delegate.beans.ccm.K8sClusterInfo
 543362:io.harness.delegate.beans.connector.k8Connector.K8sServiceAccountInfoResponse
+543363:io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse
+543364:io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest
+543365:io.harness.audit.streaming.dtos.AuditBatchDTO
+543366:io.harness.audit.streaming.dtos.AuditRecordDTO
+543367:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchStatus
+543368:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchState
+543369:io.harness.audit.streaming.dtos.PutObjectResultResponse
 543401:io.harness.delegate.task.pcf.response.CfDeployCommandResponse
 543402:io.harness.delegate.task.pcf.response.CfInfraMappingDataResponse
 543403:io.harness.delegate.task.pcf.response.CfInstanceSyncResponse
@@ -2352,6 +2359,9 @@
 573565:io.harness.delegate.task.ecs.EcsS3FetchFileConfig
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
+573568:io.harness.delegate.beans.terragrunt.request.TerragruntCommandType
+573571:io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest
+573572:io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2378,6 +2388,7 @@
 643308:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
+673567:java.util.concurrent.ConcurrentHashMap
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -2481,6 +2492,7 @@
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO

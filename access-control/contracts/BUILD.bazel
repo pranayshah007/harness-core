@@ -18,6 +18,7 @@ java_library(
         "//970-ng-commons:module",
         "//999-annotations:module",
         "//access-control/contracts/openapi/v1:access-control-server-spec-module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto:module",
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",

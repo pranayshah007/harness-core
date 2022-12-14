@@ -208,8 +208,6 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.LastDeployedHelmChartInformation;
 import software.wings.beans.appmanifest.LastDeployedHelmChartInformation.LastDeployedHelmChartInformationBuilder;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
@@ -236,6 +234,8 @@ import software.wings.beans.trigger.Trigger.TriggerKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.impl.ArtifactStreamServiceImpl;
@@ -2851,7 +2851,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (isArtifactPresentInStream(requiredArtifact, serviceId, lastWorkflowExecution.getAppId())) {
       LastDeployedArtifactInformationBuilder lastDeployedArtifactInfoBuilder =
           LastDeployedArtifactInformation.builder()
-              .artifact(requiredArtifact.get())
+              .artifact(requiredArtifact.get().toDTO())
               .executionStartTime(lastWorkflowExecution.getStartTs());
       if (lastWorkflowExecution.getPipelineExecutionId() != null) {
         PipelineSummary pipelineSummary = lastWorkflowExecution.getPipelineSummary();

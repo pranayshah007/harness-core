@@ -10,6 +10,7 @@ package io.harness.cvng.core.resources;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
@@ -27,10 +28,12 @@ import io.swagger.annotations.ApiParam;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import retrofit2.http.Body;
 
 @Api("debug")
 @Path("debug")
@@ -76,5 +79,14 @@ public class DebugResource {
   updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.retryDataCollectionTask(projectParams, identifier));
+  }
+
+  @POST
+  @Timed
+  @Path("change-event/register")
+  @ApiOperation(value = "register a Change event for debugging", nickname = "registerChangeEventDebug", hidden = true)
+  public RestResponse<Boolean> registerChangeEvent(
+      @NotNull @BeanParam ProjectParams projectParams, @NotNull @Body ChangeEventDTO changeEventDTO) {
+    return new RestResponse<>(debugService.registerInternalChangeEvent(projectParams, changeEventDTO));
   }
 }

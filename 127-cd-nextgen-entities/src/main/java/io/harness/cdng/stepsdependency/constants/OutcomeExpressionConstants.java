@@ -57,5 +57,7 @@ public class OutcomeExpressionConstants {
   public final String INSTANCES = "instances";
   public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
   public final String FREEZE_OUTCOME = "freezeOutcome";
-  public final String ELASTIGROUP_SETUP_OUTCOME = "elastgroupSetupOutcome";
+  public final String ELASTIGROUP_SETUP_OUTCOME = "elastigroupSetupOutcome";
+  public final String ELASTIGROUP_PRE_FETCH_OUTCOME = "elastigroupPreFetchOutcome";
+  public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
 }

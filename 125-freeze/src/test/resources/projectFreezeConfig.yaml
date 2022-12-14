@@ -7,11 +7,11 @@ freeze:
   status: "Enabled"
   windows:
     - timeZone: "America/Los_Angeles"
-      startTime: "2022-09-29 04:00 PM"
-      endTime: "2022-10-29 08:10 PM"
+      startTime: "2022-11-03 10:48 PM"
+      endTime: "2022-12-29 08:00 PM"
       recurrence:
         spec:
-          until: "2022-09-29T20:00"
+          until: "2023-09-29 06:00 PM"
         type: "Daily"
   entityConfigs:
     - name: "rule1"
@@ -61,7 +61,6 @@ freeze:
       identifier: Rule_2
       events:
         - type: DeploymentRejectedDueToFreeze
-        - type: TriggerInvocationRejectedDueToFreeze
       notificationMethod:
         type: PagerDuty
         spec:

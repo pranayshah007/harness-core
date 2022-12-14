@@ -14,8 +14,8 @@ import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.featureflagfilter.TriggerCatalogFilter;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,7 +36,7 @@ public class TriggerCatalogHelper {
         .map(entry
             -> TriggerCatalogItem.builder()
                    .category(entry.getKey())
-                   .triggerCatalogType(new HashSet<>(entry.getValue()))
+                   .triggerCatalogType(new ArrayList<>(entry.getValue()))
                    .build())
         .collect(Collectors.toList());
   }

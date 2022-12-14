@@ -8,10 +8,13 @@
 package io.harness.cdng.usage.impl;
 
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
+import static io.harness.rule.OwnerRule.IVAN;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -22,17 +25,30 @@ import io.harness.category.element.UnitTests;
 import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
+import io.harness.cdlicense.exception.CgLicenseUsageException;
+import io.harness.cdng.usage.CDLicenseUsageDAL;
+import io.harness.cdng.usage.pojos.ActiveService;
+import io.harness.cdng.usage.pojos.ActiveServiceBase;
+import io.harness.cdng.usage.pojos.ActiveServiceResponse;
 import io.harness.licensing.usage.beans.ReferenceDTO;
+import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
 import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
+import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
+import io.harness.licensing.usage.params.PageableUsageRequestParams;
+import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
+import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.Services;
 
 import com.google.inject.Inject;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
@@ -42,11 +58,12 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CDLicenseUsageImplTest extends CategoryTest {
   @Mock private TimeScaleDAL timeScaleDAL;
-  @Mock private CdLicenseUsageUtils utils;
+  @Mock private CDLicenseUsageDAL utils;
   @InjectMocks @Inject private CDLicenseUsageImpl cdLicenseUsage;
 
   private static final String accountIdentifier = "ACCOUNT_ID";
@@ -56,6 +73,8 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   private static final String serviceIdentifier2 = "SERVICE_2";
   private static final String serviceName = "SERVICE_NAME";
   private static final String serviceName2 = "SERVICE_NAME_2";
+  public static final String orgName = "ORG_NAME";
+  public static final String projectName = "PROJECT_NAME";
   private static final long DAYS_30_IN_MILLIS = 2592000000L;
 
   @Before
@@ -531,5 +550,93 @@ public class CDLicenseUsageImplTest extends CategoryTest {
                                                 .findFirst();
     assertThat(deletedService.get()).isNotNull();
     assertThat(deletedService.get().getName()).isEqualTo(StringUtils.EMPTY);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListLicenseUsage() {
+    PageableUsageRequestParams usageRequestParam =
+        DefaultPageableUsageRequestParams.builder()
+            .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
+            .filterParams(
+                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .build();
+    long currentTimeMillis = System.currentTimeMillis();
+    when(utils.fetchActiveServices(any()))
+        .thenReturn(ActiveServiceResponse.<List<ActiveServiceBase>>builder()
+                        .activeServiceItems(Collections.singletonList(ActiveServiceBase.builder()
+                                                                          .identifier(serviceIdentifier)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .instanceCount(2)
+                                                                          .lastDeployed(currentTimeMillis)
+                                                                          .build()))
+                        .totalCountOfItems(1)
+                        .build());
+    when(utils.fetchActiveServicesNameOrgAndProjectName(eq(accountIdentifier), any()))
+        .thenReturn(Collections.singletonList(ActiveService.builder()
+                                                  .identifier(serviceIdentifier)
+                                                  .name(serviceName)
+                                                  .orgName(orgName)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectName(projectName)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .lastDeployed(currentTimeMillis)
+                                                  .instanceCount(1)
+                                                  .build()));
+    Page<ActiveServiceDTO> activeServiceDTOS = cdLicenseUsage.listLicenseUsage(
+        accountIdentifier, ModuleType.CD, System.currentTimeMillis(), usageRequestParam);
+
+    assertThat(activeServiceDTOS.getTotalElements()).isEqualTo(1);
+    assertThat(activeServiceDTOS.getTotalPages()).isEqualTo(1);
+    List<ActiveServiceDTO> content = activeServiceDTOS.getContent();
+    assertThat(content.size()).isEqualTo(1);
+    ActiveServiceDTO activeServiceDTO = content.get(0);
+    assertThat(activeServiceDTO.getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(activeServiceDTO.getName()).isEqualTo(serviceName);
+    assertThat(activeServiceDTO.getOrgName()).isEqualTo(orgName);
+    assertThat(activeServiceDTO.getProjectName()).isEqualTo(projectName);
+    assertThat(activeServiceDTO.getInstanceCount()).isEqualTo(1);
+    assertThat(activeServiceDTO.getLastDeployed()).isEqualTo(currentTimeMillis);
+    assertThat(activeServiceDTO.getLicensesConsumed()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListLicenseUsageWithInvalidRequest() {
+    PageableUsageRequestParams usageRequestParam =
+        DefaultPageableUsageRequestParams.builder()
+            .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
+            .filterParams(
+                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .build();
+
+    when(utils.fetchActiveServices(any()))
+        .thenThrow(new CgLicenseUsageException("Failed to fetch active services", new SQLException("Invalid query")));
+
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.listLicenseUsage(
+                               orgIdentifier, ModuleType.CD, System.currentTimeMillis(), usageRequestParam))
+        .hasMessage("Failed to fetch active services")
+        .isInstanceOf(CgLicenseUsageException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListLicenseUsageInvalidAccountArgument() {
+    PageableUsageRequestParams usageRequestParam =
+        DefaultPageableUsageRequestParams.builder()
+            .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
+            .filterParams(
+                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .build();
+
+    assertThatThrownBy(
+        () -> cdLicenseUsage.listLicenseUsage(null, ModuleType.CD, System.currentTimeMillis(), usageRequestParam))
+        .hasMessage("Account Identifier cannot be null or empty")
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

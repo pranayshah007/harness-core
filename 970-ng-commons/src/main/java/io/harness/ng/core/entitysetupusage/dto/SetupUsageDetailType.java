@@ -26,6 +26,8 @@ public enum SetupUsageDetailType {
   TEMPLATE_REFERRED_BY_PIPELINE,
   FILES_REFERED_BY_PIPELINE,
   ENTITY_REFERRED_BY_INFRA,
+
+  TEMPLATE_REFERRED_BY_CONNECTOR,
   PIPELINE_REFERED_BY_PIPELINES;
 
   public static boolean isReferredByPipeline(String setupUsageDetailType) {

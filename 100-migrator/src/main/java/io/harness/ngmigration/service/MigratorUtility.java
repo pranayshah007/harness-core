@@ -63,6 +63,8 @@ public class MigratorUtility {
   private static final int SECRET = 5;
   private static final int TEMPLATE = 7;
   private static final int CONNECTOR = 10;
+  private static final int CONTAINER_TASK = 13;
+  private static final int ECS_SERVICE_SPEC = 14;
   private static final int MANIFEST = 15;
   private static final int CONFIG_FILE = 16;
   private static final int SERVICE = 20;
@@ -78,6 +80,8 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
           .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
+          .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
+          .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
           .put(NGMigrationEntityType.MANIFEST, MANIFEST)
           .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
           .put(NGMigrationEntityType.SERVICE, SERVICE)
@@ -182,6 +186,17 @@ public class MigratorUtility {
       return Scope.PROJECT;
     }
     return Scope.ORG;
+  }
+
+  public static SecretRefData getSecretRefDefaultNull(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    if (StringUtils.isBlank(secretId)) {
+      return null;
+    }
+    CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(NGMigrationEntityType.SECRET).build();
+    if (!migratedEntities.containsKey(secretEntityId)) {
+      return null;
+    }
+    return getSecretRef(migratedEntities, secretId);
   }
 
   public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
