@@ -77,6 +77,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     if (!infraAccCrossArnMap.isEmpty()) {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
         log.info("Running job for aws accountId: {}", infraAccCrossArn.getKey());
+        log.info("Connector: {}", infraAccCrossArn.getValue());
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
         // fetching the aws ec2 recommendations
         EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(

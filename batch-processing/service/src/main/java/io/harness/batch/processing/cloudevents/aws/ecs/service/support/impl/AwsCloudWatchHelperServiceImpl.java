@@ -43,12 +43,14 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
                                                  .withStartTime(request.getStartTime())
                                                  .withEndTime(request.getEndTime())
                                                  .withMetricDataQueries(request.getMetricDataQueries());
+    log.info("metricDataRequest: {}", metricDataRequest);
     List<MetricDataResult> metricDataResults = new ArrayList<>();
     String nextToken = null;
     do {
       metricDataRequest.withNextToken(nextToken);
       GetMetricDataResult metricDataResult =
           getMetricData(metricDataRequest, request.getAwsCrossAccountAttributes(), request.getRegion());
+      log.info("metricDataResult: {}", metricDataResult);
       metricDataResults.addAll(metricDataResult.getMetricDataResults());
       nextToken = metricDataResult.getNextToken();
     } while (nextToken != null);
@@ -60,9 +62,14 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
 
   private GetMetricDataResult getMetricData(
       GetMetricDataRequest request, AwsCrossAccountAttributes awsCrossAccountAttributes, String region) {
+    log.info("request: {}, awsCrossAccountAttributes: {}, region: {}", request, awsCrossAccountAttributes, region);
     try (CloseableAmazonWebServiceClient<AmazonCloudWatchClient> closeableAmazonCloudWatchClient =
              new CloseableAmazonWebServiceClient(getAwsCloudWatchClient(region, awsCrossAccountAttributes))) {
-      return closeableAmazonCloudWatchClient.getClient().getMetricData(request);
+      AmazonCloudWatchClient client = closeableAmazonCloudWatchClient.getClient();
+      log.info("amazonCloudWatchClient: {}", client);
+      GetMetricDataResult result = client.getMetricData(request);
+      log.info("getMetricDat.GetMetricDataResult: {}", result);
+      return result;
     } catch (Exception ex) {
       log.error("Exception getMetricData ", ex);
     }
