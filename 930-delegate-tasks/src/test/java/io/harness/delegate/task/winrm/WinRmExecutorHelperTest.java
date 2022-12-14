@@ -77,7 +77,8 @@ public class WinRmExecutorHelperTest extends CategoryTest {
         + "`$encoded = get-content `$encodedScriptFile`n"
         + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
         + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
-        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n\\\" ) }");
+        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}\\\" ) }");
   }
 
   @Test

@@ -394,8 +394,6 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     exitCode = session.executeScript(executeScript, outputWriter, errorWriter);
 
     WinRmExecutorHelper.cleanupFiles(
-        session, encodedScriptFilePath, powershell, disableCommandEncoding, config.getCommandParameters());
-    WinRmExecutorHelper.cleanupFiles(
         session, executablePSFilePath, powershell, disableCommandEncoding, config.getCommandParameters());
     return exitCode;
   }

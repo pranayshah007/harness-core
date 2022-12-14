@@ -120,6 +120,7 @@ public class WinRmExecutorHelper {
         + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
         + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
         + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}"
         + "\\\" ) }";
   }
 
@@ -231,12 +232,12 @@ public class WinRmExecutorHelper {
   public static String getEncodedScriptFile(String workingDir, String suffix) {
     return isEmpty(workingDir)
         ? WINDOWS_TEMPFILE_LOCATION + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10)
-        : workingDir + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + suffix;
+        : workingDir + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10);
   }
 
   public static String executablePSFilePath(String workingDir, String suffix) {
     return isEmpty(workingDir)
         ? WINDOWS_TEMPFILE_LOCATION + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10) + ".ps1"
-        : workingDir + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + suffix + ".ps1";
+        : workingDir + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10) + ".ps1";
   }
 }
