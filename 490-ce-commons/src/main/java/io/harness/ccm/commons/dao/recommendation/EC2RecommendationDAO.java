@@ -85,6 +85,7 @@ public class EC2RecommendationDAO {
         hPersistence.createUpdateOperations(EC2Recommendation.class)
             .set(EC2RecommendationKeys.accountId, ec2Recommendation.getAccountId())
             .set(EC2RecommendationKeys.awsAccountId, ec2Recommendation.getAwsAccountId())
+            .set(EC2RecommendationKeys.awsAccountName, ec2Recommendation.getAwsAccountName())
             .set(EC2RecommendationKeys.instanceId, ec2Recommendation.getInstanceId())
             .set(EC2RecommendationKeys.vcpu, ec2Recommendation.getVcpu())
             .set(EC2RecommendationKeys.instanceName, ec2Recommendation.getInstanceName())

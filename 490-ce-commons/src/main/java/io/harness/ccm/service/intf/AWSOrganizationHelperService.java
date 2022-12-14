@@ -16,10 +16,13 @@ import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.model.Account;
 import com.amazonaws.services.organizations.model.Tag;
+import software.wings.beans.AwsCrossAccountAttributes;
+
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CE)
 public interface AWSOrganizationHelperService {
+  public Account getAWSAccount(AwsCrossAccountAttributes awsCrossAccountAttributes, String awsAccountId, String awsAccessKey, String awsSecretKey);
   List<CECloudAccount> getAWSAccounts(String accountId, String connectorId, CEAwsConnectorDTO ceAwsConnectorDTO,
       String awsAccessKey, String awsSecretKey);
   List<Tag> listAwsAccountTags(AWSOrganizationsClient awsOrganizationsClient, String awsAccountId);

@@ -62,6 +62,7 @@ public final class EC2Recommendation
 
   @NotEmpty String accountId;
   @NotEmpty String awsAccountId;
+  String awsAccountName;
   @NotEmpty String instanceId;
   String rightsizingType;
   String instanceName;

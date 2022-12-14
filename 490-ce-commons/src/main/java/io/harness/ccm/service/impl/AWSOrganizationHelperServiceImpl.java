@@ -7,6 +7,7 @@
 
 package io.harness.ccm.service.impl;
 
+import com.amazonaws.services.organizations.model.DescribeAccountRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClientImpl;
@@ -34,6 +35,12 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CE)
 public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperService {
   @Inject AwsClientImpl awsClient;
+
+  public Account getAWSAccount(AwsCrossAccountAttributes awsCrossAccountAttributes, String awsAccountId, String awsAccessKey, String awsSecretKey) {
+    AWSOrganizationsClient client = awsClient.getAWSOrganizationsClient(
+        awsCrossAccountAttributes.getCrossAccountRoleArn(), awsCrossAccountAttributes.getExternalId(), awsAccessKey, awsSecretKey);
+    return client.describeAccount(new DescribeAccountRequest().withAccountId(awsAccountId)).getAccount();
+  }
 
   @Override
   public List<CECloudAccount> getAWSAccounts(String accountId, String connectorId, CEAwsConnectorDTO ceAwsConnectorDTO,

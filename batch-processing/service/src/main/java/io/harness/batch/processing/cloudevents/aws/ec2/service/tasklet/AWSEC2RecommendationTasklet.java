@@ -9,6 +9,7 @@ package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 
+import com.amazonaws.services.organizations.model.Account;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -22,10 +23,12 @@ import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2Recom
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.Ec2UtilzationData;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.MetricValue;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.aws.CEAWSConfigHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
+import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -61,6 +64,8 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
   @Autowired private CEAWSConfigHelper ceawsConfigHelper;
+  @Autowired private BatchMainConfig batchConfig;
+  @Autowired private AWSOrganizationHelperService awsOrganizationHelperService;
 
   private static final String MODIFY = "Modify";
 
@@ -70,11 +75,14 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
+    String awsAccessKey = batchConfig.getAwsS3SyncConfig().getAwsAccessKey();
+    String awsSecretKey = batchConfig.getAwsS3SyncConfig().getAwsSecretKey();
     // call aws get-metric-data to get the cpu & memory utilisation data
     Map<String, AwsCrossAccountAttributes> infraAccCrossArnMap = ceawsConfigHelper.getCrossAccountAttributes(accountId);
 
     if (!infraAccCrossArnMap.isEmpty()) {
       for (Map.Entry<String, AwsCrossAccountAttributes> infraAccCrossArn : infraAccCrossArnMap.entrySet()) {
+        Account awsAccount = awsOrganizationHelperService.getAWSAccount(infraAccCrossArn.getValue(), infraAccCrossArn.getKey(), awsAccessKey, awsSecretKey);
         Instant now = Instant.now().truncatedTo(ChronoUnit.DAYS);
         // fetching the aws ec2 recommendations
         EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
@@ -109,6 +117,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                 recommendation = buildRecommendationForTerminationType(instanceLevelRecommendation.getValue());
               }
               recommendation.setAccountId(accountId);
+              recommendation.setAwsAccountName(awsAccount.getName());
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
