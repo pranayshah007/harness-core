@@ -123,7 +123,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineCRUDResult validateAndCreatePipeline(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails) {
-    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createPipeline(pipelineEntity);
@@ -150,7 +149,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private PipelineCRUDResult createPipeline(PipelineEntity pipelineEntity) {
-    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     PipelineEntity createdEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -181,7 +179,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse validateAndClonePipeline(ClonePipelineDTO clonePipelineDTO, String accountId) {
-    checkAndThrowIfLimitReached(accountId);
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
@@ -510,7 +507,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
-    checkAndThrowIfLimitReached(accountId);
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
@@ -681,16 +677,5 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
     return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
-  }
-
-  private void checkAndThrowIfLimitReached(String accountId) {
-    long maxLimit = pipelineSettingsService.getMaxPipelineCreationCount(accountId);
-    if (maxLimit == Long.MAX_VALUE) {
-      return;
-    }
-    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId) >= maxLimit) {
-      throw new InvalidRequestException(
-          "You have created maximum number of pipelines, please upgrade your plan if you want to create more pipelines");
-    }
   }
 }

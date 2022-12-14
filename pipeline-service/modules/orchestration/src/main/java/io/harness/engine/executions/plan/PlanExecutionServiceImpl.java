@@ -269,15 +269,11 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public long countRunningExecutionsForGivenPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier) {
+    // Uses - accountId_pipelineId_status_idx
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
                             .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
                             .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
