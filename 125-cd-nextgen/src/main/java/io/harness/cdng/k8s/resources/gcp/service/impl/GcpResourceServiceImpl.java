@@ -14,16 +14,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.gcp.GcpHelperService;
 import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
+import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
+import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
+import io.harness.delegate.task.gcp.request.GcpListProjectsRequest;
 import io.harness.delegate.task.gcp.response.GcpClusterListTaskResponse;
+import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 
 @Singleton
@@ -53,5 +58,31 @@ public class GcpResourceServiceImpl implements GcpResourceService {
     GcpClusterListTaskResponse gcpClusterListTaskResponse =
         gcpHelperService.executeSyncTask(baseNGAccess, request, GcpTaskType.LIST_CLUSTERS, "list GCP clusters");
     return GcpResponseDTO.builder().clusterNames(gcpClusterListTaskResponse.getClusterNames()).build();
+  }
+
+  @Override
+  public List<GcpProjectDetails> getProjectNames(
+      IdentifierRef gcpConnectorRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    GcpConnectorDTO connector = gcpHelperService.getConnector(gcpConnectorRef);
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier(gcpConnectorRef.getAccountIdentifier())
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .build();
+
+    List<EncryptedDataDetail> encryptionDetails = gcpHelperService.getEncryptionDetails(connector, baseNGAccess);
+    GcpListProjectsRequest request =
+        GcpListProjectsRequest.builder()
+            .gcpManualDetailsDTO(gcpHelperService.getManualDetailsDTO(connector))
+            .useDelegate(INHERIT_FROM_DELEGATE == connector.getCredential().getGcpCredentialType())
+            .delegateSelectors(connector.getDelegateSelectors())
+            .encryptionDetails(encryptionDetails)
+            .build();
+    List<GcpProjectDetails> gcpProjectDetails = new ArrayList<>();
+    GcpProjectListTaskResponse gcpProjectListTaskResponse =
+        gcpHelperService.executeSyncTask(baseNGAccess, request, GcpTaskType.LIST_PROJECTS, "list GCP projects");
+    gcpProjectListTaskResponse.getProjects().forEach(
+        (key, value) -> gcpProjectDetails.add(GcpProjectDetails.builder().id(key).name(value).build()));
+    return gcpProjectDetails;
   }
 }

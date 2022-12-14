@@ -31,6 +31,7 @@ import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.cloudresourcemanager.CloudResourceManager;
 import com.google.api.services.compute.Compute;
 import com.google.api.services.container.Container;
 import com.google.api.services.container.ContainerScopes;
@@ -111,6 +112,32 @@ public class GcpHelperService {
       HttpTransport transport = gcpHttpTransportHelperService.checkIfUseProxyAndGetHttpTransport();
       GoogleCredential credential = getGoogleCredential(serviceAccountKeyFileContent, isUseDelegate);
       return new Storage.Builder(transport, jsonFactory, credential).setApplicationName("Harness").build();
+    } catch (GeneralSecurityException e) {
+      log.error("Security exception getting Google storage service", e);
+      throw new WingsException(INVALID_CLOUD_PROVIDER, USER)
+          .addParam("message", "Invalid Google Cloud Platform credentials.");
+    } catch (IOException e) {
+      log.error("Error getting Google storage service", e);
+      throw new WingsException(INVALID_CLOUD_PROVIDER, USER)
+          .addParam("message", "Invalid Google Cloud Platform credentials.");
+    }
+  }
+
+  /**
+   * Gets a CloudResourceManager
+   *
+   * @param serviceAccountKeyFileContent
+   * @param isUseDelegate
+   *
+   * @return the gcp cloud resource manager
+   */
+
+  public CloudResourceManager getCloudResourceManager(char[] serviceAccountKeyFileContent, boolean isUseDelegate) {
+    try {
+      JacksonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+      HttpTransport transport = gcpHttpTransportHelperService.checkIfUseProxyAndGetHttpTransport();
+      GoogleCredential credential = getGoogleCredential(serviceAccountKeyFileContent, isUseDelegate);
+      return new CloudResourceManager.Builder(transport, jsonFactory, credential).setApplicationName("Harness").build();
     } catch (GeneralSecurityException e) {
       log.error("Security exception getting Google storage service", e);
       throw new WingsException(INVALID_CLOUD_PROVIDER, USER)

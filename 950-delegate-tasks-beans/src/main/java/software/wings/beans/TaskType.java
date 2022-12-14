@@ -410,7 +410,8 @@ public enum TaskType {
   VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
   ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task"),
-  SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task");
+  SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task"),
+  GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Storage Artifact Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
