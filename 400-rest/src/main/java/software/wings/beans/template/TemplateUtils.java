@@ -17,7 +17,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Variable;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
 

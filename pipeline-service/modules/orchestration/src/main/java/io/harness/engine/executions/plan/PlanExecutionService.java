@@ -24,7 +24,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status);
-
+  PlanExecution markPlanExecutionErrored(String planExecutionId);
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops);
 
   PlanExecution updateStatusForceful(

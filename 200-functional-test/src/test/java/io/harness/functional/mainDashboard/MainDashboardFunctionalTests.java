@@ -31,10 +31,10 @@ import software.wings.beans.Application;
 import software.wings.beans.Environment;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.stats.DeploymentStatistics;
 import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats;
 import software.wings.beans.stats.ServiceInstanceStatistics;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;

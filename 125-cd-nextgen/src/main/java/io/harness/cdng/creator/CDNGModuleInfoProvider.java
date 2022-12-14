@@ -190,6 +190,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
             .infrastructureType(infrastructureOutcome.getKind())
             .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
             .infrastructureName(infrastructureOutcome.getInfraName());
+        if (EmptyPredicate.isNotEmpty(infrastructureOutcome.getEnvironment().getEnvGroupRef())) {
+          cdPipelineModuleInfoBuilder.envGroupIdentifier(infrastructureOutcome.getEnvironment().getEnvGroupRef());
+        }
       }
     } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
@@ -266,6 +269,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                              .type(outcome.getEnvironment().getType().name())
                                                              .infrastructureIdentifier(outcome.getInfraIdentifier())
                                                              .infrastructureName(outcome.getInfraName())
+                                                             .envGroupId(outcome.getEnvironment().getEnvGroupRef())
+                                                             .envGroupName(outcome.getEnvironment().getEnvGroupName())
                                                              .build());
         }
       });

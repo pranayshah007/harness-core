@@ -734,6 +734,40 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgCanaryDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "instanceSelection"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceSelection": {
+              "$ref": "#/definitions/Capacity"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgConfigurationManifest": {
       "allOf": [
         {
@@ -747,6 +781,33 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -1727,6 +1788,10 @@
       "type": "object",
       "discriminator": "type",
       "properties": {
+        "instances": {
+          "type": "integer",
+          "format": "int32"
+        },
         "type": {
           "type": "string"
         }
@@ -4333,6 +4398,9 @@
             }
           ]
         },
+        "provisioner": {
+          "$ref": "#/definitions/ExecutionElementConfig"
+        },
         "serviceOverrideInputs": {
           "oneOf": [
             {
@@ -5366,7 +5434,8 @@
             "Uninstall",
             "List",
             "Add",
-            "Update"
+            "Update",
+            "Version"
           ]
         },
         "flag": {
@@ -5665,12 +5734,29 @@
             "CustomDeployment",
             "ECS",
             "Elastigroup",
-            "TAS"
+            "TAS",
+            "Asg"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Asg"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgInfrastructure"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -10617,6 +10703,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AsgCanaryDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgCanaryDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AzureARMRollback"
               }
             }
@@ -12628,11 +12730,6 @@
     "TerragruntBackendConfigSpec": {
       "type": "object",
       "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerragruntConfigFilesWrapper": {
@@ -12751,6 +12848,7 @@
     "TerragruntModuleConfig": {
       "type": "object",
       "required": [
+        "path",
         "terragruntRunType"
       ],
       "properties": {

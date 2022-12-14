@@ -17,6 +17,8 @@ import io.harness.rule.OwnerWatcherRule;
 import io.harness.rule.RepeatRule;
 import io.harness.rule.ThreadRule;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -70,5 +72,9 @@ public class CategoryTest {
     // allocate impossible to trigger heap dump
     long[] block = new long[MAX_VALUE];
     log.info("{}", block.length);
+  }
+
+  protected String readFileIntoUTF8String(String filePath) throws IOException {
+    return Resources.toString(this.getClass().getClassLoader().getResource(filePath), Charsets.UTF_8);
   }
 }

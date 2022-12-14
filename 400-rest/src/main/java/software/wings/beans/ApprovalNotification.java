@@ -20,8 +20,8 @@ import static java.util.Arrays.asList;
 import io.harness.beans.EmbeddedUser;
 
 import software.wings.beans.NotificationAction.NotificationActionType;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact.Status;
 import software.wings.service.intfc.ArtifactService;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

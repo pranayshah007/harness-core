@@ -327,7 +327,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .when(secretDecryptionService)
         .decrypt(any(), eq(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()));
     doReturn(new SshSessionConfig()).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
-    doNothing()
+    doReturn(null)
         .when(scmFetchFilesHelperNG)
         .downloadFilesUsingScm(
             anyString(), eq(gitStoreDelegateConfig), eq(helmInstallCommandRequestNG.getLogCallback()));

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 40
+version: 41
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1232,6 +1232,18 @@ permissions:
       - account
   - identifier: ccm_overview_view
     name: View CCM Overview page
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_currencyPreference_view
+    name: View a CCM Currency Preference
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_currencyPreference_edit
+    name: Set or Edit Currency Preference
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

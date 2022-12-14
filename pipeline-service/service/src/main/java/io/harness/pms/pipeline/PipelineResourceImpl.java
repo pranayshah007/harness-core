@@ -430,7 +430,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     log.info(String.format("Validating the pipeline YAML with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity);
+    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, false);
     return ResponseDTO.newResponse(pipelineEntity.getIdentifier());
   }
 

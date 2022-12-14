@@ -382,7 +382,7 @@ public class WinRmSessionTest extends CategoryTest {
     setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
     winRmSession.executeScript(SCRIPT_EXEC_COMMAND, writer, error);
-    verify(winRmTool).executeCommand("powershell -f file.ps1 -OutputFormat Text");
+    verify(winRmTool).executeCommand("powershell -f file.ps1");
   }
 
   @Test

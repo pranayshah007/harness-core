@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
+import io.harness.cli.TerraformCliErrorLogOutputStream;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.runtime.TerraformCliRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
@@ -47,7 +48,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -57,8 +57,6 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Singleton
 @OwnedBy(CDP)
 public class TerraformClientImpl implements TerraformClient {
-  private static final Pattern TF_LOG_LINE_PATTERN =
-      Pattern.compile("\\[(?:TRACE|DEBUG|INFO|WARN|ERROR|CRITICAL)\\]\\s?(.+?)?:");
   public static final String TARGET_PARAM = "-target=";
   public static final String VAR_FILE_PARAM = "-var-file=";
 
@@ -330,7 +328,6 @@ public class TerraformClientImpl implements TerraformClient {
     }
 
     return cliHelper.executeCliCommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallBack,
-        loggingCommand, logOutputStream,
-        logLine -> isNotEmpty(logLine) && !TF_LOG_LINE_PATTERN.matcher(logLine).find());
+        loggingCommand, logOutputStream, new TerraformCliErrorLogOutputStream(executionLogCallBack));
   }
 }

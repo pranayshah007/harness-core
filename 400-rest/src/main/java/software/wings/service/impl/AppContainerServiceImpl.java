@@ -7,24 +7,22 @@
 
 package software.wings.service.impl;
 
-import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.delegate.beans.FileBucket.PLATFORMS;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static java.lang.String.format;
-import static org.atteo.evo.inflector.English.plural;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.InvalidRequestException;
 import io.harness.scheduler.PersistentScheduler;
 
-import software.wings.beans.AppContainer;
 import software.wings.beans.Service;
+import software.wings.beans.Service.ServiceKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
 import software.wings.scheduler.PruneFileJob;
 import software.wings.service.intfc.AppContainerService;
 import software.wings.service.intfc.AppService;
@@ -154,7 +152,7 @@ public class AppContainerServiceImpl implements AppContainerService {
       return;
     }
 
-    ensureAppContainerNotInUse(appContainerId);
+    ensureAppContainerNotInUse(accountId, appContainerId);
 
     if (!appContainer.isSystemCreated() && appContainer.getFileUuid() != null) {
       PruneFileJob.addDefaultJob(jobScheduler, AppContainer.class, appContainerId, FileBucket.PLATFORMS);
@@ -167,14 +165,14 @@ public class AppContainerServiceImpl implements AppContainerService {
     return !(appContainer.getChecksum() != null && appContainer.getChecksum().equals(storedAppContainer.getChecksum()));
   }
 
-  private void ensureAppContainerNotInUse(String appContainerId) {
-    List<Service> services = serviceResourceService
-                                 .list(aPageRequest().addFilter("appContainer", Operator.EQ, appContainerId).build(),
-                                     false, true, false, null)
-                                 .getResponse();
-    if (!services.isEmpty()) {
+  private void ensureAppContainerNotInUse(String accountId, String appContainerId) {
+    long servicesCount = wingsPersistence.createQuery(Service.class)
+                             .filter(ServiceKeys.accountId, accountId)
+                             .filter(ServiceKeys.appContainer, appContainerId)
+                             .count();
+    if (servicesCount > 0) {
       throw new InvalidRequestException(
-          format("Application Stack is in use by %d %s.", services.size(), plural("service", services.size())));
+          format("Application Stack is in use by %d %s.", servicesCount, servicesCount == 1 ? "service" : "services"));
     }
   }
 

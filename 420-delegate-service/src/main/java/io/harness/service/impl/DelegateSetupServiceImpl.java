@@ -42,7 +42,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -422,6 +422,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     long lastHeartBeat = groupDelegates.stream().mapToLong(Delegate::getLastHeartBeat).max().orElse(0);
     AtomicInteger countOfDelegatesConnected = new AtomicInteger();
     AtomicBoolean isDelegateTokenActiveAtGroupLevel = new AtomicBoolean(true);
+    List<Delegate> connectedDelegates = new ArrayList<>();
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
@@ -440,6 +441,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
               isDelegateTokenActiveAtGroupLevel.compareAndSet(!isTokenActive, false);
               if (isDelegateConnected) {
                 delegateId.set(delegate.getUuid());
+                connectedDelegates.add(delegate);
               }
               return DelegateGroupListing.DelegateInner.builder()
                   .uuid(delegate.getUuid())
@@ -460,8 +462,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       connectivityStatus = GROUP_STATUS_CONNECTED;
     }
 
-    String groupVersion =
-        groupDelegates.stream().min(Comparator.comparing(Delegate::getVersion)).map(Delegate::getVersion).orElse(null);
+    String groupVersion = connectedDelegates.stream()
+                              .min(Comparator.comparing(Delegate::getVersion))
+                              .map(Delegate::getVersion)
+                              .orElse(null);
 
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)
@@ -641,11 +645,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-    outboxService.save(DelegateGroupUpsertEvent.builder()
+    outboxService.save(DelegateUpsertEvent.builder()
                            .accountIdentifier(accountId)
                            .orgIdentifier(orgId)
                            .projectIdentifier(projectId)
-                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                            .delegateSetupDetails(DelegateSetupDetails.builder()
                                                      .identifier(updatedDelegateGroup.getIdentifier())
                                                      .tags(updatedDelegateGroup.getTags())
@@ -707,11 +711,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       DelegateGroup updatedDelegateGroup =
           persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-      outboxService.save(DelegateGroupUpsertEvent.builder()
+      outboxService.save(DelegateUpsertEvent.builder()
                              .accountIdentifier(accountIdentifier)
                              .orgIdentifier(orgIdentifier)
                              .projectIdentifier(projectIdentifier)
-                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                              .delegateSetupDetails(DelegateSetupDetails.builder()
                                                        .identifier(updatedDelegateGroup.getIdentifier())
                                                        .tags(updatedDelegateGroup.getTags())

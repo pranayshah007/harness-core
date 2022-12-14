@@ -41,6 +41,7 @@ public class Role {
   @NotEmpty final Set<String> allowedScopeLevels;
   @NotNull final Set<String> permissions;
   final boolean managed;
+  final boolean internal;
   final String description;
   final Map<String, String> tags;
   @EqualsAndHashCode.Exclude @Setter Long createdAt;

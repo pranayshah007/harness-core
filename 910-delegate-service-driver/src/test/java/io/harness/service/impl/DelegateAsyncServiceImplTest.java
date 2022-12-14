@@ -128,6 +128,56 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  public void shouldUpsertTaskResponseAndNullUsingKryoWithoutReference() {
+    // Inserting the record before event setting up the timeout details
+    String taskId = generateUuid();
+    long currentTimeStamp = System.currentTimeMillis();
+    Date minValidUntil =
+        Date.from(Instant.ofEpochMilli(currentTimeStamp).plusSeconds(Duration.ofHours(24).getSeconds()));
+    String savedTaskId = hPersistence.save(DelegateAsyncTaskResponse.builder()
+                                               .uuid(taskId)
+                                               .processAfter(currentTimeStamp)
+                                               .usingKryoWithoutReference(null)
+                                               .responseData(kryoSerializer.asDeflatedBytes(
+                                                   StringNotifyResponseData.builder().data("DATA_FROM_TASK").build()))
+                                               .build());
+
+    assertThat(savedTaskId).isEqualTo(taskId);
+
+    // Setting expiry to current time + 1hr
+    long expiryEpoch = currentTimeStamp + Duration.ofMinutes(60).toMillis();
+
+    // Setting hold until to current time + 2hr
+    long holdUntil = currentTimeStamp + Duration.ofMinutes(120).toMillis();
+
+    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil);
+
+    // Fetch the record from the database and assert
+    DelegateAsyncTaskResponse upsertedTaskResponse = hPersistence.get(DelegateAsyncTaskResponse.class, taskId);
+    assertThat(upsertedTaskResponse).isNotNull();
+
+    // Process after need to be set from the original response and should not be overridden
+    assertThat(upsertedTaskResponse.getProcessAfter()).isEqualTo(currentTimeStamp);
+
+    // Valid Until should be from original
+    assertThat(upsertedTaskResponse.getValidUntil()).isAfter(minValidUntil);
+
+    assertThat(upsertedTaskResponse.isUsingKryoWithoutReference()).isFalse();
+
+    ResponseData responseData = (ResponseData) kryoSerializer.asInflatedObject(upsertedTaskResponse.getResponseData());
+    assertThat(responseData).isInstanceOf(StringNotifyResponseData.class);
+
+    StringNotifyResponseData stringNotifyResponseData = (StringNotifyResponseData) responseData;
+    assertThat(stringNotifyResponseData.getData()).isEqualTo("DATA_FROM_TASK");
+  }
+
+  /**
+   * This test is when the response was so fast that it came even before the timeout method inserted the record
+   */
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
   public void shouldUpsertTaskResponseUsingKryoWithoutReference() {
     // Inserting the record before event setting up the timeout details
     String taskId = generateUuid();

@@ -81,6 +81,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_IDENTIFIER_KEY = "fileIdentifier";
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
+  public static final String SORT = "sort";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";

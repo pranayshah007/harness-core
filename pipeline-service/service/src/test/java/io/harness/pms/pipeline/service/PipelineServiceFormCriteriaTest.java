@@ -117,10 +117,10 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
-        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(any(), anyBoolean());
+        .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
     when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);

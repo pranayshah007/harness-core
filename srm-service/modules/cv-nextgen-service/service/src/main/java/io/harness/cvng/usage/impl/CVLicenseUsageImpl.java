@@ -13,11 +13,14 @@ import io.harness.ModuleType;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
 
 public class CVLicenseUsageImpl implements LicenseUsageInterface<CVLicenseUsageDTO, UsageRequestParams> {
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -35,5 +38,11 @@ public class CVLicenseUsageImpl implements LicenseUsageInterface<CVLicenseUsageD
     return CVLicenseUsageDTO.builder()
         .activeServices(UsageDataDTO.builder().count(count).displayName("Total active SRM services").build())
         .build();
+  }
+
+  @Override
+  public Page<CVLicenseUsageDTO> listLicenseUsage(
+      String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest) {
+    throw new NotImplementedException("not implemented");
   }
 }

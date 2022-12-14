@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -32,6 +33,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -927,6 +929,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSliMissingDataType(SLIMissingDataType.BAD);
     simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
     serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2DTO2.setName("new three");
@@ -980,7 +983,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                 .getServiceLevelIndicators()
                 .get(0)
                 .getIdentifier());
-    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(BAD, BAD, BAD, BAD),
+    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(NO_DATA, BAD, BAD, NO_DATA),
         serviceLevelIndicator2.getUuid());
     SLODashboardWidget.SLOGraphData sloGraphData2 =
         graphDataService.getGraphData(serviceLevelObjective2, clock.instant().minus(Duration.ofDays(1)),

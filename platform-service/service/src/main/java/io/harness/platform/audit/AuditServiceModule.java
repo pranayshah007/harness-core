@@ -19,6 +19,8 @@ import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.api.impl.AuditServiceImpl;
 import io.harness.audit.api.impl.AuditSettingsServiceImpl;
 import io.harness.audit.api.impl.AuditYamlServiceImpl;
+import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -127,6 +129,7 @@ public class AuditServiceModule extends AbstractModule {
     bind(AuditYamlService.class).to(AuditYamlServiceImpl.class);
     bind(AuditService.class).to(AuditServiceImpl.class);
     bind(AuditSettingsService.class).to(AuditSettingsServiceImpl.class);
+    bind(StreamingService.class).to(StreamingServiceImpl.class);
     install(
         AccessControlClientModule.getInstance(appConfig.getAccessControlClientConfig(), AUDIT_SERVICE.getServiceId()));
     install(new TokenClientModule(this.appConfig.getManagerServiceConfig(),

@@ -12,7 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;

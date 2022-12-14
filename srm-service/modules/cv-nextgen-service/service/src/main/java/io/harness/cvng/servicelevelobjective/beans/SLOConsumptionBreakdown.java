@@ -28,4 +28,6 @@ public class SLOConsumptionBreakdown {
   @NotNull int errorBudgetBurned;
   @NotNull int contributedErrorBudgetBurned;
   @NotNull ProjectParams projectParams;
+  String orgName;
+  String projectName;
 }

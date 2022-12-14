@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.HITESH;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.anySet;
 import static org.mockito.BDDMockito.given;
@@ -268,7 +269,7 @@ public class AwsECSClusterDataSyncTaskletTest extends CategoryTest {
     CECluster ceCluster = getCeCluster();
     when(cloudToHarnessMappingService.getHarnessServiceInfo(any()))
         .thenReturn(Optional.of(new HarnessServiceInfo(null, null, null, null, null, null)));
-    when(instanceDataDao.fetchInstanceData(anySet())).thenReturn(singletonList(getInstanceData()));
+    when(instanceDataDao.fetchInstanceData(anyString(), anySet())).thenReturn(singletonList(getInstanceData()));
     awsECSClusterDataSyncTasklet.updateTasks(accountId, ceCluster, singletonList(getTask()), deploymentIdServiceMap,
         Collections.EMPTY_MAP, Instant.ofEpochMilli(startTime));
     ArgumentCaptor<InstanceData> captor = ArgumentCaptor.forClass(InstanceData.class);

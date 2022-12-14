@@ -60,7 +60,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -74,6 +73,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.ShellScriptUtils;
 import software.wings.service.impl.WorkflowExecutionLogContext;
@@ -306,6 +306,14 @@ public class ArtifactCollectionState extends State {
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
       Artifact lastCollectedArtifact =
           artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
+    if (!artifactStream.isArtifactStreamParameterized()
+        && featureFlagService.isEnabled(FeatureName.SPG_FETCH_ARTIFACT_FROM_DB, context.getAccountId())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
       if (lastCollectedArtifact != null) {
         return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
       }

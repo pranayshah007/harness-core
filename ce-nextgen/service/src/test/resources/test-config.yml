@@ -158,3 +158,6 @@ dkronClientConfig:
   baseUrl: http://localhost:8080/
   connectTimeOutSeconds: 50
   readTimeOutSeconds: 50
+
+currencyPreferences:
+  historicalUpdateMonthsCount: 6
