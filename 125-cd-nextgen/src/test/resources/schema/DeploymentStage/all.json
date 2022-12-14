@@ -734,7 +734,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-
+    "AsgCanaryDeleteStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgCanaryDeployStepInfo": {
       "allOf": [
         {
@@ -763,34 +790,6 @@
             },
             "instanceSelection": {
               "$ref": "#/definitions/Capacity"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AsgCanaryDeleteStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
             }
           }
         }
@@ -1817,10 +1816,6 @@
       "type": "object",
       "discriminator": "type",
       "properties": {
-        "instances": {
-          "type": "integer",
-          "format": "int32"
-        },
         "type": {
           "type": "string"
         }
@@ -10722,22 +10717,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AsgCanaryDeploy"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/AsgCanaryDeployStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "AsgCanaryDelete"
               }
             }
@@ -10746,6 +10725,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgCanaryDeleteStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgCanaryDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgCanaryDeployStepInfo"
               }
             }
           }

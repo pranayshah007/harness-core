@@ -34,6 +34,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -122,7 +123,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
       log.error("Error while processing asg task response: {}", e.getMessage(), e);
       return asgStepCommonHelper.handleTaskException(ambiance, asgExecutionPassThroughData, e);
     }
-    StepResponse.StepResponseBuilder stepResponseBuilder =
+    StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(asgCanaryDeployResponse.getUnitProgressData().getUnitProgresses());
     if (asgCanaryDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return AsgStepCommonHelper.getFailureResponseBuilder(asgCanaryDeployResponse, stepResponseBuilder).build();

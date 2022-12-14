@@ -63,6 +63,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 
 import software.wings.beans.TaskType;
 
@@ -331,7 +332,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
         .build();
   }
 
-  public static StepResponse.StepResponseBuilder getFailureResponseBuilder(
+  public static StepResponseBuilder getFailureResponseBuilder(
       AsgCommandResponse asgCommandResponse, StepResponse.StepResponseBuilder stepResponseBuilder) {
     stepResponseBuilder.status(Status.FAILED)
         .failureInfo(
