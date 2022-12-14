@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.data.structure.CollectionUtils;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
@@ -90,7 +92,8 @@ public class EnvironmentMapper {
   }
 
   public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
-      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides) {
+      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides,
+      @Nullable EnvironmentGroupEntity envGroup) {
     List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
         ? new ArrayList<>()
         : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
@@ -104,6 +107,8 @@ public class EnvironmentMapper {
         .type(environment.getType())
         .environmentRef(environment.getIdentifier())
         .variables(variables)
+        .envGroupRef(envGroup != null ? envGroup.getIdentifier() : null)
+        .envGroupName(envGroup != null ? envGroup.getName() : null)
         .build();
   }
 }

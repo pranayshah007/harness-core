@@ -49,6 +49,8 @@ java_library(
         "@maven//:com_azure_resourcemanager_azure_resourcemanager_resources",
         "@maven//:com_github_scribejava_scribejava_apis",
         "@maven//:com_google_apis_google_api_services_container",
+        "@maven//:com_google_cloud_google_cloud_functions",
+        "@maven//:com_google_cloud_google_cloud_run",
         "@maven//:com_google_http_client_google_http_client_apache_v2",
         "@maven//:com_jakewharton_retrofit_retrofit2_reactor_adapter",
         "@maven//:com_offbytwo_jenkins_jenkins_client",

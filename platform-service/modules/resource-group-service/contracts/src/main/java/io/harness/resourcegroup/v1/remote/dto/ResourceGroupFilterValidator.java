@@ -5,15 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.resourcegroup.validator;
+package io.harness.resourcegroup.v1.remote.dto;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
-import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;

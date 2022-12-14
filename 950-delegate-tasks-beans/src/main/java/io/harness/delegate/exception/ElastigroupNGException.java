@@ -5,23 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.caching;
+package io.harness.delegate.exception;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.DataException;
 
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-@Getter
-@OwnedBy(HarnessTeam.PIPELINE)
-public enum GitFileCacheTTL {
-  VALID_CACHE_DURATION(5 * 60 * 1000L),
-  MAX_CACHE_DURATION(60 * 60 * 1000L),
-  ;
-
-  final long durationInMs;
-
-  GitFileCacheTTL(long durationInMs) {
-    this.durationInMs = durationInMs;
+@OwnedBy(HarnessTeam.CDP)
+@Value
+@EqualsAndHashCode(callSuper = false)
+public class ElastigroupNGException extends DataException {
+  public ElastigroupNGException(Throwable cause) {
+    super(cause);
   }
 }

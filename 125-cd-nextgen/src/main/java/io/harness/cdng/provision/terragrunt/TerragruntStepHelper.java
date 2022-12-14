@@ -167,8 +167,7 @@ public class TerragruntStepHelper {
   public static void addConnectorRefFromBackendConfig(
       TerragruntBackendConfig terragruntBackendConfig, Map<String, ParameterField<String>> connectorRefMap) {
     if (terragruntBackendConfig != null
-        && terragruntBackendConfig.getTerragruntBackendConfigSpec().getType().equals(
-            TerragruntBackendFileTypes.Remote)) {
+        && terragruntBackendConfig.getType().equals(TerragruntBackendFileTypes.Remote)) {
       connectorRefMap.put("configuration.spec.backendConfig.spec.store.spec.connectorRef",
           ((RemoteTerragruntBackendConfigSpec) terragruntBackendConfig.getTerragruntBackendConfigSpec())
               .store.getSpec()

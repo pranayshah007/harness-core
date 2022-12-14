@@ -17,6 +17,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.serializer.KryoSerializer;
 
@@ -25,10 +26,12 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeResumeHelper {
@@ -46,8 +49,19 @@ public class NodeResumeHelper {
   Map<String, ByteString> buildResponseMap(ResumeMetadata resumeMetadata, Map<String, ByteString> response) {
     Map<String, ByteString> byteResponseMap = new HashMap<>();
     if (accumulationRequired(resumeMetadata)) {
-      List<NodeExecution> childExecutions =
-          nodeExecutionService.fetchNodeExecutionsByParentId(resumeMetadata.getNodeExecutionUuid(), false);
+      List<NodeExecution> childExecutions = new LinkedList<>();
+      try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+               resumeMetadata.getNodeExecutionUuid(), NodeProjectionUtils.fieldsForResponseNotifyData)) {
+        while (iterator.hasNext()) {
+          NodeExecution next = iterator.next();
+          // Only oldRetry false nodes to be added
+          if (Boolean.FALSE.equals(next.getOldRetry())) {
+            childExecutions.add(next);
+          }
+        }
+      }
+
+      // TODO(archit): Make outcome service to be paginated
       Map<String, List<StepOutcomeRef>> refMap = pmsOutcomeService.fetchOutcomeRefs(
           childExecutions.stream().map(NodeExecution::getUuid).collect(Collectors.toList()));
       for (NodeExecution ce : childExecutions) {

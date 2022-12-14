@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
+import io.harness.cvng.activity.entities.InternalChangeActivity;
 import io.harness.cvng.activity.entities.KubernetesActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
@@ -151,6 +152,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(ClusteredLog.class);
     set.add(BlueGreenVerificationJob.class);
     set.add(DeploymentDataCollectionTask.class);
+    set.add(InternalChangeActivity.class);
     set.add(AppDynamicsCVConfig.class);
     set.add(DeploymentLogAnalysis.class);
     set.add(TestVerificationJob.class);

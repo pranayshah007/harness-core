@@ -8,6 +8,7 @@
 package io.harness.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNREACHABLE_HOST;
@@ -92,6 +93,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -857,11 +859,15 @@ public class GitClientV2Impl implements GitClientV2 {
       if (remoteRefUpdate.getStatus() == OK || remoteRefUpdate.getStatus() == UP_TO_DATE) {
         return pushResultBuilder().refUpdate(refUpdate).build();
       } else {
-        String errorMsg = format("Unable to push changes to git repository [%s]. "
-                + "Status reported by Remote is: %s and message is: %s. "
-                + "Other info: Force push: %s. Fast forward: %s",
-            commitAndPushRequest.getRepoUrl(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage(),
-            remoteRefUpdate.isForceUpdate(), remoteRefUpdate.isFastForward());
+        String errorMsg = format("Unable to push changes to git repository [%s] and branch [%s]. "
+                + "Status reported by Remote is: %s and message is: %s. \n \n"
+                + "Files which were staged: [%s]",
+            commitAndPushRequest.getRepoUrl(), commitAndPushRequest.getBranch(), remoteRefUpdate.getStatus(),
+            remoteRefUpdate.getMessage(),
+            emptyIfNull(commitAndPushRequest.getGitFileChanges())
+                .stream()
+                .map(GitFileChange::getFilePath)
+                .collect(Collectors.toList()));
         log.error(gitClientHelper.getGitLogMessagePrefix(commitAndPushRequest.getRepoType()) + errorMsg);
         throw new YamlException(errorMsg, ADMIN_SRE);
       }

@@ -42,8 +42,10 @@ public class InstanceDataDao {
         .get();
   }
 
-  public List<InstanceData> fetchInstanceDataForGivenInstances(List<String> instanceIds) {
+  public List<InstanceData> fetchInstanceDataForGivenInstances(String accountId, List<String> instanceIds) {
     Query<InstanceData> query = hPersistence.createQuery(InstanceData.class, excludeAuthority)
+                                    .field(InstanceDataKeys.accountId)
+                                    .equal(accountId)
                                     .field(InstanceDataKeys.instanceId)
                                     .in(instanceIds);
     return fetchInstanceData(query.fetch().iterator());

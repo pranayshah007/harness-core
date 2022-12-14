@@ -8,7 +8,6 @@
 package io.harness.engine.executions.node;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.retry.RetryStageInfo;
@@ -17,10 +16,9 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,60 +26,176 @@ import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public interface NodeExecutionService {
+  // TODO(archit): remove usage
   NodeExecution get(String nodeExecutionId);
 
-  List<NodeExecution> getAll(Set<String> nodeExecutionIds);
-
+  /**
+   * Fetches nodeExecution and uses id Index
+   * @param nodeExecutionId
+   * @param fieldsToInclude
+   * @return NodeExecution with fields included as projection
+   */
   NodeExecution getWithFieldsIncluded(String nodeExecutionId, Set<String> fieldsToInclude);
 
+  /**
+   * Get pipeline node from a given planExecutionId with projection
+   * Uses - planExecutionId_stepCategory_identifier_idx
+   * @param planExecutionId
+   * @param fields
+   * @return
+   */
+  Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
+
+  /**
+   * Fetches nodeExecution for given planExecutionId and planNodeId
+   * Uses - planExecutionId_nodeId_idx index
+   * @param planNodeUuid
+   * @param planExecutionId
+   * @return
+   */
   NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId);
 
-  Page<NodeExecution> fetchAllStepNodeExecutions(
-      String planExecutionId, Set<String> fieldsToInclude, Pageable pageable);
+  /**
+   * Only allows getting nodeExecutions within max batch size, only if no projection is required
+   * Get approval before using this method, Example for all retriedNodeIds
+   * Uses id index
+   * @param nodeExecutionIds
+   * @return NodeExecutions with all properties
+   */
+  List<NodeExecution> getAll(Set<String> nodeExecutionIds);
 
-  List<Status> fetchNodeExecutionsWithoutOldRetriesOnlyStatus(String planExecutionId);
+  /**
+   * Fetches all step nodeExecutions with given projected fields, checks stepCategory should be step
+   * Check before using this method if you need all nodes or subset of nodes
+   * Uses - planExecutionId_stepCategory_identifier_idx
+   * @param planExecutionId
+   * @param fieldsToInclude
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(String planExecutionId, Set<String> fieldsToInclude);
 
-  // TODO(Projection): Only left in graph generation in error
-  List<NodeExecution> fetchNodeExecutionsWithoutOldRetries(String planExecutionId);
+  /**
+   * Fetches all statuses for nodeExecutions for give planExecutionId and oldRetry false
+   * Uses - planExecutionId_status_idx index
+   * @param planExecutionId
+   * @return
+   */
+  List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId);
 
-  // TODO(Projection): only left in test case
-  List<NodeExecution> fetchWithoutRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses);
+  /**
+   * Returns iterator for nodeExecution without old retries without projection
+   * Uses - planExecutionId_status_idx
+   * Check before using this, as it gets all nodes without projections for a planExecutionId (Get approval)
+   * Example -> Complete Graph generation
+   * @param planExecutionId
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(String planExecutionId);
 
-  Page<NodeExecution> fetchWithoutRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToInclude, Pageable pageable);
+  /**
+   * Returns iterator for nodeExecution without old retries and statusIn defined in param
+   * Uses - planExecutionId_status_idx
+   * @param planExecutionId
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+      String planExecutionId, EnumSet<Status> statuses, @NotNull Set<String> fieldsToInclude);
 
-  // TODO(Projection): Only left in FindAllChildrenWithStatusIn
-  List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, boolean shouldUseProjections, Set<String> fieldsToBeIncluded);
+  /**
+   * Returns iterator for nodeExecution without old retries for given planExecutionId
+   * Uses - planExecutionId_status_idx
+   * @param planExecutionId
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(
+      String planExecutionId, @NotNull Set<String> fieldsToInclude);
 
-  Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(
-      String planExecutionId, EnumSet<Status> statuses, Set<String> fieldsToBeIncluded, Pageable pageable);
-
-  Page<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses,
-      Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded, Pageable pageable);
-
-  // TODO(Projection): Only left in FindAllChildrenWithStatusIn
-  List<NodeExecution> fetchNodeExecutionsWithoutOldRetriesAndStatusIn(String planExecutionId, EnumSet<Status> statuses,
-      boolean shouldUseProjections, Set<String> fieldsToBeIncluded, Set<String> fieldsToBeExcluded);
-
-  // TODO(Projection): Make it paginated, has projection
-  List<NodeExecution> fetchChildrenNodeExecutions(
+  /**
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection
+   * Uses - planExecutionId_parentId_createdAt_idx
+   * TODO(archit): Check if planExecutionId and sort is required or not
+   * @param planExecutionId
+   * @param parentId
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded);
 
-  // TODO(Projection): only left in test case
-  List<NodeExecution> fetchNodeExecutionsByStatus(String planExecutionId, Status status);
+  /**
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection
+   * Uses - parentId_status_idx
+   * @param parentId
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(String parentId, Set<String> fieldsToBeIncluded);
 
-  Page<NodeExecution> fetchNodeExecutionsByStatus(
-      String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable);
+  /**
+   * Fetches all nodes with given status with fieldsToBeIncluded as projections from analytics node
+   * Uses - status_idx index
+   * @param statuses
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchAllNodeExecutionsByStatusIteratorFromAnalytics(
+      EnumSet<Status> statuses, Set<String> fieldsToBeIncluded);
 
-  Page<NodeExecution> fetchAllNodeExecutionsByStatus(
-      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable);
+  /**
+   * Count number of nodeExecutions for given parentId(direct children only) and statuses for those nodeExecutions
+   * Uses - parentId_status_idx
+   * @param parentId
+   * @param flowingStatuses
+   * @return
+   */
+  long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses);
+
+  /**
+   * Returns children executions (including grandchildren) for given parentId
+   * Note: nodeExecution should atleast have parentId projected fields
+   * Doesn't make any DB calls
+   * @param parentId
+   * @param includeParent
+   * @param finalList -> it contains the result from allExecutions
+   * @param allExecutions
+   * @return
+   */
+  List<NodeExecution> extractChildExecutions(
+      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
+
+  // stepType, parentId and Status are already included into projections
+
+  /**
+   * Internally uses pagination to get all children of given planExecutionId
+   * Apart from fieldsTobeIncluded, NodeProjectionUtils.fieldsForAllChildrenExtractor fields are already in projection
+   * Uses - planExecutionId_status_idx index
+   * @param planExecutionId
+   * @param parentId
+   * @param statuses
+   * @param includeParent
+   * @param fieldsToBeIncluded
+   * @return all children(including grandchildren) in given planExecutionId and of parentId having one of the statuses
+   */
+  List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
+      EnumSet<Status> statuses, boolean includeParent, Set<String> fieldsToBeIncluded);
+
+  /**
+   * Note: It depends upon findAllChildrenWithStatusInAndWithoutOldRetries
+   * Thus only NodeProjectionUtils.fieldsForAllChildrenExtractor fields are in projection
+   * @param planExecutionId
+   * @param parentId
+   * @param includeParent
+   * @return all children(including grandchildren) in given planExecutionId and of parentId for all statuses
+   */
+  default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
+    return findAllChildrenWithStatusInAndWithoutOldRetries(
+        planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, Collections.emptySet());
+  }
 
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
@@ -111,37 +225,9 @@ public interface NodeExecutionService {
 
   long markAllLeavesAndQueuedNodesDiscontinuing(String planExecutionId, EnumSet<Status> statuses);
 
-  // TODO(Projection): Make it paginated, has projection
-  List<NodeExecution> findAllNodeExecutionsTrimmed(String planExecutionId);
-
   boolean markRetried(String nodeExecutionId);
 
   boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId);
-
-  // Todo: Change this to use category instead of identifier. Only used for fetching pipeline node.
-  Optional<NodeExecution> getByNodeIdentifier(@NonNull String nodeIdentifier, @NonNull String planExecutionId);
-
-  Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId);
-  Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
-
-  long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses);
-
-  default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
-    return findAllChildrenWithStatusIn(planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, true,
-        Sets.newHashSet(
-            NodeExecutionKeys.id, NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-        new HashSet<>());
-  }
-
-  List<NodeExecution> findAllChildrenWithStatusIn(String planExecutionId, String parentId, EnumSet<Status> statuses,
-      boolean includeParent, boolean shouldUseProjections, Set<String> fieldsToBeIncluded,
-      Set<String> fieldsToBeExcluded);
-
-  List<NodeExecution> findAllChildrenWithStatusIn(
-      String planExecutionId, String parentId, EnumSet<Status> flowingStatuses, boolean includeParent);
-
-  // TODO(Projection): Make it paginated, has projection
-  List<NodeExecution> fetchNodeExecutionsByParentId(String nodeExecutionId, boolean oldRetry);
 
   // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
@@ -149,16 +235,10 @@ public interface NodeExecutionService {
 
   boolean errorOutActiveNodes(String planExecutionId);
 
-  List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
-
   boolean removeTimeoutInstances(String nodeExecutionId);
 
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
-
-  // TODO(Projection): Make it paginated, and projection, in retry flow
-  List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);

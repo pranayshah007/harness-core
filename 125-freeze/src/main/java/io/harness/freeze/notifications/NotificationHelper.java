@@ -7,6 +7,7 @@
 
 package io.harness.freeze.notifications;
 
+import io.harness.beans.FeatureName;
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeEvent;
 import io.harness.freeze.beans.FreezeNotificationChannelWrapper;
@@ -21,6 +22,7 @@ import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.api.client.util.ArrayMap;
 import com.google.inject.Inject;
@@ -35,10 +37,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NotificationHelper {
   @Inject NotificationClient notificationClient;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   public void sendNotification(String yaml, boolean pipelineRejectedNotification, boolean freezeWindowNotification,
       Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze)
       throws IOException {
+    if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDC_SEND_NOTIFICATION_FOR_FREEZE)) {
+      return;
+    }
     FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
     if (freezeInfoConfig.getNotifications() == null) {

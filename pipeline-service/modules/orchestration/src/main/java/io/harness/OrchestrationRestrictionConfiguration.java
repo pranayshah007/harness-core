@@ -24,4 +24,7 @@ public class OrchestrationRestrictionConfiguration {
   @JsonProperty("pipelineCreationRestriction") PlanExecutionRestrictionConfig pipelineCreationRestriction;
   @JsonProperty("maxConcurrencyRestriction") PlanExecutionRestrictionConfig maxConcurrencyRestriction;
   @JsonProperty("totalParallelismStopRestriction") PlanExecutionRestrictionConfig totalParallelismStopRestriction;
+  @JsonProperty("maxPipelineTimeoutInHours") MaxPipelineTimeoutInHoursConfig maxPipelineTimeoutInHoursConfig;
+  @JsonProperty("maxStageTimeoutInHours") MaxStageTimeoutInHoursConfig maxStageTimeoutInHoursConfig;
+  @JsonProperty("maxStepTimeoutInHours") MaxStepTimeoutInHours maxStepTimeoutInHours;
 }

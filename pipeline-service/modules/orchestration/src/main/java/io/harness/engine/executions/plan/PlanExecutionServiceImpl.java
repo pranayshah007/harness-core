@@ -52,14 +52,13 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Field;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 @Slf4j
@@ -199,27 +198,19 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 
   @Override
   public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    int currentPage = 0;
-    int totalPages = 0;
-
     List<NodeExecution> nodeExecutions = new LinkedList<>();
-    do {
-      Page<NodeExecution> paginatedNodeExecutions =
-          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class),
-              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.withStatus)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-      currentPage++;
-    } while (currentPage < totalPages);
+    }
 
     List<Status> filtered = nodeExecutions.stream()
                                 .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))

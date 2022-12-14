@@ -74,18 +74,22 @@ public class KubernetesConnectorImpl implements BaseConnector {
     KubernetesCredentialDTO credentialDTO;
     String masterUrl = clusterConfig.getMasterUrl();
     String oidcIdentityProviderUrl = clusterConfig.getOidcIdentityProviderUrl();
-    SecretRefData usernameRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedUsername());
-    SecretRefData caCertRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedCaCert());
-    SecretRefData passwordRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedPassword());
+    SecretRefData usernameRef =
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedUsername());
+    SecretRefData caCertRef =
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedCaCert());
+    SecretRefData passwordRef =
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedPassword());
     SecretRefData serviceAccountTokenRef =
-        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedServiceAccountToken());
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedServiceAccountToken());
     SecretRefData clientIdRef =
-        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcClientId());
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedOidcClientId());
     SecretRefData oidcPasswordRef =
-        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcPassword());
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedOidcPassword());
     SecretRefData clientCertRef =
-        MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientCert());
-    SecretRefData clientKeyRef = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientKey());
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedClientCert());
+    SecretRefData clientKeyRef =
+        MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedClientKey());
 
     if (authType == null) {
       credentialDTO = KubernetesCredentialDTO.builder().kubernetesCredentialType(INHERIT_FROM_DELEGATE).build();
@@ -100,13 +104,13 @@ public class KubernetesConnectorImpl implements BaseConnector {
                    && ObjectUtils.allNotNull(masterUrl, oidcIdentityProviderUrl, oidcPasswordRef, clientIdRef))
         || authType.equals(KubernetesClusterAuthType.OIDC)) {
       SecretRefData oidcSecretRef =
-          MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedOidcSecret());
+          MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedOidcSecret());
       credentialDTO = getOidcCredentials(masterUrl, oidcIdentityProviderUrl, clusterConfig.getOidcUsername(),
           clusterConfig.getOidcScopes(), usernameRef, oidcPasswordRef, clientIdRef, oidcSecretRef);
     } else if (authType.equals(KubernetesClusterAuthType.NONE)
         && ObjectUtils.allNotNull(masterUrl, clientCertRef, clientKeyRef)) {
       SecretRefData clientKeyPassphraseRef =
-          MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedClientKeyPassphrase());
+          MigratorUtility.getSecretRefDefaultNull(migratedEntities, clusterConfig.getEncryptedClientKeyPassphrase());
       credentialDTO = getClientKeyCertCredentials(
           masterUrl, caCertRef, clientCertRef, clientKeyRef, clientKeyPassphraseRef, clusterConfig.getClientKeyAlgo());
     } else if (authType.equals(KubernetesClusterAuthType.NONE)) {

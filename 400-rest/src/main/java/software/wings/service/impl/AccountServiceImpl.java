@@ -61,6 +61,7 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
+import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -246,6 +247,8 @@ public class AccountServiceImpl implements AccountService {
   private static final String DEFAULT_EXPERIENCE = "defaultExperience";
   private static final String[] RESERVED_SUBDOMAIN_PREFIX_REGEXES = {
       "^agent$", "^app(-?\\d+)?$", "^pr$", "^qa$", "^stress$", "^prod(-?\\d+)?$"};
+
+  private static final String ON_PREM_IMMUTABLE_DELEGATE_ENABLED = "IMMUTABLE_DELEGATE_ENABLED";
 
   @Inject protected AuthService authService;
   @Inject protected HarnessCacheManager harnessCacheManager;
@@ -2075,7 +2078,22 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isImmutableDelegateEnabled(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
-    return account != null && account.isImmutableDelegateEnabled();
+    boolean immutableDelegateEnabledInDb = account != null && account.isImmutableDelegateEnabled();
+
+    // immutable delegate for ON-PREM is toggled using variable IMMUTABLE_DELEGATE_ENABLED in manager configMap
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      String immutableDelegateInConfigMap = System.getenv(ON_PREM_IMMUTABLE_DELEGATE_ENABLED);
+      if (isNotEmpty(immutableDelegateInConfigMap)) {
+        // update account collection variable in case of difference.
+        if (!String.valueOf(immutableDelegateEnabledInDb).equals(immutableDelegateInConfigMap)) {
+          wingsPersistence.updateField(
+              Account.class, accountId, AccountKeys.immutableDelegateEnabled, immutableDelegateInConfigMap);
+          dbCache.invalidate(Account.class, accountId);
+        }
+        return Boolean.parseBoolean(immutableDelegateInConfigMap);
+      }
+    }
+    return immutableDelegateEnabledInDb;
   }
 
   @Override

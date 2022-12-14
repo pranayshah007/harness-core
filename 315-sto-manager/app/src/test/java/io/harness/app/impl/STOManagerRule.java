@@ -16,6 +16,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.STOManagerConfiguration;
 import io.harness.app.STOManagerServiceModule;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -169,6 +170,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
                                           .delegateServiceEndpointVariableValue("delegate-service:8080")
                                           .liteEngineImageTag("v1.4-alpha")
                                           .pvcDefaultStorageSize(25600)
+                                          .queueServiceClient(QueueServiceClient.builder().build())
                                           .build())
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
             .logServiceConfig(LogServiceConfig.builder()
