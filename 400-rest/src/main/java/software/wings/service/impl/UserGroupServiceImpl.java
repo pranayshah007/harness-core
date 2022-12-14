@@ -267,6 +267,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       populateAppIdFilter(req, applicationIdsMatchingSearchTerm);
     }
     PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
+
+    log.info("[SAML_SYNC]: Page response for user groups list: {}", res);
+
     // Using a custom comparator since our mongo apis don't support alphabetical sorting with case insensitivity.
     // Currently, it only supports ASC and DSC.
     res.getResponse().sort((ug1, ug2) -> StringUtils.compareIgnoreCase(ug1.getName(), ug2.getName()));
@@ -335,8 +338,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     Map<String, User> userMap = allUsersList.stream().collect(Collectors.toMap(User::getUuid, identity()));
     userGroups.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
+      log.info("[SAML_SYNC]: Member IDs in user group: {}", memberIds);
       if (isEmpty(memberIds)) {
         userGroup.setMembers(new ArrayList<>());
+        log.info("[SAML_SYNC]: User group has empty memberIDs: {}", userGroup);
         return;
       }
       List<User> members = new ArrayList<>();
@@ -346,6 +351,7 @@ public class UserGroupServiceImpl implements UserGroupService {
           members.add(user);
         }
       });
+      log.info("[SAML_SYNC]: Members added- size: {}, members: {}", members.size(), members);
       userGroup.setMembers(members);
     });
   }
@@ -549,7 +555,11 @@ public class UserGroupServiceImpl implements UserGroupService {
         : Sets.newHashSet(userGroupToUpdate.getMemberIds());
     newMemberIds.removeIf(EmptyPredicate::isEmpty);
 
+    log.info("[SAML_SYNC]: New member IDs: {}", newMemberIds);
+
     UserGroup existingUserGroup = get(userGroupToUpdate.getAccountId(), userGroupToUpdate.getUuid());
+    log.info("[SAML_SYNC]: Existing user group: {}", existingUserGroup);
+
     if (UserGroupUtils.isAdminUserGroup(existingUserGroup) && newMemberIds.isEmpty()) {
       throw new WingsException(
           ErrorCode.UPDATE_NOT_ALLOWED, "Account Administrator user group must have at least one user");
@@ -562,6 +572,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
     setUnset(operations, UserGroupKeys.memberIds, newMemberIds);
     UserGroup updatedUserGroup = update(userGroupToUpdate, operations);
+
+    log.info("[SAML_SYNC]: Updated user group: {}", updatedUserGroup);
 
     // auditing addition/removal of users in/from user group
     if (toBeAudited) {
@@ -610,6 +622,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       return userGroup;
     }
     List<User> groupMembers = userGroup.getMembers();
+    log.info("[SAML_SYNC]: Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
     if (isEmpty(groupMembers)) {
       return userGroup;
     }
