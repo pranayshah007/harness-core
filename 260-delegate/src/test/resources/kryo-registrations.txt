@@ -838,7 +838,7 @@
 7254:software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest
 7255:software.wings.service.impl.aws.model.request.AwsLambdaDetailsRequest
 7256:software.wings.service.impl.aws.model.response.AwsLambdaDetailsResponse
-7258:io.harness.security.encryption.EncryptableSettingWithEncryptionDetails
+7258:io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails
 7259:software.wings.api.jira.JiraExecutionData.JiraIssueData
 7261:software.wings.beans.SlackMessage
 7262:software.wings.service.impl.SlackMessageSenderImpl

@@ -29,7 +29,7 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretsDelegateCacheService;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;

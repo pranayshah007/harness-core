@@ -35,7 +35,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.SecretManagementException;
 import io.harness.secrets.SecretsDelegateCacheService;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;

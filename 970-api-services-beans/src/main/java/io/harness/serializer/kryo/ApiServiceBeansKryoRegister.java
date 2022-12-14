@@ -109,7 +109,7 @@ import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
 import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecordData;

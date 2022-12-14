@@ -184,9 +184,10 @@ public class BuildCleaner {
         continue;
       }
 
+      resolvedSymbol.ifPresent(symbol -> logger.info("Adding dependency to {} for import {}", symbol, importStatement));
       resolvedSymbol.ifPresent(dependencies::add);
-      if (!resolvedSymbol.isPresent()) {
-        logger.info("No build dependency found for " + importStatement);
+      if (resolvedSymbol.isEmpty()) {
+        logger.info("No build dependency found for {}", importStatement);
       }
     }
 
