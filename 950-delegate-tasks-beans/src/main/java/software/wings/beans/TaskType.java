@@ -419,6 +419,7 @@ public enum TaskType {
   ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),
   ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task"),
   ELASTIGROUP_ROLLBACK(TaskGroup.ELASTIGROUP, "Elastigroup Rollback Task"),
+
   ELASTIGROUP_PRE_FETCH_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Pre Fetch Task"),
   CONTAINER_LE_STATUS(TaskGroup.CONTAINER_PMS, "Get lite engine status"),
   CONTAINER_CLEANUP(TaskGroup.CONTAINER_PMS, "Cleanup container for run task"),

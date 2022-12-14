@@ -7,23 +7,24 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 @Value
 @Builder
-@TypeAlias("ecsCanaryDeleteDataOutcome")
-@JsonTypeName("ecsCanaryDeleteDataOutcome")
-@RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeleteDataOutcome")
-public class AsgCanaryDeleteDataOutcome implements ExecutionSweepingOutput {
-  String createServiceRequestBuilderString;
-  String asgServiceNameSuffix;
+@TypeAlias("asgCanaryDeployOutcome")
+@JsonTypeName("asgCanaryDeployOutcome")
+@RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployOutcome")
+public class AsgCanaryDeployOutcome implements Outcome, ExecutionSweepingOutput {
+  String canaryAsgName;
 }

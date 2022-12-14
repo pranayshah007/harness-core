@@ -7,16 +7,4 @@
 
 package io.harness.delegate.task.aws.asg;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class AsgCanaryDeleteResult {
-  boolean canaryDeleted;
-  String canaryAsgName;
-}
+public enum AsgInfraType { ASG }

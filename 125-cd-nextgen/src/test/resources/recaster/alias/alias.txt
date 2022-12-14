@@ -629,7 +629,7 @@ io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo
 io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters
 io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode
 io.harness.cdng.aws.asg.AsgCanaryDeleteOutcome
-io.harness.cdng.aws.asg.AsgCanaryDeleteDataOutcome
+io.harness.cdng.aws.asg.AsgCanaryDeployOutcome
 io.harness.cdng.service.beans.AsgServiceSpec
 io.harness.cdng.aws.asg.AsgExecutionPassThroughData
 io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData

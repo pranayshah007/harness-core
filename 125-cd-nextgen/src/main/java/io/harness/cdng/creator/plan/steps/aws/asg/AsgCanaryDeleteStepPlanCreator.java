@@ -7,13 +7,19 @@
 
 package io.harness.cdng.creator.plan.steps.aws.asg;
 
+import static io.harness.cdng.visitor.YamlTypes.ASG_CANARY_DELETE;
+import static io.harness.cdng.visitor.YamlTypes.ASG_CANARY_DEPLOY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -33,5 +39,19 @@ public class AsgCanaryDeleteStepPlanCreator extends CDPMSStepPlanCreatorV2<AsgCa
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AsgCanaryDeleteStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  protected StepParameters getStepParameters(PlanCreationContext ctx, AsgCanaryDeleteStepNode stepElement) {
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+
+    String asgCanaryDeployFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DEPLOY);
+    String asgCanaryDeleteFnq = getExecutionStepFqn(ctx.getCurrentField(), ASG_CANARY_DELETE);
+    AsgCanaryDeleteStepParameters asgCanaryDeleteStepParameters =
+        (AsgCanaryDeleteStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    asgCanaryDeleteStepParameters.setAsgCanaryDeployFnq(asgCanaryDeployFnq);
+    asgCanaryDeleteStepParameters.setAsgCanaryDeleteFnq(asgCanaryDeleteFnq);
+
+    return stepParameters;
   }
 }

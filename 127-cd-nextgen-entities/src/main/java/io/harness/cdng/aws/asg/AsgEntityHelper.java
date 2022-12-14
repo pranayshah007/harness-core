@@ -26,8 +26,10 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-//import io.harness.delegate.task.aws.asg.AsgInfraConfig;
-//import io.harness.delegate.task.aws.asg.AsgInfraType;
+// import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+// import io.harness.delegate.task.aws.asg.AsgInfraType;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.AsgInfraType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -84,7 +86,7 @@ public class AsgEntityHelper {
     }
     return connectorDTO.get().getConnector();
   }
-/*
+
   public AsgInfraConfig getAsgInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
     ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
     switch (infrastructureOutcome.getKind()) {
@@ -93,7 +95,7 @@ public class AsgEntityHelper {
         return AsgInfraConfig.builder()
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
-            .asgInfraType(AsgInfraType.Asg)
+            .asgInfraType(AsgInfraType.ASG)
             .region(asgInfrastructureOutcome.getRegion())
             .infraStructureKey(asgInfrastructureOutcome.getInfrastructureKey())
             .build();
@@ -102,6 +104,4 @@ public class AsgEntityHelper {
             format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
     }
   }
-
- */
 }

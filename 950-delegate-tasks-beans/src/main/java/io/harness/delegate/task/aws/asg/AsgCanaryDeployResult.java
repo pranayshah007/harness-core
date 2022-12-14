@@ -7,4 +7,18 @@
 
 package io.harness.delegate.task.aws.asg;
 
-public enum AsgCommandTypeNG { ASG_CANARY_DEPLOY, ASG_CANARY_DELETE }
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+@Builder
+@OwnedBy(HarnessTeam.CDP)
+public class AsgCanaryDeployResult {
+  private String region;
+  //private List<AsgTask> asgTasks;
+  private String canaryAsgName;
+}
