@@ -936,7 +936,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
-  public void testGetConfigFileForAzure() {
+  public void testGetConfigFileForAzureExecFormat() {
     String expected = "apiVersion: v1\n"
         + "clusters:\n"
         + "- cluster:\n"
@@ -960,6 +960,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         + "    exec:\n"
         + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
         + "      args:\n"
+        + "      - get-token\n"
         + "      - --server-id\n"
         + "      - APISERVER_ID\n"
         + "      - --client-id\n"
@@ -968,7 +969,9 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         + "      - ENVIRONMENT\n"
         + "      - --tenant-id\n"
         + "      - TENANT_ID\n"
-        + "      command: true\n"
+        + "      - --login\n"
+        + "      - azurecli\n"
+        + "      command: kubelogin\n"
         + "      env: null\n"
         + "      interactiveMode: Never\n"
         + "      provideClusterInfo: false\n";
@@ -982,6 +985,64 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                                                       .apiServerId("APISERVER_ID")
                                                       .clientId("CLIENT_ID")
                                                       .aadIdToken("TOKEN")
+                                                      .shouldUseAuthProvider(false)
+                                                      .build();
+
+    KubernetesConfig kubeConfig = KubernetesConfig.builder()
+                                      .authType(AZURE_OAUTH)
+                                      .namespace("namespace")
+                                      .masterUrl("masterUrl")
+                                      .caCert("caCert".toCharArray())
+                                      .azureConfig(kubernetesAzureConfig)
+                                      .build();
+    String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
+    assertThat(expected).isEqualTo(configFileContent);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetConfigFileForAzureAuthProviderFormat() {
+    String expected = "apiVersion: v1\n"
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: masterUrl\n"
+        + "    \n"
+        + "    certificate-authority-data: caCert\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: CLUSTER_USER\n"
+        + "    namespace: namespace\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: CLUSTER_USER\n"
+        + "  user:\n"
+        + "    token: TOKEN\n"
+        + "    auth-provider:\n"
+        + "      name: azure\n"
+        + "      config:\n"
+        + "        apiserver-id: APISERVER_ID\n"
+        + "        client-id: CLIENT_ID\n"
+        + "        config-mode: \"CONFIG_MODE\"\n"
+        + "        environment: ENVIRONMENT\n"
+        + "        tenant-id: TENANT_ID\n";
+
+    KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()
+                                                      .clusterName("CLUSTER_NAME")
+                                                      .currentContext("CURRENT_CONTEXT")
+                                                      .clusterUser("CLUSTER_USER")
+                                                      .environment("ENVIRONMENT")
+                                                      .tenantId("TENANT_ID")
+                                                      .apiServerId("APISERVER_ID")
+                                                      .clientId("CLIENT_ID")
+                                                      .aadIdToken("TOKEN")
+                                                      .configMode("CONFIG_MODE")
+                                                      .shouldUseAuthProvider(true)
                                                       .build();
 
     KubernetesConfig kubeConfig = KubernetesConfig.builder()

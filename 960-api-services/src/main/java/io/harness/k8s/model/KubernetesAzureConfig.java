@@ -27,10 +27,12 @@ public class KubernetesAzureConfig {
   private String tenantId;
   private String environment;
   private String aadIdToken;
+  private boolean shouldUseAuthProvider;
 
   @Builder
   public KubernetesAzureConfig(String clusterName, String clusterUser, String currentContext, String apiServerId,
-      String clientId, String configMode, String tenantId, String environment, String aadIdToken) {
+      String clientId, String configMode, String tenantId, String environment, String aadIdToken,
+      boolean shouldUseAuthProvider) {
     this.clusterName = clusterName;
     this.clusterUser = clusterUser;
     this.currentContext = currentContext;
@@ -40,5 +42,6 @@ public class KubernetesAzureConfig {
     this.tenantId = tenantId;
     this.environment = environment;
     this.aadIdToken = aadIdToken;
+    this.shouldUseAuthProvider = shouldUseAuthProvider;
   }
 }

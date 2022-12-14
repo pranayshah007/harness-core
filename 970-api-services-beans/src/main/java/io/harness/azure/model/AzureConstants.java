@@ -7,10 +7,6 @@
 
 package io.harness.azure.model;
 
-import io.harness.delegate.clienttools.ClientTool;
-import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.delegate.clienttools.KubeloginVersion;
-
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -406,12 +402,14 @@ public interface AzureConstants {
   String ERROR_INVALID_MANAGEMENT_GROUP_ID = "Invalid credentials for Management Group ID";
   String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
   String AUTHORIZATION_ERROR = "does not have authorization";
-  String KUBELOGIN_BINARY_PATH = InstallUtils.getPath(ClientTool.KUBELOGIN, KubeloginVersion.V0_0_24);
+  String KUBELOGIN_BINARY_PATH = "kubelogin";
   String AZLOGIN_SERVICE_PRINCIPAL =
       "az login --service-principal -u ${APP_ID} -p ${PASSWORD-OR-CERT} --tenant ${TENANT_ID}";
   String AZLOGIN_MANAGED_IDENTITY = "az login --identity";
   String AZLOGIN_USER_MANAGED_IDENTITY = "--username ${CLIENT_ID}";
-  int TIMEOUTINMILIS = 45;
+  int TIMEOUTINMINUTES = 2;
   String ERROR_AZLOGIN = "Unable to login to Azure cluster %n%nCommand Executed: %n%s";
   String HINT_ERROR_AZLOGIN = "Please check if azure cli is installed on your delegate.";
+  String KUBELOGIN_VERSION = KUBELOGIN_BINARY_PATH + " --version";
+  String AZ_VERSION = "az version";
 }

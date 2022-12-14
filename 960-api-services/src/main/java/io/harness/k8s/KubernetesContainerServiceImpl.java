@@ -19,7 +19,8 @@ import static io.harness.eraro.ErrorCode.ACCESS_DENIED;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.writeUtf8StringToFile;
-import static io.harness.k8s.K8sConstants.AZURE_KUBE_CONFIG_TEMPLATE;
+import static io.harness.k8s.K8sConstants.AZURE_KUBE_CONFIG_AUTH_PROVIDER_TEMPLATE;
+import static io.harness.k8s.K8sConstants.AZURE_KUBE_CONFIG_EXEC_TEMPLATE;
 import static io.harness.k8s.K8sConstants.CLIENT_ID_KEY;
 import static io.harness.k8s.K8sConstants.CLIENT_SECRET_KEY;
 import static io.harness.k8s.K8sConstants.GCP_KUBE_CONFIG_TEMPLATE;
@@ -2150,7 +2151,11 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
 
     if (KubernetesClusterAuthType.AZURE_OAUTH == config.getAuthType()) {
-      return generateKubeConfigStringForAzure(config);
+      if (config.getAzureConfig().isShouldUseAuthProvider()) {
+        return generateKubeConfigAuthProviderFormatStringForAzure(config);
+      } else {
+        return generateKubeConfigExecFormatStringForAzure(config);
+      }
     }
 
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
@@ -2225,7 +2230,28 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${NAMESPACE}", namespace);
   }
 
-  private String generateKubeConfigStringForAzure(KubernetesConfig config) {
+  private String generateKubeConfigAuthProviderFormatStringForAzure(KubernetesConfig config) {
+    String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
+    String certificateAuthorityData =
+        isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
+    String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
+
+    return AZURE_KUBE_CONFIG_AUTH_PROVIDER_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
+        .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
+        .replace("${CERTIFICATE_AUTHORITY_DATA}", certificateAuthorityData)
+        .replace("${NAMESPACE}", namespace)
+        .replace("${CLUSTER_NAME}", config.getAzureConfig().getClusterName())
+        .replace("${CLUSTER_USER}", config.getAzureConfig().getClusterUser())
+        .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
+        .replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId())
+        .replace("${CLIENT_ID}", config.getAzureConfig().getClientId())
+        .replace("${CONFIG_MODE}", config.getAzureConfig().getConfigMode())
+        .replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment())
+        .replace("${TENANT_ID}", config.getAzureConfig().getTenantId())
+        .replace("${TOKEN}", config.getAzureConfig().getAadIdToken());
+  }
+
+  private String generateKubeConfigExecFormatStringForAzure(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
@@ -2244,7 +2270,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         ? ""
         : tenantId.replace("${TENANT_ID}", config.getAzureConfig().getTenantId());
 
-    return AZURE_KUBE_CONFIG_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
+    return AZURE_KUBE_CONFIG_EXEC_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
         .replace("${CERTIFICATE_AUTHORITY_DATA}", certificateAuthorityData)
         .replace("${NAMESPACE}", namespace)

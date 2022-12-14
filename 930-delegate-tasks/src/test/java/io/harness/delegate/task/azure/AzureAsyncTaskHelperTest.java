@@ -7,6 +7,11 @@
 
 package io.harness.delegate.task.azure;
 
+import static io.harness.azure.model.AzureConstants.AZLOGIN_MANAGED_IDENTITY;
+import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
+import static io.harness.azure.model.AzureConstants.AZLOGIN_USER_MANAGED_IDENTITY;
+import static io.harness.azure.model.AzureConstants.AZ_VERSION;
+import static io.harness.azure.model.AzureConstants.KUBELOGIN_VERSION;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -20,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -83,6 +89,7 @@ import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.UnexpectedTypeException;
 import io.harness.filesystem.FileIo;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.model.KubernetesConfig;
@@ -118,6 +125,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import reactor.core.publisher.Mono;
@@ -145,6 +153,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   private static String REPOSITORY = "test/appimage";
   private static String REGISTRY = "testreg";
   private static String REGISTRY_URL = format("%s.azurecr.io", REGISTRY.toLowerCase());
+  MockedStatic<AzureAsyncTaskHelper> azureAsyncTaskHelperMockedStatic;
 
   @Before
   public void setUp() throws Exception {
@@ -446,33 +455,38 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testClusterConfigUsingServicePrincipalWithSecret() throws IOException {
+  public void testClusterConfigUsingServicePrincipalWithSecret() throws Exception {
     testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
-    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret(), true);
+    testUserClusterConfig(
+        getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret(), false);
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingServicePrincipalWithCertificate() throws IOException {
+  public void testClusterConfigUsingServicePrincipalWithCertificate() throws Exception {
     testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
-    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert(), true);
+    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert(), false);
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingUserAssignedManagedIdentity() throws IOException {
+  public void testClusterConfigUsingUserAssignedManagedIdentity() throws Exception {
     testAdminClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
-    testUserClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI(), true);
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI(), false);
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingSystemAssignedManagedIdentity() throws IOException {
+  public void testClusterConfigUsingSystemAssignedManagedIdentity() throws Exception {
     testAdminClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
-    testUserClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI(), true);
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI(), false);
   }
 
   @Test
@@ -850,7 +864,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(azureRepositoriesResponse.getRepositories().get(0)).isEqualTo("repository");
   }
 
-  private void testAdminClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
+  private void testAdminClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws Exception {
     String accessToken = "1234567890987654321";
 
     AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
@@ -860,7 +874,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
                  AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
         .thenReturn(azureIdentityAccessTokenResponse);
 
-    when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
+    when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean()))
         .thenReturn(readResourceFileContent("azure/adminKubeConfigContent.yaml"));
 
     AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
@@ -895,7 +909,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(clusterConfig.getAzureConfig()).isNull();
   }
 
-  private void testUserClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
+  private void testUserClusterConfig(
+      AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig, boolean shouldUseAuthProvider) throws Exception {
     String accessToken = "1234567890987654321";
     String aadToken = "poiuytrewqwertyuiop";
 
@@ -915,8 +930,13 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
       when(azureAuthorizationClient.getUserAccessToken(azureConfig, null)).thenReturn(azureIdentityAccessTokenResponse);
     }
 
-    when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(readResourceFileContent("azure/userKubeConfigContent.yaml"));
+    if (shouldUseAuthProvider) {
+      when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean()))
+          .thenReturn(readResourceFileContent("azure/userKubeConfigAuthProviderFormatContent.yaml"));
+    } else {
+      when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean()))
+          .thenReturn(readResourceFileContent("azure/userKubeConfigExecFormatContent.yaml"));
+    }
 
     String scope = "6dae42f8-4368-4678-94ff-3960e28e3630";
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
@@ -936,8 +956,18 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
 
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
-
+    azureAsyncTaskHelperMockedStatic = Mockito.mockStatic(AzureAsyncTaskHelper.class, CALLS_REAL_METHODS);
+    azureAsyncTaskHelperMockedStatic.when(() -> AzureAsyncTaskHelper.runCommand(eq(KUBELOGIN_VERSION)))
+        .thenReturn(!shouldUseAuthProvider);
+    azureAsyncTaskHelperMockedStatic.when(() -> AzureAsyncTaskHelper.runCommand(eq(AZ_VERSION)))
+        .thenReturn(!shouldUseAuthProvider);
+    if (!shouldUseAuthProvider) {
+      azureAsyncTaskHelperMockedStatic
+          .when(() -> AzureAsyncTaskHelper.runCommand(eq(AzureCliCommandToLogin(azureConfig))))
+          .thenReturn(true);
+    }
     KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock);
+    azureAsyncTaskHelperMockedStatic.close();
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-azure-test-aks-dns-baa4bbdc.hcp.eastus.azmk8s.io:443");
@@ -948,6 +978,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
                 .toCharArray());
     assertThat(clusterConfig.getUsername()).isEqualTo("clusterUser_cdp-test-rg_cdp-azure-test-aks".toCharArray());
     assertThat(clusterConfig.getAzureConfig().getAadIdToken()).isEqualTo(aadToken);
+    assertThat(clusterConfig.getAzureConfig().isShouldUseAuthProvider()).isEqualTo(shouldUseAuthProvider);
   }
 
   private void testGetImageTags(AzureConfig azureConfig) {
@@ -1034,6 +1065,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .tenantId(TENANT_ID)
         .key(PASS.toCharArray())
         .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .azureAuthenticationType(AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET)
         .build();
   }
 
@@ -1087,5 +1119,29 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     File certFile = mock(File.class);
     doReturn(certFile).when(lazyAutoCloseableWorkingDirectory).workingDir();
     doReturn("").when(certFile).getAbsolutePath();
+  }
+
+  private String AzureCliCommandToLogin(AzureConfig azureConfig) {
+    switch (azureConfig.getAzureAuthenticationType()) {
+      case SERVICE_PRINCIPAL_SECRET:
+        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
+            .replace("${PASSWORD-OR-CERT}", String.valueOf(azureConfig.getKey()))
+            .replace("${TENANT_ID}", azureConfig.getTenantId());
+
+      case SERVICE_PRINCIPAL_CERT:
+        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
+            .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
+            .replace("${TENANT_ID}", azureConfig.getTenantId());
+
+      case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
+        return AZLOGIN_MANAGED_IDENTITY;
+
+      case MANAGED_IDENTITY_USER_ASSIGNED:
+        return AZLOGIN_MANAGED_IDENTITY + " "
+            + AZLOGIN_USER_MANAGED_IDENTITY.replace("${CLIENT_ID}", azureConfig.getClientId());
+
+      default:
+        throw new UnexpectedTypeException("Invalid Azure Authentication Type");
+    }
   }
 }

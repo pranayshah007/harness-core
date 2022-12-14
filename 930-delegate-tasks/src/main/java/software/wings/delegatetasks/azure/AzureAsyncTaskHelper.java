@@ -10,23 +10,21 @@ package software.wings.delegatetasks.azure;
 import static io.harness.azure.model.AzureConstants.AZLOGIN_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
 import static io.harness.azure.model.AzureConstants.AZLOGIN_USER_MANAGED_IDENTITY;
+import static io.harness.azure.model.AzureConstants.AZ_VERSION;
 import static io.harness.azure.model.AzureConstants.CLIENT_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.ENVIRONMENT_FLAG;
-import static io.harness.azure.model.AzureConstants.ERROR_AZLOGIN;
-import static io.harness.azure.model.AzureConstants.HINT_ERROR_AZLOGIN;
 import static io.harness.azure.model.AzureConstants.KUBELOGIN_BINARY_PATH;
+import static io.harness.azure.model.AzureConstants.KUBELOGIN_VERSION;
 import static io.harness.azure.model.AzureConstants.SERVER_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.TENANT_ID_FLAG;
-import static io.harness.azure.model.AzureConstants.TIMEOUTINMILIS;
+import static io.harness.azure.model.AzureConstants.TIMEOUTINMINUTES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,7 +47,6 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.ManagementGroupData;
@@ -76,6 +73,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnexpectedTypeException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.RegexFunctor;
 import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesClusterAuthType;
@@ -94,7 +92,6 @@ import com.azure.resourcemanager.resources.models.Subscription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -111,6 +108,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
+import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -400,17 +398,20 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext) throws Exception {
+  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext) throws IOException {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
         azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
         azureConfigContext.getCertificateWorkingDirectory());
 
-    azClusterLogin(azureConfig);
+    boolean shouldUseAuthProvider = !isKubeloginInstalled();
+    if (!shouldUseAuthProvider) {
+      azClusterLogin(azureConfig);
+    }
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
         azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
-        azureConfigContext.isUseClusterAdminCredentials());
+        azureConfigContext.isUseClusterAdminCredentials(), shouldUseAuthProvider);
   }
 
   public AzureRepositoriesResponse listRepositories(AzureConfigContext azureConfigContext) throws IOException {
@@ -552,27 +553,31 @@ public class AzureAsyncTaskHelper {
   }
 
   private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
-      String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials) {
+      String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials,
+      boolean shouldUseAuthProvider) {
     try {
       log.info(format(
           "Getting AKS kube config [subscription: %s] [resourceGroup: %s] [cluster: %s] [namespace: %s] [credentials: %s]",
           subscriptionId, resourceGroup, cluster, namespace, shouldGetAdminCredentials ? "admin" : "user"));
 
-      String kubeConfigContent =
-          getKubeConfigContent(azureConfig, subscriptionId, resourceGroup, cluster, shouldGetAdminCredentials);
+      String kubeConfigContent = getKubeConfigContent(
+          azureConfig, subscriptionId, resourceGroup, cluster, shouldGetAdminCredentials, shouldUseAuthProvider);
 
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
-      azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(KUBELOGIN_BINARY_PATH);
-      extractConfigFromArgs(azureKubeConfig);
-      verifyAzureKubeConfig(azureKubeConfig);
-
-      if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
-        azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, azureKubeConfig));
+      if (!shouldUseAuthProvider) {
+        azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(KUBELOGIN_BINARY_PATH);
+        extractConfigFromArgs(azureKubeConfig);
       }
 
-      return getKubernetesConfig(azureKubeConfig, namespace);
+      if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null
+          || azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+        azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, azureKubeConfig, shouldUseAuthProvider));
+      }
+      verifyAzureKubeConfig(azureKubeConfig);
+
+      return getKubernetesConfig(azureKubeConfig, namespace, shouldUseAuthProvider);
 
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(format("Kube Config could not be read from cluster"),
@@ -580,8 +585,11 @@ public class AzureAsyncTaskHelper {
     }
   }
 
-  private String fetchAksAADToken(AzureConfig azureConfig, AzureKubeConfig azureKubeConfig) {
-    StringBuilder scope = new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId());
+  private String fetchAksAADToken(
+      AzureConfig azureConfig, AzureKubeConfig azureKubeConfig, boolean shouldUseAuthProvider) {
+    StringBuilder scope = shouldUseAuthProvider
+        ? new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())
+        : new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId());
 
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
         || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
@@ -598,10 +606,10 @@ public class AzureAsyncTaskHelper {
   }
 
   private String getKubeConfigContent(AzureConfig azureConfig, String subscription, String resourceGroup,
-      String clusterName, boolean shouldGetAdminCredentials) {
+      String clusterName, boolean shouldGetAdminCredentials, boolean shouldUseAuthProvider) {
     String aksClusterCredentialsBase64 = azureKubernetesClient.getClusterCredentials(azureConfig,
         format("Bearer %s", fetchAzureUserAccessToken(azureConfig)), subscription, resourceGroup, clusterName,
-        shouldGetAdminCredentials);
+        shouldGetAdminCredentials, shouldUseAuthProvider);
     return new String(EncodingUtils.decodeBase64(aksClusterCredentialsBase64));
   }
 
@@ -626,11 +634,35 @@ public class AzureAsyncTaskHelper {
       throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
     }
 
-    if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
-      if (isEmpty(azureKubeConfig.getClusters().get(0).getName())) {
-        throw new AzureAKSException("Cluster name was not found in the kube config content!!!");
+    if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+      if (isEmpty(azureKubeConfig.getCurrentContext())) {
+        throw new AzureAKSException("Current context was not found in the kube config content!!!");
       }
 
+      if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig() == null) {
+        throw new AzureAKSException("AuthProvider was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())) {
+        throw new AzureAKSException("ApiServerId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())) {
+        throw new AzureAKSException("ClientId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())) {
+        throw new AzureAKSException("ConfigMode was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())) {
+        throw new AzureAKSException("TenantId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment())) {
+        throw new AzureAKSException("Environment was not found in the kube config content!!!");
+      }
+    } else if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
       if (isEmpty(azureKubeConfig.getCurrentContext())) {
         throw new AzureAKSException("Current context was not found in the kube config content!!!");
       }
@@ -679,25 +711,35 @@ public class AzureAsyncTaskHelper {
     log.info("Azure Kube Config is valid.");
   }
 
-  private KubernetesConfig getKubernetesConfig(AzureKubeConfig azureKubeConfig, String namespace) {
+  private KubernetesConfig getKubernetesConfig(
+      AzureKubeConfig azureKubeConfig, String namespace, boolean shouldUseAuthProvider) {
     if (isNotEmpty(azureKubeConfig.getAadToken())) {
-      KubernetesAzureConfig kubernetesAzureConfig =
+      KubernetesAzureConfig.KubernetesAzureConfigBuilder kubernetesAzureConfigBuilder =
           KubernetesAzureConfig.builder()
               .clusterName(azureKubeConfig.getClusters().get(0).getName())
               .clusterUser(azureKubeConfig.getUsers().get(0).getName())
               .currentContext(azureKubeConfig.getCurrentContext())
-              .apiServerId(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId())
-              .clientId(azureKubeConfig.getUsers().get(0).getUser().getExec().getClientId())
-              .tenantId(azureKubeConfig.getUsers().get(0).getUser().getExec().getTenantId())
-              .environment(azureKubeConfig.getUsers().get(0).getUser().getExec().getEnvironment())
               .aadIdToken(azureKubeConfig.getAadToken())
-              .build();
+              .shouldUseAuthProvider(shouldUseAuthProvider);
+      if (shouldUseAuthProvider) {
+        kubernetesAzureConfigBuilder
+            .apiServerId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())
+            .clientId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())
+            .configMode(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())
+            .tenantId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())
+            .environment(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment());
+      } else {
+        kubernetesAzureConfigBuilder.apiServerId(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId())
+            .clientId(azureKubeConfig.getUsers().get(0).getUser().getExec().getClientId())
+            .tenantId(azureKubeConfig.getUsers().get(0).getUser().getExec().getTenantId())
+            .environment(azureKubeConfig.getUsers().get(0).getUser().getExec().getEnvironment());
+      }
       return KubernetesConfig.builder()
           .namespace(namespace)
           .masterUrl(azureKubeConfig.getClusters().get(0).getCluster().getServer())
           .caCert(azureKubeConfig.getClusters().get(0).getCluster().getCertificateAuthorityData().toCharArray())
           .username(azureKubeConfig.getUsers().get(0).getName().toCharArray())
-          .azureConfig(kubernetesAzureConfig)
+          .azureConfig(kubernetesAzureConfigBuilder.build())
           .authType(KubernetesClusterAuthType.AZURE_OAUTH)
           .build();
     } else {
@@ -837,14 +879,9 @@ public class AzureAsyncTaskHelper {
     }
   }
 
-  private void azClusterLogin(AzureConfig azureConfig) throws Exception {
+  private void azClusterLogin(AzureConfig azureConfig) {
     String loginCommand = AzureCliCommandToLogin(azureConfig);
-    ProcessResult processResult = executeShellCommand(loginCommand);
-    if (processResult.getExitValue() != 0) {
-      throw NestedExceptionUtils.hintWithExplanationException(HINT_ERROR_AZLOGIN, format(ERROR_AZLOGIN, loginCommand),
-          new AzureAuthenticationException(
-              getErrorMessageIfProcessFailed("Failed to login to kubernetes cluster. ", processResult), USER));
-    }
+    runCommand(loginCommand);
   }
 
   private String AzureCliCommandToLogin(AzureConfig azureConfig) {
@@ -867,28 +904,51 @@ public class AzureAsyncTaskHelper {
             + AZLOGIN_USER_MANAGED_IDENTITY.replace("${CLIENT_ID}", azureConfig.getClientId());
 
       default:
-        new UnexpectedTypeException("Invalid Azure Authentication Type");
-        break;
+        throw new UnexpectedTypeException("Invalid Azure Authentication Type");
     }
-    return null;
   }
 
-  @VisibleForTesting
-  public ProcessResult executeShellCommand(String command) throws IOException, InterruptedException, TimeoutException {
-    ProcessExecutor processExecutor = new ProcessExecutor()
-                                          .timeout(ofSeconds(TIMEOUTINMILIS).toMillis(), TimeUnit.MILLISECONDS)
-                                          .commandSplit(command)
-                                          .readOutput(true);
-
-    return processExecutor.execute();
+  private boolean isKubeloginInstalled() {
+    return runCommand(KUBELOGIN_VERSION) && runCommand(AZ_VERSION);
   }
 
-  @VisibleForTesting
-  String getErrorMessageIfProcessFailed(String baseMessage, ProcessResult processResult) {
-    StringBuilder stringBuilder = new StringBuilder(baseMessage);
-    if (EmptyPredicate.isNotEmpty(processResult.getOutput().getUTF8())) {
-      stringBuilder.append(String.format(" Error %s", processResult.getOutput().getUTF8()));
+  public static boolean runCommand(final String command) {
+    try {
+      return executeShellCommand(command);
+    } catch (final Exception e) {
+      log.error("Failed running command: {}", command, ExceptionMessageSanitizer.sanitizeException(e));
+      return false;
     }
-    return stringBuilder.toString();
+  }
+
+  private static boolean executeShellCommand(String command)
+      throws IOException, InterruptedException, TimeoutException {
+    final ProcessExecutor processExecutor = new ProcessExecutor()
+                                                .timeout(TIMEOUTINMINUTES, TimeUnit.MINUTES)
+                                                .directory(null)
+                                                .command("/bin/bash", "-c", command)
+                                                .readOutput(true)
+                                                .redirectOutput(new LogOutputStream() {
+                                                  @Override
+                                                  protected void processLine(final String line) {
+                                                    log.info(line);
+                                                  }
+                                                })
+                                                .redirectError(new LogOutputStream() {
+                                                  @Override
+                                                  protected void processLine(final String line) {
+                                                    log.error(line);
+                                                  }
+                                                });
+
+    final ProcessResult result = processExecutor.execute();
+
+    if (result.getExitValue() == 0) {
+      log.info(result.outputUTF8());
+      return true;
+    } else {
+      log.error(result.outputUTF8());
+      return false;
+    }
   }
 }

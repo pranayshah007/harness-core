@@ -21,7 +21,16 @@ public interface AzureKubernetesRestClient {
       + "}/providers/Microsoft.ContainerService/managedClusters/{" + AzureConstants.AKS_CLUSTER_NAME
       + "}/listClusterUserCredential?api-version=2022-09-01&format=exec")
   Call<AksClusterCredentials>
-  listClusterUserCredential(@Header("Authorization") String accessToken,
+  listClusterUserCredentialExecFormat(@Header("Authorization") String accessToken,
+      @Path(value = AzureConstants.SUBSCRIPTION) String subscription,
+      @Path(value = AzureConstants.RESOURCE_GROUP) String resourceGroup,
+      @Path(value = AzureConstants.AKS_CLUSTER_NAME) String aksClusterName);
+
+  @POST("subscriptions/{" + AzureConstants.SUBSCRIPTION + "}/resourceGroups/{" + AzureConstants.RESOURCE_GROUP
+      + "}/providers/Microsoft.ContainerService/managedClusters/{" + AzureConstants.AKS_CLUSTER_NAME
+      + "}/listClusterUserCredential?api-version=2022-09-01")
+  Call<AksClusterCredentials>
+  listClusterUserCredentialAuthProviderFormat(@Header("Authorization") String accessToken,
       @Path(value = AzureConstants.SUBSCRIPTION) String subscription,
       @Path(value = AzureConstants.RESOURCE_GROUP) String resourceGroup,
       @Path(value = AzureConstants.AKS_CLUSTER_NAME) String aksClusterName);

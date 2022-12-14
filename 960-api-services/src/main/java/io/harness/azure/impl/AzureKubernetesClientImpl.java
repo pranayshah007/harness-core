@@ -45,7 +45,7 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
 
   @Override
   public String getClusterCredentials(AzureConfig azureConfig, String accessToken, String subscriptionId,
-      String resourceGroup, String aksClusterName, boolean shouldGetAdminCredentials) {
+      String resourceGroup, String aksClusterName, boolean shouldGetAdminCredentials, boolean shouldUseAuthProvider) {
     log.info(format(
         "Fetching cluster credentials [subscription: %s] [resourceGroup: %s] [aksClusterName: %s] [credentials: %s]",
         subscriptionId, resourceGroup, aksClusterName, shouldGetAdminCredentials ? "admin" : "user"));
@@ -57,9 +57,13 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
       if (shouldGetAdminCredentials) {
         request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
                       .listClusterAdminCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
+      } else if (shouldUseAuthProvider) {
+        request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
+                      .listClusterUserCredentialAuthProviderFormat(
+                          accessToken, subscriptionId, resourceGroup, aksClusterName);
       } else {
         request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
-                      .listClusterUserCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
+                      .listClusterUserCredentialExecFormat(accessToken, subscriptionId, resourceGroup, aksClusterName);
       }
 
       Response<AksClusterCredentials> response = request.execute();
