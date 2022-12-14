@@ -42,10 +42,9 @@ public class DelegateCapacityManagementServiceTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
     delegateCapacityManagementService.registerDelegateCapacity(
-        accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).taskLimit(10).build());
+        accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).build());
     Delegate delegateAfterUpdate = persistence.get(Delegate.class, delegate.getUuid());
     assertThat(delegateAfterUpdate.getDelegateCapacity().getMaximumNumberOfBuilds()).isEqualTo(5);
-    assertThat(delegateAfterUpdate.getDelegateCapacity().getTaskLimit()).isEqualTo(10);
   }
 
   @Test
@@ -57,11 +56,10 @@ public class DelegateCapacityManagementServiceTest extends WingsBaseTest {
     Delegate delegate = createDelegate(accountId);
     assertThat(delegateCapacityManagementService.hasCapacity(delegate)).isFalse();
     delegateCapacityManagementService.registerDelegateCapacity(
-        accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).taskLimit(10).build());
+        accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).build());
     Delegate delegateAfterUpdate = persistence.get(Delegate.class, delegate.getUuid());
     assertThat(delegateCapacityManagementService.hasCapacity(delegateAfterUpdate)).isTrue();
     assertThat(delegateAfterUpdate.getDelegateCapacity().getMaximumNumberOfBuilds()).isEqualTo(5);
-    assertThat(delegateAfterUpdate.getDelegateCapacity().getTaskLimit()).isEqualTo(10);
   }
 
   @Test
@@ -74,7 +72,8 @@ public class DelegateCapacityManagementServiceTest extends WingsBaseTest {
     delegateCapacityManagementService.registerDelegateCapacity(
         accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).build());
     Delegate delegateAfterUpdate = persistence.get(Delegate.class, delegate.getUuid());
-    DelegateCapacity delegateCapacity = delegateCapacityManagementService.getDelegateCapacity(delegateAfterUpdate);
+    DelegateCapacity delegateCapacity = delegateCapacityManagementService.getDelegateCapacity(
+        delegateAfterUpdate.getUuid(), delegateAfterUpdate.getAccountId());
     assertThat(delegateCapacity.getMaximumNumberOfBuilds()).isEqualTo(5);
   }
 

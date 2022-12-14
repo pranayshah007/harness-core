@@ -1,8 +1,17 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
 package io.harness.queueservice.impl;
+
+import static io.harness.beans.DelegateTask.Status.QUEUED;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
@@ -36,10 +45,10 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    return listOfDelegatesSortedByNumberOfTaskAssignedFromLocalCache(accountId);
+    return listOfDelegatesSortedByNumberOfTaskAssigned(accountId);
   }
 
-  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromLocalCache(String accountId) {
+  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId) {
     Map<String, Integer> numberOfTaskAssigned = new HashMap<>();
     getNumberOfTaskAssignedCache(accountId).forEach(delegateTask -> {
       if (delegateTask.getDelegateId() != null) {
@@ -71,7 +80,11 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   }
 
   public List<DelegateTask> getNumberOfTaskAssignedCache(String accountId) {
-    return delegateCache.getCurrentlyAssignedTask(accountId);
+    return persistence.createQuery(DelegateTask.class)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .filter(DelegateTaskKeys.status, QUEUED)
+        .project(DelegateTaskKeys.delegateId, true)
+        .asList();
   }
 
   private Map<String, Integer> listOfDelegatesSortedByNumberOfTaskAssignedFromRedisCache(String accountId) {

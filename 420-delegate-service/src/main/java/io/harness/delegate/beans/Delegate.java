@@ -195,4 +195,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .tags(delegateParams.getTags())
         .build();
   }
+
+  public boolean hasCapacityRegistered() {
+    return this.getDelegateCapacity() != null;
+  }
 }

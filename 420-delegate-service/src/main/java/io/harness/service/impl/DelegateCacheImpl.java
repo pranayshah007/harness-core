@@ -211,16 +211,6 @@ public class DelegateCacheImpl implements DelegateCache {
     }
   }
 
-  @Override
-  public List<DelegateTask> getCurrentlyAssignedTask(String accountId) {
-    try {
-      return numberOfDelegateTasksAssignedInAccountCache.get(accountId);
-    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
-      log.warn("Unable to get supported task types from cache based on account id");
-      return null;
-    }
-  }
-
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {
     List<Delegate> delegateList = getActiveDelegates(accountId);
     Set<String> supportedTaskTypes = new HashSet<>();

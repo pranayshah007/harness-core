@@ -9,7 +9,6 @@ package io.harness.service.intfc;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
@@ -31,8 +30,4 @@ public interface DelegateCache {
   List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 
   Set<String> getDelegateSupportedTaskTypes(@NotNull String accountId);
-
-  List<DelegateTask> getCurrentlyAssignedTask(@NotNull String accountId);
-
-
 }
