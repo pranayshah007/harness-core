@@ -375,6 +375,7 @@ import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
@@ -4753,8 +4754,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Collections.sort(serviceExecutionSummaries, ElementExecutionSummary.startTsComparator);
       workflowExecution.setServiceExecutionSummaries(serviceExecutionSummaries);
       if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
-        wingsPersistence.updateField(WorkflowExecution.class, workflowExecution.getUuid(), "serviceExecutionSummaries",
-            workflowExecution.getServiceExecutionSummaries());
+        Map<String, Object> fieldsToUpdate = new HashMap<>();
+        Optional<InstanceElement> optionalInstanceElement =
+            serviceExecutionSummaries.stream()
+                .map(ElementExecutionSummary::getInstanceStatusSummaries)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(InstanceStatusSummary::getInstanceElement)
+                .filter(Objects::nonNull)
+                .findAny();
+        fieldsToUpdate.put(
+            WorkflowExecutionKeys.serviceExecutionSummaries, workflowExecution.getServiceExecutionSummaries());
+        if (optionalInstanceElement.isPresent() && optionalInstanceElement.get().getUuid() != null) {
+          workflowExecution.setDeployment(true);
+          fieldsToUpdate.put(WorkflowExecutionKeys.deployment, workflowExecution.isDeployment());
+        }
+        wingsPersistence.updateFields(WorkflowExecution.class, workflowExecution.getUuid(), fieldsToUpdate);
       }
     }
   }
