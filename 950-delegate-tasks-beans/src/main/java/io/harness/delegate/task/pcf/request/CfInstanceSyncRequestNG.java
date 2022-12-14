@@ -6,7 +6,8 @@
  */
 package io.harness.delegate.task.pcf.request;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -14,18 +15,23 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.pcf.model.CfCliVersion;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Value
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class CfInstanceSyncRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  CfCliVersion cfCliVersion;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
-  TasInfraConfig tasInfraConfig;
-  Integer timeoutIntervalInMin;
+@Data
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfInstanceSyncRequestNG extends AbstractTasTaskRequest {
   String applicationName;
+
+  @Builder
+  public CfInstanceSyncRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
+
+      String applicationName) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+    this.applicationName = applicationName;
+  }
 }
