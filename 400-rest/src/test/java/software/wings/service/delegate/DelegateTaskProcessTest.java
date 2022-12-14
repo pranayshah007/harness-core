@@ -1347,8 +1347,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     delegate.setNumberOfTaskAssigned(1);
     delegate.setDelegateCapacity(DelegateCapacity.builder().maximumNumberOfBuilds(10).build());
     persistence.save(delegate);
-    when(orderByTotalNumberOfTaskAssignedCriteria.getDelegateFromCache(accountId, delegate.getUuid())).thenReturn(delegate);
-    when(orderByTotalNumberOfTaskAssignedCriteria.getNumberOfTaskAssignedCache(accountId)).thenReturn(Arrays.asList(DelegateTask.builder().build()));
     List<Delegate> eligibleDelegateIds = Collections.singletonList(delegate);
     Optional<List<String>> delegateList = resourceBasedDelegateSelectionCheckForTask.perform(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);

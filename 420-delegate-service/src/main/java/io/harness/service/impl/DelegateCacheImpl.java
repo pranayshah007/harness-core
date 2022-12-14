@@ -7,6 +7,8 @@
 
 package io.harness.service.impl;
 
+import static io.harness.beans.DelegateTask.DelegateTaskKeys;
+import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 
@@ -118,21 +120,20 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
-
   private LoadingCache<String, List<DelegateTask>> numberOfDelegateTasksAssignedInAccountCache =
-          CacheBuilder.newBuilder()
-                  .maximumSize(10000)
-                  .expireAfterWrite(1, TimeUnit.MINUTES)
-                  .build(new CacheLoader<String, List<DelegateTask>>() {
-                    @Override
-                    public List<DelegateTask> load(@org.jetbrains.annotations.NotNull String accountId) {
-                      return persistence.createQuery(DelegateTask.class)
-                              .filter(DelegateTask.DelegateTaskKeys.accountId, accountId)
-                              .project(DelegateTask.DelegateTaskKeys.delegateId, true)
-                              .asList();
-                    }
-                  });
-
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, List<DelegateTask>>() {
+            @Override
+            public List<DelegateTask> load(@org.jetbrains.annotations.NotNull String accountId) {
+              return persistence.createQuery(DelegateTask.class)
+                  .filter(DelegateTaskKeys.accountId, accountId)
+                  .filter(DelegateTaskKeys.status, QUEUED)
+                  .project(DelegateTaskKeys.delegateId, true)
+                  .asList();
+            }
+          });
 
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
@@ -212,12 +213,12 @@ public class DelegateCacheImpl implements DelegateCache {
 
   @Override
   public List<DelegateTask> getCurrentlyAssignedTask(String accountId) {
-   try {
-     return numberOfDelegateTasksAssignedInAccountCache.get(accountId);
-   }catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
-     log.warn("Unable to get supported task types from cache based on account id");
-     return null;
-   }
+    try {
+      return numberOfDelegateTasksAssignedInAccountCache.get(accountId);
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to get supported task types from cache based on account id");
+      return null;
+    }
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

@@ -9,20 +9,24 @@ import io.harness.queueservice.infc.DelegateResourceCriteria;
 
 import software.wings.beans.TaskType;
 
+import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.DEL)
 public class ResourceBasedDelegateSelectionCheckForTask {
+  @Inject OrderByTotalNumberOfTaskAssignedCriteria orderByTotalNumberOfTaskAssignedCriteria;
+  @Inject FilterByDelegateCapacity filterByDelegateCapacity;
 
   public Optional<List<String>> perform(List<Delegate> delegateList, TaskType taskType, String accountId) {
     DelegateResourceCriteria delegateResourceCriteria =
-            new FilterByDelegateCapacity().and(new OrderByTotalNumberOfTaskAssignedCriteria());
-    List<String> filteredList = delegateResourceCriteria.getFilteredEligibleDelegateList(delegateList,taskType, accountId)
-                                    .stream()
-                                    .map(Delegate::getUuid)
-                                    .collect(Collectors.toList());
+        filterByDelegateCapacity.and(orderByTotalNumberOfTaskAssignedCriteria);
+    List<String> filteredList =
+        delegateResourceCriteria.getFilteredEligibleDelegateList(delegateList, taskType, accountId)
+            .stream()
+            .map(Delegate::getUuid)
+            .collect(Collectors.toList());
     return Optional.of(filteredList);
   }
 }

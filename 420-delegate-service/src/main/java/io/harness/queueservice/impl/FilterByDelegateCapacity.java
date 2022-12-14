@@ -25,17 +25,19 @@ public class FilterByDelegateCapacity implements DelegateResourceCriteria {
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
     return delegateList.stream()
-        .filter(delegateCapacityManagementService::hasCapacity)
-        .filter(delegate -> isDelegateReachedMaxCapacity(delegate, taskType))
+        .filter(delegate -> delegateHasCapacityToAssignTask(delegate, taskType))
         .collect(Collectors.toList());
   }
 
-  private boolean isDelegateReachedMaxCapacity(Delegate delegate, TaskType taskType) {
-    TaskGroup taskGroup =
-        taskType != null && isNotBlank(taskType.name()) ? TaskType.valueOf(taskType.name()).getTaskGroup() : null;
-    if (taskGroup == TaskGroup.CI) {
-      return delegate.getDelegateCapacity().getMaximumNumberOfBuilds() >= delegate.getNumberOfTaskAssigned();
+  private boolean delegateHasCapacityToAssignTask(Delegate delegate, TaskType taskType) {
+    if (delegateCapacityManagementService.hasCapacity(delegate)) {
+      TaskGroup taskGroup =
+          taskType != null && isNotBlank(taskType.name()) ? TaskType.valueOf(taskType.name()).getTaskGroup() : null;
+      if (taskGroup == TaskGroup.CI) {
+        return delegate.getDelegateCapacity().getMaximumNumberOfBuilds() >= delegate.getNumberOfTaskAssigned();
+      }
+      return delegate.getDelegateCapacity().getTaskLimit() >= delegate.getNumberOfTaskAssigned();
     }
-    return delegate.getDelegateCapacity().getTaskLimit() >= delegate.getNumberOfTaskAssigned();
+    return true;
   }
 }
