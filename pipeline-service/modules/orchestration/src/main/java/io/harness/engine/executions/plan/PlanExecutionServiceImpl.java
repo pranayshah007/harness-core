@@ -270,12 +270,10 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
 
   @Override
   public long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier) {
-    // Uses - accountId_pipelineId_status_idx
+    // Uses - accountId_status_idx
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .in(StatusUtils.activeStatuses());
     return mongoTemplate.count(new Query(criteria), PlanExecution.class);

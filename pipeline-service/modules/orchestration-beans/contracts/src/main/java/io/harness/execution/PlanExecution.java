@@ -116,9 +116,8 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
         // PlanExecutionMonitorService
         .add(CompoundMongoIndex.builder().name("status_idx").field(PlanExecutionKeys.status).build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_pipelineId_status_idx")
+                 .name("accountId_status_idx")
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
-                 .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
                  .field(PlanExecutionKeys.status)
                  .build())
         // findPrevUnTerminatedPlanExecutionsByExecutionTag

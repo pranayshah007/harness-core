@@ -38,7 +38,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
 
   private final LoadingCache<String, List<ModuleLicenseDTO>> moduleLicensesCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(1, TimeUnit.DAYS)
+          .expireAfterWrite(1, TimeUnit.HOURS)
           .build(new CacheLoader<String, List<ModuleLicenseDTO>>() {
             @Override
             public List<ModuleLicenseDTO> load(@NotNull final String accountId) {
