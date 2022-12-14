@@ -11,6 +11,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.pcf.model.CfCliVersion;
 
 import lombok.Builder;
 import lombok.Value;
@@ -21,6 +22,7 @@ import lombok.Value;
 public class CfInstanceSyncRequestNG implements CfCommandRequestNG {
   String accountId;
   CfCommandTypeNG cfCommandTypeNG;
+  CfCliVersion cfCliVersion;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   TasInfraConfig tasInfraConfig;

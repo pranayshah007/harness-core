@@ -76,6 +76,7 @@ import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
+import io.harness.pcf.model.PcfConstants;
 
 import software.wings.delegatetasks.pcf.PcfCommandTaskHelper;
 
@@ -166,7 +167,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
               .newReleaseName(basicSetupRequestNG.getReleaseNamePrefix())
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
-              .dockerBasedDeployment(!basicSetupRequestNG.isPackageArtifact())
+              .dockerBasedDeployment(isDockerArtifact(basicSetupRequestNG.getTasArtifactConfig()))
               .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(basicSetupRequestNG, requestData));
@@ -282,14 +283,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     if (EmptyPredicate.isEmpty(previousReleases) || currentProdApplicationSummary == null) {
       return;
     }
-    String revision = "";
-    if (previousReleases.size() == 1) {
-      revision = "0";
-    } else {
-      String previousVersionedAppName = previousReleases.get(previousReleases.size() - 1).getName();
-      int latestVersionUsed = pcfCommandTaskBaseHelper.getRevisionFromReleaseName(previousVersionedAppName);
-      revision = latestVersionUsed == -1 ? "0" : String.valueOf(latestVersionUsed + 1);
-    }
+    int latestVersionUsed = getHighestVersionAppName(previousReleases);
+    String revision = latestVersionUsed == -1 ? "0" : String.valueOf(latestVersionUsed + 1);
 
     String appNamePrefix = basicSetupRequestNG.getReleaseNamePrefix();
     String newName = appNamePrefix + DELIMITER + revision;
@@ -298,10 +293,20 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     currentProdInfo.setApplicationName(newName);
   }
 
+  private int getHighestVersionAppName(List<ApplicationSummary> previousReleases) {
+    int maxVersion = -1;
+    int latestVersionUsed;
+    for (ApplicationSummary previousApp : previousReleases) {
+      latestVersionUsed = pcfCommandTaskBaseHelper.getRevisionFromReleaseName(previousApp.getName());
+      maxVersion = Math.max(latestVersionUsed, maxVersion);
+    }
+    return maxVersion;
+  }
+
   private File downloadArtifactFile(
       CfBasicSetupRequestNG basicSetupRequestNG, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
-    if (basicSetupRequestNG.isPackageArtifact()) {
+    if (isPackageArtifact(basicSetupRequestNG.getTasArtifactConfig())) {
       TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
           TasArtifactDownloadContext.builder()
               .artifactConfig((TasPackageArtifactConfig) basicSetupRequestNG.getTasArtifactConfig())
@@ -362,7 +367,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   private File generateWorkingDirectoryOnDelegate(CfBasicSetupRequestNG cfCommandSetupRequest)
       throws PivotalClientApiException, IOException {
     File workingDirectory = pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
-    if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoscalar()) {
+    if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoScalar()) {
       if (workingDirectory == null) {
         throw new PivotalClientApiException("Failed to generate CF-CLI Working directory");
       }
@@ -383,14 +388,23 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
     logCallback.saveExecutionLog("# Existing applications to Keep: " + olderVersionCountToKeep);
 
-    // Now, we need to keep "olderVersionCountToKeep" no of apps.
-    // We will keep most recent/active one as is, and downsize olderActiveVersionCountToKeep - 1
-    // apps to 0, so they will be deleted in next deployment.
     int olderValidAppsFound = 1;
     for (int index = previousReleases.size() - 1; index >= 0; index--) {
       ApplicationSummary applicationSummary = previousReleases.get(index);
-      if (olderValidAppsFound < olderVersionCountToKeep && currentProdInfo != null
+
+      if (PcfConstants.isInterimApp(applicationSummary.getName())) {
+        logCallback.saveExecutionLog(
+            "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
+        deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        continue;
+      }
+
+      if (currentProdInfo != null && isNotEmpty(currentProdInfo.getApplicationName())
           && applicationSummary.getName().equals(currentProdInfo.getApplicationName())) {
+        continue;
+      }
+
+      if (olderValidAppsFound < olderVersionCountToKeep) {
         olderValidAppsFound++;
         downsizeApplicationToZero(
             applicationSummary, cfRequestConfig, cfCommandSetupRequest, appAutoscalarRequestData, logCallback);
@@ -406,7 +420,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     cfRequestConfig.setApplicationName(applicationSummary.getName());
     try {
       cfDeploymentManager.deleteApplication(cfRequestConfig);
-      //      appsDeleted.add(applicationSummary.getName());
     } catch (PivotalClientApiException e) {
       executionLogCallback.saveExecutionLog("Failed while deleting application: "
               + encodeColor(applicationSummary.getName()) + ", Continuing for next one",
@@ -420,7 +433,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    if (cfCommandSetupRequest.isUseAppAutoscalar()) {
+    if (cfCommandSetupRequest.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
       appAutoscalarRequestData.setExpectedEnabled(true);
@@ -510,7 +523,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   public String generateManifestYamlForPush(CfBasicSetupRequestNG cfCommandSetupRequest,
       CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = cfCommandSetupRequest.getManifestYaml();
+    String manifestYaml = cfCommandSetupRequest.getPcfManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {
@@ -578,7 +591,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfBasicSetupRequestNG cfCommandSetupRequest,
       TreeMap<String, Object> applicationToBeUpdated) {
-    if (cfCommandSetupRequest.isPackageArtifact()) {
+    if (isPackageArtifact(cfCommandSetupRequest.getTasArtifactConfig())) {
       applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
     } else {
       Map<String, Object> dockerDetails = new HashMap<>();

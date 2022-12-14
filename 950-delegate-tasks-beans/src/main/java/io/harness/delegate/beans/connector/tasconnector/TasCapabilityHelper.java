@@ -22,12 +22,6 @@ public class TasCapabilityHelper extends ConnectorCapabilityBaseHelper {
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     TasConnectorDTO tasConnectorDTO = (TasConnectorDTO) connectorConfigDTO;
-    TasCredentialDTO credential = tasConnectorDTO.getCredential();
-    if (credential.getType() == TasCredentialType.MANUAL_CREDENTIALS) {
-      TasManualDetailsDTO tasManualDetailsDTO = (TasManualDetailsDTO) credential.getSpec();
-      capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-          tasManualDetailsDTO.getEndpointUrl(), maskingEvaluator));
-    }
     populateDelegateSelectorCapability(capabilityList, tasConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }

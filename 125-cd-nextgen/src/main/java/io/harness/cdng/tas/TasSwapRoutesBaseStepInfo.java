@@ -40,9 +40,8 @@ public class TasSwapRoutesBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @NotNull
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  @YamlSchemaTypes({string})
+  @YamlSchemaTypes({runtime})
   ParameterField<Boolean> downSizeOldApplication;
   @JsonIgnore String tasResizeFqn;
   @JsonIgnore String tasBGSetupFqn;

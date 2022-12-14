@@ -16,7 +16,7 @@ spec:
             instanceCount: FromManifest
             existingVersionToKeep: 3
             additionalRoutes: []
-            tempRoutes: ""
+            tempRoutes: []
       - step:
           type: Verify
           name: Verify

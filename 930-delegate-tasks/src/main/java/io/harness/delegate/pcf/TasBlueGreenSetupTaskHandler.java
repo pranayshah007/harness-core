@@ -160,7 +160,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       artifactFile = downloadArtifactFile(blueGreenSetupRequestNG, workingDirectory, logCallback);
 
       deleteOlderApplications(previousReleases, cfRequestConfig, blueGreenSetupRequestNG, cfAppAutoscalarRequestData,
-          logCallback, activeApplicationInfo);
+          logCallback, activeApplicationInfo, inActiveApplicationInfo);
 
       renameInActiveApplication(previousReleases, blueGreenSetupRequestNG, cfRequestConfig, logCallback,
           activeApplicationInfo, inActiveApplicationInfo);
@@ -176,7 +176,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
               .newReleaseName(blueGreenSetupRequestNG.getReleaseNamePrefix() + INACTIVE_APP_NAME_SUFFIX)
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
-              .dockerBasedDeployment(!blueGreenSetupRequestNG.isPackageArtifact())
+              .dockerBasedDeployment(isDockerArtifact(blueGreenSetupRequestNG.getTasArtifactConfig()))
               .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(blueGreenSetupRequestNG, requestData));
@@ -353,7 +353,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   private File downloadArtifactFile(
       CfBlueGreenSetupRequestNG blueGreenSetupRequestNG, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
-    if (blueGreenSetupRequestNG.isPackageArtifact()) {
+    if (isPackageArtifact(blueGreenSetupRequestNG.getTasArtifactConfig())) {
       TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
           TasArtifactDownloadContext.builder()
               .artifactConfig((TasPackageArtifactConfig) blueGreenSetupRequestNG.getTasArtifactConfig())
@@ -367,7 +367,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, TasApplicationInfo currentProdInfo) {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) {
     if (isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
@@ -378,14 +378,23 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
     logCallback.saveExecutionLog("# Existing applications to Keep: " + olderVersionCountToKeep);
 
-    // Now, we need to keep "olderVersionCountToKeep" no of apps.
-    // We will keep most recent/active one as is, and downsize olderActiveVersionCountToKeep - 1
-    // apps to 0, so they will be deleted in next deployment.
     int olderValidAppsFound = 1;
     for (int index = previousReleases.size() - 1; index >= 0; index--) {
       ApplicationSummary applicationSummary = previousReleases.get(index);
-      if (olderValidAppsFound < olderVersionCountToKeep && currentProdInfo != null
-          && applicationSummary.getName().equals(currentProdInfo.getApplicationName())) {
+
+      if (PcfConstants.isInterimApp(applicationSummary.getName())) {
+        logCallback.saveExecutionLog(
+            "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
+        deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+      }
+
+      if (currentProdInfo != null && applicationSummary.getName().equals(currentProdInfo.getApplicationName())) {
+        continue;
+      }
+
+      if ((olderValidAppsFound < olderVersionCountToKeep)
+          || ((inActiveApplicationInfo != null && isNotEmpty(inActiveApplicationInfo.getApplicationName())
+              && applicationSummary.getName().equals(inActiveApplicationInfo.getApplicationName())))) {
         olderValidAppsFound++;
         downsizeApplicationToZero(
             applicationSummary, cfRequestConfig, setupRequestNG, appAutoscalarRequestData, logCallback);
@@ -562,7 +571,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   public String generateManifestYamlForPush(CfBlueGreenSetupRequestNG setupRequestNG,
       CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = setupRequestNG.getManifestYaml();
+    String manifestYaml = setupRequestNG.getPcfManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {
@@ -623,7 +632,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void updateArtifactDetails(CfCreateApplicationRequestData requestData,
       CfBlueGreenSetupRequestNG cfCommandSetupRequest, TreeMap<String, Object> applicationToBeUpdated) {
-    if (cfCommandSetupRequest.isPackageArtifact()) {
+    if (isPackageArtifact(cfCommandSetupRequest.getTasArtifactConfig())) {
       applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
     } else {
       Map<String, Object> dockerDetails = new HashMap<>();
@@ -665,10 +674,10 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
     PcfManifestsPackage pcfManifestsPackage = setupRequest.getPcfManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
-    if(pcfManifestsPackage.getVariableYmls() != null) {
+    if (pcfManifestsPackage.getVariableYmls() != null) {
       pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
         File varsYamlFile =
-                pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
+            pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
         if (varsYamlFile != null) {
           varFileIndex.incrementAndGet();
           requestData.getPcfManifestFileData().getVarFiles().add(varsYamlFile);

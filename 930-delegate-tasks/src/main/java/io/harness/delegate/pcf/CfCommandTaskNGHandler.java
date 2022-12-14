@@ -18,6 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.logging.LogCallback;
@@ -60,5 +62,13 @@ public abstract class CfCommandTaskNGHandler {
           applicationSummary -> appNames.append("\n").append(encodeColor(applicationSummary.getName())));
       executionLogCallback.saveExecutionLog(appNames.toString());
     }
+  }
+
+  protected boolean isDockerArtifact(TasArtifactConfig tasArtifactConfig) {
+    return TasArtifactType.CONTAINER == tasArtifactConfig.getArtifactType();
+  }
+
+  protected boolean isPackageArtifact(TasArtifactConfig tasArtifactConfig) {
+    return TasArtifactType.PACKAGE == tasArtifactConfig.getArtifactType();
   }
 }

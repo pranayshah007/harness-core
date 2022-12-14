@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
 @TypeAlias("TasSwapRoutesStepNode")
-@RecasterAlias("io.harness.cdng.pcf.TasSwapRoutesStepNode")
+@RecasterAlias("io.harness.cdng.tas.TasSwapRoutesStepNode")
 public class TasSwapRoutesStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull TasSwapRoutesStepNode.StepType type = StepType.SwapRoutes;
   @JsonProperty("spec")

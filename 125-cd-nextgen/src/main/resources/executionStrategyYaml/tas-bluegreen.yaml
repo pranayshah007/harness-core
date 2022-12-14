@@ -16,7 +16,7 @@ spec:
             instanceCount: FromManifest
             existingVersionToKeep: 3
             additionalRoutes: []
-            tempRoute
+            tempRoutes: []
       - step:
           name: "App Resize"
           identifier: AppResize
