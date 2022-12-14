@@ -344,9 +344,13 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         ec2Recommendation.getCurrentMonthlyCost().isEmpty() ? "0.0" : ec2Recommendation.getCurrentMonthlyCost());
     Double monthlySaving = Double.parseDouble(
         ec2Recommendation.getExpectedSaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedSaving());
-    ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(), ec2Recommendation.getAccountId(),
-        ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceType(),
-        currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
+    try {
+      ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(), ec2Recommendation.getAccountId(),
+          ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceType(),
+          currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
+    } catch (Exception e) {
+      log.warn("Timescale error while saving");
+    }
   }
 
   private String calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {
