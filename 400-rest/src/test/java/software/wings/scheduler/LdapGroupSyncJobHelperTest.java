@@ -11,7 +11,7 @@ import static io.harness.beans.FeatureName.PL_LDAP_PARALLEL_GROUP_SYNC;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
-//import static software.wings.integration.SSO.LDAP.LdapTestHelper.buildLdapSettings;
+import static software.wings.integration.SSO.LDAP.LdapTestHelper.buildLdapSettings;
 import static software.wings.scheduler.LdapGroupSyncJob.MAX_LDAP_SYNC_TIMEOUT;
 import static software.wings.scheduler.LdapGroupSyncJob.MIN_LDAP_SYNC_TIMEOUT;
 
@@ -144,7 +144,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     when(userGroup.getName()).thenReturn("userGroupName");
     when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
     userGroup.setAccountId(ACCOUNT_ID);
-    //ldapSettings = buildLdapSettings();
+    ldapSettings = buildLdapSettings();
     ldapSettings.setAccountId(ACCOUNT_ID);
     ldapSettings.setUuid(SSO_ID);
     List<UserGroup> userGroups = Collections.singletonList(userGroup);
@@ -173,7 +173,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     when(userGroup.getName()).thenReturn("userGroupName");
     when(userGroup.getAccountId()).thenReturn(UUIDGenerator.generateUuid());
     userGroup.setAccountId(ACCOUNT_ID);
-    //ldapSettings = buildLdapSettings();
+    ldapSettings = buildLdapSettings();
     ldapSettings.setAccountId(ACCOUNT_ID);
     ldapSettings.setUuid(SSO_ID);
     List<UserGroup> userGroups = Collections.singletonList(userGroup);
