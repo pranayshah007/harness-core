@@ -14,7 +14,6 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -44,7 +43,6 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   Integer timeoutIntervalInMinutes;
   TasApplicationInfo oldApplicationDetails;
   TasApplicationInfo newApplicationDetails;
-  PcfManifestsPackage pcfManifestsPackage;
   List<String> tempRouteMap;
   List<String> routeMaps;
   TasApplicationInfo existingApplicationDetails;

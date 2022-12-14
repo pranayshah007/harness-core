@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -52,11 +51,11 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @NotNull ResizeStrategy resizeStrategy;
+  @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCountType, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ResizeStrategy resizeStrategy) {
+      TasResizeStrategyType resizeStrategy) {
     super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }
@@ -74,7 +73,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   @Override
   public SpecParameters getSpecParameters() {
     return TasCanaryAppSetupStepParameters.infoBuilder()
-        .tasInstanceCountType(this.tasInstanceCountType)
+        .tasInstanceCountType(this.instanceCount)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .resizeStrategy(this.resizeStrategy)

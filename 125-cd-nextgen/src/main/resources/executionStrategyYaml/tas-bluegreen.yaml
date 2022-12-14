@@ -13,7 +13,7 @@ spec:
           type: BGAppSetup
           timeout: 10m
           spec:
-            tasInstanceCountType: FromManifest
+            instanceCount: FromManifest
             existingVersionToKeep: 3
             additionalRoutes: []
             tempRoutes: []
