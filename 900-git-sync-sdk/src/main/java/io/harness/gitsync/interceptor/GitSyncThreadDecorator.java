@@ -25,7 +25,6 @@ import com.google.common.base.Charsets;
 import com.google.inject.Singleton;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.IllegalCharsetNameException;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
