@@ -277,8 +277,7 @@ public class TasStepHelper {
     logCallback.saveExecutionLog("Done", INFO, SUCCESS);
 
     // Resolving expressions
-    ExpressionEvaluatorUtils.updateExpressions(
-        scriptString, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    scriptString = engineExpressionService.renderExpression(ambiance, scriptString);
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
@@ -313,7 +312,7 @@ public class TasStepHelper {
                                                         .build();
 
     unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
-    tasStepPassThroughData.setUnitProgresses(Arrays.asList(unitProgress.build()));
+    tasStepPassThroughData.setUnitProgresses(new ArrayList<>(Arrays.asList(unitProgress.build())));
 
     //  fire task to fetch remote files
     shouldExecuteStoreFetch(tasStepPassThroughData);
@@ -953,13 +952,16 @@ public class TasStepHelper {
         tasStepPassThroughData.getGitFetchFilesResultMap(), tasStepPassThroughData.getCustomFetchContent(),
         tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
+    CDExpressionResolveFunctor cdExpressionResolveFunctor =
+            new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     Map<String, String> allFilesFetched = new HashMap<>();
     if (tasStepPassThroughData.getGitFetchFilesResultMap() != null
         && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
       for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
         if (entry.getFiles() != null) {
           for (int iterate = 0; iterate < entry.getFiles().size(); iterate++) {
-              allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(), entry.getFiles().get(iterate).getFileContent());
+              allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(), (String) ExpressionEvaluatorUtils.updateExpressions(
+                      entry.getFiles().get(iterate).getFileContent(), cdExpressionResolveFunctor));
           }
         }
       }
@@ -974,7 +976,8 @@ public class TasStepHelper {
                iterate++) {
             allFilesFetched.put(
                 tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
-                tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
+                    (String) ExpressionEvaluatorUtils.updateExpressions(
+                            tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate), cdExpressionResolveFunctor));
           }
         }
       }
@@ -984,19 +987,11 @@ public class TasStepHelper {
       for (Collection<CustomSourceFile> customSourceFileCollection :
           tasStepPassThroughData.getCustomFetchContent().values()) {
         for (CustomSourceFile customSourceFile: customSourceFileCollection) {
-          allFilesFetched.put(customSourceFile.getFilePath(),customSourceFile.getFileContent());
+          allFilesFetched.put(customSourceFile.getFilePath(), (String) ExpressionEvaluatorUtils.updateExpressions(
+                  customSourceFile.getFileContent(), cdExpressionResolveFunctor));
         }
       }
     }
-
-    //    if (tasStepPassThroughData.getRawScript() != null) {
-    //      tasStepPassThroughData.getUnitProgresses().add(UnitProgress.newBuilder()
-    //                               .setUnitName(CfCommandUnitConstants.FetchCommandScript)
-    //                               .setStatus(UnitStatus.SUCCESS)
-    //                               .setStartTime(System.currentTimeMillis() - 10)
-    //                               .setEndTime(System.currentTimeMillis() - 5)
-    //                               .build());
-    //    }
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()

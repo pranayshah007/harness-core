@@ -184,8 +184,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // During rollback, always upsize old ones
       cfCommandTaskHelperNG.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
           cfRequestConfig, upsizeList, cfInstanceElements, cfRollbackCommandRequestNG);
+      cfCommandTaskHelperNG.restoreRoutesForOldApplication(cfRollbackCommandRequestNG, cfRequestConfig, executionLogCallback);
       // Enable autoscalar for older app, if it was disabled during deploy
-
       //todo: change autoscaler data
       cfCommandTaskHelperNG.enableAutoscalerIfNeeded(cfRollbackCommandRequestNG.getNewApplicationDetails(), autoscalarRequestData, executionLogCallback);
 
@@ -198,6 +198,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfCommandTaskHelperNG.downSizeListOfInstances(executionLogCallback, cfServiceDataUpdated, cfRequestConfig,
           updateNewAppName(cfRequestConfig, cfRollbackCommandRequestNG, downSizeList), cfRollbackCommandRequestNG,
           autoscalarRequestData);
+      cfCommandTaskHelperNG.unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig);
 
       // Deleting
       cfCommandTaskHelperNG.deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);

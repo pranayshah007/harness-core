@@ -1412,6 +1412,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CfSwapRouteCommandResponseNG.class, 10000244);
     kryo.register(CfSwapRollbackCommandRequestNG.class, 10000245);
     kryo.register(CfRollbackCommandResult.class, 10000246);
+    kryo.register(io.harness.delegate.task.pcf.artifact.TasArtifactConfig.class, 10000253);
+    kryo.register(io.harness.delegate.task.pcf.artifact.TasArtifactType.class, 10000254);
+    kryo.register(io.harness.delegate.task.pcf.artifact.TasArtifactRequestDetails.class, 10000256);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

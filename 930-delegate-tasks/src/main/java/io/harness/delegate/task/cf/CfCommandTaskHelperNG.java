@@ -1040,7 +1040,7 @@ public class CfCommandTaskHelperNG {
           executionLogCallback);
     }
   }
-  void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
+  public void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
       CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig)
       throws PivotalClientApiException {
     if (commandRollbackRequest.getNewApplicationDetails() == null

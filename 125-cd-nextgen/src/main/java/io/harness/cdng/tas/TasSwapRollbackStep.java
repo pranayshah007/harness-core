@@ -83,7 +83,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   public static final String TAS_SWAP_ROLLBACK = "SwapRollback";
-  public static final String COMMAND_UNIT = "SwapRollback";
+  public static final String COMMAND_UNIT = "Swap Rollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
