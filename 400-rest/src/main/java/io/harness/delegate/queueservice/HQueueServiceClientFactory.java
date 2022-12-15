@@ -9,6 +9,8 @@ package io.harness.delegate.queueservice;
 
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.network.Http;
 
@@ -23,6 +25,7 @@ import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+@OwnedBy(HarnessTeam.DEL)
 public class HQueueServiceClientFactory implements Provider<HsqsServiceClient> {
   @Inject private MainConfiguration mainConfiguration;
 

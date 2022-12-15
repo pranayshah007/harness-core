@@ -7,8 +7,6 @@
 
 package io.harness.service.impl;
 
-import static io.harness.beans.DelegateTask.DelegateTaskKeys;
-import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 
@@ -16,7 +14,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateGroup;
@@ -117,21 +114,6 @@ public class DelegateCacheImpl implements DelegateCache {
             @Override
             public Set<String> load(@NotNull String accountId) {
               return getIntersectionOfSupportedTaskTypes(accountId);
-            }
-          });
-
-  private LoadingCache<String, List<DelegateTask>> numberOfDelegateTasksAssignedInAccountCache =
-      CacheBuilder.newBuilder()
-          .maximumSize(10000)
-          .expireAfterWrite(1, TimeUnit.MINUTES)
-          .build(new CacheLoader<String, List<DelegateTask>>() {
-            @Override
-            public List<DelegateTask> load(@org.jetbrains.annotations.NotNull String accountId) {
-              return persistence.createQuery(DelegateTask.class)
-                  .filter(DelegateTaskKeys.accountId, accountId)
-                  .filter(DelegateTaskKeys.status, QUEUED)
-                  .project(DelegateTaskKeys.delegateId, true)
-                  .asList();
             }
           });
 

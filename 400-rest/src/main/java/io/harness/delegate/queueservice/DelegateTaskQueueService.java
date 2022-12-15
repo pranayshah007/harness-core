@@ -11,6 +11,8 @@ import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.hsqs.client.HsqsServiceClient;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@OwnedBy(HarnessTeam.DEL)
 public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTask>, Runnable {
   @Inject private HsqsServiceClient hsqsServiceClient;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
