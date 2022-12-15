@@ -269,6 +269,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized), INFO, FAILURE);
         throw e;
       }
+    } else {
+      executionLogCallback.saveExecutionLog("Nothing to Downsize", INFO, SUCCESS);
     }
   }
 
