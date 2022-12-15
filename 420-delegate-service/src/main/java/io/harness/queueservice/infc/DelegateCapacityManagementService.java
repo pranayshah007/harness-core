@@ -8,7 +8,6 @@ package io.harness.queueservice.infc;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.queueservice.impl.DelegateCapacityManagementServiceImpl;
 
@@ -19,5 +18,4 @@ import com.google.inject.ImplementedBy;
 public interface DelegateCapacityManagementService {
   DelegateCapacity getDelegateCapacity(String delegateId, String accountId);
   void registerDelegateCapacity(String accountId, String delegateId, DelegateCapacity delegateCapacity);
-  boolean hasCapacity(Delegate delegate);
 }

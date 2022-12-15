@@ -19,7 +19,6 @@ import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Comparator;
 import java.util.HashMap;

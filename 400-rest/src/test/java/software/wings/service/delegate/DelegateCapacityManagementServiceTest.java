@@ -60,11 +60,11 @@ public class DelegateCapacityManagementServiceTest extends WingsBaseTest {
   public void testHasDelegateCapacity() {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId);
-    assertThat(delegateCapacityManagementService.hasCapacity(delegate)).isFalse();
+    assertThat(delegate.hasCapacityRegistered()).isFalse();
     delegateCapacityManagementService.registerDelegateCapacity(
         accountId, delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).build());
     Delegate delegateAfterUpdate = persistence.get(Delegate.class, delegate.getUuid());
-    assertThat(delegateCapacityManagementService.hasCapacity(delegateAfterUpdate)).isTrue();
+    assertThat(delegateAfterUpdate.hasCapacityRegistered()).isTrue();
     assertThat(delegateAfterUpdate.getDelegateCapacity().getMaximumNumberOfBuilds()).isEqualTo(5);
   }
 

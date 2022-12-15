@@ -29,8 +29,7 @@ public class DelegateCapacityManagementServiceImpl implements DelegateCapacityMa
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
                                 .filter(DelegateKeys.uuid, delegateId);
-    Delegate delegate = query.get();
-    return delegate.getDelegateCapacity();
+    return query.get() != null ? query.get().getDelegateCapacity() : null;
   }
 
   @Override
@@ -41,10 +40,5 @@ public class DelegateCapacityManagementServiceImpl implements DelegateCapacityMa
     UpdateOperations<Delegate> update =
         persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.delegateCapacity, delegateCapacity);
     persistence.update(query, update);
-  }
-
-  @Override
-  public boolean hasCapacity(Delegate delegate) {
-    return delegate.getDelegateCapacity() != null;
   }
 }
