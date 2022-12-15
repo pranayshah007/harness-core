@@ -24,10 +24,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.PriorityQueue;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,13 +54,11 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
             delegateTask.getDelegateId(), numberOfTaskAssigned.getOrDefault(delegateTask.getDelegateId(), 0) + 1);
       }
     });
-    PriorityQueue<Map.Entry<String, Integer>> orderedDelegatePq =
-        new PriorityQueue<>(Map.Entry.comparingByValue(Comparator.naturalOrder()));
-    orderedDelegatePq.addAll(numberOfTaskAssigned.entrySet());
-    return Stream.generate(orderedDelegatePq::poll)
-        .filter(Objects::nonNull)
+    TreeSet<Map.Entry<String, Integer>> delegateListOrdered =
+        new TreeSet<>(Map.Entry.comparingByValue(Comparator.naturalOrder()));
+    delegateListOrdered.addAll(numberOfTaskAssigned.entrySet());
+    return delegateListOrdered.stream()
         .map(entry -> updateDelegateWithNumberTaskAssigned(entry, accountId))
-        .limit(orderedDelegatePq.size())
         .collect(Collectors.toList());
   }
 
