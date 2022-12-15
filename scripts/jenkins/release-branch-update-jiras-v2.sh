@@ -22,7 +22,6 @@ PROJECTS=$(<$PROJFILE)
 #      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
 KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
-KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${CURRENT_RELEASE_BRANCH}..origin/develop | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
 #Getting the dummy commits that are made to the branch and creating a ticket out of it
 #git log --pretty=oneline --abbrev-commit |\
