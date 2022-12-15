@@ -28,7 +28,7 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetail
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 import io.harness.cdng.artifact.resources.artifactory.mappers.ArtifactoryResourceMapper;
-import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -75,6 +75,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -169,15 +170,15 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   }
 
   private DelegateResponseData getResponseData(BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType) {
-    final DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.builder()
-            .accountId(ngAccess.getAccountIdentifier())
-            .taskType(taskType)
-            .taskParameters(taskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
-            .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
+    final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                        .accountId(ngAccess.getAccountIdentifier())
+                                                        .taskType(taskType)
+                                                        .taskParameters(taskParameters)
+                                                        .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+                                                        .taskSetupAbstractions(abstractions)
+                                                        .build();
     try {
       return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
@@ -372,19 +373,16 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    final DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.builder()
-            .accountId(ngAccess.getAccountIdentifier())
-            .taskType(NGTaskType.ARTIFACTORY_ARTIFACT_TASK_NG.name())
-            .taskParameters(artifactTaskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
-            .taskSetupAbstraction(
-                SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
-            .taskSelectors(delegateSelectors)
-            .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
+    final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                        .accountId(ngAccess.getAccountIdentifier())
+                                                        .taskType(NGTaskType.ARTIFACTORY_ARTIFACT_TASK_NG.name())
+                                                        .taskParameters(artifactTaskParameters)
+                                                        .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+                                                        .taskSetupAbstractions(abstractions)
+                                                        .taskSelectors(delegateSelectors)
+                                                        .build();
     try {
       return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {

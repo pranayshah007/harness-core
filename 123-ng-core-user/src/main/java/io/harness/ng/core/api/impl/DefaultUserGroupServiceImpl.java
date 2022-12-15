@@ -21,7 +21,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 
 import static java.util.Collections.emptyList;
 
@@ -266,7 +265,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
         currentUsers = new ArrayList<>(currentUsers);
         currentUsers.addAll(usersToAdd);
         userGroup.setUsers(currentUsers);
-        UserGroup updatedUserGroup = userGroupService.updateDefaultUserGroup(toDTO(userGroup));
+        UserGroup updatedUserGroup = userGroupService.updateDefaultUserGroup(userGroup);
         log.info(DEBUG_MESSAGE + String.format("Added %s users to user group at scope %s", usersToAdd.size(), scope));
         return updatedUserGroup;
       } else {

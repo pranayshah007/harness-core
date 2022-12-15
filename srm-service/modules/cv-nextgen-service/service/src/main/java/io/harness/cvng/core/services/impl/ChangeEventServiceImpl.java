@@ -108,6 +108,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             .projectIdentifier(changeEventDTO.getProjectIdentifier())
             .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
             .build();
+    if (changeEventDTO.getMetadata().getType().isInternal()) {
+      activityService.upsert(transformer.getEntity(changeEventDTO));
+      return true;
+    }
     Optional<ChangeSource> changeSourceOptional =
         changeSourceService.getEntityByType(monitoredServiceParams, changeEventDTO.getType())
             .stream()
@@ -333,11 +337,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         .build();
   }
 
-  private long getPercentageChange(long current, long previous) {
+  private double getPercentageChange(long current, long previous) {
     if (previous == 0) {
-      return 0;
+      return 100;
     }
-    return ((current - previous) * 100) / previous;
+    return ((double) (current - previous) * 100) / previous;
   }
 
   private List<Criteria> getCriterias(Query<Activity> q, ProjectParams projectParams,

@@ -734,6 +734,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgCanaryDeleteStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgCanaryDeployStepInfo": {
       "allOf": [
         {
@@ -1788,10 +1816,6 @@
       "type": "object",
       "discriminator": "type",
       "properties": {
-        "instances": {
-          "type": "integer",
-          "format": "int32"
-        },
         "type": {
           "type": "string"
         }
@@ -4182,8 +4206,7 @@
         {
           "type": "object",
           "required": [
-            "instances",
-            "name"
+            "instances"
           ],
           "properties": {
             "delegateSelectors": {
@@ -4202,16 +4225,7 @@
               ]
             },
             "instances": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ElastigroupInstances"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/ElastigroupInstances"
             },
             "name": {
               "type": "string"
@@ -10699,6 +10713,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgCanaryDelete"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgCanaryDeleteStepInfo"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

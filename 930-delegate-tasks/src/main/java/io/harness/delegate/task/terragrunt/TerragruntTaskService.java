@@ -52,7 +52,10 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.terragrunt.v2.TerragruntClient;
 import io.harness.terragrunt.v2.TerragruntClientFactory;
 import io.harness.terragrunt.v2.TerragruntExecutable;
@@ -67,6 +70,7 @@ import software.wings.delegatetasks.DelegateFileManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -92,6 +96,7 @@ public class TerragruntTaskService {
   @Inject private DelegateFileManager delegateFileManager;
   @Inject private TerragruntClientFactory terragruntClientFactory;
   @Inject private DecryptionHelper decryptionHelper;
+  @Inject private EncryptDecryptHelper encryptDecryptHelper;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -203,7 +208,8 @@ public class TerragruntTaskService {
         handleFetchFilesException(backendFilesDirectory, "backend file", logCallback, e);
       }
     }
-    if (isNotEmpty(parameters.getStateFileId())) {
+    if (isNotEmpty(parameters.getStateFileId())
+        && TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       log.info("Downloading harness terraform state file: {}", parameters.getStateFileId());
       logCallback.saveExecutionLog(color(
           format("Downloading local state file to: %s", terragruntWorkingDirectory), LogColor.White, LogWeight.Bold));
@@ -365,6 +371,14 @@ public class TerragruntTaskService {
       throw new TerragruntFetchFilesRuntimeException(
           format("Failed to download terraform state file '%s'", stateFileId), configFilesDirectory, exception);
     }
+  }
+
+  public void saveTerraformPlanContentToFile(EncryptionConfig encryptionConfig, EncryptedRecordData encryptedTfPlan,
+      String scriptDirectory, String accountId, String terraformOutputFileName) throws IOException {
+    File tfPlanFile = Paths.get(scriptDirectory, terraformOutputFileName).toFile();
+    byte[] decryptedTerraformPlan =
+        encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+    FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
   }
 
   private static String getScriptDir(String baseDir) {

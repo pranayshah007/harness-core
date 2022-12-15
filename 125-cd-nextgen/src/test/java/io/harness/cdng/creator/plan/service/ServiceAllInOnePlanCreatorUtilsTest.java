@@ -64,7 +64,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
     YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
     Map<String, PlanCreationResponse> planCreationResponse = ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline,
         kryoSerializer, ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
-        EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS);
+        EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null);
     assertThat(planCreationResponse).hasSize(4);
   }
 
@@ -76,13 +76,13 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
     YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
     YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 2));
     assertThatExceptionOfType(InvalidArgumentsException.class)
-        .isThrownBy(
-            ()
-                -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
-                    ServiceYamlV2.builder()
-                        .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
-                        .build(),
-                    EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS))
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder()
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
+                                .build(),
+                            EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
+                            ServiceDefinitionType.ECS, null))
         .withMessage(
             "Invalid identifier [stage1] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
   }
@@ -95,13 +95,13 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
     YamlField yamlField = new YamlField("", YamlNode.fromYamlPath(pipelineYaml, ""));
     YamlField specField = new YamlField("spec", getStageNodeAtIndex(yamlField, 2));
     assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(
-            ()
-                -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
-                    ServiceYamlV2.builder()
-                        .useFromStage(ServiceUseFromStageV2.builder().stage("stage0").build())
-                        .build(),
-                    EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS))
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder()
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("stage0").build())
+                                .build(),
+                            EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
+                            ServiceDefinitionType.ECS, null))
         .withMessage(
             "Propagate from stage is not supported with multi service deployments, hence not possible to propagate service from that stage");
   }
@@ -114,13 +114,13 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
     YamlField yamlField = new YamlField("", YamlNode.fromYamlPath(pipelineYaml, ""));
     YamlField specField = new YamlField("spec", getStageNodeAtIndex(yamlField, 2));
     assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(
-            ()
-                -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
-                    ServiceYamlV2.builder()
-                        .useFromStage(ServiceUseFromStageV2.builder().stage("adhoc").build())
-                        .build(),
-                    EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS))
+        .isThrownBy(()
+                        -> ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer,
+                            ServiceYamlV2.builder()
+                                .useFromStage(ServiceUseFromStageV2.builder().stage("adhoc").build())
+                                .build(),
+                            EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId",
+                            ServiceDefinitionType.ECS, null))
         .withMessage(
             "Could not find service in stage [adhoc], hence not possible to propagate service from that stage");
   }

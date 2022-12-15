@@ -544,7 +544,7 @@ public class UserResource {
    * @return the rest response
    */
   @GET
-  @Path("userAccounts")
+  @Path("user-accounts")
   @Scope(value = ResourceType.USER, scope = LOGGED_IN)
   @Timed
   @ExceptionMetered
@@ -553,9 +553,16 @@ public class UserResource {
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int pageIndex,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("20") int pageSize,
       @Optional @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return new RestResponse<>(userService.getUserAccountsAndSupportAccounts(
-        UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm));
+    List<Account> accounts =
+        userService.getUserAccounts(UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm);
+    return new RestResponse<>(io.harness.ng.beans.PageResponse.<Account>builder()
+                                  .content(accounts)
+                                  .pageItemCount(accounts.size())
+                                  .pageSize(pageSize)
+                                  .pageIndex(pageIndex)
+                                  .build());
   }
+
   /**
    * Look up the user object using email and login the user. Intended for internal use only.
    * E.g. The Identity Service authenticated the user through OAuth provider and get the user email, then

@@ -9,7 +9,7 @@ package io.harness.cvng.activity.entities;
 
 import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityType;
-import io.harness.cvng.beans.change.EventDetails;
+import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.mongo.index.FdIndex;
 
@@ -19,6 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("INTERNAL_CHANGE")
@@ -30,7 +31,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class InternalChangeActivity extends Activity {
   @FdIndex ActivityType activityType;
   String updatedBy;
-  EventDetails eventDetails;
+  InternalChangeEvent internalChangeEvent;
   Long eventEndTime;
 
   public ActivityType getType() {
@@ -60,7 +61,12 @@ public class InternalChangeActivity extends Activity {
 
     @Override
     public String getEntityKeyLongString(InternalChangeActivity activity) {
-      return super.getKeyBuilder(activity).toString();
+      return super.getKeyBuilder(activity).add(activity.getEventTime().toString()).toString();
+    }
+
+    public Query<InternalChangeActivity> populateKeyQuery(
+        Query<InternalChangeActivity> query, InternalChangeActivity activity) {
+      return super.populateKeyQuery(query, activity).filter(ActivityKeys.eventTime, activity.getEventTime());
     }
 
     @Override
@@ -69,8 +75,10 @@ public class InternalChangeActivity extends Activity {
       setCommonUpdateOperations(updateOperations, activity);
       updateOperations.set(InternalChangeActivityKeys.activityType, activity.getType());
       updateOperations.set(InternalChangeActivityKeys.updatedBy, activity.getUpdatedBy());
-      updateOperations.set(InternalChangeActivityKeys.eventDetails, activity.getEventDetails());
-      updateOperations.set(InternalChangeActivityKeys.eventEndTime, activity.getEventEndTime());
+      updateOperations.set(InternalChangeActivityKeys.internalChangeEvent, activity.getInternalChangeEvent());
+      if (activity.getEventEndTime() != null) {
+        updateOperations.set(InternalChangeActivityKeys.eventEndTime, activity.getEventEndTime());
+      }
     }
   }
 }

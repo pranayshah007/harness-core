@@ -186,8 +186,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     PIPELINE_YAML = Resources.toString(
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
-
-    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(1000L);
   }
 
   private ClonePipelineDTO buildCloneDTO() {

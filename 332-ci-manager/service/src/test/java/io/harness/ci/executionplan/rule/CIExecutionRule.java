@@ -148,6 +148,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
       }
     });
 

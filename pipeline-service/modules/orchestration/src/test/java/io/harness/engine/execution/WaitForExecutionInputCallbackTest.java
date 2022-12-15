@@ -33,6 +33,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 import io.harness.rule.Owner;
 
 import java.util.EnumSet;
@@ -80,16 +81,39 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
         .when(nodeExecutionService)
         .get(nodeExecutionId);
+    doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
+        .when(nodeExecutionService)
+        .updateStatusWithOps(any(), eq(Status.EXPIRED), any(), any());
 
     waitForExecutionInputCallback.notifyTimeout(Map.of("key", ExecutionInputData.builder().build()));
     verify(nodeExecutionService, times(1))
         .updateStatusWithOps(eq(nodeExecutionId), eq(Status.EXPIRED), any(), eq(EnumSet.noneOf(Status.class)));
     verify(engine, times(1)).endNodeExecution(ambiance);
 
+    // Testing the ProceedWithDefaultValues.
+    doReturn(
+        NodeExecution.builder()
+            .planNode(
+                planNodeBuilder
+                    .adviserObtainment(
+                        AdviserObtainment.newBuilder().setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE).build())
+                    .build())
+            .ambiance(ambiance)
+            .build())
+        .when(nodeExecutionService)
+        .get(nodeExecutionId);
+
+    waitForExecutionInputCallback.notifyTimeout(Map.of("key", ExecutionInputData.builder().build()));
+    // It will remain 1. Because ProceedWithDefault adviser is present to NodeExecution will not be marked as expired.
+    verify(nodeExecutionService, times(1))
+        .updateStatusWithOps(eq(nodeExecutionId), eq(Status.EXPIRED), any(), eq(EnumSet.noneOf(Status.class)));
+
     ArgumentCaptor<FailureInfo> argumentCaptor = ArgumentCaptor.forClass(FailureInfo.class);
 
     doReturn(NodeExecution.builder()
-                 .planNode(planNodeBuilder.adviserObtainment(AdviserObtainment.getDefaultInstance()).build())
+                 .planNode(planNodeBuilder.clearAdviserObtainments()
+                               .adviserObtainment(AdviserObtainment.getDefaultInstance())
+                               .build())
                  .ambiance(ambiance)
                  .build())
         .when(nodeExecutionService)

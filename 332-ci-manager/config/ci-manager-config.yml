@@ -132,6 +132,10 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 ciExecutionServiceConfig:
+  miningPatternConfig:
+    gcsCreds: null
+    projectId: null
+    bucketName: null
   queueServiceClient:
     queueServiceConfig:
       baseUrl: http://localhost:9091/
@@ -161,6 +165,8 @@ ciExecutionServiceConfig:
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  hostedVmConfig:
+    splitLinuxAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

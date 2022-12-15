@@ -106,6 +106,33 @@ ciExecutionServiceConfig:
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
+  stoStepConfig:
+    defaultTag: dev
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: bandit_default
+        image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
+      - product: burp_default
+        image: harness/burp-job-runner
+      - product: checkmarx_default
+        image: harness/checkmarx-job-runner
+      - product: fortifyondemand_default
+        image: harness/fortifyondemand-job-runner
+      - product: prismacloud_default
+        image: harness/twistlock-job-runner
+      - product: snyk_default
+        image: harness/snyk-job-runner
+      - product: sonarqube_default
+        image: harness/sonarqube-agent-job-runner
+      - product: veracode_default
+        image: harness/veracode-agent-job-runner
+      - product: zap_default
+        image: harness/zap-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

@@ -93,4 +93,6 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT_REF = "environmentRef";
   public final String GROUP = "group";
   public static final String OUTPUTS = "outputs";
+
+  public final String REPOSITORY = "repository";
 }

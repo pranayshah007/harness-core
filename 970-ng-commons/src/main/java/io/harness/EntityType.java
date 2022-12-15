@@ -450,15 +450,19 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
   CONTAINER_STEP(
       ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
-  @JsonProperty(EntityTypeConstants.ASG_CANARY_DEPLOY)
-  ASG_CANARY_DEPLOY_STEP(
-      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY),
+
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE);
+      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DEPLOY)
+  ASG_CANARY_DEPLOY_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
+  ASG_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE);
 
   private final ModuleType moduleType;
   String yamlName;

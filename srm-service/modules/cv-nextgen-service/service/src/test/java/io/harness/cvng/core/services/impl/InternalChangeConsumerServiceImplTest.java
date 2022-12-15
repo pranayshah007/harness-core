@@ -79,15 +79,15 @@ public class InternalChangeConsumerServiceImplTest extends CvNextGenTestBase {
 
     InternalChangeEventMetaData internalChangeEventMetaData =
         (InternalChangeEventMetaData) changeEventDTOs.get(0).getMetadata();
-    assertThat(internalChangeEventMetaData.getEventDetails().getEventDescriptions().get(0))
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getEventDescriptions().get(0))
         .isEqualTo("test event detail");
-    assertThat(internalChangeEventMetaData.getEventDetails().getChangeEventDetailsLink().getUrl())
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getChangeEventDetailsLink().getUrl())
         .isEqualTo("testChangeEventDetailsLink");
-    assertThat(internalChangeEventMetaData.getEventDetails().getChangeEventDetailsLink().getAction())
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getChangeEventDetailsLink().getAction())
         .isEqualTo(DeepLink.Action.FETCH_DIFF_DATA);
-    assertThat(internalChangeEventMetaData.getEventDetails().getInternalLinkToEntity().getUrl())
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getInternalLinkToEntity().getUrl())
         .isEqualTo("testInternalUrl");
-    assertThat(internalChangeEventMetaData.getEventDetails().getInternalLinkToEntity().getAction())
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getInternalLinkToEntity().getAction())
         .isEqualTo(DeepLink.Action.REDIRECT_URL);
     assertThat(internalChangeEventMetaData.getUpdatedBy()).isEqualTo("user");
   }
