@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -22,6 +23,7 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 import software.wings.yaml.workflow.StepYaml;
@@ -48,7 +50,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     ShellScriptState state = (ShellScriptState) getState(stepYaml);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
     baseSetup(stepYaml, shellScriptStepNode);

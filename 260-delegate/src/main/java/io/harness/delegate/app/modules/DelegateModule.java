@@ -1980,6 +1980,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAGRUNT_ROLLBACK_TASK_NG).toInstance(TerragruntRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_FETCH_APP_TASK).toInstance(GitOpsFetchAppTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_INITIALIZATION).toInstance(CIInitializeTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_EXECUTE_STEP).toInstance(CIExecuteStepTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_LE_STATUS).toInstance(StepStatusTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_CLEANUP).toInstance(CICleanupTask.class);
   }
 
   private void registerSecretManagementBindings() {

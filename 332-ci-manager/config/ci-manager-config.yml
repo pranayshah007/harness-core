@@ -161,6 +161,8 @@ ciExecutionServiceConfig:
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  hostedVmConfig:
+    splitLinuxAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

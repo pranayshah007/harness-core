@@ -12,10 +12,12 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
 import software.wings.yaml.workflow.StepYaml;
@@ -40,7 +42,7 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     JenkinsState state = (JenkinsState) getState(stepYaml);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
     baseSetup(stepYaml, stepNode);

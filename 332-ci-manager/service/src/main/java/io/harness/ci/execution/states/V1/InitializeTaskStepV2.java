@@ -42,7 +42,6 @@ import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.callback.DelegateCallbackToken;
@@ -72,6 +71,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -235,9 +235,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
       if (accountDTO == null) {
         throw new CIStageExecutionException("Account does not exist, contact Harness support team.");
       }
-      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector = vmInitializeTaskParamsBuilder.getHostedPoolId(
-          hostedVmInfraYaml.getSpec().getPlatform(), AmbianceUtils.getAccountId(ambiance));
+      String platformSelector = ((DliteVmInitializeTaskParams) buildSetupTaskParams).getSetupVmRequest().getPoolID();
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;

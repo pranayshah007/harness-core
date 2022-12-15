@@ -418,6 +418,9 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(378, "ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG");
     taskTypeOrdinalMapping.put(379, "ELASTIGROUP_ROLLBACK");
     taskTypeOrdinalMapping.put(380, "ELASTIGROUP_PRE_FETCH_TASK_NG");
+    taskTypeOrdinalMapping.put(381, "CONTAINER_LE_STATUS");
+    taskTypeOrdinalMapping.put(382, "CONTAINER_CLEANUP");
+    taskTypeOrdinalMapping.put(383, "CONTAINER_EXECUTE_STEP");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

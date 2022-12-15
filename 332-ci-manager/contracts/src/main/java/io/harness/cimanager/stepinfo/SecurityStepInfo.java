@@ -52,9 +52,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@SuperBuilder
 @NoArgsConstructor
 @JsonTypeName("Security")
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -148,7 +150,7 @@ public class SecurityStepInfo implements PluginCompatibleStep {
     return TypeInfo.builder().stepInfoType(CIStepInfoType.SECURITY).build();
   }
 
-  private String getTypeName() {
+  protected String getTypeName() {
     return this.getClass().getAnnotation(JsonTypeName.class).value();
   }
 

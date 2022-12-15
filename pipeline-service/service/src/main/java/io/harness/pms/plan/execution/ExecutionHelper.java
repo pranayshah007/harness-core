@@ -74,6 +74,7 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -191,8 +192,9 @@ public class ExecutionHelper {
       switch (version) {
         case PipelineVersion.V1:
           allowedStageExecution = false;
-          pipelineYaml = pipelineEntity.getYaml();
-          pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
           break;
         case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =

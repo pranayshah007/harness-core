@@ -14,28 +14,23 @@
 
 package io.harness.sto.plan.creator.step;
 
-import io.harness.beans.steps.nodes.security.ClairScanNode;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.sto.STOStepType;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
+import lombok.AllArgsConstructor;
+@AllArgsConstructor
+public class STOGenericStepPlanCreator extends CIPMSStepPlanCreatorV2 {
+  protected STOStepType stepType;
 
-public class ClairStepPlanCreator extends CIPMSStepPlanCreatorV2<ClairScanNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(STOStepType.CLAIR.getName());
+    return Sets.newHashSet(stepType.getName());
   }
 
   @Override
-  public Class<ClairScanNode> getFieldClass() {
-    return ClairScanNode.class;
-  }
-
-  @Override
-  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ClairScanNode stepElement) {
-    return super.createPlanForField(ctx, stepElement);
+  public Class<?> getFieldClass() {
+    return stepType.getNode();
   }
 }
