@@ -10,7 +10,7 @@ PROJECTS=$(<$SHDIR/jira-projects.txt)
 #KEYS=$(git log --pretty=oneline --abbrev-commit |\
 #      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
 #      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
-KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} |\ grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
+KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
 # QA-Test status ID is 201, Dev Complete status id is 151.
 STATUS_ID=201
