@@ -18,6 +18,7 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
@@ -37,11 +38,13 @@ public class TasResourceServiceImpl implements TasResourceService {
         tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
     TasInfraConfig tasInfraConfig =
         TasInfraConfig.builder().tasConnectorDTO(tasConnectorDTO).encryptionDataDetails(encryptionDetails).build();
+    //todo: change cfcli version
     CfInfraMappingDataRequestNG taskParamas = CfInfraMappingDataRequestNG.builder()
                                                   .accountId(accountIdentifier)
                                                   .actionType(FETCH_ORG)
                                                   .timeoutIntervalInMin(2)
                                                   .cfCommandTypeNG(CfCommandTypeNG.DATA_FETCH)
+                                                  .cfCliVersion(CfCliVersion.V7)
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
@@ -68,6 +71,7 @@ public class TasResourceServiceImpl implements TasResourceService {
                                                   .actionType(FETCH_SPACE)
                                                   .timeoutIntervalInMin(2)
                                                   .cfCommandTypeNG(CfCommandTypeNG.DATA_FETCH)
+                                                  .cfCliVersion(CfCliVersion.V7)
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
