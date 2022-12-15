@@ -227,7 +227,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .instanceData(tasSetupDataOutcome.getInstanceData())
             .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
             .resizeStrategy(tasSetupDataOutcome.getResizeStrategy())
-            .isStandardBlueGreen(tasSetupDataOutcome.getIsBlueGreen())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
