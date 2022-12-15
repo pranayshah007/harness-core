@@ -24,6 +24,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 import static io.harness.exception.WingsException.USER;
@@ -53,6 +54,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -84,12 +86,13 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -101,17 +104,21 @@ import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResp
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -262,8 +269,8 @@ public class TasStepHelper {
     }
 
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
-            .setStartTime(System.currentTimeMillis())
-            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
+                                            .setStartTime(System.currentTimeMillis())
+                                            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
 
     logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
@@ -318,7 +325,7 @@ public class TasStepHelper {
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
-            shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+        shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
     tasStepPassThroughData.setCommandUnits(getCommandUnitsForTanzuCommand(tasStepPassThroughData));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
@@ -414,7 +421,7 @@ public class TasStepHelper {
     }
     if (isNotEmpty(tasStepPassThroughData.getVarsManifestOutcomeList())) {
       localStoreFileMapContents.putAll(getFileContentsForLocalStore(
-          tasStepPassThroughData.getAutoScalerManifestOutcomeList(), AmbianceUtils.getNgAccess(ambiance), logCallback));
+          tasStepPassThroughData.getVarsManifestOutcomeList(), AmbianceUtils.getNgAccess(ambiance), logCallback));
     }
     logCallback.saveExecutionLog(
         color(format("%nHarness Fetch Files completed successfully."), LogColor.White, LogWeight.Bold));
@@ -1351,14 +1358,14 @@ public class TasStepHelper {
         DockerArtifactOutcome dockerArtifactOutcome = (DockerArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(dockerArtifactOutcome.getConnectorRef(), ambiance);
         artifactConfigBuilder.registryType(
-            getAzureRegistryType((DockerConnectorDTO) connectorInfo.getConnectorConfig()));
+            getTasArtifactRegistryType((DockerConnectorDTO) connectorInfo.getConnectorConfig()));
         artifactConfigBuilder.image(dockerArtifactOutcome.getImage());
         artifactConfigBuilder.tag(dockerArtifactOutcome.getTag());
         break;
       case ACR_NAME:
         AcrArtifactOutcome acrArtifactOutcome = (AcrArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(acrArtifactOutcome.getConnectorRef(), ambiance);
-        artifactConfigBuilder.registryType(AzureRegistryType.ACR);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.ACR);
         artifactConfigBuilder.image(acrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(acrArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(acrArtifactOutcome.getRegistry());
@@ -1366,7 +1373,7 @@ public class TasStepHelper {
       case ECR_NAME:
         EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(ecrArtifactOutcome.getConnectorRef(), ambiance);
-        artifactConfigBuilder.registryType(AzureRegistryType.ECR);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.ECR);
         artifactConfigBuilder.image(ecrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(ecrArtifactOutcome.getTag());
         artifactConfigBuilder.region(ecrArtifactOutcome.getRegion());
@@ -1374,7 +1381,7 @@ public class TasStepHelper {
       case GCR_NAME:
         GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(gcrArtifactOutcome.getConnectorRef(), ambiance);
-        artifactConfigBuilder.registryType(AzureRegistryType.GCR);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.GCR);
         artifactConfigBuilder.image(gcrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(gcrArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(gcrArtifactOutcome.getRegistryHostname());
@@ -1382,7 +1389,7 @@ public class TasStepHelper {
       case NEXUS3_REGISTRY_NAME:
         NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
-        artifactConfigBuilder.registryType(AzureRegistryType.NEXUS_PRIVATE_REGISTRY);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.NEXUS_PRIVATE_REGISTRY);
         artifactConfigBuilder.image(nexusArtifactOutcome.getImage());
         artifactConfigBuilder.tag(nexusArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(nexusArtifactOutcome.getRegistryHostname());
@@ -1390,7 +1397,7 @@ public class TasStepHelper {
       case ARTIFACTORY_REGISTRY_NAME:
         ArtifactoryArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
-        artifactConfigBuilder.registryType(AzureRegistryType.ARTIFACTORY_PRIVATE_REGISTRY);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.ARTIFACTORY_PRIVATE_REGISTRY);
         artifactConfigBuilder.image(artifactoryArtifactOutcome.getImage());
         artifactConfigBuilder.tag(artifactoryArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(artifactoryArtifactOutcome.getRegistryHostname());
@@ -1414,11 +1421,11 @@ public class TasStepHelper {
         .build();
   }
 
-  private AzureRegistryType getAzureRegistryType(DockerConnectorDTO dockerConfig) {
+  private TasArtifactRegistryType getTasArtifactRegistryType(DockerConnectorDTO dockerConfig) {
     if (dockerConfig.getAuth().getAuthType().equals(ANONYMOUS)) {
-      return AzureRegistryType.DOCKER_HUB_PUBLIC;
+      return TasArtifactRegistryType.DOCKER_HUB_PUBLIC;
     } else {
-      return AzureRegistryType.DOCKER_HUB_PRIVATE;
+      return TasArtifactRegistryType.DOCKER_HUB_PRIVATE;
     }
   }
 
@@ -1472,6 +1479,21 @@ public class TasStepHelper {
                                                   .build());
         connectorInfoDTO = cdStepHelper.getConnector(jenkinsArtifactOutcome.getConnectorRef(), ambiance);
         break;
+      case AZURE_ARTIFACTS_NAME:
+        AzureArtifactsOutcome azureArtifactsOutcome = (AzureArtifactsOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(AZURE_ARTIFACTS);
+        artifactConfigBuilder.artifactDetails(AzureDevOpsTasArtifactRequestDetails.builder()
+                                                  .packageType(azureArtifactsOutcome.getPackageType())
+                                                  .packageName(azureArtifactsOutcome.getPackageName())
+                                                  .project(azureArtifactsOutcome.getProject())
+                                                  .feed(azureArtifactsOutcome.getFeed())
+                                                  .scope(azureArtifactsOutcome.getScope())
+                                                  .version(azureArtifactsOutcome.getVersion())
+                                                  .identifier(azureArtifactsOutcome.getIdentifier())
+                                                  .versionRegex(azureArtifactsOutcome.getVersionRegex())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(azureArtifactsOutcome.getConnectorRef(), ambiance);
+        break;
       default:
         throw new InvalidArgumentsException(
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
@@ -1491,27 +1513,27 @@ public class TasStepHelper {
   }
 
   public UnitProgressData completeUnitProgressData(
-          UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
+      UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
 
     List<UnitProgress> finalUnitProgressList =
-            currentProgressData.getUnitProgresses()
-                    .stream()
-                    .map(unitProgress -> {
-                      if (unitProgress.getStatus() == RUNNING) {
-                        LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                        logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
-                        return UnitProgress.newBuilder(unitProgress)
-                                .setStatus(UnitStatus.FAILURE)
-                                .setEndTime(System.currentTimeMillis())
-                                .build();
-                      }
+        currentProgressData.getUnitProgresses()
+            .stream()
+            .map(unitProgress -> {
+              if (unitProgress.getStatus() == RUNNING) {
+                LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
+                logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
+                return UnitProgress.newBuilder(unitProgress)
+                    .setStatus(UnitStatus.FAILURE)
+                    .setEndTime(System.currentTimeMillis())
+                    .build();
+              }
 
-                      return unitProgress;
-                    })
-                    .collect(Collectors.toList());
+              return unitProgress;
+            })
+            .collect(Collectors.toList());
 
     return UnitProgressData.builder().unitProgresses(finalUnitProgressList).build();
   }

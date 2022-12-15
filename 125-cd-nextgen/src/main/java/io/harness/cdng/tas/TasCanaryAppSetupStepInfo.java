@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -22,6 +23,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
+import com.amazonaws.services.ec2.model.ReservationState;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -51,11 +53,11 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @NotNull TasResizeStrategyType resizeStrategy;
+  @NotNull ResizeStrategy resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCountType, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      TasResizeStrategyType resizeStrategy) {
+      ResizeStrategy resizeStrategy) {
     super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }

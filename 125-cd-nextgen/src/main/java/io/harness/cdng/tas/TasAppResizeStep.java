@@ -229,6 +229,8 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .resizeStrategy(tasSetupDataOutcome.getResizeStrategy())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
+            .pcfManifestsPackage(tasSetupDataOutcome.getPcfManifestsPackage())
+            .maxCount(tasSetupDataOutcome.getMaxCount())
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .totalPreviousInstanceCount(tasSetupDataOutcome.getTotalPreviousInstanceCount())

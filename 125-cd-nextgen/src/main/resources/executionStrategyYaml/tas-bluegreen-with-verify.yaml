@@ -34,9 +34,9 @@ spec:
               spec:
                 value: 100
             oldAppInstances:
-              type: Count
+              type: Percentage
               spec:
-                value: 0
+                value: 100
       - step:
           name: "Swap Routes"
           identifier: SwapRoutes

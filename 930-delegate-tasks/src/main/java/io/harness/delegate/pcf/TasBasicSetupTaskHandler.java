@@ -36,6 +36,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,6 +52,8 @@ import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
+import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
+import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
@@ -109,6 +112,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   @Inject CfDeploymentManager cfDeploymentManager;
   @Inject protected PcfCommandTaskHelper pcfCommandTaskHelper;
   @Inject TasTaskHelperBase tasTaskHelperBase;
+  @Inject private TasRegistrySettingsAdapter tasRegistrySettingsAdapter;
 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
@@ -163,7 +167,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
                   basicSetupRequestNG, cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix()))
               .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
               .configPathVar(workingDirectory.getAbsolutePath())
-              .password(cfCommandTaskHelperNG.getPassword(basicSetupRequestNG.getTasArtifactConfig()))
               .newReleaseName(basicSetupRequestNG.getReleaseNamePrefix())
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
@@ -290,7 +293,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     String newName = appNamePrefix + DELIMITER + revision;
 
     pcfCommandTaskBaseHelper.renameApp(currentProdApplicationSummary, cfRequestConfig, logCallback, newName);
-    currentProdInfo.setApplicationName(newName);
+    if (!isNull(currentProdInfo)) {
+      currentProdInfo.setApplicationName(newName);
+    }
   }
 
   private int getHighestVersionAppName(List<ApplicationSummary> previousReleases) {
@@ -594,12 +599,17 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     if (isPackageArtifact(cfCommandSetupRequest.getTasArtifactConfig())) {
       applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
     } else {
+      TasContainerArtifactConfig tasContainerArtifactConfig =
+          ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig());
+      TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
-      String dockerImagePath = ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig()).getImage();
-      String username = cfCommandTaskHelperNG.getUsername(cfCommandSetupRequest.getTasArtifactConfig());
+      String dockerImagePath = tasContainerArtifactConfig.getImage();
       dockerDetails.put(IMAGE_MANIFEST_YML_ELEMENT, dockerImagePath);
-      if (!isEmpty(username)) {
-        dockerDetails.put(USERNAME_MANIFEST_YML_ELEMENT, username);
+      if (!isEmpty(tasArtifactCreds.getUsername())) {
+        dockerDetails.put(USERNAME_MANIFEST_YML_ELEMENT, tasArtifactCreds.getUsername());
+      }
+      if (!isEmpty(tasArtifactCreds.getPassword())) {
+        requestData.setPassword(tasArtifactCreds.getPassword().toCharArray());
       }
       applicationToBeUpdated.put(DOCKER_MANIFEST_YML_ELEMENT, dockerDetails);
     }

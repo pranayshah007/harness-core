@@ -42,6 +42,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -56,11 +57,14 @@ import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
+import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
+import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.exception.InvalidPcfStateException;
+import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfBlueGreenSetupResponseNG;
@@ -115,6 +119,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   @Inject CfDeploymentManager cfDeploymentManager;
   @Inject protected PcfCommandTaskHelper pcfCommandTaskHelper;
   @Inject TasTaskHelperBase tasTaskHelperBase;
+  @Inject private TasRegistrySettingsAdapter tasRegistrySettingsAdapter;
 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
@@ -172,7 +177,6 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
                   blueGreenSetupRequestNG.getReleaseNamePrefix() + INACTIVE_APP_NAME_SUFFIX))
               .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
               .configPathVar(workingDirectory.getAbsolutePath())
-              .password(cfCommandTaskHelperNG.getPassword(blueGreenSetupRequestNG.getTasArtifactConfig()))
               .newReleaseName(blueGreenSetupRequestNG.getReleaseNamePrefix() + INACTIVE_APP_NAME_SUFFIX)
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
@@ -534,7 +538,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       CfBlueGreenSetupRequestNG blueGreenSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       TasApplicationInfo activeApplicationInfo, TasApplicationInfo inActiveApplicationInfo)
       throws PivotalClientApiException {
-    if (inActiveApplicationInfo == null || isEmpty(inActiveApplicationInfo.getApplicationGuid()) || previousReleases.size() == 1) {
+    if (inActiveApplicationInfo == null || isEmpty(inActiveApplicationInfo.getApplicationGuid())
+            || previousReleases.size() == 1) {
       return;
     }
     ApplicationSummary inActiveApplication =
@@ -636,12 +641,17 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     if (isPackageArtifact(cfCommandSetupRequest.getTasArtifactConfig())) {
       applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
     } else {
+      TasContainerArtifactConfig tasContainerArtifactConfig =
+          ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig());
+      TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
-      String dockerImagePath = ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig()).getImage();
-      String username = cfCommandTaskHelperNG.getUsername(cfCommandSetupRequest.getTasArtifactConfig());
+      String dockerImagePath = tasContainerArtifactConfig.getImage();
       dockerDetails.put(IMAGE_MANIFEST_YML_ELEMENT, dockerImagePath);
-      if (!isEmpty(username)) {
-        dockerDetails.put(USERNAME_MANIFEST_YML_ELEMENT, username);
+      if (!isEmpty(tasArtifactCreds.getUsername())) {
+        dockerDetails.put(USERNAME_MANIFEST_YML_ELEMENT, tasArtifactCreds.getUsername());
+      }
+      if (!isEmpty(tasArtifactCreds.getPassword())) {
+        requestData.setPassword(tasArtifactCreds.getPassword().toCharArray());
       }
       applicationToBeUpdated.put(DOCKER_MANIFEST_YML_ELEMENT, dockerDetails);
     }

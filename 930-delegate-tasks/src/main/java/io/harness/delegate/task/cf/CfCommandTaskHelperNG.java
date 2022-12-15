@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_EXPLANATION;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_HINT;
@@ -49,14 +48,13 @@ import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.connector.task.docker.DockerArtifactTaskHandler;
+import io.harness.beans.DecryptableEntity;
+import io.harness.connector.helper.DecryptionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
-import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
-import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -72,19 +70,17 @@ import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.mappers.AzureArtifactsRequestResponseMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.azure.artifact.AzureArtifactUtils;
+import io.harness.delegate.task.cf.TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder;
 import io.harness.delegate.task.nexus.NexusMapper;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
-import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasArtifactRequestDetails;
-import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
@@ -101,7 +97,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
-import io.harness.exception.ngexception.AzureAppServiceTaskException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -112,7 +107,7 @@ import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfRequestConfig;
-import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.LogColor;
@@ -155,10 +150,9 @@ public class CfCommandTaskHelperNG {
 
   @Inject PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
   @Inject CfDeploymentManager cfDeploymentManager;
-  @Inject DockerArtifactTaskHandler dockerArtifactTaskHandler;
   @Inject private ArtifactoryNgService artifactoryNgService;
   @Inject private ArtifactoryRequestMapper artifactoryRequestMapper;
-  @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private DecryptionHelper decryptionHelper;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   @Inject private AwsApiHelperService awsApiHelperService;
   @Inject private NexusService nexusService;
@@ -179,72 +173,9 @@ public class CfCommandTaskHelperNG {
     return new File(workingDir);
   }
 
-  public char[] getPassword(TasArtifactConfig tasArtifactConfig) {
-    char[] password = null;
-    if (tasArtifactConfig.getConnectorConfig() instanceof DockerConnectorDTO) {
-      DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) tasArtifactConfig.getConnectorConfig();
-      dockerArtifactTaskHandler.decryptRequestDTOs(
-          DockerArtifactDelegateRequest.builder()
-              .dockerConnectorDTO(dockerConnectorDTO)
-              .encryptedDataDetails(tasArtifactConfig.getEncryptedDataDetails())
-              .build());
-      DockerUserNamePasswordDTO dockerUserNamePasswordDTO =
-          (DockerUserNamePasswordDTO) dockerConnectorDTO.getAuth().getCredentials();
-
-      String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
-      password = new String(dockerUserNamePasswordDTO.getPasswordRef().getDecryptedValue()).toCharArray();
-      String username = dockerUserNamePasswordDTO.getUsername();
-      validateSettings((TasContainerArtifactConfig) tasArtifactConfig, dockerRegistryUrl, username, password);
-    }
-    return password;
-  }
-
-  public String getUsername(TasArtifactConfig tasArtifactConfig) {
-    String username = null;
-    if (tasArtifactConfig.getConnectorConfig() instanceof DockerConnectorDTO) {
-      DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) tasArtifactConfig.getConnectorConfig();
-      DockerUserNamePasswordDTO dockerUserNamePasswordDTO =
-          (DockerUserNamePasswordDTO) dockerConnectorDTO.getAuth().getCredentials();
-
-      String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
-      char[] password = new String(dockerUserNamePasswordDTO.getPasswordRef().getDecryptedValue()).toCharArray();
-      username = dockerUserNamePasswordDTO.getUsername();
-      validateSettings((TasContainerArtifactConfig) tasArtifactConfig, dockerRegistryUrl, username, password);
-    }
-    return username;
-  }
-
-  protected void validateSettings(
-      TasContainerArtifactConfig config, String registryUrl, String username, char[] password) {
-    validateSettings(config, registryUrl);
-    if (isBlank(username)) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format("Configure username for %s container registry connector", config.getRegistryType().getValue()),
-          format("Username is blank for '%s' container registry but is required", config.getRegistryType().getValue()),
-          new InvalidArgumentsException(Pair.of("username", "Null or blank value")));
-    }
-
-    if (isEmpty(password)) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format("Configure password for %s container registry connector", config.getRegistryType().getValue()),
-          format("Password is blank for '%s' container registry but is required", config.getRegistryType().getValue()),
-          new InvalidArgumentsException(Pair.of("password", "Null or blank value")));
-    }
-  }
-
-  protected void validateSettings(TasContainerArtifactConfig config, String registryUrl) {
-    if (isBlank(registryUrl)) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format("Check if connector provided %s is properly configured", config.getRegistryType().getValue()),
-          format("Registry url is '%s' which is an invalid value for '%s' container registry", registryUrl,
-              config.getRegistryType().getValue()),
-          new InvalidArgumentsException(Pair.of("registry", "Null or blank value")));
-    }
-  }
-
   public TasArtifactDownloadResponse downloadPackageArtifact(
       TasArtifactDownloadContext artifactDownloadContext, LogCallback logCallback) {
-    TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder =
+    TasArtifactDownloadResponseBuilder artifactResponseBuilder =
         TasArtifactDownloadResponse.builder().artifactType(ArtifactType.ZIP);
     InputStream artifactStream;
     TasPackageArtifactConfig artifactConfig = artifactDownloadContext.getArtifactConfig();
@@ -276,8 +207,7 @@ public class CfCommandTaskHelperNG {
       logCallback.saveExecutionLog("" /* Empty line */);
       logCallback.saveExecutionLog(
           color(format("Successfully downloaded artifact '%s'", artifactConfig.getArtifactDetails().getArtifactName()),
-              LogColor.White, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+              LogColor.White, LogWeight.Bold));
 
       return artifactResponseBuilder.artifactFile(artifactFile).build();
     } catch (Exception e) {
@@ -349,23 +279,27 @@ public class CfCommandTaskHelperNG {
   }
 
   private InputStream downloadFromJenkins(TasPackageArtifactConfig artifactConfig,
-      TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
-    JenkinsTasArtifactRequestDetails JenkinsTasArtifactRequestDetails =
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+    JenkinsTasArtifactRequestDetails jenkinsTasArtifactRequestDetails =
         (JenkinsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
-    validateJenkinsArtifact(artifactConfig, JenkinsTasArtifactRequestDetails, logCallback);
-    Pair<String, InputStream> pair;
+    validateJenkinsArtifact(artifactConfig, jenkinsTasArtifactRequestDetails, logCallback);
+    Pair<String, InputStream> pair = null;
     Jenkins jenkins = configureJenkins(artifactConfig);
 
     try {
       JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
+      decryptEntity(
+          decryptionHelper, jenkinsConnectorDto.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
 
       logCallback.saveExecutionLog(
           color(format("Downloading jenkins artifact: %s/job/%s/%s/artifact/%s", jenkinsConnectorDto.getJenkinsUrl(),
-                    JenkinsTasArtifactRequestDetails.getJobName(), JenkinsTasArtifactRequestDetails.getBuild(),
-                    JenkinsTasArtifactRequestDetails.getArtifactPath()),
+                    jenkinsTasArtifactRequestDetails.getJobName(), jenkinsTasArtifactRequestDetails.getBuild(),
+                    jenkinsTasArtifactRequestDetails.getArtifactPath()),
               White, Bold));
-      pair = jenkins.downloadArtifact(JenkinsTasArtifactRequestDetails.getJobName(),
-          JenkinsTasArtifactRequestDetails.getBuild(), JenkinsTasArtifactRequestDetails.getArtifactPath());
+      if (!isNull(jenkins)) {
+        pair = jenkins.downloadArtifact(jenkinsTasArtifactRequestDetails.getJobName(),
+            jenkinsTasArtifactRequestDetails.getBuild(), jenkinsTasArtifactRequestDetails.getArtifactPath());
+      }
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in downloading jenkins artifact ", sanitizedException);
@@ -373,13 +307,13 @@ public class CfCommandTaskHelperNG {
           "Failed to download jenkins artifact. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
           CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(JENKINS_ARTIFACT_DOWNLOAD_HINT,
-          format(JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION, JenkinsTasArtifactRequestDetails.getIdentifier()),
+          format(JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION, jenkinsTasArtifactRequestDetails.getIdentifier()),
           new InvalidArgumentsException(
-              format(JENKINS_ARTIFACT_DOWNLOAD_FAILED, JenkinsTasArtifactRequestDetails.getIdentifier())));
+              format(JENKINS_ARTIFACT_DOWNLOAD_FAILED, jenkinsTasArtifactRequestDetails.getIdentifier())));
     }
-    if (null != pair) {
+    if (pair != null) {
       artifactResponseBuilder.artifactType(
-          AzureArtifactUtils.detectArtifactType(JenkinsTasArtifactRequestDetails.getArtifactPath(), logCallback));
+          AzureArtifactUtils.detectArtifactType(jenkinsTasArtifactRequestDetails.getArtifactPath(), logCallback));
       return pair.getRight();
     } else {
       return null;
@@ -413,15 +347,17 @@ public class CfCommandTaskHelperNG {
   }
 
   private InputStream downloadFromAzureArtifacts(TasPackageArtifactConfig artifactConfig,
-      TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     AzureDevOpsTasArtifactRequestDetails azureArtifactsRequestDetails =
         (AzureDevOpsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
 
     validateAzureDevOpsArtifact(artifactConfig, azureArtifactsRequestDetails, logCallback);
-
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        (AzureArtifactsConnectorDTO) artifactConfig.getConnectorConfig();
+    decryptEntity(decryptionHelper, azureArtifactsConnectorDTO.getDecryptableEntities(),
+        artifactConfig.getEncryptedDataDetails());
     AzureArtifactsInternalConfig azureArtifactsInternalConfig =
-        AzureArtifactsRequestResponseMapper.toAzureArtifactsInternalConfig(
-            (AzureArtifactsConnectorDTO) artifactConfig.getConnectorConfig());
+        AzureArtifactsRequestResponseMapper.toAzureArtifactsInternalConfig(azureArtifactsConnectorDTO);
 
     String project = azureArtifactsRequestDetails.getProject();
     String packageName = azureArtifactsRequestDetails.getPackageName();
@@ -445,7 +381,7 @@ public class CfCommandTaskHelperNG {
       log.error("Failure in downloading artifact from Azure Artifacts", sanitizedException);
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT,
           errorMessageExplanation,
-          new AzureAppServiceTaskException(
+          new PivotalClientApiException(
               format(DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED, azureArtifactsRequestDetails.getIdentifier()),
               sanitizedException));
     }
@@ -458,13 +394,13 @@ public class CfCommandTaskHelperNG {
           "Failed to download artifact from Azure Artifacts.", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_AZURE_ARTIFACTS_HINT,
           errorMessageExplanation,
-          new AzureAppServiceTaskException(
+          new PivotalClientApiException(
               format(DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED, azureArtifactsRequestDetails.getIdentifier())));
     }
   }
 
   private InputStream downloadFromAwsS3(TasPackageArtifactConfig s3ArtifactConfig,
-      TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     AwsS3TasArtifactRequestDetails artifactRequestDetails =
         (AwsS3TasArtifactRequestDetails) s3ArtifactConfig.getArtifactDetails();
     validateAwsS3Artifact(s3ArtifactConfig, artifactRequestDetails, logCallback);
@@ -478,9 +414,10 @@ public class CfCommandTaskHelperNG {
 
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
         s3ArtifactConfig.getConnectorConfig(), s3ArtifactConfig.getEncryptedDataDetails());
-
-    AwsInternalConfig awsConfig =
-        awsNgConfigMapper.createAwsInternalConfig((AwsConnectorDTO) s3ArtifactConfig.getConnectorConfig());
+    AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) s3ArtifactConfig.getConnectorConfig();
+    decryptEntity(
+        decryptionHelper, awsConnectorDTO.getDecryptableEntities(), s3ArtifactConfig.getEncryptedDataDetails());
+    AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     String region = EmptyPredicate.isNotEmpty(artifactRequestDetails.getRegion()) ? artifactRequestDetails.getRegion()
                                                                                   : AWS_DEFAULT_REGION;
     InputStream artifactInputStream;
@@ -496,7 +433,7 @@ public class CfCommandTaskHelperNG {
         throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
             String.format(DOWNLOAD_FROM_S3_EXPLANATION, artifactRequestDetails.getBucketName(),
                 artifactRequestDetails.getFilePath()),
-            new AzureAppServiceTaskException(format(DOWNLOAD_FROM_S3_FAILED, artifactRequestDetails.getIdentifier())));
+            new PivotalClientApiException(format(DOWNLOAD_FROM_S3_FAILED, artifactRequestDetails.getIdentifier())));
       }
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
@@ -507,7 +444,7 @@ public class CfCommandTaskHelperNG {
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
           String.format(DOWNLOAD_FROM_S3_EXPLANATION, artifactRequestDetails.getBucketName(),
               artifactRequestDetails.getFilePath()),
-          new AzureAppServiceTaskException(
+          new PivotalClientApiException(
               format(DOWNLOAD_FROM_S3_FAILED, artifactRequestDetails.getIdentifier()), sanitizedException));
     }
     artifactResponseBuilder.artifactType(
@@ -554,21 +491,21 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  private void validateAzureDevOpsArtifact(TasPackageArtifactConfig azureDevopsArtifactConfig,
-      AzureDevOpsTasArtifactRequestDetails artifactRequestDetails, LogCallback logCallback) {
-    if (!(azureDevopsArtifactConfig.getArtifactDetails() instanceof AzureDevOpsTasArtifactRequestDetails)) {
+  private void validateAzureDevOpsArtifact(TasPackageArtifactConfig tasPackageArtifactConfig,
+      AzureDevOpsTasArtifactRequestDetails azureDevOpsTasArtifactRequestDetails, LogCallback logCallback) {
+    if (!(tasPackageArtifactConfig.getArtifactDetails() instanceof AzureDevOpsTasArtifactRequestDetails)) {
       throw NestedExceptionUtils.hintWithExplanationException("Please contact harness support team",
           format("Unexpected artifact configuration of type '%s'",
-              azureDevopsArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
+              tasPackageArtifactConfig.getArtifactDetails().getClass().getSimpleName()),
           new InvalidArgumentsException(Pair.of("artifactDetails",
               format("Invalid artifact details, expected '%s'",
                   AzureDevOpsTasArtifactRequestDetails.class.getSimpleName()))));
     }
 
-    if (EmptyPredicate.isEmpty(artifactRequestDetails.getArtifactName())) {
+    if (EmptyPredicate.isEmpty(azureDevOpsTasArtifactRequestDetails.getArtifactName())) {
       logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
-          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactRequestDetails.getIdentifier()),
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, azureDevOpsTasArtifactRequestDetails.getIdentifier()),
           new InvalidArgumentsException("not able to find artifact Path"));
     }
   }
@@ -583,7 +520,7 @@ public class CfCommandTaskHelperNG {
   }
 
   private InputStream downloadFromArtifactory(TasPackageArtifactConfig artifactConfig,
-      TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof ArtifactoryConnectorDTO)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Configure artifactory connector for artifactory configuration",
@@ -605,6 +542,8 @@ public class CfCommandTaskHelperNG {
     }
 
     ArtifactoryConnectorDTO artifactoryConnector = (ArtifactoryConnectorDTO) artifactConfig.getConnectorConfig();
+    decryptEntity(
+        decryptionHelper, artifactoryConnector.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
     ArtifactoryTasArtifactRequestDetails artifactDetails =
         (ArtifactoryTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
     ArtifactoryConfigRequest artifactoryConfigRequest =
@@ -622,7 +561,7 @@ public class CfCommandTaskHelperNG {
   }
 
   private InputStream downloadFromNexus(TasPackageArtifactConfig artifactConfig,
-      TasArtifactDownloadResponse.TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
+      TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof NexusConnectorDTO)) {
       throw NestedExceptionUtils.hintWithExplanationException("Configure nexus connector for nexus configuration",
           format("Unexpected connector type '%s' for nexus configuration",
@@ -643,6 +582,8 @@ public class CfCommandTaskHelperNG {
     }
 
     NexusConnectorDTO nexusConnectorDTO = (NexusConnectorDTO) artifactConfig.getConnectorConfig();
+    decryptEntity(
+        decryptionHelper, nexusConnectorDTO.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
     NexusTasArtifactRequestDetails requestDetails =
         (NexusTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
 
@@ -672,7 +613,17 @@ public class CfCommandTaskHelperNG {
       logCallback.saveExecutionLog(format(
           "Failed to download artifact '%s' due to: %s", artifactUrl, ExceptionUtils.getMessage(sanitizedException)));
       throw NestedExceptionUtils.hintWithExplanationException(NEXUS_FAILED_DOWNLOAD_HINT,
-          NEXUS_FAILED_DOWNLOAD_EXPLANATION + message, new AzureAppServiceTaskException(message));
+          NEXUS_FAILED_DOWNLOAD_EXPLANATION + message, new PivotalClientApiException(message));
+    }
+  }
+
+  protected void decryptEntity(DecryptionHelper decryptionHelper, List<DecryptableEntity> decryptableEntities,
+      List<EncryptedDataDetail> encryptedDataDetails) {
+    if (isNotEmpty(decryptableEntities)) {
+      for (DecryptableEntity decryptableEntity : decryptableEntities) {
+        decryptionHelper.decrypt(decryptableEntity, encryptedDataDetails);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(decryptableEntity, encryptedDataDetails);
+      }
     }
   }
 
@@ -699,7 +650,6 @@ public class CfCommandTaskHelperNG {
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
       Integer updateCount, List<CfInternalInstanceElement> pcfInstanceElements,
       CfAppAutoscalarRequestData appAutoscalarRequestData) throws PivotalClientApiException {
-
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 
     TasApplicationInfo downsizeAppDetail = cfDeployCommandRequestNG.getDownsizeAppDetail();
@@ -831,7 +781,8 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
       CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo, CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances) throws PivotalClientApiException {
+      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances)
+      throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(oldApplicationInfo.getApplicationName());
     cfRequestConfig.setDesiredCount(oldApplicationInfo.getRunningCount());
     executionLogCallback.saveExecutionLog(color("# Upsizing application:", White, Bold));
@@ -842,11 +793,11 @@ public class CfCommandTaskHelperNG {
     ApplicationDetail detailsAfterUpsize =
         cfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
     detailsAfterUpsize.getInstanceDetails().forEach(instanceDetail
-            -> oldAppInstances.add(CfInternalInstanceElement.builder()
-            .applicationId(detailsAfterUpsize.getId())
-            .displayName(detailsAfterUpsize.getName())
-            .instanceIndex(instanceDetail.getIndex())
-            .build()));
+        -> oldAppInstances.add(CfInternalInstanceElement.builder()
+                                   .applicationId(detailsAfterUpsize.getId())
+                                   .displayName(detailsAfterUpsize.getName())
+                                   .instanceIndex(instanceDetail.getIndex())
+                                   .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
     restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);

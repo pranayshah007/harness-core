@@ -14,8 +14,8 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.pcf.CfCommandUnitConstants.Downsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
-
 import static io.harness.pcf.PcfUtils.encodeColor;
+
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -112,21 +112,23 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // During rollback, always upsize old ones
       List<CfInternalInstanceElement> oldAppInstances = new ArrayList<>();
       updateNewAppName(cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig, executionLogCallback);
-      if(!isNull(cfRollbackCommandRequestNG.getActiveApplicationDetails())) {
+      if (!isNull(cfRollbackCommandRequestNG.getActiveApplicationDetails())) {
         renameOldApp(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
         cfCommandTaskHelperNG.upsizeListOfInstancesAndRestoreRoutes(executionLogCallback, cfDeploymentManager,
-                cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, cfRollbackCommandRequestNG, oldAppInstances);
+            cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, cfRollbackCommandRequestNG,
+            oldAppInstances);
         // Enable autoscalar for older app, if it was disabled during deploy
-        //todo : ask about autoscaler
-        // cfCommandTaskHelperNG.enableAutoscalerIfNeeded(cfRollbackCommandRequestNG.getOldApplicationDetails(), autoscalarRequestData, executionLogCallback);
+        if (cfRollbackCommandRequestNG.isUseAppAutoScalar()) {
+          cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
+              cfRollbackCommandRequestNG.getActiveApplicationDetails(), autoscalarRequestData, executionLogCallback);
+        }
         executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
-      }
-      else {
+      } else {
         executionLogCallback.saveExecutionLog("#---------- No Upsize required", INFO, SUCCESS);
       }
       // Downsizing
       executionLogCallback =
-              tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
+          tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
       cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfServiceDataUpdated,
           cfRequestConfig, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG,
           autoscalarRequestData);
@@ -229,7 +231,7 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   private void deleteApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG cfRollbackCommandRequestNG,
-                         LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     TasApplicationInfo newApp = cfRollbackCommandRequestNG.getNewApplicationDetails();
     String newAppName = newApp.getApplicationName();
     cfRequestConfig.setApplicationName(newAppName);
