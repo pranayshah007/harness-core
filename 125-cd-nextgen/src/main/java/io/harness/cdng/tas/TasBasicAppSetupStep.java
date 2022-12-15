@@ -139,11 +139,11 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
               .resizeStrategy(ResizeStrategy.DOWNSIZE_OLD_FIRST)
               .maxCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
-              .useAppAutoscalar(
+              .useAppAutoScalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .oldApplicationDetails(
+              .activeApplicationDetails(
                   isNull(response.getCurrentProdInfo().getApplicationName()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
               .build(),

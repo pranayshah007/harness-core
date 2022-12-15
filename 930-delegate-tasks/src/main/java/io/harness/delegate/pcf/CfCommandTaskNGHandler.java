@@ -37,6 +37,7 @@ import org.yaml.snakeyaml.representer.Representer;
 public abstract class CfCommandTaskNGHandler {
   protected static Yaml yaml = null;
   protected static final int MAX_RELEASE_VERSIONS_TO_KEEP = 3;
+  protected final String CLOUD_FOUNDRY_LOG_PREFIX = "CLOUD_FOUNDRY_LOG_PREFIX: ";
 
   static {
     DumperOptions options = new DumperOptions();

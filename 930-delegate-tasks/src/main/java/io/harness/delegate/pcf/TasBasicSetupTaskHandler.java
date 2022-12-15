@@ -338,7 +338,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases) {
     ApplicationSummary currentActiveApplication = getCurrentProdApplicationSummary(previousReleases);
     if (currentActiveApplication == null) {
-      return TasApplicationInfo.builder().build();
+      return null;
     }
 
     return TasApplicationInfo.builder()

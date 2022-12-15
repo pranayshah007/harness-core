@@ -32,6 +32,7 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfServiceData;
+import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
@@ -69,7 +70,6 @@ import org.cloudfoundry.operations.applications.ApplicationDetail;
 @Slf4j
 @OwnedBy(CDP)
 public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
-  private final String CLOUD_FOUNDRY_LOG_PREFIX = "CLOUD_FOUNDRY_LOG_PREFIX: ";
   @Inject TasTaskHelperBase tasTaskHelperBase;
   @Inject TasNgConfigMapper tasNgConfigMapper;
   @Inject CfDeploymentManager cfDeploymentManager;
@@ -108,7 +108,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
 
       // Init AppAutoscalarRequestData If Needed
-      if (cfDeployCommandRequestNG.isUseAppAutoscalar()) {
+      if (cfDeployCommandRequestNG.isUseAppAutoScalar()) {
         cfAppAutoscalarRequestData.setCfRequestConfig(cfRequestConfig);
         cfAppAutoscalarRequestData.setConfigPathVar(workingDirectory.getAbsolutePath());
         cfAppAutoscalarRequestData.setTimeoutInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin());
@@ -202,7 +202,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   void generateCfInstancesElementsForExistingApp(List<CfInternalInstanceElement> pcfInstanceElementsForVerification,
       CfRequestConfig cfRequestConfig, CfDeployCommandRequestNG cfDeployCommandRequestNG,
       LogCallback executionLogCallback) {
-    CfAppSetupTimeDetails downsizeAppDetail = cfDeployCommandRequestNG.getDownsizeAppDetail();
+    TasApplicationInfo downsizeAppDetail = cfDeployCommandRequestNG.getDownsizeAppDetail();
     if (downsizeAppDetail == null || isBlank(downsizeAppDetail.getApplicationName())) {
       return;
     }

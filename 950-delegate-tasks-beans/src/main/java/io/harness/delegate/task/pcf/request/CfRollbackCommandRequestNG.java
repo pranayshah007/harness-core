@@ -7,10 +7,10 @@
 
 package io.harness.delegate.task.pcf.request;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -21,33 +21,45 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
-import lombok.experimental.SuperBuilder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Data
-@SuperBuilder
-@AllArgsConstructor
-@OwnedBy(HarnessTeam.CDP)
-public class CfRollbackCommandRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
-  Integer timeoutIntervalInMin;
-  TasInfraConfig tasInfraConfig;
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfRollbackCommandRequestNG extends AbstractTasTaskRequest {
   List<CfServiceData> instanceData;
   List<String> routeMaps;
-  List<String> tempRouteMaps;
-  TasApplicationInfo oldApplicationDetails;
+  TasApplicationInfo activeApplicationDetails;
   TasApplicationInfo newApplicationDetails;
+  TasApplicationInfo inActiveApplicationDetails;
   String cfAppNamePrefix;
   Integer activeAppRevision;
-  CfAppSetupTimeDetails existingInActiveApplicationDetails;
-  CfCliVersion cfCliVersion;
   boolean enforceSslValidation;
-  boolean useAppAutoscalar;
-  boolean swapRouteOccured;
+  boolean useAppAutoScalar;
   String existingAppNamingStrategy;
-  boolean upsizeInActiveApp;
-  boolean downsizeOldApps;
+  @Builder
+  public CfRollbackCommandRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
+
+      List<CfServiceData> instanceData, List<String> routeMaps, TasApplicationInfo activeApplicationDetails,
+      TasApplicationInfo newApplicationDetails, String cfAppNamePrefix, Integer activeAppRevision,
+      TasApplicationInfo inActiveApplicationDetails, boolean enforceSslValidation, boolean useAppAutoScalar,
+      String existingAppNamingStrategy) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+    this.instanceData = instanceData;
+    this.activeApplicationDetails = activeApplicationDetails;
+    this.newApplicationDetails = newApplicationDetails;
+    this.cfAppNamePrefix = cfAppNamePrefix;
+    this.activeAppRevision = activeAppRevision;
+    this.routeMaps = routeMaps;
+    this.useAppAutoScalar = useAppAutoScalar;
+    this.inActiveApplicationDetails = inActiveApplicationDetails;
+    this.enforceSslValidation = enforceSslValidation;
+    this.existingAppNamingStrategy = existingAppNamingStrategy;
+  }
 }

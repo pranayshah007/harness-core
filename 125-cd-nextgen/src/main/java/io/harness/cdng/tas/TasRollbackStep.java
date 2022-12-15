@@ -18,16 +18,13 @@ import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -115,8 +112,8 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
-            .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
-            .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
+            .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .build();
 
@@ -126,8 +123,8 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
                                   .taskType(CF_COMMAND_TASK_NG.name())
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Arrays.asList(CfCommandUnitConstants.Upsize,
-                    CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Arrays.asList(CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -166,10 +163,10 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     }
     if (!CommandExecutionStatus.SUCCESS.equals(response.getCommandExecutionStatus())) {
       return StepResponse.builder()
-              .status(Status.FAILED)
-              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-              .build();
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
     }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

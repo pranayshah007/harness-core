@@ -21,7 +21,6 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -122,7 +121,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     List<CfServiceData> instanceData = new ArrayList<>();
     if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
       tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
-        Integer temp = cfServiceData.getDesiredCount();
+        int temp = cfServiceData.getDesiredCount();
         cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
         cfServiceData.setPreviousCount(temp);
         instanceData.add(cfServiceData);
@@ -154,17 +153,16 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
-            .downsizeOldApps(downsizeOldApplication)
+            .downsizeOldApplication(downsizeOldApplication)
             .timeoutIntervalInMin(10)
-            .swapRouteOccured(swapRouteOccurred)
-            .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
-            .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
+            .swapRouteOccurred(swapRouteOccurred)
+            .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
-            .tempRouteMaps(tasSetupDataOutcome.getTempRouteMap())
+                .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails())
+            .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
             .instanceData(instanceData)
-            .existingApplicationDetails(Collections.singletonList(
-                tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails()))
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
             .build();
 
@@ -174,8 +172,9 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
                                   .taskType(CF_COMMAND_TASK_NG.name())
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Arrays.asList(COMMAND_UNIT, CfCommandUnitConstants.Upsize,
-                    CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        Arrays.asList(COMMAND_UNIT, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize,
+            CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -214,10 +213,10 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     }
     if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
       return StepResponse.builder()
-              .status(Status.FAILED)
-              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-              .build();
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
     }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

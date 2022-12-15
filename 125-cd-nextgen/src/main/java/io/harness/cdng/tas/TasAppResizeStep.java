@@ -219,9 +219,9 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .commandName(TAS_APP_RESIZE)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
-            .downsizeAppDetail(isNull(tasSetupDataOutcome.getOldApplicationDetails())
+            .downsizeAppDetail(isNull(tasSetupDataOutcome.getActiveApplicationDetails())
                     ? null
-                    : tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
+                    : tasSetupDataOutcome.getActiveApplicationDetails())
             .upsizeCount(upsizeCount)
             .downSizeCount(downsizeCount)
             .instanceData(tasSetupDataOutcome.getInstanceData())
@@ -230,7 +230,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .isStandardBlueGreen(tasSetupDataOutcome.getIsBlueGreen())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
-            .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
+            .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .totalPreviousInstanceCount(tasSetupDataOutcome.getTotalPreviousInstanceCount())
             .build();

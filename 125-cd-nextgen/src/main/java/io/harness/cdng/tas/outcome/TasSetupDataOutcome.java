@@ -32,7 +32,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.beans.TasSetupDataOutcome")
 public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   Integer totalPreviousInstanceCount;
-  CfAppSetupTimeDetails downsizeAppDetail;
   Integer desiredActualFinalCount;
   String newReleaseName;
   Integer maxCount;
@@ -41,12 +40,12 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   String cfAppNamePrefix;
   CfCliVersion cfCliVersion;
   Integer timeoutIntervalInMinutes;
-  TasApplicationInfo oldApplicationDetails;
+  TasApplicationInfo inActiveApplicationDetails;
+  TasApplicationInfo activeApplicationDetails;
   TasApplicationInfo newApplicationDetails;
   List<String> tempRouteMap;
   List<String> routeMaps;
   TasApplicationInfo existingApplicationDetails;
   @Builder.Default Boolean isBlueGreen = Boolean.FALSE;
-
-  boolean useAppAutoscalar;
+  boolean useAppAutoScalar;
 }

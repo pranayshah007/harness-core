@@ -7,41 +7,57 @@
 
 package io.harness.delegate.task.pcf.request;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.pcf.model.CfCliVersion;
-import io.harness.pcf.model.CfCliVersionNG;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Value
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class CfSwapRoutesRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
-  Integer timeoutIntervalInMin;
-  TasInfraConfig tasInfraConfig;
+@Data
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfSwapRoutesRequestNG extends AbstractTasTaskRequest {
   String newApplicationName;
-  CfAppSetupTimeDetails existingApplicationDetails;
-  List<String> existingApplicationNames;
   List<String> tempRoutes;
   List<String> finalRoutes;
   boolean downsizeOldApplication;
-  boolean isMapRoutesOperation;
-  boolean upSizeInActiveApp;
-  CfAppSetupTimeDetails existingInActiveApplicationDetails;
+  TasApplicationInfo activeApplicationDetails;
+  TasApplicationInfo inActiveApplicationDetails;
   TasApplicationInfo newApplicationDetails;
-  String cfAppNamePrefix;
-  boolean useAppAutoscalar;
-  CfCliVersion cfCliVersion;
+  List<String> existingApplicationNames;
+  String releaseNamePrefix;
+  boolean useAppAutoScalar;
+  Integer olderActiveVersionCountToKeep;
+
+  @Builder
+  public CfSwapRoutesRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
+      Integer olderActiveVersionCountToKeep, List<String> finalRoutes, boolean useAppAutoScalar,
+      List<String> tempRoutes, boolean downsizeOldApplication, TasApplicationInfo activeApplicationDetails,
+      TasApplicationInfo inActiveApplicationDetails, TasApplicationInfo newApplicationDetails,
+      List<String> existingApplicationNames, String newApplicationName) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+
+    this.newApplicationName = newApplicationName;
+    this.tempRoutes = tempRoutes;
+    this.finalRoutes = finalRoutes;
+    this.downsizeOldApplication = downsizeOldApplication;
+    this.activeApplicationDetails = activeApplicationDetails;
+    this.inActiveApplicationDetails = inActiveApplicationDetails;
+    this.newApplicationDetails = newApplicationDetails;
+    this.existingApplicationNames = existingApplicationNames;
+    this.releaseNamePrefix = releaseNamePrefix;
+    this.useAppAutoScalar = useAppAutoScalar;
+    this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
+  }
 }
