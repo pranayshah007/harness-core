@@ -21,14 +21,17 @@ PROJECTS=$(<$PROJFILE)
 #      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
 #      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
-KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
-
+which grep
+KEYS="PIE-123"
+#KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
+KEYS=$($KEYS | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 #Getting the dummy commits that are made to the branch and creating a ticket out of it
 #git log --pretty=oneline --abbrev-commit |\
 #      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
 #      grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
 
-git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
+$KEYS | grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
+#git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
 dummyJiraList=$(sed 's/,/\\n/g' dummyJiraList.txt)
 
 #Creating a ticket for such tickets
