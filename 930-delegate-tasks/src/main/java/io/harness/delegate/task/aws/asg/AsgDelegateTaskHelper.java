@@ -7,38 +7,31 @@
 
 package io.harness.delegate.task.aws.asg;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.aws.asg.AsgCommandTaskNGHandler;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.aws.asg.AsgCommandTaskNGHandler;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.aws.asg.AsgInfraConfigHelper;
-import io.harness.delegate.task.aws.asg.request.AsgCommandRequest;
-import io.harness.delegate.task.aws.asg.response.AsgCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
+import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class AsgDelegateTaskHelper {
-  @Inject private Map<String, AsgCommandTaskNGHandler> commandTaskTypeToTaskHandlerMap;
   @Inject private AsgInfraConfigHelper asgInfraConfigHelper;
 
-  public AsgCommandResponse getAsgCommandResponse(
+  public AsgCommandResponse getAsgCommandResponse(AsgCommandTaskNGHandler commandTaskHandler,
       AsgCommandRequest asgCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = asgCommandRequest.getCommandUnitsProgress() != null
         ? asgCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
-    log.info("Starting task execution for command: {}", asgCommandRequest.getAsgCommandType().name());
+    log.info("Starting task execution for command: {}", asgCommandRequest.getCommandName());
     decryptRequestDTOs(asgCommandRequest);
 
-    AsgCommandTaskNGHandler commandTaskHandler =
-        commandTaskTypeToTaskHandlerMap.get(asgCommandRequest.getAsgCommandType().name());
     try {
       AsgCommandResponse asgCommandResponse =
           commandTaskHandler.executeTask(asgCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
@@ -46,8 +39,7 @@ public class AsgDelegateTaskHelper {
       return asgCommandResponse;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing asg task [{}]",
-          asgCommandRequest.getCommandName() + ":" + asgCommandRequest.getAsgCommandType(), sanitizedException);
+      log.error("Exception in processing asg task [{}]", asgCommandRequest.getCommandName(), sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
