@@ -52,7 +52,7 @@ public class InstanceDetailsHelper {
   private static final String CLAIM_NAMESPACE = "claim_namespace";
 
   public List<QLCEViewEntityStatsDataPoint> getInstanceDetails(
-      List<QLCEViewEntityStatsDataPoint> costData, String instanceType) {
+      List<QLCEViewEntityStatsDataPoint> costData, String instanceType, String accountId) {
     Set<String> instanceIds = new HashSet<>();
     List<String> instanceIdWithCluster = new ArrayList<>();
 
@@ -68,7 +68,7 @@ public class InstanceDetailsHelper {
 
     Map<String, InstanceData> instanceIdToInstanceData = new HashMap<>();
     List<InstanceData> instanceDataList =
-        instanceDataService.fetchInstanceDataForGivenInstances(new ArrayList<>(instanceIds));
+        instanceDataService.fetchInstanceDataForGivenInstances(accountId, new ArrayList<>(instanceIds));
 
     for (InstanceData instanceData : instanceDataList) {
       String key = instanceData.getClusterId() + ID_SEPARATOR + instanceData.getInstanceId();

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.events;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_REVOKE_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -28,7 +30,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateNgTokenRevokeEvent extends AbstractDelegateConfigurationEvent {
-  public static final String DELEGATE_TOKEN_REVOKE_EVENT = "DelegateNgTokenRevokeEvent";
   private DelegateNgTokenDTO token;
 
   @Override

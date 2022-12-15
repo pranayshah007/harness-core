@@ -537,9 +537,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
             .schemaErrors(
                 Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.inputSet").build()))
             .build();
-    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
-    invalidYamlException.setYaml(pipelineYaml);
-    return invalidYamlException;
+    return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
   String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier, String projectIdentifier,

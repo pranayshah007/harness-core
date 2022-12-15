@@ -58,6 +58,8 @@ import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
@@ -320,6 +322,7 @@ public class CENextGenModule extends AbstractModule {
         configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -352,6 +355,7 @@ public class CENextGenModule extends AbstractModule {
     bind(RuleEnforcementService.class).to(RuleEnforcementServiceImpl.class);
     bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
+    bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

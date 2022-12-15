@@ -36,7 +36,7 @@ public interface MorphiaRegistrar {
   default void testClassesModule() {
     final Set<Class> classes = new HashSet<>();
     registerClasses(classes);
-    CodeUtils.checkHarnessClassesBelongToModule(CodeUtils.location(this.getClass()), classes);
+    CodeUtils.checkHarnessClassesBelongToModule(CodeUtils.topModuleLocation(this.getClass()), classes);
   }
 
   static void putClass(Map<String, Class> map, String name, Class clazz) {
@@ -59,6 +59,6 @@ public interface MorphiaRegistrar {
     Set<Class> classes = new HashSet<>(map.values());
     classes.remove(NotFoundClass.class);
 
-    CodeUtils.checkHarnessClassesBelongToModule(CodeUtils.location(this.getClass()), classes);
+    CodeUtils.checkHarnessClassesBelongToModule(CodeUtils.topModuleLocation(this.getClass()), classes);
   }
 }

@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -22,6 +24,7 @@ import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -91,7 +94,6 @@ import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
@@ -209,5 +211,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntApplyStepInfo.class, 12623);
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
+
+    kryo.register(AsgCanaryDeployStepInfo.class, 12626);
+    kryo.register(AsgCanaryDeleteStepInfo.class, 12627);
   }
 }

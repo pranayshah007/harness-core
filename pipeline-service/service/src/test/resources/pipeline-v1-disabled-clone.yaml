@@ -1,0 +1,37 @@
+version: 1
+name: Java with Gradle Infra
+inputs:
+  image:
+    type: string
+    desc: image name
+    default: golang
+  repo:
+    type: string
+    desc: repository name
+    required: true
+    prompt: true
+  count:
+    type: number
+  password:
+    type: secret
+    desc: docker password
+    enums: [secret1, secret2]
+    required: true
+repository:
+  disabled: true
+stages:
+  - name: output variable
+    type: ci
+    spec:
+      clone:
+        disabled: true
+      steps:
+        - name: one
+          type: script
+          spec:
+            strategy:
+              parallelism: 2
+            image: alpine
+            run: export foo=bar
+            outputs:
+              - foo

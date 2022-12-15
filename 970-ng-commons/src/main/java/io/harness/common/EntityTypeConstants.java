@@ -179,4 +179,8 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
+  String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
+  String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
+  String ASG_CANARY_DELETE = "AsgCanaryDelete";
 }

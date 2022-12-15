@@ -280,6 +280,7 @@ message PageResponse {
 message PageRequest {
   int32 page = 1;
   string url = 2;
+  int32 size = 3;
 }
 
 message GetFileRequest {

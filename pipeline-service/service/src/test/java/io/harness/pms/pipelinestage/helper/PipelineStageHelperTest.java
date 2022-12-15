@@ -21,7 +21,6 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -170,8 +169,7 @@ public class PipelineStageHelperTest extends CategoryTest {
     doReturn(resolvedExpressionMap)
         .when(pmsEngineExpressionService)
         .resolve(ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-    PipelineStageOutcome outcome =
-        pipelineStageHelper.resolveOutputVariables(expressionMap, NodeExecution.builder().ambiance(ambiance).build());
+    PipelineStageOutcome outcome = pipelineStageHelper.resolveOutputVariables(expressionMap, ambiance);
     assertThat(outcome.size()).isEqualTo(2);
     assertThat(outcome.get(var1)).isEqualTo("pipelineName");
     assertThat(outcome.get(var2)).isEqualTo("constant");

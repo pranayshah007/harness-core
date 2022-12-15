@@ -39,7 +39,7 @@ public class ServiceUseFromStageV2 implements Visitable {
   String uuid;
 
   // Stage identifier of the stage to select from.
-  @NotNull String stage;
+  @ApiModelProperty(required = true) @NotNull String stage;
 
   // For Visitor Framework Impl
   String metadata;

@@ -127,7 +127,7 @@ public class TemplateReferenceHelper {
                 || CUSTOM_DEPLOYMENT_TEMPLATE.equals(secondLastNode.getKey()))) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
           IdentifierRef templateIdentifierRef =
-              IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
+              IdentifierRefHelper.getIdentifierRefOrThrowException(identifier, accountId, orgId, projectId, "template");
 
           // remove templateRef from FQN and add versionLabel to FQN to fetch corresponding template version.
           fqnList.remove(fqnList.size() - 1);

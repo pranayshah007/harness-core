@@ -368,11 +368,11 @@ public class RetryExecutionHelper {
   }
 
   public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId,
-      List<String> stageIdentifiersToRetrytWith) {
+      List<String> stageIdentifiersToRetryWith) {
     List<Node> planNodes = plan.getPlanNodes();
 
     List<String> stagesFqnToRetryWith =
-        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetrytWith);
+        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetryWith);
     List<NodeExecution> strategyNodeExecutions =
         nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
     List<Node> strategyNodes = new ArrayList<>();

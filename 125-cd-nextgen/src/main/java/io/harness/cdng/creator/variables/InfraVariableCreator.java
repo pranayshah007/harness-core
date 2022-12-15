@@ -143,6 +143,10 @@ public class InfraVariableCreator {
           addVariablesForTASInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.ASG:
+          addVariablesForAsgInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
@@ -270,6 +274,16 @@ public class InfraVariableCreator {
 
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.CONFIGURATION, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForAsgInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariableForYamlType(

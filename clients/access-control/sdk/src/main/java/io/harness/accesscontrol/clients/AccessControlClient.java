@@ -34,4 +34,6 @@ public interface AccessControlClient {
 
   void checkForAccessOrThrow(
       Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage);
+
+  AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList);
 }

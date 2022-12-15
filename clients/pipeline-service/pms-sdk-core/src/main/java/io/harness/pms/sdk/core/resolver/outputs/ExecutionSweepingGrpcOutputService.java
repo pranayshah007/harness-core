@@ -108,4 +108,17 @@ public class ExecutionSweepingGrpcOutputService implements ExecutionSweepingOutp
     }
     return optionalSweepingOutputs;
   }
+
+  @Override
+  public String consumeOptional(Ambiance ambiance, String name, ExecutionSweepingOutput value, String groupName) {
+    SweepingOutputConsumeBlobRequest.Builder builder =
+        SweepingOutputConsumeBlobRequest.newBuilder().setAmbiance(ambiance).setName(name).setValue(
+            RecastOrchestrationUtils.toJson(value));
+    if (EmptyPredicate.isNotEmpty(groupName)) {
+      builder.setGroupName(groupName);
+    }
+    SweepingOutputConsumeBlobResponse sweepingOutputConsumeBlobResponse = PmsGrpcClientUtils.retryAndProcessException(
+        sweepingOutputServiceBlockingStub::consumeOptional, builder.build());
+    return sweepingOutputConsumeBlobResponse.getResponse();
+  }
 }

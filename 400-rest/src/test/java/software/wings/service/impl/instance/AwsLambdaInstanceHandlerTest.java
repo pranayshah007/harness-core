@@ -55,7 +55,6 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.Tag;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.InvocationCount;
 import software.wings.beans.infrastructure.instance.InvocationCount.InvocationCountKey;
 import software.wings.beans.infrastructure.instance.ServerlessInstance;
@@ -68,6 +67,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.AwsAmiDeploym
 import software.wings.beans.infrastructure.instance.key.deployment.AwsLambdaDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.delegatetasks.DelegateProxyFactory;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.AwsLambdaInstanceSyncPerpetualTaskCreator;
 import software.wings.service.impl.aws.model.embed.AwsLambdaDetails;
 import software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest;

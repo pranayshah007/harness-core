@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import static io.harness.ngmigration.service.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -20,6 +21,7 @@ import io.harness.steps.jira.update.JiraUpdateStepInfo;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.jira.update.beans.TransitionTo;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 import software.wings.yaml.workflow.StepYaml;
@@ -52,7 +54,7 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:

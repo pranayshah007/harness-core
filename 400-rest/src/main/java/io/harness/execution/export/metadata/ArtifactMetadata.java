@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.BuildExecutionSummary;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 import lombok.Builder;

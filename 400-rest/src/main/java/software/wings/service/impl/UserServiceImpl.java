@@ -535,6 +535,33 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm) {
+    Query<Account> query = getUserAccountsQuery(userId, searchTerm);
+    return query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+  }
+
+  private Query<Account> getUserAccountsQuery(String userId, String searchTerm) {
+    Query<Account> query = wingsPersistence.createQuery(Account.class);
+    List<String> accountIds = getUserAccountIds(userId);
+    if (harnessUserGroupService.isHarnessSupportUser(userId)) {
+      accountIds.addAll(accessRequestService.getAccountsHavingActiveAccessRequestForUser(userId));
+      query.or(query.criteria(AccountKeys.isHarnessSupportAccessAllowed).equal(true),
+          query.criteria(AccountKeys.uuid).in(accountIds));
+
+    } else {
+      query.field(AccountKeys.uuid).in(accountIds);
+    }
+    query.and(getSearchCriterion(query, AccountKeys.accountName, searchTerm));
+    query.order(Sort.ascending(AccountKeys.accountName));
+    return query;
+  }
+
+  public List<String> getUserAccountIds(String userId) {
+    User user = wingsPersistence.createQuery(User.class).filter("uuid", userId).project(UserKeys.accounts, true).get();
+    return user.getAccounts().stream().map(Account::getUuid).collect(toList());
+  }
+
+  @Override
   public User completeNewSignupInvite(UserInvite userInvite) {
     User existingUser = getUserByEmail(userInvite.getEmail());
     if (existingUser != null) {

@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -17,6 +18,7 @@ public class ContainerMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(ContainerPortDetails.class);
+    set.add(LiteEnginePodDetailsOutcome.class);
   }
 
   @Override

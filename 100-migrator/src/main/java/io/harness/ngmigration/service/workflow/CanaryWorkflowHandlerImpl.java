@@ -16,6 +16,7 @@ import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
@@ -23,6 +24,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandler;
 import software.wings.yaml.workflow.CanaryWorkflowYaml;
 
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
@@ -88,15 +91,15 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
+  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
-      return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+      return getDeploymentStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
     }
     if (workflowType == BUILD) {
-      return getCustomStageTemplateSpec(workflow, stepMapperFactory);
+      return getCustomStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
     }
-    return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
+    return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
   }
 
   @Override

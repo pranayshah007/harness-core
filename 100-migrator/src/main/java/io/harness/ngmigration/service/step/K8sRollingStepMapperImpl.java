@@ -10,11 +10,15 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
+
+import java.util.Map;
 
 public class K8sRollingStepMapperImpl implements StepMapper {
   @Override
@@ -28,7 +32,7 @@ public class K8sRollingStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     K8sRollingStepNode k8sRollingStepNode = new K8sRollingStepNode();
     baseSetup(stepYaml, k8sRollingStepNode);
     k8sRollingStepNode.setK8sRollingStepInfo(

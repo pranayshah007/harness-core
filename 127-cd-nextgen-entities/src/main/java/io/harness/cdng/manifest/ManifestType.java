@@ -25,6 +25,8 @@ public interface ManifestType {
           ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
   Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam);
+  Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
+      ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
   String K8Manifest = "K8sManifest";
   String VALUES = "Values";

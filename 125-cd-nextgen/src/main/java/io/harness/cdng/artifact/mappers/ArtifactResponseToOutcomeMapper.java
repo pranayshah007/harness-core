@@ -181,7 +181,7 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
-        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
+        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -207,16 +207,12 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private static AMIArtifactOutcome getAMIArtifactOutcome(
-      AMIArtifactConfig amiArtifactConfig, AMIArtifactDelegateResponse amiArtifactDelegateResponse) {
-    if (amiArtifactDelegateResponse == null) {
-      return null;
-    }
-
+  private static AMIArtifactOutcome getAMIArtifactOutcome(AMIArtifactConfig amiArtifactConfig,
+      AMIArtifactDelegateResponse amiArtifactDelegateResponse, boolean useDelegateResponse) {
     return AMIArtifactOutcome.builder()
-        .amiId(amiArtifactDelegateResponse.getAmiId())
-        .metadata(amiArtifactDelegateResponse.getMetadata())
-        .version(amiArtifactDelegateResponse.getVersion())
+        .amiId(useDelegateResponse ? amiArtifactDelegateResponse.getAmiId() : "")
+        .metadata(useDelegateResponse ? amiArtifactDelegateResponse.getMetadata() : null)
+        .version(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "")
         .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMI.getDisplayName())
         .identifier(amiArtifactConfig.getIdentifier())
@@ -258,6 +254,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
+    Map<String, String> metadata = null;
+    String displayName = null;
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
+      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
+    }
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
+      displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
     return DockerArtifactOutcome.builder()
         .image(getImageValue(dockerDelegateResponse))
         .connectorRef(dockerConfig.getConnectorRef().getValue())
@@ -270,8 +276,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(dockerConfig.getIdentifier())
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
+        .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
+        .metadata(metadata)
         .build();
   }
 

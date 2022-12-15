@@ -13,7 +13,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.PmsLevelUtils;
-import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -42,8 +41,8 @@ public class IdentityNodeExecutionStrategyHelper {
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   @Inject private NodeExecutionService nodeExecutionService;
 
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
-      IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
+  public NodeExecution createNodeExecution(
+      @NotNull Ambiance ambiance, @NotNull IdentityPlanNode node, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
     NodeExecution execution = NodeExecution.builder()

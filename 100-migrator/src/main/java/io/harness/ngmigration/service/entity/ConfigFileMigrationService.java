@@ -224,7 +224,9 @@ public class ConfigFileMigrationService extends NgMigrationService {
       if (configNode != null) {
         ConfigFile configFile = (ConfigFile) configNode.getEntity();
         NGYamlFile file = getYamlFileForConfigFile(configFile, inputDTO, entities);
-        configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+        if (file != null) {
+          configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+        }
       }
     }
     return configWrappers;

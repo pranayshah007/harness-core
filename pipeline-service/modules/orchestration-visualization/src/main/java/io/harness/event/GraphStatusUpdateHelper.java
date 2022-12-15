@@ -131,7 +131,7 @@ public class GraphStatusUpdateHelper {
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
             .progressData(nodeExecution.getPmsProgressData());
-    if (prevValue.getStepParameters() != null) {
+    if (prevValue.getStepParameters() == null) {
       prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
     }
     return prevValueBuilder.build();

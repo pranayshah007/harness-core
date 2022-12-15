@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
+import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
+
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.entities.CVConfig;
@@ -16,6 +18,7 @@ import io.harness.data.validator.EntityIdentifier;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
@@ -45,6 +48,7 @@ import org.hibernate.validator.constraints.NotEmpty;
       @JsonSubTypes.Type(value = CloudWatchMetricsHealthSourceSpec.class, name = "CloudWatchMetrics"),
       @JsonSubTypes.Type(value = AwsPrometheusHealthSourceSpec.class, name = "AwsPrometheus")
 })
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 @Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")
 public abstract class HealthSourceSpec {
   @NotEmpty @EntityIdentifier(allowScoped = true) String connectorRef;

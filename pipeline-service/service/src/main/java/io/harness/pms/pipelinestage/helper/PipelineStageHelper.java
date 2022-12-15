@@ -196,8 +196,7 @@ public class PipelineStageHelper {
         && graphLayoutNodeDTO.get(stageNodeId).getNodeType().equals(StepSpecTypeConstants.PIPELINE_STAGE);
   }
 
-  public PipelineStageOutcome resolveOutputVariables(
-      Map<String, ParameterField<String>> map, NodeExecution nodeExecution) {
+  public PipelineStageOutcome resolveOutputVariables(Map<String, ParameterField<String>> map, Ambiance ambiance) {
     Map<String, String> resolvedMap = new HashMap<>();
 
     for (Map.Entry<String, ParameterField<String>> entry : map.entrySet()) {
@@ -213,6 +212,6 @@ public class PipelineStageHelper {
     }
 
     return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
-        nodeExecution.getAmbiance(), resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
   }
 }

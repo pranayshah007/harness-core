@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -6,6 +11,7 @@ go_library(
     importpath = "github.com/harness/harness-core/queue-service/hsqs/handler",
     visibility = ["//visibility:public"],
     deps = [
+        "//queue-service/hsqs/instrumentation",
         "//queue-service/hsqs/store",
         "@com_github_labstack_echo_v4//:echo",
     ],
@@ -19,6 +25,7 @@ go_test(
     embed = [":handler"],
     deps = [
         "//queue-service/hsqs/config",
+        "//queue-service/hsqs/instrumentation/metrics",
         "//queue-service/hsqs/store",
         "//queue-service/hsqs/store/redis",
         "@com_github_go_redis_redismock_v8//:redismock",

@@ -7,18 +7,21 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.BuildWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.BuildWorkflowYamlHandler;
 import software.wings.yaml.workflow.BuildWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BuildWorkflowYamlHandler buildWorkflowYamlHandler;
@@ -49,7 +52,7 @@ public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
-    return getCustomStageTemplateSpec(workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getCustomStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
   }
 }

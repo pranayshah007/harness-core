@@ -90,7 +90,7 @@ public class WinRmExecutorHelper {
   public static List<String> splitCommandForCopyingToRemoteFile(
       String command, String encodedScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference='Stop'\n" + command;
-    String base64Command = encodeBase64(command.getBytes(StandardCharsets.UTF_16LE));
+    String base64Command = encodeBase64(command.getBytes(StandardCharsets.UTF_8));
     // write commands to a file and then execute the file
     String commandParametersString = buildCommandParameters(commandParameters);
 
@@ -114,15 +114,13 @@ public class WinRmExecutorHelper {
 
     return powershell + " Invoke-Command " + commandParametersString + " -command {[IO.File]::AppendAllText(\\\""
         + psExecutableFile + "\\\", \\\""
-        + "try{`n"
-        + "`t`$encoded = get-content " + encodedScriptFile + "`n"
-        + "`t`$decoded = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String(`$encoded));`n"
-        + "`tSet-Content -Path " + scriptExecutionFile + " -Value `$decoded -Encoding Unicode`n"
-        + "`tInvoke-Expression -Command " + scriptExecutionFile + "`n"
-        + "}`ncatch`n{`n`tWrite-Error `$_;`n`texit 1`n}`n"
-        + "finally`n{`n"
-        + "`tif (Test-Path " + scriptExecutionFile + ") {Remove-Item -Force -Path " + scriptExecutionFile + "}"
-        + "`tif (Test-Path " + encodedScriptFile + ") {Remove-Item -Force -Path " + encodedScriptFile + "}`n}"
+        + "`$encodedScriptFile = [Environment]::ExpandEnvironmentVariables(`\\\"" + encodedScriptFile + "`\\\");`n"
+        + "`$scriptExecutionFile = [Environment]::ExpandEnvironmentVariables(`\\\"" + scriptExecutionFile + "`\\\");`n"
+        + "`$encoded = get-content `$encodedScriptFile`n"
+        + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
+        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}"
         + "\\\" ) }";
   }
 
@@ -234,12 +232,12 @@ public class WinRmExecutorHelper {
   public static String getEncodedScriptFile(String workingDir, String suffix) {
     return isEmpty(workingDir)
         ? WINDOWS_TEMPFILE_LOCATION + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10)
-        : workingDir + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + suffix;
+        : workingDir + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10);
   }
 
   public static String executablePSFilePath(String workingDir, String suffix) {
     return isEmpty(workingDir)
         ? WINDOWS_TEMPFILE_LOCATION + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10) + ".ps1"
-        : workingDir + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + suffix + ".ps1";
+        : workingDir + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10) + ".ps1";
   }
 }

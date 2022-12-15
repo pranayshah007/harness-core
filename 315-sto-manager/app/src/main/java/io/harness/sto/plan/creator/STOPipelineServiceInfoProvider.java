@@ -40,6 +40,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.sto.STOStepType;
 import io.harness.sto.plan.creator.filter.STOStageFilterJsonCreator;
 import io.harness.sto.plan.creator.stage.SecurityStagePMSPlanCreator;
+import io.harness.sto.plan.creator.step.STOGenericStepPlanCreator;
 import io.harness.sto.plan.creator.step.STOPMSStepFilterJsonCreator;
 import io.harness.sto.plan.creator.step.STOPMSStepPlanCreator;
 import io.harness.sto.plan.creator.step.STOStepFilterJsonCreatorV2;
@@ -71,8 +72,10 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new SecurityStagePMSPlanCreator());
     planCreators.add(new STOPMSStepPlanCreator());
 
-    planCreators.addAll(
-        Arrays.asList(STOStepType.values()).stream().map(e -> e.getPlanCreator()).collect(Collectors.toList()));
+    planCreators.addAll(Arrays.asList(STOStepType.values())
+                            .stream()
+                            .map(STOPipelineServiceInfoProvider::getPlanCreator)
+                            .collect(Collectors.toList()));
 
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
@@ -112,6 +115,10 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
         new EmptyVariableCreator(STEP, Set.of(TEST, PUBLISH_ARTIFACTS, LITE_ENGINE_TASK, SAVE_CACHE, CLEANUP)));
 
     return variableCreators;
+  }
+
+  private static PartialPlanCreator<?> getPlanCreator(STOStepType stepType) {
+    return new STOGenericStepPlanCreator(stepType);
   }
 
   private StepInfo createStepInfo(STOStepType stoStepType, String stepCategory) {

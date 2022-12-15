@@ -12,24 +12,38 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.sto.STOStepType;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Locale;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("stoGenericStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.STOGenericStepInfo")
 public class STOGenericStepInfo extends SecurityStepInfo {
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return this.getTypeName().toLowerCase(Locale.ROOT);
+  }
+
+  @ApiModelProperty(hidden = true)
+  public STOStepType getSTOStepType() {
+    return STOStepType.lookupByName(this.getTypeName());
+  }
+
   @NotNull @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlScanMode") protected STOYamlScanMode mode;
 
   @NotNull

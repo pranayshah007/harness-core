@@ -393,6 +393,16 @@ public class DiscoveryService {
     }
     List<NGYamlFile> files = new ArrayList<>();
 
+    // Load all migrated entities for the CG entities before actual migration
+    for (CgEntityId cgEntityId : entities.keySet()) {
+      NGYamlFile yamlFile =
+          migrationFactory.getMethod(cgEntityId.getType()).getExistingYaml(inputDTO, entities, cgEntityId);
+      if (yamlFile != null) {
+        migratedEntities.put(cgEntityId, yamlFile);
+        files.add(yamlFile);
+      }
+    }
+
     // Note: Special case: Migrate environments
     // We are doing this because when we migrate infra we need to reference environment
     // & environment is parent of infra. Environment also has no business logic.

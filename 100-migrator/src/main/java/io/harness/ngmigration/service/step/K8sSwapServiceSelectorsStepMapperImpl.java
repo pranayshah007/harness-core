@@ -10,9 +10,11 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepInfo;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.KubernetesSwapServiceSelectors;
 import software.wings.yaml.workflow.StepYaml;
@@ -36,7 +38,7 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(stepYaml);
     K8sBGSwapServicesStepNode k8sBGSwapServicesStepNode = new K8sBGSwapServicesStepNode();
     baseSetup(stepYaml, k8sBGSwapServicesStepNode);
