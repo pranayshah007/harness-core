@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -40,6 +41,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.DX)
+@HarnessAlwaysRun
 public class GitSyncSettingsTest extends GitSyncTestBase {
   @Inject GitSyncSettingsServiceImpl gitSyncSettingsService;
   @Inject GitSyncSettingsRepository gitSyncSettingsRepository;
