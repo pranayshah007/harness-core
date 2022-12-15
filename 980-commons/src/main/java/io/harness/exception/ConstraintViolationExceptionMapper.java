@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
-import io.harness.utils.ConstraintViolationHandlerUtils;
+import io.harness.utils.constraintviolation.ConstraintViolationHandlerUtils;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ConstraintViolationExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
   @Override
   public Response toResponse(ConstraintViolationException exception) {
-    log.error("ConstraintViolationException while handling restcall", exception);
     ImmutableList<String> errors = ConstraintViolationHandlerUtils.getErrorMessages(exception);
 
     if (errors.isEmpty()) {

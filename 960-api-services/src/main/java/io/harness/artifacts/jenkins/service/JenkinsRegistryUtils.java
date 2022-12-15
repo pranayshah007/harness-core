@@ -26,6 +26,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.client.JenkinsClient;
 import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
@@ -175,6 +176,8 @@ public class JenkinsRegistryUtils {
 
   public BuildDetails getBuildDetails(BuildWithDetails buildWithDetails, List<String> artifactPaths) {
     List<ArtifactFileMetadata> artifactFileMetadata = getArtifactFileMetadata(buildWithDetails, artifactPaths);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.url, buildWithDetails.getUrl());
     BuildDetails buildDetails = aBuildDetails()
                                     .withNumber(String.valueOf(buildWithDetails.getNumber()))
                                     .withRevision(extractRevision(buildWithDetails))
@@ -185,6 +188,7 @@ public class JenkinsRegistryUtils {
                                     .withStatus(BuildDetails.BuildStatus.valueOf(buildWithDetails.getResult().name()))
                                     .withUiDisplayName("Build# " + buildWithDetails.getNumber())
                                     .withArtifactDownloadMetadata(artifactFileMetadata)
+                                    .withMetadata(metadata)
                                     .build();
     populateBuildParams(buildWithDetails, buildDetails);
     return buildDetails;
@@ -500,25 +504,40 @@ public class JenkinsRegistryUtils {
     String parentJobUrl = null;
     String childJobName;
 
-    try {
-      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+    boolean isAlreadyEncoding = jobname.contains("/");
 
-      String[] jobNameSplit = decodedJobName.split("/");
+    if (isAlreadyEncoding) {
+      String[] jobNameSplit = jobname.split("/");
       int parts = jobNameSplit.length;
       if (parts > 1) {
         parentJobUrl = constructParentJobPath(jobNameSplit);
         parentJobName = jobNameSplit[parts - 2];
         childJobName = jobNameSplit[parts - 1];
       } else {
-        childJobName = decodedJobName;
+        childJobName = jobname;
       }
 
       return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
 
-    } catch (UnsupportedEncodingException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Failure in decoding job name",
-          "Check if the Job name is correct",
-          new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER));
+    } else {
+      try {
+        String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+
+        String[] jobNameSplit = decodedJobName.split("/");
+        int parts = jobNameSplit.length;
+        if (parts > 1) {
+          parentJobUrl = constructParentJobPath(jobNameSplit);
+          parentJobName = jobNameSplit[parts - 2];
+          childJobName = jobNameSplit[parts - 1];
+        } else {
+          childJobName = decodedJobName;
+        }
+
+        return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
+
+      } catch (UnsupportedEncodingException e) {
+        throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+      }
     }
   }
 

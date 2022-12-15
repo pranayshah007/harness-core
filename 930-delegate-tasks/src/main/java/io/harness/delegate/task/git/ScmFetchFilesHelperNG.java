@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.logging.LogLevel.ERROR;
 
 import static java.util.stream.Collectors.toList;
@@ -28,7 +27,6 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
-import io.harness.filesystem.FileIo;
 import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
@@ -43,14 +41,14 @@ import io.harness.service.ScmServiceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +59,7 @@ public class ScmFetchFilesHelperNG {
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
   private static final List<String> ROOT_DIRECTORY_PATHS = Arrays.asList(".", "/");
+  private static final Pattern regexStartSlash = Pattern.compile("^/+");
 
   public FetchFilesResult fetchFilesFromRepoWithScm(
       GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
@@ -74,11 +73,19 @@ public class ScmFetchFilesHelperNG {
         .build();
   }
 
-  public void downloadFilesUsingScm(
+  public String downloadFilesUsingScm(
       String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
-    gitStoreDelegateConfig.getPaths().forEach(
-        filePath -> downloadFilesForFilePath(gitStoreDelegateConfig, filePath, executionLogCallback, directoryPath));
+    Set<String> commitIds = new HashSet<>();
+    gitStoreDelegateConfig.getPaths().forEach(filePath
+        -> commitIds.add(downloadFilesForFilePath(gitStoreDelegateConfig,
+            filePath.replaceAll(regexStartSlash.pattern(), ""), executionLogCallback, directoryPath)));
+
+    if (commitIds.size() > 1) {
+      log.warn("Found multiple commit ids: {}, expected only one", commitIds);
+    }
+
+    return commitIds.isEmpty() ? null : commitIds.iterator().next();
   }
 
   private List<GitFile> fetchFilesFromRepo(
@@ -121,17 +128,19 @@ public class ScmFetchFilesHelperNG {
     return fileBatchContentResponse;
   }
 
-  private void downloadFilesForFilePath(GitStoreDelegateConfig gitStoreDelegateConfig, String filePath,
+  private String downloadFilesForFilePath(GitStoreDelegateConfig gitStoreDelegateConfig, String filePath,
       LogCallback executionLogCallback, String directoryPath) {
     FileContentBatchResponse fileBatchContentResponse = getFileContentBatchResponseByFolder(
         gitStoreDelegateConfig, Collections.singleton(filePath), gitStoreDelegateConfig.getGitConfigDTO());
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
     boolean relativize = !ROOT_DIRECTORY_PATHS.contains(filePath);
+    boolean useBase64 = true;
     if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
       fileBatchContentResponse =
           fetchFilesByFilePaths(useBranch, gitStoreDelegateConfig.getBranch(), gitStoreDelegateConfig.getCommitId(),
               gitStoreDelegateConfig.getPaths(), gitStoreDelegateConfig.getGitConfigDTO());
       relativize = false;
+      useBase64 = false;
     }
 
     List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse()
@@ -154,33 +163,13 @@ public class ScmFetchFilesHelperNG {
 
     try {
       for (FileContent fileContent : fileContents) {
-        writeFile(directoryPath, fileContent, filePath, relativize);
+        ScmFetcherUtils.writeFile(directoryPath, fileContent, filePath, relativize, useBase64);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);
     }
-  }
 
-  private void writeFile(String directoryPath, FileContent fileContent, String basePath, boolean relativize)
-      throws IOException {
-    String filePath;
-    if (relativize) {
-      filePath = Paths.get(basePath).relativize(Paths.get(fileContent.getPath())).toString();
-      if (isEmpty(filePath)) {
-        filePath = Paths.get(fileContent.getPath()).getFileName().toString();
-      }
-    } else {
-      filePath = fileContent.getPath();
-    }
-
-    Path finalPath = Paths.get(directoryPath, filePath);
-    Path parent = finalPath.getParent();
-    if (parent == null) {
-      throw new WingsException("Failed to create file at path " + finalPath.toString());
-    }
-
-    createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeUtf8StringToFile(finalPath.toString(), fileContent.getContent());
+    return fileBatchContentResponse.getCommitId();
   }
 
   private void throwFailedToFetchFileException(
@@ -199,7 +188,7 @@ public class ScmFetchFilesHelperNG {
     FileContentBatchResponse fileBatchContentResponse;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c
-          -> scmServiceClient.listFiles(
+          -> scmServiceClient.listFilesV2(
               scmConnector, filePaths, gitStoreDelegateConfig.getBranch(), SCMGrpc.newBlockingStub(c)));
     } else {
       fileBatchContentResponse = scmDelegateClient.processScmRequest(c

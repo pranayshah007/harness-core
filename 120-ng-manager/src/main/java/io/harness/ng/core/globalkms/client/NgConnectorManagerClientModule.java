@@ -9,6 +9,7 @@ package io.harness.ng.core.globalkms.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.client.NgConnectorManagerClient;
 import io.harness.ng.core.globalkms.impl.NgConnectorManagerClientServiceImpl;
 import io.harness.ng.core.globalkms.services.NgConnectorManagerClientService;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -18,6 +19,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.PL)
 public class NgConnectorManagerClientModule extends AbstractModule {
@@ -30,6 +32,7 @@ public class NgConnectorManagerClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private NgConnectorManagerClientFactory connectorManagerClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgConnectorManagerClientFactory(
         managerClientConfig, managerServiceSecret, new ServiceTokenGenerator(), kryoConverterFactory);

@@ -177,7 +177,6 @@ public class K8sRollingDeployTest extends CategoryTest {
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
 
     doReturn(null).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(K8sDelegateManifestConfig.builder().build())
         .when(k8sRollingDeploy)
         .createDelegateManifestConfig(any(), any());
@@ -205,7 +204,6 @@ public class K8sRollingDeployTest extends CategoryTest {
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());
 
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
     doReturn(RELEASE_NAME).when(k8sRollingDeploy).fetchReleaseName(any(), any());
     doReturn(K8sDelegateManifestConfig.builder().build())
@@ -291,7 +289,6 @@ public class K8sRollingDeployTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWhenInheritManifests() {
     k8sRollingDeploy.setInheritManifests(true);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(Activity.builder().build()).when(k8sRollingDeploy).createK8sActivity(any(), any(), any(), any(), any());
     doReturn(ExecutionResponse.builder().build()).when(k8sRollingDeploy).executeK8sTask(any(), any());
     k8sRollingDeploy.execute(context);
@@ -407,7 +404,6 @@ public class K8sRollingDeployTest extends CategoryTest {
             .build();
 
     context.pushContextElement(standardParams);
-    doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     doReturn(app).when(workflowStandardParamsExtensionService).getApp(standardParams);
     doReturn(app).when(appService).get(APP_ID);
     doReturn(ACTIVITY_ID).when(k8sRollingDeploy).fetchActivityId(context);

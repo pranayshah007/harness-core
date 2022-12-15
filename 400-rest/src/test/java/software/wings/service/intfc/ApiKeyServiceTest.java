@@ -8,6 +8,7 @@
 package software.wings.service.intfc;
 
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.NIKOLA;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
@@ -60,6 +61,7 @@ import software.wings.service.impl.AuditServiceHelper;
 import com.google.inject.Inject;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -240,6 +242,22 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     } catch (UnauthorizedException ex) {
       fail("Validation failed: " + ex.getMessage());
     }
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void Validate_ApiKeyNullOrEmpty_ReturnsFalse() {
+    assertThat(apiKeyService.validate(null, "abc")).isFalse();
+    assertThat(apiKeyService.validate(StringUtils.EMPTY, "abc")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void Validate_AccountKeyNullOrEmpty_ReturnsFalse() {
+    assertThat(apiKeyService.validate("abc", null)).isFalse();
+    assertThat(apiKeyService.validate("abc", StringUtils.EMPTY)).isFalse();
   }
 
   @Test

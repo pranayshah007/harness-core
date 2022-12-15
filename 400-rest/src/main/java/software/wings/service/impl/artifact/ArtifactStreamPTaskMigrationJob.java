@@ -62,7 +62,7 @@ public class ArtifactStreamPTaskMigrationJob implements Managed {
 
   @Override
   public void start() {
-    artifactStreamPTaskJobFuture = executorService.scheduleWithFixedDelay(this::run, 0, 10, TimeUnit.MINUTES);
+    artifactStreamPTaskJobFuture = executorService.scheduleWithFixedDelay(this::run, 1, 10, TimeUnit.MINUTES);
   }
 
   @Override

@@ -608,6 +608,7 @@
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLNexusMavenProps.java
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLNexusNpmProps.java
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLNexusNugetProps.java
+400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLNexusRawProps.java
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLNexusRepositoryFormat.java
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLSFTPArtifactSource.java
 400-rest/src/main/java/software/wings/graphql/schema/type/artifactSource/QLSMBArtifactSource.java

@@ -10,9 +10,10 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Pipeline.PipelineKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
 import io.harness.persistence.HIterator;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.Pipeline;
@@ -23,11 +24,8 @@ import software.wings.dl.WingsPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
-import io.fabric8.utils.Lists;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,24 +36,21 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigratePipelinesToTimeScaleDB {
+public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
 
   private static final int MAX_RETRY = 5;
 
-  private static final String insert_statement =
-      "INSERT INTO CG_PIPELINES (ID,NAME,ACCOUNT_ID,APP_ID,ENV_IDS,WORKFLOW_IDS,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?,?)";
+  private static final String upsert_statement =
+      "INSERT INTO CG_PIPELINES (ID,NAME,ACCOUNT_ID,APP_ID,ENV_IDS,WORKFLOW_IDS,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,ENV_IDS = excluded.ENV_IDS,WORKFLOW_IDS = excluded.WORKFLOW_IDS,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
 
-  private static final String update_statement =
-      "UPDATE CG_PIPELINES SET NAME=?, ACCOUNT_ID=?, APP_ID=?, ENV_IDS=?, WORKFLOW_IDS=?, CREATED_AT=?, LAST_UPDATED_AT=?, CREATED_BY=?, LAST_UPDATED_BY=? WHERE ID=?";
-
-  private static final String query_statement = "SELECT * FROM CG_PIPELINES WHERE ID=?";
+  private static final String TABLE_NAME = "CG_PIPELINES";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_PIPELINES");
       return false;
     }
     int count = 0;
@@ -63,45 +58,34 @@ public class MigratePipelinesToTimeScaleDB {
       FindOptions findOptions_pipelines = new FindOptions();
       findOptions_pipelines.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Pipeline> iterator = new HIterator<>(wingsPersistence.createQuery(Pipeline.class, excludeAuthority)
-                                                              .field(PipelineKeys.accountId)
-                                                              .equal(accountId)
-                                                              .fetch(findOptions_pipelines))) {
+      try (HIterator<Pipeline> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Pipeline.class, excludeAuthority)
+                                   .field(PipelineKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_pipelines))) {
         while (iterator.hasNext()) {
           Pipeline pipeline = iterator.next();
-          prepareTimeScaleQueries(pipeline);
+          saveToTimeScale(pipeline);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_PIPELINES", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_PIPELINES", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(Pipeline pipeline) {
+  public void saveToTimeScale(Pipeline pipeline) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
     while (!successful && retryCount < MAX_RETRY) {
-      ResultSet queryResult = null;
-
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement queryStatement = connection.prepareStatement(query_statement);
-           PreparedStatement updateStatement = connection.prepareStatement(update_statement);
-           PreparedStatement insertStatement = connection.prepareStatement(insert_statement)) {
-        queryStatement.setString(1, pipeline.getUuid());
-        queryResult = queryStatement.executeQuery();
-        if (queryResult != null && queryResult.next()) {
-          log.info("Pipeline found in the timescaleDB:[{}],updating it", pipeline.getUuid());
-          updateDataInTimeScaleDB(pipeline, connection, updateStatement);
-        } else {
-          log.info("Pipeline not found in the timescaleDB:[{}],inserting it", pipeline.getUuid());
-          insertDataInTimeScaleDB(pipeline, connection, insertStatement);
-        }
+           PreparedStatement upsertStatement = connection.prepareStatement(upsert_statement)) {
+        upsertDataInTimeScaleDB(pipeline, connection, upsertStatement);
         successful = true;
       } catch (SQLException e) {
         if (retryCount >= MAX_RETRY) {
@@ -114,18 +98,17 @@ public class MigratePipelinesToTimeScaleDB {
         log.error("Failed to save pipeline,[{}]", pipeline.getUuid(), e);
         retryCount = MAX_RETRY + 1;
       } finally {
-        DBUtils.close(queryResult);
         log.info("Total time =[{}] for pipeline:[{}]", System.currentTimeMillis() - startTime, pipeline.getUuid());
       }
     }
   }
 
-  private void insertDataInTimeScaleDB(
-      Pipeline pipeline, Connection connection, PreparedStatement insertPreparedStatement) throws SQLException {
-    insertPreparedStatement.setString(1, pipeline.getUuid());
-    insertPreparedStatement.setString(2, pipeline.getName());
-    insertPreparedStatement.setString(3, pipeline.getAccountId());
-    insertPreparedStatement.setString(4, pipeline.getAppId());
+  private void upsertDataInTimeScaleDB(
+      Pipeline pipeline, Connection connection, PreparedStatement upsertPreparedStatement) throws SQLException {
+    upsertPreparedStatement.setString(1, pipeline.getUuid());
+    upsertPreparedStatement.setString(2, pipeline.getName());
+    upsertPreparedStatement.setString(3, pipeline.getAccountId());
+    upsertPreparedStatement.setString(4, pipeline.getAppId());
 
     List<PipelineStage> pipelineStages = pipeline.getPipelineStages();
     List<String> envIds = new ArrayList<>();
@@ -156,66 +139,11 @@ public class MigratePipelinesToTimeScaleDB {
         }
       }
     }
-    insertArrayData(5, connection, insertPreparedStatement, envIds);
-    insertArrayData(6, connection, insertPreparedStatement, workflowIds);
+    insertArrayData(5, connection, upsertPreparedStatement, envIds);
+    insertArrayData(6, connection, upsertPreparedStatement, workflowIds);
 
-    insertPreparedStatement.setLong(7, pipeline.getCreatedAt());
-    insertPreparedStatement.setLong(8, pipeline.getLastUpdatedAt());
-
-    String created_by = null;
-    if (pipeline.getCreatedBy() != null) {
-      created_by = pipeline.getCreatedBy().getName();
-    }
-    String updated_by = null;
-    if (pipeline.getLastUpdatedBy() != null) {
-      updated_by = pipeline.getLastUpdatedBy().getName();
-    }
-    insertPreparedStatement.setString(9, created_by);
-    insertPreparedStatement.setString(10, updated_by);
-
-    insertPreparedStatement.execute();
-  }
-
-  private void updateDataInTimeScaleDB(Pipeline pipeline, Connection connection, PreparedStatement updateStatement)
-      throws SQLException {
-    updateStatement.setString(1, pipeline.getName());
-    updateStatement.setString(2, pipeline.getAccountId());
-    updateStatement.setString(3, pipeline.getAppId());
-
-    List<PipelineStage> pipelineStages = pipeline.getPipelineStages();
-    List<String> envIds = new ArrayList<>();
-    Map<String, String> isEnvIdPresent = new HashMap<>();
-    List<String> workflowIds = new ArrayList<>();
-    Map<String, String> isWorkflowIdPresent = new HashMap<>();
-    for (PipelineStage pipelineStage : pipelineStages) {
-      List<PipelineStageElement> pipelineStageElements = pipelineStage.getPipelineStageElements();
-      for (PipelineStageElement pipelineStageElement : pipelineStageElements) {
-        if (pipelineStageElement.getProperties().containsKey("envId")) {
-          String envId = pipelineStageElement.getProperties().get("envId").toString();
-          if (envId != null) {
-            if (!isEnvIdPresent.containsKey(envId)) {
-              envIds.add(envId);
-              isEnvIdPresent.put(envId, envId);
-            }
-          }
-        }
-
-        if (pipelineStageElement.getProperties().containsKey("workflowId")) {
-          String workflowId = pipelineStageElement.getProperties().get("workflowId").toString();
-          if (workflowId != null) {
-            if (!isWorkflowIdPresent.containsKey(workflowId)) {
-              workflowIds.add(workflowId);
-              isWorkflowIdPresent.put(workflowId, workflowId);
-            }
-          }
-        }
-      }
-    }
-    insertArrayData(4, connection, updateStatement, envIds);
-    insertArrayData(5, connection, updateStatement, workflowIds);
-
-    updateStatement.setLong(6, pipeline.getCreatedAt());
-    updateStatement.setLong(7, pipeline.getLastUpdatedAt());
+    upsertPreparedStatement.setLong(7, pipeline.getCreatedAt());
+    upsertPreparedStatement.setLong(8, pipeline.getLastUpdatedAt());
 
     String created_by = null;
     if (pipeline.getCreatedBy() != null) {
@@ -225,20 +153,17 @@ public class MigratePipelinesToTimeScaleDB {
     if (pipeline.getLastUpdatedBy() != null) {
       updated_by = pipeline.getLastUpdatedBy().getName();
     }
-    updateStatement.setString(8, created_by);
-    updateStatement.setString(9, updated_by);
-    updateStatement.setString(10, pipeline.getUuid());
+    upsertPreparedStatement.setString(9, created_by);
+    upsertPreparedStatement.setString(10, updated_by);
 
-    updateStatement.execute();
+    upsertPreparedStatement.execute();
   }
 
-  private void insertArrayData(
-      int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
-      Array array = dbConnection.createArrayOf("text", data.toArray());
-      preparedStatement.setArray(index, array);
-    } else {
-      preparedStatement.setArray(index, null);
-    }
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

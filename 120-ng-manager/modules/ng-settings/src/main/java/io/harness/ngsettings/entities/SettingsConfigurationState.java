@@ -8,9 +8,11 @@
 package io.harness.ngsettings.entities;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 
 import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
@@ -30,6 +32,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "SettingsConfigurationStateKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "settingsConfigurationState", noClassnameStored = true)
 @Document("settingsConfigurationState")
 @TypeAlias("NGSettingsConfigurationState")

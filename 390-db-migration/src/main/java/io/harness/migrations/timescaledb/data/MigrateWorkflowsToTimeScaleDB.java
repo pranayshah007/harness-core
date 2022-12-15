@@ -17,8 +17,8 @@ import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -73,7 +73,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
       findOptions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<WorkflowExecution> iterator =
-               new HIterator<>(wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority)
                                    .field(WorkflowExecutionKeys.createdAt)
                                    .greaterThanOrEq(System.currentTimeMillis() - (30 * 24 * 3600 * 1000L))
                                    .field(WorkflowExecutionKeys.pipelineExecutionId)

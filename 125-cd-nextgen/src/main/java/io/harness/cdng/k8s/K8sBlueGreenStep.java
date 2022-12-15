@@ -101,6 +101,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
         (K8sBlueGreenStepParameters) stepElementParameters.getSpec();
     boolean skipDryRun = CDStepHelper.getParameterFieldBooleanValue(
         k8sBlueGreenStepParameters.getSkipDryRun(), K8sBlueGreenBaseStepInfoKeys.skipDryRun, stepElementParameters);
+    boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(k8sBlueGreenStepParameters.getPruningEnabled(),
+        K8sBlueGreenBaseStepInfoKeys.pruningEnabled, stepElementParameters);
     List<String> manifestFilesContents =
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
@@ -127,7 +129,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
-            .pruningEnabled(cdStepHelper.isPruningEnabled(accountId))
+            .pruningEnabled(pruningEnabled)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
@@ -176,17 +178,21 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
     K8sBGDeployResponse k8sBGDeployResponse = (K8sBGDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
 
-    K8sBlueGreenOutcome k8sBlueGreenOutcome =
-        K8sBlueGreenOutcome.builder()
-            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
-            .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
-            .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
-            .stageServiceName(k8sBGDeployResponse.getStageServiceName())
-            .stageColor(k8sBGDeployResponse.getStageColor())
-            .primaryColor(k8sBGDeployResponse.getPrimaryColor())
-            .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
-                AmbianceUtils.getAccountId(ambiance), k8sBGDeployResponse.getPrunedResourceIds()))
-            .build();
+    K8sBlueGreenStepParameters k8sBlueGreenStepParameters =
+        (K8sBlueGreenStepParameters) stepElementParameters.getSpec();
+    boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(k8sBlueGreenStepParameters.getPruningEnabled(),
+        K8sBlueGreenBaseStepInfoKeys.pruningEnabled, stepElementParameters);
+
+    K8sBlueGreenOutcome k8sBlueGreenOutcome = K8sBlueGreenOutcome.builder()
+                                                  .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
+                                                  .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
+                                                  .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
+                                                  .stageServiceName(k8sBGDeployResponse.getStageServiceName())
+                                                  .stageColor(k8sBGDeployResponse.getStageColor())
+                                                  .primaryColor(k8sBGDeployResponse.getPrimaryColor())
+                                                  .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
+                                                      pruningEnabled, k8sBGDeployResponse.getPrunedResourceIds()))
+                                                  .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
 

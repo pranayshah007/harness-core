@@ -18,10 +18,10 @@ import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.KubernetesSetupParams.KubernetesSetupParamsBuilder.aKubernetesSetupParams;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.MASKED;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
@@ -96,7 +96,6 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
@@ -117,6 +116,7 @@ import software.wings.helpers.ext.container.ContainerMasterUrlHelper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ActivityService;
@@ -313,8 +313,8 @@ public class KubernetesSetupTest extends WingsBaseTest {
     when(serviceResourceService.getContainerTaskByDeploymentType(APP_ID, SERVICE_ID, DeploymentType.KUBERNETES.name()))
         .thenReturn(kubernetesContainerTask);
 
-    workflowStandardParamsExtensionService = new WorkflowStandardParamsExtensionService(
-        appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+    workflowStandardParamsExtensionService = new WorkflowStandardParamsExtensionService(appService, null,
+        artifactService, environmentService, artifactStreamServiceBindingService, null, featureFlagService);
     on(kubernetesSetup).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     contextElementParamMapperFactory =

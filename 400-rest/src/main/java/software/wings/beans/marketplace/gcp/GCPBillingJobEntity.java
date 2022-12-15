@@ -10,9 +10,11 @@ package software.wings.beans.marketplace.gcp;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAccess;
 import io.harness.persistence.UpdatedAtAccess;
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Id;
 @Getter
 @ToString
 @EqualsAndHashCode
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gcpBillingJobEntity")
 @HarnessEntity(exportable = true)
 public class GCPBillingJobEntity implements PersistentRegularIterable, CreatedAtAccess, UpdatedAtAccess, AccountAccess {

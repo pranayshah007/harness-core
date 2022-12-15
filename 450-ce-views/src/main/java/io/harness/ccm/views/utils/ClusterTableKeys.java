@@ -87,6 +87,7 @@ public class ClusterTableKeys {
   public static final String COUNT = "totalCount";
   public static final String COUNT_INNER = "totalCountInner";
   public static final String PRICING_SOURCE = "pricingsource";
+  public static final String TIME_GRANULARITY = "time_granularity";
 
   // Some default constants
   public static final String DEFAULT_STRING_VALUE = "";
@@ -127,4 +128,5 @@ public class ClusterTableKeys {
   public static final String GROUP_BY_INSTANCE_ID = "Instance Id";
   public static final String GROUP_BY_INSTANCE_NAME = "Instance Name";
   public static final String GROUP_BY_INSTANCE_TYPE = "Instance Type";
+  public static final String GROUP_BY_NONE = "None";
 }

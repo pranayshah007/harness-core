@@ -43,7 +43,7 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -146,8 +146,9 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
   public void testUpdateDeploymentConfigRevision() throws Exception {
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
-    Release.KubernetesResourceIdRevision resourceIdMock = Mockito.mock(Release.KubernetesResourceIdRevision.class);
-    Release release = Release.builder().managedWorkloads(asList(resourceIdMock)).build();
+    K8sLegacyRelease.KubernetesResourceIdRevision resourceIdMock =
+        Mockito.mock(K8sLegacyRelease.KubernetesResourceIdRevision.class);
+    K8sLegacyRelease release = K8sLegacyRelease.builder().managedWorkloads(asList(resourceIdMock)).build();
 
     when(k8sTaskHelperBase.getLatestRevision(any(), any(), any())).thenReturn("2");
     when(resourceIdMock.getWorkload())
@@ -168,10 +169,14 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
   public void testUpdateMultipleWorkloadsRevision() throws Exception {
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
-    Release.KubernetesResourceIdRevision deploymentId = Mockito.mock(Release.KubernetesResourceIdRevision.class);
-    Release.KubernetesResourceIdRevision statefulSetId = Mockito.mock(Release.KubernetesResourceIdRevision.class);
-    Release.KubernetesResourceIdRevision daemonSetId = Mockito.mock(Release.KubernetesResourceIdRevision.class);
-    Release release = Release.builder().managedWorkloads(asList(deploymentId, statefulSetId, daemonSetId)).build();
+    K8sLegacyRelease.KubernetesResourceIdRevision deploymentId =
+        Mockito.mock(K8sLegacyRelease.KubernetesResourceIdRevision.class);
+    K8sLegacyRelease.KubernetesResourceIdRevision statefulSetId =
+        Mockito.mock(K8sLegacyRelease.KubernetesResourceIdRevision.class);
+    K8sLegacyRelease.KubernetesResourceIdRevision daemonSetId =
+        Mockito.mock(K8sLegacyRelease.KubernetesResourceIdRevision.class);
+    K8sLegacyRelease release =
+        K8sLegacyRelease.builder().managedWorkloads(asList(deploymentId, statefulSetId, daemonSetId)).build();
 
     doReturn("3")
         .when(k8sTaskHelperBase)

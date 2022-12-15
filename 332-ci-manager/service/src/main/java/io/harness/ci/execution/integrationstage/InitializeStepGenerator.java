@@ -9,27 +9,17 @@ package io.harness.ci.integrationstage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
-import io.harness.steps.matrix.StrategyExpansionData;
-import io.harness.steps.matrix.StrategyHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Singleton
 @OwnedBy(HarnessTeam.CI)
@@ -37,42 +27,23 @@ public class InitializeStepGenerator {
   private static final String INITIALIZE_TASK = InitializeStepInfo.STEP_TYPE.getType();
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
-  @Inject private StrategyHelper strategyHelper;
-  @Inject private CIFeatureFlagService ciFeatureFlagService;
-
   InitializeStepInfo createInitializeStepInfo(ExecutionElementConfig executionElement, CodeBase ciCodebase,
-      StageElementConfig stageElementConfig, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
+      IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
       String accountId) {
-    IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
-
-    List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
-    Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
-    boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
-    if (pipelineMatrixEnabled) {
-      for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-        // Inject the envVariables before calling strategy expansion
-        IntegrationStageUtils.injectLoopEnvVariables(config);
-        ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config);
-        expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
-        strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
-      }
-    }
+    IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
 
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     return InitializeStepInfo.builder()
         .identifier(INITIALIZE_TASK)
         .name(INITIALIZE_TASK)
         .infrastructure(infrastructure)
-        .stageIdentifier(stageElementConfig.getIdentifier())
-        .variables(stageElementConfig.getVariables())
+        .stageIdentifier(stageNode.getIdentifier())
+        .variables(stageNode.getVariables())
         .stageElementConfig(integrationStageConfig)
         .executionSource(ciExecutionArgs.getExecutionSource())
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
-        .strategyExpansionMap(strategyExpansionMap)
-        .executionElementConfig(pipelineMatrixEnabled
-                ? ExecutionElementConfig.builder().steps(expandedExecutionElement).build()
-                : executionElement)
+        .executionElementConfig(executionElement)
         .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
         .build();
   }

@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -29,14 +30,17 @@ import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -122,6 +126,12 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
 
       @Provides
       @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(CiExecutionRegistrars.springConverters)
@@ -147,6 +157,10 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
 
     CIManagerConfiguration configuration =
         CIManagerConfiguration.builder()
+            .eventsFrameworkConfiguration(
+                EventsFrameworkConfiguration.builder()
+                    .redisConfig(RedisConfig.builder().envNamespace("blah").redisUrl("dummyRedisUrl").build())
+                    .build())
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
             .accessControlClientConfiguration(AccessControlClientConfiguration.builder()
@@ -158,15 +172,22 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                                                                                   .connectTimeOutSeconds(15)
                                                                                   .build())
                                                   .build())
-            .ciExecutionServiceConfig(CIExecutionServiceConfig.builder()
-                                          .addonImageTag("v1.4-alpha")
-                                          .defaultCPULimit(200)
-                                          .defaultInternalImageConnector("account.harnessimage")
-                                          .defaultMemoryLimit(200)
-                                          .delegateServiceEndpointVariableValue("delegate-service:8080")
-                                          .liteEngineImageTag("v1.4-alpha")
-                                          .pvcDefaultStorageSize(25600)
-                                          .build())
+            .ciExecutionServiceConfig(
+                CIExecutionServiceConfig.builder()
+                    .addonImageTag("v1.4-alpha")
+                    .queueServiceClient(
+                        QueueServiceClient.builder()
+                            .queueServiceConfig(
+                                ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
+                            .authToken("tokrn")
+                            .build())
+                    .defaultCPULimit(200)
+                    .defaultInternalImageConnector("account.harnessimage")
+                    .defaultMemoryLimit(200)
+                    .delegateServiceEndpointVariableValue("delegate-service:8080")
+                    .liteEngineImageTag("v1.4-alpha")
+                    .pvcDefaultStorageSize(25600)
+                    .build())
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
             .logServiceConfig(
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())

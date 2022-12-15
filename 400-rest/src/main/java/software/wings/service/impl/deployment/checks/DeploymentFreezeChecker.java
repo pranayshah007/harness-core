@@ -37,6 +37,7 @@ import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
 import software.wings.service.intfc.deployment.PreDeploymentChecker;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -73,11 +74,18 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     }
 
     if (governanceConfig.isDeploymentFreeze()) {
-      throw new DeploymentFreezeException(
-          DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId, Collections.emptyList(), "", true, false);
+      throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
+          Collections.emptyList(), Collections.emptyList(), "", true, false);
     }
 
     if (featureFlagService.isEnabled(FeatureName.NEW_DEPLOYMENT_FREEZE, accountId)) {
+      if (featureFlagService.isNotEnabled(FeatureName.SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS, accountId)) {
+        for (TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig :
+            governanceConfig.getTimeRangeBasedFreezeConfigs()) {
+          // Set excludeAppSelections to an empty list if exclusions FF is not enabled.
+          timeRangeBasedFreezeConfig.setExcludeAppSelections(new ArrayList<>());
+        }
+      }
       if (isEmpty(deploymentCtx.getEnvIds())) {
         checkIfAppFrozen(governanceConfig, accountId);
       }
@@ -95,14 +103,24 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
   }
 
   public void checkIfServiceFrozen(String accountId, GovernanceConfig governanceConfig) {
-    List<TimeRangeBasedFreezeConfig> blockingWindows = governanceConfig.getTimeRangeBasedFreezeConfigs()
-                                                           .stream()
-                                                           .filter(TimeRangeBasedFreezeConfig::checkIfActive)
-                                                           .filter(window -> isServiceFrozen(governanceConfig, window))
-                                                           .collect(Collectors.toList());
+    List<TimeRangeBasedFreezeConfig> blockingWindows;
+    if (featureFlagService.isEnabled(FeatureName.SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS, accountId)) {
+      blockingWindows = governanceConfig.getTimeRangeBasedFreezeConfigs()
+                            .stream()
+                            .filter(TimeRangeBasedFreezeConfig::checkIfActive)
+                            .filter(window -> isServiceFrozenWithExclusions(governanceConfig, window))
+                            .collect(Collectors.toList());
+    } else {
+      blockingWindows = governanceConfig.getTimeRangeBasedFreezeConfigs()
+                            .stream()
+                            .filter(TimeRangeBasedFreezeConfig::checkIfActive)
+                            .filter(window -> isServiceFrozen(governanceConfig, window))
+                            .collect(Collectors.toList());
+    }
     if (isNotEmpty(blockingWindows)) {
       throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
           blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+          blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
           blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
           false, true);
     }
@@ -131,6 +149,42 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     return isFrozen;
   }
 
+  private boolean isServiceFrozenWithExclusions(GovernanceConfig governanceConfig, TimeRangeBasedFreezeConfig window) {
+    // We will need to check here if some services are frozen.
+    //
+    boolean isFrozen = false;
+    for (ApplicationFilter applicationFilter : window.getAppSelections()) {
+      if (BlackoutWindowFilterType.CUSTOM.equals(applicationFilter.getFilterType())) {
+        List<String> appIds = ((CustomAppFilter) applicationFilter).getApps();
+        for (String appId : appIds) {
+          if (!Collections.disjoint(governanceConfigService.getEnvIdsFromAppSelection(appId, applicationFilter),
+                  deploymentCtx.getEnvIds())
+              && !Collections.disjoint(governanceConfigService.getServiceIdsFromAppSelection(appId, applicationFilter),
+                  deploymentCtx.getServiceIds())) {
+            isFrozen = true;
+            break;
+          }
+        }
+      }
+    }
+    // Handle exclusion logic
+    for (ApplicationFilter applicationFilter : window.getExcludeAppSelections()) {
+      if (BlackoutWindowFilterType.CUSTOM.equals(applicationFilter.getFilterType())) {
+        List<String> appIds = ((CustomAppFilter) applicationFilter).getApps();
+        for (String appId : appIds) {
+          if (!Collections.disjoint(governanceConfigService.getEnvIdsFromAppSelection(appId, applicationFilter),
+                  deploymentCtx.getEnvIds())
+              && !Collections.disjoint(governanceConfigService.getServiceIdsFromAppSelection(appId, applicationFilter),
+                  deploymentCtx.getServiceIds())) {
+            isFrozen = false;
+            break;
+          }
+        }
+      }
+    }
+    return isFrozen;
+  }
+
   // Checks if the app is completely frozen then sends notification to all windows that freeze the app
   private void checkIfAppFrozen(GovernanceConfig governanceConfig, String accountId) {
     if (isEmpty(governanceConfig.getTimeRangeBasedFreezeConfigs())) {
@@ -144,6 +198,7 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     if (isNotEmpty(blockingWindows)) {
       throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
           blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+          blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
           blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
           false, false);
     }
@@ -154,12 +209,23 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     if (isEmpty(freezeWindow.getAppSelections())) {
       return false;
     }
-    return freezeWindow.getAppSelections()
-        .stream()
-        .filter(appSelection -> appSelection.getEnvSelection().getFilterType() == EnvironmentFilterType.ALL)
-        .anyMatch(appSelection
-            -> appSelection.getFilterType() == BlackoutWindowFilterType.ALL
-                || ((CustomAppFilter) appSelection).getApps().contains(deploymentCtx.getAppId()));
+    boolean is_frozen =
+        freezeWindow.getAppSelections()
+            .stream()
+            .filter(appSelection -> appSelection.getEnvSelection().getFilterType() == EnvironmentFilterType.ALL)
+            .anyMatch(appSelection
+                -> appSelection.getFilterType() == BlackoutWindowFilterType.ALL
+                    || ((CustomAppFilter) appSelection).getApps().contains(deploymentCtx.getAppId()));
+
+    boolean is_excluded_from_freeze =
+        freezeWindow.getExcludeAppSelections()
+            .stream()
+            .filter(appSelection -> appSelection.getEnvSelection().getFilterType() == EnvironmentFilterType.ALL)
+            .anyMatch(appSelection
+                -> appSelection.getFilterType() == BlackoutWindowFilterType.ALL
+                    || ((CustomAppFilter) appSelection).getApps().contains(deploymentCtx.getAppId()));
+
+    return is_frozen && !is_excluded_from_freeze;
   }
 
   void checkIfEnvFrozen(String accountId, GovernanceConfig governanceConfig) {
@@ -186,6 +252,7 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
       if (isNotEmpty(blockingWindows)) {
         throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
             blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+            blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
             blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
             false, false);
       }

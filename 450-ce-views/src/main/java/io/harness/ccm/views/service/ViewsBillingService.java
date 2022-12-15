@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.entities.ViewQueryParams;
+import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -21,6 +22,7 @@ import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewCostData;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.TableResult;
 import java.util.List;
@@ -44,7 +46,7 @@ public interface ViewsBillingService {
 
   List<String> getColumnsForTable(BigQuery bigQuery, String informationSchemaView, String table);
 
-  boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters);
+  boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy);
 
   // For NG perspective queries
   QLCEViewGridData getEntityStatsDataPointsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
@@ -55,7 +57,8 @@ public interface ViewsBillingService {
       String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams);
 
   QLCEViewTrendData getTrendStatsDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams);
 
   TableResult getTimeSeriesStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
@@ -65,11 +68,23 @@ public interface ViewsBillingService {
       List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       ViewQueryParams queryParams);
 
+  Map<Long, Double> getOthersTotalCostDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
+      ViewQueryParams queryParams);
+
   QLCEViewTrendInfo getForecastCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams);
 
   ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
+
+  ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
+
+  Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams, boolean lastPeriod, long startTime);
 
   Integer getTotalCountForQuery(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       String cloudProviderTableName, ViewQueryParams queryParams);
@@ -78,4 +93,11 @@ public interface ViewsBillingService {
 
   Map<String, Map<String, String>> getLabelsForWorkloads(
       BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters);
+
+  Map<String, Map<Timestamp, Double>> getSharedCostPerTimestampFromFilters(BigQuery bigQuery,
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
+      List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
+      boolean skipRoundOff);
+
+  List<ViewRule> getViewRules(List<QLCEViewFilterWrapper> filters);
 }

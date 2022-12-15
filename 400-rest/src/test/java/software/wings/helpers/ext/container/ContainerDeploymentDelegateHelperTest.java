@@ -124,8 +124,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
     ContainerServiceParams containerServiceParams =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(kubernetesClusterConfig).build())
-            .encryptionDetails(Collections.emptyList())
+            .settingAttribute(
+                SettingAttribute.Builder.aSettingAttribute().withValue(kubernetesClusterConfig).build().toDTO())
             .build();
     String version = "1.16";
 
@@ -146,7 +146,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .encryptionDetails(Collections.emptyList())
             .build();
     String version = "1.16+144";
@@ -168,7 +169,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .encryptionDetails(Collections.emptyList())
             .build();
     String version = "1.15";
@@ -247,7 +249,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetKubernetesConfigForContainerParamsWithRancherWithException() throws IOException {
     RancherConfig rancherConfig = RancherConfig.builder().rancherUrl("sampleRancherUrl").build();
-    SettingAttribute settingAttribute = mock(SettingAttribute.class);
+    software.wings.beans.dto.SettingAttribute settingAttribute = mock(software.wings.beans.dto.SettingAttribute.class);
     ContainerServiceParams params = ContainerServiceParams.builder()
                                         .settingAttribute(settingAttribute)
                                         .clusterName("sampleCluster")
@@ -266,7 +268,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetKubernetesConfigForContainerParamsWithRancher() throws IOException {
     RancherConfig rancherConfig = RancherConfig.builder().rancherUrl("sampleRancherUrl").build();
-    SettingAttribute settingAttribute = mock(SettingAttribute.class);
+    software.wings.beans.dto.SettingAttribute settingAttribute = mock(software.wings.beans.dto.SettingAttribute.class);
     ContainerServiceParams params = ContainerServiceParams.builder()
                                         .settingAttribute(settingAttribute)
                                         .clusterName("sampleCluster")

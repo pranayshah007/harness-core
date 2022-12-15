@@ -7,10 +7,10 @@
 
 package io.harness.platform;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.platform.PlatformConfiguration.getPlatformServiceCombinedResourceClasses;
 import static io.harness.platform.audit.AuditServiceSetup.AUDIT_SERVICE;
@@ -20,10 +20,10 @@ import static io.harness.platform.resourcegroup.ResourceGroupServiceSetup.RESOUR
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
-import io.harness.AuthorizationServiceHeader;
-import io.harness.GodInjector;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -56,6 +56,10 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -137,16 +141,27 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     log.info("Starting Platform Application ...");
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
     MaintenanceController.forceMaintenance(true);
+    Module providerModule = new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
+    };
     GodInjector godInjector = new GodInjector();
     godInjector.put(NOTIFICATION_SERVICE,
-        Guice.createInjector(new NotificationServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+        Guice.createInjector(
+            new NotificationServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
       godInjector.put(RESOURCE_GROUP_SERVICE,
-          Guice.createInjector(new ResourceGroupServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+          Guice.createInjector(
+              new ResourceGroupServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     }
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       godInjector.put(AUDIT_SERVICE,
-          Guice.createInjector(new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry)));
+          Guice.createInjector(
+              new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
     }
 
     godInjector.put(PLATFORM_SERVICE,

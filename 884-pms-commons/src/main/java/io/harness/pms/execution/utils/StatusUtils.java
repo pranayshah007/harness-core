@@ -15,6 +15,7 @@ import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.FAILED;
+import static io.harness.pms.contracts.execution.Status.FREEZE_FAILED;
 import static io.harness.pms.contracts.execution.Status.IGNORE_FAILED;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
@@ -29,9 +30,11 @@ import static io.harness.pms.contracts.execution.Status.SUSPENDED;
 import static io.harness.pms.contracts.execution.Status.TASK_WAITING;
 import static io.harness.pms.contracts.execution.Status.TIMED_WAITING;
 import static io.harness.pms.contracts.execution.Status.UNRECOGNIZED;
+import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.execution.Status;
 
 import java.util.Collections;
@@ -46,46 +49,60 @@ import lombok.extern.slf4j.Slf4j;
 public class StatusUtils {
   // Status Groups
   private final EnumSet<Status> FINALIZABLE_STATUSES =
-      EnumSet.of(QUEUED, RUNNING, PAUSING, PAUSED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING,
-          INTERVENTION_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, PAUSING, INPUT_WAITING);
+      EnumSet.of(QUEUED, RUNNING, PAUSING, PAUSED, ASYNC_WAITING, WAIT_STEP_RUNNING, APPROVAL_WAITING, RESOURCE_WAITING,
+          INTERVENTION_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
   private final EnumSet<Status> ABORT_AND_EXPIRE_STATUSES =
-      EnumSet.of(QUEUED, RUNNING, PAUSING, PAUSED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING,
-          INTERVENTION_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, PAUSING, INPUT_WAITING);
+      EnumSet.of(QUEUED, RUNNING, PAUSING, PAUSED, ASYNC_WAITING, WAIT_STEP_RUNNING, APPROVAL_WAITING, RESOURCE_WAITING,
+          INTERVENTION_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
   private final EnumSet<Status> POSITIVE_STATUSES = EnumSet.of(SUCCEEDED, SKIPPED, SUSPENDED, IGNORE_FAILED);
 
-  private final EnumSet<Status> BROKE_STATUSES = EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED);
+  private final EnumSet<Status> BROKE_STATUSES = EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, FREEZE_FAILED);
 
   private final EnumSet<Status> BROKE_AND_ABORTED_STATUSES =
-      EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED);
+      EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED, FREEZE_FAILED);
 
-  private final EnumSet<Status> RESUMABLE_STATUSES = EnumSet.of(QUEUED, RUNNING, ASYNC_WAITING, APPROVAL_WAITING,
-      RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING, INPUT_WAITING);
+  private final EnumSet<Status> RESUMABLE_STATUSES = EnumSet.of(QUEUED, RUNNING, ASYNC_WAITING, WAIT_STEP_RUNNING,
+      APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING, INPUT_WAITING, PAUSED);
 
   private final EnumSet<Status> FLOWING_STATUSES =
       EnumSet.of(RUNNING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING);
 
-  private final EnumSet<Status> ACTIVE_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, APPROVAL_WAITING,
-      RESOURCE_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
+  private final EnumSet<Status> ACTIVE_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, WAIT_STEP_RUNNING,
+      APPROVAL_WAITING, RESOURCE_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
-  private final EnumSet<Status> UNPAUSABLE_CHILD_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, APPROVAL_WAITING,
-      ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
+  private final EnumSet<Status> UNPAUSABLE_CHILD_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, WAIT_STEP_RUNNING,
+      APPROVAL_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
-  private final EnumSet<Status> FINAL_STATUSES =
-      EnumSet.of(SKIPPED, IGNORE_FAILED, ABORTED, ERRORED, FAILED, EXPIRED, SUSPENDED, SUCCEEDED, APPROVAL_REJECTED);
+  private final EnumSet<Status> FINAL_STATUSES = EnumSet.of(SKIPPED, IGNORE_FAILED, ABORTED, ERRORED, FAILED, EXPIRED,
+      SUSPENDED, SUCCEEDED, APPROVAL_REJECTED, FREEZE_FAILED);
 
   private final EnumSet<Status> GRAPH_UPDATE_STATUSES =
       EnumSet.of(RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, DISCONTINUING, PAUSING,
-          QUEUED, PAUSED, APPROVAL_WAITING, RESOURCE_WAITING, INPUT_WAITING);
+          QUEUED, PAUSED, WAIT_STEP_RUNNING, APPROVAL_WAITING, RESOURCE_WAITING, INPUT_WAITING);
 
   private final EnumSet<Status> RETRYABLE_STATUSES =
-      EnumSet.of(INTERVENTION_WAITING, FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED);
+      EnumSet.of(INTERVENTION_WAITING, FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, FREEZE_FAILED);
 
-  private final EnumSet<Status> RETRYABLE_FAILED_STATUSES = EnumSet.of(FAILED, EXPIRED, APPROVAL_REJECTED, ABORTED);
+  private final EnumSet<Status> RETRYABLE_FAILED_STATUSES =
+      EnumSet.of(FAILED, EXPIRED, APPROVAL_REJECTED, ABORTED, FREEZE_FAILED);
+
+  private final EnumSet<Status> ADVISING_STATUSES = EnumSet.of(INPUT_WAITING);
+  private final EnumSet<Status> ABORTING_STATUSES = EnumSet.of(QUEUED);
+
+  private final EnumSet<Status> ABORT_IN_PROGRESS_STATUSES = EnumSet.of(DISCONTINUING, EXPIRED, ABORTED);
 
   public EnumSet<Status> finalizableStatuses() {
     return FINALIZABLE_STATUSES;
+  }
+
+  public EnumSet<Status> abortingStatuses() {
+    return ABORTING_STATUSES;
+  }
+
+  public EnumSet<Status> abortInProgressStatuses() {
+    return ABORT_IN_PROGRESS_STATUSES;
   }
 
   public EnumSet<Status> getRetryableFailedStatuses() {
@@ -98,6 +115,10 @@ public class StatusUtils {
 
   public EnumSet<Status> brokeStatuses() {
     return BROKE_STATUSES;
+  }
+
+  public boolean isAdvisingStatus(Status status) {
+    return ADVISING_STATUSES.contains(status);
   }
 
   public EnumSet<Status> brokeAndAbortedStatuses() {
@@ -140,11 +161,12 @@ public class StatusUtils {
     switch (status) {
       case RUNNING:
         return EnumSet.of(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING,
-            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING);
+            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING, WAIT_STEP_RUNNING);
       case INTERVENTION_WAITING:
         return BROKE_STATUSES;
       case TIMED_WAITING:
       case ASYNC_WAITING:
+      case WAIT_STEP_RUNNING:
       case APPROVAL_WAITING:
       case RESOURCE_WAITING:
       case TASK_WAITING:
@@ -156,8 +178,8 @@ public class StatusUtils {
         return EnumSet.of(QUEUED, RUNNING, PAUSING);
       case DISCONTINUING:
         return EnumSet.of(QUEUED, RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, PAUSING,
-            RESOURCE_WAITING, APPROVAL_WAITING, QUEUED, PAUSED, FAILED, SUSPENDED, EXPIRED, APPROVAL_REJECTED,
-            INPUT_WAITING);
+            RESOURCE_WAITING, APPROVAL_WAITING, WAIT_STEP_RUNNING, QUEUED, PAUSED, FAILED, SUSPENDED, EXPIRED,
+            APPROVAL_REJECTED, INPUT_WAITING);
       case QUEUED:
         return EnumSet.of(PAUSED, PAUSING);
       case ABORTED:
@@ -166,11 +188,12 @@ public class StatusUtils {
       case FAILED:
       case EXPIRED:
       case APPROVAL_REJECTED:
+      case FREEZE_FAILED:
         return FINALIZABLE_STATUSES;
       case SUCCEEDED:
         return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
       case IGNORE_FAILED:
-        return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED);
+        return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
       default:
         throw new IllegalStateException("Unexpected value: " + status);
     }
@@ -179,11 +202,11 @@ public class StatusUtils {
   public EnumSet<Status> planAllowedStartSet(Status status) {
     switch (status) {
       case INTERVENTION_WAITING:
-        return EnumSet.of(RUNNING, PAUSING, PAUSED);
+        return EnumSet.of(RUNNING, PAUSING, PAUSED, WAIT_STEP_RUNNING);
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
       case SUCCEEDED:
-        return EnumSet.of(PAUSING, INTERVENTION_WAITING, RUNNING, APPROVAL_WAITING, INPUT_WAITING);
+        return EnumSet.of(PAUSING, INTERVENTION_WAITING, RUNNING, WAIT_STEP_RUNNING, APPROVAL_WAITING, INPUT_WAITING);
       default:
         return nodeAllowedStartSet(status);
     }
@@ -205,6 +228,9 @@ public class StatusUtils {
     return status;
   }
 
+  public boolean checkIfAllChildrenSkipped(List<Status> statuses) {
+    return EmptyPredicate.isEmpty(statuses) || statuses.stream().allMatch(status -> status == SKIPPED);
+  }
   public Status calculateStatusForNode(List<Status> statuses, String nodeExecutionId) {
     Status status = calculateStatus(statuses);
     if (status == UNRECOGNIZED) {
@@ -227,6 +253,8 @@ public class StatusUtils {
       return ERRORED;
     } else if (statuses.stream().anyMatch(status -> status == FAILED)) {
       return FAILED;
+    } else if (statuses.stream().anyMatch(status -> status == FREEZE_FAILED)) {
+      return FREEZE_FAILED;
     } else if (statuses.stream().anyMatch(status -> status == APPROVAL_REJECTED)) {
       return APPROVAL_REJECTED;
     } else if (statuses.stream().anyMatch(status -> status == EXPIRED)) {
@@ -239,6 +267,8 @@ public class StatusUtils {
       return INPUT_WAITING;
     } else if (statuses.stream().anyMatch(status -> status == RESOURCE_WAITING)) {
       return RESOURCE_WAITING;
+    } else if (statuses.stream().anyMatch(status -> status == WAIT_STEP_RUNNING)) {
+      return WAIT_STEP_RUNNING;
     } else if (statuses.stream().anyMatch(status -> status == QUEUED)) {
       return QUEUED;
     } else if (!Collections.disjoint(statuses, FLOWING_STATUSES)) {

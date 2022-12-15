@@ -122,6 +122,7 @@ message PullRequest {
   google.protobuf.Timestamp updated = 16;
   repeated Label labels = 17;
   repeated Commit commits = 18;  // List of commits associated with the pull request
+  string mergeSha = 19;
 }
 
 message PullRequestHook {
@@ -213,6 +214,7 @@ message GithubProvider {
     string access_token = 1;
     GithubApp github_app = 2;
   }
+  bool isGithubApp = 3;
 }
 
 message GitlabProvider {
@@ -278,6 +280,7 @@ message PageResponse {
 message PageRequest {
   int32 page = 1;
   string url = 2;
+  int32 size = 3;
 }
 
 message GetFileRequest {
@@ -288,6 +291,7 @@ message GetFileRequest {
     string ref = 4;
   }
   Provider provider = 5;
+  bool base64Encoding = 6;
 }
 
 message GetBatchFileRequest {
@@ -343,6 +347,7 @@ message FileModifyRequest {
   string blob_id = 7;
   Signature signature = 8;
   Provider provider = 9;
+  bool useGitClient = 10;
 }
 
 message FileContent {
@@ -385,6 +390,8 @@ message FindFilesInCommitRequest {
 message FindFilesInCommitResponse {
   repeated FileChange file = 1;
   PageResponse pagination = 2;
+  int32 status = 3;
+  string error = 4;
 }
 
 enum ContentType {

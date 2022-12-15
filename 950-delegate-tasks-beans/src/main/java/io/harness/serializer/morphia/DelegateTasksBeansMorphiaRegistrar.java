@@ -7,12 +7,8 @@
 
 package io.harness.serializer.morphia;
 
-import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.capability.CapabilityRequirement;
-import io.harness.capability.CapabilitySubjectPermission;
-import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
@@ -35,9 +31,18 @@ import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -48,12 +53,15 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
+import io.harness.delegate.task.gitpolling.GitPollingSourceType;
+import io.harness.delegate.task.gitpolling.GitPollingTaskType;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
+import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
-import io.harness.ng.core.models.Secret;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CustomArtifactServerConfig;
@@ -64,7 +72,6 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.PhysicalDataCenterConfig;
 import software.wings.beans.PrometheusConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
@@ -96,27 +103,18 @@ import software.wings.helpers.ext.helm.response.HelmInstallCommandResponse;
 import software.wings.sm.states.JenkinsExecutionResponse;
 import software.wings.sm.states.KubernetesSteadyStateCheckResponse;
 import software.wings.sm.states.KubernetesSwapServiceSelectorsResponse;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.DEL)
-@BreakDependencyOn("io.harness.capability.CapabilityRequirement")
-@BreakDependencyOn("io.harness.capability.CapabilitySubjectPermission")
 public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
   private String cf = "helpers.ext.cloudformation.";
 
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(CapabilityRequirement.class);
-    set.add(CapabilitySubjectPermission.class);
-    set.add(CapabilityTaskSelectionDetails.class);
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
-    set.add(Secret.class);
-    set.add(SettingAttribute.class);
-    set.add(YamlGitConfig.class);
     set.add(ArtifactSourceable.class);
   }
 
@@ -146,6 +144,8 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.beans.executioncapability.AwsCliInstallationCapability", AwsCliInstallationCapability.class);
     h.put("delegate.beans.executioncapability.SystemEnvCheckerCapability", SystemEnvCheckerCapability.class);
     h.put("delegate.beans.executioncapability.SelectorCapability", SelectorCapability.class);
+    h.put("delegate.beans.executioncapability.WinrmConnectivityExecutionCapability",
+        WinrmConnectivityExecutionCapability.class);
     h.put("delegate.command.CommandExecutionResult", CommandExecutionResult.class);
     h.put("delegate.task.spotinst.request.SpotInstDeployTaskParameters", SpotInstDeployTaskParameters.class);
     h.put("delegate.task.spotinst.request.SpotInstSetupTaskParameters", SpotInstSetupTaskParameters.class);
@@ -157,12 +157,25 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.task.artifacts.request.ArtifactTaskParameters", ArtifactTaskParameters.class);
     h.put("delegate.task.artifacts.docker.DockerArtifactDelegateRequest", DockerArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest", JenkinsArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest", AzureArtifactsDelegateRequest.class);
+    h.put(
+        "delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse", AzureArtifactsDelegateResponse.class);
+    h.put("delegate.task.artifacts.ami.AMIArtifactDelegateRequest", AMIArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.ami.AMIArtifactDelegateResponse", AMIArtifactDelegateResponse.class);
+    h.put("delegate.task.artifacts.ami.AMITag", AMITag.class);
+    h.put("delegate.task.artifacts.ami.AMIFilter", AMIFilter.class);
+    h.put("delegate.task.artifacts.custom.CustomArtifactDelegateRequest", CustomArtifactDelegateRequest.class);
+    h.put("delegate.task.artifacts.custom.CustomArtifactDelegateResponse", CustomArtifactDelegateResponse.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateRequest", GcrArtifactDelegateRequest.class);
     h.put("delegate.task.artifacts.gcr.GcrArtifactDelegateResponse", GcrArtifactDelegateResponse.class);
     h.put("delegate.task.gcp.request.GcpValidationRequest", GcpValidationRequest.class);
     h.put("delegate.task.gcp.response.GcpValidationTaskResponse", GcpValidationTaskResponse.class);
     h.put("software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse", EcsServiceDeployResponse.class);
     w.put("helpers.ext.helm.response.HelmInstallCommandResponse", HelmInstallCommandResponse.class);
+    h.put("delegate.task.gitpolling.request.GitPollingTaskParameters", GitPollingTaskParameters.class);
+    h.put("delegate.task.gitpolling.github", GitHubPollingDelegateRequest.class);
+    h.put("delegate.task.gitpolling.GitPollingSourceType", GitPollingSourceType.class);
+    h.put("delegate.task.gitpolling.GitPollingTaskType", GitPollingTaskType.class);
     w.put("beans.AwsConfig", AwsConfig.class);
     w.put("beans.GitConfig", GitConfig.class);
     w.put("beans.yaml.GitCommandExecutionResponse", GitCommandExecutionResponse.class);

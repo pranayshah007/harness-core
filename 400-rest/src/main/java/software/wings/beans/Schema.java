@@ -8,7 +8,9 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "schema", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class Schema implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {

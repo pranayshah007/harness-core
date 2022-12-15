@@ -1,0 +1,221 @@
+basePath: /
+definitions:
+  store.AckRequest:
+    properties:
+      consumerName:
+        type: string
+      itemID:
+        type: string
+      subTopic:
+        type: string
+      topic:
+        type: string
+    type: object
+  store.AckResponse:
+    properties:
+      itemID:
+        type: string
+    type: object
+  store.DequeueItemMetadata:
+    properties:
+      currentRetryCount:
+        type: integer
+      maxProcessingTime:
+        type: number
+    type: object
+  store.DequeueRequest:
+    properties:
+      batchSize:
+        type: integer
+      consumerName:
+        type: string
+      maxWaitDuration:
+        type: integer
+      topic:
+        type: string
+    type: object
+  store.DequeueResponse:
+    properties:
+      itemId:
+        type: string
+      metadata:
+        $ref: '#/definitions/store.DequeueItemMetadata'
+      payload:
+        type: string
+      queueKey:
+        type: string
+      timeStamp:
+        type: integer
+    type: object
+  store.EnqueueRequest:
+    properties:
+      payload:
+        type: string
+      producerName:
+        type: string
+      subTopic:
+        type: string
+      topic:
+        type: string
+    type: object
+  store.EnqueueResponse:
+    properties:
+      itemId:
+        description: ItemID is the identifier of the task in the Queue
+        type: string
+    type: object
+  store.UnAckRequest:
+    properties:
+      itemID:
+        type: string
+      retryTimeAfterDuration:
+        description: Retry topic + subtopic after RetryAfterTimeDuration nanoseconds
+        type: integer
+      subTopic:
+        type: string
+      topic:
+        type: string
+      type:
+        type: integer
+    type: object
+  store.UnAckResponse:
+    properties:
+      itemID:
+        type: string
+      subTopic:
+        type: string
+      topic:
+        type: string
+      type:
+        type: integer
+    type: object
+host: localhost:9091
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a queuing client.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Doc- hsqs
+  version: "1.0"
+paths:
+  /v1/ack:
+    post:
+      consumes:
+      - application/json
+      description: Ack a Redis message consumed successfully
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.AckRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.AckResponse'
+      summary: Ack a Redis message
+  /v1/dequeue:
+    post:
+      consumes:
+      - application/json
+      description: Dequeue a request
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.DequeueRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.DequeueResponse'
+      summary: Dequeue in Redis
+  /v1/healthz:
+    get:
+      consumes:
+      - application/json
+      description: Health API for Queue Service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Health API for Queue Service
+  /v1/queue:
+    post:
+      consumes:
+      - application/json
+      description: Enqueue the request
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.EnqueueRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.EnqueueResponse'
+      summary: Enqueue
+  /v1/unack:
+    post:
+      consumes:
+      - application/json
+      description: UnAck a Redis message or SubTopic to stop processing
+      parameters:
+      - description: query params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/store.UnAckRequest'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.UnAckResponse'
+      summary: UnAck a Redis message or SubTopic
+schemes:
+- http
+swagger: "2.0"

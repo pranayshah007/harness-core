@@ -1,0 +1,6 @@
+template:
+  name: OpenStack
+  identifier: OpenStack
+  tags: {}
+  description: ""
+  type: CustomDeployment

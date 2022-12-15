@@ -54,6 +54,7 @@ public class OutboxPersistenceConfig extends AbstractMongoConfiguration {
             .retryWrites(true)
             .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
             .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
+            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
@@ -80,7 +81,7 @@ public class OutboxPersistenceConfig extends AbstractMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), mongoBackendConfiguration);
   }
 
   @Override

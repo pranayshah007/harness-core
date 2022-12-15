@@ -6,5 +6,5 @@ metadata:
   namespace: ${delegateNamespace}
 type: Opaque
 data:
-  ACCOUNT_SECRET: "${secret}"
+  DELEGATE_TOKEN: "${secret}"
 </#macro>

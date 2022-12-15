@@ -48,8 +48,8 @@ import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.tasks.ResponseData;
@@ -79,7 +79,6 @@ import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -106,6 +105,7 @@ import software.wings.beans.template.command.SshCommandTemplate;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.exception.ShellScriptException;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.impl.ActivityHelperService;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
@@ -480,8 +480,8 @@ public class CommandState extends State {
     try {
       Application application = appService.get(appId);
       String accountId = application.getAccountId();
-      Artifact artifact = null;
-      Map<String, Artifact> multiArtifacts = null;
+      software.wings.persistence.artifact.Artifact artifact = null;
+      Map<String, software.wings.persistence.artifact.Artifact> multiArtifacts = null;
 
       Command command = null;
 
@@ -492,11 +492,7 @@ public class CommandState extends State {
         if (service == null) {
           throw new ShellScriptException("Linked command needs artifact but service is not found", null, null, USER);
         }
-        if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-          artifact = findArtifact(service.getUuid(), context);
-        } else {
-          multiArtifacts = findArtifacts(service.getUuid(), context);
-        }
+        artifact = findArtifact(service.getUuid(), context);
       }
 
       Map<String, String> serviceVariables = context.getServiceVariables().entrySet().stream().collect(
@@ -526,7 +522,8 @@ public class CommandState extends State {
               .serviceVariables(serviceVariables)
               .safeDisplayServiceVariables(safeDisplayServiceVariables)
               .serviceTemplateId(serviceTemplate != null ? serviceTemplate.getUuid() : null)
-              .appContainer(service != null ? service.getAppContainer() : null)
+              .appContainer(
+                  (service != null && service.getAppContainer() != null) ? service.getAppContainer().toDTO() : null)
               .host(host)
               .accountId(accountId)
               .timeout(getTimeoutMillis())
@@ -588,30 +585,21 @@ public class CommandState extends State {
   }
 
   private void fetchArtifactDetails(ExecutionContext context, CommandStateExecutionData.Builder executionDataBuilder,
-      Service service, String accountId, Artifact artifact, Map<String, Artifact> multiArtifacts, Command command,
+      Service service, String accountId, software.wings.persistence.artifact.Artifact artifact,
+      Map<String, software.wings.persistence.artifact.Artifact> multiArtifacts, Command command,
       CommandParametersBuilder commandParametersBuilder) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      if (artifact != null) {
-        getArtifactDetails(context, executionDataBuilder, service, accountId, artifact, commandParametersBuilder);
-      } else if (command.isArtifactNeeded()) {
-        throw new ShellScriptException(
-            format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
-      }
-    } else {
-      if (isNotEmpty(multiArtifacts)) {
-        getMultiArtifactDetails(
-            context, executionDataBuilder, service, accountId, multiArtifacts, commandParametersBuilder);
-      } else if (command.isArtifactNeeded()) {
-        throw new ShellScriptException(
-            format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
-      }
+    if (artifact != null) {
+      getArtifactDetails(context, executionDataBuilder, service, accountId, artifact, commandParametersBuilder);
+    } else if (command.isArtifactNeeded()) {
+      throw new ShellScriptException(
+          format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
     }
   }
 
   private void processTemplateVariables(ExecutionContext context,
       CommandStateExecutionData.Builder executionDataBuilder, String appId, String envId,
-      InstanceElement instanceElement, Service service, String accountId, Artifact artifact, Command command,
-      int expressionFunctorToken) {
+      InstanceElement instanceElement, Service service, String accountId,
+      software.wings.persistence.artifact.Artifact artifact, Command command, int expressionFunctorToken) {
     context.resetPreparedCache();
     if (getTemplateUuid() != null) {
       String templateId = getTemplateUuid();
@@ -675,14 +663,15 @@ public class CommandState extends State {
         .build();
   }
 
-  private void addArtifactTemplateVariablesToContext(
-      Map<String, String> artifactTemplateVariableMap, Map<String, Artifact> multiArtifacts, ExecutionContext context) {
+  private void addArtifactTemplateVariablesToContext(Map<String, String> artifactTemplateVariableMap,
+      Map<String, software.wings.persistence.artifact.Artifact> multiArtifacts, ExecutionContext context) {
     if (artifactTemplateVariableMap.size() > 0) {
       for (Entry<String, String> entry : artifactTemplateVariableMap.entrySet()) {
         String param = entry.getKey();
         String paramValue = entry.getValue();
         String expression = templateUtils.getExpression(paramValue);
-        Artifact evaluatedValue = (Artifact) context.evaluateExpression(expression);
+        software.wings.persistence.artifact.Artifact evaluatedValue =
+            (software.wings.persistence.artifact.Artifact) context.evaluateExpression(expression);
         if (evaluatedValue != null) {
           multiArtifacts.put(param, evaluatedValue);
         }
@@ -742,7 +731,8 @@ public class CommandState extends State {
   }
 
   private void getArtifactDetails(ExecutionContext context, CommandStateExecutionData.Builder executionDataBuilder,
-      Service service, String accountId, Artifact artifact, CommandParametersBuilder commandParametersBuilder) {
+      Service service, String accountId, software.wings.persistence.artifact.Artifact artifact,
+      CommandParametersBuilder commandParametersBuilder) {
     log.info("Artifact being used: {} for stateExecutionInstanceId: {}", artifact.getUuid(),
         context.getStateExecutionInstanceId());
     commandParametersBuilder.metadata(MappingUtils.safeCopy(artifact.getMetadata()));
@@ -764,7 +754,7 @@ public class CommandState extends State {
             format("Unable to find Connector/Cloud Provider for artifact stream %s", artifactStream.getSourceName()),
             WingsException.USER);
       }
-      artifactStreamAttributes.setServerSetting(settingAttribute);
+      artifactStreamAttributes.setServerSetting(settingAttribute.toDTO());
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));
@@ -781,12 +771,14 @@ public class CommandState extends State {
     artifactStreamAttributes.setArtifactType(service.getArtifactType());
     commandParametersBuilder.artifactStreamAttributes(artifactStreamAttributes);
 
-    commandParametersBuilder.artifactFiles(artifact.getArtifactFiles());
+    commandParametersBuilder.artifactFiles(
+        artifact.getArtifactFiles().stream().map(ArtifactFile::toDTO).collect(toList()));
     executionDataBuilder.withArtifactName(artifact.getDisplayName()).withActivityId(artifact.getUuid());
     populateArtifactFileNameToContext(commandParametersBuilder, artifact);
   }
 
-  private void populateArtifactFileNameToContext(CommandParametersBuilder commandParametersBuilder, Artifact artifact) {
+  private void populateArtifactFileNameToContext(
+      CommandParametersBuilder commandParametersBuilder, software.wings.persistence.artifact.Artifact artifact) {
     String artifactFileName = null;
     if (artifact == null) {
       return;
@@ -807,13 +799,18 @@ public class CommandState extends State {
   }
 
   private void getMultiArtifactDetails(ExecutionContext context, CommandStateExecutionData.Builder executionDataBuilder,
-      Service service, String accountId, Map<String, Artifact> map, CommandParametersBuilder commandParametersBuilder) {
-    commandParametersBuilder.multiArtifactMap(map);
+      Service service, String accountId, Map<String, software.wings.persistence.artifact.Artifact> map,
+      CommandParametersBuilder commandParametersBuilder) {
+    Map<String, Artifact> dtoMap = new HashMap<>();
+    for (Map.Entry<String, software.wings.persistence.artifact.Artifact> entry : map.entrySet()) {
+      dtoMap.put(entry.getKey(), entry.getValue().toDTO());
+    }
+    commandParametersBuilder.multiArtifactMap(dtoMap);
     Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap = new HashMap<>();
     Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap = new HashMap<>();
     if (isNotEmpty(map)) {
-      for (Entry<String, Artifact> entry : map.entrySet()) {
-        Artifact artifact = entry.getValue();
+      for (Entry<String, software.wings.persistence.artifact.Artifact> entry : map.entrySet()) {
+        software.wings.persistence.artifact.Artifact artifact = entry.getValue();
         log.info("Artifact being used: {} for stateExecutionInstanceId: {}", artifact.getUuid(),
             context.getStateExecutionInstanceId());
         // Observed NPE in alerts
@@ -834,7 +831,7 @@ public class CommandState extends State {
                                          artifactStream.getSourceName()),
                 WingsException.USER);
           }
-          artifactStreamAttributes.setServerSetting(settingAttribute);
+          artifactStreamAttributes.setServerSetting(settingAttribute.toDTO());
           List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
               (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
               context.getWorkflowExecutionId());
@@ -858,7 +855,7 @@ public class CommandState extends State {
     }
   }
 
-  private void addArtifactFileNameToContext(Map<String, Artifact> multiArtifactMap,
+  private void addArtifactFileNameToContext(Map<String, software.wings.persistence.artifact.Artifact> multiArtifactMap,
       Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap,
       CommandParametersBuilder commandParametersBuilder) {
     artifactFileName = resolveArtifactFileName(multiArtifactMap, artifactStreamAttributesMap);
@@ -868,14 +865,14 @@ public class CommandState extends State {
     }
   }
 
-  private String resolveArtifactFileName(
-      Map<String, Artifact> multiArtifactMap, Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap) {
+  private String resolveArtifactFileName(Map<String, software.wings.persistence.artifact.Artifact> multiArtifactMap,
+      Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap) {
     String artifactFileName = null;
     if (multiArtifactMap.size() == 1) {
       String artifactVariableName = multiArtifactMap.keySet().stream().findFirst().isPresent()
           ? multiArtifactMap.keySet().stream().findFirst().get()
           : null;
-      Artifact artifact = multiArtifactMap.get(artifactVariableName);
+      software.wings.persistence.artifact.Artifact artifact = multiArtifactMap.get(artifactVariableName);
       if (artifact != null) {
         ArtifactStreamAttributes artifactStreamAttributes = artifactStreamAttributesMap.get(artifact.getUuid());
         if (artifactStreamAttributes == null) {
@@ -902,7 +899,7 @@ public class CommandState extends State {
       ExecutionContext context, Host host, CommandParametersBuilder commandParametersBuilder) {
     if (isNotEmpty(host.getHostConnAttr())) {
       SettingAttribute hostConnectionAttribute = settingsService.get(host.getHostConnAttr());
-      commandParametersBuilder.hostConnectionAttributes(hostConnectionAttribute);
+      commandParametersBuilder.hostConnectionAttributes(hostConnectionAttribute.toDTO());
       commandParametersBuilder.hostConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) hostConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));
@@ -915,7 +912,7 @@ public class CommandState extends State {
     }
     if (isNotEmpty(host.getBastionConnAttr())) {
       SettingAttribute bastionConnectionAttribute = settingsService.get(host.getBastionConnAttr());
-      commandParametersBuilder.bastionConnectionAttributes(bastionConnectionAttribute);
+      commandParametersBuilder.bastionConnectionAttributes(bastionConnectionAttribute.toDTO());
       commandParametersBuilder.bastionConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) bastionConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));
@@ -949,8 +946,11 @@ public class CommandState extends State {
       commandParametersBuilder.disableWinRMCommandEncodingFFSet(true);
     }
 
-    commandParametersBuilder.multiArtifact(
-        featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId));
+    if (featureFlagService.isEnabled(FeatureName.WINRM_SCRIPT_COMMAND_SPLIT, accountId)) {
+      commandParametersBuilder.winrmScriptCommandSplit(true);
+    }
+
+    commandParametersBuilder.multiArtifact(false);
 
     commandParametersBuilder.useWinRMKerberosUniqueCacheFile(
         featureFlagService.isEnabled(FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE, accountId));
@@ -1004,13 +1004,14 @@ public class CommandState extends State {
   }
 
   void renderCommandString(Command command, ExecutionContext context,
-      CommandStateExecutionData commandStateExecutionData, Artifact artifact, int expressionFunctorToken) {
+      CommandStateExecutionData commandStateExecutionData, software.wings.persistence.artifact.Artifact artifact,
+      int expressionFunctorToken) {
     renderCommandString(command, context, commandStateExecutionData, artifact, false, expressionFunctorToken);
   }
 
   void renderCommandString(Command command, ExecutionContext context,
-      CommandStateExecutionData commandStateExecutionData, Artifact artifact, boolean linkedFromTemplateLibrary,
-      int expressionFunctorToken) {
+      CommandStateExecutionData commandStateExecutionData, software.wings.persistence.artifact.Artifact artifact,
+      boolean linkedFromTemplateLibrary, int expressionFunctorToken) {
     for (CommandUnit commandUnit : command.getCommandUnits()) {
       if (CommandUnitType.COMMAND == commandUnit.getCommandUnitType()) {
         Command commandCommandUnit = (Command) commandUnit;
@@ -1078,7 +1079,7 @@ public class CommandState extends State {
 
   // used in tests
   void renderTailFilePattern(ExecutionContext context, CommandStateExecutionData commandStateExecutionData,
-      Artifact artifact, ExecCommandUnit execCommandUnit) {
+      software.wings.persistence.artifact.Artifact artifact, ExecCommandUnit execCommandUnit) {
     List<TailFilePatternEntry> filePatternEntries = execCommandUnit.getTailPatterns();
     for (TailFilePatternEntry filePatternEntry : filePatternEntries) {
       if (isNotEmpty(filePatternEntry.getFilePath())) {
@@ -1137,13 +1138,13 @@ public class CommandState extends State {
         .collect(toList());
   }
 
-  private Artifact findArtifact(String serviceId, ExecutionContext context) {
+  private software.wings.persistence.artifact.Artifact findArtifact(String serviceId, ExecutionContext context) {
     if (isRollback()) {
       if (context.getContextElement(ContextElementType.INSTANCE) == null) {
         WorkflowStandardParams contextElement = context.getContextElement(ContextElementType.STANDARD);
         return workflowStandardParamsExtensionService.getRollbackArtifactForService(contextElement, serviceId);
       }
-      Artifact previousArtifact = serviceResourceService.findPreviousArtifact(
+      software.wings.persistence.artifact.Artifact previousArtifact = serviceResourceService.findPreviousArtifact(
           context.getAppId(), context.getWorkflowExecutionId(), context.getContextElement(ContextElementType.INSTANCE));
       if (previousArtifact != null) {
         return previousArtifact;
@@ -1152,7 +1153,8 @@ public class CommandState extends State {
     return ((DeploymentExecutionContext) context).getArtifactForService(serviceId);
   }
 
-  private Map<String, Artifact> findArtifacts(String serviceId, ExecutionContext context) {
+  private Map<String, software.wings.persistence.artifact.Artifact> findArtifacts(
+      String serviceId, ExecutionContext context) {
     // NOTE: This function also takes care of rollback.
     return ((DeploymentExecutionContext) context).getArtifactsForService(serviceId);
   }

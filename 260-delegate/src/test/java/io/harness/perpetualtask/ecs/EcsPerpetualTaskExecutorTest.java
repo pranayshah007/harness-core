@@ -7,7 +7,7 @@
 
 package io.harness.perpetualtask.ecs;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 import static io.harness.rule.OwnerRule.HITESH;
 

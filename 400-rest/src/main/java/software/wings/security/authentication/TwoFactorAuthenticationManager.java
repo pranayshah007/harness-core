@@ -22,10 +22,14 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
 import software.wings.beans.User;
+import software.wings.beans.loginSettings.events.LoginSettingsTwoFactorAuthEvent;
+import software.wings.beans.loginSettings.events.TwoFactorAuthYamlDTO;
 import software.wings.features.TwoFactorAuthenticationFeature;
 import software.wings.features.api.AccountId;
 import software.wings.features.api.PremiumFeature;
@@ -55,6 +59,7 @@ public class TwoFactorAuthenticationManager {
   @Inject private EventPublishHelper eventPublishHelper;
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject @Named(TwoFactorAuthenticationFeature.FEATURE_NAME) private PremiumFeature twoFactorAuthenticationFeature;
+  @Inject private OutboxService outboxService;
 
   public TwoFactorAuthHandler getTwoFactorAuthHandler(TwoFactorAuthenticationMechanism mechanism) {
     switch (mechanism) {
@@ -100,6 +105,8 @@ public class TwoFactorAuthenticationManager {
     if (isNotEmpty(user.getAccounts())) {
       user.getAccounts().forEach(account -> {
         auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Event.Type.ENABLE_2FA);
+        ngAuditLoginSettings(
+            account.getUuid(), user.isTwoFactorAuthenticationEnabled(), settings.isTwoFactorAuthenticationEnabled());
         log.info("Auditing enabling of 2FA for user={} in account={}", user.getName(), account.getAccountName());
       });
     }
@@ -120,6 +127,8 @@ public class TwoFactorAuthenticationManager {
         if (isNotEmpty(user.getAccounts())) {
           user.getAccounts().forEach(account -> {
             auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Event.Type.DISABLE_2FA);
+            ngAuditLoginSettings(
+                account.getUuid(), user.isTwoFactorAuthenticationEnabled(), !user.isTwoFactorAuthenticationEnabled());
             log.info("Auditing disabling of 2FA for user={} in account={}", user.getName(), account.getAccountName());
           });
         }
@@ -130,6 +139,27 @@ public class TwoFactorAuthenticationManager {
           user.isTwoFactorAuthenticationEnabled(), user.getTwoFactorAuthenticationMechanism());
     }
     return user;
+  }
+
+  private void ngAuditLoginSettings(
+      String accountIdentifier, boolean oldTwoFactorAuthEnabled, boolean newTwoFactorAuthEnabled) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          LoginSettingsTwoFactorAuthEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldTwoFactorAuthYamlDTO(
+                  TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(oldTwoFactorAuthEnabled).build())
+              .newTwoFactorAuthYamlDTO(
+                  TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(newTwoFactorAuthEnabled).build())
+              .build());
+      log.info(
+          "NG Auth Audits: for account {} and outboxEventId {} successfully saved the audit for LoginSettingsTwoFactorAuthEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Auth Audits: for account {} saving the LoginSettingsTwoFactorAuthEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
   }
 
   private boolean isAllowed2FADisable(User user) {

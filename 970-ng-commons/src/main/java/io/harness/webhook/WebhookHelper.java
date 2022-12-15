@@ -66,7 +66,7 @@ public class WebhookHelper {
     }
 
     // This will change to common endpoint that will be used by all
-    urlBuilder.append("webhook/custom?accountIdentifier=")
+    urlBuilder.append("webhook/custom/v2?accountIdentifier=")
         .append(accountId)
         .append("&orgIdentifier=")
         .append(orgIdentifier)
@@ -77,5 +77,11 @@ public class WebhookHelper {
         .append("&triggerIdentifier=")
         .append(triggerIdentifier);
     return urlBuilder.toString();
+  }
+
+  public String generateCustomWebhookCurlCommand(String webhookUrl) {
+    return String.format(
+        "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url '%s' -d '{\"sample_key\": \"sample_value\"}'",
+        webhookUrl);
   }
 }

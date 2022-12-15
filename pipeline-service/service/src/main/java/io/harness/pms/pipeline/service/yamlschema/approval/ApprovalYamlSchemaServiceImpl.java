@@ -78,7 +78,6 @@ public class ApprovalYamlSchemaServiceImpl implements ApprovalYamlSchemaService 
         YamlSchemaUtils.getNodeClassesByYamlGroup(
             yamlSchemaRootClasses, StepCategory.STEP.name(), enabledFeatureFlags, featureRestrictionsMap),
         "");
-
     yamlSchemaGenerator.modifyRefsNamespace(approvalStageSchema, APPROVAL_NAMESPACE);
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();
     JsonNode node = mapper.createObjectNode().set(APPROVAL_NAMESPACE, definitions);

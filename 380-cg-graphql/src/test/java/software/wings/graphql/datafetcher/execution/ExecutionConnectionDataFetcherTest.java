@@ -362,7 +362,8 @@ public class ExecutionConnectionDataFetcherTest extends AbstractDataFetcherTestB
         QLExecutionFilter.builder()
             .application(
                 QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {APP1_ID_ACCOUNT1}).build())
-            .helmChartVersion(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"helm1"}).build())
+            .helmChartVersion(
+                QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"helm-1.23"}).build())
             .build();
     when(dataFetchingEnvironment.getArguments())
         .thenReturn(Collections.singletonMap(ExecutionConnectionDataFetcher.INDIRECT_EXECUTION_FIELD, true));

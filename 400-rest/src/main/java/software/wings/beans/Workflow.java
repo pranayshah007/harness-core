@@ -16,12 +16,14 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
+import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -32,6 +34,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -39,6 +42,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.impl.workflow.WorkflowServiceTemplateHelper;
 
@@ -62,6 +66,7 @@ import org.mongodb.morphia.annotations.Transient;
  * @author Rishi
  */
 @OwnedBy(CDC)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "workflows", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "WorkflowKeys")
@@ -422,6 +427,18 @@ public class Workflow
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(WORKFLOW)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   public static final class WorkflowBuilder {

@@ -1,0 +1,10 @@
+infrastructureDefinition:
+  name: sampleInfra
+  identifier: sampleInfra
+  description: "sampleInfra"
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: Custom_Deployment
+  environmentRef: sampleEnv
+  deploymentType: CustomDeployment
+  type: CustomDeployment

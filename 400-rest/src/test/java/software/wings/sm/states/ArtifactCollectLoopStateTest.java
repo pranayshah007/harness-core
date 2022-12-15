@@ -27,8 +27,8 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ArtifactCollectLoopParams;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContextImpl;
@@ -124,11 +124,13 @@ public class ArtifactCollectLoopStateTest extends WingsBaseTest {
     response.put("response2", ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build());
     String workflowExecutionId = "workflowExecutionId";
     String appId = "appId";
+    WorkflowStandardParams workflowStandardParams = WorkflowStandardParams.Builder.aWorkflowStandardParams().build();
     List<Artifact> artifacts = Collections.singletonList(Artifact.Builder.anArtifact().build());
     StateExecutionInstance stateExecutionInstance = StateExecutionInstance.Builder.aStateExecutionInstance().build();
     when(context.getWorkflowExecutionId()).thenReturn(workflowExecutionId);
     when(context.getAppId()).thenReturn(appId);
     when(context.getStateExecutionInstance()).thenReturn(stateExecutionInstance);
+    when(context.fetchWorkflowStandardParamsFromContext()).thenReturn(workflowStandardParams);
     when(workflowExecutionService.getArtifactsCollected(appId, workflowExecutionId)).thenReturn(artifacts);
     doNothing().when(artifactCollectLoopState).addArtifactsToWorkflowExecution(appId, workflowExecutionId, artifacts);
     doNothing()
@@ -141,7 +143,7 @@ public class ArtifactCollectLoopStateTest extends WingsBaseTest {
     ExecutionResponse executionResponse = artifactCollectLoopState.handleAsyncResponse(context, response);
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-    verify(artifactCollectLoopState).updateArtifactsInContext(context);
+    verify(artifactCollectLoopState).updateArtifactsInContext(context, workflowStandardParams);
     verify(artifactCollectLoopState).addArtifactsToWorkflowExecution(appId, workflowExecutionId, artifacts);
     verify(artifactCollectLoopState).addArtifactsToStateExecutionInstance(appId, stateExecutionInstance, artifacts);
     verify(artifactCollectLoopState)

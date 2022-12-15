@@ -8,8 +8,10 @@
 package io.harness.delegate.beans.connector.scm.gitlab;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabSshCredentialsOutcomeDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -30,4 +32,8 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the Gitlab credentials used via SSH connections")
 public class GitlabSshCredentialsDTO implements GitlabCredentialsDTO, DecryptableEntity {
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData sshKeyRef;
+  @Override
+  public GitlabCredentialsOutcomeDTO toOutcome() {
+    return GitlabSshCredentialsOutcomeDTO.builder().sshKeyRef(this.sshKeyRef).build();
+  }
 }

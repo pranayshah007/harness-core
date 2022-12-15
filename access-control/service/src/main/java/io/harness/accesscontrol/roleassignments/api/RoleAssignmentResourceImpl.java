@@ -7,9 +7,6 @@
 
 package io.harness.accesscontrol.roleassignments.api;
 
-import static io.harness.accesscontrol.AccessControlPermissions.EDIT_SERVICEACCOUNT_PERMISSION;
-import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP_PERMISSION;
-import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
@@ -29,27 +26,18 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.USER_NOT_AUTHORIZED;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.toList;
 import static lombok.AccessLevel.PRIVATE;
 
-import io.harness.accesscontrol.AccessControlPermissions;
-import io.harness.accesscontrol.AccessControlResourceTypes;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.common.validation.ValidationResult;
 import io.harness.accesscontrol.commons.validation.HarnessActionValidator;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.principals.PrincipalType;
-import io.harness.accesscontrol.principals.serviceaccounts.HarnessServiceAccountService;
-import io.harness.accesscontrol.principals.serviceaccounts.ServiceAccountService;
-import io.harness.accesscontrol.principals.usergroups.HarnessUserGroupService;
+import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
-import io.harness.accesscontrol.principals.users.HarnessUserService;
-import io.harness.accesscontrol.principals.users.UserService;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
@@ -67,13 +55,12 @@ import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.DuplicateFieldException;
@@ -96,7 +83,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.NotFoundException;
 import lombok.experimental.FieldDefaults;
@@ -113,53 +99,42 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   RoleAssignmentService roleAssignmentService;
   HarnessResourceGroupService harnessResourceGroupService;
-  HarnessUserGroupService harnessUserGroupService;
-  HarnessUserService harnessUserService;
-  HarnessServiceAccountService harnessServiceAccountService;
-  HarnessScopeService harnessScopeService;
   ScopeService scopeService;
   RoleService roleService;
   ResourceGroupService resourceGroupService;
   UserGroupService userGroupService;
-  UserService userService;
-  ServiceAccountService serviceAccountService;
   RoleAssignmentDTOMapper roleAssignmentDTOMapper;
+
+  RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
   RoleDTOMapper roleDTOMapper;
   TransactionTemplate transactionTemplate;
   HarnessActionValidator<RoleAssignment> actionValidator;
   OutboxService outboxService;
-  AccessControlClient accessControlClient;
+  RoleAssignmentApiUtils roleAssignmentApiUtils;
 
-  RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public RoleAssignmentResourceImpl(RoleAssignmentService roleAssignmentService,
-      HarnessResourceGroupService harnessResourceGroupService, HarnessUserGroupService harnessUserGroupService,
-      HarnessUserService harnessUserService, HarnessServiceAccountService harnessServiceAccountService,
-      HarnessScopeService harnessScopeService, ScopeService scopeService, RoleService roleService,
-      ResourceGroupService resourceGroupService, UserGroupService userGroupService, UserService userService,
-      ServiceAccountService serviceAccountService, RoleAssignmentDTOMapper roleAssignmentDTOMapper,
+      HarnessResourceGroupService harnessResourceGroupService, ScopeService scopeService, RoleService roleService,
+      ResourceGroupService resourceGroupService, UserGroupService userGroupService,
+      RoleAssignmentDTOMapper roleAssignmentDTOMapper, RoleAssignmentAggregateMapper roleAssignmentAggregateMapper,
       RoleDTOMapper roleDTOMapper, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       @Named(MODEL_NAME) HarnessActionValidator<RoleAssignment> actionValidator, OutboxService outboxService,
-      AccessControlClient accessControlClient) {
+      RoleAssignmentApiUtils roleAssignmentApiUtils) {
     this.roleAssignmentService = roleAssignmentService;
     this.harnessResourceGroupService = harnessResourceGroupService;
-    this.harnessUserGroupService = harnessUserGroupService;
-    this.harnessUserService = harnessUserService;
-    this.harnessServiceAccountService = harnessServiceAccountService;
-    this.harnessScopeService = harnessScopeService;
     this.scopeService = scopeService;
     this.roleService = roleService;
     this.resourceGroupService = resourceGroupService;
     this.userGroupService = userGroupService;
-    this.userService = userService;
-    this.serviceAccountService = serviceAccountService;
     this.roleAssignmentDTOMapper = roleAssignmentDTOMapper;
+    this.roleAssignmentAggregateMapper = roleAssignmentAggregateMapper;
     this.roleDTOMapper = roleDTOMapper;
     this.transactionTemplate = transactionTemplate;
     this.actionValidator = actionValidator;
     this.outboxService = outboxService;
-    this.accessControlClient = accessControlClient;
+    this.roleAssignmentApiUtils = roleAssignmentApiUtils;
   }
 
   @Override
@@ -170,15 +145,15 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
         RoleAssignmentFilter.builder().scopeFilter(scopeIdentifier);
     Set<PrincipalType> principalTypes = Sets.newHashSet();
 
-    if (checkViewPermission(harnessScopeParams, USER)) {
+    if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER)) {
       principalTypes.add(USER);
     }
 
-    if (checkViewPermission(harnessScopeParams, USER_GROUP)) {
+    if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP)) {
       principalTypes.add(USER_GROUP);
     }
 
-    if (checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT)) {
+    if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT)) {
       principalTypes.add(SERVICE_ACCOUNT);
     }
 
@@ -206,6 +181,61 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   }
 
   @Override
+  public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
+      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
+    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
+    if (!hasAccessToUserRoleAssignments) {
+      throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    Set<ScopeSelector> scopeFilter = new HashSet<>();
+    if (isEmpty(roleAssignmentFilterV2.getScopeFilters())) {
+      scopeFilter.add(ScopeSelector.builder()
+                          .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                          .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                          .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+                          .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                          .build());
+    } else {
+      scopeFilter.addAll(roleAssignmentFilterV2.getScopeFilters());
+    }
+    roleAssignmentFilterV2.setScopeFilters(scopeFilter);
+
+    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
+    RoleAssignmentFilter filter = null;
+    List<UserGroup> userGroups = new ArrayList<>();
+    if (principalFilter != null && USER.equals(principalFilter.getType())) {
+      userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
+      filter = roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
+    } else {
+      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2);
+    }
+
+    PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
+    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
+      String userGroupName = null;
+      if (USER_GROUP.equals(response.getPrincipalType())) {
+        UserGroup principal = userGroups.stream()
+                                  .filter(userGroup
+                                      -> userGroup.getIdentifier().equals(response.getPrincipalIdentifier())
+                                          && scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier())
+                                                 .getLevel()
+                                                 .toString()
+                                                 .equals(response.getPrincipalScopeLevel()))
+                                  .findAny()
+                                  .orElse(null);
+        if (principal != null) {
+          userGroupName = principal.getName();
+        }
+      }
+
+      return roleAssignmentAggregateMapper.toDTO(response, userGroupName);
+    });
+
+    return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+  }
+
+  @Override
   public ResponseDTO<List<RoleAssignmentResponseDTO>> getAllIncludingChildScopes(
       HarnessScopeParams harnessScopeParams, RoleAssignmentFilterDTO roleAssignmentFilterDTO) {
     Scope scope = fromParams(harnessScopeParams);
@@ -213,13 +243,14 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
 
     PageRequest pageRequest = PageRequest.builder().pageSize(1000).build();
     List<RoleAssignment> roleAssignments = roleAssignmentService.list(pageRequest, roleAssignmentFilter).getContent();
-    return ResponseDTO.newResponse(roleAssignments.stream()
-                                       .filter(roleAssignment
-                                           -> checkViewPermission(toParams(scopeService.buildScopeFromScopeIdentifier(
-                                                                      roleAssignment.getScopeIdentifier())),
-                                               roleAssignment.getPrincipalType()))
-                                       .map(roleAssignmentDTOMapper::toResponseDTO)
-                                       .collect(Collectors.toList()));
+    return ResponseDTO.newResponse(
+        roleAssignments.stream()
+            .filter(roleAssignment
+                -> roleAssignmentApiUtils.checkViewPermission(
+                    toParams(scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier())),
+                    roleAssignment.getPrincipalType()))
+            .map(roleAssignmentDTOMapper::toResponseDTO)
+            .collect(Collectors.toList()));
   }
 
   @Override
@@ -253,6 +284,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
             .stream()
             .map(ResourceGroupDTOMapper::toDTO)
             .collect(toList());
+
     List<RoleAssignmentDTO> roleAssignmentDTOs =
         roleAssignments.stream().map(RoleAssignmentDTOMapper::toDTO).collect(toList());
     return ResponseDTO.newResponse(
@@ -263,12 +295,13 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   public ResponseDTO<RoleAssignmentResponseDTO> create(
       HarnessScopeParams harnessScopeParams, RoleAssignmentDTO roleAssignmentDTO) {
     Scope scope = fromParams(harnessScopeParams);
-    validateDeprecatedResourceGroupNotUsed(roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
-    validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
+    roleAssignmentApiUtils.validateDeprecatedResourceGroupNotUsed(
+        roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
+    roleAssignmentApiUtils.validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
     RoleAssignment roleAssignment =
-        buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
-    syncDependencies(roleAssignment, scope);
-    checkUpdatePermission(harnessScopeParams, roleAssignment);
+        roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
+    roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
+    roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleAssignment createdRoleAssignment = roleAssignmentService.create(roleAssignment);
       RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(createdRoleAssignment);
@@ -278,80 +311,6 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }));
   }
 
-  private RoleAssignment buildRoleAssignmentWithPrincipalScopeLevel(RoleAssignment roleAssignment, Scope scope) {
-    String principalScopeLevel = null;
-    if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && !isEmpty(roleAssignment.getPrincipalScopeLevel())) {
-      principalScopeLevel = roleAssignment.getPrincipalScopeLevel();
-    }
-    if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
-      principalScopeLevel = roleAssignment.getScopeLevel();
-    }
-    if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
-      principalScopeLevel = getServiceAccountScopeLevel(roleAssignment.getPrincipalIdentifier(), scope);
-    }
-    return RoleAssignment.builder()
-        .identifier(roleAssignment.getIdentifier())
-        .scopeIdentifier(roleAssignment.getScopeIdentifier())
-        .scopeLevel(roleAssignment.getScopeLevel())
-        .resourceGroupIdentifier(roleAssignment.getResourceGroupIdentifier())
-        .roleIdentifier(roleAssignment.getRoleIdentifier())
-        .principalScopeLevel(principalScopeLevel)
-        .principalIdentifier(roleAssignment.getPrincipalIdentifier())
-        .principalType(roleAssignment.getPrincipalType())
-        .managed(roleAssignment.isManaged())
-        .disabled(roleAssignment.isDisabled())
-        .createdAt(roleAssignment.getCreatedAt())
-        .lastModifiedAt(roleAssignment.getLastModifiedAt())
-        .build();
-  }
-
-  private String getServiceAccountScopeLevel(@NotNull String serviceAccountIdentifier, @NotNull Scope scope) {
-    HarnessScopeParams scopeParams = ScopeMapper.toParams(scope);
-    Scope serviceAccountScope = scope;
-    while (serviceAccountScope != null) {
-      harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
-      serviceAccountScope = serviceAccountScope.getParentScope();
-    }
-
-    Scope accountScope = ScopeMapper.fromParams(
-        HarnessScopeParams.builder().accountIdentifier(scopeParams.getAccountIdentifier()).build());
-    if (serviceAccountService.get(serviceAccountIdentifier, accountScope.toString()).isPresent()) {
-      return accountScope.getLevel().toString();
-    }
-    Scope orgScope = ScopeMapper.fromParams(HarnessScopeParams.builder()
-                                                .accountIdentifier(scopeParams.getAccountIdentifier())
-                                                .orgIdentifier(scopeParams.getOrgIdentifier())
-                                                .build());
-    if (serviceAccountService.get(serviceAccountIdentifier, orgScope.toString()).isPresent()) {
-      return orgScope.getLevel().toString();
-    }
-    return scope.getLevel().toString();
-  }
-
-  private static void validateDeprecatedResourceGroupNotUsed(String resourceGroupIdentifier, String scopeLevel) {
-    if (HarnessResourceGroupConstants.DEPRECATED_ALL_RESOURCES_RESOURCE_GROUP_IDENTIFIER.equals(
-            resourceGroupIdentifier)) {
-      throw new InvalidRequestException(String.format("%s is deprecated, please use %s.",
-          HarnessResourceGroupConstants.DEPRECATED_ALL_RESOURCES_RESOURCE_GROUP_IDENTIFIER,
-          HarnessResourceGroupConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER));
-    }
-  }
-
-  private void validatePrincipalScopeLevelConditions(PrincipalDTO principalDTO, ScopeLevel scopeLevel) {
-    if (principalDTO.getScopeLevel() == null) {
-      return;
-    }
-    if (!isValidParentScopeLevel(HarnessScopeLevel.valueOf(principalDTO.getScopeLevel().toUpperCase()), scopeLevel)) {
-      throw new InvalidRequestException(
-          String.format("Principal scope level cannot be %s for %s scoped role assignment.",
-              principalDTO.getScopeLevel(), scopeLevel.toString()));
-    }
-  }
-
-  private static boolean isValidParentScopeLevel(ScopeLevel parentScopeLevel, ScopeLevel scopeLevel) {
-    return parentScopeLevel.getRank() <= scopeLevel.getRank();
-  }
-
   @Override
   public ResponseDTO<RoleAssignmentResponseDTO> update(
       String identifier, HarnessScopeParams harnessScopeParams, RoleAssignmentDTO roleAssignmentDTO) {
@@ -359,11 +318,12 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     if (!identifier.equals(roleAssignmentDTO.getIdentifier())) {
       throw new InvalidRequestException("Role assignment identifier in the request body and the url do not match.");
     }
-    validateDeprecatedResourceGroupNotUsed(roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
-    validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
+    roleAssignmentApiUtils.validateDeprecatedResourceGroupNotUsed(
+        roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
+    roleAssignmentApiUtils.validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
     RoleAssignment roleAssignmentUpdate =
-        buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
-    checkUpdatePermission(harnessScopeParams, roleAssignmentUpdate);
+        roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
+    roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignmentUpdate);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleAssignmentUpdateResult roleAssignmentUpdateResult = roleAssignmentService.update(roleAssignmentUpdate);
       RoleAssignmentResponseDTO response =
@@ -388,9 +348,9 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
       return ResponseDTO.newResponse(new ArrayList<>());
     }
     roleAssignmentCreateRequestDTO.getRoleAssignments().forEach(roleAssignmentDTO -> {
-      validateDeprecatedResourceGroupNotUsed(
+      roleAssignmentApiUtils.validateDeprecatedResourceGroupNotUsed(
           roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
-      validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
+      roleAssignmentApiUtils.validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
     });
     return ResponseDTO.newResponse(createRoleAssignments(harnessScopeParams, roleAssignmentCreateRequestDTO, false));
   }
@@ -452,7 +412,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
         roleAssignmentService.get(identifier, scopeIdentifier).<InvalidRequestException>orElseThrow(() -> {
           throw new InvalidRequestException("Invalid Role Assignment");
         });
-    checkUpdatePermission(harnessScopeParams, roleAssignment);
+    roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
     ValidationResult validationResult = actionValidator.canDelete(roleAssignment);
     if (!validationResult.isValid()) {
       throw new InvalidRequestException(validationResult.getErrorMessage());
@@ -469,6 +429,23 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }));
   }
 
+  @Override
+  public ResponseDTO<RoleAssignmentResponseDTO> get(HarnessScopeParams harnessScopeParams, String identifier) {
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment =
+        roleAssignmentService.get(identifier, scope.toString()).<NotFoundException>orElseThrow(() -> {
+          throw new NotFoundException("Role Assignment with given identifier doesn't exists");
+        });
+    if (!roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, roleAssignment.getPrincipalType())) {
+      throw new UnauthorizedException(
+          String.format("Current principal is not authorized to the view the role assignments for Principal Type %s",
+              roleAssignment.getPrincipalType().name()),
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
+    return ResponseDTO.newResponse(response);
+  }
+
   private List<RoleAssignmentResponseDTO> createRoleAssignments(
       HarnessScopeParams harnessScopeParams, RoleAssignmentCreateRequestDTO requestDTO, boolean managed) {
     Scope scope = fromParams(harnessScopeParams);
@@ -476,7 +453,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
         requestDTO.getRoleAssignments()
             .stream()
             .map(roleAssignmentDTO
-                -> buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO, managed), scope))
+                -> roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(
+                    fromDTO(scope, roleAssignmentDTO, managed), scope))
             .collect(Collectors.toList());
 
     requestDTO.getRoleAssignments().forEach(
@@ -485,8 +463,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     List<RoleAssignmentResponseDTO> createdRoleAssignments = new ArrayList<>();
     for (RoleAssignment roleAssignment : roleAssignmentsPayload) {
       try {
-        syncDependencies(roleAssignment, scope);
-        checkUpdatePermission(harnessScopeParams, roleAssignment);
+        roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
+        roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
         RoleAssignmentResponseDTO roleAssignmentResponseDTO =
             Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
               RoleAssignmentResponseDTO response =
@@ -526,67 +504,13 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }
   }
 
-  private void checkUpdatePermission(HarnessScopeParams harnessScopeParams, RoleAssignment roleAssignment) {
-    int scopeRank = ScopeMapper.fromParams(harnessScopeParams).getLevel().getRank();
-    int principalScopeRank = roleAssignment.getPrincipalScopeLevel() == null
-        ? scopeRank
-        : HarnessScopeLevel.valueOf(roleAssignment.getPrincipalScopeLevel().toUpperCase()).getRank();
-    boolean allPrincipalUpdateCheck = roleAssignment.getPrincipalScopeLevel() != null && scopeRank > principalScopeRank;
-
-    if (USER_GROUP.equals(roleAssignment.getPrincipalType())) {
-      accessControlClient.checkForAccessOrThrow(
-          ResourceScope.of(harnessScopeParams.getAccountIdentifier(), harnessScopeParams.getOrgIdentifier(),
-              harnessScopeParams.getProjectIdentifier()),
-          Resource.of(AccessControlResourceTypes.USER_GROUP,
-              allPrincipalUpdateCheck ? null : roleAssignment.getPrincipalIdentifier()),
-          MANAGE_USERGROUP_PERMISSION);
-    } else if (USER.equals(roleAssignment.getPrincipalType())) {
-      accessControlClient.checkForAccessOrThrow(
-          ResourceScope.of(harnessScopeParams.getAccountIdentifier(), harnessScopeParams.getOrgIdentifier(),
-              harnessScopeParams.getProjectIdentifier()),
-          Resource.of(AccessControlResourceTypes.USER, roleAssignment.getPrincipalIdentifier()),
-          MANAGE_USER_PERMISSION);
-    } else if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
-      accessControlClient.checkForAccessOrThrow(
-          ResourceScope.of(harnessScopeParams.getAccountIdentifier(), harnessScopeParams.getOrgIdentifier(),
-              harnessScopeParams.getProjectIdentifier()),
-          Resource.of(AccessControlResourceTypes.SERVICEACCOUNT,
-              allPrincipalUpdateCheck ? null : roleAssignment.getPrincipalIdentifier()),
-          EDIT_SERVICEACCOUNT_PERMISSION);
-    } else {
-      throw new InvalidRequestException(String.format(
-          "Role assignments for principalType %s cannot be changed", roleAssignment.getPrincipalType().toString()));
-    }
-  }
-
-  private boolean checkViewPermission(HarnessScopeParams harnessScopeParams, PrincipalType principalType) {
-    String resourceType = null;
-    String permissionIdentifier = null;
-    if (USER.equals(principalType)) {
-      resourceType = AccessControlResourceTypes.USER;
-      permissionIdentifier = AccessControlPermissions.VIEW_USER_PERMISSION;
-    } else if (USER_GROUP.equals(principalType)) {
-      resourceType = AccessControlResourceTypes.USER_GROUP;
-      permissionIdentifier = AccessControlPermissions.VIEW_USERGROUP_PERMISSION;
-    } else if (SERVICE_ACCOUNT.equals(principalType)) {
-      resourceType = AccessControlResourceTypes.SERVICEACCOUNT;
-      permissionIdentifier = AccessControlPermissions.VIEW_SERVICEACCOUNT_PERMISSION;
-    } else {
-      throw new InvalidRequestException("Invalid Principal type: " + principalType.toString());
-    }
-    return accessControlClient.hasAccess(ResourceScope.builder()
-                                             .projectIdentifier(harnessScopeParams.getProjectIdentifier())
-                                             .orgIdentifier(harnessScopeParams.getOrgIdentifier())
-                                             .accountIdentifier(harnessScopeParams.getAccountIdentifier())
-                                             .build(),
-        Resource.of(resourceType, null), permissionIdentifier);
-  }
-
   private Optional<RoleAssignmentFilter> buildRoleAssignmentFilterWithPermissionFilter(
       HarnessScopeParams harnessScopeParams, RoleAssignmentFilterDTO roleAssignmentFilterDTO) {
-    boolean hasAccessToUserRoleAssignments = checkViewPermission(harnessScopeParams, USER);
-    boolean hasAccessToUserGroupRoleAssignments = checkViewPermission(harnessScopeParams, USER_GROUP);
-    boolean hasAccessToServiceAccountRoleAssignments = checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT);
+    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
+    boolean hasAccessToUserGroupRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP);
+    boolean hasAccessToServiceAccountRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT);
     Scope scope = fromParams(harnessScopeParams);
     RoleAssignmentFilter roleAssignmentFilter = fromDTO(scope.toString(), roleAssignmentFilterDTO);
     if (isNotEmpty(roleAssignmentFilter.getPrincipalFilter())) {
@@ -625,15 +549,15 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
       }
     } else {
       Set<PrincipalType> principalTypes = Sets.newHashSet();
-      if (checkViewPermission(harnessScopeParams, USER)) {
+      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER)) {
         principalTypes.add(USER);
       }
 
-      if (checkViewPermission(harnessScopeParams, USER_GROUP)) {
+      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP)) {
         principalTypes.add(USER_GROUP);
       }
 
-      if (checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT)) {
+      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT)) {
         principalTypes.add(SERVICE_ACCOUNT);
       }
 
@@ -644,31 +568,5 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
       }
     }
     return Optional.of(roleAssignmentFilter);
-  }
-
-  private void syncDependencies(RoleAssignment roleAssignment, Scope scope) {
-    if (!scopeService.isPresent(scope.toString())) {
-      harnessScopeService.sync(scope);
-    }
-    if (!resourceGroupService.get(roleAssignment.getResourceGroupIdentifier(), scope.toString(), NO_FILTER)
-             .isPresent()) {
-      harnessResourceGroupService.sync(roleAssignment.getResourceGroupIdentifier(), scope);
-    }
-    if (roleAssignment.getPrincipalType().equals(USER_GROUP)) {
-      Scope principalScope = fromParams(toParentScopeParams(toParams(scope), roleAssignment.getPrincipalScopeLevel()));
-      if (!userGroupService.get(roleAssignment.getPrincipalIdentifier(), principalScope.toString()).isPresent()) {
-        harnessUserGroupService.sync(roleAssignment.getPrincipalIdentifier(), principalScope);
-      }
-    }
-    if (roleAssignment.getPrincipalType().equals(USER)
-        && !userService.get(roleAssignment.getPrincipalIdentifier(), scope.toString()).isPresent()) {
-      harnessUserService.sync(roleAssignment.getPrincipalIdentifier(), scope);
-    }
-    if (roleAssignment.getPrincipalType().equals(SERVICE_ACCOUNT)) {
-      Scope principalScope = fromParams(toParentScopeParams(toParams(scope), roleAssignment.getPrincipalScopeLevel()));
-      if (!serviceAccountService.get(roleAssignment.getPrincipalIdentifier(), principalScope.toString()).isPresent()) {
-        harnessServiceAccountService.sync(roleAssignment.getPrincipalIdentifier(), principalScope);
-      }
-    }
   }
 }

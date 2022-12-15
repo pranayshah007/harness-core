@@ -19,12 +19,14 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptService;
@@ -41,8 +43,8 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.rule.Owner;
 
-import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +52,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class MarkStatusInterruptHandlerTest extends CategoryTest {
@@ -122,10 +125,16 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
     doReturn(NodeExecution.builder().status(fromStatus).uuid(nodeExecutionId).ambiance(ambiance).build())
         .when(nodeExecutionService)
         .update(eq(nodeExecutionId), any());
+
     // Returning Final status so planExecutionService should not be called.
-    doReturn(Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(FAILED).build()))
-        .when(nodeExecutionService)
-        .fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+    List<NodeExecution> nodeExecutionList =
+        List.of(NodeExecution.builder().uuid("newNodeExecutionId").status(FAILED).build());
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+             eq(planExecutionId), eq(StatusUtils.activeStatuses()), eq(NodeProjectionUtils.withStatus)))
+        .thenReturn(iterator);
+
     doReturn(interruptBuilder.state(State.PROCESSED_SUCCESSFULLY).build())
         .when(interruptService)
         .markProcessed(interruptUuid, State.PROCESSED_SUCCESSFULLY);
@@ -142,9 +151,11 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
     verify(interruptService, times(1)).markProcessed(interruptUuid, State.PROCESSED_SUCCESSFULLY);
 
     // Returning NonFinal status so planExecutionService should be called.
-    doReturn(Arrays.asList(NodeExecution.builder().uuid("newNodeExecutionId").status(nonFinalStatus).build()))
-        .when(nodeExecutionService)
-        .fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+    nodeExecutionList = List.of(NodeExecution.builder().uuid("newNodeExecutionId").status(nonFinalStatus).build());
+    iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+             eq(planExecutionId), eq(StatusUtils.activeStatuses()), eq(NodeProjectionUtils.withStatus)))
+        .thenReturn(iterator);
 
     returnedInterrupt =
         markStatusInterruptHandler.handleInterruptStatus(interruptBuilder.build(), nodeExecutionId, status);

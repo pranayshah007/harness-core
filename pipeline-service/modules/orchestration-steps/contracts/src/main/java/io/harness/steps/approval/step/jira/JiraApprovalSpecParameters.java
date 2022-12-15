@@ -34,6 +34,7 @@ public class JiraApprovalSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> connectorRef;
   @NotNull ParameterField<String> issueKey;
   String issueType;
+  String projectKey;
   @NotNull CriteriaSpecWrapper approvalCriteria;
   CriteriaSpecWrapper rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

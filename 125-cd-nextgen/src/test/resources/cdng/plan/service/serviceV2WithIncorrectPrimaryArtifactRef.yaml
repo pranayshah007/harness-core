@@ -1,0 +1,30 @@
+service:
+  name: manager
+  identifier: manager
+  tags: {}
+  gitOpsEnabled: false
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: i5
+          sources:
+            - identifier: i1
+              type: Dockerhub
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.20"
+            - identifier: i2
+              type: Dockerhub
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.19"
+            - identifier: i3
+              type: Dockerhub
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: ""

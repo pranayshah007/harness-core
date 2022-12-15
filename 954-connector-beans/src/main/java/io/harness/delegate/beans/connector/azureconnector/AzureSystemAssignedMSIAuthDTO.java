@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureSystemAssignedMSIAuthOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
@@ -22,4 +23,9 @@ import lombok.Value;
 @JsonTypeName(AzureConstants.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
 @ApiModel("AzureSystemAssignedMSIAuth")
 @Schema(name = "AzureSystemAssignedMSIAuth", description = "This contains azure SystemAssigned MSI auth details")
-public class AzureSystemAssignedMSIAuthDTO extends AzureAuthCredentialDTO {}
+public class AzureSystemAssignedMSIAuthDTO extends AzureAuthCredentialDTO {
+  @Override
+  public AzureSystemAssignedMSIAuthOutcomeDTO toOutcome() {
+    return AzureSystemAssignedMSIAuthOutcomeDTO.builder().build();
+  }
+}

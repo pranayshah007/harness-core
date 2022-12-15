@@ -9,14 +9,16 @@ package io.harness.gitsync.gittoharness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.GitToHarnessProcessRequest;
 import io.harness.gitsync.GitToHarnessServiceGrpc.GitToHarnessServiceImplBase;
 import io.harness.gitsync.MarkEntityInvalidRequest;
 import io.harness.gitsync.MarkEntityInvalidResponse;
 import io.harness.gitsync.ProcessingResponse;
+import io.harness.gitsync.ResetGitSyncSDKCacheRequest;
+import io.harness.gitsync.ResetGitSyncSDKCacheResponse;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -60,6 +62,13 @@ public class GitToHarnessGrpcService extends GitToHarnessServiceImplBase {
   public void markEntitiesInvalid(
       MarkEntityInvalidRequest request, StreamObserver<MarkEntityInvalidResponse> responseObserver) {
     responseObserver.onNext(gitToHarnessSdkProcessor.markEntitiesInvalid(request));
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void resetGitSyncSDKCache(
+      ResetGitSyncSDKCacheRequest request, StreamObserver<ResetGitSyncSDKCacheResponse> responseObserver) {
+    responseObserver.onNext(gitToHarnessSdkProcessor.resetGitSyncSDKCache(request));
     responseObserver.onCompleted();
   }
 }

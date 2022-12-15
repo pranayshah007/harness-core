@@ -9,7 +9,9 @@ package io.harness.cdng.jenkins.jenkinsstep;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionStatus;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
@@ -19,7 +21,9 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,5 +69,37 @@ public class JenkinsBuildStepVariableCreator extends GenericStepVariableCreator<
         addFieldToPropertiesMapUnderStep(uuidNode, yamlPropertiesMap);
       }
     });
+  }
+
+  @Override
+  public YamlExtraProperties getStepExtraProperties(
+      String fqnPrefix, String localNamePrefix, JenkinsBuildStepNode config) {
+    YamlExtraProperties stepExtraProperties = super.getStepExtraProperties(fqnPrefix, localNamePrefix, config);
+
+    // empty map so that expressions are added for this even if no variables are added
+    Map<String, String> outputVariablesMap = new HashMap<>();
+
+    JenkinsBuildOutcome jenkinsBuildOutcome = JenkinsBuildOutcome.builder()
+                                                  .executionStatus(ExecutionStatus.SUCCESS)
+                                                  .buildFullDisplayName("")
+                                                  .buildNumber("")
+                                                  .jobUrl("")
+                                                  .buildFullDisplayName("")
+                                                  .build();
+
+    List<String> outputExpressions = VariableCreatorHelper.getExpressionsInObject(jenkinsBuildOutcome, "build");
+    List<YamlProperties> outputProperties = new LinkedList<>();
+    for (String outputExpression : outputExpressions) {
+      outputProperties.add(YamlProperties.newBuilder()
+                               .setFqn(fqnPrefix + "." + outputExpression)
+                               .setLocalName(localNamePrefix + "." + outputExpression)
+                               .setVisible(true)
+                               .build());
+    }
+
+    return YamlExtraProperties.newBuilder()
+        .addAllProperties(stepExtraProperties.getPropertiesList())
+        .addAllOutputProperties(outputProperties)
+        .build();
   }
 }

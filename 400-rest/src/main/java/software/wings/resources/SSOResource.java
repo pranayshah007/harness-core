@@ -18,6 +18,7 @@ import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -264,6 +265,7 @@ public class SSOResource {
 
   @POST
   @Path("ldap/iterations")
+  @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<List<Long>> getIterationsFromCron(
       @QueryParam("accountId") @NotBlank String accountId, CronExpressionRequest cronExpressionRequest) {
     return new RestResponse<>(ssoService.getIterationsFromCron(accountId, cronExpressionRequest.getCronExpression()));
@@ -327,12 +329,6 @@ public class SSOResource {
       @QueryParam("accountId") @NotBlank String accountId, @QueryParam("q") @NotBlank String query) {
     Collection<LdapGroupResponse> groups = ssoService.searchGroupsByName(ldapId, query);
     return new RestResponse<>(groups);
-  }
-
-  @Data
-  public static class LDAPTestAuthenticationRequest {
-    @NotBlank String email;
-    @NotBlank String password;
   }
 
   @Data

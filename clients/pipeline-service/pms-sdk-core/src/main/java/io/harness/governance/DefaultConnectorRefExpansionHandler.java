@@ -8,7 +8,6 @@
 package io.harness.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -22,6 +21,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -82,7 +82,7 @@ public class DefaultConnectorRefExpansionHandler implements JsonExpansionHandler
   }
 
   Optional<ConnectorDTO> getConnectorDTO(String connectorId, String accountId, String orgId, String projectId) {
-    return getResponseWithRetry(connectorResourceClient.get(connectorId, accountId, orgId, projectId),
+    return NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountId, orgId, projectId),
         "Could not get connector response for account: " + accountId + " after {} attempts.");
   }
 

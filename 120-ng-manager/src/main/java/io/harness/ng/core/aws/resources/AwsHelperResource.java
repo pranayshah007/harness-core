@@ -7,16 +7,28 @@
 
 package io.harness.ng.core.aws.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.lang.String.format;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
+import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.AwsListInstancesFilterDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
@@ -28,6 +40,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +50,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -59,6 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AwsHelperResource {
   private final AwsResourceServiceImpl awsHelperService;
+  private final InfrastructureEntityService infrastructureEntityService;
 
   @GET
   @Path("regions")
@@ -108,10 +123,12 @@ public class AwsHelperResource {
   public ResponseDTO<Map<String, String>> listIamRoles(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(awsHelperService.getRolesARNs(connectorRef, orgIdentifier, projectIdentifier));
+    return ResponseDTO.newResponse(
+        awsHelperService.getRolesARNs(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 
   @GET
@@ -161,6 +178,39 @@ public class AwsHelperResource {
   }
 
   @GET
+  @Path("v2/tags")
+  @ApiOperation(value = "Get all the tags V2", nickname = "tagsV2")
+  public ResponseDTO<Set<String>> getTagsV2(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((SshWinRmAwsInfrastructure) spec).getRegion().getValue();
+    }
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    Map<String, String> tags = awsHelperService.getTags(connectorRef, orgIdentifier, projectIdentifier, region);
+    return ResponseDTO.newResponse(tags.keySet());
+  }
+
+  @GET
   @Path("load-balancers")
   @ApiOperation(value = "Get load balancers", nickname = "loadBalancers")
   public ResponseDTO<List<String>> getLoadBalancers(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
@@ -186,5 +236,160 @@ public class AwsHelperResource {
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         awsHelperService.getASGNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
+  @GET
+  @Path("clusters")
+  @ApiOperation(value = "Get clusters", nickname = "clusters")
+  public ResponseDTO<List<String>> getClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        awsHelperService.getClusterNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
+  @GET
+  @Path("elastic-load-balancers")
+  @ApiOperation(value = "Get elastic load balancers", nickname = "elastic load balancers")
+  public ResponseDTO<List<String>> getElasticLoadBalancers(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        awsHelperService.getElasticLoadBalancerNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
+  @GET
+  @Path("listeners")
+  @ApiOperation(value = "Get elastic load balancer listeners ", nickname = "listeners")
+  public ResponseDTO<Map<String, String>> getElasticLoadBalancerListenersArn(
+      @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region, @NotNull @QueryParam("elasticLoadBalancer") String elasticLoadBalancer,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getElasticLoadBalancerListenersArn(
+        connectorRef, orgIdentifier, projectIdentifier, region, elasticLoadBalancer));
+  }
+
+  @GET
+  @Path("listener-rules-arns")
+  @ApiOperation(value = "Get elastic load balancer listener rules", nickname = "listener rules")
+  public ResponseDTO<List<String>> getElasticLoadBalancerListenerRules(
+      @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region, @NotNull @QueryParam("elasticLoadBalancer") String elasticLoadBalancer,
+      @NotNull @QueryParam("listenerArn") String listenerArn,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getElasticLoadBalancerListenerRules(
+        connectorRef, orgIdentifier, projectIdentifier, region, elasticLoadBalancer, listenerArn));
+  }
+
+  private InfrastructureDefinitionConfig getInfrastructureDefinitionConfig(
+      String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
+    if (isEmpty(envId)) {
+      throw new InvalidRequestException(
+          String.valueOf(format("%s must be provided", NGCommonEntityConstants.ENVIRONMENT_KEY)));
+    }
+
+    if (isEmpty(infraDefinitionId)) {
+      throw new InvalidRequestException(
+          String.valueOf(format("%s must be provided", NGCommonEntityConstants.INFRA_DEFINITION_KEY)));
+    }
+
+    InfrastructureEntity infrastructureEntity =
+        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId)
+            .orElseThrow(() -> {
+              throw new NotFoundException(String.format(
+                  "Infrastructure with identifier [%s] in project [%s], org [%s], environment [%s] not found",
+                  infraDefinitionId, projectIdentifier, orgIdentifier, envId));
+            });
+
+    return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity)
+        .getInfrastructureDefinitionConfig();
   }
 }

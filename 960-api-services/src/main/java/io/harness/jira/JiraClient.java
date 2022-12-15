@@ -19,6 +19,7 @@ import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
 import io.harness.validation.Validator;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.json.JSONArray;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -43,6 +45,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(CDC)
 @Slf4j
 public class JiraClient {
+  private static final int MAX_FIELD_RESULTS = 200;
   private static final int CONNECT_TIMEOUT = 60;
   private static final int READ_TIMEOUT = 60;
 
@@ -56,6 +59,7 @@ public class JiraClient {
           .name(COMMENT_FIELD_NAME)
           .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
           .build();
+  private static final String REPORTER_FIELD_NAME = "Reporter";
 
   private final JiraInternalConfig config;
   private final JiraRestClient restClient;
@@ -71,7 +75,9 @@ public class JiraClient {
   }
 
   public JiraInstanceData getInstanceData() {
-    return executeCall(restClient.getInstanceData(), "fetching jira instance data");
+    JiraInstanceData instanceData = executeCall(restClient.getInstanceData(), "fetching jira instance data");
+    log.info("Jira instance of type: {} - Version: {}", instanceData.getDeploymentType(), instanceData.getVersion());
+    return instanceData;
   }
   public JiraUserData getUser(String userKey) {
     return executeCall(restClient.getUser(userKey), "getting user");
@@ -81,7 +87,9 @@ public class JiraClient {
     JiraInstanceData jiraInstanceData = getInstanceData();
     switch (jiraInstanceData.deploymentType) {
       case SERVER:
-        return executeCall(restClient.getUsersForJiraServer(userQuery, accountId, "10", startAt), "fetching users");
+        return executeCall(
+            restClient.getUsersForJiraServer(userQuery.equals("") ? "\"\"" : userQuery, accountId, "10", startAt),
+            "fetching users");
       default:
         return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
     }
@@ -185,15 +193,39 @@ public class JiraClient {
    * @param ignoreComment should not fetch comment
    * @return the issue create metadata
    */
-  public JiraIssueCreateMetadataNG getIssueCreateMetadata(
-      String projectKey, String issueType, String expand, boolean fetchStatus, boolean ignoreComment) {
-    JiraIssueCreateMetadataNG createMetadata =
-        executeCall(restClient.getIssueCreateMetadata(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
-                        EmptyPredicate.isEmpty(issueType) ? null : issueType,
-                        EmptyPredicate.isEmpty(expand) ? "projects.issuetypes.fields" : expand),
+  public JiraIssueCreateMetadataNG getIssueCreateMetadata(String projectKey, String issueType, String expand,
+      boolean fetchStatus, boolean ignoreComment, boolean ffEnabled, boolean fromCG) {
+    JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    if (jiraInstanceData.deploymentType == JiraInstanceData.JiraDeploymentType.SERVER && ffEnabled) {
+      if (issueType == null) {
+        JiraIssueCreateMetadataNGIssueTypes createMetadataNGIssueTypes = executeCall(
+            restClient.getIssueCreateMetadataIssueTypes(EmptyPredicate.isEmpty(projectKey) ? null : projectKey),
+            "fetching create metadata V2");
+        originalMetadataFromNewIssueTypeMetadata(projectKey, createMetadata, createMetadataNGIssueTypes);
+      } else {
+        JiraIssueTypeNG issueTypeNG = getIssueTypeFromName(issueType, projectKey);
+        JiraIssueCreateMetadataNGFields createMetadataNGFields = executeCall(
+            restClient.getIssueCreateMetadataFields(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
+                EmptyPredicate.isEmpty(issueTypeNG.getId()) ? null : issueTypeNG.getId(), MAX_FIELD_RESULTS),
             "fetching create metadata");
-    if (!ignoreComment) {
-      createMetadata.addField(COMMENT_FIELD);
+        if (!ignoreComment) {
+          createMetadataNGFields.addField(COMMENT_FIELD);
+        }
+        if (!fromCG) {
+          createMetadataNGFields.removeField(REPORTER_FIELD_NAME);
+        }
+        originalMetadataFromNewFieldsMetadata(projectKey, createMetadata, issueTypeNG, createMetadataNGFields);
+      }
+    } else {
+      createMetadata =
+          executeCall(restClient.getIssueCreateMetadata(EmptyPredicate.isEmpty(projectKey) ? null : projectKey,
+                          EmptyPredicate.isEmpty(issueType) ? null : issueType,
+                          EmptyPredicate.isEmpty(expand) ? "projects.issuetypes.fields" : expand),
+              "fetching create metadata");
+      if (!ignoreComment) {
+        createMetadata.addField(COMMENT_FIELD);
+      }
     }
 
     if (fetchStatus) {
@@ -215,6 +247,34 @@ public class JiraClient {
     }
 
     return createMetadata;
+  }
+
+  @VisibleForTesting
+  void originalMetadataFromNewIssueTypeMetadata(String projectKey, JiraIssueCreateMetadataNG createMetadata,
+      JiraIssueCreateMetadataNGIssueTypes createMetadataNGIssueTypes) {
+    JiraProjectNG jiraProjectNG = new JiraProjectNG(createMetadataNGIssueTypes);
+    jiraProjectNG.setKey(projectKey);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put(projectKey, jiraProjectNG);
+    createMetadata.setProjects(projects);
+  }
+
+  @VisibleForTesting
+  void originalMetadataFromNewFieldsMetadata(String projectKey, JiraIssueCreateMetadataNG createMetadata,
+      JiraIssueTypeNG issueTypeNG, JiraIssueCreateMetadataNGFields createMetadataNGFields) {
+    JiraIssueTypeNG jiraIssueTypeNG = new JiraIssueTypeNG(createMetadataNGFields);
+    jiraIssueTypeNG.setId(issueTypeNG.getId());
+    jiraIssueTypeNG.setName(issueTypeNG.getName());
+    jiraIssueTypeNG.setDescription(issueTypeNG.getDescription());
+    jiraIssueTypeNG.setSubTask(issueTypeNG.isSubTask());
+    Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
+    issueTypes.put(jiraIssueTypeNG.getName(), jiraIssueTypeNG);
+    JiraProjectNG jiraProjectNG = new JiraProjectNG();
+    jiraProjectNG.setKey(projectKey);
+    jiraProjectNG.setIssueTypes(issueTypes);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put(projectKey, jiraProjectNG);
+    createMetadata.setProjects(projects);
   }
 
   /**
@@ -248,6 +308,10 @@ public class JiraClient {
     return executeCall(restClient.getProjectStatuses(projectKey), "fetching project statuses");
   }
 
+  public JSONArray getResolution() {
+    return executeCall(restClient.getResolution(), "fetching Resolutions");
+  }
+
   /**
    * Create an issue in the given project and issue type.
    *
@@ -271,8 +335,9 @@ public class JiraClient {
    * @return the created issue
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
-      Map<String, String> fields, boolean checkRequiredFields) {
-    JiraIssueCreateMetadataNG createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false);
+      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
+    JiraIssueCreateMetadataNG createMetadata =
+        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
       throw new InvalidRequestException(String.format("Invalid project: %s", projectKey));
@@ -289,8 +354,9 @@ public class JiraClient {
     String comment = pair.getRight();
 
     // Create issue with all non-comment fields.
-    JiraCreateIssueRequestNG createIssueRequest =
-        new JiraCreateIssueRequestNG(project, issueType, fields, checkRequiredFields);
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    JiraCreateIssueRequestNG createIssueRequest = new JiraCreateIssueRequestNG(
+        project, issueType, fields, checkRequiredFields, jiraInstanceData.getDeploymentType());
     JiraIssueNG issue = executeCall(restClient.createIssue(createIssueRequest), "creating issue");
 
     // Add comment.
@@ -338,10 +404,12 @@ public class JiraClient {
     ImmutablePair<Map<String, String>, String> pair = extractCommentField(fields);
     fields = pair.getLeft();
     String comment = pair.getRight();
+    JiraInstanceData jiraInstanceData = getInstanceData();
 
     // Update all non-comment fields.
     if (EmptyPredicate.isNotEmpty(fields)) {
-      JiraUpdateIssueRequestNG updateIssueRequest = new JiraUpdateIssueRequestNG(updateMetadata, null, fields);
+      JiraUpdateIssueRequestNG updateIssueRequest =
+          new JiraUpdateIssueRequestNG(updateMetadata, null, fields, jiraInstanceData.getDeploymentType());
       executeCall(restClient.updateIssue(issueKey, updateIssueRequest), "updating issue fields");
     }
     // Add comment field.
@@ -351,7 +419,8 @@ public class JiraClient {
     }
     // Do status transition.
     if (EmptyPredicate.isNotEmpty(transitionId)) {
-      JiraUpdateIssueRequestNG updateIssueRequest = new JiraUpdateIssueRequestNG(updateMetadata, transitionId, null);
+      JiraUpdateIssueRequestNG updateIssueRequest =
+          new JiraUpdateIssueRequestNG(updateMetadata, transitionId, null, jiraInstanceData.getDeploymentType());
       executeCall(restClient.transitionIssue(issueKey, updateIssueRequest), "updating issue status");
     }
     return getIssue(issueKey, true);
@@ -387,7 +456,7 @@ public class JiraClient {
       // If transitionName is given, find first transition with the given and toStatus, else throw error.
       return transitions.getTransitions()
           .stream()
-          .filter(t -> t.getTo().getName().equals(transitionToStatus) && t.getName().equals(transitionName))
+          .filter(t -> t.getTo().getName().equalsIgnoreCase(transitionToStatus) && t.getName().equals(transitionName))
           .findFirst()
           .map(JiraIssueTransitionNG::getId)
           .orElseThrow(() -> new JiraClientException(String.format("Invalid transition name: %s", transitionName)));
@@ -395,7 +464,7 @@ public class JiraClient {
       // If transitionName is not given, find first transition with the toStatus, else throw error.
       return transitions.getTransitions()
           .stream()
-          .filter(t -> t.getTo().getName().equals(transitionToStatus))
+          .filter(t -> t.getTo().getName().equalsIgnoreCase(transitionToStatus))
           .findFirst()
           .map(JiraIssueTransitionNG::getId)
           .orElseThrow(
@@ -446,5 +515,17 @@ public class JiraClient {
                             .addConverterFactory(JacksonConverterFactory.create())
                             .build();
     return retrofit.create(JiraRestClient.class);
+  }
+
+  private JiraIssueTypeNG getIssueTypeFromName(String issueTypeName, String projectKey) {
+    JiraIssueCreateMetadataNGIssueTypes createMetadataIssueTypes =
+        executeCall(restClient.getIssueCreateMetadataIssueTypes(EmptyPredicate.isEmpty(projectKey) ? null : projectKey),
+            "fetching create metadata V2");
+    JiraIssueTypeNG issueType = createMetadataIssueTypes.getIssueTypes().get(issueTypeName);
+    if (issueType == null) {
+      throw new InvalidRequestException(
+          String.format("Invalid issue type in project %s: %s", projectKey, issueTypeName));
+    }
+    return issueType;
   }
 }

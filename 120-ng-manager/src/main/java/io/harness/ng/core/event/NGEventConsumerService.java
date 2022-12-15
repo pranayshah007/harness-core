@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MA
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
+import static io.harness.eventsframework.EventsFrameworkConstants.LDAP_GROUP_SYNC;
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE_MAX_PROCESSING_TIME;
@@ -24,6 +25,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.impl.FullSyncMessageConsumer;
+import io.harness.ldap.scheduler.LdapGroupSyncStreamConsumer;
 import io.harness.ng.authenticationsettings.SamlAuthorizationStreamConsumer;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -43,6 +45,7 @@ public class NGEventConsumerService implements Managed {
   @Inject private SetupUsageStreamConsumer setupUsageStreamConsumer;
   @Inject private EntityActivityStreamConsumer entityActivityStreamConsumer;
   @Inject private SamlAuthorizationStreamConsumer samlAuthorizationStreamConsumer;
+  @Inject private LdapGroupSyncStreamConsumer ldapGroupSyncStreamConsumer;
   @Inject private FullSyncMessageConsumer fullSyncMessageConsumer;
   private ExecutorService ngAccountSetupConsumerService;
 
@@ -52,6 +55,7 @@ public class NGEventConsumerService implements Managed {
   private ExecutorService entityActivityConsumerService;
   private ExecutorService userMembershipConsumerService;
   private ExecutorService samlAuthorizationConsumerService;
+  private ExecutorService ldapGroupSyncConsumerService;
   private ExecutorService instanceStatsConsumerService;
   private ExecutorService gitSyncConfigStreamConsumerService;
   private ExecutorService fullSyncStreamConsumerService;
@@ -70,6 +74,8 @@ public class NGEventConsumerService implements Managed {
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(USERMEMBERSHIP).build());
     samlAuthorizationConsumerService = Executors.newSingleThreadExecutor(
         new ThreadFactoryBuilder().setNameFormat(SAML_AUTHORIZATION_ASSERTION).build());
+    ldapGroupSyncConsumerService =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(LDAP_GROUP_SYNC).build());
     instanceStatsConsumerService =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(INSTANCE_STATS).build());
     gitSyncConfigStreamConsumerService =
@@ -83,6 +89,7 @@ public class NGEventConsumerService implements Managed {
     entityActivityConsumerService.execute(entityActivityStreamConsumer);
     userMembershipConsumerService.execute(userMembershipStreamConsumer);
     samlAuthorizationConsumerService.execute(samlAuthorizationStreamConsumer);
+    ldapGroupSyncConsumerService.execute(ldapGroupSyncStreamConsumer);
     instanceStatsConsumerService.execute(instanceStatsStreamConsumer);
     fullSyncStreamConsumerService.execute(fullSyncMessageConsumer);
   }
@@ -95,6 +102,7 @@ public class NGEventConsumerService implements Managed {
     entityActivityConsumerService.shutdownNow();
     userMembershipConsumerService.shutdownNow();
     samlAuthorizationConsumerService.shutdownNow();
+    ldapGroupSyncConsumerService.shutdown();
     gitSyncConfigStreamConsumerService.shutdownNow();
     instanceStatsConsumerService.shutdownNow();
     ngAccountSetupConsumerService.awaitTermination(ENTITY_CRUD_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
@@ -103,6 +111,7 @@ public class NGEventConsumerService implements Managed {
     entityActivityConsumerService.awaitTermination(ENTITY_ACTIVITY_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     userMembershipConsumerService.awaitTermination(USERMEMBERSHIP_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     samlAuthorizationConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
+    ldapGroupSyncConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     instanceStatsConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     gitSyncConfigStreamConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
   }

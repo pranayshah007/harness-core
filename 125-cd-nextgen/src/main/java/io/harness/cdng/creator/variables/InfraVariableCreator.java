@@ -131,10 +131,37 @@ public class InfraVariableCreator {
           addVariablesForAzureWebAppInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.ECS:
+          addVariablesForEcsAwsInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
+        case InfrastructureKind.ELASTIGROUP:
+          addVariablesForElastigroupInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
+        case InfrastructureKind.TAS:
+          addVariablesForTASInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
+        case InfrastructureKind.ASG:
+          addVariablesForAsgInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
     }
+  }
+
+  private void addVariablesForTASInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.ORG, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.SPACE, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariablesForKubernetesInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
@@ -199,8 +226,7 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CREDENTIALS_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.HOSTS, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.ATTRIBUTE_FILTERS, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.HOST_FILTERS, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.HOST_FILTER, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.DELEGATE_SELECTORS, infraSpecNode, yamlPropertiesMap);
   }
 
@@ -227,6 +253,37 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.STAGE, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForEcsAwsInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForElastigroupInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CONFIGURATION, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForAsgInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariableForYamlType(

@@ -29,7 +29,6 @@ public enum QLSecretManagerType implements QLEnum {
   HASHICORP_VAULT(VAULT),
   AZURE_KEY_VAULT(AZURE_VAULT),
   GCP_SECRETS_MANAGER(EncryptionType.GCP_SECRETS_MANAGER),
-  CYBERARK(EncryptionType.CYBERARK),
   GOOGLE_KMS(GCP_KMS),
   CUSTOM(EncryptionType.CUSTOM),
   SSH(VAULT_SSH);

@@ -113,6 +113,6 @@ public class ResourceGroupFactoryTest {
                                             .resourceFilter(resourceFilter)
                                             .build();
     Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
-    assertThat(resourceSelector.size()).isEqualTo(18);
+    assertThat(resourceSelector.size()).isEqualTo(15);
   }
 }

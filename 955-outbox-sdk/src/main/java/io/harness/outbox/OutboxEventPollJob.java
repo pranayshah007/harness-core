@@ -8,6 +8,7 @@
 package io.harness.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_MAX_EVENTS_POLLED;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_UNBLOCK_RETRY_INTERVAL_IN_MINUTES;
 
@@ -60,7 +61,9 @@ public class OutboxEventPollJob implements Runnable {
   @Override
   public void run() {
     try {
-      pollAndHandleOutboxEvents();
+      if (!getMaintenanceFlag()) {
+        pollAndHandleOutboxEvents();
+      }
     } catch (Exception exception) {
       log.error("Unexpected error occurred during the execution of OutboxPollJob", exception);
     }

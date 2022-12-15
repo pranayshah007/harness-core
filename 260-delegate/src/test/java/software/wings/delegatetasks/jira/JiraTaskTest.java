@@ -9,8 +9,10 @@ package software.wings.delegatetasks.jira;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -44,8 +46,15 @@ import io.harness.exception.JiraClientException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldSchemaNG;
+import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueTypeNG;
+import io.harness.jira.JiraProjectNG;
+import io.harness.jira.JiraRestClient;
 import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
@@ -126,6 +135,7 @@ public class JiraTaskTest extends CategoryTest {
   @Mock private Issue issue;
   @Mock private JiraIssueNG issueNG;
   @Mock private JiraClient jiraClient;
+  @Mock private JiraRestClient jiraRestClient;
   @Mock private io.harness.jira.JiraClient jiraNGClient;
   @Mock private Project project;
   @Mock private FluentUpdate update;
@@ -157,10 +167,12 @@ public class JiraTaskTest extends CategoryTest {
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(null);
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     JiraExecutionData executionData =
@@ -177,7 +189,8 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFetchUserListInfo() {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
-    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    List<JiraUserData> mockUserList =
+        new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true, "id")));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
     doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD)).when(jiraNGClient).getInstanceData();
@@ -195,7 +208,8 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFetchUserListInfoForJiraServer() {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
-    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    List<JiraUserData> mockUserList =
+        new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true, "id")));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
     doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER)).when(jiraNGClient).getInstanceData();
@@ -218,10 +232,12 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
@@ -238,11 +254,13 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    List<JiraUserData> userDataList =
-        Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(
+        new JiraUserData("accountId", "Lucas", true, "id1"), new JiraUserData("accountI2d", "Lucas", true, "id2"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
 
     spyJiraTask.run(new Object[] {taskParameters});
   }
@@ -253,12 +271,16 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
-    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
+    doThrow(new JiraClientException("error"))
+        .when(jiraNGClient)
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -271,12 +293,16 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
+    doReturn(mock(JiraIssueNG.class))
+        .when(jiraNGClient)
+        .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -290,7 +316,8 @@ public class JiraTaskTest extends CategoryTest {
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     verify(jiraNGClient)
-        .createIssue(eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean());
+        .createIssue(eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap(), anyBoolean(),
+            anyBoolean(), anyBoolean());
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
   @Test
@@ -300,7 +327,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
@@ -308,6 +335,8 @@ public class JiraTaskTest extends CategoryTest {
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
     doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .executionStatus(ExecutionStatus.SUCCESS)
@@ -323,6 +352,162 @@ public class JiraTaskTest extends CategoryTest {
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_newCreateMetaEndPointWithoutIssueTypeFailed() {
+    JiraTaskParameters taskParameters = JiraTaskParameters.builder()
+                                            .jiraAction(JiraAction.GET_CREATE_METADATA)
+                                            .createmetaExpandParam("projects.issuetypes")
+                                            .project("TES")
+                                            .issueType(null)
+                                            .useNewMeta(true)
+                                            .build();
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doThrow(new JiraClientException("error"))
+        .when(jiraNGClient)
+        .getIssueCreateMetadata(eq("TES"), any(), eq("projects.issuetypes"), eq(false), eq(false), eq(true), eq(true));
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).isInstanceOf(JiraExecutionData.class);
+    assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_newCreateMetaEndPointWithoutIssueTypeSuccess() {
+    JiraTaskParameters taskParameters = JiraTaskParameters.builder()
+                                            .jiraAction(JiraAction.GET_CREATE_METADATA)
+                                            .createmetaExpandParam("projects.issuetypes")
+                                            .project("TES")
+                                            .issueType(null)
+                                            .useNewMeta(true)
+                                            .build();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = new JiraIssueCreateMetadataNG();
+    JiraProjectNG jiraProjectNG = new JiraProjectNG();
+    jiraProjectNG.setKey("TES");
+    jiraProjectNG.setId("10101");
+    jiraProjectNG.setName("TestTask");
+    JiraIssueTypeNG jiraIssueTypeNG1 = new JiraIssueTypeNG();
+    jiraIssueTypeNG1.setName("Task");
+    jiraIssueTypeNG1.setId("10003");
+    jiraIssueTypeNG1.setSubTask(false);
+    JiraIssueTypeNG jiraIssueTypeNG2 = new JiraIssueTypeNG();
+    jiraIssueTypeNG2.setName("Sub-Task");
+    jiraIssueTypeNG2.setId("10000");
+    jiraIssueTypeNG2.setSubTask(true);
+    Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
+    issueTypes.put("Task", jiraIssueTypeNG1);
+    issueTypes.put("Sub-Task", jiraIssueTypeNG2);
+    jiraProjectNG.setIssueTypes(issueTypes);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put("TES", jiraProjectNG);
+    jiraIssueCreateMetadataNG.setProjects(projects);
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(jiraIssueCreateMetadataNG)
+        .when(jiraNGClient)
+        .getIssueCreateMetadata(eq("TES"), any(), eq("projects.issuetypes"), eq(false), eq(false), eq(true), eq(true));
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.SUCCESS);
+    assertThat(delegateResponseData).isInstanceOf(JiraExecutionData.class);
+    JiraExecutionData jiraExecutionData = (JiraExecutionData) delegateResponseData;
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().size()).isEqualTo(1);
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getKey()).isEqualTo("TES");
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().size()).isEqualTo(2);
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().get(0).getId())
+        .isEqualTo("10003");
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().get(1).getId())
+        .isEqualTo("10000");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_newCreateMetaEndPointWithIssueType() {
+    JiraTaskParameters taskParameters = JiraTaskParameters.builder()
+                                            .jiraAction(JiraAction.GET_CREATE_METADATA)
+                                            .createmetaExpandParam("projects.issuetypes")
+                                            .project("TES")
+                                            .issueType(null)
+                                            .useNewMeta(true)
+                                            .build();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = new JiraIssueCreateMetadataNG();
+    JiraProjectNG jiraProjectNG = new JiraProjectNG();
+    jiraProjectNG.setKey("TES");
+    jiraProjectNG.setId("10101");
+    jiraProjectNG.setName("TestTask");
+    JiraIssueTypeNG jiraIssueTypeNG1 = new JiraIssueTypeNG();
+    jiraIssueTypeNG1.setName("Task");
+    jiraIssueTypeNG1.setId("10003");
+    jiraIssueTypeNG1.setSubTask(false);
+    JiraFieldNG jiraFieldNG1 = new JiraFieldNG();
+    jiraFieldNG1.setRequired(true);
+    jiraFieldNG1.setKey("summary");
+    jiraFieldNG1.setName("Summary");
+    jiraFieldNG1.setCustom(false);
+    jiraFieldNG1.setSchema(JiraFieldSchemaNG.builder().typeStr("string").type(JiraFieldTypeNG.STRING).build());
+    JiraFieldNG jiraFieldNG2 = new JiraFieldNG();
+    jiraFieldNG2.setRequired(true);
+    jiraFieldNG2.setKey("labels");
+    jiraFieldNG2.setName("Labels");
+    jiraFieldNG2.setCustom(false);
+    jiraFieldNG2.setSchema(
+        JiraFieldSchemaNG.builder().typeStr("string").array(true).type(JiraFieldTypeNG.STRING).build());
+    Map<String, JiraFieldNG> fields = new HashMap<>();
+    fields.put("summary", jiraFieldNG1);
+    fields.put("labels", jiraFieldNG2);
+    jiraIssueTypeNG1.setFields(fields);
+    Map<String, JiraIssueTypeNG> issueTypes = new HashMap<>();
+    issueTypes.put("Task", jiraIssueTypeNG1);
+    jiraProjectNG.setIssueTypes(issueTypes);
+    Map<String, JiraProjectNG> projects = new HashMap<>();
+    projects.put("TES", jiraProjectNG);
+    jiraIssueCreateMetadataNG.setProjects(projects);
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(jiraIssueCreateMetadataNG)
+        .when(jiraNGClient)
+        .getIssueCreateMetadata(eq("TES"), any(), eq("projects.issuetypes"), eq(false), eq(false), eq(true), eq(true));
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.SUCCESS);
+    assertThat(delegateResponseData).isInstanceOf(JiraExecutionData.class);
+    JiraExecutionData jiraExecutionData = (JiraExecutionData) delegateResponseData;
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().size()).isEqualTo(1);
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getKey()).isEqualTo("TES");
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().size()).isEqualTo(1);
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().get(0).getId())
+        .isEqualTo("10003");
+    assertThat(jiraExecutionData.getCreateMetadata().getProjects().get(0).getIssueTypes().get(0).getJiraFields().size())
+        .isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldExtractTimeTrackingSuccessfully() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
+    Map<String, JiraCustomFieldValue> customFields = new HashMap<>();
+    Map<String, String> userTypeFields = null;
+    customFields.put("TimeTracking:OriginalEstimate", new JiraCustomFieldValue("timetracking", "1d 2h"));
+    customFields.put("TimeTracking:RemainingEstimate", new JiraCustomFieldValue("timetracking", "4h"));
+    taskParameters.setCustomFields(customFields);
+
+    jiraTask.setCustomFieldsOnCreate(taskParameters, create);
+    Map<String, String> extracted = jiraTask.extractFieldsFromCGParameters(taskParameters, userTypeFields);
+
+    assertThat(extracted.get("Original Estimate")).isEqualTo("1d 2h");
+    assertThat(extracted.get("Remaining Estimate")).isEqualTo("4h");
+  }
+
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
@@ -930,6 +1115,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSuccessfulExecutionForCheckJiraApproval() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
+
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "To Do"));

@@ -9,6 +9,8 @@ package io.harness.connector.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.exception.InvalidRequestException;
@@ -22,9 +24,12 @@ public class ConnectorUtils {
   public void checkForConnectorValidityOrThrow(ConnectorResponseDTO connector) {
     if (!connector.getEntityValidityDetails().isValid()) {
       throw new InvalidRequestException(
-          String.format("Connector for identifier [%s] is invalid. Please fix the connector YAML.",
+          format("Connector for identifier [%s] is invalid. Please fix the connector YAML.",
               connector.getConnector().getIdentifier()),
           WingsException.USER);
     }
+  }
+  public boolean isValid(ConnectorResponseDTO connector) {
+    return connector.getEntityValidityDetails().isValid();
   }
 }

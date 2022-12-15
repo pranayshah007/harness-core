@@ -43,7 +43,7 @@ metadata:
   namespace: test-namespace
 type: Opaque
 data:
-  ACCOUNT_SECRET: "QUNDT1VOVF9LRVk="
+  DELEGATE_TOKEN: "QUNDT1VOVF9LRVk="
 
 ---
 
@@ -77,9 +77,11 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         resources:
           limits:
-            cpu: "0.5"
             memory: "2048Mi"
           requests:
             cpu: "0.5"
@@ -204,7 +206,7 @@ data:
 
 ---
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:

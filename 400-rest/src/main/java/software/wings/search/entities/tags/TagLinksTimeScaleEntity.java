@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.tags;
 
+import io.harness.event.reconciliation.service.LookerEntityReconService;
+import io.harness.event.reconciliation.service.TagsEntityReconServiceImpl;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.HarnessTagLink;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class TagLinksTimeScaleEntity implements TimeScaleEntity<HarnessTagLink> {
   @Inject private TagLinkTimescaleChangeHandler tagLinkTimescaleChangeHandler;
+  @Inject private TagsEntityReconServiceImpl tagsEntityReconService;
   @Inject private MigrateTagLinksToTImeScaleDB migrateTagLinksToTImeScaleDB;
 
   public static final Class<HarnessTagLink> SOURCE_ENTITY_CLASS = HarnessTagLink.class;
@@ -29,8 +32,18 @@ public class TagLinksTimeScaleEntity implements TimeScaleEntity<HarnessTagLink> 
   }
 
   @Override
+  public String getMigrationClassName() {
+    return migrateTagLinksToTImeScaleDB.getTimescaleDBClass();
+  }
+
+  @Override
   public ChangeHandler getChangeHandler() {
     return tagLinkTimescaleChangeHandler;
+  }
+
+  @Override
+  public LookerEntityReconService getReconService() {
+    return tagsEntityReconService;
   }
 
   @Override
@@ -43,5 +56,15 @@ public class TagLinksTimeScaleEntity implements TimeScaleEntity<HarnessTagLink> 
   @Override
   public boolean runMigration(String accountId) {
     return migrateTagLinksToTImeScaleDB.runTimeScaleMigration(accountId);
+  }
+
+  @Override
+  public void savetoTimescale(HarnessTagLink entity) {
+    migrateTagLinksToTImeScaleDB.saveToTimeScale(entity);
+  }
+
+  @Override
+  public void deleteFromTimescale(String id) {
+    migrateTagLinksToTImeScaleDB.deleteFromTimescale(id);
   }
 }

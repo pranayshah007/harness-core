@@ -35,4 +35,5 @@ public class WebhookEventProcessingDetails {
   String payload;
   Long eventCreatedAt;
   String runtimeInput;
+  String warningMsg;
 }

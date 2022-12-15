@@ -20,10 +20,10 @@ import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aG
 import static software.wings.beans.InstanceUnitType.COUNT;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
 import static software.wings.beans.container.Label.Builder.aLabel;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
@@ -269,8 +269,8 @@ public class KubernetesDeployTest extends WingsBaseTest {
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, COMMAND_NAME)).thenReturn(serviceCommand);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
     on(kubernetesDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(kubernetesDeployRollback).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.PipelineServiceTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -45,6 +46,7 @@ public class PmsMongoIndexesTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
@@ -52,7 +54,7 @@ public class PmsMongoIndexesTest extends PipelineServiceTestBase {
     morphia.map(classes);
 
     List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
-        persistence.getDatastore(PipelineEntity.class), morphia, Store.builder().name(DbAliases.PMS).build(), null);
+        persistence.getDatastore(PipelineEntity.class), morphia, Store.builder().name(DbAliases.PMS).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

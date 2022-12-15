@@ -41,6 +41,7 @@ import software.wings.beans.LogHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -54,6 +55,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Builder
   public JiraApprovalCallback(String approvalInstanceId) {
@@ -83,7 +85,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraTaskNGResponse jiraTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Jira Approval Instance failed to fetch jira issue for instance id - {}", instance.getId());
         handleErrorNotifyResponse(logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch jira issue:");
@@ -91,6 +96,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       }
 
       jiraTaskNGResponse = (JiraTaskNGResponse) responseData;
+      if (!validateProject(instance, jiraTaskNGResponse)) {
+        return;
+      }
+
       if (isNull(jiraTaskNGResponse.getIssue())) {
         log.info("Invalid issue key");
         String errorMessage = String.format("Invalid issue key: %s", instance.getIssueKey());
@@ -115,7 +124,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     }
 
     try {
-      checkApprovalAndRejectionCriteria(jiraTaskNGResponse.getIssue(), instance, logCallback,
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(jiraTaskNGResponse.getIssue(), instance, logCallback,
           instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       if (ex instanceof ApprovalStepNGException && ((ApprovalStepNGException) ex).isFatal()) {
@@ -147,6 +156,21 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     return true;
   }
 
+  @VisibleForTesting
+  // Return false if validation fails
+  protected boolean validateProject(JiraApprovalInstance instance, JiraTaskNGResponse jiraTaskNGResponse) {
+    if (!isNull(instance.getProjectKey())) {
+      final String projectKey = jiraTaskNGResponse.getIssue().getFields().getOrDefault("Project Key", "").toString();
+      if (!instance.getProjectKey().equals(projectKey)) {
+        String errorMessage = String.format(
+            "Invalid project key. Execution sent: %s. Parsed from issue: %s", instance.getProjectKey(), projectKey);
+        log.warn(errorMessage);
+        approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
+        return false;
+      }
+    }
+    return true;
+  }
   @Override
   protected boolean evaluateCriteria(TicketNG ticket, CriteriaSpecDTO criteriaSpec) {
     return CriteriaEvaluator.evaluateCriteria((JiraIssueNG) ticket, criteriaSpec);

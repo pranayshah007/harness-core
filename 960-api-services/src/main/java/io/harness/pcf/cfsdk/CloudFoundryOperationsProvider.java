@@ -41,7 +41,6 @@ public class CloudFoundryOperationsProvider {
       return CloudFoundryOperationsWrapper.builder()
           .cloudFoundryOperations(cloudFoundryOperations)
           .connectionContext(connectionContext)
-          .ignorePcfConnectionContextCache(pcfRequestConfig.isIgnorePcfConnectionContextCache())
           .build();
     } catch (Exception e) {
       throw new PivotalClientApiException("Exception while creating CloudFoundryOperations: " + e.getMessage(), e);

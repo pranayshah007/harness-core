@@ -38,8 +38,8 @@ import software.wings.beans.GcpConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.service.impl.ContainerServiceParams;
@@ -96,6 +96,7 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
   private final boolean localOverrideFeatureFlag;
   private final boolean saveExecutionLogs;
   boolean disableWinRMCommandEncodingFFSet; // DISABLE_WINRM_COMMAND_ENCODING
+  boolean winrmScriptCommandSplit; // WINRM_SCRIPT_COMMAND_SPLIT
   boolean disableWinRMEnvVariables; // stop passing service variables as env variables
   private boolean isVaultSSH;
   private String role;

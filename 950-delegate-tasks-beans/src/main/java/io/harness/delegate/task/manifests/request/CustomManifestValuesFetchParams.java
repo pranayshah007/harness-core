@@ -40,6 +40,8 @@ public class CustomManifestValuesFetchParams
   private String appId;
   private Set<String> delegateSelectors;
   @Expression(ALLOW_SECRETS) private CustomManifestSource customManifestSource;
+  boolean shouldOpenLogStream;
+  boolean shouldCloseLogStream;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

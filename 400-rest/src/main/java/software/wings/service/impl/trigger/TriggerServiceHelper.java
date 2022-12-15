@@ -8,6 +8,7 @@
 package software.wings.service.impl.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.PageRequest.LIMIT_2K_PAGE_SIZE;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
@@ -53,8 +54,6 @@ import software.wings.beans.VariableType;
 import software.wings.beans.WebHookToken;
 import software.wings.beans.Workflow;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.trigger.ArtifactSelection;
 import software.wings.beans.trigger.ArtifactSelection.ArtifactSelectionKeys;
@@ -72,6 +71,8 @@ import software.wings.beans.trigger.WebHookTriggerCondition;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactCollectionService;
@@ -133,6 +134,12 @@ public class TriggerServiceHelper {
   }
 
   public List<Trigger> getTriggersByApp(String appId) {
+    final String accountId = appService.getAccountIdByAppId(appId);
+    if (featureFlagService.isEnabled(FeatureName.SPG_2K_DEFAULT_PAGE_SIZE, accountId)) {
+      return wingsPersistence
+          .query(Trigger.class, aPageRequest().addFilter("appId", EQ, appId).withLimit(LIMIT_2K_PAGE_SIZE).build())
+          .getResponse();
+    }
     return wingsPersistence.query(Trigger.class, aPageRequest().addFilter("appId", EQ, appId).build()).getResponse();
   }
 

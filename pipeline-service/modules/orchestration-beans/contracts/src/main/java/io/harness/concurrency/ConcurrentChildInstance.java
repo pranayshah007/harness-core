@@ -7,6 +7,8 @@
 
 package io.harness.concurrency;
 
+import io.harness.pms.contracts.execution.Status;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +18,6 @@ import lombok.Data;
 public class ConcurrentChildInstance {
   private List<String> childrenNodeExecutionIds;
   private int cursor; // the pointer to which node we should start from childrenNodeExecutionIds
+  private List<Status>
+      childStatuses; // This stores the status of children which will help us in knowing if we should continue or not.
 }

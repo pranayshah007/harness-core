@@ -35,8 +35,8 @@ import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import java.util.Collections;

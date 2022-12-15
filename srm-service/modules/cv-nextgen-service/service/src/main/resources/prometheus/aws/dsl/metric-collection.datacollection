@@ -1,0 +1,81 @@
+Var lengthOfItems = Env:queryList.length()
+Var index = 0
+Var one = 1
+Var returnList = []
+
+while Var:index !=  Var:lengthOfItems {
+    Var metricName = Env:metricNameList[Var:index]
+    Var query = Env:queryList[Var:index]
+    Var metricIdentifier =  Env:metricIdentifiers[Var:index]
+
+    if Env:collectHostData == "true" {
+        Var serviceInstanceField = Env:serviceInstanceFieldList[Var:index]
+        Var filters = Env:filterList[Var:index]
+        Var concatenatedFilter = concat("{",Var:filters,"}")
+        Var baseUrlForHostCollection =  Env:baseUrlsForHostCollection[Var:index]
+        Var hostQueryParamMap = {}
+        Var startTime = concat("",Env:startTimeSeconds)
+        Var endTime = concat("",Env:endTimeSeconds)
+        Var:hostQueryParamMap.put("start",Var:startTime)
+        Var:hostQueryParamMap.put("end",Var:endTime)
+        Var:hostQueryParamMap.put("match[]",Var:concatenatedFilter)
+        Var hostResult = sync-call-aws(url=Var:baseUrlForHostCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:hostQueryParamMap)
+        Var hostList = extract(Var:hostResult,$.data)
+        Var hostListLength = Var:hostList.length()
+
+        if Env:maximumHostSizeAllowed < Var:hostListLength {
+            Var exceptionMessage = concat("Host list returned from Prometheus is of size ", Var:hostListLength, ", which is greater than allowed ",  Env:maximumHostSizeAllowed, ", please check the query")
+            throw exception Var:exceptionMessage
+        }
+        foreach host in Var:hostList {
+            Var hostFilter = concat(",",Var:serviceInstanceField, "=\"", Var:host, "\"}")
+            print Var:hostFilter
+            Var:query.replaceAll("}", Var:hostFilter)
+            Var dataQueryParamMap = {}
+            Var:dataQueryParamMap.put("start",Var:startTime)
+            Var:dataQueryParamMap.put("end",Var:endTime)
+            Var:dataQueryParamMap.put("step","60s")
+            Var:dataQueryParamMap.put("query", Var:query)
+            Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:dataQueryParamMap)
+            Var resultList = extract(Var:result, $.data.result)
+            foreach metric in Var:resultList {
+              Var data = extract(Var:metric,$.values)
+              foreach meticData in Var:data {
+                Var val = extract(Var:meticData,$.[1])
+                Var timeStampVal = extract(Var:meticData,$.[0])
+                Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:val, timestamp=Var:timeStampVal, host=Var:host)
+                Var:returnList.append(Var:tsRecord)
+              }
+            }
+            Var:query = Env:queryList[Var:index]
+        }
+
+    }
+
+
+    if Env:collectHostData != "true" {
+        Var dataQueryParamMap = {}
+        Var startTime = concat("",Env:startTimeSeconds)
+        Var endTime = concat("",Env:endTimeSeconds)
+        Var:dataQueryParamMap.put("start",Var:startTime)
+        Var:dataQueryParamMap.put("end",Var:endTime)
+        Var:dataQueryParamMap.put("step","60s")
+        Var:dataQueryParamMap.put("query", Var:query)
+        Var result = sync-call-aws(url=Env:baseUrlForDataCollection, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Var:dataQueryParamMap)
+        Var resultList = extract(Var:result, $.data.result)
+        foreach metric in Var:resultList {
+          Var data = extract(Var:metric,$.values)
+          foreach meticData in Var:data {
+            Var val = extract(Var:meticData,$.[1])
+            Var timeStampVal = extract(Var:meticData,$.[0])
+            Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:val, timestamp=Var:timeStampVal)
+            Var:returnList.append(Var:tsRecord)
+          }
+        }
+    }
+
+
+    index = Var:index + Var:one
+}
+
+return Var:returnList

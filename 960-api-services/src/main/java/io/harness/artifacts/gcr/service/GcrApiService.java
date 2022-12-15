@@ -31,14 +31,6 @@ public interface GcrApiService {
   List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds);
 
   /**
-   * Gets last successful build.
-   *
-   * @param gcpConfig the gcr config
-   * @return the last successful build`
-   */
-  BuildDetailsInternal getLastSuccessfulBuild(GcrInternalConfig gcpConfig, String imageName);
-
-  /**
    * Validates the Image
    *
    * @param gcpConfig

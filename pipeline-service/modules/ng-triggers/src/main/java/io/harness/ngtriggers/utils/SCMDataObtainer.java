@@ -21,8 +21,10 @@ import static software.wings.beans.TaskType.SCM_GIT_REF_TASK;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -34,6 +36,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
+import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
@@ -50,7 +53,11 @@ import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
+import io.harness.product.ci.scm.proto.SCMGrpc;
+import io.harness.secrets.SecretDecryptor;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.ScmServiceClient;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
@@ -58,11 +65,14 @@ import io.harness.utils.ConnectorUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -72,16 +82,24 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   private final TaskExecutionUtils taskExecutionUtils;
   private final ConnectorUtils connectorUtils;
   private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
   public static final String AZURE_REPO_BASE_URL = "azure.com";
+  private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private static final int MAX_ATTEMPTS = 3;
+  @Inject private SCMGrpc.SCMBlockingStub scmBlockingStub;
+  @Inject SecretDecryptor secretDecryptor;
+  @Inject ScmServiceClient scmServiceClient;
 
   @Inject
-  public SCMDataObtainer(
-      TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils, KryoSerializer kryoSerializer) {
+  public SCMDataObtainer(TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils,
+      KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer) {
     this.taskExecutionUtils = taskExecutionUtils;
     this.connectorUtils = connectorUtils;
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
   }
 
   @Override
@@ -187,6 +205,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
 
   List<Commit> getCommitsInPr(ConnectorDetails connectorDetails, TriggerDetails triggerDetails, long number) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
+
     try {
       WebhookTriggerConfigV2 webhookTriggerConfigV2 =
           (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
@@ -197,13 +216,59 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     } catch (Exception ex) {
       log.error("Failed to update url");
     }
+
+    ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
+                                                  .prNumber(number)
+                                                  .gitRefType(GitRefType.PULL_REQUEST_COMMITS)
+                                                  .encryptedDataDetails(connectorDetails.getEncryptedDataDetails())
+                                                  .scmConnector(scmConnector)
+                                                  .build();
+    boolean executeOnDelegate =
+        connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+
+    if (executeOnDelegate) {
+      return fetchPrCommitsViaDelegate(connectorDetails, scmGitRefTaskParams, triggerDetails);
+    } else {
+      return fetchPrCommitsViaManager(connectorDetails, scmGitRefTaskParams, triggerDetails);
+    }
+  }
+
+  private List<Commit> fetchPrCommitsViaManager(
+      ConnectorDetails connectorDetails, ScmGitRefTaskParams scmGitRefTaskParams, TriggerDetails triggerDetails) {
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        format("[Retrying failed call to fetch codebase metadata: [%s], attempt: {}", connectorDetails.getIdentifier()),
+        format(
+            "Failed call to fetch codebase metadata: [%s] after retrying {} times", connectorDetails.getIdentifier()));
+
+    decrypt(scmGitRefTaskParams.getScmConnector(), connectorDetails.getEncryptedDataDetails());
+    ListCommitsInPRResponse listCommitsInPRResponse =
+        Failsafe.with(retryPolicy)
+            .get(()
+                     -> scmServiceClient.listCommitsInPR(
+                         scmGitRefTaskParams.getScmConnector(), scmGitRefTaskParams.getPrNumber(), scmBlockingStub));
+
+    return listCommitsInPRResponse.getCommitsList();
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .abortOn(ConnectorNotFoundException.class)
+        .withDelay(RETRY_SLEEP_DURATION)
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  private void decrypt(ScmConnector connector, List<EncryptedDataDetail> encryptedDataDetails) {
+    final DecryptableEntity decryptableEntity = secretDecryptor.decrypt(
+        GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(connector), encryptedDataDetails);
+    GitApiAccessDecryptionHelper.setAPIAccessDecryptableEntity(connector, decryptableEntity);
+  }
+
+  private List<Commit> fetchPrCommitsViaDelegate(
+      ConnectorDetails connectorDetails, ScmGitRefTaskParams scmGitRefTaskParams, TriggerDetails triggerDetails) {
     if (ScmConnector.class.isAssignableFrom(connectorDetails.getConnectorConfig().getClass())) {
-      ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
-                                                    .prNumber(number)
-                                                    .gitRefType(GitRefType.PULL_REQUEST_COMMITS)
-                                                    .encryptedDataDetails(connectorDetails.getEncryptedDataDetails())
-                                                    .scmConnector(scmConnector)
-                                                    .build();
       ResponseData responseData =
           taskExecutionUtils.executeSyncTask(DelegateTaskRequest.builder()
                                                  .accountId(triggerDetails.getNgTriggerEntity().getAccountId())
@@ -214,7 +279,9 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
 
       if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
         BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-        Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+        Object object = binaryResponseData.isUsingKryoWithoutReference()
+            ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+            : kryoSerializer.asInflatedObject(binaryResponseData.getData());
         if (ScmGitRefTaskResponseData.class.isAssignableFrom(object.getClass())) {
           ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) object;
           try {

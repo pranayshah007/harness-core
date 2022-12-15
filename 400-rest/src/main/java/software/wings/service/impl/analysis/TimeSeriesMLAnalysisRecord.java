@@ -8,9 +8,11 @@
 package software.wings.service.impl.analysis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeSeriesAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class TimeSeriesMLAnalysisRecord extends MetricAnalysisRecord {

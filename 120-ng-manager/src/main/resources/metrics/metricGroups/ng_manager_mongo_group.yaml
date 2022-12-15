@@ -1,0 +1,7 @@
+name: NextGen Manager Mongo Metrics Group
+identifier: ngManagerMongoMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serverAddress
+  - clientDescription

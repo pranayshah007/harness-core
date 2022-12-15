@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.steps.Step;
 
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import lombok.experimental.UtilityClass;
 public class PipelineServiceStepRegistrar {
   public Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
+    engineSteps.put(PipelineStageStep.STEP_TYPE, PipelineStageStep.class);
     engineSteps.putAll(OrchestrationStepsModuleStepRegistrar.getEngineSteps());
     return engineSteps;
   }

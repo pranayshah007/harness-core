@@ -32,6 +32,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEW
 import static software.wings.security.PermissionAttribute.PermissionType.CREATE_CUSTOM_DASHBOARDS;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.HIDE_NEXTGEN_BUTTON;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ACCOUNT_DEFAULTS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_API_KEYS;
@@ -72,6 +73,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.ApiKeyEntry;
@@ -80,6 +82,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.HttpMethod;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.Pipeline;
+import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.Service;
 import software.wings.beans.TemplateExpression;
@@ -200,6 +203,7 @@ public class AuthHandler {
   @Inject private WorkflowServiceHelper workflowServiceHelper;
   @Inject private TemplateService templateService;
   @Inject private TemplateGalleryService templateGalleryService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public UserPermissionInfo evaluateUserPermissionInfo(String accountId, List<UserGroup> userGroups, User user) {
     double accountPermissionsTime, getAppIdsTime, collectAppIdsTime, fetchRequiredEntitiesTime,
@@ -389,7 +393,7 @@ public class AuthHandler {
       Map<PermissionType, Map<String, List<Base>>> permissionTypeAppIdEntityMap, Set<String> appIds,
       PermissionType permissionType, Filter entityFilter, Set<Action> actions) {
     final HashSet<Action> fixedEntityActions = Sets.newHashSet(Action.READ, Action.UPDATE, Action.DELETE,
-        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK);
+        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW);
     appIds.forEach(appId -> {
       AppPermissionSummary appPermissionSummary = appPermissionMap.get(appId);
       if (appPermissionSummary == null) {
@@ -581,6 +585,11 @@ public class AuthHandler {
                 finalAppPermissionSummary.getRollbackWorkflowExecutePermissionsForEnvs(), envIdSet);
             finalAppPermissionSummary.setRollbackWorkflowExecutePermissionsForEnvs(updatedEnvIdSet);
           }
+          if (entityActions.contains(Action.ABORT_WORKFLOW)) {
+            Set<String> updatedEnvIdSet = addToExistingEntityIdSet(
+                finalAppPermissionSummary.getAbortWorkflowExecutePermissionsForEnvs(), envIdSet);
+            finalAppPermissionSummary.setAbortWorkflowExecutePermissionsForEnvs(updatedEnvIdSet);
+          }
           break;
         }
         case APP_TEMPLATE: {
@@ -652,7 +661,7 @@ public class AuthHandler {
       Map<PermissionType, Map<String, List<Base>>> permissionTypeAppIdEntityMap, Set<String> appIds,
       PermissionType permissionType, Filter entityFilter, Set<Action> actions) {
     final HashSet<Action> fixedEntityActions = Sets.newHashSet(Action.READ, Action.UPDATE, Action.DELETE,
-        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK);
+        Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW, Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW);
     appIds.forEach(appId -> {
       AppPermissionSummary appPermissionSummary = appPermissionMap.get(appId);
       if (appPermissionSummary == null) {
@@ -926,9 +935,19 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdPipelineMap(String accountId) {
-    PageRequest<Pipeline> pageRequest = aPageRequest().addFilter("accountId", Operator.EQ, accountId).build();
-    List<Pipeline> list = getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest));
-    return list.stream().collect(Collectors.groupingBy(Base::getAppId));
+    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH, accountId)) {
+      List<Pipeline> pipelines = wingsPersistence.createQuery(Pipeline.class)
+                                     .filter(PipelineKeys.accountId, accountId)
+                                     .project(PipelineKeys.uuid, true)
+                                     .project(PipelineKeys.appId, true)
+                                     .project(PipelineKeys.accountId, true)
+                                     .asList();
+      return pipelines.stream().collect(Collectors.groupingBy(Base::getAppId));
+    } else {
+      PageRequest<Pipeline> pageRequest = aPageRequest().addFilter("accountId", Operator.EQ, accountId).build();
+      List<Pipeline> list = getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest));
+      return list.stream().collect(Collectors.groupingBy(Base::getAppId));
+    }
   }
 
   private Map<String, List<Base>> getAppIdTemplateMap(String accountId) {
@@ -1790,7 +1809,7 @@ public class AuthHandler {
 
   public UserGroup buildDefaultAdminUserGroup(String accountId, User user) {
     AccountPermissions accountPermissions =
-        AccountPermissions.builder().permissions(getAllAccountPermissions()).build();
+        AccountPermissions.builder().permissions(getDefaultEnabledAccountPermissions()).build();
 
     Set<AppPermission> appPermissions = Sets.newHashSet();
     AppPermission appPermission = AppPermission.builder()
@@ -1888,8 +1907,8 @@ public class AuthHandler {
 
     AppPermission deploymentPermission =
         AppPermission.builder()
-            .actions(Sets.newHashSet(
-                Action.READ, Action.EXECUTE_WORKFLOW, Action.EXECUTE_PIPELINE, Action.EXECUTE_WORKFLOW_ROLLBACK))
+            .actions(Sets.newHashSet(Action.READ, Action.EXECUTE_WORKFLOW, Action.EXECUTE_PIPELINE,
+                Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW))
             .appFilter(AppFilter.builder().filterType(AppFilter.FilterType.ALL).build())
             .entityFilter(new EnvFilter(null, Sets.newHashSet(envFilterType)))
             .permissionType(PermissionType.DEPLOYMENT)
@@ -1941,12 +1960,20 @@ public class AuthHandler {
         MANAGE_ALERT_NOTIFICATION_RULES, MANAGE_DELEGATE_PROFILES, MANAGE_CONFIG_AS_CODE, MANAGE_SECRETS,
         MANAGE_SECRET_MANAGERS, MANAGE_AUTHENTICATION_SETTINGS, MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES,
         MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_API_KEYS, MANAGE_CUSTOM_DASHBOARDS, CREATE_CUSTOM_DASHBOARDS,
-        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS);
+        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, HIDE_NEXTGEN_BUTTON);
+  }
+
+  public Set<PermissionType> getDefaultEnabledAccountPermissions() {
+    Set<PermissionType> allAccountPermissions = getAllAccountPermissions();
+    Set<PermissionType> disabledPermissions = Sets.newHashSet(HIDE_NEXTGEN_BUTTON);
+    return allAccountPermissions.stream()
+        .filter(permission -> !disabledPermissions.contains(permission))
+        .collect(Collectors.toSet());
   }
 
   private Set<Action> getAllActions() {
     return Sets.newHashSet(Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.EXECUTE_WORKFLOW,
-        Action.EXECUTE_WORKFLOW_ROLLBACK, Action.EXECUTE_PIPELINE);
+        Action.EXECUTE_WORKFLOW_ROLLBACK, Action.ABORT_WORKFLOW, Action.EXECUTE_PIPELINE);
   }
 
   private Set<Action> getAllNonDeploymentActions() {
@@ -2069,7 +2096,7 @@ public class AuthHandler {
     String accountId = getRequestParamFromContext("accountId", containerRequestContext.getUriInfo().getPathParameters(),
         containerRequestContext.getUriInfo().getQueryParameters());
 
-    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId, true);
+    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId);
     if (apiKeyEntry == null) {
       throw new InvalidRequestException(USER_NOT_AUTHORIZED, USER);
     }

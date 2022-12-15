@@ -92,7 +92,9 @@ public class InfrastructureMappingServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void testCreateNewOrReturnExistingInfrastructureMappingDuplicateKeyException() {
     when(infrastructureMappingRepository.save(infrastructureMapping)).thenThrow(new DuplicateKeyException("duplicate"));
-    when(infrastructureMappingRepository.findByInfrastructureKey(anyString()))
+    when(
+        infrastructureMappingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndInfrastructureKey(
+            anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(infrastructureMapping));
     assertThat(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(infrastructureMappingDTO))
         .isEqualTo(Optional.of(infrastructureMappingDTO));

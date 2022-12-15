@@ -10,6 +10,7 @@ package io.harness.data.validator;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.validator.EntityIdentifierValidator.NOT_ALLOWED_WORDS;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.SHREYAS;
 import static io.harness.rule.OwnerRule.VIKAS;
 
 import static junit.framework.TestCase.assertEquals;
@@ -130,5 +131,18 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
 
   private static boolean isLetterOrDigit(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testEntityIdentifierValidator_ForStringStartingWith$() {
+    String identifier = "$abc";
+    EntityIdentifierValidatorTestStructure entityIdentifierValidatorTestStructure =
+        EntityIdentifierValidatorTestStructure.builder().identifier(identifier).build();
+    assertEquals(1, validator.validate(entityIdentifierValidatorTestStructure).size());
+    assertEquals("can be 64 characters long and can only contain alphanumeric, underscore and $ characters,"
+            + " and not start with a number or $",
+        validator.validate(entityIdentifierValidatorTestStructure).stream().findAny().get().getMessage());
   }
 }

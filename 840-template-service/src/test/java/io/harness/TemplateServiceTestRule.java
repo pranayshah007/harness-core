@@ -31,6 +31,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.oas.OASModule;
@@ -48,6 +49,8 @@ import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.services.NoOpTemplateGitXServiceImpl;
+import io.harness.template.services.TemplateGitXService;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -139,6 +142,12 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
 
       @Provides
       @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(TemplateServiceModuleRegistrars.springConverters)
@@ -182,6 +191,7 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         }).toInstance(DelegateServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
+        bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
       }
     });
 

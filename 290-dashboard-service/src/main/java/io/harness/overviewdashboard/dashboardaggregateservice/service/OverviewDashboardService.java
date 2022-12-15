@@ -21,9 +21,12 @@ public interface OverviewDashboardService {
   ExecutionResponse<TopProjectsPanel> getTopProjectsPanel(
       String accountIdentifier, String userId, long startInterval, long endInterval);
 
-  ExecutionResponse<DeploymentsStatsOverview> getDeploymentStatsOverview(
-      String accountIdentifier, String userId, long startInterval, long endInterval, GroupBy groupBy, SortBy sortBy);
+  ExecutionResponse<DeploymentsStatsOverview> getDeploymentStatsOverview(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String userId, long startInterval, long endInterval, GroupBy groupBy, SortBy sortBy);
 
-  ExecutionResponse<CountOverview> getCountOverview(
-      String accountIdentifier, String userId, long startInterval, long endInterval);
+  ExecutionResponse<DeploymentsStatsOverview> getActiveDeploymentsOverview(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId);
+
+  ExecutionResponse<CountOverview> getCountOverview(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String userId, long startInterval, long endInterval);
 }

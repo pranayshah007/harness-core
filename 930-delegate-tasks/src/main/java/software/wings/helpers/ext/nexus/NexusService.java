@@ -77,6 +77,17 @@ public interface NexusService {
    */
   List<String> getArtifactNames(NexusRequest nexusConfig, String repoId, String path, String repositoryFormat);
 
+  /***
+   *
+   * @param nexusConfig
+   * @param repoId the repoId
+   * @param packageName package name
+   * @param repositoryFormat the repositoryFormat
+   * @return list of package names
+   */
+  List<BuildDetails> getPackageNames(
+      NexusRequest nexusConfig, String repoId, String packageName, String repositoryFormat);
+
   /**
    * @param nexusConfig
    * @param repoId       Repository Type

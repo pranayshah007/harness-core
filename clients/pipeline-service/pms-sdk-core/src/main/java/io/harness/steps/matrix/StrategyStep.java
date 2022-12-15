@@ -21,11 +21,14 @@ import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
@@ -34,6 +37,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,6 +60,8 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
   @Override
   public ChildrenExecutableResponse obtainChildrenAfterRbac(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
+    boolean shouldProceedIfFailed =
+        stepParameters.getShouldProceedIfFailed() != null && stepParameters.getShouldProceedIfFailed();
     int maxConcurrencyLimitBasedOnPlan = 10000;
     try {
       if (enforcementClientService.isEnforcementEnabled()) {
@@ -86,7 +92,11 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }
-      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(children)
+          .setMaxConcurrency(maxConcurrency)
+          .setShouldProceedIfFailed(shouldProceedIfFailed)
+          .build();
     }
     if (stepParameters.getStrategyConfig().getRepeat() != null) {
       int maxConcurrency = 0;
@@ -101,16 +111,25 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }
-      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(children)
+          .setMaxConcurrency(maxConcurrency)
+          .setShouldProceedIfFailed(shouldProceedIfFailed)
+          .build();
     }
     if (stepParameters.getStrategyConfig().getParallelism() != null) {
       List<Child> children = parallelismStrategyConfigService.fetchChildren(
           stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
-      int maxConcurrency = stepParameters.getStrategyConfig().getParallelism().getValue();
+      int maxConcurrency =
+          Integer.valueOf(String.valueOf(stepParameters.getStrategyConfig().getParallelism().getValue()));
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }
-      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(children)
+          .setMaxConcurrency(maxConcurrency)
+          .setShouldProceedIfFailed(shouldProceedIfFailed)
+          .build();
     }
     return ChildrenExecutableResponse.newBuilder()
         .addChildren(
@@ -127,6 +146,14 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
   public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
+
+    if (StatusUtils.checkIfAllChildrenSkipped(responseDataMap.values()
+                                                  .stream()
+                                                  .map(o -> ((StepResponseNotifyData) o).getStatus())
+                                                  .collect(Collectors.toList()))) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
     return createStepResponseFromChildResponse(responseDataMap);
   }
 }

@@ -15,11 +15,14 @@ import lombok.Getter;
 public class ActiveServiceInstanceInfo {
   private String infraIdentifier;
   private String infraName;
+  private String clusterIdentifier;
+  private String agentIdentifier;
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;
   private String lastDeployedAt;
   private String envIdentifier;
   private String envName;
   private String tag;
+  private String displayName;
   private int count;
 }

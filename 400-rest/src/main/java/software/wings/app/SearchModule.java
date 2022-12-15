@@ -14,27 +14,19 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.changestreams.ChangeEventFactory;
 import io.harness.mongo.changestreams.ChangeStreamModule;
 import io.harness.mongo.changestreams.ChangeTracker;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 
 import software.wings.search.ElasticsearchServiceImpl;
 import software.wings.search.SearchService;
 import software.wings.search.entities.application.ApplicationSearchEntity;
-import software.wings.search.entities.application.ApplicationTimeScaleEntity;
-import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity;
 import software.wings.search.entities.deployment.DeploymentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentSearchEntity;
-import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
 import software.wings.search.entities.pipeline.PipelineSearchEntity;
-import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceSearchEntity;
-import software.wings.search.entities.service.ServiceTimeScaleEntity;
-import software.wings.search.entities.tags.TagLinksTimeScaleEntity;
-import software.wings.search.entities.user.UserTimeScaleEntity;
 import software.wings.search.entities.workflow.WorkflowSearchEntity;
-import software.wings.search.entities.workflow.WorkflowTimeScaleEntity;
 import software.wings.search.framework.SearchDao;
 import software.wings.search.framework.SearchEntity;
 import software.wings.search.framework.SynchronousElasticsearchDao;
-import software.wings.search.framework.TimeScaleEntity;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -81,7 +73,6 @@ public class SearchModule extends AbstractModule {
     bind(SearchService.class).to(ElasticsearchServiceImpl.class);
     bind(SearchDao.class).to(SynchronousElasticsearchDao.class);
     bindEntities();
-    bindTimeScaleEntities();
   }
 
   private void bindEntities() {
@@ -95,19 +86,6 @@ public class SearchModule extends AbstractModule {
     searchEntityMultibinder.addBinding().to(DeploymentSearchEntity.class);
   }
 
-  private void bindTimeScaleEntities() {
-    Multibinder<TimeScaleEntity<?>> timeScaleEntityMultibinder =
-        Multibinder.newSetBinder(binder(), new TypeLiteral<TimeScaleEntity<?>>() {});
-    timeScaleEntityMultibinder.addBinding().to(ApplicationTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(TagLinksTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(ServiceTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(WorkflowTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(PipelineTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(EnvironmentTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(CloudProviderTimeScaleEntity.class);
-    timeScaleEntityMultibinder.addBinding().to(UserTimeScaleEntity.class);
-  }
-
   @Provides
   @Named("Search")
   public ChangeTracker getChangeTracker(Injector injector) {
@@ -119,6 +97,7 @@ public class SearchModule extends AbstractModule {
       tags = new TagSet(new Tag(mainConfiguration.getElasticsearchConfig().getMongoTagKey(),
           mainConfiguration.getElasticsearchConfig().getMongoTagValue()));
     }
-    return new ChangeTracker(mongoConfig, changeEventFactory, tags);
+    return new ChangeTracker(
+        mongoConfig, injector.getInstance(HarnessConnectionPoolListener.class), changeEventFactory, tags);
   }
 }

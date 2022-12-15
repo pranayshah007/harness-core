@@ -9,7 +9,7 @@ package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
 
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
 import java.util.List;
 
 public interface AzureKubernetesClient extends AzureResourceClient {

@@ -41,6 +41,26 @@ func (g *gradleRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(g.log, g.fs)
 }
 
+func (g *gradleRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	kotlinTests, err := GetKotlinTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	tests = append(tests, kotlinTests...)
+	return tests, nil
+}
+
 /*
 The following needs to be added to a build.gradle to make it compatible with test intelligence:
 // This adds HARNESS_JAVA_AGENT to the testing command if it's provided through the command line.
@@ -70,14 +90,9 @@ func (g *gradleRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		gc = gradleCmd
 	}
 
-	// If instrumentation needs to be ignored, we run all the tests without adding the agent config
-	if ignoreInstr {
-		g.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return strings.TrimSpace(fmt.Sprintf("%s %s", gc, userArgs)), nil
-	}
-
+	// Agent arg
 	var orCmd string
-
+	inputUserArgs := userArgs
 	if strings.Contains(userArgs, "||") {
 		// args = "test || orCond1 || orCond2" gets split as:
 		// [test, orCond1 || orCond2]
@@ -89,15 +104,19 @@ func (g *gradleRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	if orCmd != "" {
 		orCmd = "|| " + strings.TrimSpace(orCmd)
 	}
-
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
+
+	// Run all the tests
 	if runAll {
-		// Run all the tests
+		if ignoreInstr {
+			return strings.TrimSpace(fmt.Sprintf("%s %s", gc, inputUserArgs)), nil
+		}
 		return strings.TrimSpace(fmt.Sprintf("%s %s -DHARNESS_JAVA_AGENT=%s %s", gc, userArgs, agentArg, orCmd)), nil
 	}
 	if len(tests) == 0 {
 		return fmt.Sprintf("echo \"Skipping test run, received no tests to execute\""), nil
 	}
+
 	// Use only unique <package, class> tuples
 	set := make(map[types.RunnableTest]interface{})
 	var testStr string
@@ -111,5 +130,8 @@ func (g *gradleRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		testStr = testStr + " --tests " + fmt.Sprintf("\"%s.%s\"", t.Pkg, t.Class)
 	}
 
+	if ignoreInstr {
+		return strings.TrimSpace(fmt.Sprintf("%s %s%s %s", gc, userArgs, testStr, orCmd)), nil
+	}
 	return strings.TrimSpace(fmt.Sprintf("%s %s -DHARNESS_JAVA_AGENT=%s%s %s", gc, userArgs, agentArg, testStr, orCmd)), nil
 }

@@ -11,4 +11,4 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(CDC) public enum QLNexusRepositoryFormat { DOCKER, MAVEN, NPM, NUGET }
+@OwnedBy(CDC) public enum QLNexusRepositoryFormat { DOCKER, MAVEN, NPM, NUGET, RAW }

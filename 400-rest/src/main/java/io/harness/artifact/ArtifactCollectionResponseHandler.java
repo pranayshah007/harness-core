@@ -26,7 +26,6 @@ import io.harness.perpetualtask.PerpetualTaskService;
 
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.ArtifactCollectionFailedAlert;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
@@ -34,6 +33,7 @@ import software.wings.delegatetasks.buildsource.ArtifactStreamLogContext;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.impl.artifact.ArtifactStreamPTaskHelper;
 import software.wings.service.intfc.AlertService;
@@ -141,8 +141,7 @@ public class ArtifactCollectionResponseHandler {
 
     log.info("Artifact cleanup started");
     ArtifactStreamAttributes artifactStreamAttributes =
-        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream,
-            featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifactStream.getAccountId()));
+        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
 
     Set<String> artifactKeys = buildSourceResponse.getToBeDeletedKeys();
     boolean deleted =

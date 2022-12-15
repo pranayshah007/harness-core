@@ -93,7 +93,7 @@ public class TriggerValidationHandlerTest extends CategoryTest {
     doReturn(Optional.empty())
         .doReturn(Optional.of("placeholder_for_actual_pipeline_yml"))
         .when(buildTriggerHelper)
-        .fetchPipelineForTrigger(ngTriggerEntity);
+        .fetchPipelineForTrigger(triggerDetails);
 
     PipelineRefValidator pipelineRefValidator = new PipelineRefValidator(buildTriggerHelper);
     ValidationResult validate =

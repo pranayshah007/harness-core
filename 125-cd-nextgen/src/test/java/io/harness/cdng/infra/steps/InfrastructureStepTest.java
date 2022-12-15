@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -39,16 +42,28 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
+import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
+import io.harness.cdng.infra.beans.host.HostAttributesFilter;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
@@ -58,14 +73,29 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
+import io.harness.cdng.instance.InstanceOutcomeHelper;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
@@ -84,27 +114,31 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
+import com.google.common.collect.Lists;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -122,6 +156,9 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock StageExecutionHelper stageExecutionHelper;
   @Mock NGLogCallback ngLogCallback;
   @Mock NGLogCallback ngLogCallbackOpen;
+  @Mock InfrastructureMapper infrastructureMapper;
+  @Mock InfrastructureValidator infrastructureValidator;
+  @Mock InstanceOutcomeHelper instanceOutcomeHelper;
 
   private final String ACCOUNT_ID = "accountId";
 
@@ -140,7 +177,8 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecSyncAfterRbac() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
-    ParameterField<String> connectorRef = ParameterField.createValueField("account.gcp-sa");
+    List<ParameterField<String>> connectorRefs = new ArrayList<>();
+    connectorRefs.add(ParameterField.createValueField("account.gcp-sa"));
     GcpConnectorDTO gcpConnectorServiceAccount =
         GcpConnectorDTO.builder()
             .credential(GcpConnectorCredentialDTO.builder()
@@ -149,12 +187,12 @@ public class InfrastructureStepTest extends CategoryTest {
                             .build())
             .build();
 
-    doReturn(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build())
+    doReturn(Arrays.asList(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(connectorRef), eq(ambiance), eq(ngLogCallback));
+        .validateAndGetConnectors(eq(connectorRefs), eq(ambiance), eq(ngLogCallback));
 
     Infrastructure infrastructureSpec = K8sGcpInfrastructure.builder()
-                                            .connectorRef(connectorRef)
+                                            .connectorRef(connectorRefs.get(0))
                                             .namespace(ParameterField.createValueField("namespace"))
                                             .releaseName(ParameterField.createValueField("releaseName"))
                                             .cluster(ParameterField.createValueField("cluster"))
@@ -169,6 +207,15 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(cdStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("sshKeyRef")
+                .hosts(Arrays.asList("host1", "host2"))
+                .hostFilter(
+                    HostFilterDTO.builder().type(HostFilterType.ALL).spec(AllHostsFilterDTO.builder().build()).build())
+                .infrastructureKey("0ebad79c13bd2f86edbae354b72b4d2a410f3bab")
+                .build());
 
     infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
@@ -193,12 +240,12 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-        PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcSshInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
                                             .build();
-
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
@@ -207,9 +254,23 @@ public class InfrastructureStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
+        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("sshKeyRef")
+                .hosts(Arrays.asList("host1", "host2"))
+                .hostFilter(
+                    HostFilterDTO.builder().type(HostFilterType.ALL).spec(AllHostsFilterDTO.builder().build()).build())
+                .infrastructureKey("0ebad79c13bd2f86edbae354b72b4d2a410f3bab")
+                .build());
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
-    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+    StepResponse stepResponse =
+        infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> pdcConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -219,6 +280,13 @@ public class InfrastructureStepTest extends CategoryTest {
     SshInfraDelegateConfigOutput pdcInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
     assertThat(pdcInfraDelegateConfigOutput).isNotNull();
     assertThat(pdcInfraDelegateConfigOutput.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -228,20 +296,33 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
-        PdcWinRmInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
                                             .build();
-
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcWinRmInfraDelegateConfig);
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("sshKeyRef")
+                .hosts(Arrays.asList("host1", "host2"))
+                .hostFilter(
+                    HostFilterDTO.builder().type(HostFilterType.ALL).spec(AllHostsFilterDTO.builder().build()).build())
+                .infrastructureKey("0ebad79c13bd2f86edbae354b72b4d2a410f3bab")
+                .build());
+    when(instanceOutcomeHelper.saveAndGetInstancesOutcome(
+             eq(ambiance), any(InfrastructureOutcome.class), any(Set.class)))
+        .thenReturn(getInstancesOutcome());
 
-    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+    StepResponse stepResponse =
+        infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> pdcConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
@@ -251,6 +332,13 @@ public class InfrastructureStepTest extends CategoryTest {
     WinRmInfraDelegateConfigOutput pdcInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
     assertThat(pdcInfraDelegateConfigOutput).isNotNull();
     assertThat(pdcInfraDelegateConfigOutput.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
+    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    assertThat(stepOutcomes.contains(StepResponse.StepOutcome.builder()
+                                         .outcome(getInstancesOutcome())
+                                         .name(OutcomeExpressionConstants.INSTANCES)
+                                         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+                                         .build()))
+        .isTrue();
   }
 
   @Test
@@ -329,14 +417,25 @@ public class InfrastructureStepTest extends CategoryTest {
     String connectorRef = "some-connector-ref";
     List<String> hostFilters = Arrays.asList("filter-host1", "filter-host2");
 
-    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
-                                            .credentialsRef(ParameterField.createValueField(sshKeyRef))
-                                            .connectorRef(ParameterField.createValueField(connectorRef))
-                                            .hostFilters(ParameterField.createValueField(hostFilters))
-                                            .build();
+    Infrastructure infrastructureSpec =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField(sshKeyRef))
+            .connectorRef(ParameterField.createValueField(connectorRef))
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .build())
+            .build();
 
     InfraMapping expectedInfraMapping =
-        PdcInfraMapping.builder().credentialsRef(sshKeyRef).connectorRef(connectorRef).hostFilters(hostFilters).build();
+        PdcInfraMapping.builder()
+            .credentialsRef(sshKeyRef)
+            .connectorRef(connectorRef)
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .build())
+            .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
     assertThat(infraMapping).isEqualTo(expectedInfraMapping);
@@ -352,17 +451,29 @@ public class InfrastructureStepTest extends CategoryTest {
     attributeFilters.put("some-attribute", "some-value");
     attributeFilters.put("another-attribute", "another-value");
 
-    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
-                                            .credentialsRef(ParameterField.createValueField(sshKeyRef))
-                                            .connectorRef(ParameterField.createValueField(connectorRef))
-                                            .attributeFilters(ParameterField.createValueField(attributeFilters))
-                                            .build();
+    Infrastructure infrastructureSpec =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField(sshKeyRef))
+            .connectorRef(ParameterField.createValueField(connectorRef))
+            .hostFilter(
+                HostFilter.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(
+                        HostAttributesFilter.builder().value(ParameterField.createValueField(attributeFilters)).build())
+                    .build())
+            .build();
 
-    InfraMapping expectedInfraMapping = PdcInfraMapping.builder()
-                                            .credentialsRef(sshKeyRef)
-                                            .connectorRef(connectorRef)
-                                            .attributeFilters(attributeFilters)
-                                            .build();
+    InfraMapping expectedInfraMapping =
+        PdcInfraMapping.builder()
+            .credentialsRef(sshKeyRef)
+            .connectorRef(connectorRef)
+            .hostFilter(
+                HostFilter.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(
+                        HostAttributesFilter.builder().value(ParameterField.createValueField(attributeFilters)).build())
+                    .build())
+            .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
     assertThat(infraMapping).isEqualTo(expectedInfraMapping);
@@ -376,7 +487,7 @@ public class InfrastructureStepTest extends CategoryTest {
     String credentialsRef = "some-credentials-ref";
     String subscriptionId = "some-sub-id";
     String resourceGroup = "some-resource-group";
-    Boolean usePublicDns = true;
+    String connectionType = "Hostname";
     Map<String, String> tags = new HashMap<>();
     tags.put("some-tag", "some-value");
     tags.put("another-tag", "another-value");
@@ -387,7 +498,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(ParameterField.createValueField(subscriptionId))
                                             .resourceGroup(ParameterField.createValueField(resourceGroup))
                                             .tags(ParameterField.createValueField(tags))
-                                            .usePublicDns(ParameterField.createValueField(usePublicDns))
+                                            .hostConnectionType(ParameterField.createValueField(connectionType))
                                             .build();
 
     InfraMapping expectedInfraMapping = SshWinRmAzureInfraMapping.builder()
@@ -396,7 +507,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(subscriptionId)
                                             .resourceGroup(resourceGroup)
                                             .tags(tags)
-                                            .usePublicDns(usePublicDns)
+                                            .hostConnectionType(connectionType)
                                             .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
@@ -607,9 +718,11 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testValidateConnector() {
-    ParameterField<String> gcpSaConnectorRef = ParameterField.createValueField("account.gcp-sa");
-    ParameterField<String> gcpDelegateConnectorRef = ParameterField.createValueField("account.gcp-delegate");
-    ParameterField<String> missingConnectorRef = ParameterField.createValueField("account.missing");
+    List<ParameterField<String>> gcpSaConnectorRefs = Arrays.asList(ParameterField.createValueField("account.gcp-sa"));
+    List<ParameterField<String>> gcpDelegateConnectorRefs =
+        Arrays.asList(ParameterField.createValueField("account.gcp-delegate"));
+    List<ParameterField<String>> missingConnectorRefs =
+        Arrays.asList(ParameterField.createValueField("account.missing"));
 
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     GcpConnectorDTO gcpConnectorServiceAccount =
@@ -626,29 +739,30 @@ public class InfrastructureStepTest extends CategoryTest {
             .build();
 
     doThrow(new InvalidRequestException(
-                format("Connector not found for identifier : [%s]", missingConnectorRef.getValue())))
+                format("Connector not found for identifier : [%s]", missingConnectorRefs.get(0).getValue())))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(missingConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(missingConnectorRefs), eq(ambiance), any());
 
-    doReturn(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build())
+    doReturn(Arrays.asList(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(gcpSaConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(gcpSaConnectorRefs), eq(ambiance), any());
 
-    doReturn(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorInheritFromDelegate).build())
+    doReturn(Arrays.asList(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorInheritFromDelegate).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(eq(gcpDelegateConnectorRef), eq(ambiance), any());
+        .validateAndGetConnectors(eq(gcpDelegateConnectorRefs), eq(ambiance), any());
 
-    assertConnectorValidationMessage(K8sGcpInfrastructure.builder().connectorRef(missingConnectorRef).build(),
+    assertConnectorValidationMessage(K8sGcpInfrastructure.builder().connectorRef(missingConnectorRefs.get(0)).build(),
         "Connector not found for identifier : [account.missing]");
 
     assertThatCode(()
                        -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRef).build(), ambiance))
+                           K8sGcpInfrastructure.builder().connectorRef(gcpSaConnectorRefs.get(0)).build(), ambiance))
         .doesNotThrowAnyException();
 
-    assertThatCode(()
-                       -> infrastructureStep.validateConnector(
-                           K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRef).build(), ambiance))
+    assertThatCode(
+        ()
+            -> infrastructureStep.validateConnector(
+                K8sGcpInfrastructure.builder().connectorRef(gcpDelegateConnectorRefs.get(0)).build(), ambiance))
         .doesNotThrowAnyException();
   }
 
@@ -724,6 +838,114 @@ public class InfrastructureStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testValidateElastigroupInfrastructure() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(""))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateAsgInfrastructure() {
+    AsgInfrastructure infrastructure = AsgInfrastructure.builder()
+                                           .connectorRef(ParameterField.createValueField(""))
+                                           .region(ParameterField.createValueField("region"))
+                                           .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testValidateTASConnector() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    TanzuApplicationServiceInfrastructure infrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("tanzuConnector"))
+            .organization(ParameterField.createValueField("devTest"))
+            .space(ParameterField.createValueField("devSpace"))
+            .build();
+
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
+
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(AwsConnectorDTO.builder().build())
+                                            .connectorType(ConnectorType.TAS)
+                                            .build();
+
+    doReturn(Lists.newArrayList(connectorInfoDTO))
+        .when(infrastructureStepHelper)
+        .validateAndGetConnectors(any(), any(), any());
+
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+
+    connectorInfoDTO.setConnectorConfig(TasConnectorDTO.builder().build());
+
+    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testValidateElastigroupConnector() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(""))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(AwsConnectorDTO.builder().build())
+                                            .connectorType(ConnectorType.AWS)
+                                            .build();
+
+    doReturn(Lists.newArrayList(connectorInfoDTO))
+        .when(infrastructureStepHelper)
+        .validateAndGetConnectors(any(), any(), any());
+
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    connectorInfoDTO.setConnectorConfig(SpotConnectorDTO.builder().build());
+
+    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
+  }
+
+  @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testValidateSshWinRmAwsInfrastructure() {
@@ -735,7 +957,7 @@ public class InfrastructureStepTest extends CategoryTest {
 
     doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
         .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(credentialsRef), any());
+        .validateExpression(any(), eq(credentialsRef), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
         .isInstanceOf(InvalidRequestException.class)
@@ -747,7 +969,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .build();
     doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
         .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef2), any(), any());
+        .validateExpression(eq(connectorRef2), any(), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
         .isInstanceOf(InvalidRequestException.class)
@@ -771,5 +993,11 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
     assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
         .hasMessageContaining(message);
+  }
+
+  private InstancesOutcome getInstancesOutcome() {
+    return InstancesOutcome.builder()
+        .instances(List.of(InstanceOutcome.builder().name("instanceName").hostName("instanceHostname").build()))
+        .build();
   }
 }

@@ -56,7 +56,6 @@ import software.wings.dl.exportimport.WingsMongoExportImport;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.security.PermissionAttribute.ResourceType;
@@ -1014,13 +1013,6 @@ public class AccountExportImportResource {
     for (Trigger trigger : triggers) {
       // Scheduled triggers is using the cron expression as trigger. No need to add special delay.
       ScheduledTriggerJob.add(scheduler, accountId, trigger.getAppId(), trigger.getUuid(), trigger);
-      importedJobCount++;
-    }
-
-    // 4. LdapGroupSyncJob
-    List<LdapSettings> ldapSettings = getAllLdapSettingsForAccount(accountId);
-    for (LdapSettings ldapSetting : ldapSettings) {
-      LdapGroupSyncJob.add(scheduler, accountId, ldapSetting.getUuid());
       importedJobCount++;
     }
 

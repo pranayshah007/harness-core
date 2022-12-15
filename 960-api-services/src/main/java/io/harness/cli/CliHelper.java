@@ -37,17 +37,24 @@ public class CliHelper {
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback) throws IOException, InterruptedException, TimeoutException {
-    return executeCliCommand(
-        command, timeoutInMillis, envVariables, directory, executionLogCallback, command, new EmptyLogOutputStream());
+    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, command,
+        new EmptyLogOutputStream(), new DefaultErrorLogOutputStream(executionLogCallback));
   }
 
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream)
       throws IOException, InterruptedException, TimeoutException {
+    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, loggingCommand,
+        logOutputStream, new DefaultErrorLogOutputStream(executionLogCallback));
+  }
+
+  @Nonnull
+  public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
+      String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream,
+      ErrorLogOutputStream errorLogOutputStream) throws IOException, InterruptedException, TimeoutException {
     executionLogCallback.saveExecutionLog(loggingCommand, LogLevel.INFO, RUNNING);
 
-    StringBuilder errorLogs = new StringBuilder();
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .command("/bin/sh", "-c", command)
@@ -55,22 +62,21 @@ public class CliHelper {
                                           .environment(CollectionUtils.emptyIfNull(envVariables))
                                           .directory(new File(directory))
                                           .redirectOutput(logOutputStream)
-                                          .redirectError(new LogOutputStream() {
-                                            @Override
-                                            protected void processLine(String line) {
-                                              log.error(line);
-                                              executionLogCallback.saveExecutionLog(line, LogLevel.ERROR);
-                                              errorLogs.append(' ').append(line);
-                                            }
-                                          });
+                                          .redirectError(errorLogOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     CommandExecutionStatus status = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
     return CliResponse.builder()
+        .command(command)
         .commandExecutionStatus(status)
         .output(processResult.outputUTF8())
-        .error(errorLogs.toString().trim())
+        .error(errorLogOutputStream.getError())
         .exitCode(processResult.getExitValue())
         .build();
+  }
+
+  @Nonnull
+  public ProcessResult executeCommand(String command) throws IOException, InterruptedException, TimeoutException {
+    return new ProcessExecutor().commandSplit(command).readOutput(true).execute();
   }
 }

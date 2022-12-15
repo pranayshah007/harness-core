@@ -7,9 +7,11 @@
 
 package io.harness.connector.entities.embedded.docker;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
+import io.harness.ng.DbAliases;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "DockerConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)

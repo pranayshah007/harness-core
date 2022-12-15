@@ -9,6 +9,8 @@ package io.harness.cdng.pipeline.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.cdng.infra.beans.ProvisionerType;
@@ -75,9 +77,11 @@ public class CDNGPipelineConfigurationResource {
   public ResponseDTO<String>
   getExecutionStrategyYaml(@NotNull @QueryParam("serviceDefinitionType") ServiceDefinitionType serviceDefinitionType,
       @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
-      @QueryParam("includeVerify") boolean includeVerify) throws IOException {
+      @QueryParam("includeVerify") boolean includeVerify,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) throws IOException {
     return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
-        serviceDefinitionType, executionStrategyType, includeVerify));
+        serviceDefinitionType, executionStrategyType, includeVerify, accountIdentifier));
   }
 
   @GET
@@ -149,11 +153,13 @@ public class CDNGPipelineConfigurationResource {
   @ApiOperation(
       value = "Gets generated Yaml snippet based on strategy parameters", nickname = "postExecutionStrategyYaml")
   public ResponseDTO<String>
-  getExecutionStrategyYaml(@NotNull @QueryParam("serviceDefinitionType") ServiceDefinitionType serviceDefinitionType,
+  getExecutionStrategyYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam("serviceDefinitionType") ServiceDefinitionType serviceDefinitionType,
       @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
       @QueryParam("includeVerify") boolean includeVerify, @NotNull @Body StrategyParameters strategyParameters)
       throws IOException {
-    return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getSshExecutionStrategyYaml(
-        serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters));
+    return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.generateExecutionStrategyYaml(
+        accountIdentifier, serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters));
   }
 }

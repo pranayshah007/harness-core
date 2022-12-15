@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HPersistence.upToOne;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -129,12 +130,14 @@ public class DelegateConnectionDao {
   }
 
   public boolean checkDelegateConnected(String accountId, String delegateId, String version) {
-    return persistence.createQuery(DelegateConnection.class)
-               .filter(DelegateConnectionKeys.accountId, accountId)
-               .filter(DelegateConnectionKeys.delegateId, delegateId)
-               .filter(DelegateConnectionKeys.version, version)
-               .filter(DelegateConnectionKeys.disconnected, Boolean.FALSE)
-               .field(DelegateConnectionKeys.lastHeartbeat)
+    Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class)
+                                          .filter(DelegateConnectionKeys.accountId, accountId)
+                                          .filter(DelegateConnectionKeys.delegateId, delegateId)
+                                          .filter(DelegateConnectionKeys.disconnected, Boolean.FALSE);
+    if (isNotEmpty(version)) {
+      query.filter(DelegateConnectionKeys.version, version);
+    }
+    return query.field(DelegateConnectionKeys.lastHeartbeat)
                .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
                .count(upToOne)
         > 0;

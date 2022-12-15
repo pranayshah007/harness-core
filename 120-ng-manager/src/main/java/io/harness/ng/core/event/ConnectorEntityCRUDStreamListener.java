@@ -8,6 +8,7 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -16,14 +17,20 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANI
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.connector.eventHandlers.ConnectorEntityCRUDEventHandler;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -37,14 +44,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectorEntityCRUDStreamListener implements MessageListener {
   private final HarnessSMManager harnessSMManager;
   private final ConnectorEntityCRUDEventHandler connectorEntityCRUDEventHandler;
-  private final NGAccountSettingService accountSettingService;
+  private final NGSettingsClient settingsClient;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
 
   @Inject
   public ConnectorEntityCRUDStreamListener(HarnessSMManager harnessSMManager,
-      ConnectorEntityCRUDEventHandler connectorEntityCRUDEventHandler, NGAccountSettingService accountSettingService) {
+      ConnectorEntityCRUDEventHandler connectorEntityCRUDEventHandler, NGSettingsClient settingsClient,
+      NGFeatureFlagHelperService featureFlagHelperService) {
     this.harnessSMManager = harnessSMManager;
     this.connectorEntityCRUDEventHandler = connectorEntityCRUDEventHandler;
-    this.accountSettingService = accountSettingService;
+    this.settingsClient = settingsClient;
+    this.featureFlagHelperService = featureFlagHelperService;
   }
 
   @Override
@@ -58,11 +68,33 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
             return processOrganizationChangeEvent(message);
           case PROJECT_ENTITY:
             return processProjectChangeEvent(message);
+          case ACCOUNT_ENTITY:
+            return processAccountChangeEvent(message);
           default:
         }
       }
     }
     return true;
+  }
+
+  private boolean processAccountChangeEvent(Message message) {
+    if (!(message.getMessage().getMetadataMap().containsKey(ACTION)
+            && DELETE_ACTION.equals(message.getMessage().getMetadataMap().get(ACTION)))) {
+      return true;
+    }
+    AccountEntityChangeDTO accountEntityChangeDTO;
+    try {
+      accountEntityChangeDTO = AccountEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    return processAccountDeleteEvent(accountEntityChangeDTO);
+  }
+
+  private boolean processAccountDeleteEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    return connectorEntityCRUDEventHandler.deleteAssociatedConnectors(
+        accountEntityChangeDTO.getAccountId(), null, null);
   }
 
   private boolean processOrganizationChangeEvent(Message message) {
@@ -89,8 +121,18 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processOrganizationCreateEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
-    final boolean isBuiltInSMDisabled = accountSettingService.getIsBuiltInSMDisabled(
-        organizationEntityChangeDTO.getAccountIdentifier(), null, null, AccountSettingType.CONNECTOR);
+    String accountIdentifier = organizationEntityChangeDTO.getAccountIdentifier();
+
+    Boolean isBuiltInSMDisabled = false;
+
+    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+      isBuiltInSMDisabled = parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(
+                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+              .getValue());
+    }
+
     if (!isBuiltInSMDisabled) {
       harnessSMManager.createHarnessSecretManager(
           organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier(), null);
@@ -131,8 +173,17 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectCreateEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    final boolean isBuiltInSMDisabled = accountSettingService.getIsBuiltInSMDisabled(
-        projectEntityChangeDTO.getAccountIdentifier(), null, null, AccountSettingType.CONNECTOR);
+    String accountIdentifier = projectEntityChangeDTO.getAccountIdentifier();
+    Boolean isBuiltInSMDisabled = false;
+
+    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+      isBuiltInSMDisabled = parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(
+                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+              .getValue());
+    }
+
     if (!isBuiltInSMDisabled) {
       harnessSMManager.createHarnessSecretManager(projectEntityChangeDTO.getAccountIdentifier(),
           projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.DISABLE_WINRM_COMMAND_ENCODING;
 import static io.harness.beans.FeatureName.LOCAL_DELEGATE_CONFIG_OVERRIDE;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
+import static io.harness.beans.FeatureName.WINRM_SCRIPT_COMMAND_SPLIT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -46,8 +47,8 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
@@ -67,7 +68,6 @@ import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
@@ -77,6 +77,7 @@ import software.wings.beans.command.CommandType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.beans.delegation.ShellScriptParameters.ShellScriptParametersBuilder;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.template.TemplateUtils;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.exception.ShellScriptException;
@@ -396,10 +397,10 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
           throw new ShellScriptException("Valid SSH Connection Attribute not provided in Shell Script Step",
               ErrorCode.SSH_CONNECTION_ERROR, Level.ERROR, WingsException.USER);
         }
-        SettingAttribute keySettingAttribute = settingsService.get(sshKeyRef);
+        SettingAttribute keySettingAttribute = settingsService.get(sshKeyRef).toDTO();
         if (keySettingAttribute == null) {
           keySettingAttribute =
-              settingsService.getSettingAttributeByName(executionContext.getApp().getAccountId(), sshKeyRef);
+              settingsService.getSettingAttributeByName(executionContext.getApp().getAccountId(), sshKeyRef).toDTO();
         }
 
         if (keySettingAttribute == null) {
@@ -514,6 +515,8 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
             .keyName(keyName)
             .disableWinRMCommandEncodingFFSet(
                 featureFlagService.isEnabled(DISABLE_WINRM_COMMAND_ENCODING, executionContext.getApp().getAccountId()))
+            .winrmScriptCommandSplit(
+                featureFlagService.isEnabled(WINRM_SCRIPT_COMMAND_SPLIT, executionContext.getApp().getAccountId()))
             .disableWinRMEnvVariables(featureFlagService.isNotEnabled(
                 FeatureName.ENABLE_WINRM_ENV_VARIABLES, executionContext.getApp().getAccountId()))
             .saveExecutionLogs(true)
@@ -642,10 +645,10 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
           ErrorCode.SSH_CONNECTION_ERROR, Level.ERROR, WingsException.USER);
     }
 
-    SettingAttribute keySettingAttribute = settingsService.get(connectionAttributes);
+    SettingAttribute keySettingAttribute = settingsService.get(connectionAttributes).toDTO();
     if (keySettingAttribute == null) {
       keySettingAttribute =
-          settingsService.getSettingAttributeByName(context.getApp().getAccountId(), connectionAttributes);
+          settingsService.getSettingAttributeByName(context.getApp().getAccountId(), connectionAttributes).toDTO();
     }
 
     winRmConnectionAttributes = (WinRmConnectionAttributes) keySettingAttribute.getValue();

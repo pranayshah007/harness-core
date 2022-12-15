@@ -10,12 +10,10 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
-import static io.harness.beans.FeatureName.DELETE_HELM_REPO_CACHE_DIR;
+import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
-import static io.harness.beans.FeatureName.HELM_CHART_VERSION_STRICT_MATCH;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
-import static io.harness.beans.FeatureName.USE_HELM_REPO_FLAGS;
 import static io.harness.beans.FeatureName.USE_LATEST_CHARTMUSEUM_VERSION;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -117,7 +115,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.command.HelmDummyCommandUnit;
@@ -143,6 +140,7 @@ import software.wings.helpers.ext.helm.response.HelmValuesFetchTaskResponse;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.GitFileConfigHelperService;
@@ -182,6 +180,7 @@ import software.wings.stencils.DefaultValue;
 import software.wings.utils.ApplicationManifestUtils;
 import software.wings.utils.HelmChartSpecificationMapper;
 
+import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -246,6 +245,7 @@ public class HelmDeployState extends State {
   @Getter @Setter private String helmReleaseNamePrefix;
   @Getter @Setter private GitFileConfig gitFileConfig;
   @Getter @Setter private String commandFlags;
+  @Getter @Setter @Attributes(title = "Ignore release hist failure") private boolean ignoreReleaseHistFailure;
 
   public static final String HELM_COMMAND_NAME = "Helm Deploy";
   private static final String DOCKER_IMAGE_TAG_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_TAG}";
@@ -442,11 +442,11 @@ public class HelmDeployState extends State {
   protected void setNewAndPrevReleaseVersion(ExecutionContext context, Application app, String releaseName,
       ContainerServiceParams containerServiceParams, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
       GitConfig gitConfig, List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
-      int expressionFunctorToken, HelmCommandFlag helmCommandFlag) throws InterruptedException {
+      int expressionFunctorToken, HelmCommandFlag helmCommandFlag, String activityId) throws InterruptedException {
     log.info("Setting new and previous helm release version");
     int prevVersion =
         getPreviousReleaseVersion(context, app, releaseName, containerServiceParams, gitConfig, encryptedDataDetails,
-            commandFlags, helmVersion, expressionFunctorToken, stateExecutionDataBuilder, helmCommandFlag);
+            commandFlags, helmVersion, expressionFunctorToken, stateExecutionDataBuilder, helmCommandFlag, activityId);
 
     stateExecutionDataBuilder.releaseOldVersion(prevVersion);
     stateExecutionDataBuilder.releaseNewVersion(prevVersion + 1);
@@ -495,8 +495,8 @@ public class HelmDeployState extends State {
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(FeatureName.GIT_HOST_CONNECTIVITY, context.getAccountId()))
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()))
-            .useNewKubectlVersion(
-                featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()));
+            .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
+            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure);
 
     if (gitFileConfig != null) {
       helmInstallCommandRequestBuilder.gitFileConfig(gitFileConfig);
@@ -531,10 +531,11 @@ public class HelmDeployState extends State {
       ContainerServiceParams containerServiceParams, GitConfig gitConfig,
       List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
       int expressionFunctorToken, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
-      HelmCommandFlag helmCommandFlag) throws InterruptedException {
+      HelmCommandFlag helmCommandFlag, String activityId) throws InterruptedException {
     int prevVersion = 0;
     HelmReleaseHistoryCommandRequest helmReleaseHistoryCommandRequest =
         HelmReleaseHistoryCommandRequest.builder()
+            .activityId(activityId)
             .releaseName(releaseName)
             .containerServiceParams(containerServiceParams)
             .gitConfig(gitConfig)
@@ -1055,14 +1056,14 @@ public class HelmDeployState extends State {
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
             if (HelmVersion.isHelmV3(helmVersion)) {
-              helmChartConfigTaskParams.setUseRepoFlags(
-                  featureFlagService.isEnabled(USE_HELM_REPO_FLAGS, context.getAccountId()));
-              helmChartConfigTaskParams.setDeleteRepoCacheDir(
-                  featureFlagService.isEnabled(DELETE_HELM_REPO_CACHE_DIR, context.getAccountId()));
+              helmChartConfigTaskParams.setUseRepoFlags(true);
+              helmChartConfigTaskParams.setDeleteRepoCacheDir(true);
             }
 
-            helmChartConfigTaskParams.setCheckIncorrectChartVersion(
-                featureFlagService.isEnabled(HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
+            helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
+                && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
+
+            helmChartConfigTaskParams.setCheckIncorrectChartVersion(true);
 
             manifestConfig = K8sDelegateManifestConfig.builder()
                                  .helmChartConfigParams(helmChartConfigTaskParams)
@@ -1155,7 +1156,7 @@ public class HelmDeployState extends State {
 
     final int expressionFunctorToken = HashGenerator.generateIntegerHash();
     setNewAndPrevReleaseVersion(context, app, releaseName, containerServiceParams, stateExecutionDataBuilder, gitConfig,
-        encryptedDataDetails, cmdFlags, helmVersion, expressionFunctorToken, helmCommandFlag);
+        encryptedDataDetails, cmdFlags, helmVersion, expressionFunctorToken, helmCommandFlag, activityId);
     HelmCommandRequest commandRequest = getHelmCommandRequest(context, helmChartSpecification, containerServiceParams,
         releaseName, app.getAccountId(), app.getUuid(), activityId, imageDetails, repoName, gitConfig,
         encryptedDataDetails, cmdFlags, manifestConfig, appManifestMap, helmVersion, helmCommandFlag);

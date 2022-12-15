@@ -16,12 +16,8 @@ import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
-import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateTasksBeansMorphiaRegistrar;
-import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
-import io.harness.serializer.morphia.converters.CapabilityParametersMorphiaConverter;
-import io.harness.serializer.morphia.converters.TestingCapabilityMorphiaConverter;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
@@ -44,7 +40,6 @@ public class DelegateTasksBeansRegistrars {
           .add(CgOrchestrationBeansKryoRegistrar.class)
           .add(CommonEntitiesKryoRegistrar.class)
           .add(DelegateBeansKryoRegistrar.class)
-          .add(NgPersistenceKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -57,12 +52,8 @@ public class DelegateTasksBeansRegistrars {
           .addAll(RbacCoreRegistrars.morphiaRegistrars)
           .add(CommonEntitiesMorphiaRegister.class)
           .add(CgOrchestrationBeansMorphiaRegistrar.class)
-          .add(NgPersistenceMorphiaRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
-      ImmutableSet.<Class<? extends TypeConverter>>builder()
-          .add(CapabilityParametersMorphiaConverter.class)
-          .add(TestingCapabilityMorphiaConverter.class)
-          .build();
+      ImmutableSet.<Class<? extends TypeConverter>>builder().build();
 }

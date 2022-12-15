@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.k8s.PrePruningInfo;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class K8sBlueGreenHandlerConfig extends K8sHandlerConfig {
   private ReleaseHistory releaseHistory;
-  private Release currentRelease;
+  private K8sLegacyRelease currentRelease;
   private KubernetesResource managedWorkload;
   private KubernetesResource primaryService;
   private KubernetesResource stageService;

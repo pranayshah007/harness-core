@@ -93,6 +93,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

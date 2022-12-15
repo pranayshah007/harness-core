@@ -37,5 +37,4 @@ public class TerraformRollbackStepParameters implements SpecParameters {
   @NotNull String provisionerIdentifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-  List<String> planStepsFqn;
 }

@@ -93,7 +93,7 @@ public class AwsValidationHandlerTest extends CategoryTest {
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
   public void testValidateFailure() {
-    doThrow(new RuntimeException("No Credentials found")).when(awsClient).validateAwsAccountCredential(any());
+    doThrow(new RuntimeException("No Credentials found")).when(awsClient).validateAwsAccountCredential(any(), any());
     String secretKeyRefIdentifier = "secretKeyRefIdentifier";
     String secretKey = "secretKey";
     SecretRefData passwordSecretRef = SecretRefData.builder()

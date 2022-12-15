@@ -27,12 +27,12 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.ExceptionLogger;
 
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.Base;
@@ -49,12 +49,13 @@ import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
 import software.wings.yaml.gitSync.YamlChangeSet.YamlChangeSetKeys;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -83,7 +84,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   @Inject private YamlGitService yamlGitService;
   @Inject private YamlSuccessfulChangeService yamlSuccessfulChangeService;
   @Inject private YamlGitConfigService yamlGitConfigService;
-  private static final Integer MAX_RETRY_COUNT = 3;
+  public static final Integer MAX_RETRY_COUNT = 3;
 
   @Override
   public YamlChangeSet save(YamlChangeSet yamlChangeSet) {
@@ -256,6 +257,10 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     if (headChangeSet != null && isFullSync(headChangeSet)) {
       selectedYamlChangeSet = headChangeSet;
     }
+    YamlChangeSet fullSyncChangeset = getAnyFullSyncChangeset(accountId, queueKey);
+    if (fullSyncChangeset != null) {
+      selectedYamlChangeSet = fullSyncChangeset;
+    }
 
     if (selectedYamlChangeSet == null) {
       final YamlChangeSet oldestGitToHarnessChangeSet = getOldestGitToHarnessChangeSet(accountId, queueKey);
@@ -312,6 +317,15 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
                .filter(YamlChangeSetKeys.status, Status.RUNNING)
                .count()
         > 0;
+  }
+
+  private YamlChangeSet getAnyFullSyncChangeset(String accountId, String queueKey) {
+    return wingsPersistence.createQuery(YamlChangeSet.class)
+        .filter(YamlChangeSetKeys.accountId, accountId)
+        .filter(YamlChangeSetKeys.queueKey, queueKey)
+        .filter(YamlChangeSetKeys.status, Status.QUEUED)
+        .filter(YamlChangeSetKeys.fullSync, true)
+        .get();
   }
 
   @Override
@@ -395,19 +409,27 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   public void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId) {
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              YamlChangeSet.class, accountId, Duration.ofMinutes(1), Duration.ofSeconds(10))) {
-      UpdateOperations<YamlChangeSet> ops = wingsPersistence.createUpdateOperations(YamlChangeSet.class);
-      setUnset(ops, YamlChangeSetKeys.status, SKIPPED);
-      setUnset(ops, YamlChangeSetKeys.messageCode, MAX_RETRY_COUNT_EXCEEDED_CODE);
-
-      Query<YamlChangeSet> yamlChangeSetQuery = wingsPersistence.createQuery(YamlChangeSet.class)
-                                                    .filter(YamlChangeSetKeys.accountId, accountId)
-                                                    .filter(YamlChangeSetKeys.status, QUEUED)
-                                                    .field(YamlChangeSetKeys.retryCount)
-                                                    .greaterThan(MAX_RETRY_COUNT);
-      UpdateResults status = wingsPersistence.update(yamlChangeSetQuery, ops);
-      log.info(
-          "Updated the status of [{}] YamlChangeSets to Skipped. Max retry count exceeded", status.getUpdatedCount());
+      markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(accountId, null);
     }
+  }
+
+  @Override
+  public void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId, String changeSetId) {
+    UpdateOperations<YamlChangeSet> ops = wingsPersistence.createUpdateOperations(YamlChangeSet.class);
+    setUnset(ops, YamlChangeSetKeys.status, SKIPPED);
+    setUnset(ops, YamlChangeSetKeys.messageCode, MAX_RETRY_COUNT_EXCEEDED_CODE);
+
+    Query<YamlChangeSet> yamlChangeSetQuery = wingsPersistence.createQuery(YamlChangeSet.class)
+                                                  .filter(YamlChangeSetKeys.accountId, accountId)
+                                                  .filter(YamlChangeSetKeys.status, QUEUED)
+                                                  .field(YamlChangeSetKeys.retryCount)
+                                                  .greaterThan(MAX_RETRY_COUNT);
+    if (changeSetId != null) {
+      yamlChangeSetQuery.filter(Base.ID_KEY2, changeSetId);
+    }
+    UpdateResults status = wingsPersistence.update(yamlChangeSetQuery, ops);
+    log.info(
+        "Updated the status of [{}] YamlChangeSets to Skipped. Max retry count exceeded", status.getUpdatedCount());
   }
 
   @Override
@@ -545,25 +567,43 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
 
   @Override
   public YamlChangeSet pushYamlChangeSetForGitToHarness(
-      String accountId, String branchName, String connectorId, String repositoryName) {
+      String accountId, String branchName, String connectorId, String repositoryName, String appId) {
     if (!featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
       return null;
     }
-    YamlChangeSet yamlChangeSet = YamlChangeSet.builder()
-                                      .status(YamlChangeSet.Status.QUEUED)
-                                      .accountId(accountId)
-                                      .fullSync(false)
-                                      .gitToHarness(true)
-                                      .gitWebhookRequestAttributes(GitWebhookRequestAttributes.builder()
-                                                                       .branchName(branchName)
-                                                                       .gitConnectorId(connectorId)
-                                                                       .headCommitId("HEAD")
-                                                                       .repositoryFullName(repositoryName)
-                                                                       .isPollingBased(true)
-                                                                       .build())
-                                      .queuedOn(System.currentTimeMillis())
-                                      .build();
-    return save(yamlChangeSet);
+    if (!isG2hChangesetQueued(accountId, branchName, connectorId, repositoryName)) {
+      YamlChangeSet yamlChangeSet = YamlChangeSet.builder()
+                                        .status(YamlChangeSet.Status.QUEUED)
+                                        .accountId(accountId)
+                                        .fullSync(false)
+                                        .gitToHarness(true)
+                                        .gitWebhookRequestAttributes(GitWebhookRequestAttributes.builder()
+                                                                         .branchName(branchName)
+                                                                         .gitConnectorId(connectorId)
+                                                                         .repositoryFullName(repositoryName)
+                                                                         .isPollingBased(true)
+                                                                         .build())
+                                        .queuedOn(System.currentTimeMillis())
+                                        .appId(appId)
+                                        .gitFileChanges(Collections.emptyList())
+                                        .build();
+
+      return save(yamlChangeSet);
+    } else {
+      return null;
+    }
+  }
+
+  private boolean isG2hChangesetQueued(String accountId, String branchName, String connectorId, String repositoryName) {
+    long count =
+        wingsPersistence.createQuery(YamlChangeSet.class)
+            .filter(YamlChangeSetKeys.status, QUEUED)
+            .filter(YamlChangeSetKeys.accountId, accountId)
+            .filter(YamlChangeSetKeys.gitSyncMetadata + "." + GitSyncMetadataKeys.gitConnectorId, connectorId)
+            .filter(YamlChangeSetKeys.gitSyncMetadata + "." + GitSyncMetadataKeys.branchName, branchName)
+            .filter(YamlChangeSetKeys.gitSyncMetadata + "." + GitSyncMetadataKeys.repositoryName, repositoryName)
+            .count();
+    return count > 0;
   }
 
   private CriteriaContainer getGitToHarnessChangeSetCriteria(Query<YamlChangeSet> query, YamlGitConfig yamlGitConfig) {
@@ -579,5 +619,11 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   private CriteriaContainer getHarnessToGitChangeSetCriteria(Query<YamlChangeSet> query, String appId) {
     return query.and(query.criteria(YamlChangeSetKeys.gitToHarness).equal(Boolean.FALSE),
         query.criteria(ApplicationKeys.appId).equal(appId));
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlChangeSet.class).filter(YamlChangeSetKeys.accountId, accountId));
   }
 }

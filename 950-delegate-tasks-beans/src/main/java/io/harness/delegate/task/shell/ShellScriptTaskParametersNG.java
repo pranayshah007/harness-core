@@ -39,6 +39,7 @@ public class ShellScriptTaskParametersNG
   String executionId;
   String workingDirectory;
   @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables;
+  List<String> secretOutputVars;
   ScriptType scriptType;
   K8sInfraDelegateConfig k8sInfraDelegateConfig;
 

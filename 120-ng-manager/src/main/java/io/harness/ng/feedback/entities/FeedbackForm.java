@@ -10,7 +10,7 @@ package io.harness.ng.feedback.entities;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.ModuleType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
@@ -33,8 +33,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "FeedbackFormKeys")
-@Entity(value = "feedbackForms", noClassnameStored = true)
 @StoreIn(DbAliases.NG_MANAGER)
+@Entity(value = "feedbackForms", noClassnameStored = true)
 @Document("feedbackForms")
 @Persistent
 @OwnedBy(GTM)

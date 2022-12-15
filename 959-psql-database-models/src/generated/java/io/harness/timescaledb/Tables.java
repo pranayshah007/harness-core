@@ -18,12 +18,14 @@ import io.harness.timescaledb.tables.KubernetesUtilizationData;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
+import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
 /**
@@ -73,6 +75,12 @@ public class Tables {
   public static final NodePoolAggregated NODE_POOL_AGGREGATED = NodePoolAggregated.NODE_POOL_AGGREGATED;
 
   /**
+   * The table <code>public.pipeline_execution_summary</code>.
+   */
+  public static final PipelineExecutionSummary PIPELINE_EXECUTION_SUMMARY =
+      PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY;
+
+  /**
    * The table <code>public.pipeline_execution_summary_cd</code>.
    */
   public static final PipelineExecutionSummaryCd PIPELINE_EXECUTION_SUMMARY_CD =
@@ -103,6 +111,11 @@ public class Tables {
    * The table <code>public.services</code>.
    */
   public static final Services SERVICES = Services.SERVICES;
+
+  /**
+   * The table <code>public.utilization_data</code>.
+   */
+  public static final UtilizationData UTILIZATION_DATA = UtilizationData.UTILIZATION_DATA;
 
   /**
    * The table <code>public.workload_info</code>.

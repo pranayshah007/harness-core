@@ -17,6 +17,7 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -55,6 +56,7 @@ public class PipelineExecutionSummaryDTO {
 
   Map<String, LinkedHashMap<String, Object>> moduleInfo;
   Map<String, GraphLayoutNodeDTO> layoutNodeMap;
+  String firstRollbackStageGraphId;
   List<String> modules;
   String startingNodeId;
 
@@ -76,6 +78,7 @@ public class PipelineExecutionSummaryDTO {
 
   Boolean executionInputConfigured;
   boolean isStagesExecution;
+  PipelineStageInfo parentStageInfo;
   List<String> stagesExecuted;
   Map<String, String> stagesExecutedNames;
   boolean allowStageExecutions;

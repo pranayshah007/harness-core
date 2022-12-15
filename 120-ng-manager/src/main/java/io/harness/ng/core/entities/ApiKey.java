@@ -8,6 +8,7 @@
 package io.harness.ng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
@@ -17,6 +18,7 @@ import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.ng.core.NGOrgAccess;
 import io.harness.ng.core.NGProjectAccess;
@@ -47,6 +49,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "ApiKeyKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngApiKeys", noClassnameStored = true)
 @Document("ngApiKeys")
 @TypeAlias("ngApiKeys")
@@ -89,7 +92,7 @@ public class ApiKey implements PersistentEntity, UuidAware, NGAccountAccess, NGO
 
   @EntityIdentifier String identifier;
   @NGEntityName String name;
-  @NotNull @Size(max = 1024) String description;
+  @Size(max = 1024) String description;
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
 
   @NotNull String parentIdentifier;

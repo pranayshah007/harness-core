@@ -18,19 +18,16 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
-import io.harness.utils.RetryUtils;
+import io.harness.springdata.PersistenceUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -42,10 +39,9 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   private final RoleAssignmentService roleAssignmentService;
   private final ScopeService scopeService;
   private final TransactionTemplate transactionTemplate;
-  private static final RetryPolicy<Object> deleteServiceAccountTransactionPolicy = RetryUtils.getRetryPolicy(
+  private static final RetryPolicy<Object> deleteServiceAccountTransactionPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to delete service account and corresponding role assignments; attempt: {}",
-      "[Failed]: Failed to delete service account and corresponding role assignments; attempt: {}",
-      ImmutableList.of(TransactionException.class), Duration.ofSeconds(5), 3, log);
+      "[Failed]: Failed to delete service account and corresponding role assignments; attempt: {}");
 
   @Inject
   public ServiceAccountServiceImpl(ServiceAccountDao serviceAccountDao, TransactionTemplate transactionTemplate,

@@ -20,7 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -51,6 +51,7 @@ public class PMSPipelineFilterHelperTest extends CategoryTest {
     fieldsToBeUpdated.add(PipelineEntityKeys.stageCount);
     fieldsToBeUpdated.add(PipelineEntityKeys.stageNames);
     fieldsToBeUpdated.add(PipelineEntityKeys.allowStageExecutions);
+    fieldsToBeUpdated.add(PipelineEntityKeys.harnessVersion);
 
     for (String field : fieldsToBeUpdated) {
       assertThat(true).isEqualTo(PMSPipelineFilterHelper.getUpdateOperations(pipelineEntity, 0L).modifies(field));

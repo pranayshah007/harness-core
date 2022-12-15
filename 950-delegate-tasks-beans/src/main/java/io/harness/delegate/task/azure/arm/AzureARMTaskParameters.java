@@ -23,22 +23,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class AzureARMTaskParameters extends AzureTaskParameters {
-  private static final Set<AzureARMTaskParameters.AzureARMTaskType> SYNC_TASK_TYPES =
+  private static final Set<AzureARMTaskType> SYNC_TASK_TYPES =
       newHashSet(AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS, AzureARMTaskType.LIST_MNG_GROUP);
-  @NotNull private AzureARMTaskParameters.AzureARMTaskType commandType;
+  @NotNull private AzureARMTaskType commandType;
 
   public AzureARMTaskParameters(String appId, String accountId, String activityId, String subscriptionId,
-      String commandName, Integer timeoutIntervalInMin, AzureARMTaskParameters.AzureARMTaskType commandType) {
+      String commandName, Integer timeoutIntervalInMin, AzureARMTaskType commandType) {
     super(appId, accountId, activityId, subscriptionId, commandName, timeoutIntervalInMin);
     this.commandType = commandType;
-  }
-
-  public enum AzureARMTaskType {
-    ARM_DEPLOYMENT,
-    ARM_ROLLBACK,
-    LIST_SUBSCRIPTION_LOCATIONS,
-    LIST_MNG_GROUP,
-    BLUEPRINT_DEPLOYMENT
   }
 
   public boolean isSyncTask() {

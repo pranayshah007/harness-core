@@ -35,11 +35,12 @@ public class DebeziumControllerStarter {
     List<String> collections = debeziumConfig.getMonitoredCollections();
     for (String monitoredCollection : collections) {
       try {
-        MongoCollectionChangeConsumer changeConsumer = consumerFactory.get(debeziumConfig.getSleepInterval(),
-            monitoredCollection, changeConsumerConfig, debeziumConfig.getProducingCountPerBatch());
+        MongoCollectionChangeConsumer changeConsumer =
+            consumerFactory.get(debeziumConfig.getSleepInterval(), monitoredCollection, changeConsumerConfig,
+                debeziumConfig.getProducingCountPerBatch(), debeziumConfig.getRedisStreamSize(), cfClient);
         DebeziumController debeziumController = new DebeziumController(
             DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
-            changeConsumer, locker, debeziumExecutorService, cfClient);
+            changeConsumer, locker, debeziumExecutorService);
         debeziumExecutorService.submit(debeziumController);
         log.info("Starting Debezium Controller for Collection {} ...", monitoredCollection);
       } catch (Exception e) {

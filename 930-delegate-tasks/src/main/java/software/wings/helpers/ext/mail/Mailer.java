@@ -117,14 +117,13 @@ public class Mailer {
 
         body = bodyWriter.toString();
       }
-
+      log.info("The body of the email being sent for user {} is {}", emailData.getTo(), emailData.getBody());
       email.setSubject(subject);
       if (emailData.isHasHtml()) {
         ((HtmlEmail) email).setHtmlMsg(body);
       } else {
         email.setMsg(body);
       }
-
       email.send();
       log.info("Successfully sent an email with subject '{}' to user {} through mail server {}:{}", email.getSubject(),
           emailData.getTo(), email.getHostName(), email.getSmtpPort());

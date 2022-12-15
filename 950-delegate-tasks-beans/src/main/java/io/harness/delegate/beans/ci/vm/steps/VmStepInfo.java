@@ -7,9 +7,9 @@
 
 package io.harness.delegate.beans.ci.vm.steps;
 
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 public interface VmStepInfo extends NestedAnnotationResolver {
-  enum Type { RUN, PLUGIN, RUN_TEST }
+  enum Type { RUN, PLUGIN, RUN_TEST, BACKGROUND }
   Type getType();
 }

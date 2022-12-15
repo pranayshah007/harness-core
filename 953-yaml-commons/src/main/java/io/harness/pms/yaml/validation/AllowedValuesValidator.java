@@ -10,7 +10,7 @@ package io.harness.pms.yaml.validation;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +55,7 @@ public class AllowedValuesValidator implements RuntimeValidator {
     }
 
     if (isJexlExpression) {
-      parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters);
+      parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters, expressionMode);
     } else {
       parameters = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
     }

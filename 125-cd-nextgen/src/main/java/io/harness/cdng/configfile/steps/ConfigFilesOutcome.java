@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileOutcome;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("ConfigFilesOutcome")
 @TypeAlias("configFilesOutcome")
 @RecasterAlias("io.harness.cdng.configfile.steps.ConfigFilesOutcome")
-public class ConfigFilesOutcome extends HashMap<String, ConfigFileOutcome> implements Outcome {
+public class ConfigFilesOutcome extends HashMap<String, ConfigFileOutcome> implements Outcome, ExecutionSweepingOutput {
   public ConfigFilesOutcome() {}
 
   public ConfigFilesOutcome(Map<String, ConfigFileOutcome> map) {

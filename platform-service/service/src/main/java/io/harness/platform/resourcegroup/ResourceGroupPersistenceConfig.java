@@ -62,6 +62,7 @@ public class ResourceGroupPersistenceConfig extends AbstractMongoConfiguration {
             .retryWrites(true)
             .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
             .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
+            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
@@ -94,6 +95,7 @@ public class ResourceGroupPersistenceConfig extends AbstractMongoConfiguration {
             .retryWrites(true)
             .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
             .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
+            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
@@ -108,6 +110,6 @@ public class ResourceGroupPersistenceConfig extends AbstractMongoConfiguration {
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration);
   }
 }

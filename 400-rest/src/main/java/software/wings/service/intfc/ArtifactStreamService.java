@@ -120,6 +120,10 @@ public interface ArtifactStreamService extends OwnedByService {
 
   ArtifactStream resetStoppedArtifactCollection(String appId, String artifactStreamId);
 
+  boolean resetStoppedArtifactCollectionForAccount(String accountId);
+
+  boolean stopArtifactCollectionForAccount(String accountId);
+
   void updateCollectionEnabled(ArtifactStream artifactStream, boolean collectionEnabled);
 
   Map<String, String> getArtifactStreamNames(@NotEmpty String appId, Set<String> artifactStreamIds);

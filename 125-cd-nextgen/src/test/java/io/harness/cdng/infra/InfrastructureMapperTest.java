@@ -9,38 +9,62 @@ package io.harness.cdng.infra;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABHISHEK;
-import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
+import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.exception.InvalidArgumentsException;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -48,19 +72,75 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 public class InfrastructureMapperTest extends CategoryTest {
+  @Mock private ConnectorService connectorService;
+  @InjectMocks private InfrastructureMapper infrastructureMapper;
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder().identifier("env").type(EnvironmentType.Production).build();
   private final ServiceStepOutcome serviceOutcome = ServiceStepOutcome.builder().identifier("service").build();
+
+  AutoCloseable mocks;
+  @Before
+  public void setUp() throws Exception {
+    mocks = MockitoAnnotations.openMocks(this);
+
+    doReturn(
+        Optional.of(
+            ConnectorResponseDTO.builder().connector(ConnectorInfoDTO.builder().name("my_connector").build()).build()))
+        .when(connectorService)
+        .getByRef(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
 
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testToOutcome() {
+    K8SDirectInfrastructure k8SDirectInfrastructure = K8SDirectInfrastructure.builder()
+                                                          .connectorRef(ParameterField.createValueField("connectorId"))
+                                                          .namespace(ParameterField.createValueField("namespace"))
+                                                          .releaseName(ParameterField.createValueField("release"))
+                                                          .build();
+    k8SDirectInfrastructure.setInfraName("infraName");
+
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .namespace("namespace")
+            .releaseName("release")
+            .environment(environment)
+            .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
+            .build();
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        k8SDirectInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcomeAbstract infrastructureOutcomeAbstract = (InfrastructureOutcomeAbstract) infrastructureOutcome;
+    assertThat(infrastructureOutcomeAbstract.getName()).isEqualTo("infraName");
+    assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testToOutcomeConnectorNotFound() {
+    doReturn(Optional.empty()).when(connectorService).getByRef(anyString(), anyString(), anyString(), anyString());
+
     K8SDirectInfrastructure k8SDirectInfrastructure = K8SDirectInfrastructure.builder()
                                                           .connectorRef(ParameterField.createValueField("connectorId"))
                                                           .namespace(ParameterField.createValueField("namespace"))
@@ -76,32 +156,10 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SDirectInfrastructure, environment, serviceOutcome);
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        k8SDirectInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testToOutcomeEmptyValues() {
-    K8SDirectInfrastructure emptyReleaseName = K8SDirectInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connectorId"))
-                                                   .namespace(ParameterField.createValueField("namespace"))
-                                                   .releaseName(ParameterField.createValueField(""))
-                                                   .build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8SDirectInfrastructure emptyNamespace = K8SDirectInfrastructure.builder()
-                                                 .connectorRef(ParameterField.createValueField("connectorId"))
-                                                 .namespace(ParameterField.createValueField(""))
-                                                 .releaseName(ParameterField.createValueField("releaseName"))
-                                                 .build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
+    assertThat(infrastructureOutcome.getConnector()).isNull();
   }
 
   @Test
@@ -125,41 +183,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SGcpInfrastructure, environment, serviceOutcome);
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        k8SGcpInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(k8sGcpInfrastructureOutcome);
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testK8sGcpInfraMapperEmptyValues() {
-    K8sGcpInfrastructure emptyNamespace = K8sGcpInfrastructure.builder()
-                                              .connectorRef(ParameterField.createValueField("connectorId"))
-                                              .namespace(ParameterField.createValueField(""))
-                                              .releaseName(ParameterField.createValueField("release"))
-                                              .cluster(ParameterField.createValueField("cluster"))
-                                              .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sGcpInfrastructure emptyReleaseName = K8sGcpInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField("namespace"))
-                                                .releaseName(ParameterField.createValueField(""))
-                                                .cluster(ParameterField.createValueField("cluster"))
-                                                .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sGcpInfrastructure emptyClusterName = K8sGcpInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField("namespace"))
-                                                .releaseName(ParameterField.createValueField("release"))
-                                                .cluster(ParameterField.createValueField(""))
-                                                .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -173,7 +199,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .stage(ParameterField.createValueField("stage"))
             .build();
 
-    ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
+    ServerlessAwsLambdaInfrastructureOutcome expectedOutcome =
         ServerlessAwsLambdaInfrastructureOutcome.builder()
             .connectorRef("connectorId")
             .region("region")
@@ -182,31 +208,43 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("ad53b5ff347a533d21b0d02bab1ae1d62506068c")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(serverlessAwsLambdaInfrastructure, environment, serviceOutcome);
-    assertThat(infrastructureOutcome).isEqualTo(serverlessAwsLambdaInfrastructureOutcome);
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        serverlessAwsLambdaInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
   @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+  @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void testServerlessAwsInfraMapperEmptyValues() {
-    ServerlessAwsLambdaInfrastructure emptyRegion = ServerlessAwsLambdaInfrastructure.builder()
-                                                        .connectorRef(ParameterField.createValueField("connectorId"))
-                                                        .region(ParameterField.createValueField(""))
-                                                        .stage(ParameterField.createValueField("stage"))
-                                                        .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyRegion, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
+  public void testElastigroupInfraMapper() {
+    InlineStoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
 
-    ServerlessAwsLambdaInfrastructure emptyStage = ServerlessAwsLambdaInfrastructure.builder()
-                                                       .connectorRef(ParameterField.createValueField("connectorId"))
-                                                       .region(ParameterField.createValueField("region"))
-                                                       .stage(ParameterField.createValueField(""))
-                                                       .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyStage, environment, serviceOutcome));
+    ElastigroupInfrastructureOutcome expectedOutcome =
+        ElastigroupInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .environment(environment)
+            .infrastructureKey("bef2304c702e57cf3f33982f5473222df5c1731f")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testPdcInfrastructureWithConnectorToOutcome() {
@@ -214,20 +252,32 @@ public class InfrastructureMapperTest extends CategoryTest {
         PdcInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
             .connectorRef(ParameterField.createValueField("connector-ref"))
-            .hostFilters(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder()
+                                      .value(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                      .build())
+                            .build())
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
 
-    assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
-                                          .credentialsRef("ssh-key-ref")
-                                          .connectorRef("connector-ref")
-                                          .hostFilters(Arrays.asList("host1", "host2"))
-                                          .environment(environment)
-                                          .build(),
-            "infrastructureKey");
+    PdcInfrastructureOutcome outcome =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("ssh-key-ref")
+            .connectorRef("connector-ref")
+            .hostFilter(HostFilterDTO.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilterDTO.builder()
+                                      .value(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                      .build())
+                            .build())
+            .environment(environment)
+            .build();
+    outcome.setConnector(Connector.builder().name("my_connector").build());
+
+    assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
   }
 
   @Test
@@ -241,40 +291,18 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
 
     assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
-                                          .credentialsRef("ssh-key-ref")
-                                          .hosts(Arrays.asList("host1", "host2", "host3"))
-                                          .environment(environment)
-                                          .build(),
+        .isEqualToIgnoringGivenFields(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("ssh-key-ref")
+                .hosts(Arrays.asList("host1", "host2", "host3"))
+                .environment(environment)
+                .hostFilter(
+                    HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(HostFilterType.ALL).build())
+                .build(),
             "infrastructureKey");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testPdcInfrastructureEmptySshKeyRef() {
-    PdcInfrastructure emptySshKeyRef =
-        PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testPdcInfrastructureEmptyHostsAndConnector() {
-    PdcInfrastructure emptySshKeyRef = PdcInfrastructure.builder()
-                                           .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                           .hosts(ParameterField.ofNull())
-                                           .connectorRef(ParameterField.ofNull())
-                                           .build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -288,53 +316,23 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("res-group"))
             .subscriptionId(ParameterField.createValueField("sub-id"))
             .tags(ParameterField.createValueField(Collections.singletonMap("tag", "val")))
-            .usePublicDns(ParameterField.createValueField(true))
+            .hostConnectionType(ParameterField.createValueField("Hostname"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
 
-    assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(SshWinRmAzureInfrastructureOutcome.builder()
-                                          .connectorRef("connector-ref")
-                                          .credentialsRef("credentials-ref")
-                                          .resourceGroup("res-group")
-                                          .subscriptionId("sub-id")
-                                          .tags(Collections.singletonMap("tag", "val"))
-                                          .usePublicDns(true)
-                                          .environment(environment)
-                                          .build(),
-            "infrastructureKey");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testSshWinRmAzureInfrastructureEmptyCredentialsRefAndResourceGroup() {
-    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
-                                                   .credentialsRef(ParameterField.ofNull())
-                                                   .resourceGroup(ParameterField.ofNull())
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                   .subscriptionId(ParameterField.createValueField("sub-id"))
-                                                   .build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testSshWinRmAzureInfrastructureEmptySubscriptionIdAndConnectorId() {
-    SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
-                                                   .subscriptionId(ParameterField.ofNull())
-                                                   .connectorRef(ParameterField.ofNull())
-                                                   .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                                   .resourceGroup(ParameterField.createValueField("resource-id"))
-                                                   .build();
-
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
+    SshWinRmAzureInfrastructureOutcome outcome = SshWinRmAzureInfrastructureOutcome.builder()
+                                                     .connectorRef("connector-ref")
+                                                     .credentialsRef("credentials-ref")
+                                                     .resourceGroup("res-group")
+                                                     .subscriptionId("sub-id")
+                                                     .tags(Collections.singletonMap("tag", "val"))
+                                                     .hostConnectionType("Hostname")
+                                                     .environment(environment)
+                                                     .build();
+    outcome.setConnector(Connector.builder().name("my_connector").build());
+    assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
   }
 
   @Test
@@ -365,7 +363,8 @@ public class InfrastructureMapperTest extends CategoryTest {
             .useClusterAdminCredentials(true)
             .build();
 
-    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
+    assertThat(infrastructureMapper.toOutcome(
+                   k8SAzureInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId"))
         .isEqualTo(k8sAzureInfrastructureOutcome);
 
     k8SAzureInfrastructure = K8sAzureInfrastructure.builder()
@@ -390,7 +389,8 @@ public class InfrastructureMapperTest extends CategoryTest {
                                         .useClusterAdminCredentials(false)
                                         .build();
 
-    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
+    assertThat(infrastructureMapper.toOutcome(
+                   k8SAzureInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId"))
         .isEqualTo(k8sAzureInfrastructureOutcome);
   }
 
@@ -405,85 +405,104 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .build();
 
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(azureWebAppInfrastructure, environment, serviceOutcome);
-    assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(AzureWebAppInfrastructureOutcome.builder()
-                                          .connectorRef("connectorId")
-                                          .subscription("subscriptionId")
-                                          .resourceGroup("resourceGroup")
-                                          .environment(environment)
-                                          .build(),
-            "infrastructureKey");
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        azureWebAppInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    AzureWebAppInfrastructureOutcome outcome = AzureWebAppInfrastructureOutcome.builder()
+                                                   .connectorRef("connectorId")
+                                                   .subscription("subscriptionId")
+                                                   .resourceGroup("resourceGroup")
+                                                   .environment(environment)
+                                                   .build();
+    outcome.setConnector(Connector.builder().name("my_connector").build());
+    assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
   }
 
   @Test
-  @Owner(developers = MLUKIC)
+  @Owner(developers = ANIL)
   @Category(UnitTests.class)
-  public void testK8sAzureInfraMapperEmptyValues() {
-    K8sAzureInfrastructure emptyNamespace = K8sAzureInfrastructure.builder()
-                                                .connectorRef(ParameterField.createValueField("connectorId"))
-                                                .namespace(ParameterField.createValueField(""))
-                                                .releaseName(ParameterField.createValueField("release"))
-                                                .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                .cluster(ParameterField.createValueField("cluster"))
-                                                .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
+  public void testTanzuApplicationServiceInfraMapper() {
+    String pcfConnector = "connectorId";
+    String org = "devtest";
+    String space = "devspace";
 
-    K8sAzureInfrastructure emptyReleaseName = K8sAzureInfrastructure.builder()
-                                                  .connectorRef(ParameterField.createValueField("connectorId"))
-                                                  .namespace(ParameterField.createValueField("namespace"))
-                                                  .releaseName(ParameterField.createValueField(""))
-                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                  .cluster(ParameterField.createValueField("cluster"))
-                                                  .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptySubscription = K8sAzureInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connectorId"))
-                                                   .namespace(ParameterField.createValueField("namespace"))
-                                                   .releaseName(ParameterField.createValueField("release"))
-                                                   .subscriptionId(ParameterField.createValueField(""))
-                                                   .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                   .cluster(ParameterField.createValueField("cluster"))
-                                                   .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySubscription, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    K8sAzureInfrastructure emptyResourceGroupName =
-        K8sAzureInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField("connectorId"))
-            .namespace(ParameterField.createValueField("namespace"))
-            .releaseName(ParameterField.createValueField("release"))
-            .subscriptionId(ParameterField.createValueField("subscriptionId"))
-            .resourceGroup(ParameterField.createValueField(""))
-            .cluster(ParameterField.createValueField("cluster"))
+    TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(pcfConnector))
+            .organization(ParameterField.createValueField(org))
+            .space(ParameterField.createValueField(space))
             .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyResourceGroupName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
 
-    K8sAzureInfrastructure emptyClusterName = K8sAzureInfrastructure.builder()
-                                                  .connectorRef(ParameterField.createValueField("connectorId"))
-                                                  .namespace(ParameterField.createValueField("namespace"))
-                                                  .releaseName(ParameterField.createValueField("release"))
-                                                  .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                                  .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                                  .cluster(ParameterField.createValueField(""))
-                                                  .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
+    TanzuApplicationServiceInfrastructureOutcome expectedOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder()
+            .connectorRef(pcfConnector)
+            .organization(org)
+            .space(space)
+            .environment(environment)
+            .infrastructureKey("8d27ebf01280cd9d93840db85e22bc910b604418")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        tanzuApplicationServiceInfrastructure, environment, serviceOutcome, "accountId", "orgId", "projectId");
+
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testEcsInfraMapper() {
+    EcsInfrastructure ecsInfrastructure = EcsInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .region(ParameterField.createValueField("region"))
+                                              .cluster(ParameterField.createValueField("cluster"))
+                                              .build();
+
+    EcsInfrastructureOutcome expectedOutcome = EcsInfrastructureOutcome.builder()
+                                                   .connectorRef("connectorId")
+                                                   .region("region")
+                                                   .cluster("cluster")
+                                                   .environment(environment)
+                                                   .infrastructureKey("4e88dbd8bc5e4694fe1c72d90371e127a8bc3d1c")
+                                                   .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(ecsInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testAsgInfraMapper() {
+    AsgInfrastructure asgInfrastructure = AsgInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .region(ParameterField.createValueField("region"))
+                                              .build();
+
+    AsgInfrastructureOutcome expectedOutcome = AsgInfrastructureOutcome.builder()
+                                                   .connectorRef("connectorId")
+                                                   .region("region")
+                                                   .environment(environment)
+                                                   .infrastructureKey("f9497b14ff1b27911470c2fe1683bd66358ebd4f")
+                                                   .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(asgInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void testSetInfraIdentifierAndName_InfrastructureDetailsAbstract() {
-    InfrastructureDetailsAbstract k8SDirectInfrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
-    InfrastructureMapper.setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, "Identifier", "Name");
+    InfrastructureOutcomeAbstract k8SDirectInfrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
+    infrastructureMapper.setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, "Identifier", "Name");
     assertThat(k8SDirectInfrastructureOutcome.getInfraIdentifier()).isEqualTo("Identifier");
     assertThat(k8SDirectInfrastructureOutcome.getInfraName()).isEqualTo("Name");
   }

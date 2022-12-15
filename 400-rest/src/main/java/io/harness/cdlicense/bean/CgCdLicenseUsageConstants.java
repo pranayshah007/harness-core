@@ -23,4 +23,16 @@ public class CgCdLicenseUsageConstants {
       "SELECT DISTINCT UNNEST(SERVICES) FROM DEPLOYMENT WHERE ACCOUNTID = ? AND STARTTIME > NOW() - ? * INTERVAL '1' DAY";
   public static final String QUERY_FECTH_PERCENTILE_INSTANCE_COUNT_FOR_SERVICES =
       "SELECT SERVICEID, PERCENTILE_DISC(?) WITHIN GROUP (ORDER BY INSTANCECOUNT) AS INSTANCECOUNT FROM INSTANCE_STATS WHERE ACCOUNTID = ? AND SERVICEID = ANY (?) AND REPORTEDAT > NOW() - ? * INTERVAL '1' DAY GROUP BY SERVICEID";
+  public static final String QUERY_FETCH_SERVICE_INSTANCE_USAGE = ""
+      + "select percentile_disc(?) within group (order by instanceCountsPerReportedAt.instancecount) as percentileInstanceCount\n"
+      + "from (\n"
+      + "    select \n"
+      + "        sum(instancecount) as instancecount,\n"
+      + "        date_trunc('minute', reportedat) as reportedat,\n"
+      + "        accountid\n"
+      + "    from instance_stats \n"
+      + "    where accountid = ? \n"
+      + "        and reportedat > now() - INTERVAL '30 day' \n"
+      + "    group by accountid, date_trunc('minute', reportedat)\n"
+      + ") as instanceCountsPerReportedAt";
 }

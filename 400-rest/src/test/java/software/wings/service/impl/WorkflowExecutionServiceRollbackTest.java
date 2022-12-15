@@ -23,9 +23,9 @@ import static software.wings.api.CloudProviderType.PCF;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.execution.RollbackType.AUTO;
 import static software.wings.beans.execution.RollbackType.MANUAL;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
@@ -73,9 +73,9 @@ import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionBuilder;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.deployment.checks.AccountExpirationChecker;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
@@ -239,7 +239,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
       workflowExecutionService.getOnDemandRollbackConfirmation(APP_ID, savedWE);
       failBecauseExceptionWasNotThrown(InvalidRequestException.class);
     } catch (Exception e) {
-      assertThat(e).hasMessage("No previous execution before this execution to rollback to, workflowExecution: test");
+      assertThat(e).hasMessage("No previous execution found to rollback, workflowExecution: test");
     }
   }
 
@@ -352,27 +352,27 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
     WorkflowExecution lastSuccessfulWE = createNewWorkflowExecution(false);
     lastSuccessfulWE.setStatus(ExecutionStatus.ABORTED);
 
-    boolean result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE);
+    boolean result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE, false);
     assertThat(result).isFalse();
 
     lastSuccessfulWE.setStatus(SUCCESS);
     lastSuccessfulWE.setWorkflowType(WorkflowType.PIPELINE);
 
-    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE);
+    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE, false);
     assertThat(result).isFalse();
 
     lastSuccessfulWE.setWorkflowType(WorkflowType.ORCHESTRATION);
     lastSuccessfulWE.setEnvType(NON_PROD);
-    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE);
+    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE, false);
     assertThat(result).isTrue();
 
     lastSuccessfulWE.setEnvType(PROD);
     lastSuccessfulWE.setInfraDefinitionIds(asList("id1", "id2"));
-    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE);
+    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE, false);
     assertThat(result).isFalse();
 
     lastSuccessfulWE.setInfraDefinitionIds(Collections.singletonList("id2"));
-    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE);
+    result = workflowExecutionService.getOnDemandRollbackAvailable(APP_ID, lastSuccessfulWE, false);
     assertThat(result).isTrue();
   }
 
@@ -415,7 +415,8 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
     when(artifactService.listByIds(any(), any())).thenReturn(Collections.singletonList(artifact));
     when(stateMachineExecutor.queue(any(), any())).thenReturn(new StateExecutionInstance());
 
-    WorkflowExecution rollbackWEResult = workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE);
+    WorkflowExecution rollbackWEResult =
+        workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE, false);
     assertThat(rollbackWEResult.isOnDemandRollback()).isTrue();
     assertThat(rollbackWEResult.getOriginalExecution().getExecutionId()).isEqualTo(newWE.getUuid());
     assertThat(rollbackWEResult.getOriginalExecution().getStartTs()).isEqualTo(newWE.getStartTs());
@@ -459,7 +460,8 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
     when(artifactService.listByIds(any(), any())).thenReturn(Collections.singletonList(artifact));
     when(stateMachineExecutor.queue(any(), any())).thenReturn(new StateExecutionInstance());
 
-    WorkflowExecution rollbackWEResult = workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE);
+    WorkflowExecution rollbackWEResult =
+        workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE, false);
     assertThat(rollbackWEResult.isOnDemandRollback()).isTrue();
     assertThat(rollbackWEResult.getOriginalExecution().getExecutionId()).isEqualTo(newWE.getUuid());
     assertThat(rollbackWEResult.getOriginalExecution().getStartTs()).isEqualTo(newWE.getStartTs());
@@ -504,7 +506,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
     when(artifactService.listByIds(any(), any())).thenReturn(Collections.singletonList(artifact));
     when(stateMachineExecutor.queue(any(), any())).thenReturn(new StateExecutionInstance());
 
-    assertThatThrownBy(() -> workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE))
+    assertThatThrownBy(() -> workflowExecutionService.triggerRollbackExecutionWorkflow(APP_ID, newWE, false))
         .isInstanceOf(InvalidRequestException.class)
         .extracting("message")
         .isEqualTo("No previous artifact found to rollback to");

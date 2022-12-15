@@ -34,6 +34,7 @@ import com.google.inject.Singleton;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,7 +53,11 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
       ArtifactSourceDelegateRequest artifactSourceDelegateRequest) {
     ArtifactoryArtifactDelegateRequest attributesRequest =
         (ArtifactoryArtifactDelegateRequest) artifactSourceDelegateRequest;
+
+    List<Map<String, String>> labels;
+
     BuildDetailsInternal lastSuccessfulBuild;
+
     ArtifactoryConfigRequest artifactoryConfig =
         ArtifactoryRequestResponseMapper.toArtifactoryInternalConfig(attributesRequest);
 
@@ -60,14 +65,29 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
       lastSuccessfulBuild = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryConfig,
           attributesRequest.getRepositoryName(), attributesRequest.getArtifactPath(),
           attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex());
+
     } else {
       lastSuccessfulBuild =
           artifactoryRegistryService.verifyBuildNumber(artifactoryConfig, attributesRequest.getRepositoryName(),
               attributesRequest.getArtifactPath(), attributesRequest.getRepositoryFormat(), attributesRequest.getTag());
     }
 
-    ArtifactoryArtifactDelegateResponse artifactoryDockerArtifactDelegateResponse =
-        ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(lastSuccessfulBuild, attributesRequest);
+    labels = artifactoryRegistryService.getLabels(artifactoryConfig, attributesRequest.getArtifactPath(),
+        attributesRequest.getRepositoryName(), lastSuccessfulBuild.getNumber());
+
+    ArtifactoryArtifactDelegateResponse artifactoryDockerArtifactDelegateResponse;
+
+    // Checking whether labels or not
+    if (EmptyPredicate.isNotEmpty(labels)) {
+      artifactoryDockerArtifactDelegateResponse = ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(
+          lastSuccessfulBuild, attributesRequest, labels.get(0));
+
+    }
+
+    else {
+      artifactoryDockerArtifactDelegateResponse =
+          ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(lastSuccessfulBuild, attributesRequest, null);
+    }
 
     return getSuccessTaskExecutionResponse(Collections.singletonList(artifactoryDockerArtifactDelegateResponse));
   }
@@ -143,7 +163,7 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     List<ArtifactoryArtifactDelegateResponse> artifactoryDockerArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
-            .map(build -> ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(build, attributesRequest))
+            .map(build -> ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(build, attributesRequest, null))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(artifactoryDockerArtifactDelegateResponseList);
   }
@@ -167,8 +187,10 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     String finalArtifactDirectory = artifactDirectory;
     buildDetails = buildDetails.stream()
                        .map(buildDetail -> {
-                         String artifactoryPath =
-                             buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                         String artifactoryPath = buildDetail.getArtifactPath();
+                         if (!finalArtifactDirectory.equals(".")) {
+                           artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                         }
                          if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
                            artifactoryPath = artifactoryPath.substring(1);
                          }

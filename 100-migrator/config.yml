@@ -268,7 +268,6 @@ cg:
     socketTimeout: 30
     logUnclosedConnections: false
     loggerLevel: OFF
-    instanceDataRetentionDays: 210
     instanceStatsMigrationEventsLimit: 150
     instanceStatsMigrationQueryBatchSize: 100
     deploymentDataMigrationRowLimit: 1000
@@ -310,10 +309,12 @@ cg:
     #locksUri: mongodb://localhost:27017/impermanent
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: MANUAL
     traceMode: DISABLED
+    aliasDBName: harness
     mongoSSLConfig:
       mongoSSLEnabled: false
       mongoTrustStorePath:
@@ -323,9 +324,11 @@ cg:
     uri: mongodb://localhost:27017/events
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: MANUAL
+    aliasDBName: events
 
   searchEnabled: false
   graphQLEnabled: false
@@ -345,7 +348,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 36d92fd8
+  scmVersion: 9ddfb2b9
 
   ngAuthUIEnabled: false
 
@@ -572,6 +575,13 @@ cg:
       title: Connect to a verification provider
       url: https://docs.harness.io/article/r6ut6tldy0-verification-providers
 
+  executorsConfig:
+    dataReconciliationExecutorConfig:
+      corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+      maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+      idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+      timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
   workers:
     active:
       io.harness: false
@@ -679,6 +689,8 @@ cg:
     poolSize: 3
     syncInterval: 15
     defaultCronExpression: "0 0/15 * 1/1 * ? *"
+
+  enableOpentelemetry: false
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

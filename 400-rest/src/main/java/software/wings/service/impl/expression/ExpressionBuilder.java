@@ -48,7 +48,6 @@ import static software.wings.sm.ContextElement.DEPLOYMENT_URL;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.ff.FeatureFlagService;
 
@@ -56,9 +55,8 @@ import software.wings.beans.EntityType;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SubEntityType;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.ServiceVariableService;
@@ -148,6 +146,8 @@ public abstract class ExpressionBuilder {
   protected static final String INFRA_HELM_RELEASENAME = "infra.helm.releaseName";
   protected static final String INFRA_CUSTOM_VARS = "infra.custom.vars";
 
+  protected static final String INFRA_CLOUDPROVIDER_NAME = "infra.cloudProvider.name";
+
   protected static final String INFRA_PCF_ORG = "infra.pcf.organization";
   protected static final String INFRA_PCF_SPACE = "infra.pcf.space";
   protected static final String INFRA_PCF_CLOUDPROVIDER_NAME = "infra.pcf.cloudProvider.name";
@@ -232,7 +232,7 @@ public abstract class ExpressionBuilder {
     expressions.addAll(asList(INFRA_KUBERNETES_NAMESPACE, INFRA_KUBERNETES_INFRAID));
     expressions.addAll(asList(INFRA_ROUTE_PCF, INFRA_TEMP_ROUTE_PCF));
     expressions.add(WorkflowStandardParams.DEPLOYMENT_TRIGGERED_BY);
-    expressions.addAll(asList(INFRA_CUSTOM_VARS));
+    expressions.addAll(asList(INFRA_CUSTOM_VARS, INFRA_CLOUDPROVIDER_NAME));
 
     expressions.addAll(asList(HELM_CHART_BASE_PATH, HELM_CHART_DESCRIPTION, HELM_CHART_NAME, HELM_CHART_REPO_NAME,
         HELM_CHART_URL, HELM_CHART_VERSION, HELM_CHART_BUCKET_NAME, HELM_CHART_DISPLAY_NAME));
@@ -348,23 +348,6 @@ public abstract class ExpressionBuilder {
       serviceVariablePageRequest.addFilter("entityType", EQ, entityType);
     }
     List<ServiceVariable> serviceVariables = serviceVariablesService.list(serviceVariablePageRequest, MASKED);
-
-    String accountId = appService.getAccountIdByAppId(appId);
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      Set<String> serviceVariableMentions = new HashSet<>();
-      serviceVariables.forEach(serviceVariable -> {
-        if (ServiceVariableType.ARTIFACT == serviceVariable.getType()) {
-          String artifactMentions = "artifacts." + serviceVariable.getName();
-          serviceVariableMentions.add(artifactMentions);
-          for (String suffix : getArtifactExpressionSuffixes()) {
-            serviceVariableMentions.add(artifactMentions + suffix);
-          }
-        } else {
-          serviceVariableMentions.add("serviceVariable." + serviceVariable.getName());
-        }
-      });
-      return serviceVariableMentions;
-    }
 
     return serviceVariables.stream()
         .map(serviceVariable -> "serviceVariable." + serviceVariable.getName())

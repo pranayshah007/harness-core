@@ -82,8 +82,10 @@ public class PluginStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.description",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.connectorRef",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.runAsUser",
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.uses",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.timeout",
-            "pipeline.stages.download_plugin_success.spec.execution.steps.download.name");
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.name",
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.entrypoint");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

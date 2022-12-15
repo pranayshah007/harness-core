@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -37,8 +39,9 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
+import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -67,7 +70,7 @@ import software.wings.beans.Account;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.security.annotations.Scope;
@@ -86,6 +89,7 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -126,6 +130,7 @@ public class DelegateAgentResource {
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   private PollingResourceClient pollingResourceClient;
+  private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
@@ -135,7 +140,8 @@ public class DelegateAgentResource {
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
-      InstanceSyncResponsePublisher instanceSyncResponsePublisher) {
+      InstanceSyncResponsePublisher instanceSyncResponsePublisher,
+      DelegatePollingHeartbeatService delegatePollingHeartbeatService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -151,6 +157,7 @@ public class DelegateAgentResource {
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.pollingResourceClient = pollingResourceClient;
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
+    this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
   }
 
   @DelegateAuth
@@ -234,11 +241,13 @@ public class DelegateAgentResource {
   @Path("register")
   @Timed
   @ExceptionMetered
-  public RestResponse<DelegateRegisterResponse> register(
-      @QueryParam("accountId") @NotEmpty final String accountId, final DelegateParams delegateParams) {
+  public RestResponse<DelegateRegisterResponse> register(@QueryParam("accountId") @NotEmpty final String accountId,
+      final DelegateParams delegateParams,
+      @HeaderParam(HEADER_AGENT_MTLS_AUTHORITY) @Nullable String agentMtlsAuthority) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final long startTime = System.currentTimeMillis();
-      final DelegateRegisterResponse registerResponse = delegateService.register(delegateParams);
+      final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+      final DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, isConnectedUsingMtls);
       log.info("Delegate registration took {} in ms", System.currentTimeMillis() - startTime);
       return new RestResponse<>(registerResponse);
     }
@@ -440,18 +449,19 @@ public class DelegateAgentResource {
   @Path("heartbeat-with-polling")
   @Timed
   @ExceptionMetered
-  public RestResponse<DelegateHeartbeatResponse> updateDelegateHB(
-      @QueryParam("accountId") @NotEmpty String accountId, DelegateParams delegateParams) {
+  public RestResponse<DelegateHeartbeatResponse> updateDelegateHB(@QueryParam("accountId") @NotEmpty String accountId,
+      @HeaderParam(HEADER_AGENT_MTLS_AUTHORITY) @Nullable String agentMtlsAuthority, DelegateParams delegateParams) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateParams.getDelegateId(), OVERRIDE_ERROR)) {
+      final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
       // delegate.isPollingModeEnabled() will be true here.
       if ("ECS".equals(delegateParams.getDelegateType())) {
-        Delegate registeredDelegate = delegateService.handleEcsDelegateRequest(buildDelegateFromParams(delegateParams));
+        Delegate registeredDelegate = delegateService.handleEcsDelegateRequest(
+            Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls));
 
         return new RestResponse<>(buildDelegateHBResponse(registeredDelegate));
       } else {
-        return new RestResponse<>(buildDelegateHBResponse(
-            delegateService.updateHeartbeatForDelegateWithPollingEnabled(buildDelegateFromParams(delegateParams))));
+        return new RestResponse<>(delegatePollingHeartbeatService.process(delegateParams));
       }
     }
   }
@@ -580,30 +590,6 @@ public class DelegateAgentResource {
         .sequenceNumber(delegate.getSequenceNum())
         .status(delegate.getStatus().toString())
         .useCdn(delegate.isUseCdn())
-        .build();
-  }
-
-  private Delegate buildDelegateFromParams(DelegateParams delegateParams) {
-    return Delegate.builder()
-        .uuid(delegateParams.getDelegateId())
-        .accountId(delegateParams.getAccountId())
-        .description(delegateParams.getDescription())
-        .ip(delegateParams.getIp())
-        .hostName(delegateParams.getHostName())
-        .delegateGroupName(delegateParams.getDelegateGroupName())
-        .delegateName(delegateParams.getDelegateName())
-        .delegateProfileId(delegateParams.getDelegateProfileId())
-        .lastHeartBeat(delegateParams.getLastHeartBeat())
-        .version(delegateParams.getVersion())
-        .sequenceNum(delegateParams.getSequenceNum())
-        .delegateType(delegateParams.getDelegateType())
-        .delegateRandomToken(delegateParams.getDelegateRandomToken())
-        .keepAlivePacket(delegateParams.isKeepAlivePacket())
-        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
-        .ng(delegateParams.isNg())
-        .sampleDelegate(delegateParams.isSampleDelegate())
-        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
-        .location(delegateParams.getLocation())
         .build();
   }
 }

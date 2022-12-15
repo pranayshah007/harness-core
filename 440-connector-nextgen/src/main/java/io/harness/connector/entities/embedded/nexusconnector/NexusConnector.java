@@ -7,8 +7,10 @@
 
 package io.harness.connector.entities.embedded.nexusconnector;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
+import io.harness.ng.DbAliases;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "NexusConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)

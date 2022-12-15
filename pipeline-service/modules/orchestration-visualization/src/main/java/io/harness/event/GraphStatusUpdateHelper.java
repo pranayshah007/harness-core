@@ -10,6 +10,7 @@ package io.harness.event;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
+import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
 import io.harness.DelegateInfoHelper;
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,7 +19,6 @@ import io.harness.beans.GraphVertex;
 import io.harness.beans.GraphVertex.GraphVertexBuilder;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
@@ -26,7 +26,6 @@ import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
@@ -49,17 +48,17 @@ public class GraphStatusUpdateHelper {
 
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
-  public OrchestrationGraph handleEvent(String planExecutionId, String nodeExecutionId,
-      OrchestrationEventType eventType, OrchestrationGraph orchestrationGraph) {
+  public OrchestrationGraph handleEvent(
+      String planExecutionId, String nodeExecutionId, OrchestrationGraph orchestrationGraph) {
     if (isEmpty(nodeExecutionId)) {
       return orchestrationGraph;
     }
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-    return handleEventV2(planExecutionId, nodeExecution, eventType, orchestrationGraph);
+    return handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
   }
 
-  public OrchestrationGraph handleEventV2(String planExecutionId, NodeExecution nodeExecution,
-      OrchestrationEventType eventType, OrchestrationGraph orchestrationGraph) {
+  public OrchestrationGraph handleEventV2(
+      String planExecutionId, NodeExecution nodeExecution, OrchestrationGraph orchestrationGraph) {
     if (nodeExecution == null) {
       return orchestrationGraph;
     }
@@ -83,9 +82,8 @@ public class GraphStatusUpdateHelper {
         orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
       }
     } catch (Exception e) {
-      log.error(String.format("[GRAPH_ERROR]  [%s] event failed for [%s] for plan [%s]", eventType, nodeExecutionId,
-                    planExecutionId),
-          e);
+      log.error(
+          String.format("[GRAPH_ERROR] event failed for [%s] for plan [%s]", nodeExecutionId, planExecutionId), e);
       throw e;
     }
     return orchestrationGraph;
@@ -97,10 +95,6 @@ public class GraphStatusUpdateHelper {
     graphVertexMap.computeIfPresent(nodeExecutionId, (key, prevValue) -> {
       GraphVertex newValue = convertFromNodeExecution(prevValue, nodeExecution);
       if (isOutcomeUpdateGraphStatus(newValue.getStatus())) {
-        if (EmptyPredicate.isEmpty(newValue.getStepParameters())) {
-          log.error(String.format("Step Parameters null for nodeExecutionId %s", nodeExecutionId));
-          newValue.setStepParameters(pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId));
-        }
         newValue.setOutcomeDocuments(PmsOutcomeMapper.convertJsonToOrchestrationMap(
             pmsOutcomeService.findAllOutcomesMapByRuntimeId(planExecutionId, nodeExecutionId)));
         newValue.setGraphDelegateSelectionLogParams(
@@ -137,11 +131,15 @@ public class GraphStatusUpdateHelper {
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
             .progressData(nodeExecution.getPmsProgressData());
+    if (prevValue.getStepParameters() == null) {
+      prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
+    }
     return prevValueBuilder.build();
   }
 
   @VisibleForTesting
   boolean isOutcomeUpdateGraphStatus(Status status) {
-    return StatusUtils.isFinalStatus(status) || status.equals(INTERVENTION_WAITING) || status.equals(APPROVAL_WAITING);
+    return StatusUtils.isFinalStatus(status) || status.equals(INTERVENTION_WAITING) || status.equals(APPROVAL_WAITING)
+        || status.equals(WAIT_STEP_RUNNING);
   }
 }

@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -48,7 +49,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(HarnessTeam.CDC)
 @Api("artifacts")
 @Path("/artifacts/artifactory")
 @Produces({"application/json", "application/yaml"})
@@ -104,7 +105,7 @@ public class ArtifactoryArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
@@ -143,6 +144,13 @@ public class ArtifactoryArtifactResource {
     // todo(hinger): resolve other expressions here
     artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    repository = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    artifactRepositoryUrl = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
@@ -189,9 +197,42 @@ public class ArtifactoryArtifactResource {
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier =
+            artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
+      }
+
+      if (isEmpty(repositoryType)) {
+        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      }
+    }
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    ArtifactoryRepoDetailsDTO repoDetailsDTO =
+        artifactoryResourceService.getRepositories(repositoryType, connectorRef, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(repoDetailsDTO);
+  }
+
+  @GET
+  @Path("imagePaths")
+  @ApiOperation(value = "Gets Image Paths details", nickname = "getImagePathsForArtifactory")
+  public ResponseDTO<ArtifactoryImagePathsDTO> getImagePaths(
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("repository") String repository, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -204,9 +245,30 @@ public class ArtifactoryArtifactResource {
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    ArtifactoryRepoDetailsDTO repoDetailsDTO =
-        artifactoryResourceService.getRepositories(repositoryType, connectorRef, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(repoDetailsDTO);
+    ArtifactoryImagePathsDTO artifactoryImagePathsDTO = artifactoryResourceService.getImagePaths(
+        repositoryType, connectorRef, orgIdentifier, projectIdentifier, repository);
+    return ResponseDTO.newResponse(artifactoryImagePathsDTO);
+  }
+
+  @POST
+  @Path("imagePathsV2")
+  @ApiOperation(value = "Gets Image Paths details", nickname = "getImagePathsForArtifactoryV2")
+  public ResponseDTO<ArtifactoryImagePathsDTO> getImagePathsV2(
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("repository") String repository, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull String runtimeInputYaml,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    // Resolving parameters for service v2 compatibility
+    ArtifactoryImagePathsDTO artifactoryImagePathsDTO = artifactResourceUtils.getArtifactoryImagePath(repositoryType,
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, repository, fqnPath,
+        runtimeInputYaml, pipelineIdentifier, serviceRef, gitEntityBasicInfo);
+
+    return ResponseDTO.newResponse(artifactoryImagePathsDTO);
   }
 
   @GET

@@ -1,0 +1,9 @@
+pipeline:
+  name: testPipelineWithStepGroup
+  identifier: testPipelineWithStepGroup
+  template:
+    templateRef: testpipeline
+    versionLabel: "1"
+  tags: {}
+  projectIdentifier: njh
+  orgIdentifier: default

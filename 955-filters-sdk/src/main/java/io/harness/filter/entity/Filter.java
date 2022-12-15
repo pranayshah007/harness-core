@@ -9,12 +9,14 @@ package io.harness.filter.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterVisibility;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -48,6 +50,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "FilterKeys")
+@StoreIn(DbAliases.ALL)
 @Entity(value = "filters", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("filters")

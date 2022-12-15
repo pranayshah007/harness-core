@@ -7,9 +7,9 @@
 
 package io.harness.pms.sdk.core;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;

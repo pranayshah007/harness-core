@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -78,6 +79,8 @@ public abstract class BaseVaultConfig extends SecretManagerConfig {
   @Attributes(title = "serviceAccountTokenPath") private String serviceAccountTokenPath;
   @Attributes(title = "k8sAuthEndpoint") private String k8sAuthEndpoint;
 
+  @Attributes(title = "renewAppRoleToken") @Builder.Default private Boolean renewAppRoleToken = Boolean.TRUE;
+
   public boolean isCertValidationRequired() {
     return isCertValidationRequired;
   }
@@ -110,6 +113,12 @@ public abstract class BaseVaultConfig extends SecretManagerConfig {
   @SchemaIgnore
   public AccessType getAccessType() {
     return isNotEmpty(appRoleId) ? AccessType.APP_ROLE : AccessType.TOKEN;
+  }
+
+  @JsonIgnore
+  @SchemaIgnore
+  public boolean getRenewAppRoleToken() {
+    return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
   }
 
   @Override

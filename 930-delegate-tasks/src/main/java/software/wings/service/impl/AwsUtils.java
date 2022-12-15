@@ -34,6 +34,8 @@ import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.google.common.collect.ArrayListMultimap;
@@ -121,5 +123,11 @@ public class AwsUtils {
     AmazonAutoScalingClientBuilder builder = AmazonAutoScalingClientBuilder.standard().withRegion(region);
     awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
     return (AmazonAutoScalingClient) builder.build();
+  }
+
+  public AmazonECSClient getAmazonECSClient(Regions region, AwsInternalConfig awsConfig) {
+    AmazonECSClientBuilder builder = AmazonECSClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonECSClient) builder.build();
   }
 }

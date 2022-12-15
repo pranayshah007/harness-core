@@ -77,6 +77,14 @@ public interface ActivityService {
    */
   List<CommandUnitDetails> getCommandUnits(String appId, String activityId);
 
+  /**
+   * Gets command units.
+   *
+   * @param activity the Activity
+   * @return the command units
+   */
+  List<CommandUnitDetails> getCommandUnits(Activity activity);
+
   Map<String, List<CommandUnitDetails>> getCommandUnitsMapUsingSecondary(Collection<String> activityIds);
 
   /**

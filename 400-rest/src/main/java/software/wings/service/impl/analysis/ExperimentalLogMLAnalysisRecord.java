@@ -11,10 +11,12 @@ import static software.wings.common.VerificationConstants.ML_RECORDS_TTL_MONTHS;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.service.impl.splunk.LogMLClusterScores;
@@ -41,6 +43,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ExperimentalLogMLAnalysisRecordKeys")
 @IgnoreUnusedIndex
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "experimentalLogAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ExperimentalLogMLAnalysisRecord extends Base {

@@ -175,6 +175,7 @@ mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -183,14 +184,17 @@ mongo:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
 
@@ -201,7 +205,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 36d92fd8
+scmVersion: 9ddfb2b9
 
 portal:
   url: https://localhost:8000
@@ -279,10 +283,6 @@ cdnConfig:
   watcherJarBasePath: public/shared/watchers/builds
   watcherJarPath: oracle-8u191/%s/watcher.jar
   watcherMetaDataFilePath: public/%s/%s/watchers/current.version
-  alpnJarPath: public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  cdnJreTarPaths:
-    oracle8u191: public/shared/jre/oracle-8u191/jre-8u191-${OS}-x64.tar.gz
-    openjdk8u242: public/shared/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
 
 #should not need for dms, keeping it for injection
 commandLibraryServiceConfig:
@@ -342,39 +342,27 @@ auditClientConfig:
 
 enableAudit: false
 
-currentJre: openjdk8u242
-migrateToJre: openjdk8u242
-
-jreConfigs:
-  oracle8u191:
-    version: 1.8.0_191
-    jreDirectory: jre1.8.0_191
-    jreMacDirectory: jre1.8.0_191.jre
-    jreTarPath: jre/8u191/jre-8u191-${OS}-x64.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  openjdk8u242:
-    version: 1.8.0_242
-    jreDirectory: jdk8u242-b08-jre
-    jreMacDirectory: jdk8u242-b08-jre
-    jreTarPath: jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
+currentJre: openjdk11014_9
+migrateToJre: openjdk11014_9
 
 iteratorsConfig:
   delegateCapabilitiesRecordIteratorConfig:
     threadPoolSize: ${DELEGATE_CAPABILITIES_RECORD_ITERATOR_THREAD_COUNT:-5}
   blockingCapabilityPermissionsRecordHandlerIteratorConfig:
     threadPoolSize: ${BLOCKING_CAPABILITY_PERMISSIONS_RECORD_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskExpiryCheckIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_EXPIRY_CHECK_ITERATOR_THREAD_COUNT:-5}
-  perpetualTaskRebalanceIteratorConfig:
-    threadPoolSize: ${PERPETUAL_TASK_REBALANCE_ITERATOR_THREAD_COUNT:-5}
+  delegateDisconnectDetectorIteratorConfig:
+    threadPoolSize: ${DELEGATE_DISCONNECT_DETECTOR_CHECK_ITERATOR_THREAD_COUNT:-2}
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskRebroadcastIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-5}
   failDelegateTaskIteratorConfig:
     threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-5}
 
+executorsConfig:
+  dataReconciliationExecutorConfig:
+    corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+    maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+    idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+    timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 ldapSyncJobConfig:
   poolSize: 3

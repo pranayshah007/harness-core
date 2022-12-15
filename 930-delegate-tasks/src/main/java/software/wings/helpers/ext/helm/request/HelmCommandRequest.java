@@ -86,6 +86,7 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
   private boolean isGitHostConnectivityCheck;
   private boolean useNewKubectlVersion;
   private boolean useLatestChartMuseumVersion;
+  private String gcpKeyPath;
 
   public HelmCommandRequest(HelmCommandType helmCommandType, boolean mergeCapabilities) {
     this.helmCommandType = helmCommandType;
@@ -112,7 +113,6 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
                                       .build());
       }
     }
-
     Set<String> delegateSelectors = getDelegateSelectorsFromConfigurations();
     if (isNotEmpty(delegateSelectors)) {
       executionCapabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());

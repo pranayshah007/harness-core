@@ -7,14 +7,13 @@
 
 package io.harness.platform.resourcegroup;
 
-import static io.harness.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -27,7 +26,6 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.govern.ProviderModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -42,10 +40,13 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
+import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.resourcegroup.ResourceGroupModule;
+import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.morphia.ResourceGroupSerializer;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
@@ -95,7 +96,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(ResourceGroupSerializer.morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -121,8 +121,19 @@ public class ResourceGroupServiceModule extends AbstractModule {
     install(ExecutorModule.getInstance());
     bind(PlatformConfiguration.class).toInstance(appConfig);
     bind(HPersistence.class).to(MongoPersistence.class);
+    bind(ResourceGroupValidator.class).to(ResourceGroupValidatorImpl.class);
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
+    bind(QueueController.class).toInstance(new QueueController() {
+      @Override
+      public boolean isPrimary() {
+        return true;
+      }
+
+      @Override
+      public boolean isNotPrimary() {
+        return false;
+      }
+    });
     install(new ValidationModule(getValidatorFactory()));
     install(new ResourceGroupPersistenceModule());
     install(PersistentLockModule.getInstance());
@@ -190,7 +201,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       return null;
     }
-    return RedisUtils.getClient(redisConfig);
+    return RedissonClientFactory.getClient(redisConfig);
   }
 
   @Provides

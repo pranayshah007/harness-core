@@ -14,17 +14,18 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.common.VerificationConstants.ML_RECORDS_TTL_MONTHS;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.serializer.JsonUtils;
 
@@ -72,6 +73,7 @@ import org.mongodb.morphia.annotations.Entity;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "LogMLAnalysisRecordKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "logAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.CV)
@@ -98,11 +100,6 @@ public class LogMLAnalysisRecord extends Base implements AccountAccess {
                 .field(LogMLAnalysisRecordKeys.logCollectionMinute)
                 .field(LogMLAnalysisRecordKeys.analysisStatus)
                 .descSortField(LAST_UPDATED_AT_KEY)
-                .build(),
-            CompoundMongoIndex.builder()
-                .name("stateExecStatusIdx")
-                .field(LogMLAnalysisRecordKeys.stateExecutionId)
-                .field(LogMLAnalysisRecordKeys.analysisStatus)
                 .build(),
             SortCompoundMongoIndex.builder()
                 .name("stateExecutionId_1_analysisStatus_1_logCollectionMinute_-1")

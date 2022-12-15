@@ -167,6 +167,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretBuilder;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -184,6 +185,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -201,6 +203,8 @@ import java.util.zip.Deflater;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.internal.http2.ConnectionShutdownException;
+import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
@@ -463,7 +467,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public void validateCredentials(KubernetesConfig kubernetesConfig) {
     final Supplier<Void> versionApiCall = () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       KubernetesApiCall.call(apiClient, () -> new VersionApi(apiClient).getCodeCall(null));
       return null;
     };
@@ -484,7 +488,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         result = client.get()
                      .resources(workloadType)
                      .namespace(kubernetesConfig.getNamespace())
-                     .execute(kubeConfigDir.getPath(), null, errStream, false);
+                     .execute(kubeConfigDir.getPath(), null, errStream, false, Collections.emptyMap());
         if (0 == result.getExitValue()) {
           return;
         }
@@ -1271,15 +1275,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .createOrReplace(definition);
   }
 
-  @Override
-  public V1ConfigMap createOrReplaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
-    String name = definition.getMetadata().getName();
-    V1ConfigMap configMap = getConfigMap(kubernetesConfig, name);
-    return configMap == null ? createConfigMap(kubernetesConfig, definition)
-                             : replaceConfigMap(kubernetesConfig, definition);
-  }
-
-  private V1ConfigMap replaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
+  @VisibleForTesting
+  V1ConfigMap replaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
     String name = definition.getMetadata().getName();
     log.info("Replacing config map [{}]", name);
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
@@ -1604,7 +1601,24 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public V1Secret createOrReplaceSecret(KubernetesConfig kubernetesConfig, V1Secret definition) {
     String name = definition.getMetadata().getName();
     V1Secret secret = getSecret(kubernetesConfig, name);
-    return secret == null ? createSecret(kubernetesConfig, definition) : replaceSecret(kubernetesConfig, definition);
+    return createOrReplaceSecret(kubernetesConfig, definition, secret != null);
+  }
+
+  private V1Secret createOrReplaceSecret(KubernetesConfig kubernetesConfig, V1Secret secret, boolean secretExists) {
+    return secretExists ? replaceSecret(kubernetesConfig, secret) : createSecret(kubernetesConfig, secret);
+  }
+
+  @Override
+  public V1ConfigMap createOrReplaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
+    String name = definition.getMetadata().getName();
+    V1ConfigMap configMap = getConfigMap(kubernetesConfig, name);
+    return createOrReplaceConfigMap(kubernetesConfig, definition, configMap != null);
+  }
+
+  private V1ConfigMap createOrReplaceConfigMap(
+      KubernetesConfig kubernetesConfig, V1ConfigMap configmap, boolean configMapExists) {
+    return configMapExists ? replaceConfigMap(kubernetesConfig, configmap)
+                           : createConfigMap(kubernetesConfig, configmap);
   }
 
   @VisibleForTesting
@@ -1998,6 +2012,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       KubernetesConfig kubernetesConfig, String releaseName, String releaseHistory) throws IOException {
     V1ConfigMap configMap = getConfigMap(kubernetesConfig, releaseName);
     String compressedB64EncodedReleaseHistory = encodeBase64(compressString(releaseHistory, Deflater.BEST_COMPRESSION));
+    boolean configMapExists = false;
 
     if (configMap == null) {
       configMap = new V1ConfigMapBuilder()
@@ -2009,19 +2024,19 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                           CompressedReleaseHistoryFlag, "true"))
                       .build();
     } else {
-      Map data = configMap.getData();
-      data.put(ReleaseHistoryKeyName, compressedB64EncodedReleaseHistory);
-      data.put(CompressedReleaseHistoryFlag, "true");
-      configMap.setData(data);
+      configMap.putDataItem(ReleaseHistoryKeyName, compressedB64EncodedReleaseHistory);
+      configMap.putDataItem(CompressedReleaseHistoryFlag, "true");
+      configMapExists = true;
     }
 
-    return createOrReplaceConfigMap(kubernetesConfig, configMap);
+    return createOrReplaceConfigMap(kubernetesConfig, configMap, configMapExists);
   }
 
   private V1Secret saveReleaseHistoryInSecrets(
       KubernetesConfig kubernetesConfig, String releaseName, String releaseHistory) throws IOException {
     V1Secret secret = getSecret(kubernetesConfig, releaseName);
     byte[] compressedReleaseHistory = compressString(releaseHistory, Deflater.BEST_COMPRESSION);
+    boolean secretExists = false;
 
     if (secret == null) {
       secret = new V1SecretBuilder()
@@ -2033,13 +2048,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                        CompressedReleaseHistoryFlag, new byte[] {(byte) 1}))
                    .build();
     } else {
-      Map data = secret.getData();
-      data.put(ReleaseHistoryKeyName, compressedReleaseHistory);
-      data.put(CompressedReleaseHistoryFlag, new byte[] {(byte) 1});
-      secret.setData(data);
+      secret.putDataItem(ReleaseHistoryKeyName, compressedReleaseHistory);
+      secret.putDataItem(CompressedReleaseHistoryFlag, new byte[] {(byte) 1});
+      secretExists = true;
     }
 
-    return createOrReplaceSecret(kubernetesConfig, secret);
+    return createOrReplaceSecret(kubernetesConfig, secret, secretExists);
   }
 
   @Override
@@ -2159,6 +2173,41 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${SERVICE_ACCOUNT_TOKEN_DATA}", serviceAccountTokenData);
   }
 
+  @Override
+  public List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields) {
+    final Supplier<List<V1Secret>> secretSupplier = Retry.decorateSupplier(retry, () -> {
+      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      String namespace = kubernetesConfig.getNamespace();
+      try {
+        V1SecretList secrets = new CoreV1Api(apiClient).listNamespacedSecret(
+            namespace, null, null, null, fields, labels, null, null, null, null, null);
+        return secrets.getItems();
+      } catch (ApiException e) {
+        throw new InvalidRequestException(
+            String.format("Unable to get secrets from namespace: %s %nCode: %s, message: %s, labels: %s, fields: %s",
+                namespace, e.getCode(), getErrorMessage(e), labels, fields));
+      }
+    });
+    return secretSupplier.get();
+  }
+
+  @Override
+  public V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields) {
+    final Supplier<V1Status> secretSupplier = Retry.decorateSupplier(retry, () -> {
+      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      String namespace = kubernetesConfig.getNamespace();
+      try {
+        return new CoreV1Api(apiClient).deleteCollectionNamespacedSecret(
+            namespace, null, null, null, fields, null, labels, null, null, null, null, null, null, null);
+      } catch (ApiException e) {
+        throw new InvalidRequestException(
+            String.format("Unable to delete secrets from namespace %s %nCode: %s, message: %s, labels: %s, fields: %s",
+                namespace, e.getCode(), getErrorMessage(e), labels, fields));
+      }
+    });
+    return secretSupplier.get();
+  }
+
   private String generateKubeConfigStringForGcp(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
@@ -2238,8 +2287,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   private Retry buildRetryAndRegisterListeners() {
-    final Retry exponentialRetry = RetryHelper.getExponentialRetry(
-        this.getClass().getSimpleName(), new Class[] {ConnectException.class, TimeoutException.class});
+    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
+        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
+            StreamResetException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

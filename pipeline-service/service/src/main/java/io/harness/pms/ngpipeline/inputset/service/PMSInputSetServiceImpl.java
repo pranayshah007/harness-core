@@ -54,6 +54,7 @@ import io.harness.repositories.inputset.PMSInputSetRepository;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -116,7 +117,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean deleted) {
+      String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID) {
     Optional<InputSetEntity> optionalInputSetEntity =
         getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
     if (!optionalInputSetEntity.isPresent()) {
@@ -124,7 +125,10 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
     }
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      InputSetValidationHelper.validateInputSetForOldGitSync(
+          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
+    } else if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
       ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
       try {
         InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
@@ -134,6 +138,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         // irrespective of whether the validation throws an exception or not
         GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
       }
+    } else {
+      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
     }
     return optionalInputSetEntity;
   }
@@ -407,7 +413,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public InputSetEntity importInputSetFromRemote(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
       InputSetImportRequestDTO inputSetImportRequestDTO, boolean isForceImport) {
-    gitAwareEntityHelper.checkRootFolder();
     String repoUrl = getRepoUrlAndCheckForFileUniqueness(
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =
@@ -434,6 +439,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   // todo: move to helper class when created during refactoring
+  @VisibleForTesting
   void checkAndThrowMismatchInImportedInputSetMetadata(String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest,
       String importedInputSet) {
@@ -499,12 +505,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       changedFields.put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
     }
 
-    String descriptionFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (!(EmptyPredicate.isEmpty(inputSetImportRequest.getInputSetDescription())
-            && EmptyPredicate.isEmpty(descriptionFromGit))
-        && !inputSetImportRequest.getInputSetDescription().equals(descriptionFromGit)) {
-      changedFields.put(YAMLFieldNameConstants.DESCRIPTION, descriptionFromGit);
-    }
     if (isOverlay) {
       String pipelineIdentifierFromGit =
           inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PIPELINE_IDENTIFIER);
@@ -537,9 +537,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
             .schemaErrors(
                 Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.inputSet").build()))
             .build();
-    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
-    invalidYamlException.setYaml(pipelineYaml);
-    return invalidYamlException;
+    return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
   String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier, String projectIdentifier,

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.ModuleType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEventData;
@@ -51,11 +51,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "AuditEventKeys")
+@StoreIn(DbAliases.AUDITS)
 @Entity(value = "auditEvents", noClassnameStored = true)
 @Document("auditEvents")
 @TypeAlias("auditEvents")
 @JsonInclude(NON_NULL)
-@StoreIn(DbAliases.AUDITS)
 public class AuditEvent {
   @NotNull @NotBlank String insertId;
   @Id @org.mongodb.morphia.annotations.Id String id;

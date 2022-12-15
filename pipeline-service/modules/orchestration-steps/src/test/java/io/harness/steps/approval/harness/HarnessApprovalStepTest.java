@@ -7,15 +7,25 @@
 
 package io.harness.steps.approval.harness;
 
+import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -27,6 +37,7 @@ import io.harness.rule.Owner;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
 import io.harness.steps.approval.step.harness.HarnessApprovalResponseData;
@@ -35,10 +46,10 @@ import io.harness.steps.approval.step.harness.HarnessApprovalStep;
 import io.harness.steps.approval.step.harness.beans.Approvers;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,8 +67,15 @@ public class HarnessApprovalStepTest {
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock ExecutorService executorService;
   @Mock ApprovalNotificationHandler approvalNotificationHandler;
-
+  @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @InjectMocks private HarnessApprovalStep harnessApprovalStep;
+  private ILogStreamingStepClient logStreamingStepClient;
+
+  @Before
+  public void setup() {
+    logStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
 
   @Test
   @Owner(developers = PRABU)
@@ -72,6 +90,11 @@ public class HarnessApprovalStepTest {
     })
         .when(approvalInstanceService)
         .save(any());
+    when(approvalNotificationHandler.getUserGroups(HarnessApprovalInstance.fromStepParameters(ambiance, parameters)))
+        .thenReturn(Collections.emptyList());
+    assertThatThrownBy(() -> harnessApprovalStep.executeAsync(ambiance, parameters, null, null))
+        .isInstanceOf(InvalidRequestException.class);
+    when(approvalNotificationHandler.getUserGroups(any())).thenReturn(Collections.singletonList(buildUserGroup()));
     assertThat(harnessApprovalStep.executeAsync(ambiance, parameters, null, null).getCallbackIds(0))
         .isEqualTo(INSTANCE_ID);
     ArgumentCaptor<ApprovalInstance> approvalInstanceArgumentCaptor = ArgumentCaptor.forClass(ApprovalInstance.class);
@@ -82,6 +105,12 @@ public class HarnessApprovalStepTest {
     assertThat(instance.getApprovalMessage()).isEqualTo(APPROVAL_MESSAGE);
     assertThat(instance.getApprovers().getUserGroups().get(0)).isEqualTo(USER_GROUP);
     assertThat(instance.getApprovers().getMinimumCount()).isEqualTo(1);
+    assertThat(instance.getValidatedApprovalUserGroups().size()).isEqualTo(1);
+    assertThat(instance.getValidatedApprovalUserGroups().get(0))
+        .isEqualTo(ApprovalUserGroupDTO.toApprovalUserGroupDTO(buildUserGroup()));
+    assertThat(instance.getValidatedUserGroups().size()).isEqualTo(1);
+    assertThat(instance.getValidatedUserGroups().get(0)).isEqualTo(buildUserGroup());
+    verify(logStreamingStepClient, times(2)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -100,6 +129,7 @@ public class HarnessApprovalStepTest {
     StepResponse stepResponse =
         harnessApprovalStep.handleAsyncResponse(ambiance, parameters, Collections.singletonMap("key", responseData));
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -120,6 +150,7 @@ public class HarnessApprovalStepTest {
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(HarnessApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -138,11 +169,13 @@ public class HarnessApprovalStepTest {
         harnessApprovalStep.handleAsyncResponse(ambiance, parameters, Collections.singletonMap("key", responseData));
     assertThat(response.getStatus()).isEqualTo(Status.APPROVAL_REJECTED);
     assertThat(response.getFailureInfo().getFailureData(0).getFailureTypesList())
-        .containsExactly(FailureType.UNKNOWN_FAILURE);
+        .containsExactly(FailureType.APPROVAL_REJECTION);
     assertThat(response.getFailureInfo().getFailureData(0).getMessage()).isEqualTo("Approval Step has been Rejected");
+    assertThat(response.getFailureInfo().getFailureData(0).getCode()).isEqualTo(APPROVAL_REJECTION.name());
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(HarnessApprovalOutcome.class);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -153,21 +186,24 @@ public class HarnessApprovalStepTest {
     StepElementParameters parameters = getStepElementParameters();
     harnessApprovalStep.handleAbort(ambiance, parameters, null);
     verify(approvalInstanceService).expireByNodeExecutionId(null);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
         .type("HARNESS_APPROVAL")
-        .spec(HarnessApprovalSpecParameters.builder()
-                  .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
-                  .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
-                  .approvers(
-                      Approvers.builder()
-                          .userGroups(ParameterField.<List<String>>builder().value(Arrays.asList(USER_GROUP)).build())
-                          .minimumCount(ParameterField.<Integer>builder().value(1).build())
-                          .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
-                          .build())
-                  .build())
+        .spec(
+            HarnessApprovalSpecParameters.builder()
+                .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
+                .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
+                .approvers(
+                    Approvers.builder()
+                        .userGroups(
+                            ParameterField.<List<String>>builder().value(Collections.singletonList(USER_GROUP)).build())
+                        .minimumCount(ParameterField.<Integer>builder().value(1).build())
+                        .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+                        .build())
+                .build())
         .build();
   }
 
@@ -176,6 +212,16 @@ public class HarnessApprovalStepTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .build();
+  }
+
+  private UserGroupDTO buildUserGroup() {
+    return UserGroupDTO.builder()
+        .accountIdentifier("accId")
+        .orgIdentifier("orgId")
+        .projectIdentifier("projId")
+        .name("UG NAME")
+        .identifier("UG_NAME")
         .build();
   }
 }

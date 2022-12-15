@@ -71,10 +71,11 @@ public class StageCleanupUtility {
       stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
     }
 
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.K8) {
+    StageInfraDetails.Type type = stageInfraDetails.getType();
+    if (type == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
       return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
-    } else if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    } else if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
       return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
@@ -129,9 +130,11 @@ public class StageCleanupUtility {
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+
     return CIVmCleanupTaskParams.builder()
         .stageRuntimeId(stageDetails.getStageRuntimeID())
         .poolId(vmStageInfraDetails.getPoolId())
+        .infraInfo(vmStageInfraDetails.getInfraInfo())
         .build();
   }
 

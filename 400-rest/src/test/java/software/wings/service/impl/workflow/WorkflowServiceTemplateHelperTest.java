@@ -91,6 +91,26 @@ public class WorkflowServiceTemplateHelperTest extends WingsBaseTest {
     workflowServiceTemplateHelper.validatePhaseStepsProperties(newPhaseStep);
   }
 
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testSaveWorkflowWithStringTimeout() {
+    Map<String, Object> properties = new HashMap<>();
+    Integer timeout = WorkflowServiceTemplateHelper.MAXIMUM_TIMEOUT + 20;
+    properties.put("timeoutMillis", timeout.toString());
+
+    PhaseStep newPhaseStep = PhaseStepBuilder.aPhaseStep(PhaseStepType.HELM_DEPLOY, "Helm Deploy")
+                                 .addStep(GraphNode.builder()
+                                              .id("id")
+                                              .name("test-helm")
+                                              .type(StepType.APPROVAL.toString())
+                                              .properties(properties)
+                                              .build())
+                                 .build();
+
+    workflowServiceTemplateHelper.validatePhaseStepsProperties(newPhaseStep);
+  }
+
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)

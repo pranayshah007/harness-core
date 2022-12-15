@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.yaml.GitCommand.GitCommandType.COMMIT_AND_PUSH;
@@ -25,9 +26,11 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.FeatureName;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
@@ -60,7 +63,6 @@ import software.wings.yaml.gitSync.GitFileActivity;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -200,13 +202,16 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
     log.info("Remote head commit did not match local head commit. Requeuing changeset [{}] again.", changeSetId);
     if (changeSetId != null) {
       if (featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
-        yamlChangeSetService.pushYamlChangeSetForGitToHarness(accountId, branchName, gitConnectorId, repositoryName);
+        YamlChangeSet yamlChangeSet = yamlChangeSetService.get(accountId, changeSetId);
+        yamlChangeSetService.pushYamlChangeSetForGitToHarness(
+            accountId, branchName, gitConnectorId, repositoryName, yamlChangeSet.getAppId());
       }
       yamlChangeSetService.updateStatusAndIncrementPushCount(accountId, changeSetId, Status.QUEUED);
     }
   }
 
-  private void addYamlChangeSetToFilesCommited(List<GitFileChange> gitFileChanges, YamlGitConfig yamlGitConfig) {
+  private void addYamlChangeSetToFilesCommited(
+      List<GitFileChange> gitFileChanges, software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     if (isEmpty(gitFileChanges)) {
       return;
     }
@@ -284,7 +289,7 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   private void saveCommitFromHarness(GitCommitAndPushResult gitCommitAndPushResult, YamlChangeSet yamlChangeSet,
       List<String> yamlGitConfigIds, List<String> yamlSetIdsProcessed) {
     String commitId = gitCommitAndPushResult.getGitCommitResult().getCommitId();
-    YamlGitConfig yamlGitConfig = gitCommitAndPushResult.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = gitCommitAndPushResult.getYamlGitConfig();
     if (yamlGitConfig == null) {
       throw new UnexpectedException(String.format(
           "Error while saving commit for commitId=[%s],yamlChangeSetId=[%s] as the yamlGitConfig is null ", commitId,
@@ -420,24 +425,41 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
 
   @Override
   public void notify(Map<String, Supplier<ResponseData>> response) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
+         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_NESTS)) {
       Supplier<ResponseData> responseDataSupplier = response.values().iterator().next();
       try {
         ResponseData responseData = responseDataSupplier.get();
         notify(responseData);
-      } catch (NoAvailableDelegatesException | NoInstalledDelegatesException e) {
-        log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
-            changeSetId, accountId, response);
-        log.error("Delegate not available or installed, retrying.", e);
-        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
-            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+      } catch (
+          NoAvailableDelegatesException | NoInstalledDelegatesException | NoEligibleDelegatesInAccountException e) {
+        log.error(
+            "Git request failed because of no delegate for command:[{}], changeSetId:[{}], account:[{}], response:[{}]",
+            gitCommandType, changeSetId, accountId, response, e);
+        yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
+            GitSyncFailureAlertDetails.builder()
+                .branchName(branchName)
+                .repositoryName(repositoryName)
+                .errorMessage(ExceptionUtils.getMessage(e))
+                .gitConnectorId(gitConnectorId)
+                .errorCode(e.getCode())
+                .build());
+        updateChangeSetFailureStatusSafely();
+        updateGitCommitFailureSafely();
       } catch (Exception e) {
         log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
             changeSetId, accountId, response);
         log.error("Failure in git command execution", e);
-        updateChangeSetFailureStatusSafely();
-        updateGitCommitFailureSafely();
+        YamlChangeSet yamlChangeSet = yamlChangeSetService.get(accountId, changeSetId);
+        if (yamlChangeSet != null) {
+          if (yamlChangeSet.getRetryCount() != null
+              && yamlChangeSet.getRetryCount() > YamlChangeSetServiceImpl.MAX_RETRY_COUNT) {
+            yamlChangeSetService.markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(accountId, changeSetId);
+          } else {
+            yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
+                Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+          }
+        }
       }
     }
   }

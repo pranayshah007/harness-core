@@ -1,0 +1,110 @@
+pipeline:
+  name: custom1
+  identifier: custom1
+  projectIdentifier: PR1
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: app
+        identifier: app
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: fss1
+                      identifier: fss
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo hi
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: fda
+                      identifier: fda
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo hi
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+        tags: {}
+    - parallel:
+        - stage:
+            name: cs101
+            identifier: cs
+            description: ""
+            type: Custom
+            spec:
+              execution:
+                steps:
+                  - step:
+                      type: ShellScript
+                      name: ss
+                      identifier: ss
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: sleep 70
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 1m 1s
+                  - step:
+                      type: HarnessApproval
+                      name: fdsfd
+                      identifier: fdsfd
+                      spec:
+                        approvalMessage: Please review the following information and approve the pipeline progression
+                        includePipelineExecutionHistory: true
+                        approvers:
+                          userGroups:
+                            - account.usg1
+                          minimumCount: 1
+                          disallowPipelineExecutor: false
+                        approverInputs: []
+                      timeout: 1d
+            tags: {}
+        - stage:
+            name: custom2
+            identifier: custom2
+            description: ""
+            type: Custom1
+            spec:
+              execution:
+                steps:
+                  - step:
+                      type: ShellScript
+                      name: ss
+                      identifier: ss
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: ss
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+            tags: {}

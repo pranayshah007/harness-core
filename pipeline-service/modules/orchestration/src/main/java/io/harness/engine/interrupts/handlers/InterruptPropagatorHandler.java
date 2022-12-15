@@ -19,19 +19,22 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
+import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 /**
  * This serves as base class for the interrupts that are registered with parent but they recursively need to traverse
  * through  the tree and take appropriate action on the leaf node like ABORT_ALL, EXPIRE_ALL
- *
+ * <p>
  * TODO: Evaluate this an extract PAUSE_ALL and RESUME_ALL here too
- *
  */
 
 @OwnedBy(PIPELINE)
@@ -50,12 +53,29 @@ public abstract class InterruptPropagatorHandler {
 
   public Interrupt handleChildNodes(Interrupt interrupt, String nodeExecutionId) {
     Interrupt updatedInterrupt = interruptService.markProcessing(interrupt.getUuid());
-    // Fetching all the children leaf nodes for this particular parent node
-    List<NodeExecution> allNodeExecutions = nodeExecutionService.findAllChildrenWithStatusIn(
-        interrupt.getPlanExecutionId(), nodeExecutionId, StatusUtils.abortAndExpireStatuses(), true);
+    // Find all the nodeExecutions for this plan
+    List<NodeExecution> allExecutions = new LinkedList<>();
+    try (
+        CloseableIterator<NodeExecution> iterator =
+            nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(interrupt.getPlanExecutionId(),
+                StatusUtils.abortAndExpireStatuses(), NodeProjectionUtils.fieldsForInterruptPropagatorHandler)) {
+      while (iterator.hasNext()) {
+        allExecutions.add(iterator.next());
+      }
+    }
 
-    List<String> targetIds = allNodeExecutions.stream()
-                                 .filter(ne -> ExecutionModeUtils.isLeafMode(ne.getMode()))
+    // Filter all the nodes that are in queued state
+    List<NodeExecution> finalList =
+        allExecutions.stream()
+            .filter(nodeExecution -> StatusUtils.abortingStatuses().contains(nodeExecution.getStatus()))
+            .collect(Collectors.toList());
+    // Extract all the running leaf nodes with the parent id as nodeExecutionId passed in as param
+    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions);
+
+    List<String> targetIds = finalList.stream()
+                                 .filter(ne
+                                     -> ExecutionModeUtils.isLeafMode(ne.getMode())
+                                         || StatusUtils.abortingStatuses().contains(ne.getStatus()))
                                  .map(NodeExecution::getUuid)
                                  .collect(Collectors.toList());
 
@@ -71,8 +91,15 @@ public abstract class InterruptPropagatorHandler {
       // If count is 0 that means no running leaf node and hence nothing to do
       return updatedInterrupt;
     } else {
-      List<NodeExecution> discontinuingNodeExecutions =
-          nodeExecutionService.fetchNodeExecutionsByStatus(updatedInterrupt.getPlanExecutionId(), DISCONTINUING);
+      List<NodeExecution> discontinuingNodeExecutions = new LinkedList<>();
+      try (CloseableIterator<NodeExecution> iterator =
+               nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+                   updatedInterrupt.getPlanExecutionId(), EnumSet.of(DISCONTINUING),
+                   NodeProjectionUtils.fieldsForDiscontinuingNodes)) {
+        while (iterator.hasNext()) {
+          discontinuingNodeExecutions.add(iterator.next());
+        }
+      }
 
       if (isEmpty(discontinuingNodeExecutions)) {
         log.warn(updatedInterrupt.getType()

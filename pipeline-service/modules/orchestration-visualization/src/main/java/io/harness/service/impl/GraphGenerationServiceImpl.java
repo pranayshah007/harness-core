@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EphemeralOrchestrationGraph;
-import io.harness.beans.FeatureName;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.beans.OrchestrationGraph;
@@ -38,10 +37,7 @@ import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.plan.NodeType;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -49,7 +45,9 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
 import io.harness.skip.service.VertexSkipperService;
+import io.harness.utils.PmsFeatureFlagService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -57,18 +55,21 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
 public class GraphGenerationServiceImpl implements GraphGenerationService {
-  private static final long THRESHOLD_LOG = 50;
+  public static final int THRESHOLD_LOG = 1000;
+
   private static final String GRAPH_LOCK = "GRAPH_LOCK_";
 
   @Inject private PlanExecutionService planExecutionService;
@@ -127,7 +128,8 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(String planExecutionId) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(String planExecutionId) {
     OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
     if (orchestrationGraph == null) {
       log.warn("[PMS_GRAPH] Graph not yet generated. Passing on to next iteration");
@@ -137,25 +139,30 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   // This must always be called after acquiring the lock
-  private boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
+  @VisibleForTesting
+  boolean updateGraphUnderLock(OrchestrationGraph orchestrationGraph) {
     if (orchestrationGraph == null) {
       return false;
     }
+    boolean shouldAck = true;
     String planExecutionId = orchestrationGraph.getPlanExecutionId();
     long startTs = System.currentTimeMillis();
     long lastUpdatedAt = orchestrationGraph.getLastUpdatedAt();
+
     List<OrchestrationEventLog> unprocessedEventLogs =
-        orchestrationEventLogRepository.findUnprocessedEvents(planExecutionId, lastUpdatedAt);
+        orchestrationEventLogRepository.findUnprocessedEvents(planExecutionId, lastUpdatedAt, THRESHOLD_LOG);
     if (unprocessedEventLogs.isEmpty()) {
       return true;
     }
 
-    if (unprocessedEventLogs.size() > THRESHOLD_LOG) {
+    if (unprocessedEventLogs.size() == THRESHOLD_LOG) {
       log.warn("[PMS_GRAPH] Found [{}] unprocessed event logs", unprocessedEventLogs.size());
+      // Re-emit if there are too many logs
+      shouldAck = false;
     }
-
+    boolean updateRequired = false;
     Update executionSummaryUpdate = new Update();
-    Set<String> processedNodeExecutionIds = new HashSet<>();
+    Set<String> nodeExecutionIds = new HashSet<>();
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
@@ -166,41 +173,52 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
         case STEP_DETAILS_UPDATE:
           orchestrationGraph = stepDetailsUpdateEventHandler.handleEvent(
               planExecutionId, nodeExecutionId, orchestrationGraph, executionSummaryUpdate);
+          updateRequired = true;
           break;
         case STEP_INPUTS_UPDATE:
           orchestrationGraph =
               stepDetailsUpdateEventHandler.handleStepInputEvent(planExecutionId, nodeExecutionId, orchestrationGraph);
+          updateRequired = true;
           break;
         default:
-          if (processedNodeExecutionIds.contains(nodeExecutionId)) {
+          if (nodeExecutionIds.contains(nodeExecutionId)) {
             continue;
           }
-          processedNodeExecutionIds.add(nodeExecutionId);
+          nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          if (pmsFeatureFlagService.isEnabled(
-                  AmbianceUtils.getAccountId(nodeExecution.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
-            pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
-                planExecutionId, nodeExecution, executionSummaryUpdate);
-            pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
-          }
-          if (OrchestrationUtils.isStageNode(nodeExecution)
+          updateRequired = pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+                               planExecutionId, nodeExecution, executionSummaryUpdate)
+              || updateRequired;
+          updateRequired =
+              pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
+              || updateRequired;
+
+          if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-            pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate);
+            updateRequired =
+                pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate)
+                || updateRequired;
           } else {
-            ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution);
-            ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution);
+            updateRequired =
+                ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution)
+                || updateRequired;
+            updateRequired = ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution)
+                || updateRequired;
           }
-          orchestrationGraph = graphStatusUpdateHelper.handleEventV2(
-              planExecutionId, nodeExecution, orchestrationEventType, orchestrationGraph);
+          orchestrationGraph =
+              graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
       lastUpdatedAt = orchestrationEventLog.getCreatedAt();
     }
+
     cachePartialOrchestrationGraph(orchestrationGraph.withLastUpdatedAt(lastUpdatedAt), lastUpdatedAt);
-    pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
+    if (updateRequired) {
+      pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
+    }
     log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
         System.currentTimeMillis() - startTs);
-    return true;
+    return shouldAck;
   }
 
   @Override
@@ -259,7 +277,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
     String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())) {
+    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
+            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }
@@ -267,14 +287,23 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public OrchestrationGraph buildOrchestrationGraph(String planExecutionId) {
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
     if (planExecution == null) {
       throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
               + planExecutionId + "] not found or unable to generate a graph for it",
           "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
           new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
     }
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetries(planExecutionId);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
+    log.warn(String.format(
+        "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
+        planExecutionId, nodeExecutions.size()));
     if (isEmpty(nodeExecutions)) {
       return OrchestrationGraph.builder()
           .adjacencyList(OrchestrationAdjacencyListInternal.builder()
@@ -301,9 +330,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
             .build();
 
     List<NodeExecution> stageNodeExecutions =
-        nodeExecutions.stream()
-            .filter(nodeExecution -> nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE)
-            .collect(Collectors.toList());
+        nodeExecutions.stream().filter(OrchestrationUtils::isStageOrParallelStageNode).collect(Collectors.toList());
     cacheOrchestrationGraph(graph);
     pmsExecutionSummaryService.regenerateStageLayoutGraph(planExecutionId, stageNodeExecutions);
     return graph;

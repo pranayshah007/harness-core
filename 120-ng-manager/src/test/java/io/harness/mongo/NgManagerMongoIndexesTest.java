@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.NgManagerTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.Connector;
 import io.harness.ng.DbAliases;
@@ -42,6 +43,7 @@ public class NgManagerMongoIndexesTest extends NgManagerTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
@@ -49,7 +51,7 @@ public class NgManagerMongoIndexesTest extends NgManagerTestBase {
     morphia.map(classes);
 
     List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
-        persistence.getDatastore(Connector.class), morphia, Store.builder().name(DbAliases.NG_MANAGER).build(), null);
+        persistence.getDatastore(Connector.class), morphia, Store.builder().name(DbAliases.NG_MANAGER).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

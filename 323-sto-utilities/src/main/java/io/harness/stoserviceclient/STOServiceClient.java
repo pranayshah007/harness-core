@@ -9,6 +9,7 @@ package io.harness.stoserviceclient;
 
 import io.harness.common.STOCommonEndpointConstants;
 
+import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
@@ -16,5 +17,5 @@ import retrofit2.http.Query;
 
 public interface STOServiceClient {
   @GET(STOCommonEndpointConstants.STO_SERVICE_TOKEN_ENDPOINT)
-  Call<String> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
+  Call<JsonObject> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
 }

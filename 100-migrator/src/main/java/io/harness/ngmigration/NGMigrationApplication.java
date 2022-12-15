@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -23,7 +22,6 @@ import static com.google.inject.name.Names.named;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
 import io.harness.ccm.cluster.ClusterRecordHandler;
@@ -68,13 +66,13 @@ import io.harness.mongo.QueryFactory;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ngmigration.api.NgMigrationResource;
 import io.harness.ngmigration.serializer.CurrentGenRegistrars;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
-import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceImpl;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordHandler;
 import io.harness.persistence.HPersistence;
@@ -82,17 +80,12 @@ import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.redis.RedisConfig;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
-import io.harness.service.impl.DelegateInsightsServiceImpl;
-import io.harness.service.impl.DelegateTaskServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateProfileObserver;
-import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
-import io.harness.service.intfc.PerpetualTaskStateObserver;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionServiceImpl;
@@ -102,7 +95,6 @@ import io.harness.stream.StreamModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBService;
-import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
 
@@ -148,7 +140,6 @@ import software.wings.service.impl.CloudProviderObserver;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
-import software.wings.service.impl.DelegateTaskStatusObserver;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -229,6 +220,7 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.atmosphere.cpr.AtmosphereServlet;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.MetaBroadcaster;
@@ -335,6 +327,17 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
     List<Module> modules = new ArrayList<>();
     addModules(configuration.getCg(), modules);
+
+    Module providerModule = new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+    };
+    modules.add(providerModule);
+
     modules.add(new MigratorModule(configuration));
 
     Injector injector = Guice.createInjector(modules);
@@ -380,6 +383,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     // Authentication/Authorization filters
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
+
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
 
     environment.lifecycle().addServerLifecycleListener(server -> {
       for (Connector connector : server.getConnectors()) {
@@ -515,7 +522,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     modules.add(FiltersModule.getInstance());
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);
     modules.add(new WingsModule(configuration, StartupMode.MANAGER));
@@ -584,18 +590,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
       @Override
       public FeatureFlagConfig featureFlagConfig() {
         return configuration.getFeatureFlagConfig();
-      }
-    });
-
-    modules.add(new AbstractPersistenceTracerModule() {
-      @Override
-      protected RedisConfig redisConfigProvider() {
-        return configuration.getEventsFrameworkConfiguration().getRedisConfig();
-      }
-
-      @Override
-      protected String serviceIdProvider() {
-        return MANAGER.getServiceId();
       }
     });
   }
@@ -717,36 +711,8 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
   }
 
-  /**
-   * All the observers that belong to Delegate service app
-   *
-   * @param injector
-   * @param delegateServiceImpl
-   */
-  private void registerDelegateServiceObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
-    delegateServiceImpl.getDelegateTaskStatusObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
-
-    DelegateTaskServiceImpl delegateTaskService =
-        (DelegateTaskServiceImpl) injector.getInstance(Key.get(DelegateTaskService.class));
-    delegateTaskService.getDelegateTaskStatusObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
-
-    DelegateProfileServiceImpl delegateProfileService =
-        (DelegateProfileServiceImpl) injector.getInstance(Key.get(DelegateProfileService.class));
-    DelegateProfileEventHandler delegateProfileEventHandler =
-        injector.getInstance(Key.get(DelegateProfileEventHandler.class));
-    delegateServiceImpl.getDelegateProfileSubject().register(delegateProfileEventHandler);
-    delegateProfileService.getDelegateProfileSubject().register(delegateProfileEventHandler);
-
-    // Eventually will be moved to dms
-    PerpetualTaskServiceImpl perpetualTaskService =
-        (PerpetualTaskServiceImpl) injector.getInstance(Key.get(PerpetualTaskService.class));
-    perpetualTaskService.getPerpetualTaskCrudSubject().register(
-        injector.getInstance(Key.get(PerpetualTaskRecordHandler.class)));
-    perpetualTaskService.getPerpetualTaskStateObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
-    delegateServiceImpl.getSubject().register(perpetualTaskService);
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   /**
@@ -932,16 +898,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
           if (isDms()) {
             remoteObservers.add(RemoteObserver.builder()
                                     .subjectCLass(DelegateServiceImpl.class)
-                                    .observerClass(DelegateTaskStatusObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(DelegateTaskServiceImpl.class)
-                                    .observerClass(DelegateTaskStatusObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(DelegateServiceImpl.class)
                                     .observerClass(DelegateProfileObserver.class)
                                     .observer(DelegateProfileEventHandler.class)
                                     .build());
@@ -954,16 +910,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
                                     .subjectCLass(PerpetualTaskServiceImpl.class)
                                     .observerClass(PerpetualTaskCrudObserver.class)
                                     .observer(PerpetualTaskRecordHandler.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(PerpetualTaskServiceImpl.class)
-                                    .observerClass(PerpetualTaskStateObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(PerpetualTaskServiceImpl.class)
-                                    .observerClass(PerpetualTaskStateObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
                                     .build());
             remoteObservers.add(RemoteObserver.builder()
                                     .subjectCLass(AccountServiceImpl.class)

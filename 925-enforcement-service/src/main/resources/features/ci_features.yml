@@ -38,10 +38,10 @@ features:
     restrictions:
       FREE:
         restrictionType: AVAILABILITY
-        enabled: false
+        enabled: true
       TEAM:
         restrictionType: AVAILABILITY
-        enabled: false
+        enabled: true
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
@@ -77,4 +77,19 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
-
+  - name: MAX_BUILDS_PER_DAY
+    description: The restriction on number of stages on builds per day
+    restrictions:
+      FREE:
+        restrictionType: RATE_LIMIT
+        limit: 100
+        timeUnit:
+          unit: DAYS
+          numberOfUnits: 1
+        clientName: cimanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true

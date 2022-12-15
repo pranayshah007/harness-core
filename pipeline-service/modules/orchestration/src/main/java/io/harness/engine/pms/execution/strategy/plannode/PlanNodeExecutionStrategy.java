@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
@@ -55,6 +56,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -62,12 +64,14 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -93,6 +97,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("EngineExecutorService") ExecutorService executorService;
+  @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -110,7 +117,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .parentId(parentId)
             .previousId(previousId)
             .unitProgresses(new ArrayList<>())
-            .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
             .module(node.getServiceName())
             .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
             .skipGraphType(node.getSkipGraphType())
@@ -124,10 +130,11 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   }
 
   @VisibleForTesting
-  void resolveParameters(Ambiance ambiance, PmsStepParameters stepParameters, boolean skipUnresolvedCheck) {
+  void resolveParameters(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     log.info("Starting to Resolve step parameters");
-    Object resolvedStepParameters = pmsEngineExpressionService.resolve(ambiance, stepParameters, skipUnresolvedCheck);
+    Object resolvedStepParameters =
+        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
     // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
@@ -143,7 +150,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String nodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       PlanNode planNode = planService.fetchNode(ambiance.getPlanId(), nodeId);
-      resolveParameters(ambiance, planNode.getStepParameters(), planNode.isSkipUnresolvedExpressionsCheck());
+      resolveParameters(ambiance, planNode);
 
       ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
       if (!check.isProceed()) {
@@ -152,6 +159,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       log.info("Proceeding with  Execution. Reason : {}", check.getReason());
 
+      if (waitForExecutionInputHelper.waitForExecutionInput(ambiance, nodeExecutionId, planNode)) {
+        return;
+      }
       if (facilitationHelper.customFacilitatorPresent(planNode)) {
         facilitateEventPublisher.publishEvent(ambiance, planNode);
         return;
@@ -205,7 +215,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         nodeExecution = Preconditions.checkNotNull(nodeExecutionService.updateStatusWithOpsV2(
             nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class), NodeProjectionUtils.fieldsForResume));
       } else {
-        log.warn("NodeExecution with id {} is already in Running status", nodeExecutionId);
+        // This will happen if the node is not in any paused or waiting statuses.
+        log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
       }
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {

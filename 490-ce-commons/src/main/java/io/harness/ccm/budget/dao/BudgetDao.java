@@ -7,6 +7,8 @@
 
 package io.harness.ccm.budget.dao;
 
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
+import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
 import io.harness.persistence.HPersistence;
@@ -19,6 +21,18 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;
+  private static final String SCOPE_VIEW_ID = "scope.viewId";
+  private static final String SCOPE_VIEW_NAME = "scope.viewName";
+  private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetBreakdown;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.actualMonthlyCost;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.forecastMonthlyCost;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.yearlyLastPeriodCost;
 
   public String save(Budget budget) {
     return persistence.save(budget);
@@ -99,6 +113,50 @@ public class BudgetDao {
     if (null != budget.getUserGroupIds()) {
       updateOperations.set(BudgetKeys.userGroupIds, budget.getUserGroupIds());
     }
+    if (null != budget.getBudgetMonthlyBreakdown() && null != budget.getBudgetMonthlyBreakdown().getBudgetBreakdown()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN, budget.getBudgetMonthlyBreakdown().getBudgetBreakdown());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT, budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getActualMonthlyCost()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST, budget.getBudgetMonthlyBreakdown().getActualMonthlyCost());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST, budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost()) {
+      updateOperations.set(BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST,
+          budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost());
+    }
+    persistence.update(query, updateOperations);
+  }
+
+  public void updateBudgetMonthlyBreakdown(String budgetId, BudgetMonthlyBreakdown budgetMonthlyBreakdown) {
+    Query query = persistence.createQuery(Budget.class).field(BudgetKeys.uuid).equal(budgetId);
+    UpdateOperations<Budget> updateOperations = persistence.createUpdateOperations(Budget.class);
+
+    updateOperations.set(BudgetKeys.budgetMonthlyBreakdown, budgetMonthlyBreakdown);
+    persistence.update(query, updateOperations);
+  }
+
+  public void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName) {
+    Query query = persistence.createQuery(Budget.class)
+                      .disableValidation()
+                      .field(BudgetKeys.accountId)
+                      .equal(accountId)
+                      .field(SCOPE_VIEW_ID)
+                      .equal(perspectiveId);
+    UpdateOperations<Budget> updateOperations =
+        persistence.createUpdateOperations(Budget.class).disableValidation().set(SCOPE_VIEW_NAME, perspectiveName);
     persistence.update(query, updateOperations);
   }
 

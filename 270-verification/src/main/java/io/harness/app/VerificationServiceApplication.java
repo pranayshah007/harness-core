@@ -42,8 +42,8 @@ import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
-import io.harness.jobs.sg247.collection.ServiceGuardDataCollectionJob;
-import io.harness.jobs.sg247.logs.ServiceGuardAnalysisJob;
+import io.harness.jobs.sg247.CVConfigurationAnalysisJob;
+import io.harness.jobs.sg247.CVConfigurationDataCollectionJob;
 import io.harness.jobs.sg247.logs.ServiceGuardCleanUpAlertsJob;
 import io.harness.jobs.workflow.WorkflowCVTaskCreationHandler;
 import io.harness.jobs.workflow.collection.CVDataCollectionJob;
@@ -59,6 +59,7 @@ import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -99,6 +100,8 @@ import software.wings.security.ThreadLocalUserProvider;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
 import software.wings.service.impl.analysis.MLAnalysisType;
+import software.wings.verification.CVConfiguration;
+import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -271,6 +274,13 @@ public class VerificationServiceApplication extends Application<VerificationServ
       MongoConfig mongoConfig() {
         return configuration.getMongoConnectionFactory();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
     modules.add(new AbstractMongoModule() {
       @Override
@@ -346,7 +356,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
 
     registerWorkflowIterators(injector);
 
-    registerServiceGuardIterators(injector);
+    registerServiceGuardIterators(injector, configuration.getServiceGuardIteratorConfig());
 
     initializeServiceTaskPoll(injector);
 
@@ -545,15 +555,45 @@ public class VerificationServiceApplication extends Application<VerificationServ
     workflowVerificationExecutor.scheduleAtFixedRate(() -> dataCollectionIterator.process(), 0, 5, TimeUnit.SECONDS);
   }
 
-  private void registerServiceGuardIterators(Injector injector) {
+  private void registerServiceGuardIterators(Injector injector, IteratorConfig serviceGuardIteratorConfig) {
     // Increasing thread size to 20 for now. This needs to be redesigned to handle increasing accounts.
-    ScheduledThreadPoolExecutor serviceGuardExecutor =
-        new ScheduledThreadPoolExecutor(20, new ThreadFactoryBuilder().setNameFormat("Iterator-ServiceGuard").build());
-    registerIterator(injector, serviceGuardExecutor, new ServiceGuardDataCollectionJob(),
-        AccountKeys.serviceGuardDataCollectionIteration, ofMinutes(1), 7);
-    registerIterator(injector, serviceGuardExecutor, new ServiceGuardAnalysisJob(),
-        AccountKeys.serviceGuardDataAnalysisIteration, ofMinutes(1), 7);
-    registerAlertsCleanupIterator(injector, serviceGuardExecutor, ofMinutes(2), 7);
+    if (serviceGuardIteratorConfig.isEnabled()) {
+      ScheduledThreadPoolExecutor serviceGuardExecutor = new ScheduledThreadPoolExecutor(
+          20, new ThreadFactoryBuilder().setNameFormat("Iterator-ServiceGuard").build());
+      registerServiceGuardIterator(injector, serviceGuardExecutor, new CVConfigurationDataCollectionJob(),
+          CVConfigurationKeys.serviceGuardDataCollectionIteration,
+          ofSeconds(serviceGuardIteratorConfig.getTargetIntervalInSeconds()),
+          serviceGuardIteratorConfig.getThreadPoolCount());
+      registerServiceGuardIterator(injector, serviceGuardExecutor, new CVConfigurationAnalysisJob(),
+          CVConfigurationKeys.serviceGuardDataAnalysisIteration,
+          ofSeconds(serviceGuardIteratorConfig.getTargetIntervalInSeconds()),
+          serviceGuardIteratorConfig.getThreadPoolCount());
+      registerAlertsCleanupIterator(injector, serviceGuardExecutor,
+          ofSeconds(serviceGuardIteratorConfig.getTargetIntervalInSeconds()),
+          serviceGuardIteratorConfig.getThreadPoolCount());
+    }
+  }
+
+  private void registerServiceGuardIterator(Injector injector, ScheduledThreadPoolExecutor serviceGuardExecutor,
+      Handler<CVConfiguration> handler, String iteratorFieldName, Duration interval, int maxAllowedThreads) {
+    injector.injectMembers(handler);
+    MongoPersistenceIterator dataCollectionIterator =
+        MongoPersistenceIterator.<CVConfiguration, MorphiaFilterExpander<CVConfiguration>>builder()
+            .mode(ProcessMode.PUMP)
+            .clazz(CVConfiguration.class)
+            .fieldName(iteratorFieldName)
+            .targetInterval(interval)
+            .acceptableNoAlertDelay(ofSeconds(30))
+            .executorService(serviceGuardExecutor)
+            .semaphore(new Semaphore(maxAllowedThreads))
+            .handler(handler)
+            .schedulingType(REGULAR)
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .unsorted(true)
+            .build();
+    injector.injectMembers(dataCollectionIterator);
+    serviceGuardExecutor.scheduleAtFixedRate(() -> dataCollectionIterator.process(), 0, 10, TimeUnit.SECONDS);
   }
 
   private void registerIterator(Injector injector, ScheduledThreadPoolExecutor serviceGuardExecutor,

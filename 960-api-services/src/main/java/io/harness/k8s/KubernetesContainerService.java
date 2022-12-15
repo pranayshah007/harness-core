@@ -201,4 +201,8 @@ public interface KubernetesContainerService {
   List<V1Status> validateLightwingResourceExists(KubernetesConfig kubernetesConfig) throws Exception;
 
   @SneakyThrows V1TokenReviewStatus fetchTokenReviewStatus(KubernetesConfig kubernetesConfig);
+
+  List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields);
+
+  V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields);
 }

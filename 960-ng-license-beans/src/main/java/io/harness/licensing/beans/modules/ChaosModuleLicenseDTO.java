@@ -32,6 +32,6 @@ import lombok.experimental.SuperBuilder;
 @JsonInclude(NON_NULL)
 @Schema(name = "ChaosModuleLicense", description = "This contains details of the Chaos License in Harness")
 public class ChaosModuleLicenseDTO extends ModuleLicenseDTO {
-  Integer totalChaosScenarioRun;
-  Integer totalChaosDelegates;
+  Integer totalChaosExperimentRuns;
+  Integer totalChaosInfrastructures;
 }

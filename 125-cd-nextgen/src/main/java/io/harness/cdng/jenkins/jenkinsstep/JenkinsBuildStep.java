@@ -81,6 +81,7 @@ public class JenkinsBuildStep extends TaskExecutableWithRollbackAndRbac<Artifact
             .connectorRef(specParameters.getConnectorRef().getValue())
             .jobName(specParameters.getJobName().getValue())
             .unstableStatusAsSuccess(specParameters.isUnstableStatusAsSuccess())
+            .useConnectorUrlForJobExecution(specParameters.isUseConnectorUrlForJobExecution())
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .jobParameter(JenkinsBuildStepUtils.processJenkinsFieldsInParameters(specParameters.getFields()));

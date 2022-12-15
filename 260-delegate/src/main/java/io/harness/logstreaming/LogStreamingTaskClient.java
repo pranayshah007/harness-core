@@ -29,7 +29,6 @@ import io.harness.network.SafeHttpCall;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -65,10 +65,11 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   private final String token;
   private final String accountId;
   private final String baseLogKey;
-  private ScheduledExecutorService scheduledExecutorService;
+  private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(10,
+      new ThreadFactoryBuilder().setNameFormat("log-streaming-client-%d").setPriority(Thread.NORM_PRIORITY).build());
   @Deprecated private final String appId;
   @Deprecated private final String activityId;
-
+  private ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
@@ -82,24 +83,29 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     } catch (Exception ex) {
       log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
-    scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
-        new ThreadFactoryBuilder().setNameFormat("log-streaming-client-%d").setPriority(Thread.NORM_PRIORITY).build());
-    scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
+    scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public void closeStream(String baseLogKeySuffix) {
     String logKey = getLogKey(baseLogKeySuffix);
 
-    // we don't want workflow steps to hang because of any log reasons. Putting a safety net just in case
+    synchronized (logCache) {
+      // We can mark this task to be completed. Log upload can happen asynchronously.
+      scheduledExecutorService.submit(() -> closeStreamAsync(logKey));
+    }
+  }
+
+  private void closeStreamAsync(String logKey) {
+    // Waiting for finite time allow log upload to finish.
     long startTime = currentTimeMillis();
     synchronized (logCache) {
       while (logCache.containsKey(logKey) && currentTimeMillis() < startTime + TimeUnit.SECONDS.toMillis(5)) {
-        log.debug("for {} the logs are not drained yet. sleeping...", logKey);
+        log.debug("For {} the logs are not drained yet. sleeping...", logKey);
         try {
           logCache.wait(100);
         } catch (InterruptedException e) {
-          // ignore
+          log.warn("Log upload didn't completed successfully for {} ", logKey);
         }
       }
     }
@@ -112,7 +118,11 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     } catch (Exception ex) {
       log.error("Unable to close log stream for account {} and key {}", accountId, logKey, ex);
     } finally {
-      scheduledExecutorService.shutdownNow();
+      if (scheduledFuture != null) {
+        scheduledFuture.cancel(false);
+      } else {
+        log.error("Scheduled future is missing for logkey {}", logKey);
+      }
     }
   }
 
@@ -135,8 +145,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     }
   }
 
-  @VisibleForTesting
-  void dispatchLogs() {
+  @Override
+  public void dispatchLogs() {
     synchronized (logCache) {
       for (Iterator<Map.Entry<String, List<LogLine>>> iterator = logCache.entrySet().iterator(); iterator.hasNext();) {
         Map.Entry<String, List<LogLine>> next = iterator.next();

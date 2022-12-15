@@ -44,13 +44,14 @@ import io.harness.notification.bean.PipelineEvent;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.notification.NotificationInstrumentationHelper;
 import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.sdk.SdkStepHelper;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
@@ -62,11 +63,13 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -74,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 public class InstrumentationPipelineEndEventHandler implements OrchestrationEndObserver, AsyncInformObserver {
   @Inject TelemetryReporter telemetryReporter;
   @Inject PMSExecutionService pmsExecutionService;
+  @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
   @Inject NotificationInstrumentationHelper notificationInstrumentationHelper;
   @Inject AccountService accountService;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
@@ -88,30 +92,31 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
     String accountName = accountDTO.getName();
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    // TODO : Optimize this query to use projections
-    List<NodeExecution> nodeExecutionList = nodeExecutionService.fetchNodeExecutions(planExecutionId);
     Set<String> allSdkSteps = sdkStepHelper.getAllStepVisibleInUI();
 
-    List<String> stepTypes =
-        nodeExecutionList.stream()
-            .map(nodeExecution -> AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()))
-            .filter(stepType -> stepType != null && stepType.getStepCategory() == StepCategory.STEP)
-            .map(StepType::getType)
-            .filter(allSdkSteps::contains)
-            .collect(Collectors.toList());
-    List<String> failedSteps =
-        nodeExecutionList.stream()
-            .filter(o -> allSdkSteps.contains(AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType()))
-            .filter(o -> StatusUtils.brokeStatuses().contains(o.getStatus()))
-            .map(o -> AmbianceUtils.obtainCurrentLevel(o.getAmbiance()).getIdentifier())
-            .collect(Collectors.toList());
-    List<String> failedStepTypes =
-        nodeExecutionList.stream()
-            .filter(o -> allSdkSteps.contains(AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType()))
-            .filter(o -> StatusUtils.brokeStatuses().contains(o.getStatus()))
-            .map(o -> AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType())
-            .collect(Collectors.toList());
-    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+    List<String> stepTypes = new LinkedList<>();
+    List<String> failedSteps = new LinkedList<>();
+    List<String> failedStepTypes = new LinkedList<>();
+
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchAllStepNodeExecutions(
+             planExecutionId, NodeProjectionUtils.fieldsForInstrumentationHandler)) {
+      while (iterator.hasNext()) {
+        NodeExecution currentNodeExecution = iterator.next();
+
+        String currentStepType = AmbianceUtils.getCurrentStepType(currentNodeExecution.getAmbiance()).getType();
+        if (allSdkSteps.contains(currentStepType)) {
+          stepTypes.add(currentStepType);
+          // If step is in broken status then only add to results
+          if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
+            // Add step identifier
+            failedSteps.add(AmbianceUtils.obtainCurrentLevel(currentNodeExecution.getAmbiance()).getIdentifier());
+            failedStepTypes.add(currentStepType);
+          }
+        }
+      }
+    }
+
+    // TODO(Projection)
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
 

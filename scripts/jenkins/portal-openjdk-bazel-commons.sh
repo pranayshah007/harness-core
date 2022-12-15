@@ -36,10 +36,10 @@ function copy_cg_manager_jars(){
 	cp ../../360-cg-manager/newrelic.yml .
 	cp ../../360-cg-manager/config.yml .
 	cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+	cp ../../400-rest/src/main/resources/jfr/default.jfc .
+  cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
-	cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/manager/Dockerfile-manager-cie-jdk ./Dockerfile-cie-jdk
-	cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/manager/scripts/ .
@@ -57,12 +57,11 @@ function copy_event_server_jars(){
 	cd dist/event-server
 
 	cp ${BAZEL_BIN}/350-event-server/module_deploy.jar event-server-capsule.jar
+	cp ../../350-event-server/keystore.jks .
 	cp ../../350-event-server/key.pem .
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .
-	cp ../../dockerization/event-server/Dockerfile-event-server-jenkins-k8-openjdk Dockerfile
 	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/event-server/Dockerfile-event-server-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/event-server/scripts/ .
@@ -82,10 +81,11 @@ function copy_ng_manager_jars(){
 	cp ../../120-ng-manager/key.pem .
 	cp ../../120-ng-manager/cert.pem .
 	cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
+	cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
+	cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
+  cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
 
-	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
-	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-manager/scripts/ .
@@ -97,44 +97,7 @@ function copy_ng_manager_jars(){
 	cd ../..
 }
 
-function copy_ce_nextgen_jars(){
-	MODULE_NAME="340-ce-nextgen";
-	FOLDER_NAME="ce-nextgen";
-	mkdir -p dist/${FOLDER_NAME} ;
-	cd dist/${FOLDER_NAME}
 
-	cp ${BAZEL_BIN}/${MODULE_NAME}/module_deploy.jar ce-nextgen-capsule.jar
-	cp ../../${MODULE_NAME}/keystore.jks .
-	cp ../../${MODULE_NAME}/config.yml .
-	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-jenkins-k8-openjdk Dockerfile
-	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-jenkins-k8-gcr-openjdk Dockerfile-gcr
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-	cp -r ../../dockerization/${FOLDER_NAME}/scripts/ .
-	
-	copy_common_files
-
-	cd ../..
-}
-
-function copy_batch_processing_jars(){
-	mkdir -p dist/batch-processing ;
-	cd dist/batch-processing
-
-	cp ${BAZEL_BIN}/280-batch-processing/module_deploy.jar batch-processing-capsule.jar
-	cp ../../280-batch-processing/batch-processing-config.yml .
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-openjdk Dockerfile
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk Dockerfile-gcr
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-	cp -r ../../dockerization/batch-processing/scripts/ .
-	
-	copy_common_files
-
-	cd ../..
-}
 
 function copy_change_data_capture_jars(){
 	mkdir -p dist/change-data-capture ;
@@ -142,9 +105,7 @@ function copy_change_data_capture_jars(){
 	
 	cp ${BAZEL_BIN}/110-change-data-capture/module_deploy.jar change-data-capture.jar
 	cp ../../110-change-data-capture/config.yml .
-	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-jenkins-k8-openjdk Dockerfile
 	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/change-data-capture/scripts/ .
@@ -160,19 +121,7 @@ function copy_ng_dashboard_jars(){
 
 	cp ${BAZEL_BIN}/290-dashboard-service/module_deploy.jar ng-dashboard-service.jar
 	cp ../../290-dashboard-service/config.yml .
-
-	if [ -e ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-openjdk ]
-	then
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-openjdk Dockerfile
-	fi
-	  echo "Docker file for ng dashboard not found"
-
-	if [ -e ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk ]
-	then
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk Dockerfile-gcr
-	fi
-	  echo "Docker file for ng dashboard for gcr not found"
+	cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .

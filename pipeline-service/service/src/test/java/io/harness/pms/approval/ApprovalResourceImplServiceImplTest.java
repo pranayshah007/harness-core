@@ -25,7 +25,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.common.EntityTypeConstants;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.PlanExecution;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -48,7 +47,6 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityReque
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,14 +79,13 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private CurrentUserHelper currentUserHelper;
   @Mock private UserClient userClient;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   ApprovalResourceServiceImpl approvalResourceService;
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     approvalResourceService = new ApprovalResourceServiceImpl(approvalInstanceService, approvalInstanceResponseMapper,
-        planExecutionService, userGroupClient, currentUserHelper, userClient, ngFeatureFlagHelperService);
+        planExecutionService, userGroupClient, currentUserHelper, userClient);
   }
 
   @Test
@@ -143,15 +140,12 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
         .hasMessage("User not authorized to approve/reject");
 
     harnessApprovalInstance.getApprovers().setDisallowPipelineExecutor(true);
-    PlanExecution planExecution =
-        PlanExecution.builder()
-            .metadata(ExecutionMetadata.newBuilder()
-                          .setTriggerInfo(ExecutionTriggerInfo.newBuilder()
-                                              .setTriggeredBy(TriggeredBy.newBuilder().setUuid(uuid).build())
-                                              .build())
-                          .build())
-            .build();
-    when(planExecutionService.get(any())).thenReturn(planExecution);
+    ExecutionMetadata metadata = ExecutionMetadata.newBuilder()
+                                     .setTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                         .setTriggeredBy(TriggeredBy.newBuilder().setUuid(uuid).build())
+                                                         .build())
+                                     .build();
+    when(planExecutionService.getExecutionMetadataFromPlanExecution(any())).thenReturn(metadata);
     assertThatCode(() -> approvalResourceService.addHarnessApprovalActivity(id, harnessApprovalActivityRequestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("User not authorized to approve/reject");
@@ -167,8 +161,6 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testSnippetWithServiceNowCreateUpdate() throws IOException {
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     String yaml = approvalResourceService.getYamlSnippet(ApprovalType.SERVICENOW_APPROVAL, "accountId");
     assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_CREATE)).isTrue();
     assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_UPDATE)).isTrue();

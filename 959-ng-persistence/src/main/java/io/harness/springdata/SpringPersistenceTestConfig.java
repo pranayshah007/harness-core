@@ -13,6 +13,7 @@ import static com.google.inject.name.Names.named;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
 
 import com.google.inject.Injector;
 import com.mongodb.MongoClient;
@@ -64,7 +65,7 @@ public class SpringPersistenceTestConfig extends AbstractMongoConfiguration {
   @Bean(name = "primary")
   @Primary
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), MongoConfig.builder().build());
   }
 
   @Override

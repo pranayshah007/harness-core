@@ -22,6 +22,10 @@ import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
@@ -64,10 +68,12 @@ import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.helper.FileBatchResponseMapper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.helper.GitSyncUtils;
 import io.harness.gitsync.common.helper.PRFileListMapper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.impl.ScmResponseStatusUtils;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.userprofile.commons.SCMType;
@@ -91,6 +97,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.PrincipalContextData;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
@@ -102,6 +109,7 @@ import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,7 +193,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     ScmConnector connector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
     final List<EncryptedDataDetail> encryptionDetails =
-        getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, connector);
+        getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, connector);
     final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
     final ScmGitFileTaskParams scmGitFileTaskParams = getScmGitFileTaskParams(
         connector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE_CONTENT, commitId, branchName, null);
@@ -206,7 +214,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
-    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), decryptedConnector);
     ScmPRTaskParams scmPRTaskParams = ScmPRTaskParams.builder()
                                           .scmConnector(decryptedConnector)
@@ -640,7 +648,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public GetUserReposResponse listUserRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ScmConnector scmConnector, PageRequestDTO pageRequest) {
     final List<EncryptedDataDetail> encryptionDetails =
-        getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
+        getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
                                                         .gitRefType(GitRefType.REPOSITORY_LIST)
                                                         .scmConnector(scmConnector)
@@ -665,7 +673,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest) {
     final List<EncryptedDataDetail> encryptionDetails =
-        getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
+        getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
                                                         .gitRefType(GitRefType.BRANCH_LIST_WITH_DEFAULT_BRANCH)
                                                         .scmConnector(scmConnector)
@@ -691,7 +699,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public GetUserRepoResponse getRepoDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
     final List<EncryptedDataDetail> encryptionDetails =
-        getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
+        getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
                                                         .gitRefType(GitRefType.REPOSITORY_DETAILS)
                                                         .scmConnector(scmConnector)
@@ -714,7 +722,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public CreateBranchResponse createNewBranch(
       Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
-    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
                                                         .gitRefType(GitRefType.CREATE_BRANCH_V2)
@@ -741,9 +749,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public CreateFileResponse createFile(CreateGitFileRequestDTO createGitFileRequestDTO) {
     GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
     Scope scope = createGitFileRequestDTO.getScope();
-    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), createGitFileRequestDTO.getScmConnector());
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .useGitClient(createGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.ADD_V2)
                                               .scmConnector(createGitFileRequestDTO.getScmConnector())
                                               .gitFileDetails(gitFileDetails)
@@ -769,9 +778,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public UpdateFileResponse updateFile(UpdateGitFileRequestDTO updateGitFileRequestDTO) {
     GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
     Scope scope = updateGitFileRequestDTO.getScope();
-    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .useGitClient(updateGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.UPDATE_V2)
                                               .scmConnector(updateGitFileRequestDTO.getScmConnector())
                                               .gitFileDetails(gitFileDetails)
@@ -797,7 +807,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO) {
     Scope scope = getLatestCommitOnFileRequestDTO.getScope();
-    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), getLatestCommitOnFileRequestDTO.getScmConnector());
     ScmGitRefTaskParams taskParams = ScmGitRefTaskParams.builder()
                                          .gitRefType(GitRefType.GET_LATEST_COMMIT_ON_FILE)
@@ -822,6 +832,70 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     }
   }
 
+  @Override
+  public GitFileResponse getFile(Scope scope, ScmConnector scmConnector, GitFileRequest gitFileContentRequest) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(
+        gitFileContentRequest.getFilepath(), gitFileContentRequest.getBranch(), gitFileContentRequest.getCommitId());
+    final ScmGitFileTaskParams scmGitFileTaskParams =
+        getScmGitFileTaskParams(scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE,
+            gitFileContentRequest.getCommitId(), gitFileContentRequest.getBranch(), null);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
+    return gitFileTaskResponseData.getGitFileResponse();
+  }
+
+  @Override
+  public GetLatestCommitResponse getBranchHeadCommitDetails(Scope scope, ScmConnector scmConnector, String branch) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+
+    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
+                                                        .gitRefType(GitRefType.LATEST_COMMIT_V2)
+                                                        .scmConnector(scmConnector)
+                                                        .encryptedDataDetails(encryptionDetails)
+                                                        .branch(branch)
+                                                        .build();
+
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+
+    ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
+    try {
+      return GetLatestCommitResponse.parseFrom(scmGitRefTaskResponseData.getGetLatestCommitResponse());
+    } catch (InvalidProtocolBufferException e) {
+      String errorMsg = String.format(errorFormat, "show-branch", scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier());
+      log.error(errorMsg, e);
+      throw new UnexpectedException(errorMsg);
+    }
+  }
+
+  @Override
+  public ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+
+    final ScmGitFileTaskParams scmGitFileTaskParams =
+        ScmGitFileTaskParams.builder()
+            .gitFileTaskType(GitFileTaskType.GET_FILE_GIT_DETAILS_LIST_IN_COMMIT)
+            .ref(request.getRef())
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .filePathsList(Collections.singletonList(request.getFileDirectoryPath()))
+            .build();
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
+    return gitFileTaskResponseData.getListFilesInCommitResponse();
+  }
+
   // ------------------------------- PRIVATE METHODS -------------------------------
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(
@@ -830,6 +904,21 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final DecryptableEntity apiAccessDecryptableEntity =
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmConnector);
     return secretManagerClientService.getEncryptionDetails(baseNGAccess, apiAccessDecryptableEntity);
+  }
+
+  private List<EncryptedDataDetail> getEncryptedDataDetailsForNewGitX(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
+    final BaseNGAccess baseNGAccess = getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
+    final DecryptableEntity apiAccessDecryptableEntity =
+        GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmConnector);
+    PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
+    // setting service principal for connector encryption in case of Git Connector
+    GitSyncUtils.setGitSyncServicePrincipal();
+    List<EncryptedDataDetail> encryptedDataDetails =
+        secretManagerClientService.getEncryptionDetails(baseNGAccess, apiAccessDecryptableEntity);
+    // setting back current principal for all other operations
+    GitSyncUtils.setCurrentPrincipalContext(currentPrincipal);
+    return encryptedDataDetails;
   }
 
   private DelegateTaskRequest getDelegateTaskRequest(String accountIdentifier, String orgIdentifier,

@@ -53,7 +53,7 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
                                       .uuid(webhookDTO.getEventId())
                                       .createdAt(webhookDTO.getTime())
                                       .build();
-
+      log.info("Processing webhook event with id {}", webhookDTO.getEventId());
       if (event.isSubscriptionConfirmation()) {
         result = ngTriggerWebhookConfirmationHelper.handleTriggerWebhookConfirmationEvent(event);
       } else {

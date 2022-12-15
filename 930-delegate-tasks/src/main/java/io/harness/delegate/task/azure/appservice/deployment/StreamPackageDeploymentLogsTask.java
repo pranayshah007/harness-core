@@ -30,13 +30,14 @@ import io.harness.azure.utility.AzureLogParser;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
-import com.microsoft.azure.CloudException;
+import software.wings.beans.LogHelper;
+
+import com.azure.core.exception.HttpResponseException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.joda.time.DateTime;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 
 @OwnedBy(CDP)
 public class StreamPackageDeploymentLogsTask implements Runnable {
@@ -45,7 +46,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
   String slotName;
   LogCallback logCallback;
   AzureLogParser logParser;
-  private Subscription subscription;
+  private Disposable subscription;
   private final DateTime startTime;
   private final AtomicBoolean operationCompleted = new AtomicBoolean();
   private final AtomicBoolean operationFailed = new AtomicBoolean();
@@ -65,7 +66,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
     if (!logParser.shouldLog(log)) {
       return;
     }
-    logCallback.saveExecutionLog(log, INFO);
+    logCallback.saveExecutionLog(LogHelper.color(log, White, Bold), INFO);
   }
 
   protected void streamLogs(String s) {
@@ -77,7 +78,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
     if (logParser.checkIsSuccessDeployment(log)) {
       operationCompleted.set(true);
       logCallback.saveExecutionLog(String.format(LOG_STREAM_SUCCESS_MSG, slotName), INFO, SUCCESS);
-      subscription.unsubscribe();
+      unsubscribe();
     }
 
     if (logParser.checkIfFailed(log)) {
@@ -85,7 +86,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
       operationFailed.set(true);
       errorLog = log;
       logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT_ERROR_MSG, slotName, log), ERROR, FAILURE);
-      subscription.unsubscribe();
+      unsubscribe();
       throw new InvalidRequestException(log);
     }
   }
@@ -97,39 +98,37 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
 
   @Override
   public void run() {
-    Observable<String> logStreamObservable = azureWebClient.streamDeploymentLogsAsync(azureWebClientContext, slotName);
-    Subscriber<String> streamSubscriber = new Subscriber<String>() {
-      @Override
-      public void onCompleted() {
-        operationCompleted.set(true);
-        unsubscribe();
-      }
-
-      @Override
-      public void onError(Throwable e) {
-        if (!operationCompleted.get()) {
-          String errorMessage = getErrorMessage(e);
-          errorLog = errorMessage;
-          logCallback.saveExecutionLog(
-              color(
-                  String.format(FAIL_LOG_STREAMING, slotName, isEmpty(errorMessage) ? "" : errorMessage), White, Bold),
-              INFO, SUCCESS);
-        }
-        operationCompleted.set(true);
-        unsubscribe();
-      }
-
-      @Override
-      public void onNext(String s) {
-        if (!operationCompleted.get()) {
-          streamLogs(s);
-        } else {
-          unsubscribe();
-        }
-      }
-    };
-    subscription = streamSubscriber;
-    logStreamObservable.subscribe(streamSubscriber);
+    Flux<String> logStreamFlux = azureWebClient.streamDeploymentLogsAsync(azureWebClientContext, slotName);
+    subscription =
+        logStreamFlux.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+            .subscribe(
+                next
+                -> {
+                  if (!operationCompleted.get()) {
+                    streamLogs(next);
+                  } else {
+                    unsubscribe();
+                  }
+                },
+                error
+                -> {
+                  if (!operationCompleted.get()) {
+                    String errorMessage = getErrorMessage(error);
+                    errorLog = errorMessage;
+                    logCallback.saveExecutionLog(
+                        color(String.format(FAIL_LOG_STREAMING, slotName, isEmpty(errorMessage) ? "" : errorMessage),
+                            White, Bold),
+                        INFO, SUCCESS);
+                  }
+                  operationFailed.set(true);
+                  operationCompleted.set(true);
+                  unsubscribe();
+                },
+                () -> {
+                  operationFailed.set(false);
+                  operationCompleted.set(true);
+                  unsubscribe();
+                });
   }
 
   public boolean operationFailed() {
@@ -145,7 +144,9 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
   }
 
   public void unsubscribe() {
-    subscription.unsubscribe();
+    if (!subscription.isDisposed()) {
+      subscription.dispose();
+    }
   }
 
   private String getErrorMessage(Throwable e) {
@@ -167,10 +168,10 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
   }
 
   private String getBodyMessage(Throwable throwable) {
-    if (throwable instanceof CloudException) {
-      CloudException cloudException = (CloudException) throwable;
-      if (cloudException.body() != null) {
-        return cloudException.body().message();
+    if (throwable instanceof HttpResponseException) {
+      HttpResponseException exception = (HttpResponseException) throwable;
+      if (exception.getResponse() != null) {
+        return exception.getResponse().getBodyAsString().block();
       }
     }
     return null;

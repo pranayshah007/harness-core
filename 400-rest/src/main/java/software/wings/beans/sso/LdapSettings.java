@@ -41,6 +41,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
@@ -54,6 +55,7 @@ import org.mongodb.morphia.annotations.Transient;
 @OwnedBy(PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 @Data
+@NoArgsConstructor
 @FieldNameConstants(innerTypeName = "LdapSettingsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = true)
@@ -75,6 +77,8 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
   @Valid List<LdapGroupSettings> groupSettingsList;
 
   private String cronExpression;
+
+  boolean disabled;
 
   @JsonIgnore @Transient private String defaultCronExpression;
 
@@ -112,7 +116,7 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
         .get();
   }
 
-  public void encryptLdapInlineSecret(SecretManager secretManager) {
+  public void encryptLdapInlineSecret(SecretManager secretManager, boolean localSM) {
     if (isNotEmpty(connectionSettings.getBindPassword())
         && !LdapConstants.MASKED_STRING.equals(connectionSettings.getBindPassword())) {
       connectionSettings.setPasswordType(LdapConnectionSettings.INLINE_SECRET);
@@ -126,6 +130,9 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
                                   .name(UUID.randomUUID().toString())
                                   .scopedToAccount(true)
                                   .build();
+      if (localSM) {
+        secretText.setKmsId(accountId);
+      }
       String encryptedBindPassword = secretManager.saveSecretText(accountId, secretText, false);
       connectionSettings.setEncryptedBindPassword(encryptedBindPassword);
       connectionSettings.setBindPassword(LdapConstants.MASKED_STRING);

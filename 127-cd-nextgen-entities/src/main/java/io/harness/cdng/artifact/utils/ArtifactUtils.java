@@ -15,16 +15,21 @@ import io.harness.NGConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
@@ -116,7 +121,8 @@ public class ArtifactUtils {
             dockerHubArtifactConfig.getConnectorRef().getValue());
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
+        return String.format("\ntype: %s \nbucketName: %s \nfilePath: %s \nfilePathRegex: %s \nconnectorRef: %s\n",
+            sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
             amazonS3ArtifactConfig.getFilePath().getValue(), amazonS3ArtifactConfig.getFilePathRegex().getValue(),
             amazonS3ArtifactConfig.getConnectorRef().getValue());
       case GCR:
@@ -133,11 +139,18 @@ public class ArtifactUtils {
             ecrArtifactConfig.getConnectorRef().getValue());
       case NEXUS3_REGISTRY:
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, nexusRegistryArtifactConfig.getArtifactPath().getValue(),
+        return String.format(placeholder, sourceType, nexusRegistryArtifactConfig.getRepository().getValue(),
             ParameterField.isNull(nexusRegistryArtifactConfig.getTag())
                 ? nexusRegistryArtifactConfig.getTagRegex().getValue()
                 : nexusRegistryArtifactConfig.getTag().getValue(),
             nexusRegistryArtifactConfig.getConnectorRef().getValue());
+      case NEXUS2_REGISTRY:
+        Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, nexus2RegistryArtifactConfig.getRepository().getValue(),
+            ParameterField.isNull(nexus2RegistryArtifactConfig.getTag())
+                ? nexus2RegistryArtifactConfig.getTagRegex().getValue()
+                : nexus2RegistryArtifactConfig.getTag().getValue(),
+            nexus2RegistryArtifactConfig.getConnectorRef().getValue());
       case ARTIFACTORY_REGISTRY:
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
@@ -165,9 +178,47 @@ public class ArtifactUtils {
         return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());
       case JENKINS:
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
-            jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
-            jenkinsArtifactConfig.getConnectorRef().getValue());
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            jenkinsArtifactConfig.getJobName().getValue(), jenkinsArtifactConfig.getArtifactPath().getValue(),
+            jenkinsArtifactConfig.getBuild().getValue(), jenkinsArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        return String.format(
+            "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nversion: %s \nversionRegex: %s\n",
+            sourceType, githubPackagesArtifactConfig.getConnectorRef().getValue(),
+            githubPackagesArtifactConfig.getOrg().getValue(), githubPackagesArtifactConfig.getPackageName().getValue(),
+            githubPackagesArtifactConfig.getPackageType().getValue(),
+            githubPackagesArtifactConfig.getVersion().getValue(),
+            githubPackagesArtifactConfig.getVersionRegex().getValue());
+      case AZURE_ARTIFACTS:
+        AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
+
+        return String.format(
+            "\ntype: %s \nscope: %s \nproject: %s \nfeed: %s \npackageType: %s \npackageName: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n",
+            sourceType, azureArtifactsConfig.getScope().getValue(), azureArtifactsConfig.getProject().getValue(),
+            azureArtifactsConfig.getFeed().getValue(), azureArtifactsConfig.getPackageType().getValue(),
+            azureArtifactsConfig.getPackageName().getValue(), azureArtifactsConfig.getVersion().getValue(),
+            azureArtifactsConfig.getVersionRegex().getValue(), azureArtifactsConfig.getConnectorRef().getValue());
+      case AMI:
+        AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
+
+        return String.format("\ntype: %s \nversion: %s \nversionRegex: %s \nconnectorRef: %s\n", sourceType,
+            amiArtifactConfig.getVersion().getValue(), amiArtifactConfig.getVersionRegex().getValue(),
+            amiArtifactConfig.getConnectorRef().getValue());
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        String version = googleArtifactRegistryConfig.getVersion().getValue() != null
+            ? googleArtifactRegistryConfig.getVersion().getValue()
+            : googleArtifactRegistryConfig.getVersionRegex().getValue();
+        return String.format(
+            "\ntype: %s \nregion: %s \nproject: %s \nrepositoryName: %s \npackage: %s \nversion/versionRegex: %s \nconnectorRef: %s \nregistryType: %s\n",
+            sourceType, googleArtifactRegistryConfig.getRegion().getValue(),
+            googleArtifactRegistryConfig.getProject().getValue(),
+            googleArtifactRegistryConfig.getRepositoryName().getValue(),
+            googleArtifactRegistryConfig.getPkg().getValue(), version,
+            googleArtifactRegistryConfig.getConnectorRef().getValue(),
+            googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

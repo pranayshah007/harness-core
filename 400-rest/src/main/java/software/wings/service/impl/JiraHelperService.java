@@ -276,13 +276,15 @@ public class JiraHelperService {
 
   public JiraCreateMetaResponse getCreateMetadata(String connectorId, String expand, String project, String accountId,
       String appId, long timeoutMillis, String issueType) {
-    JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
-                                                .accountId(accountId)
-                                                .jiraAction(JiraAction.GET_CREATE_METADATA)
-                                                .createmetaExpandParam(expand)
-                                                .issueType(issueType)
-                                                .project(project)
-                                                .build();
+    JiraTaskParameters jiraTaskParameters =
+        JiraTaskParameters.builder()
+            .accountId(accountId)
+            .jiraAction(JiraAction.GET_CREATE_METADATA)
+            .createmetaExpandParam(expand)
+            .issueType(issueType)
+            .useNewMeta(featureFlagService.isEnabled(FeatureName.SPG_USE_NEW_METADATA, accountId))
+            .project(project)
+            .build();
 
     JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters, timeoutMillis);
     if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {

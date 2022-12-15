@@ -17,17 +17,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
+
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -51,11 +57,25 @@ public class PluginStepNode extends CIAbstractStepNode {
     return pluginStepInfo;
   }
 
-  enum StepType {
+  public enum StepType {
     Plugin(CIStepInfoType.PLUGIN.getDisplayName());
     @Getter String name;
     StepType(String name) {
       this.name = name;
     }
+  }
+
+  @Builder
+  public PluginStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
+      PluginStepInfo pluginStepInfo, PluginStepNode.StepType type, ParameterField<Timeout> timeout) {
+    this.setFailureStrategies(failureStrategies);
+    this.pluginStepInfo = pluginStepInfo;
+    this.type = type;
+    this.setFailureStrategies(failureStrategies);
+    this.setTimeout(timeout);
+    this.setUuid(uuid);
+    this.setIdentifier(identifier);
+    this.setName(name);
+    this.setDescription(getDescription());
   }
 }

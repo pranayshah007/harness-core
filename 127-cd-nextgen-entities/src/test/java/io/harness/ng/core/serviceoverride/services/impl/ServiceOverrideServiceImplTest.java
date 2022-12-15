@@ -9,6 +9,7 @@ package io.harness.ng.core.serviceoverride.services.impl;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -147,7 +148,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     serviceOverrideService.upsert(serviceOverridesEntity);
 
     String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
-        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_REF, SERVICE_REF);
 
     String resFile = "serviceOverrides-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
@@ -172,7 +173,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     serviceOverrideService.upsert(serviceOverridesEntity);
 
     String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
-        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_REF, SERVICE_REF);
 
     assertThat(serviceOverrideInputs).isNull();
   }
@@ -348,6 +349,25 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         .isPresent();
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testValidateBlankServiceOverrides() {
+    NGServiceOverridesEntity serviceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .environmentRef(ENV_REF)
+            .serviceRef(SERVICE_REF)
+            .yaml(
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variables: \n    - name: \"    \"\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
+            .build();
+    assertThatThrownBy(() -> serviceOverrideService.validateOverrideValues(serviceOverridesEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            String.format("Empty variable name for 1 variable override in service ref: [%s]", SERVICE_REF));
+  }
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

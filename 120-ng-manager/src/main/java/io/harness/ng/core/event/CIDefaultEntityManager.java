@@ -9,6 +9,7 @@ package io.harness.ng.core.event;
 
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -28,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class CIDefaultEntityManager {
-  public static final String HARNESS_IMAGE = "harnessImage";
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) ConnectorService connectorService;
 
   public void createCIDefaultEntities(String accountIdentifier, String organizer, String project) {
@@ -36,7 +36,8 @@ public class CIDefaultEntityManager {
   }
 
   private void createDockerConnector(String accountId, String org, String project) {
-    Optional<ConnectorResponseDTO> harnessImage = connectorService.get(accountId, org, project, HARNESS_IMAGE);
+    Optional<ConnectorResponseDTO> harnessImage =
+        connectorService.get(accountId, org, project, NGCommonEntityConstants.HARNESS_IMAGE);
     if (harnessImage.isPresent()) {
       log.info(String.format(
           "skipping creating docker connector as its already present in account id: %s, org: %s, project: %s",
@@ -50,11 +51,12 @@ public class CIDefaultEntityManager {
       DockerConnectorDTO dockerConnectorDTO = DockerConnectorDTO.builder()
                                                   .dockerRegistryUrl("https://index.docker.io/v2/")
                                                   .auth(authenticationDTO)
+                                                  .executeOnDelegate(false)
                                                   .providerType(DockerRegistryProviderType.DOCKER_HUB)
                                                   .build();
       ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                               .connectorConfig(dockerConnectorDTO)
-                                              .identifier(HARNESS_IMAGE)
+                                              .identifier(NGCommonEntityConstants.HARNESS_IMAGE)
                                               .connectorType(ConnectorType.DOCKER)
                                               .name("Harness Docker Connector")
                                               .description("Harness internal connector")

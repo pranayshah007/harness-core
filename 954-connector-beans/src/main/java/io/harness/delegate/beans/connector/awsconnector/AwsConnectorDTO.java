@@ -17,6 +17,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.awsconnector.outcome.AwsCredentialOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -59,5 +62,18 @@ public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
         && isEmpty(delegateSelectors)) {
       throw new InvalidRequestException(INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG);
     }
+  }
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return AwsConnectorOutcomeDTO.builder()
+        .credential(AwsCredentialOutcomeDTO.builder()
+                        .type(this.credential.getAwsCredentialType())
+                        .crossAccountAccess(this.credential.getCrossAccountAccess())
+                        .config(this.credential.getConfig())
+                        .region(this.credential.getTestRegion())
+                        .build())
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

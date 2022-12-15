@@ -21,8 +21,8 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
 import com.google.inject.Inject;
@@ -50,10 +50,11 @@ public class CIInitializeTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     CIInitializeTaskParams ciInitializeTaskParams = (CIInitializeTaskParams) parameters;
-    if (ciInitializeTaskParams.getType() == CIInitializeTaskParams.Type.GCP_K8) {
+    CIInitializeTaskParams.Type type = ciInitializeTaskParams.getType();
+    if (type == CIInitializeTaskParams.Type.GCP_K8) {
       return ciK8InitializeTaskHandler.executeTaskInternal(
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
-    } else if (ciInitializeTaskParams.getType() == CIInitializeTaskParams.Type.VM) {
+    } else if (type == CIInitializeTaskParams.Type.VM || type == CIInitializeTaskParams.Type.DOCKER) {
       CITaskExecutionResponse response = ciVmInitializeTaskHandler.executeTaskInternal(
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
       response.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());

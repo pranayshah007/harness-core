@@ -37,4 +37,11 @@ public class PmsStepParameters extends OrchestrationMap {
 
     return new PmsStepParameters(map);
   }
+
+  public String getValue(String key) {
+    if (this.containsKey(key)) {
+      return this.get(key).toString();
+    }
+    return null;
+  }
 }

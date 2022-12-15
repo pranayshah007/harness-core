@@ -10,6 +10,7 @@ package io.harness.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.plan.PlanNodeProto;
@@ -66,7 +67,9 @@ public class PlanNode implements Node {
   // Config
   boolean skipExpressionChain;
   @Builder.Default SkipType skipGraphType = SkipType.NOOP;
-  @Builder.Default boolean skipUnresolvedExpressionsCheck = true;
+  @Builder.Default @Deprecated boolean skipUnresolvedExpressionsCheck = true;
+
+  @Builder.Default ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 
   public static PlanNode fromPlanNodeProto(PlanNodeProto planNodeProto) {
     if (planNodeProto == null) {
@@ -89,6 +92,7 @@ public class PlanNode implements Node {
         .skipExpressionChain(planNodeProto.getSkipExpressionChain())
         .skipGraphType(planNodeProto.getSkipType())
         .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
+        .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
         .serviceName(planNodeProto.getServiceName())
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())

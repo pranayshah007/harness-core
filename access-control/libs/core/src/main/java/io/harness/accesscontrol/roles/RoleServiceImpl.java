@@ -28,13 +28,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
-import io.harness.utils.RetryUtils;
+import io.harness.springdata.PersistenceUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +43,6 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -58,19 +55,16 @@ public class RoleServiceImpl implements RoleService {
   private final ScopeService scopeService;
   private final RoleAssignmentService roleAssignmentService;
   private final TransactionTemplate transactionTemplate;
+  private static final RetryPolicy<Object> removeRoleTransactionPolicy = PersistenceUtils.getRetryPolicy(
+      "[Retrying]: Failed to remove role assignments for the role and remove the role; attempt: {}",
+      "[Failed]: Failed to remove role assignments for the role and remove the role; attempt: {}");
+
+  private static final RetryPolicy<Object> removeRoleScopeLevelsTransactionPolicy = PersistenceUtils.getRetryPolicy(
+      "[Retrying]: Failed to remove role assignments for the erased scope levels of the role and update the role; attempt: {}",
+      "[Failed]: Failed to remove role assignments for the erased scope levels of the role and update the role; attempt: {}");
 
   private static final Set<PermissionStatus> ALLOWED_PERMISSION_STATUS =
       Sets.newHashSet(PermissionStatus.EXPERIMENTAL, PermissionStatus.ACTIVE, PermissionStatus.DEPRECATED);
-
-  private static final RetryPolicy<Object> removeRoleTransactionPolicy = RetryUtils.getRetryPolicy(
-      "[Retrying]: Failed to remove role assignments for the role and remove the role; attempt: {}",
-      "[Failed]: Failed to remove role assignments for the role and remove the role; attempt: {}",
-      ImmutableList.of(TransactionException.class), Duration.ofSeconds(5), 3, log);
-
-  private static final RetryPolicy<Object> removeRoleScopeLevelsTransactionPolicy = RetryUtils.getRetryPolicy(
-      "[Retrying]: Failed to remove role assignments for the erased scope levels of the role and update the role; attempt: {}",
-      "[Failed]: Failed to remove role assignments for the erased scope levels of the role and update the role; attempt: {}",
-      ImmutableList.of(TransactionException.class), Duration.ofSeconds(5), 3, log);
 
   @Inject
   public RoleServiceImpl(RoleDao roleDao, PermissionService permissionService, ScopeService scopeService,

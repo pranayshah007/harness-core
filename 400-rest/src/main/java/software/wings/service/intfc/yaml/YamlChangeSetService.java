@@ -11,9 +11,10 @@ import io.harness.validation.Create;
 import io.harness.validation.Update;
 
 import software.wings.beans.yaml.GitFileChange;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.util.List;
 import javax.validation.Valid;
@@ -24,7 +25,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 /**
  * Created by anubhaw on 10/31/17.
  */
-public interface YamlChangeSetService {
+public interface YamlChangeSetService extends OwnedByAccount {
   /**
    * Save yaml change set.
    *
@@ -81,6 +82,8 @@ public interface YamlChangeSetService {
 
   void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId);
 
+  void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId, String changeSetId);
+
   boolean updateStatusAndIncrementRetryCountForYamlChangeSets(
       String accountId, Status newStatus, List<Status> currentStatus, List<String> yamlChangeSetIds);
 
@@ -98,5 +101,5 @@ public interface YamlChangeSetService {
       int displayCount, List<YamlChangeSet.Status> statuses, Boolean gitToHarness);
 
   YamlChangeSet pushYamlChangeSetForGitToHarness(
-      String accountId, String branchName, String connectorId, String repositoryName);
+      String accountId, String branchName, String connectorId, String repositoryName, String appId);
 }

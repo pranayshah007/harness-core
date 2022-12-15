@@ -65,13 +65,14 @@ import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.VerificationOperationException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.persistence.HIterator;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -432,33 +433,8 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
   public PageResponse<ContinuousVerificationExecutionMetaData> getAllCVExecutionsForTime(final String accountId,
       long beginEpochTs, long endEpochTs, boolean isTimeSeries,
       PageRequest<ContinuousVerificationExecutionMetaData> pageRequestFromUI) {
-    // TODO: Move this accountId check to Rbac
-    if (!featureFlagService.isEnabled(FeatureName.GLOBAL_CV_DASH, accountId)) {
-      return new PageResponse<>();
-    }
-    PageRequest<ContinuousVerificationExecutionMetaData> pageRequest =
-        PageRequestBuilder.aPageRequest().withOffset(pageRequestFromUI.getOffset()).build();
-    if (beginEpochTs < 0 || endEpochTs < 0) {
-      // if there's no start/end, we will default to 7 days
-      beginEpochTs = Timestamp.currentMinuteBoundary() - TimeUnit.DAYS.toMillis(7);
-      endEpochTs = Timestamp.currentMinuteBoundary();
-    }
-    List<StateType> stateTypeList;
-    if (isTimeSeries) {
-      stateTypeList = getMetricAnalysisStates();
-    } else {
-      stateTypeList = getLogAnalysisStates();
-    }
-
-    pageRequest.addFilter("stateType", Operator.IN, stateTypeList.toArray());
-    pageRequest.addFilter("workflowStartTs", Operator.GE, beginEpochTs);
-    pageRequest.addFilter("workflowStartTs", Operator.LT, endEpochTs);
-    pageRequest.setFieldsIncluded(Arrays.asList("stateExecutionId", "workflowExecutionId", "envId", "serviceId",
-        "accountId", "executionStatus", "applicationId", "workflowStartTs", "stateType"));
-    pageRequest.addOrder("workflowStartTs", OrderType.DESC);
-    pageRequest.addOrder("stateStartTs", OrderType.DESC);
-
-    return wingsPersistence.query(ContinuousVerificationExecutionMetaData.class, pageRequest, excludeAuthority);
+    // TODO: Clean this up fully after UI code is removed.
+    return new PageResponse<>();
   }
 
   @Override
@@ -2250,7 +2226,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                 .headers(new HashMap<>())
                 .options(datadogConfig.fetchLogOptionsMap())
                 .query(config.getQuery())
-                .body(datadogConfig.fetchLogBodyMap(true))
+                .jsonBody(JsonUtils.asJson(datadogConfig.fetchLogBodyMap(true)))
                 .encryptedDataDetails(secretManager.getEncryptionDetails(datadogConfig, config.getAppId(), null))
                 .hosts(Sets.newHashSet(DUMMY_HOST_NAME))
                 .stateType(DelegateStateType.DATA_DOG_LOG)
@@ -2294,7 +2270,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                 .stateExecutionId(CV_24x7_STATE_EXECUTION + "-" + config.getUuid())
                 .serviceId(config.getServiceId())
                 .hosts(Sets.newHashSet(DUMMY_HOST_NAME))
-                .body(isEmpty(body) ? null : new JSONObject(body).toMap())
+                .jsonBody(isEmpty(body) ? null : body)
                 .cvConfidId(config.getUuid())
                 .shouldDoHostBasedFiltering(false)
                 .startTime(startTime)

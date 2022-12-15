@@ -50,6 +50,7 @@ mongo:
   uri: ${MONGO_URI:-mongodb://127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020/accesscontrol?replicaSet=rs0}
   connectTimeout: ${MONGO_CONNECT_TIMEOUT:-30000}
   serverSelectionTimeout: ${MONGO_SERVER_SELECTION_TIMEOUT:-90000}
+  socketTimeout: ${MONGO_SOCKET_TIMEOUT:-360000}
   maxConnectionIdleTime: ${MAX_CONNECTION_IDLE_TIME:-600000}
   connectionsPerHost: ${-MONGO_CONNECTIONS_PER_HOST:-300}
   indexManagerMode: ${MONGO_INDEX_MANAGER_MODE:-AUTO}
@@ -254,3 +255,5 @@ enforcementClientConfiguration:
 
 hostname: ${HOSTNAME:-localhost}
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
+
+enableOpentelemetry: false

@@ -54,7 +54,7 @@ public class EnvironmentRefExpansionHandler implements JsonExpansionHandler {
       default:
         return sendErrorResponseForNotFoundEnv(scopedEnvId);
     }
-    if (!optEnvironment.isPresent()) {
+    if (optEnvironment.isEmpty()) {
       return sendErrorResponseForNotFoundEnv(scopedEnvId);
     }
     Environment environment = optEnvironment.get();

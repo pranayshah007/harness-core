@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.batch;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -26,10 +26,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "dataGeneratedNotification", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DataGeneratedNotificationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 public final class DataGeneratedNotification implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   @Id String uuid;
   @Unique String accountId;

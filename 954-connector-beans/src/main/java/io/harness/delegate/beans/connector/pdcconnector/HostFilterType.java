@@ -7,9 +7,27 @@
 
 package io.harness.delegate.beans.connector.pdcconnector;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum HostFilterType {
+  @JsonProperty(HostFilterKind.ALL) ALL(HostFilterKind.ALL),
+  @JsonProperty(HostFilterKind.HOST_NAMES) HOST_NAMES(HostFilterKind.HOST_NAMES),
+  @JsonProperty(HostFilterKind.HOST_ATTRIBUTES) HOST_ATTRIBUTES(HostFilterKind.HOST_ATTRIBUTES);
 
-  HOST_NAMES,
-  HOST_ATTRIBUTES
+  private final String displayName;
 
+  HostFilterType(String displayName) {
+    this.displayName = displayName;
+  }
+
+  @JsonValue
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  @Override
+  public String toString() {
+    return displayName;
+  }
 }

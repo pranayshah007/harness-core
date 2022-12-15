@@ -8,9 +8,14 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -24,15 +29,21 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.HintException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
+import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.models.KerberosConfig;
 import io.harness.ng.core.models.KerberosWinRmConfig;
 import io.harness.ng.core.models.NTLMConfig;
@@ -43,6 +54,7 @@ import io.harness.ng.core.models.SSHKeyCredential;
 import io.harness.ng.core.models.SSHKeyPathCredential;
 import io.harness.ng.core.models.SSHPasswordCredential;
 import io.harness.ng.core.models.Secret;
+import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.models.TGTKeyTabFilePathSpec;
 import io.harness.ng.core.models.TGTPasswordSpec;
 import io.harness.ng.core.models.WinRmAuth;
@@ -55,6 +67,7 @@ import io.harness.repositories.ng.core.spring.SecretRepository;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
@@ -62,10 +75,15 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import java.util.Arrays;
 import java.util.Optional;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -79,6 +97,28 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
+  private ArgumentCaptor<SecretForceDeleteEvent> secretForceDeleteEventArgumentCaptor;
+  private ArgumentCaptor<SecretDeleteEvent> secretDeleteEventArgumentCaptor;
+
+  private String ORG_ID = randomAlphabetic(10);
+  private String PROJECT_ID = randomAlphabetic(10);
+  private String ID = randomAlphabetic(10);
+  private String ACC_ID = randomAlphabetic(10);
+  Secret secret = Secret.builder()
+                      .identifier(ID)
+                      .accountIdentifier(ACC_ID)
+                      .projectIdentifier(PROJECT_ID)
+                      .orgIdentifier(ORG_ID)
+                      .secretSpec(SecretTextSpec.builder()
+                                      .secretManagerIdentifier("secretManager")
+                                      .valueType(ValueType.Inline)
+                                      .value("value")
+                                      .build())
+
+                      .build();
   @Before
   public void setup() {
     secretRepository = mock(SecretRepository.class);
@@ -95,6 +135,8 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
         winRmCredentialsSpecDTOHelper, accessControlClient);
     secretServiceV2Spy = spy(secretServiceV2);
+    secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
+    secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);
   }
 
   private SecretDTOV2 getSecretDTO() {
@@ -120,6 +162,20 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testGetForIdentifierRef() {
+    Secret testsecret = Secret.builder().name("testsecret").build();
+    when(secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.of(testsecret));
+    Optional<Secret> secretOptional = secretServiceV2.get(IdentifierRef.builder().identifier("test").build());
+    assertThat(secretOptional.get()).isEqualTo(testsecret);
+    verify(secretRepository)
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testDelete() {
@@ -127,10 +183,38 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
     doNothing().when(secretRepository).delete(any());
     when(transactionTemplate.execute(any())).thenReturn(true);
-    boolean success = secretServiceV2Spy.delete("account", "org", "proj", "identifier");
+    boolean success = secretServiceV2Spy.delete("account", "org", "proj", "identifier", false);
     assertThat(success).isTrue();
     verify(secretServiceV2Spy).get(any(), any(), any(), any());
     verify(secretRepository, times(0)).delete(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void deleteInternal_withForceDeleteFalse() {
+    doNothing().when(ngSecretActivityService).deleteAllActivities(any(), any());
+    doNothing().when(secretRepository).delete(any());
+    boolean success = secretServiceV2Spy.deleteInternal("account", "org", "proj", "identifier", secret, false);
+    assertThat(success).isTrue();
+    verify(outboxService, times(1)).save(secretDeleteEventArgumentCaptor.capture());
+    SecretDeleteEvent secretDeleteEvent = secretDeleteEventArgumentCaptor.getValue();
+    assertThat(secret.getIdentifier()).isEqualTo(secretDeleteEvent.getSecret().getIdentifier());
+    assertThat("SecretDeleted").isEqualTo(secretDeleteEvent.getEventType());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void deleteInternal_withForceDeleteTrue() {
+    doNothing().when(ngSecretActivityService).deleteAllActivities(any(), any());
+    doNothing().when(secretRepository).delete(any());
+    boolean success = secretServiceV2Spy.deleteInternal("account", "org", "proj", "identifier", secret, true);
+    assertThat(success).isTrue();
+    verify(outboxService, times(1)).save(secretForceDeleteEventArgumentCaptor.capture());
+    SecretForceDeleteEvent secretDeleteEvent = secretForceDeleteEventArgumentCaptor.getValue();
+    assertThat(secret.getIdentifier()).isEqualTo(secretDeleteEvent.getSecret().getIdentifier());
+    assertThat("SecretForceDeleted").isEqualTo(secretDeleteEvent.getEventType());
   }
 
   @Test
@@ -138,7 +222,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreate() {
     SecretDTOV2 secretDTOV2 = getSecretDTO();
-    Secret secret = secretDTOV2.toEntity();
+    Secret secret = Secret.fromDTO(secretDTOV2);
     when(secretRepository.save(any())).thenReturn(secret);
     when(transactionTemplate.execute(any())).thenReturn(secret);
 
@@ -241,6 +325,33 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
     assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testValidationForSSHWithKeyReferenceNoDelegateException() {
+    Secret secret = getSecret();
+    secret.setSecretSpec(SSHExecutionCredentialSpec.builder()
+                             .port(22)
+                             .auth(SSHAuth.builder()
+                                       .type(SSHAuthScheme.SSH)
+                                       .sshSpec(SSHConfig.builder()
+                                                    .credentialType(SSHCredentialType.KeyReference)
+                                                    .spec(SSHKeyCredential.builder()
+                                                              .userName("username")
+                                                              .key(SecretRefData.builder().build())
+                                                              .build())
+                                                    .build())
+                                       .build())
+                             .build());
+    doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenThrow(new DelegateServiceDriverException("No eligible delegate(s) found in the account."));
+    exceptionRule.expect(HintException.class);
+    exceptionRule.expectMessage(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK));
+    secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
   }
 
   @Test
@@ -362,5 +473,20 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
     assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetPaginatedResults() {
+    Secret secret1 =
+        Secret.builder().name("name1").type(SecretType.SecretText).identifier("id1").createdAt((long) 2).build();
+    Secret secret2 =
+        Secret.builder().name("name2").type(SecretType.SecretText).identifier("id2").createdAt((long) 7).build();
+    Secret secret3 =
+        Secret.builder().name("name3").type(SecretType.SecretText).identifier("id3").createdAt((long) 3).build();
+    Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
+    assertThat(paginatedResult.getNumberOfElements()).isEqualTo(1);
+    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret1));
   }
 }

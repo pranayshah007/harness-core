@@ -7,19 +7,14 @@
 
 package io.harness.delegate.event.handler;
 
-import static io.harness.beans.FeatureName.TRIGGER_PROFILE_SCRIPT_EXECUTION_WF;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.StringUtils.compare;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.WorkflowType;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateProfile;
-import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
@@ -38,7 +33,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 import java.util.Set;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,37 +48,6 @@ public class DelegateProfileEventHandler implements DelegateProfileObserver {
   @Inject private HPersistence persistence;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateService delegateService;
-
-  @Override
-  public void onProfileUpdated(@NonNull DelegateProfile originalProfile, @NonNull DelegateProfile updatedProfile) {
-    // Trigger profile script workflow execution, foreach of the delegates, if script is changed
-    if (featureFlagService.isEnabled(TRIGGER_PROFILE_SCRIPT_EXECUTION_WF, originalProfile.getAccountId())) {
-      if (isNotBlank(updatedProfile.getStartupScript())
-          && compare(originalProfile.getStartupScript(), updatedProfile.getStartupScript()) != 0) {
-        Set<String> delegateIds = fetchProfileDelegateIds(updatedProfile.getAccountId(), updatedProfile.getUuid());
-
-        for (String delegateId : delegateIds) {
-          triggerProfileScriptWorkflowExecution(
-              updatedProfile.getAccountId(), delegateId, updatedProfile.getStartupScript());
-        }
-      }
-    }
-  }
-
-  @Override
-  public void onProfileApplied(@NonNull String accountId, @NonNull String delegateId, @NonNull String profileId) {
-    if (featureFlagService.isEnabled(TRIGGER_PROFILE_SCRIPT_EXECUTION_WF, accountId)) {
-      // Trigger profile script workflow execution, for the given delegate
-      DelegateProfile appliedProfile = persistence.createQuery(DelegateProfile.class)
-                                           .filter(DelegateProfileKeys.accountId, accountId)
-                                           .filter(DelegateProfileKeys.uuid, profileId)
-                                           .get();
-
-      if (appliedProfile != null && isNotBlank(appliedProfile.getStartupScript())) {
-        triggerProfileScriptWorkflowExecution(accountId, delegateId, appliedProfile.getStartupScript());
-      }
-    }
-  }
 
   @Override
   public void onProfileSelectorsUpdated(String accountId, String profileId) {

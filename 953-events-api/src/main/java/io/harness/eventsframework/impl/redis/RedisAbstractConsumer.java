@@ -15,7 +15,6 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.monitoring.dto.RedisEventMetricDTOMapper;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
-import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import io.github.resilience4j.core.IntervalFunction;
@@ -49,13 +48,6 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   private Retry retry;
   @Inject RedisEventMetricPublisher redisEventMetricPublisher;
 
-  public RedisAbstractConsumer(
-      String topicName, String groupName, @NotNull RedisConfig redisConfig, Duration maxProcessingTime, int batchSize) {
-    super(topicName, groupName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, redisConfig.getEnvNamespace());
-  }
-
   public RedisAbstractConsumer(String topicName, String groupName, @NotNull RedissonClient redissonClient,
       Duration maxProcessingTime, int batchSize, String envNamespace) {
     super(topicName, groupName);
@@ -68,13 +60,6 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     super(topicName, groupName);
     initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, envNamespace);
     this.redisEventMetricPublisher = redisEventMetricPublisher;
-  }
-
-  public RedisAbstractConsumer(String topicName, String groupName, String consumerName, RedisConfig redisConfig,
-      Duration maxProcessingTime, int batchSize) {
-    super(topicName, groupName, consumerName);
-    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
-    initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, redisConfig.getEnvNamespace());
   }
 
   public RedisAbstractConsumer(String topicName, String groupName, String consumerName,
@@ -129,7 +114,12 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   }
 
   private List<PendingEntry> getPendingEntriesInternal() {
-    return stream.listPending(getGroupName(), StreamMessageId.MIN, StreamMessageId.MAX, batchSize);
+    try {
+      return stream.listPending(getGroupName(), StreamMessageId.MIN, StreamMessageId.MAX, batchSize);
+    } catch (Exception ex) {
+      log.warn("Exception occurred while listing pending entries", ex);
+      throw ex;
+    }
   }
 
   private List<Message> claimEntries(List<PendingEntry> pendingEntries) {
@@ -146,19 +136,24 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   }
 
   private List<Message> claimEntriesInternal(List<PendingEntry> pendingEntries) {
-    String groupName = getGroupName();
-    if (pendingEntries.isEmpty()) {
-      return Collections.emptyList();
-    } else {
-      Map<StreamMessageId, Map<String, String>> messages = executeClaimCommand(pendingEntries);
-      for (PendingEntry entry : pendingEntries) {
-        StreamMessageId messageId = entry.getId();
-        // If the message has been delivered breach our redelivery threshold then move this to deadLetterQueue
-        if (entry.getLastTimeDelivered() >= RedisUtils.UNACKED_RETRY_COUNT) {
-          moveMessageToDeadLetterQueue(messageId, groupName, messages);
+    try {
+      String groupName = getGroupName();
+      if (pendingEntries.isEmpty()) {
+        return Collections.emptyList();
+      } else {
+        Map<StreamMessageId, Map<String, String>> messages = executeClaimCommand(pendingEntries);
+        for (PendingEntry entry : pendingEntries) {
+          StreamMessageId messageId = entry.getId();
+          // If the message has been delivered breach our redelivery threshold then move this to deadLetterQueue
+          if (entry.getLastTimeDelivered() >= RedisUtils.UNACKED_RETRY_COUNT) {
+            moveMessageToDeadLetterQueue(messageId, groupName, messages);
+          }
         }
+        return RedisUtils.getMessageObject(messages);
       }
-      return RedisUtils.getMessageObject(messages);
+    } catch (Exception ex) {
+      log.warn("Exception occurred while claiming entries", ex);
+      throw ex;
     }
   }
 
@@ -191,13 +186,13 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   }
 
   private List<Message> getNewMessagesInternal(Duration maxWaitTime) {
-    Map<StreamMessageId, Map<String, String>> result =
-        stream.readGroup(getGroupName(), getName(), batchSize, maxWaitTime.toMillis(), TimeUnit.MILLISECONDS);
-    List<Message> messages = RedisUtils.getMessageObject(result);
-    for (Message message : messages) {
-      addMonitoring(message);
+    try {
+      return RedisUtils.getMessageObject(
+          stream.readGroup(getGroupName(), getName(), batchSize, maxWaitTime.toMillis(), TimeUnit.MILLISECONDS));
+    } catch (Exception ex) {
+      log.warn("Exception occurred while getting new messages", ex);
+      throw ex;
     }
-    return messages;
   }
 
   private void addMonitoring(Message message) {

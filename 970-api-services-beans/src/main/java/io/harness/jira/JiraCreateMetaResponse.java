@@ -33,4 +33,9 @@ public class JiraCreateMetaResponse {
       this.projects.add(new JiraProjectData(proj));
     }
   }
+
+  public JiraCreateMetaResponse(JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG) {
+    this.expand = "projects";
+    jiraIssueCreateMetadataNG.getProjects().values().forEach(proj -> this.projects.add(new JiraProjectData(proj)));
+  }
 }

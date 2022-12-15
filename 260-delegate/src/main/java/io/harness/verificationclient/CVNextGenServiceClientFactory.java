@@ -36,7 +36,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(HarnessTeam.CV)
 public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceClient> {
-  private static final ConnectionPool CONNECTION_POOL = new ConnectionPool(0, 10, TimeUnit.MINUTES);
+  private static final ConnectionPool CONNECTION_POOL = new ConnectionPool(20, 1, TimeUnit.MINUTES);
 
   private final String baseUrl;
   private final TokenGenerator tokenGenerator;

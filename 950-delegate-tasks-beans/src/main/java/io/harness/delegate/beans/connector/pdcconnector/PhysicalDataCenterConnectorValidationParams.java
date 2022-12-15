@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.pdcconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.utils.PhysicalDataCenterConstants.DEFAULT_SSH_PORT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -36,6 +37,6 @@ public class PhysicalDataCenterConnectorValidationParams
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return PhysicalDataCenterConnectorCapabilityHelper.fetchRequiredExecutionCapabilities(
-        physicalDataCenterConnectorDTO, maskingEvaluator);
+        physicalDataCenterConnectorDTO, maskingEvaluator, DEFAULT_SSH_PORT);
   }
 }

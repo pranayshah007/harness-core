@@ -30,7 +30,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.stoserviceclient.STOServiceUtils;
 
-import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
 public class K8InitializeTaskUtilsTest extends CIExecutionTestBase {
+  private K8InitializeTaskUtils k8InitializeTaskUtils;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
@@ -49,10 +49,11 @@ public class K8InitializeTaskUtilsTest extends CIExecutionTestBase {
   @Mock STOServiceUtils stoServiceUtils;
   @Mock private CIFeatureFlagService featureFlagService;
   @Mock private SecretUtils secretUtils;
-  @Inject private K8InitializeTaskUtils k8InitializeTaskUtils;
 
   @Before
   public void setUp() {
+    k8InitializeTaskUtils = new K8InitializeTaskUtils();
+
     on(k8InitializeTaskUtils).set("connectorUtils", connectorUtils);
     on(k8InitializeTaskUtils).set("secretUtils", secretUtils);
     on(k8InitializeTaskUtils).set("executionSweepingOutputResolver", executionSweepingOutputResolver);

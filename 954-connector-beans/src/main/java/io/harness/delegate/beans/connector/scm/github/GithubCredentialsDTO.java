@@ -7,7 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.github.outcome.GithubCredentialsOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -19,4 +21,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
   , @JsonSubTypes.Type(value = GithubSshCredentialsDTO.class, name = GitConfigConstants.SSH)
 })
 @Schema(name = "GithubCredentials", description = "This is a interface for details of the Github credentials")
-public interface GithubCredentialsDTO {}
+public interface GithubCredentialsDTO extends DecryptableEntity {
+  default GithubCredentialsOutcomeDTO toOutcome() {
+    return null;
+  }
+}

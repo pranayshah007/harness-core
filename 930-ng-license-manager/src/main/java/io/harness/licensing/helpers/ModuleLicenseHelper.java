@@ -18,6 +18,8 @@ import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
+import io.harness.licensing.entities.modules.CVModuleLicense;
+import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 
@@ -240,7 +242,12 @@ public class ModuleLicenseHelper {
         }
         break;
       case CV:
-        // TODO: CV license update logic
+        CVModuleLicense cvLicense = (CVModuleLicense) update;
+        CVModuleLicense currentCVLicense = (CVModuleLicense) current;
+        if (cvLicense.getNumberOfServices() != null
+            && !cvLicense.getNumberOfServices().equals(currentCVLicense.getNumberOfServices())) {
+          currentCVLicense.setNumberOfServices(cvLicense.getNumberOfServices());
+        }
         break;
       case CI:
         CIModuleLicense ciLicense = (CIModuleLicense) update;
@@ -249,6 +256,10 @@ public class ModuleLicenseHelper {
             && !ciLicense.getNumberOfCommitters().equals(currentCILicense.getNumberOfCommitters())) {
           currentCILicense.setNumberOfCommitters(ciLicense.getNumberOfCommitters());
         }
+        if (ciLicense.getHostingCredits() != null
+            && !ciLicense.getHostingCredits().equals(currentCILicense.getHostingCredits())) {
+          currentCILicense.setHostingCredits(ciLicense.getHostingCredits());
+        }
         break;
       case STO:
         STOModuleLicense stoLicense = (STOModuleLicense) update;
@@ -256,6 +267,19 @@ public class ModuleLicenseHelper {
         if (stoLicense.getNumberOfDevelopers() != null
             && !stoLicense.getNumberOfDevelopers().equals(currentSTOLicense.getNumberOfDevelopers())) {
           currentSTOLicense.setNumberOfDevelopers(stoLicense.getNumberOfDevelopers());
+        }
+        break;
+      case CHAOS:
+        ChaosModuleLicense chaosLicense = (ChaosModuleLicense) update;
+        ChaosModuleLicense currentCHAOSLicense = (ChaosModuleLicense) current;
+        if (chaosLicense.getTotalChaosInfrastructures() != null
+            && !chaosLicense.getTotalChaosInfrastructures().equals(
+                currentCHAOSLicense.getTotalChaosInfrastructures())) {
+          currentCHAOSLicense.setTotalChaosInfrastructures(chaosLicense.getTotalChaosInfrastructures());
+        }
+        if (chaosLicense.getTotalChaosExperimentRuns() != null
+            && !chaosLicense.getTotalChaosExperimentRuns().equals(currentCHAOSLicense.getTotalChaosExperimentRuns())) {
+          currentCHAOSLicense.setTotalChaosExperimentRuns(chaosLicense.getTotalChaosExperimentRuns());
         }
         break;
       default:

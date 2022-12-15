@@ -33,4 +33,9 @@ public class NgInitCommandUnit implements NgCommandUnit {
   public String getWorkingDirectory() {
     return null;
   }
+
+  @Override
+  public String getDestinationPath() {
+    return null;
+  }
 }

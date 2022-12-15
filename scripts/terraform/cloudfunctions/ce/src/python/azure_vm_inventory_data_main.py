@@ -81,7 +81,8 @@ def get_data_to_insert(vm_list):
             "publisher": get_vm_attribute(vm, ["properties", "storageProfile", "imageReference", "publisher"]),
             "offer": get_vm_attribute(vm, ["properties", "storageProfile", "imageReference", "offer"]),
             "sku": get_vm_attribute(vm, ["properties", "storageProfile", "imageReference", "sku"]),  # plan
-            "displayStatus": get_vm_attribute(vm, ["properties", "extended", "instanceView", "powerState", "displayStatus"]),
+            "displayStatus": (get_vm_attribute(vm, ["properties", "extended", "instanceView", "powerState", "displayStatus"]) or
+                              get_vm_attribute(vm, ["properties", "provisioningState"])),
             "lastUpdatedAt": str(datetime.utcnow()),
             "vmSize": get_vm_attribute(vm, ["properties", "hardwareProfile", "vmSize"]),
             "computerName": get_vm_attribute(vm, ["properties", "osProfile", "computerName"]),

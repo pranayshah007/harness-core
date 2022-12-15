@@ -11,7 +11,7 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import java.security.SecureRandom;
@@ -52,6 +52,6 @@ public class AccountUtils {
   }
 
   private boolean isDuplicateAccountName(String accountName) {
-    return RestClientUtils.getResponse(accountClient.doesAccountExist(accountName));
+    return CGRestUtils.getResponse(accountClient.doesAccountExist(accountName));
   }
 }

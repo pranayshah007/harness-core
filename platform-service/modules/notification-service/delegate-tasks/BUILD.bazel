@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -12,11 +17,9 @@ java_library(
     ],
     deps = [
         "//:lombok",
-        "//910-delegate-service-driver:module",
         "//920-delegate-service-beans:module",
         "//930-delegate-tasks:module",
         "//950-delegate-tasks-beans:module",
-        "//950-ng-project-n-orgs:module",
         "//960-ng-core-beans:module",
         "//960-persistence:module",
         "//970-api-services-beans:module",
@@ -24,8 +27,6 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "//clients/notification:module",
-        "//platform-service/modules/notification-service/contracts:module",
         "//platform-service/modules/notification-service/contracts/src/main/proto:notification_beans_java_proto",
     ],
 )

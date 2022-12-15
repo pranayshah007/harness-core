@@ -35,6 +35,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.utils.DelegateJreVersionHelper;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
@@ -42,12 +43,10 @@ import io.harness.rule.Owner;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.DelegateSequenceConfig;
-import software.wings.jre.JreConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +70,7 @@ public class EcsDelegateRegistrationTest {
   @Mock(answer = RETURNS_SELF) private UpdateOperations<DelegateSequenceConfig> updateOperations;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private MainConfiguration mainConfiguration;
+  @Mock private DelegateJreVersionHelper jreVersionHelper;
   private DelegateServiceImpl underTest;
 
   @Before
@@ -79,6 +79,7 @@ public class EcsDelegateRegistrationTest {
                         .persistence(persistence)
                         .featureFlagService(featureFlagService)
                         .mainConfiguration(mainConfiguration)
+                        .jreVersionHelper(jreVersionHelper)
                         .build());
   }
 
@@ -105,12 +106,6 @@ public class EcsDelegateRegistrationTest {
         .when(underTest)
         .getDelegateSequenceConfig(ACCOUNT_ID, HOST_NAME, 5);
     lenient().doReturn(false).when(featureFlagService).isEnabled(any(), any());
-    JreConfig oracleJreConfig = JreConfig.builder().version("1.8.0_191").build();
-    HashMap<String, JreConfig> jreConfigMap = new HashMap<>();
-    jreConfigMap.put("oracle8u191", oracleJreConfig);
-    jreConfigMap.put("openjdk11014_9", JreConfig.builder().version("11.0.14").build());
-    when(mainConfiguration.getMigrateToJre()).thenReturn("openjdk11014_9");
-    doReturn(jreConfigMap).when(mainConfiguration).getJreConfigs();
 
     underTest.handleEcsDelegateRequest(requestDelegate);
 
@@ -351,8 +346,7 @@ public class EcsDelegateRegistrationTest {
   public void testGetInactiveDelegateSequenceConfigToReplace() {
     List<DelegateSequenceConfig> existingDelegateSequenceConfigs = getExistingDelegateSequenceConfigs();
 
-    Delegate delegate =
-        Delegate.builder().delegateType("ECS").hostName("hostname").tags(Arrays.asList("newtag1", "newtag2")).build();
+    Delegate delegate = Delegate.builder().delegateType("ECS").hostName("hostname").build();
 
     doReturn(Delegate.builder().uuid("12345").tags(Arrays.asList("tag1", "tag2")).build())
         .doReturn(null)
@@ -360,7 +354,7 @@ public class EcsDelegateRegistrationTest {
         .getDelegateUsingSequenceNum(any(), any(), any());
 
     mockWingsPersistanceForUpdateCall();
-    doNothing().when(underTest).delete(any(), any());
+    doReturn(null).when(underTest).delete(any(), any());
 
     DelegateSequenceConfig config =
         underTest.getInactiveDelegateSequenceConfigToReplace(delegate, existingDelegateSequenceConfigs);
@@ -369,8 +363,8 @@ public class EcsDelegateRegistrationTest {
 
     assertThat(delegate.getTags()).isNotNull();
     assertThat(delegate.getTags()).hasSize(2);
-    assertThat(delegate.getTags().contains("newtag1")).isTrue();
-    assertThat(delegate.getTags().contains("newtag2")).isTrue();
+    assertThat(delegate.getTags().contains("tag1")).isTrue();
+    assertThat(delegate.getTags().contains("tag2")).isTrue();
     assertThat(delegate.getHostName()).isEqualTo("hostname_1");
 
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);

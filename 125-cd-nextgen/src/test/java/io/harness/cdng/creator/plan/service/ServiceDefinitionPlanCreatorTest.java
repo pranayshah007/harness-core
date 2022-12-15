@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,11 +20,14 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -32,12 +36,29 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
-  @Inject ServiceDefinitionPlanCreator serviceDefinitionPlanCreator;
+  @InjectMocks @Inject ServiceDefinitionPlanCreator serviceDefinitionPlanCreator;
+  @Mock private EnvironmentService environmentService;
+  @Mock private ServiceOverrideService serviceOverrideService;
+  @Inject private KryoSerializer kryoSerializer;
+
+  private static final String ACCOUNT_ID = "account_id";
+  private static final String ORG_IDENTIFIER = "orgId";
+  private static final String PROJ_IDENTIFIER = "projId";
+  private static final String SVC_REF = "SVC_REF";
+  private static final String ENV_REF = "ENV_REF";
+
+  @Before
+  public void setupMocks() {
+    initMocks(this);
+  }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -52,10 +73,12 @@ public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = serviceDefinitionPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.SERVICE_DEFINITION)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION).size()).isEqualTo(6);
+    assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION).size()).isEqualTo(11);
     assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION))
         .containsOnly(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
-            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP);
+            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP,
+            ServiceSpecType.ECS, ServiceSpecType.CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP, ServiceSpecType.TAS,
+            ServiceSpecType.ASG);
   }
 
   private void checksForDependencies(PlanCreationResponse planCreationResponse, String nodeUuid) {

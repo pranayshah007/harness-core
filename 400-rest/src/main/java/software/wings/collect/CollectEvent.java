@@ -8,9 +8,11 @@
 package software.wings.collect;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -18,6 +20,7 @@ import java.util.Date;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Reference;
 
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "collectorQueue2", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class CollectEvent extends Queuable {

@@ -8,10 +8,12 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.event.model.EventType;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -30,6 +32,7 @@ import org.mongodb.morphia.annotations.Entity;
  */
 @Data
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "notifications")
 @HarnessEntity(exportable = false)
 @JsonTypeInfo(use = Id.NAME, property = "notificationType", include = As.EXISTING_PROPERTY)

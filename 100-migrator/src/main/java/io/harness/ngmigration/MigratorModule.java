@@ -7,16 +7,21 @@
 
 package io.harness.ngmigration;
 
+import static io.harness.authorization.AuthorizationServiceHeader.MIGRATOR;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.service.ServiceResourceClientModule;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class MigratorModule extends AbstractModule {
   private MigratorConfig migratorConfig;
 
@@ -43,5 +48,15 @@ public class MigratorModule extends AbstractModule {
   @Named("templateServiceClientConfig")
   public ServiceHttpClientConfig templateServiceClientConfig() {
     return migratorConfig.getTemplateServiceClientConfig();
+  }
+
+  @Override
+  public void configure() {
+    try {
+      install(new ServiceResourceClientModule(migratorConfig.getNgClientConfig(),
+          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
+    } catch (Exception ex) {
+      log.info("Could not create the service resource client module", ex);
+    }
   }
 }

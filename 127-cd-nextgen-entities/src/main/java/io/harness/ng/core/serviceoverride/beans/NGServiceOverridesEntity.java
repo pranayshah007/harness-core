@@ -10,7 +10,7 @@ package io.harness.ng.core.serviceoverride.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -35,12 +35,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "serviceOverridesNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "NGServiceOverridesEntityKeys")
 @Document("serviceOverridesNG")
 @TypeAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @RecasterAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(CDC)
 public class NGServiceOverridesEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
@@ -47,8 +46,8 @@ import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.YamlDirectoryService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 import software.wings.yaml.workflow.BasicWorkflowYaml;
 import software.wings.yaml.workflow.BuildWorkflowYaml;
 
@@ -108,8 +107,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
                                             .withFileContent(NEW)
                                             .build();
 
-    // TODO: remove when feature flag is cleaned up
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNTID)).thenReturn(false);
     // Validate for InfrastructureMapping
     when(entityUpdateService.obtainEntityGitSyncFileChangeSet(anyString(), any(), any(), any()))
         .thenReturn(Lists.newArrayList(gitFileChangeForDelete))
@@ -190,8 +187,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
                                             .withFileContent(NEW)
                                             .build();
 
-    // TODO: remove when feature flag is cleaned up
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNTID)).thenReturn(false);
     // Validate for Artifact Stream
     when(entityUpdateService.obtainEntityGitSyncFileChangeSet(anyString(), any(), any(), any()))
         .thenReturn(Lists.newArrayList(gitFileChangeForDelete))
@@ -259,7 +254,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void test_compareYaml() {
-    when(featureFlagService.isEnabled(FeatureName.COMPARE_YAML_IN_GIT_SYNC, ACCOUNTID)).thenReturn(true);
     OrchestrationWorkflow orchestrationWorkflow1 =
         BuildWorkflow.BuildOrchestrationWorkflowBuilder.aBuildOrchestrationWorkflow().build();
     orchestrationWorkflow1.setOrchestrationWorkflowType(OrchestrationWorkflowType.BASIC);

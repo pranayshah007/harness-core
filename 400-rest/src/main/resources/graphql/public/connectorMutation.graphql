@@ -62,6 +62,8 @@ input GitConnectorInput {
   customCommitDetails: CustomCommitDetailsInput
   usageScope: UsageScopeInput
   delegateSelectors: [String!]
+  disableUserGitConfig: Boolean
+  providerType: ProviderType
 }
 
 input UpdateGitConnectorInput {
@@ -75,6 +77,7 @@ input UpdateGitConnectorInput {
   customCommitDetails: CustomCommitDetailsInput
   usageScope: UsageScopeInput
   delegateSelectors: [String!]
+  disableUserGitConfig: Boolean
 }
 
 input CustomCommitDetailsInput {

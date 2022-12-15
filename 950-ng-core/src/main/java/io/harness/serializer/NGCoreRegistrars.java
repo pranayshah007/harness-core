@@ -9,6 +9,7 @@ package io.harness.serializer;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
@@ -32,6 +33,7 @@ public class NGCoreRegistrars {
           .add(NGCoreKryoRegistrar.class)
           .add(NgPersistenceKryoRegistrar.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
+          .addAll(FiltersRegistrars.kryoRegistrars)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -44,6 +46,7 @@ public class NGCoreRegistrars {
           .add(NgPersistenceMorphiaRegistrar.class)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
+          .addAll(FiltersRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

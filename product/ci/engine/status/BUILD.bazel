@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -14,9 +19,12 @@ go_library(
         "//commons/go/lib/utils",
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
+        "//product/ci/engine/status/payloads",
         "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_gogo_protobuf//jsonpb",
         "@com_github_pkg_errors//:errors",
+        "@com_github_wings_software_dlite//client:go_default_library",
+        "@com_github_wings_software_dlite//delegate:go_default_library",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
         "@org_golang_google_protobuf//types/known/durationpb",

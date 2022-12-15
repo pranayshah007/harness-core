@@ -178,7 +178,7 @@ public class ExecutionQueryHelper {
       }
 
       if (filter.getHelmChartVersion() != null) {
-        field = query.field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
+        field = query.field(WorkflowExecutionKeys.executionArgs_helmCharts_displayName);
         QLIdFilter helmChartVersionFilter = filter.getHelmChartVersion();
         utils.setIdFilter(field, helmChartVersionFilter);
       }

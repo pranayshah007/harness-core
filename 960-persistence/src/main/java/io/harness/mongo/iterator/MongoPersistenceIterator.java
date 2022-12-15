@@ -11,10 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_DELAY;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_ERROR;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_DELAY;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_ERROR;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.threading.Morpheus.sleep;
@@ -31,7 +31,7 @@ import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.maintenance.MaintenanceController;
-import io.harness.metrics.impl.IteratorMetricsServiceImpl;
+import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.EntityLogContext;
 import io.harness.mongo.EntityProcessController;
@@ -45,6 +45,7 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import lombok.Builder;
 import lombok.Getter;
@@ -58,7 +59,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private static final Duration QUERY_TIME = ofMillis(200);
 
   @Inject private final QueueController queueController;
-  @Inject private IteratorMetricsServiceImpl iteratorMetricsService;
+  @Inject private PersistenceMetricsServiceImpl iteratorMetricsService;
 
   public interface Handler<T> {
     void handle(T entity);
@@ -77,12 +78,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration acceptableExecutionTime;
   private Duration throttleInterval;
   private Handler<T> handler;
-  private ExecutorService executorService;
+  @Getter private ExecutorService executorService;
   private Semaphore semaphore;
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
+  private boolean unsorted;
 
   private long movingAvg(long current, long sample) {
     return (15 * current + sample) / 16;
@@ -137,7 +139,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         T entity = null;
         try {
           entity = persistenceProvider.obtainNextInstance(
-              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander);
+              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander, unsorted);
         } finally {
           semaphore.release();
         }
@@ -165,10 +167,14 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
           T finalEntity = entity;
           synchronized (finalEntity) {
-            executorService.submit(() -> processEntity(finalEntity));
-            // it might take some time until the submitted task is actually triggered.
-            // lets wait for awhile until for this to happen
-            finalEntity.wait(10000);
+            try {
+              executorService.submit(() -> processEntity(finalEntity));
+              // it might take some time until the submitted task is actually triggered.
+              // lets wait for awhile until for this to happen
+              finalEntity.wait(10000);
+            } catch (RejectedExecutionException e) {
+              log.info("The executor service has been shutdown for entity {}", finalEntity);
+            }
           }
           continue;
         }

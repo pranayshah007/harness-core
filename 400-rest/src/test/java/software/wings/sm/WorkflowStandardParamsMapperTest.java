@@ -15,9 +15,9 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_REGISTRY_URL_KEY;
 import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_USER_NAME_KEY;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_KEY;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
@@ -48,8 +48,8 @@ import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;
@@ -106,7 +106,6 @@ public class WorkflowStandardParamsMapperTest extends WingsBaseTest {
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.APP_DYNAMICS.name()))
         .thenReturn(Lists.newArrayList(aSettingAttribute().withUuid("id").build()));
     on(appService).set("settingsService", settingsService);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
   }
 
   /**
@@ -347,7 +346,7 @@ public class WorkflowStandardParamsMapperTest extends WingsBaseTest {
         injector.getInstance(EnvironmentService.class),
         artifactStreamServiceBindingService != null ? artifactStreamServiceBindingService
                                                     : injector.getInstance(ArtifactStreamServiceBindingService.class),
-        helmChartService != null ? helmChartService : injector.getInstance(HelmChartService.class));
+        helmChartService != null ? helmChartService : injector.getInstance(HelmChartService.class), featureFlagService);
 
     return new WorkflowStandardParamsParamMapper(this.injector.getInstance(SubdomainUrlHelperIntfc.class),
         this.injector.getInstance(WorkflowExecutionService.class),

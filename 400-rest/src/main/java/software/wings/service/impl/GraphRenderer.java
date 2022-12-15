@@ -122,7 +122,7 @@ public class GraphRenderer {
       }
     }
     final Optional<ExecutionStatus> notNewActiveStatuses =
-        activeStatuses.stream().filter(status -> status != NEW).findFirst();
+        activeStatuses.stream().filter(status -> !asList(NEW, null).contains(status)).findFirst();
     if (notNewActiveStatuses.isPresent()) {
       return notNewActiveStatuses.get();
     }
@@ -382,6 +382,9 @@ public class GraphRenderer {
         if (stateExecutionInstance != null) {
           getHostElementStatus(stateExecutionInstance, executionData);
           ExecutionStatus stateExecutionInstanceStatus = executionData.getStatus();
+          if (stateExecutionInstanceStatus == null) {
+            log.info("Aggregating null status for StateExecutionInstance {}", stateExecutionInstance.getUuid());
+          }
           collect.add(stateExecutionInstanceStatus);
           multiset.add(ExecutionStatus.getStatusCategory(stateExecutionInstanceStatus));
         } else {

@@ -151,9 +151,9 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) @ResourceIdentifier String envGroupId,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Specify whether Environment is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
@@ -220,9 +220,9 @@ public class EnvironmentGroupResource {
   public ResponseDTO<PageResponse<EnvironmentGroupResponse>>
   listEnvironmentGroup(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @QueryParam("envGroupIdentifiers") List<String> envGroupIds,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
@@ -273,9 +273,9 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) @ResourceIdentifier String envGroupId,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo) {
     checkFForThrow(accountId);

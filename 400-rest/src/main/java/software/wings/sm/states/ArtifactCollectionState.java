@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
+import static io.harness.beans.FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -59,7 +60,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -73,7 +73,9 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
+import software.wings.service.impl.ShellScriptUtils;
 import software.wings.service.impl.WorkflowExecutionLogContext;
 import software.wings.service.impl.applicationmanifest.ManifestCollectionUtils;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
@@ -288,7 +290,8 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean shouldCollectArtifact(ExecutionContext context) {
-    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId());
+    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId())
+        || featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId());
   }
 
   private boolean shouldCollectManifest(ExecutionContext context) {
@@ -308,6 +311,14 @@ public class ArtifactCollectionState extends State {
       }
     }
 
+    if (!artifactStream.isArtifactStreamParameterized()
+        && featureFlagService.isEnabled(FeatureName.SPG_FETCH_ARTIFACT_FROM_DB, context.getAccountId())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
     Integer timeout = getTimeoutMillis();
     DelegateTaskBuilder delegateTaskBuilder;
 
@@ -320,7 +331,8 @@ public class ArtifactCollectionState extends State {
                   -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
               .findFirst()
               .orElse(CustomArtifactStream.Script.builder().build());
-      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isEmpty(versionScript.getScriptString())) {
+      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled())
+          && ShellScriptUtils.isNoopScript(versionScript.getScriptString())) {
         return saveCustomArtifactResponse(customArtifactStream, evaluatedBuildNo, timeout);
       }
       ArtifactStreamAttributes artifactStreamAttributes =
@@ -621,6 +633,8 @@ public class ArtifactCollectionState extends State {
           if (shouldUpdateMetadata(artifact, savedArtifact)) {
             artifactService.updateMetadataAndRevision(
                 savedArtifact.getUuid(), savedArtifact.getAccountId(), metadata, artifact.getRevision());
+          } else if (featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId())) {
+            artifactService.updateLastUpdatedAt(savedArtifact.getUuid(), savedArtifact.getAccountId());
           }
         }
         ArtifactCollectionExecutionData artifactCollectionExecutionData =
@@ -977,7 +991,7 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean isMultiArtifact(String accountId) {
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   public void setRuntimeValues(Map<String, Object> runtimeValues) {

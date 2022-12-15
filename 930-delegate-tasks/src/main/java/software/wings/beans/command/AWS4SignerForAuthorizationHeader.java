@@ -181,7 +181,7 @@ public class AWS4SignerForAuthorizationHeader {
    * @param endpoint Url endpoint
    * @param withEndpoint if true, return endpoint concatenated with canonicalized resource path
    */
-  protected static String getEndpointWithCanonicalizedResourcePath(URL endpoint, boolean withEndpoint) {
+  public static String getEndpointWithCanonicalizedResourcePath(URL endpoint, boolean withEndpoint) {
     if (endpoint == null) {
       return "/";
     }

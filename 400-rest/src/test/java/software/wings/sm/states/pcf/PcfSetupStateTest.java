@@ -40,9 +40,9 @@ import static software.wings.beans.TaskType.PCF_COMMAND_TASK;
 import static software.wings.beans.appmanifest.StoreType.CUSTOM;
 import static software.wings.beans.appmanifest.StoreType.Local;
 import static software.wings.beans.appmanifest.StoreType.Remote;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.MASKED;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.states.pcf.PcfSetupState.PCF_SETUP_COMMAND;
@@ -97,7 +97,6 @@ import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
@@ -142,7 +141,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -162,6 +160,7 @@ import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PcfInfraStructure;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ServiceHelper;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.ActivityService;
@@ -404,7 +403,6 @@ public class PcfSetupStateTest extends WingsBaseTest {
         .thenReturn(
             PcfServiceSpecification.builder().manifestYaml(MANIFEST_YAML_CONTENT).serviceId(service.getUuid()).build());
     doNothing().when(serviceHelper).addPlaceholderTexts(any());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
 
     doReturn("artifact-name").when(pcfSetupState).artifactFileNameForSource(any(), any());
@@ -412,8 +410,8 @@ public class PcfSetupStateTest extends WingsBaseTest {
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        spy(new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null));
+        spy(new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(pcfSetupState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);

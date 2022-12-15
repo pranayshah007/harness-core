@@ -1,0 +1,25 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Git",
+    "spec" : {
+      "url" : "https://github.com/example/example-repo.git",
+      "validationRepo" : "https://github.com/example/example-validation-repo.git",
+      "branchName" : "example_branch",
+      "delegateSelectors" : [ ],
+      "executeOnDelegate" : false,
+      "type" : "Ssh",
+      "connectionType" : "Repo",
+      "spec" : {
+        "sshKeyRef" : "account.git-ssh-key"
+      }
+    }
+  }
+}

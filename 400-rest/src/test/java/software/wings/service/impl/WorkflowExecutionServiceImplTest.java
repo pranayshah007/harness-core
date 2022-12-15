@@ -26,6 +26,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -35,6 +36,7 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKAS_S;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.threading.Poller.pollFor;
 
 import static software.wings.api.DeploymentType.SSH;
@@ -52,12 +54,13 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.infra.InfraDefinitionTestConstants.RESOURCE_CONSTRAINT_NAME;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.settings.SettingVariableTypes.KUBERNETES;
 import static software.wings.settings.SettingVariableTypes.PHYSICAL_DATA_CENTER;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
 import static software.wings.sm.StateType.APPROVAL;
@@ -143,6 +146,7 @@ import io.harness.waiter.OrchestrationNotifyEventListener;
 import software.wings.WingsBaseTest;
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
+import software.wings.api.InstanceElement;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.WorkflowElement;
@@ -155,6 +159,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.CanaryWorkflowExecutionAdvisor;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
+import software.wings.beans.ElementExecutionSummary;
 import software.wings.beans.Environment;
 import software.wings.beans.Environment.Builder;
 import software.wings.beans.ErrorStrategy;
@@ -188,7 +193,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
@@ -207,6 +211,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.resources.stats.model.TimeRange;
 import software.wings.rules.Listeners;
 import software.wings.scheduler.BackgroundJobScheduler;
@@ -233,6 +238,7 @@ import software.wings.service.intfc.security.SSHVaultService;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionEventAdvisor;
 import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import software.wings.sm.StateMachine;
@@ -266,6 +272,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The type Workflow service impl test.
@@ -1919,9 +1927,9 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = MILOS)
+  @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void shouldObtainLastGoodDeployedArtifactsForRollback() throws InterruptedException {
+  public void shouldObtainEmptyArtifactsForRollbackWhenNoInstancesAreDeployed() throws InterruptedException {
     when(artifactStreamServiceBindingService.listArtifactStreamIds(anyString()))
         .thenReturn(singletonList("artifactStreamId"));
 
@@ -1947,7 +1955,82 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
         workflowExecution2, workflowExecution1.getInfraMappingIds(), true);
+    assertThat(artifacts).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldObtainLastGoodDeployedArtifactsWithDeployedInstancesForRollback() throws InterruptedException {
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(anyString()))
+        .thenReturn(singletonList("artifactStreamId"));
+
+    String appId = app.getUuid();
+    Service service = addService("Service");
+    DockerArtifactStream dockerArtifactStream = DockerArtifactStream.builder().uuid("artifactStreamId").build();
+    service.setArtifactStreams(singletonList(dockerArtifactStream));
+    service.setArtifactStreamIds(singletonList(dockerArtifactStream.getUuid()));
+
+    SettingAttribute computeProvider =
+        aSettingAttribute().withAppId(app.getUuid()).withValue(aPhysicalDataCenterConfig().build()).build();
+    when(mockSettingsService.getByAccountAndId(any(), any())).thenReturn(computeProvider);
+    wingsPersistence.save(computeProvider);
+
+    final InfrastructureDefinition infraDefinition = createInfraDefinition(computeProvider, "Infra", "host1");
+
+    Workflow workflow = createWorkflow(appId, env, service, infraDefinition);
+
+    WorkflowExecution workflowExecution1 = triggerWorkflow(workflow, env);
+    WorkflowExecution workflowExecution2 = triggerWorkflow(workflow, env);
+    WorkflowExecution workflowExecution3 = triggerWorkflow(workflow, env);
+
+    List<ElementExecutionSummary> executionSummaries1 = workflowExecution1.getServiceExecutionSummaries();
+    InstanceStatusSummary instanceStatusSummary1 =
+        anInstanceStatusSummary()
+            .withInstanceElement(InstanceElement.Builder.anInstanceElement().uuid("instanceId1").build())
+            .build();
+    executionSummaries1.get(0).setInstanceStatusSummaries(asList(instanceStatusSummary1));
+
+    Artifact artifact1 = workflowExecution1.getArtifacts().get(0);
+    artifact1.setUuid("artifact1");
+
+    Artifact artifact2 = workflowExecution2.getArtifacts().get(0);
+    artifact2.setUuid("artifact2");
+
+    Artifact artifact3 = workflowExecution3.getArtifacts().get(0);
+    artifact3.setUuid("artifact3");
+
+    Query<WorkflowExecution> query1 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution1.getUuid());
+
+    Query<WorkflowExecution> query2 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution2.getUuid());
+
+    Query<WorkflowExecution> query3 = wingsPersistence.createQuery(WorkflowExecution.class)
+                                          .filter(WorkflowExecutionKeys.uuid, workflowExecution3.getUuid());
+
+    UpdateOperations<WorkflowExecution> updateOps1 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.serviceExecutionSummaries, executionSummaries1)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution1.getArtifacts());
+
+    UpdateOperations<WorkflowExecution> updateOps2 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution2.getArtifacts());
+
+    UpdateOperations<WorkflowExecution> updateOps3 =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class)
+            .set(WorkflowExecutionKeys.artifacts, workflowExecution3.getArtifacts());
+
+    wingsPersistence.update(query1, updateOps1);
+    wingsPersistence.update(query2, updateOps2);
+    wingsPersistence.update(query3, updateOps3);
+
+    List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
+        workflowExecution3, workflowExecution1.getInfraMappingIds(), true);
     assertThat(artifacts).isNotEmpty();
+    assertThat(artifacts.get(0).getUuid()).isEqualTo(workflowExecution1.getArtifacts().get(0).getUuid());
+    assertThat(artifacts.get(0).getUuid()).isNotEqualTo(workflowExecution2.getArtifacts().get(0).getUuid());
   }
 
   @Test
@@ -2164,7 +2247,6 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     String serviceId1 = SERVICE_ID + "_1";
     String artifactId1 = ARTIFACT_ID + "_1";
     String artifactStreamId1 = ARTIFACT_STREAM_ID + "_1";
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(
         asList(anArtifact().withUuid(ARTIFACT_ID).build(), anArtifact().withUuid(artifactId1).build()));
@@ -2227,23 +2309,6 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     Set<String> keywords = new HashSet<>();
     ((WorkflowExecutionServiceImpl) workflowExecutionService)
         .populateArtifactsAndServices(workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
-  }
-
-  @Test
-  @Owner(developers = GARVIT)
-  @Category(UnitTests.class)
-  public void shouldPopulateArtifactsAndServicesWithArtifactStreamRefactorBasic() {
-    // This is just to test that populateArtifacts function is called for feature-flag on.
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-    ExecutionArgs executionArgs = new ExecutionArgs();
-    executionArgs.setArtifactVariables(Collections.emptyList());
-    WorkflowExecution workflowExecution = WorkflowExecution.builder().build();
-    WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
-    Set<String> keywords = new HashSet<>();
-    ((WorkflowExecutionServiceImpl) workflowExecutionService)
-        .populateArtifactsAndServices(workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
-    verify(multiArtifactWorkflowExecutionServiceHelper).filterArtifactsForExecution(any(), any(), any());
-    assertThat(workflowExecution.getArtifacts()).isNullOrEmpty();
   }
 
   @Test
@@ -2373,7 +2438,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void executionHostsShouldNotBeSetForNonSshDeploymentType() {
+  public void executionHostsShouldNotBeSetForNonSshOrWinRmDeploymentType() {
     List<String> hosts = Arrays.asList("host1", "host2");
     WorkflowExecution workflowExecution =
         WorkflowExecution.builder().serviceIds(Collections.singletonList("serviceId")).build();
@@ -2384,7 +2449,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                            -> ((WorkflowExecutionServiceImpl) workflowExecutionService)
                                   .validateExecutionArgsHosts(hosts, workflowExecution, workflow))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Execution Hosts only supported for SSH deployment type");
+        .hasMessageContaining("Execution Hosts only supported for SSH and WinRM deployment type");
   }
 
   @Test
@@ -3386,5 +3451,47 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     assertThat(workflowStandardParams.getArtifactInputs()).isNotNull().isNotEmpty();
     assertThat(workflowStandardParams.getArtifactInputs().get(0)).isEqualTo(artifactVariable1.getArtifactInput());
     verify(artifactStreamServiceBindingService).listArtifactStreamIds(service.getUuid());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldSaveRejectedByFreezeWindowsFFOn() {
+    User user = anUser().uuid(generateUuid()).name("user-name").build();
+    UserThreadLocal.set(user);
+    doThrow(new InvalidRequestException("User is not authorized", WingsException.USER))
+        .when(deploymentAuthHandler)
+        .authorizeDeploymentDuringFreeze();
+    String appId = app.getUuid();
+    Workflow workflow = createExecutableWorkflow(appId, env, "workflow1");
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setArtifacts(singletonList(
+        Artifact.Builder.anArtifact().withAccountId(ACCOUNT_ID).withAppId(APP_ID).withUuid(ARTIFACT_ID).build()));
+
+    WorkflowExecutionUpdateFake callback = new WorkflowExecutionUpdateFake();
+    when(featureFlagService.isEnabled(FeatureName.NEW_DEPLOYMENT_FREEZE, account.getUuid())).thenReturn(true);
+    when(featureFlagService.isEnabled(FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS, account.getUuid()))
+        .thenReturn(true);
+
+    GovernanceConfig governanceConfig = GovernanceConfig.builder()
+                                            .accountId(account.getUuid())
+                                            .timeRangeBasedFreezeConfigs(Collections.singletonList(
+                                                TimeRangeBasedFreezeConfig.builder()
+                                                    .name("freeze1")
+                                                    .uuid(FREEZE_WINDOW_ID)
+                                                    .timeRange(new TimeRange(0, 1, "", false, null, null, null, false))
+                                                    .build()))
+                                            .build();
+    when(governanceConfigService.get(account.getUuid())).thenReturn(governanceConfig);
+    when(governanceConfigService.getFrozenEnvIdsForApp(account.getUuid(), appId, governanceConfig))
+        .thenReturn(Collections.singletonMap(FREEZE_WINDOW_ID, Collections.singleton(env.getUuid())));
+    assertThatThrownBy(()
+                           -> workflowExecutionService.triggerOrchestrationWorkflowExecution(
+                               appId, env.getUuid(), workflow.getUuid(), null, executionArgs, callback, null))
+        .isInstanceOf(DeploymentFreezeException.class)
+        .hasMessage(
+            "Deployment Freeze Window [freeze1] is active for the environment. No deployments are allowed to proceed.")
+        .hasFieldOrPropertyWithValue("deploymentFreezeIds", Collections.singletonList(FREEZE_WINDOW_ID))
+        .hasFieldOrPropertyWithValue("deploymentFreezeNamesList", Collections.singletonList("freeze1"));
   }
 }

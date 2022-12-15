@@ -11,6 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 
+import java.time.Duration;
+import java.util.List;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AsyncWaitEngineImpl implements AsyncWaitEngine {
   private final WaitNotifyEngine waitNotifyEngine;
@@ -22,7 +25,9 @@ public class AsyncWaitEngineImpl implements AsyncWaitEngine {
   }
 
   @Override
-  public void waitForAllOn(NotifyCallback notifyCallback, ProgressCallback progressCallback, String... correlationIds) {
-    waitNotifyEngine.waitForAllOn(publisherName, notifyCallback, progressCallback, correlationIds);
+  public void waitForAllOn(
+      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout) {
+    waitNotifyEngine.waitForAllOn(
+        publisherName, notifyCallback, progressCallback, correlationIds, Duration.ofMillis(timeout));
   }
 }

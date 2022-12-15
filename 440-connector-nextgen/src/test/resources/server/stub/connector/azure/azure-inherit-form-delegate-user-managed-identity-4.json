@@ -1,0 +1,34 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "slug" : "example_connector",
+    "description" : "example_connector",
+    "org" : "default",
+    "project" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "spec" : {
+      "type" : "AzureInheritFromDelegateUserAssignedManagedIdentity",
+      "delegate_selectors" : [ "pl1" ],
+      "azure_environment_type" : "AZURE",
+      "execute_on_delegate" : true,
+      "client_id" : "1234567890"
+    }
+  },
+  "created" : 1234567890,
+  "updated" : 1234567890,
+  "status" : {
+    "status" : "FAILURE",
+    "errors" : [ {
+      "reason" : "Unexpected Error",
+      "message" : "Check your credentials",
+      "code" : 450
+    } ],
+    "error_summary" : "Error Encountered (Check your credentials)",
+    "tested_at" : 1234567890,
+    "connected_at" : 1234567890
+  },
+  "harness_managed" : false,
+  "governance_metadata" : null
+}

@@ -7,8 +7,8 @@
 
 package io.harness.perpetualtask.k8s.watch;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
-import static io.harness.ccm.commons.constants.Constants.UID;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.UID;
 import static io.harness.perpetualtask.k8s.utils.DebugConstants.RELATIVITY_CLUSTER_IDS;
 import static io.harness.perpetualtask.k8s.watch.PodEvent.EventType.EVENT_TYPE_TERMINATED;
 import static io.harness.perpetualtask.k8s.watch.Volume.VolumeType.VOLUME_TYPE_PVC;
@@ -24,6 +24,8 @@ import io.harness.event.client.EventPublisher;
 import io.harness.event.payloads.CeExceptionMessage;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.utils.ApiInfoLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -54,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +66,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PodWatcher implements ResourceEventHandler<V1Pod> {
   private static final TypeRegistry TYPE_REGISTRY =
       TypeRegistry.newBuilder().add(PodInfo.getDescriptor()).add(PodEvent.getDescriptor()).build();
-
+  public static final String RUNNING_PHASE = "Running";
+  public static final String READY_STATE = "Ready";
   private final String clusterId;
   private final EventPublisher eventPublisher;
   private final PVCFetcher pvcFetcher;
@@ -75,7 +77,6 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   private final PodInfo podInfoPrototype;
   private final PodEvent podEventPrototype;
   private final boolean isClusterSeen;
-
   private final K8sControllerFetcher controllerFetcher;
 
   private static final String POD_EVENT_MSG = "Pod: {}, action: {}";
@@ -113,17 +114,19 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
-              log.info("Pod watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+              ApiInfoLogger.logInfoIfNotSeenRecently(
+                  "Pod watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
                   callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
-              if (!"0".equals(callGeneratorParams.resourceVersion)
-                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
-                K8sWatcherHelper.updateLastSeen(
-                    String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, clusterId), Instant.now());
-              }
+              K8sWatcherHelper.updateLastSeen(
+                  String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, clusterId), Instant.now());
               try {
                 return coreV1Api.listPodForAllNamespacesCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
                     callGeneratorParams.watch, null);
+              } catch (IllegalArgumentException ex) {
+                ApiExceptionLogger.logErrorIfNotSeenRecently(
+                    ex, String.format("IllegalArgumentException: %s", ex.getMessage()));
+                throw ex;
               } catch (Exception e) {
                 log.error("Unknown exception occurred for listPodForAllNamespacesCall", e);
                 throw e;
@@ -174,10 +177,11 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   public void eventReceived(V1Pod pod) {
     String uid = pod.getMetadata().getUid();
     V1PodCondition podScheduledCondition = getPodScheduledCondition(pod);
-
-    if (podScheduledCondition != null && !publishedPods.contains(uid)) {
+    if (podScheduledCondition != null && !publishedPods.contains(uid) && isPodInRunningPhase(pod)) {
       Timestamp creationTimestamp =
           HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
+
+      log.info("UID: {} and PodName: {} -> CreationTimesTamp: {}", uid, pod.getMetadata().getName(), creationTimestamp);
 
       PodInfo podInfo =
           PodInfo.newBuilder(podInfoPrototype)
@@ -225,6 +229,11 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
       }
       publishedPods.remove(uid);
     }
+  }
+
+  private static boolean isPodInRunningPhase(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    return status != null && status.getPhase() != null && status.getPhase().equalsIgnoreCase(RUNNING_PHASE);
   }
 
   private Map<String, String> getNamespaceLabels(String namespaceName) {

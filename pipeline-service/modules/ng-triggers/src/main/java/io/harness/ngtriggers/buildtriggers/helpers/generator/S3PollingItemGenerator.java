@@ -35,15 +35,18 @@ public class S3PollingItemGenerator implements PollingItemGenerator {
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String bucketName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.bucketName");
     String filePathRegex = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.filePathRegex");
+    String region = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.region");
 
     return builder
-        .setPollingPayloadData(
-            PollingPayloadData.newBuilder()
-                .setConnectorRef(connectorRef)
-                .setType(Type.AMAZON_S3)
-                .setAmazonS3Payload(
-                    AmazonS3Payload.newBuilder().setBucketName(bucketName).setFilePathRegex(filePathRegex).build())
-                .build())
+        .setPollingPayloadData(PollingPayloadData.newBuilder()
+                                   .setConnectorRef(connectorRef)
+                                   .setType(Type.AMAZON_S3)
+                                   .setAmazonS3Payload(AmazonS3Payload.newBuilder()
+                                                           .setBucketName(bucketName)
+                                                           .setFilePathRegex(filePathRegex)
+                                                           .setRegion(region)
+                                                           .build())
+                                   .build())
         .build();
   }
 }

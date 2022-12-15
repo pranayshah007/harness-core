@@ -27,4 +27,7 @@ public class ScmErrorHints {
       "Please check if the branch<BRANCH> already exits in the repo<REPO>.";
   public static final String FILE_ALREADY_EXISTS =
       "Please check if the file<FILEPATH> already exits in the branch<BRANCH> and repo<REPO>.";
+
+  public static final String WRONG_REPO_OR_BRANCH =
+      "Please check if the provided branch<BRANCH> or the Bitbucket repo name<REPO> are valid.";
 }

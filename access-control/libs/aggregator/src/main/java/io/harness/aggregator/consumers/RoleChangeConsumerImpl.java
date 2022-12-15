@@ -11,6 +11,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
@@ -24,12 +25,14 @@ import io.harness.accesscontrol.roles.persistence.RoleDBO;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.mongo.DelayLogContext;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,6 +71,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
 
   @Override
   public void consumeUpdateEvent(String id, RoleDBO updatedRole) {
+    long startTime = System.currentTimeMillis();
     if (updatedRole.getPermissions() == null) {
       return;
     }
@@ -105,9 +109,13 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       Thread.currentThread().interrupt();
       throw new GeneralException("", ex);
     }
-
-    log.info("Number of ACLs created: {}", numberOfACLsCreated);
-    log.info("Number of ACLs deleted: {}", numberOfACLsDeleted);
+    long permissionsChangeTime = System.currentTimeMillis() - startTime;
+    try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
+      log.info("RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
+          numberOfACLsCreated, id, permissionsChangeTime);
+      log.info("RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
+          numberOfACLsDeleted, id, permissionsChangeTime);
+    }
   }
 
   @Override
@@ -164,9 +172,12 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
             -> existingPrincipals.forEach(principalIdentifier
                 -> existingResourceSelectors.forEach(resourceSelector
                     -> aclsToCreate.add(buildACL(permissionIdentifier, Principal.of(principalType, principalIdentifier),
-                        roleAssignmentDBO, resourceSelector)))));
+                        roleAssignmentDBO, resourceSelector, false)))));
       }
       numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+      numberOfACLsCreated +=
+          aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
+              roleAssignmentDBO, new HashSet<>(), permissionsAddedToRole));
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);
     }

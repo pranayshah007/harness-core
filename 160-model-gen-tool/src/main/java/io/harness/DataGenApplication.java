@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -174,6 +173,13 @@ public class DataGenApplication extends Application<MainConfiguration> {
             .addAll(ManagerRegistrars.springConverters)
             .build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
 
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
@@ -217,7 +223,6 @@ public class DataGenApplication extends Application<MainConfiguration> {
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
     modules.add(new AlertModule());
-    modules.add(new CapabilityModule());
     modules.add(new WingsModule(configuration, StartupMode.MANAGER));
     modules.add(new TotpModule());
     modules.add(new ProviderModule() {

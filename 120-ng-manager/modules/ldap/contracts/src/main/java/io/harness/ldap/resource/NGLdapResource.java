@@ -21,6 +21,7 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapTestResponse;
+import software.wings.helpers.ext.ldap.LdapResponse;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -33,7 +34,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collection;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -42,7 +42,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotBlank;
+import retrofit2.http.Multipart;
 
 @OwnedBy(PL)
 @Api("ldap")
@@ -84,7 +86,7 @@ public interface NGLdapResource {
                                      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @POST
   @Path("settings/test/user")
@@ -102,7 +104,7 @@ public interface NGLdapResource {
                                NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @POST
   @Path("settings/test/group")
@@ -120,7 +122,7 @@ public interface NGLdapResource {
                                 NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @GET
   @Path("/{ldapId}/search/group")
@@ -157,4 +159,26 @@ public interface NGLdapResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
+
+  @Multipart
+  @POST
+  @Path("/ldap-login-test")
+  @Consumes("multipart/form-data")
+  @ApiOperation(value = "Perform LDAP Login Test", nickname = "postLdapAuthenticationTest")
+  @Operation(operationId = "postLdapAuthenticationTest", summary = "Test LDAP authentication",
+      description = "Tests LDAP authentication for the given Account ID, with a valid test email and password",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns authentication status")
+      })
+  RestResponse<LdapResponse>
+  postLdapAuthenticationTest(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                 NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "This should be a valid test email") @FormDataParam("email") String email,
+      @Parameter(description = "This should be a valid password for the test email") @FormDataParam(
+          "password") String password);
 }

@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 # Create image for ci-addon which will be run as an entrypoint in customer
 # container
 #
@@ -17,13 +22,13 @@ RUN microdnf update \
     && microdnf clean all
 
 # Copy ci-addon binary
-COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux-amd64
+COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
 COPY java-agent.jar /usr/local/bin/
 COPY split_tests /usr/local/bin/
-RUN chmod +x /usr/local/bin/ci-addon-linux-amd64 \
+RUN chmod +x /usr/local/bin/ci-addon-linux \
     && chmod +x /usr/local/bin/split_tests
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 
-CMD ["/usr/local/bin/ci-addon-linux-amd64"]
+CMD ["/usr/local/bin/ci-addon-linux"]

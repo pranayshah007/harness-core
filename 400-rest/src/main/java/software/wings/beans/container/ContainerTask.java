@@ -9,19 +9,25 @@ package software.wings.beans.container;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.CONTAINER_TASK;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.DeploymentSpecification;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -40,11 +46,12 @@ import org.mongodb.morphia.annotations.Entity;
 @OwnedBy(CDP)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "deploymentType")
+@StoreIn(DbAliases.HARNESS)
 @Entity("containerTasks")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ContainerTaskKeys")
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public abstract class ContainerTask extends DeploymentSpecification implements AccountAccess {
+public abstract class ContainerTask extends DeploymentSpecification implements AccountAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -129,6 +136,24 @@ public abstract class ContainerTask extends DeploymentSpecification implements A
   @Override
   public String getUuid() {
     return super.getUuid();
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getUuid();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getMigrationEntityName())
+        .type(CONTAINER_TASK)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   public abstract ContainerTask convertToAdvanced();

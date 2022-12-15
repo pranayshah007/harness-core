@@ -10,6 +10,7 @@ package software.wings.service.impl.trigger;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.BYPASS_HELM_FETCH;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SERVICE_ID_FILTER_FOR_TRIGGERS;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -67,19 +68,20 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
+import io.harness.data.parser.CsvParser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.idempotence.IdempotentId;
 import io.harness.distribution.idempotence.IdempotentLock;
 import io.harness.distribution.idempotence.IdempotentResult;
 import io.harness.distribution.idempotence.UnableToRegisterIdempotentOperationException;
 import io.harness.exception.DeploymentFreezeException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Application;
@@ -99,7 +101,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
@@ -130,6 +131,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.trigger.response.TriggerDeploymentNeededResponse;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.AppLogContext;
@@ -299,6 +301,12 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public Trigger save(Trigger trigger) {
     String accountId = appService.getAccountIdByAppId(trigger.getAppId());
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     trigger.setAccountId(accountId);
     validateInput(trigger, null);
     updateNextIterations(trigger);
@@ -347,6 +355,12 @@ public class TriggerServiceImpl implements TriggerService {
     String accountId = isEmpty(existingTrigger.getAccountId())
         ? appService.getAccountIdByAppId(existingTrigger.getAppId())
         : existingTrigger.getAccountId();
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     trigger.setAccountId(accountId);
 
     validateInput(trigger, existingTrigger);
@@ -1038,7 +1052,13 @@ public class TriggerServiceImpl implements TriggerService {
   }
 
   private List<Artifact> getLastDeployedArtifacts(String appId, String workflowId, String serviceId) {
-    List<Artifact> lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId);
+    String accountId = appService.getAccountIdByAppId(appId);
+    List<Artifact> lastDeployedArtifacts;
+    if (featureFlagService.isEnabled(SERVICE_ID_FILTER_FOR_TRIGGERS, accountId)) {
+      lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId, serviceId);
+    } else {
+      lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId);
+    }
     if (lastDeployedArtifacts != null && serviceId != null) {
       List<String> artifactStreamIds = artifactStreamServiceBindingService.listArtifactStreamIds(appId, serviceId);
       if (isEmpty(artifactStreamIds)) {
@@ -1099,6 +1119,13 @@ public class TriggerServiceImpl implements TriggerService {
 
   private WorkflowExecution triggerDeployment(List<Artifact> artifacts, List<HelmChart> helmCharts,
       Map<String, String> parameters, TriggerExecution triggerExecution, Trigger trigger) {
+    String accountId = appService.getAccountIdByAppId(trigger.getAppId());
+    if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      Application app = appService.get(trigger.getAppId());
+      if (app != null && Boolean.TRUE.equals(app.getDisableTriggers())) {
+        throw new InvalidRequestException("Triggers are disabled for the application " + app.getName());
+      }
+    }
     ExecutionArgs executionArgs = new ExecutionArgs();
 
     if (isNotEmpty(artifacts)) {
@@ -1425,7 +1452,7 @@ public class TriggerServiceImpl implements TriggerService {
       List<String> allowedValues = variable.getAllowedList();
       if (isNotEmpty(allowedValues)) {
         String variableValue = nameToVariableValueMap.get(variable.getName());
-        if (isNotEmpty(variableValue) && !allowedValues.contains(variableValue)) {
+        if (isNotEmpty(variableValue) && !allowedValues.containsAll(CsvParser.parse(variableValue))) {
           throw new InvalidRequestException(String.format(
               "Trigger rejected because passed workflow variable value %s was not present in allowed values list [%s]",
               variableValue, String.join(",", allowedValues)));

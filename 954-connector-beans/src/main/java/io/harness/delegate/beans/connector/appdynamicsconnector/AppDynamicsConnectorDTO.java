@@ -16,8 +16,8 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
 import io.harness.exception.InvalidRequestException;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
@@ -34,6 +34,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -46,7 +47,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public class AppDynamicsConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   String username;
   @NotNull String accountname;
-  @NotNull @NotBlank String controllerUrl;
+  @URL @NotNull @NotBlank String controllerUrl;
   Set<String> delegateSelectors;
 
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;

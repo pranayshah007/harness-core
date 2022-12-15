@@ -48,6 +48,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
   @Inject @Named("enablePrimaryCheck") private boolean enablePrimaryCheck;
@@ -95,14 +96,18 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             lockedAsyncTaskResponse.getUuid(), queryTime, loopProcessingTime);
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
-        ResponseData data = (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
         ResponseData responseData;
-        if (data instanceof SerializedResponseData) {
-          responseData = data;
+        if (disableDeserialization) {
+          responseData = BinaryResponseData.builder()
+                             .data(lockedAsyncTaskResponse.getResponseData())
+                             .usingKryoWithoutReference(lockedAsyncTaskResponse.isUsingKryoWithoutReference())
+                             .build();
         } else {
-          responseData = disableDeserialization
-              ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
-              : (DelegateResponseData) data;
+          ResponseData data = lockedAsyncTaskResponse.isUsingKryoWithoutReference()
+              ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData())
+              : (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+
+          responseData = data instanceof SerializedResponseData ? data : (DelegateResponseData) data;
         }
 
         long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
@@ -173,6 +178,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             .setOnInsert(DelegateAsyncTaskResponseKeys.responseData, getTimeoutMessage())
             .setOnInsert(DelegateAsyncTaskResponseKeys.processAfter, expiry)
             .setOnInsert(DelegateAsyncTaskResponseKeys.validUntil, Date.from(validUntilInstant))
+            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, false)
             .set(DelegateAsyncTaskResponseKeys.holdUntil, holdUntil);
 
     Query<DelegateAsyncTaskResponse> upsertQuery =

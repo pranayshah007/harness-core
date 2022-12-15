@@ -100,8 +100,8 @@ public class GitOpsInstanceSyncResource {
         DeleteInstancesRequest.builder().deletedCount(gitOpsInstanceRequestList.size()).status(true).build());
   }
 
-  private List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+  List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     List<GitOpsInstance> instanceDTOs = new ArrayList<>();
 
     final List<GitOpsInstance> gitOpsInstanceDTOs = gitOpsRequestDTOMapper.toGitOpsInstanceList(
@@ -144,7 +144,7 @@ public class GitOpsInstanceSyncResource {
         instances.forEach(gitInstance -> {
           gitInstance.setPipelineName(pipelineInfo.getName());
           gitInstance.setLastExecutedAt(pipelineInfo.getLastExecutedAt());
-          gitInstance.setPipelineExecutionId(pipelineInfo.getPipelineExecutionId());
+          gitInstance.setPipelineExecutionId(pipelineInfo.getPlanExecutionId());
           gitInstance.setLastDeployedById(pipelineInfo.getDeployedById());
           gitInstance.setLastDeployedByName(pipelineInfo.getDeployedByName());
           instanceDTOs.add(gitInstance);

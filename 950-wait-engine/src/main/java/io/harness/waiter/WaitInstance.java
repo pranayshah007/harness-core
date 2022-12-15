@@ -10,7 +10,7 @@ package io.harness.waiter;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
@@ -38,12 +38,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "WaitInstanceKeys")
+@StoreIn(DbAliases.ALL)
 @Document("waitInstances")
 @TypeAlias("waitInstances")
 @Entity(value = "waitInstances", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.DEL)
-@StoreIn(DbAliases.ALL)
 public class WaitInstance implements WaitEngineEntity {
   public static final Duration TTL = ofDays(90);
 

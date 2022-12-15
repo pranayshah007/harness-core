@@ -7,6 +7,7 @@
 
 package software.wings.beans.appmanifest;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.NameAccess;
@@ -37,6 +39,7 @@ import org.mongodb.morphia.annotations.Transient;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "helmCharts", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "HelmChartKeys")
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -68,7 +71,7 @@ public class HelmChart implements AccountAccess, NameAccess, PersistentEntity, U
   @Transient private String appManifestName;
   private String name;
   private String displayName;
-  @FdIndex private String accountId;
+  private String accountId;
   private String appId;
   private String serviceId;
   private long createdAt;

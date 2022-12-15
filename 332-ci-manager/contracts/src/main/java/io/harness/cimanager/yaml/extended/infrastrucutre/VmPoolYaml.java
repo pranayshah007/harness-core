@@ -59,5 +59,6 @@ public class VmPoolYaml implements VmInfraSpec {
     @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
     private ParameterField<OSType> os;
     @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> harnessImageConnectorRef;
+    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> initTimeout;
   }
 }

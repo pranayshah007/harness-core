@@ -145,6 +145,10 @@ public class HttpStepTest extends CategoryTest {
     //    assertion = HttpStep.validateAssertions(response, stepParameters);
     //    assertThat(assertion).isTrue();
 
+    stepParameters.setAssertion(ParameterField.createValueField("\"<+pipeline.name>\" == \"http\""));
+    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertThat(assertion).isFalse();
+
     // json.object() assertions
     stepParameters.setAssertion(ParameterField.createValueField(
         "<+json.object(httpResponseBody).support.url> == \"https://reqres.in/#support-heading\""));

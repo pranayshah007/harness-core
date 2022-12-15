@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
-import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 
@@ -21,12 +20,8 @@ public final class ConfigFileOutcomeMapper {
   private ConfigFileOutcomeMapper() {}
 
   public static ConfigFileOutcome toConfigFileOutcome(
-      ConfigFileStepParameters configFileStepParameters, ConfigFileAttributes configFileAttributes) {
+      String identifier, int order, ConfigFileAttributes configFileAttributes) {
     StoreConfig store = ParameterFieldHelper.getParameterFieldValue(configFileAttributes.getStore()).getSpec();
-    return ConfigFileOutcome.builder()
-        .identifier(configFileStepParameters.getIdentifier())
-        .store(store)
-        .order(configFileStepParameters.getOrder())
-        .build();
+    return ConfigFileOutcome.builder().identifier(identifier).store(store).order(order).build();
   }
 }

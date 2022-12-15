@@ -27,7 +27,7 @@ metadata:
   namespace: harness-delegate
 type: Opaque
 data:
-  ACCOUNT_SECRET: "QUNDT1VOVF9LRVk="
+  DELEGATE_TOKEN: "QUNDT1VOVF9LRVk="
 
 ---
 
@@ -62,10 +62,14 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         resources:
           limits:
-            cpu: "1.0"
             memory: "8Gi"
+          requests:
+            cpu: "1.0"
         livenessProbe:
           httpGet:
             path: /api/health
@@ -184,7 +188,7 @@ data:
 
 ---
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:

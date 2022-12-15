@@ -7,8 +7,15 @@
 
 package io.harness.ng.core.outbox;
 
+import static io.harness.ng.core.ResourceConstants.INFRASTRUCTURE_ID;
+import static io.harness.ng.core.ResourceConstants.SERVICE_OVERRIDE_NAME;
+import static io.harness.ng.core.ResourceConstants.STATUS;
+import static io.harness.ng.core.events.EnvironmentUpdatedEvent.Status.CREATED;
+import static io.harness.ng.core.events.EnvironmentUpdatedEvent.Status.DELETED;
+import static io.harness.ng.core.events.EnvironmentUpdatedEvent.Status.UPDATED;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
@@ -39,6 +46,8 @@ import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.events.OutboxEventConstants;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
@@ -187,13 +196,16 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
                                      .orgIdentifier(orgIdentifier)
                                      .identifier(identifier)
                                      .build();
-    EnvironmentUpdatedEvent environmentUpdatedEvent = EnvironmentUpdatedEvent.builder()
-                                                          .accountIdentifier(accountIdentifier)
-                                                          .orgIdentifier(orgIdentifier)
-                                                          .projectIdentifier(projectIdentifier)
-                                                          .newEnvironment(newEnvironment)
-                                                          .oldEnvironment(oldEnvironment)
-                                                          .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.ENVIRONMENT)
+            .status(UPDATED)
+            .newEnvironment(newEnvironment)
+            .oldEnvironment(oldEnvironment)
+            .build();
 
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
@@ -224,6 +236,382 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
     assertEquals(newYaml, auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvCreateServiceOverride() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+    NGServiceOverridesEntity newServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .accountId(accountIdentifier)
+                                                             .projectIdentifier(projectIdentifier)
+                                                             .orgIdentifier(orgIdentifier)
+                                                             .environmentRef(environmentRef)
+                                                             .serviceRef(serviceRef)
+                                                             .yaml("yaml")
+                                                             .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(EnvironmentUpdatedEvent.Status.CREATED)
+            .newServiceOverridesEntity(newServiceOverridesEntity)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String newYaml = newServiceOverridesEntity.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(CREATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(newYaml, auditEntry.getNewYaml());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvDeleteServiceOverride() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+
+    NGServiceOverridesEntity oldServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .accountId(accountIdentifier)
+                                                             .projectIdentifier(projectIdentifier)
+                                                             .orgIdentifier(orgIdentifier)
+                                                             .environmentRef(environmentRef)
+                                                             .serviceRef(serviceRef)
+                                                             .yaml("oldYaml")
+                                                             .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(DELETED)
+            .oldServiceOverridesEntity(oldServiceOverridesEntity)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String oldYaml = oldServiceOverridesEntity.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(DELETED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvUpdateServiceOverride() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String serviceRef = randomAlphabetic(10);
+    NGServiceOverridesEntity newServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .accountId(accountIdentifier)
+                                                             .projectIdentifier(projectIdentifier)
+                                                             .orgIdentifier(orgIdentifier)
+                                                             .environmentRef(environmentRef)
+                                                             .serviceRef(serviceRef)
+                                                             .yaml("newYaml")
+                                                             .build();
+    NGServiceOverridesEntity oldServiceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                             .accountId(accountIdentifier)
+                                                             .projectIdentifier(projectIdentifier)
+                                                             .orgIdentifier(orgIdentifier)
+                                                             .environmentRef(environmentRef)
+                                                             .serviceRef(serviceRef)
+                                                             .yaml("oldYaml")
+                                                             .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+            .status(UPDATED)
+            .newServiceOverridesEntity(newServiceOverridesEntity)
+            .oldServiceOverridesEntity(oldServiceOverridesEntity)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String newYaml = newServiceOverridesEntity.getYaml();
+    String oldYaml = oldServiceOverridesEntity.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(serviceRef + " Override", auditEntry.getResource().getLabels().get(SERVICE_OVERRIDE_NAME));
+    assertEquals(UPDATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(newYaml, auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvCreateInfrastructure() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    InfrastructureEntity newInfrastructure = InfrastructureEntity.builder()
+                                                 .accountId(accountIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .envIdentifier(environmentRef)
+                                                 .identifier(identifier)
+                                                 .yaml("newYaml")
+                                                 .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+            .status(EnvironmentUpdatedEvent.Status.CREATED)
+            .newInfrastructureEntity(newInfrastructure)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String newYaml = newInfrastructure.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(identifier, auditEntry.getResource().getLabels().get(INFRASTRUCTURE_ID));
+    assertEquals(CREATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(newYaml, auditEntry.getNewYaml());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvUpdateInfrastructure() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    InfrastructureEntity newInfrastructure = InfrastructureEntity.builder()
+                                                 .accountId(accountIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .envIdentifier(environmentRef)
+                                                 .identifier(identifier)
+                                                 .yaml("newYaml")
+                                                 .build();
+    InfrastructureEntity oldInfrastructure = InfrastructureEntity.builder()
+                                                 .accountId(accountIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .envIdentifier(environmentRef)
+                                                 .identifier(identifier)
+                                                 .yaml("oldYaml")
+                                                 .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+            .status(UPDATED)
+            .newInfrastructureEntity(newInfrastructure)
+            .oldInfrastructureEntity(oldInfrastructure)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String newYaml = newInfrastructure.getYaml();
+    String oldYaml = oldInfrastructure.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(identifier, auditEntry.getResource().getLabels().get(INFRASTRUCTURE_ID));
+    assertEquals(UPDATED.name(), auditEntry.getResource().getLabels().get(STATUS));
+    assertEquals(newYaml, auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testUpdateEnvDeleteInfrastructure() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String environmentRef = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    InfrastructureEntity oldInfrastructure = InfrastructureEntity.builder()
+                                                 .accountId(accountIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .envIdentifier(environmentRef)
+                                                 .identifier(identifier)
+                                                 .yaml("oldYaml")
+                                                 .build();
+    EnvironmentUpdatedEvent environmentUpdatedEvent =
+        EnvironmentUpdatedEvent.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
+            .status(DELETED)
+            .oldInfrastructureEntity(oldInfrastructure)
+            .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(environmentUpdatedEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(OutboxEventConstants.ENVIRONMENT_UPDATED)
+                                  .eventData(eventData)
+                                  .resource(environmentUpdatedEvent.getResource())
+                                  .resourceScope(environmentUpdatedEvent.getResourceScope())
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .build();
+
+    String oldYaml = oldInfrastructure.getYaml();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    environmentEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, auditEntry, outboxEvent);
+    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(identifier, auditEntry.getResource().getLabels().get(INFRASTRUCTURE_ID));
+    assertEquals(DELETED.name(), auditEntry.getResource().getLabels().get(STATUS));
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
 

@@ -7,11 +7,10 @@
 
 package io.harness.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
@@ -28,19 +27,21 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InfrastructureMappingNGKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMappingNG", noClassnameStored = true)
 @Document("infrastructureMappingNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public class InfrastructureMapping {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_idx")
+                 .name("accountId_orgId_projectId_infrastructureKey_unique_idx")
+                 .unique(true)
                  .field(InfrastructureMappingNGKeys.accountIdentifier)
                  .field(InfrastructureMappingNGKeys.orgIdentifier)
                  .field(InfrastructureMappingNGKeys.projectIdentifier)
+                 .field(InfrastructureMappingNGKeys.infrastructureKey)
                  .build())
         .build();
   }
@@ -53,5 +54,5 @@ public class InfrastructureMapping {
   private String connectorRef;
   private String envId;
   private String serviceId;
-  @FdUniqueIndex private String infrastructureKey;
+  private String infrastructureKey;
 }

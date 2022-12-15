@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.redisson.client.codec.Codec;
 
 @OwnedBy(PL)
 @Data
@@ -33,6 +34,7 @@ public class RedisConfig {
   private int connectionMinimumIdleSize;
   private String envNamespace;
   private RedisReadMode readMode;
+  private Class<? extends Codec> codec;
   private int nettyThreads;
   private boolean useScriptCache;
   @ConfigSecret private String password;
@@ -40,4 +42,8 @@ public class RedisConfig {
   @ConfigSecret private RedisSSLConfig sslConfig;
   private int subscriptionsPerConnection;
   private int subscriptionConnectionPoolSize;
+  private int connectionPoolSize;
+  private int retryInterval;
+  private int retryAttempts;
+  private int timeout;
 }

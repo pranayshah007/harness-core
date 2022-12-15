@@ -32,7 +32,6 @@ import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_LIST_EMPTY_V
 import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_NOT_NUMBERS_VALIDATION_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
@@ -40,39 +39,54 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureComputeClient;
+import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
+import io.harness.azure.model.VirtualMachineData.VirtualMachineDataBuilder;
 import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
+import software.wings.beans.AzureImageGallery;
+
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.appservice.models.DeploymentSlots;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.appservice.models.WebAppBasic;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.compute.fluent.ComputeManagementClient;
+import com.azure.resourcemanager.compute.fluent.VirtualMachineScaleSetsClient;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.implementation.ComputeManagementClientBuilder;
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.SshConfiguration;
+import com.azure.resourcemanager.compute.models.SshPublicKey;
+import com.azure.resourcemanager.compute.models.UpgradeMode;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetOSProfile;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.VirtualMachineScaleSetNetworkInterface;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.SshConfiguration;
-import com.microsoft.azure.management.compute.SshPublicKey;
-import com.microsoft.azure.management.compute.UpgradeMode;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetOSProfile;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.compute.implementation.VirtualMachineScaleSetInner;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.VirtualMachineScaleSetNetworkInterface;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import io.fabric8.utils.Objects;
 import java.time.Duration;
 import java.time.Instant;
@@ -97,16 +111,17 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start getting Virtual Machine Scale Sets by resourceGroupName: {}, subscriptionId: {}",
         resourceGroupName, subscriptionId);
     Instant startListingVMSS = Instant.now();
-    PagedList<VirtualMachineScaleSet> virtualMachineScaleSets =
+    PagedIterable<VirtualMachineScaleSet> virtualMachineScaleSets =
         azure.virtualMachineScaleSets().listByResourceGroup(resourceGroupName);
 
     // Lazy listing https://github.com/Azure/azure-sdk-for-java/issues/860
-    List<VirtualMachineScaleSet> virtualMachineScaleSetsList = new ArrayList<>(virtualMachineScaleSets);
+    List<VirtualMachineScaleSet> virtualMachineScaleSetsList =
+        virtualMachineScaleSets.stream().collect(Collectors.toList());
 
     long elapsedTime = Duration.between(startListingVMSS, Instant.now()).toMillis();
     log.info(
@@ -126,7 +141,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(VIRTUAL_SCALE_SET_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     Objects.notNull(azure.virtualMachineScaleSets().getByResourceGroup(resourceGroupName, virtualScaleSetName),
         format("There is no virtual machine scale set with name %s", virtualScaleSetName));
@@ -142,7 +157,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       return;
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start bulk deleting Virtual Machine Scale Sets, ids: {}", vmssIDs);
     azure.virtualMachineScaleSets().deleteByIds(vmssIDs);
@@ -169,12 +184,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @NotNull
   private List<VirtualMachineScaleSetVM> getVirtualMachineScaleSetVMs(VirtualMachineScaleSet virtualMachineScaleSet) {
-    List<VirtualMachineScaleSetVM> virtualMachineScaleSetVMsList = new ArrayList<>();
-    PagedList<VirtualMachineScaleSetVM> virtualMachineScaleSetVMs = virtualMachineScaleSet.virtualMachines().list();
-    for (VirtualMachineScaleSetVM scaleSetVM : virtualMachineScaleSetVMs) {
-      virtualMachineScaleSetVMsList.add(scaleSetVM);
-    }
-    return virtualMachineScaleSetVMsList;
+    return virtualMachineScaleSet.virtualMachines().list().stream().collect(Collectors.toList());
   }
 
   @Override
@@ -184,7 +194,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(VIRTUAL_MACHINE_SCALE_SET_ID_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     Objects.notNull(azure.virtualMachineScaleSets().getById(virtualMachineScaleSetId),
         format("There is no virtual machine scale set with virtualMachineScaleSetId %s", virtualMachineScaleSetId));
@@ -200,7 +210,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(VIRTUAL_MACHINE_SCALE_SET_ID_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start getting Virtual Machine Scale Sets by virtualMachineScaleSetId: {}, subscriptionId: {}",
         virtualMachineScaleSetId, subscriptionId);
@@ -219,7 +229,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       return Optional.empty();
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug(
         "Start getting Virtual Machine Scale Sets name virtualMachineScaleSetName: {}, subscriptionId: {}, resourceGroupName: {}",
@@ -232,38 +242,52 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<Subscription> listSubscriptions(AzureConfig azureConfig) {
-    Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
+    AzureResourceManager azure = getAzureClientWithDefaultSubscription(azureConfig);
     Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
 
     log.debug("Start listing subscriptions for tenantId {}", azureConfig.getTenantId());
-    PagedList<Subscription> subscriptions = azure.subscriptions().list();
+    PagedIterable<Subscription> subscriptions = azure.subscriptions().list();
     return subscriptions.stream().collect(Collectors.toList());
   }
 
   @Override
   public List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
       AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
     log.debug("Start listing Web App Names for tenantId {}", azureConfig.getTenantId());
-    PagedList<WebApp> webAppNames = azure.webApps().listByResourceGroup(resourceGroup);
+    PagedIterable<WebAppBasic> webAppNames = azure.webApps().listByResourceGroup(resourceGroup);
     return webAppNames.stream().map(HasName::name).collect(Collectors.toList());
   }
 
   @Override
-  public List<DeploymentSlot> listWebAppDeploymentSlots(
-      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+  public List<WebDeploymentSlotBasic> listWebAppDeploymentSlots(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroup, String webAppName) throws ManagementException {
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
     log.debug("Start listing Web App deployment slots for tenantId {}", azureConfig.getTenantId());
     WebApp webApp = getWebApp(azure, resourceGroup, webAppName);
 
-    PagedList<DeploymentSlot> deploymentSlots = webApp.deploymentSlots().list();
-    return deploymentSlots.stream().collect(Collectors.toList());
+    if (webApp == null) {
+      throw new AzureAppServicesWebAppNotFoundException(webAppName, resourceGroup);
+    }
+
+    DeploymentSlots deploymentSlots = webApp.deploymentSlots();
+    if (deploymentSlots == null) {
+      throw new AzureAppServicesWebAppNotFoundException(webAppName, resourceGroup);
+    }
+
+    PagedIterable<WebDeploymentSlotBasic> webDeploymentSlotBasicList = webApp.deploymentSlots().list();
+    if (webDeploymentSlotBasicList == null) {
+      throw new AzureAppServicesWebAppNotFoundException(webAppName, resourceGroup);
+    }
+
+    return webDeploymentSlotBasicList.stream().collect(Collectors.toList());
   }
 
   @NotNull
-  private WebApp getWebApp(Azure azure, String resourceGroupName, String webAppName) {
+  private WebApp getWebApp(AzureResourceManager azure, String resourceGroupName, String webAppName)
+      throws ManagementException {
     WebApp webApp = azure.webApps().getByResourceGroup(resourceGroupName, webAppName);
     if (webApp == null) {
       throw new IllegalArgumentException(
@@ -274,11 +298,28 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<String> listResourceGroupsNamesBySubscriptionId(AzureConfig azureConfig, String subscriptionId) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing resource groups names for subscriptionId {}", subscriptionId);
-    List<ResourceGroup> resourceGroupList = azure.resourceGroups().list();
+    List<ResourceGroup> resourceGroupList = azure.resourceGroups().list().stream().collect(Collectors.toList());
     return resourceGroupList.stream().map(HasName::name).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<AzureImageGallery> listImageGalleries(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
+    return azure.galleries()
+        .listByResourceGroup(resourceGroup)
+        .stream()
+        .map(ig
+            -> AzureImageGallery.builder()
+                   .name(ig.name())
+                   .subscriptionId(subscriptionId)
+                   .resourceGroupName(resourceGroup)
+                   .regionName(ig.regionName())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -291,12 +332,14 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(NUMBER_OF_VM_INSTANCES_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     VirtualMachineScaleSet virtualMachineScaleSet = azure.virtualMachineScaleSets().getById(virtualMachineScaleSetId);
-    PagedList<VirtualMachineScaleSetVM> vmssInstanceList = virtualMachineScaleSet.virtualMachines().list();
+    PagedIterable<VirtualMachineScaleSetVM> vmssInstanceList = virtualMachineScaleSet.virtualMachines().list();
+    List<VirtualMachineScaleSetVM> vmssInstanceArrayList = vmssInstanceList.stream().collect(Collectors.toList());
 
-    return (numberOfVMInstances == 0 ? vmssInstanceList.isEmpty() : vmssInstanceList.size() == numberOfVMInstances)
+    return (numberOfVMInstances == 0 ? vmssInstanceArrayList.isEmpty()
+                                     : vmssInstanceArrayList.size() == numberOfVMInstances)
         || vmssInstanceList.stream().allMatch(
             instance -> instance.instanceView().statuses().get(0).displayStatus().equals("Provisioning succeeded"));
   }
@@ -324,22 +367,23 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   @Override
-  public void createVirtualMachineScaleSet(AzureConfig azureConfig, String subscriptionId,
-      VirtualMachineScaleSet baseVirtualMachineScaleSet, String newVirtualMachineScaleSetName,
-      AzureUserAuthVMInstanceData azureUserAuthVMInstanceData, AzureMachineImageArtifact imageArtifact,
-      AzureVMSSTagsData tags) {
+  public SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> createVirtualMachineScaleSet(
+      AzureConfig azureConfig, String subscriptionId, VirtualMachineScaleSet baseVirtualMachineScaleSet,
+      String newVirtualMachineScaleSetName, AzureUserAuthVMInstanceData azureUserAuthVMInstanceData,
+      AzureMachineImageArtifact imageArtifact, AzureVMSSTagsData tags) {
     if (isBlank(newVirtualMachineScaleSetName)) {
       throw new IllegalArgumentException(NEW_VIRTUAL_MACHINE_SCALE_SET_NAME_IS_NULL_VALIDATION_MSG);
     }
 
     Objects.notNull(baseVirtualMachineScaleSet, BASE_VIRTUAL_MACHINE_SCALE_SET_IS_NULL_VALIDATION_MSG);
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    VirtualMachineScaleSetsClient virtualMachineScaleSetsClient =
+        getComputeManagementClient(azureConfig, subscriptionId).getVirtualMachineScaleSets();
 
     Map<String, String> baseVMSSTags =
         getTagsForNewVMSS(baseVirtualMachineScaleSet, newVirtualMachineScaleSetName, tags);
 
-    VirtualMachineScaleSetInner inner = baseVirtualMachineScaleSet.inner();
+    VirtualMachineScaleSetInner inner = baseVirtualMachineScaleSet.innerModel();
 
     updateTags(inner, baseVMSSTags);
     updateVMImage(inner, imageArtifact);
@@ -347,7 +391,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     updateCapacity(inner, 0);
 
     try {
-      azure.virtualMachineScaleSets().inner().beginCreateOrUpdate(
+      return virtualMachineScaleSetsClient.beginCreateOrUpdate(
           baseVirtualMachineScaleSet.resourceGroupName(), newVirtualMachineScaleSetName, inner);
     } catch (Exception e) {
       throw new InvalidRequestException(
@@ -551,31 +595,33 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   @Override
-  public Optional<PublicIPAddressInner> getVMPublicIPAddress(VirtualMachineScaleSetVM vm) {
-    PagedList<VirtualMachineScaleSetNetworkInterface> vmScaleSetNetworkInterfaces = vm.listNetworkInterfaces();
+  public Optional<PublicIpAddressInner> getVMPublicIPAddress(VirtualMachineScaleSetVM vm) {
+    List<VirtualMachineScaleSetNetworkInterface> vmScaleSetNetworkInterfaces =
+        vm.listNetworkInterfaces().stream().collect(Collectors.toList());
     if (vmScaleSetNetworkInterfaces.isEmpty()) {
       return Optional.empty();
     }
 
     VirtualMachineScaleSetNetworkInterface virtualMachineScaleSetNetworkInterface = vmScaleSetNetworkInterfaces.get(0);
-    PublicIPAddressInner publicIPAddressInner =
-        virtualMachineScaleSetNetworkInterface.primaryIPConfiguration().inner().publicIPAddress();
+    PublicIpAddressInner publicIpAddressInner =
+        virtualMachineScaleSetNetworkInterface.primaryIPConfiguration().innerModel().publicIpAddress();
 
-    if (isNull(publicIPAddressInner)) {
+    if (isNull(publicIpAddressInner)) {
       return Optional.empty();
     }
 
-    return Optional.of(publicIPAddressInner);
+    return Optional.of(publicIpAddressInner);
   }
 
   @Override
   public List<VirtualMachineScaleSetNetworkInterface> listVMVirtualMachineScaleSetNetworkInterfaces(
       VirtualMachineScaleSetVM vm) {
-    PagedList<VirtualMachineScaleSetNetworkInterface> vmScaleSetNetworkInterfaces = vm.listNetworkInterfaces();
+    List<VirtualMachineScaleSetNetworkInterface> vmScaleSetNetworkInterfaces =
+        vm.listNetworkInterfaces().stream().collect(Collectors.toList());
     if (vmScaleSetNetworkInterfaces.isEmpty()) {
       return Collections.emptyList();
     }
-    return new ArrayList<>(vmScaleSetNetworkInterfaces);
+    return vmScaleSetNetworkInterfaces;
   }
 
   @Override
@@ -592,7 +638,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(GALLERY_IMAGE_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     try {
       log.debug("Start getting gallery image, imageName {}, galleryName: {}, resourceGroupName: {}", imageName,
@@ -611,7 +657,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags) {
+      AzureOSType osType, Map<String, String> tags, AzureHostConnectionType hostConnectionType) {
     if (isBlank(resourceGroup)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
@@ -619,11 +665,14 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(OS_TYPE_NULL_VALIDATION_MSG);
     }
 
-    List<VirtualMachine> virtualMachines =
-        getAzureClient(azureConfig, subscriptionId).virtualMachines().listByResourceGroup(resourceGroup);
+    List<VirtualMachine> virtualMachines = getAzureClient(azureConfig, subscriptionId)
+                                               .virtualMachines()
+                                               .listByResourceGroup(resourceGroup)
+                                               .stream()
+                                               .collect(Collectors.toList());
 
     if (isEmpty(virtualMachines)) {
-      log.info("List VMs did not find any matching VMs in Azure for subscription :  {}", subscriptionId);
+      log.info("List VMs did not find any matching VMs in AzureResourceManager for subscription :  {}", subscriptionId);
       return Collections.emptyList();
     }
 
@@ -631,8 +680,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         .filter(this::isVmRunning)
         .filter(virtualMachine -> filterOsType(virtualMachine, osType))
         .filter(virtualMachine -> filterTags(virtualMachine, tags))
-        .filter(virtualMachine -> virtualMachine.getPrimaryPublicIPAddress() != null)
-        .map(this::toVirtualMachineData)
+        .map(virtualMachine -> toVirtualMachineData(virtualMachine, hostConnectionType))
         .collect(Collectors.toList());
   }
 
@@ -647,7 +695,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   private boolean isVmRunning(VirtualMachine virtualMachine) {
-    return virtualMachine.powerState().equals(RUNNING);
+    return virtualMachine.powerState().equals(PowerState.RUNNING);
   }
 
   private boolean filterTags(VirtualMachine virtualMachine, Map<String, String> tags) {
@@ -660,7 +708,46 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         && virtualMachine.tags().values().containsAll(tags.values());
   }
 
-  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine) {
-    return VirtualMachineData.builder().hostName(virtualMachine.getPrimaryPublicIPAddress().ipAddress()).build();
+  private VirtualMachineData toVirtualMachineData(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType) {
+    VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
+
+    setAddress(virtualMachine, hostConnectionType, builder);
+    return builder.hostName(virtualMachine.name())
+        .privateIp(virtualMachine.getPrimaryNetworkInterface() != null
+                ? virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP()
+                : null)
+        .publicIp(virtualMachine.getPrimaryPublicIPAddress() != null
+                ? virtualMachine.getPrimaryPublicIPAddress().ipAddress()
+                : null)
+        .build();
+  }
+
+  private void setAddress(
+      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType, VirtualMachineDataBuilder builder) {
+    if (AzureHostConnectionType.PUBLIC_IP.equals(hostConnectionType)
+        && virtualMachine.getPrimaryPublicIPAddress() != null) {
+      builder.address(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
+    } else if (AzureHostConnectionType.PRIVATE_IP.equals(hostConnectionType)
+        && virtualMachine.getPrimaryNetworkInterface() != null) {
+      builder.address(virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP());
+    } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
+      builder.address(virtualMachine.name());
+    }
+  }
+
+  protected ComputeManagementClient getComputeManagementClient(AzureClientContext context) {
+    return getComputeManagementClient(context.getAzureConfig(), context.getSubscriptionId());
+  }
+
+  protected ComputeManagementClient getComputeManagementClient(AzureConfig azureConfig) {
+    return getComputeManagementClient(azureConfig, null);
+  }
+
+  protected ComputeManagementClient getComputeManagementClient(AzureConfig azureConfig, String subscriptionId) {
+    return new ComputeManagementClientBuilder()
+        .subscriptionId(subscriptionId)
+        .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .buildClient();
   }
 }

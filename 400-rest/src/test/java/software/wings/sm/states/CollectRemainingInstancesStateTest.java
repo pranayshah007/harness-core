@@ -63,17 +63,10 @@ public class CollectRemainingInstancesStateTest extends WingsBaseTest {
 
   @Mock private ExecutionContextImpl context;
 
-  String PHASE_NAME_FOR_ROLLBACK = "Canary";
-
   @Before
   public void setUp() {
     when(context.getApp()).thenReturn(anApplication().uuid(APP_ID).build());
     when(context.fetchInfraMappingId()).thenReturn(INFRA_MAPPING_ID);
-    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
-        .thenReturn(PhaseElement.builder()
-                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
-                        .phaseNameForRollback(PHASE_NAME_FOR_ROLLBACK)
-                        .build());
     when(sweepingOutputService.find(any()))
         .thenReturn(SweepingOutputInstance.builder().uuid(UUID).appId(APP_ID).build());
 
@@ -86,20 +79,12 @@ public class CollectRemainingInstancesStateTest extends WingsBaseTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testSkipCollectingRemainingInstancesWhenItsNotLastPhase() {
-    when(context.isLastPhase(true)).thenReturn(false);
-    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
-        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
-
-    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
-
-    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SKIPPED);
-  }
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
   public void testSkipCollectingRemainingInstancesWhenItsNotASG() {
-    when(context.isLastPhase(true)).thenReturn(true);
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary")
+                        .build());
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
         .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(false).build());
 
@@ -111,65 +96,19 @@ public class CollectRemainingInstancesStateTest extends WingsBaseTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testWhenThereAreNoAlreadyRolledBackInstances() {
+  public void testWhenThereIsOneAdditionalServicesInASG() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary0")
+                        .build());
     when(context.isLastPhase(true)).thenReturn(true);
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
         .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
     when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
-        .thenReturn(sweepingOutputInstanceListWithOneCurrentInstance());
+        .thenReturn(sweepingOutputInstanceList(new int[][] {{1, 2}}));
     when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
-        .thenReturn(getServiceInstancesFromASGWithServiceRunning(2));
-
-    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
-
-    verify(sweepingOutputService).deleteById(APP_ID, UUID);
-
-    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
-    verify(sweepingOutputService).save(captor.capture());
-
-    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
-    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(2);
-    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testWhenThereIsOtherServicesInASG() {
-    when(context.isLastPhase(true)).thenReturn(true);
-    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
-        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
-    when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
-        .thenReturn(sweepingOutputInstanceListWithOneCurrentInstance());
-    List<ServiceInstance> serviceInstancesFromASGWithServiceRunning = getServiceInstancesFromASGWithServiceRunning(2);
-    serviceInstancesFromASGWithServiceRunning.get(0).setServiceId("DUMMY");
-    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
-        .thenReturn(serviceInstancesFromASGWithServiceRunning);
-
-    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
-
-    verify(sweepingOutputService).deleteById(APP_ID, UUID);
-
-    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
-    verify(sweepingOutputService).save(captor.capture());
-
-    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
-    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(1);
-    assertThat(serviceInstanceIdsParam.getInstanceIds().get(0)).isEqualTo("instance2");
-    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testWhenThereIs8servicesInASGBut5AreRolledBack() {
-    when(context.isLastPhase(true)).thenReturn(true);
-    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
-        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
-    when(sweepingOutputService.findManyWithNamePrefix(any(), any())).thenReturn(sweepingOutputInstanceList());
-    List<ServiceInstance> serviceInstancesFromASGWithServiceRunning = getServiceInstancesFromASGWithServiceRunning(8);
-    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
-        .thenReturn(serviceInstancesFromASGWithServiceRunning);
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(new int[] {1, 2, 3}));
 
     ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
 
@@ -182,50 +121,238 @@ public class CollectRemainingInstancesStateTest extends WingsBaseTest {
     assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(3);
     assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
     assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance2"));
-    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance8"));
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance3"));
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
   }
 
-  private List<ServiceInstance> getServiceInstancesFromASGWithServiceRunning(int number) {
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRolledBackPhase3() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary3")
+                        .build());
+    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
+        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
+    when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
+        .thenReturn(sweepingOutputInstanceList(new int[][] {{1}, {2, 3}, {4, 5}, {6, 7, 8}}));
+    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(
+            new int[] {1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}));
+
+    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
+
+    verify(sweepingOutputService).deleteById(APP_ID, UUID);
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(sweepingOutputService).save(captor.capture());
+
+    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
+    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(6);
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance7"));
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance8"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance2"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance3"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance4"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance5"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance6"));
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRolledBackPhase2() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary2")
+                        .build());
+    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
+        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
+    when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
+        .thenReturn(sweepingOutputInstanceList(new int[][] {{1}, {2, 3}, {4, 5}, {6, 7, 8}}));
+    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(
+            new int[] {1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}));
+
+    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
+
+    verify(sweepingOutputService).deleteById(APP_ID, UUID);
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(sweepingOutputService).save(captor.capture());
+
+    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
+    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(4);
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance4"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance2"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance3"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance5"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance6"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance7"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance8"));
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRolledBackPhase1() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary1")
+                        .build());
+    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
+        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
+    when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
+        .thenReturn(sweepingOutputInstanceList(new int[][] {{1}, {2, 3}, {4, 5}, {6, 7, 8}}));
+    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(
+            new int[] {1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}));
+
+    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
+
+    verify(sweepingOutputService).deleteById(APP_ID, UUID);
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(sweepingOutputService).save(captor.capture());
+
+    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
+    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(4);
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance2"));
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance3"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance4"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance5"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance6"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance7"));
+    assertTrue(!serviceInstanceIdsParam.getInstanceIds().contains("instance8"));
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRolledBackPhase0() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary0")
+                        .build());
+    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
+        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
+    when(sweepingOutputService.findManyWithNamePrefix(any(), any())).thenReturn(getSweepingOutputForLastPhase());
+    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(
+            new int[] {1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}));
+
+    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
+
+    verify(sweepingOutputService).deleteById(APP_ID, UUID);
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(sweepingOutputService).save(captor.capture());
+
+    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
+    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(1);
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRolledBackWhenItIsScaleUp2() {
+    when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
+        .thenReturn(PhaseElement.builder()
+                        .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
+                        .phaseNameForRollback("Canary0")
+                        .build());
+    when(context.isLastPhase(true)).thenReturn(true);
+    when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
+        .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
+    when(sweepingOutputService.findManyWithNamePrefix(any(), any()))
+        .thenReturn(sweepingOutputInstanceList(new int[][] {{1}, {2, 3}, {4, 5}, {6, 7, 8}}));
+    when(infrastructureMappingService.selectServiceInstances(any(), any(), any(), any()))
+        .thenReturn(getServiceInstancesFromASGWithServiceRunning(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+
+    ExecutionResponse executionResponse = collectRemainingInstancesState.execute(context);
+
+    verify(sweepingOutputService).deleteById(APP_ID, UUID);
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(sweepingOutputService).save(captor.capture());
+
+    ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) captor.getValue().getValue();
+    assertThat(serviceInstanceIdsParam.getInstanceIds().size()).isEqualTo(2);
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance1"));
+    assertTrue(serviceInstanceIdsParam.getInstanceIds().contains("instance9"));
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  private List<ServiceInstance> getServiceInstancesFromASGWithServiceRunning(int[] instances) {
     List<ServiceInstance> serviceInstances = new ArrayList<>();
-    int i = 1;
-    while (i <= number) {
+    for (int instance : instances) {
       serviceInstances.add(aServiceInstance()
                                .withServiceId(SERVICE_ID)
-                               .withUuid("instance" + i)
-                               .withHostId("hostId" + i)
-                               .withHostName("host" + i)
-                               .withPublicDns("publicDNS" + i)
+                               .withUuid("instance" + instance)
+                               .withHostId("hostId" + instance)
+                               .withHostName("host" + instance)
+                               .withPublicDns("publicDNS" + instance)
                                .build());
-      i++;
     }
     return serviceInstances;
   }
 
-  private List<SweepingOutputInstance> sweepingOutputInstanceListWithOneCurrentInstance() {
-    return asList(SweepingOutputInstance.builder()
-                      .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary")
-                      .value(aServiceInstanceIdsParam().withInstanceIds(asList("instance1", "instance2")).build())
-                      .build());
+  private List<SweepingOutputInstance> sweepingOutputInstanceList(int[][] instancesThroughPhases) {
+    List<SweepingOutputInstance> sweepingOutputInstanceList = new ArrayList<>();
+
+    for (int i = 0; i < instancesThroughPhases.length; i++) {
+      List<String> instanceList = new ArrayList<>();
+      for (int j = 0; j < instancesThroughPhases[i].length; j++) {
+        instanceList.add("instance" + instancesThroughPhases[i][j]);
+      }
+      sweepingOutputInstanceList.add(SweepingOutputInstance.builder()
+                                         .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary" + i)
+                                         .value(aServiceInstanceIdsParam().withInstanceIds(instanceList).build())
+                                         .build());
+    }
+    return sweepingOutputInstanceList;
   }
 
-  private List<SweepingOutputInstance> sweepingOutputInstanceList() {
-    List<SweepingOutputInstance> sweepingOutputInstanceList =
-        new ArrayList<>(sweepingOutputInstanceListWithOneCurrentInstance());
-
-    sweepingOutputInstanceList.addAll(
+  private List<SweepingOutputInstance> getSweepingOutputForLastPhase() {
+    return new ArrayList<>(
         asList(SweepingOutputInstance.builder()
-                   .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary2")
-                   .value(aServiceInstanceIdsParam().withInstanceIds(asList("instance3", "instance4")).build())
+                   .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary0")
+                   .value(aServiceInstanceIdsParam().withInstanceIds(Collections.singletonList("instance1")).build())
                    .build(),
             SweepingOutputInstance.builder()
-                .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary3")
-                .value(aServiceInstanceIdsParam().withInstanceIds(asList("instance5", "instance6")).build())
+                .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary1")
+                .value(aServiceInstanceIdsParam()
+                           .withInstanceIds(asList("instance2", "instance3", "instance16", "instance17"))
+                           .withInitiallyDeployedInstancesCount(2)
+                           .build())
                 .build(),
             SweepingOutputInstance.builder()
-                .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary4")
-                .value(aServiceInstanceIdsParam().withInstanceIds(Collections.singletonList("instance7")).build())
+                .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary2")
+                .value(aServiceInstanceIdsParam()
+                           .withInstanceIds(asList("instance4", "instance13", "instance14", "instance15"))
+                           .withInitiallyDeployedInstancesCount(2)
+                           .build())
+                .build(),
+            SweepingOutputInstance.builder()
+                .name(SERVICE_INSTANCE_IDS_PARAMS + "Canary3")
+                .value(aServiceInstanceIdsParam()
+                           .withInstanceIds(
+                               asList("instance7", "instance8", "instance9", "instance10", "instance11", "instance12"))
+                           .withInitiallyDeployedInstancesCount(3)
+                           .build())
                 .build()));
-    return sweepingOutputInstanceList;
   }
 }

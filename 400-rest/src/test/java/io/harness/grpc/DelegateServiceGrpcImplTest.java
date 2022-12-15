@@ -72,6 +72,7 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import com.google.protobuf.util.Timestamps;
@@ -117,6 +118,8 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   private DelegateSyncService delegateSyncService;
   private DelegateTaskService delegateTaskService;
 
@@ -136,8 +139,8 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
 
     DelegateServiceGrpc.DelegateServiceBlockingStub delegateServiceBlockingStub =
         DelegateServiceGrpc.newBlockingStub(channel);
-    delegateServiceGrpcClient = new DelegateServiceGrpcClient(
-        delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
+    delegateServiceGrpcClient = new DelegateServiceGrpcClient(delegateServiceBlockingStub, delegateAsyncService,
+        kryoSerializer, referenceFalseKryoSerializer, delegateSyncService, () -> false);
     delegateServiceAgentClient = mock(DelegateServiceAgentClient.class);
     delegateSyncService = mock(DelegateSyncService.class);
 
@@ -147,7 +150,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();
@@ -192,7 +195,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                              builder.setMode(TaskMode.SYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList())
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                          .getTaskId();
     assertThat(taskId1).isNotNull();
     assertThat(taskId1.getId()).isNotBlank();
@@ -206,7 +209,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                                builder.setMode(TaskMode.SYNC).setParked(false).build(),
                                asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                               java.time.Duration.ZERO, false, false, Collections.emptyList())
+                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                            .getTaskId();
     assertThat(taskId1Ng).isNotNull();
     assertThat(taskId1Ng.getId()).isNotBlank();
@@ -219,7 +222,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                              builder.setMode(TaskMode.ASYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList())
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
                          .getTaskId();
     assertThat(taskId2).isNotNull();
     assertThat(taskId2.getId()).isNotBlank();
@@ -232,7 +235,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.ASYNC).setParked(true).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList())
+                false, Collections.emptyList(), false, null)
             .getTaskId();
     assertThat(taskId3).isNotNull();
     assertThat(taskId3.getId()).isNotBlank();
@@ -247,7 +250,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.SYNC).setParked(false).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList()))
+                false, Collections.emptyList(), false, null))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.");
   }
@@ -275,6 +278,34 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTask(accountId, taskId);
     assertThatThrownBy(()
                            -> delegateServiceGrpcClient.cancelTask(AccountId.newBuilder().setId(accountId).build(),
+                               TaskId.newBuilder().setId(taskId).build()))
+        .isInstanceOf(DelegateServiceDriverException.class)
+        .hasMessage("Unexpected error occurred while cancelling task.");
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
+  public void testCancelTaskV2() {
+    String accountId = generateUuid();
+    String taskId = generateUuid();
+    when(delegateTaskServiceClassic.abortTaskV2(accountId, taskId))
+        .thenReturn(null)
+        .thenReturn(DelegateTask.builder().status(Status.STARTED).build());
+
+    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.TYPE_UNSPECIFIED);
+
+    taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.EXECUTING);
+
+    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTaskV2(accountId, taskId);
+    assertThatThrownBy(()
+                           -> delegateServiceGrpcClient.cancelTaskV2(AccountId.newBuilder().setId(accountId).build(),
                                TaskId.newBuilder().setId(taskId).build()))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while cancelling task.");

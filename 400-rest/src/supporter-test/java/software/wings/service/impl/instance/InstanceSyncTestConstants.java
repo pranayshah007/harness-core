@@ -52,6 +52,8 @@ public class InstanceSyncTestConstants {
   public static final String ENV_9_ID = "env9_Id";
   public static final String ENV_10_ID = "env10_Id";
   public static final String ENV_NAME = "envName";
+  public static final String ENV_TYPE = "envType";
+
   public static final String INFRA_MAPPING_ID = "infraMapping_Id";
   public static final String INFRA_MAPPING_NAME = "infraMapping_Name";
   public static final String INFRA_MAPPING_1_ID = "infraMapping1_Id";

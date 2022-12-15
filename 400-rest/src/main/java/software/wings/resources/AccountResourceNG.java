@@ -16,6 +16,7 @@ import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Account;
@@ -30,6 +31,7 @@ import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -81,8 +83,8 @@ public class AccountResourceNG {
   @GET
   @Path("/list")
   public RestResponse<List<AccountDTO>> getAllAccounts() {
-    List<Account> accountList = accountService.listAllAccounts();
-    return new RestResponse<>(accountList.stream().map(AccountMapper::toAccountDTO).collect(Collectors.toList()));
+    List<AccountDTO> accountList = accountService.getAllAccounts();
+    return new RestResponse<>(accountList);
   }
   @GET
   @Path("{accountId}")
@@ -109,6 +111,18 @@ public class AccountResourceNG {
   public RestResponse<Boolean> isFeatureFlagEnabled(
       @QueryParam("featureName") String featureName, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(accountService.isFeatureFlagEnabled(featureName, accountId));
+  }
+
+  @GET
+  @Path("immutable-delegate-enabled")
+  public RestResponse<Boolean> isImmutableDelegateEnabled(@QueryParam("accountId") @NotNull String accountId) {
+    return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
+  }
+
+  @GET
+  @Path("/feature-flag-enabled-accounts")
+  public RestResponse<Set<String>> getFeatureFlagEnabledAccountIds(@QueryParam("featureName") String featureName) {
+    return new RestResponse<>(accountService.getFeatureFlagEnabledAccountIds(featureName));
   }
 
   @GET
@@ -162,9 +176,27 @@ public class AccountResourceNG {
   }
 
   @GET
-  @Path("isAutoInviteAcceptanceEnabled")
+  @Hidden
+  @Path("is-auto-invite-acceptance-enabled")
+  @InternalApi
   public RestResponse<Boolean> isAutoInviteAcceptanceEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse(accountService.isAutoInviteAcceptanceEnabled(accountId));
+  }
+
+  @GET
+  @Hidden
+  @Path("is-pl-no-email-invite-acceptance-enabled")
+  @InternalApi
+  public RestResponse<Boolean> isPLNoEmailForSamlAccountInvitesEnabled(
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId));
+  }
+
+  @GET
+  @Path("is-sso-enabled")
+  public RestResponse<Boolean> isSSOEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
+    Account account = accountService.get(accountId);
+    return new RestResponse(accountService.isSSOEnabled(account));
   }
 
   @Path("/exists/{accountName}")

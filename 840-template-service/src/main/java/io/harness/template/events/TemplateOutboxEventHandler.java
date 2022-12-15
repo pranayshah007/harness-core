@@ -7,8 +7,8 @@
 
 package io.harness.template.events;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.ModuleType;
@@ -36,6 +36,7 @@ import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.helpers.TemplateReferenceHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -52,10 +53,13 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
   private final Producer eventProducer;
+  private final TemplateReferenceHelper templateReferenceHelper;
 
   @Inject
-  public TemplateOutboxEventHandler(
-      AuditClientService auditClientService, @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
+  public TemplateOutboxEventHandler(AuditClientService auditClientService,
+      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer,
+      TemplateReferenceHelper templateReferenceHelper) {
+    this.templateReferenceHelper = templateReferenceHelper;
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
     this.eventProducer = eventProducer;
@@ -65,7 +69,8 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
     TemplateCreateEvent templateCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), TemplateCreateEvent.class);
 
-    boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION);
+    boolean publishedToRedis = publishEvent(
+        outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION, templateCreateEvent.getTemplateEntity());
     TemplateEventData templateEventData = new TemplateEventData(templateCreateEvent.getComments(), null);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
@@ -103,9 +108,11 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
       publishedToRedis = publishEvent(EventsFrameworkMetadataConstants.DELETE_ACTION,
           oldTemplate.getAccountIdentifier(), outboxEvent.getResource().getIdentifier(), entityBuilder.build());
 
-      publishedToRedis = publishedToRedis && publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION);
+      publishedToRedis =
+          publishedToRedis && publishEvent(outboxEvent, EventsFrameworkMetadataConstants.CREATE_ACTION, oldTemplate);
     } else {
-      publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION);
+      publishedToRedis = publishEvent(
+          outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION, templateUpdateEvent.getNewTemplateEntity());
     }
 
     TemplateEventData templateEventData = new TemplateEventData(
@@ -128,7 +135,9 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
   private boolean handleTemplateDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     TemplateDeleteEvent templateDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), TemplateDeleteEvent.class);
-    boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION);
+    boolean publishedToRedis = publishEvent(
+        outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION, templateDeleteEvent.getTemplateEntity());
+    templateReferenceHelper.deleteTemplateReferences(templateDeleteEvent.getTemplateEntity());
     TemplateEventData templateEventData = new TemplateEventData(templateDeleteEvent.getComments(), null);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
@@ -172,10 +181,9 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
     }
   }
 
-  boolean publishEvent(OutboxEvent outboxEvent, String action) {
+  boolean publishEvent(OutboxEvent outboxEvent, String action, TemplateEntity templateEntity) {
     EntityChangeDTO.Builder entityBuilder =
         EntityChangeDTO.newBuilder().setIdentifier(StringValue.of(outboxEvent.getResource().getIdentifier()));
-
     String accountIdentifier;
     if (outboxEvent.getResourceScope() instanceof AccountScope) {
       accountIdentifier = ((AccountScope) outboxEvent.getResourceScope()).getAccountIdentifier();
@@ -191,6 +199,12 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
       entityBuilder.setAccountIdentifier(StringValue.of(accountIdentifier));
       entityBuilder.setOrgIdentifier(StringValue.of(resourceScope.getOrgIdentifier()));
       entityBuilder.setProjectIdentifier(StringValue.of(resourceScope.getProjectIdentifier()));
+    }
+
+    entityBuilder.putMetadata("versionLabel", templateEntity.getVersionLabel());
+    entityBuilder.putMetadata("templateType", templateEntity.getTemplateEntityType().toString());
+    if (templateEntity.isStableTemplate()) {
+      entityBuilder.putMetadata("isStable", "true");
     }
     return publishEvent(action, accountIdentifier, outboxEvent.getResource().getIdentifier(), entityBuilder.build());
   }

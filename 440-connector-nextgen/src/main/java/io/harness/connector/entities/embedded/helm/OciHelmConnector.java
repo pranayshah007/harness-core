@@ -7,8 +7,10 @@
 
 package io.harness.connector.entities.embedded.helm;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.ng.DbAliases;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "OciHelmConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)

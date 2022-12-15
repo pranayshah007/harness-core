@@ -7,14 +7,14 @@
 
 package io.harness.accesscontrol.commons.events;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.queue.QueueController;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -28,17 +28,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
-public abstract class EventListener implements Runnable {
+public abstract class EventListener extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   private final Set<EventConsumer> eventConsumers;
-  private final QueueController queueController;
 
   @Inject
-  public EventListener(Consumer redisConsumer, Set<EventConsumer> eventConsumers, QueueController queueController) {
+  public EventListener(Consumer redisConsumer, Set<EventConsumer> eventConsumers) {
     this.redisConsumer = redisConsumer;
     this.eventConsumers = eventConsumers;
-    this.queueController = queueController;
   }
 
   public abstract String getListenerName();
@@ -49,11 +47,6 @@ public abstract class EventListener implements Runnable {
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(ACCESS_CONTROL_SERVICE.getServiceId()));
       while (!Thread.currentThread().isInterrupted()) {
-        if (queueController.isNotPrimary()) {
-          log.info(getListenerName() + "is not running on primary deployment, will try again after some time...");
-          TimeUnit.SECONDS.sleep(30);
-          continue;
-        }
         readEventsFrameworkMessages();
       }
     } catch (InterruptedException ex) {
@@ -89,18 +82,8 @@ public abstract class EventListener implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      return processMessage(message);
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     if (message.getMessage() == null) {
       return true;
     }

@@ -13,7 +13,10 @@ COPY --chown=65534:65534 keystore.jks /opt/harness/
 COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
+COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
@@ -32,3 +35,7 @@ FROM base as saas
 
 COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
 RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
+
+USER root
+RUN microdnf install -y dnf yum \
+&& microdnf clean all

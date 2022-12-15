@@ -8,27 +8,30 @@
 package io.harness.cdng.environment.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
+import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -48,7 +51,6 @@ public class EnvironmentYamlV2 implements Visitable {
 
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> environmentRef;
 
   /*
@@ -58,9 +60,20 @@ public class EnvironmentYamlV2 implements Visitable {
   @YamlSchemaTypes({runtime})
   ParameterField<Boolean> deployToAll;
 
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @YamlSchemaTypes(runtime)
+  ParameterField<List<FilterYaml>> filters;
+
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
+
+  @ApiModelProperty(dataType = "io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml")
+  @YamlSchemaTypes({expression})
+  ParameterField<InfraStructureDefinitionYaml> infrastructureDefinition;
+
+  @Nullable @VariableExpression(skipVariableExpression = true) ExecutionElementConfig provisioner;
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)

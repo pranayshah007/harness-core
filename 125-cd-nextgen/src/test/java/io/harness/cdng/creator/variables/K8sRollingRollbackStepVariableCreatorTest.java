@@ -54,7 +54,7 @@ public class K8sRollingRollbackStepVariableCreatorTest extends CategoryTest {
         K8sRollingRollbackStepNode.class);
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.description",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.spec.skipDryRun",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.spec.pruningEnabled",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.name");

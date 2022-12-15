@@ -10,11 +10,13 @@ package software.wings.beans;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 
 import static software.wings.beans.Environment.Builder.anEnvironment;
+import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,9 +26,9 @@ import io.harness.beans.EnvironmentType;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -34,6 +36,7 @@ import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -60,6 +63,7 @@ import org.mongodb.morphia.annotations.Transient;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "EnvironmentKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "environments", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -99,7 +103,7 @@ public class Environment
   @Transient private List<InfrastructureDefinition> infrastructureDefinitions;
   @Transient private int infraDefinitionsCount;
   @SchemaIgnore private Set<String> keywords;
-  @FdIndex private String accountId;
+  private String accountId;
   private boolean sample;
 
   private transient List<HarnessTagLink> tagLinks;
@@ -278,6 +282,18 @@ public class Environment
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(ENVIRONMENT)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   /**

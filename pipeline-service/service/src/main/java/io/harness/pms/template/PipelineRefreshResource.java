@@ -18,14 +18,15 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -39,7 +40,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -97,7 +100,7 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(
@@ -116,9 +119,10 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(
-        pipelineRefreshService.validateTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
+    return ResponseDTO.newResponse(pipelineRefreshService.validateTemplateInputsInPipeline(
+        accountId, orgId, projectId, pipelineIdentifier, loadFromCache));
   }
 
   @GET
@@ -149,10 +153,10 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
-        accountId, orgId, projectId, pipelineIdentifier));
+        accountId, orgId, projectId, pipelineIdentifier, gitEntityBasicInfo));
   }
 }

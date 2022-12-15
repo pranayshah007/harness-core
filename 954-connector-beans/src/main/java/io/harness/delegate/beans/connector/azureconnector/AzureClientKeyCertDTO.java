@@ -9,8 +9,9 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientKeyCertOutcomeDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -33,4 +34,8 @@ public class AzureClientKeyCertDTO extends AzureAuthCredentialDTO {
   @NotNull
   @SecretReference
   SecretRefData clientCertRef;
+  @Override
+  public AzureClientKeyCertOutcomeDTO toOutcome() {
+    return AzureClientKeyCertOutcomeDTO.builder().certificateRef(this.clientCertRef).build();
+  }
 }

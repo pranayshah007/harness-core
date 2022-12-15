@@ -25,6 +25,7 @@ import io.harness.engine.interrupts.handlers.MarkExpiredInterruptHandler;
 import io.harness.engine.interrupts.handlers.MarkFailedInterruptHandler;
 import io.harness.engine.interrupts.handlers.MarkSuccessInterruptHandler;
 import io.harness.engine.interrupts.handlers.PauseAllInterruptHandler;
+import io.harness.engine.interrupts.handlers.ProceedWithDefaultInterruptHandler;
 import io.harness.engine.interrupts.handlers.ResumeAllInterruptHandler;
 import io.harness.engine.interrupts.handlers.RetryInterruptHandler;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -56,6 +57,8 @@ public class InterruptHandlerFactoryTest extends OrchestrationTestBase {
     assertThat(handlerFactory.obtainHandler(InterruptType.ABORT)).isInstanceOf(AbortInterruptHandler.class);
     assertThat(handlerFactory.obtainHandler(InterruptType.CUSTOM_FAILURE))
         .isInstanceOf(CustomFailureInterruptHandler.class);
+    assertThat(handlerFactory.obtainHandler(InterruptType.PROCEED_WITH_DEFAULT))
+        .isInstanceOf(ProceedWithDefaultInterruptHandler.class);
 
     assertThatThrownBy(() -> handlerFactory.obtainHandler(InterruptType.UNKNOWN))
         .isInstanceOf(IllegalStateException.class)

@@ -9,11 +9,13 @@ package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
@@ -21,6 +23,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,10 +39,13 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowImportSetResponseNG;
+import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -47,6 +53,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -145,8 +152,9 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Retrofit retrofit = Mockito.mock(Retrofit.class);
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getAdditionalFields(anyString(), anyString())).thenReturn(mockCall);
-    List<Map<String, String>> responseMap = Arrays.asList(
-        ImmutableMap.of("label", "field1", "name", "value1"), ImmutableMap.of("label", "field2", "name", "value2"));
+    List<Map<String, String>> responseMap =
+        Arrays.asList(ImmutableMap.of("label", "field1", "name", "value1", "internalType", "boolean"),
+            ImmutableMap.of("label", "field2", "name", "value2", "internalType", "string"));
     JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responseMap));
     Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
     when(mockCall.execute()).thenReturn(jsonNodeResponse);
@@ -167,6 +175,11 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         .containsExactlyInAnyOrder("field1", "field2");
     assertThat(response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getKey).collect(Collectors.toList()))
         .containsExactlyInAnyOrder("value1", "value2");
+    assertThat(response.getServiceNowFieldNGList()
+                   .stream()
+                   .map(ServiceNowFieldNG::getInternalType)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("string", "boolean");
     verify(secretDecryptionService).decrypt(any(), any());
   }
 
@@ -589,5 +602,232 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     assertThat(response.getTicket().getFields()).hasSize(2);
     verify(secretDecryptionService).decrypt(any(), any());
     verify(serviceNowRestClient).updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testCreateImportSetNormalAndEmptyImportData() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createImportSet(anyString(), anyString(), anyString(), any())).thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    when(mockCall.execute())
+        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetResponse.json", classLoader));
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    String stagingTable = "u_testing0001";
+    String importData = "{\n"
+        + "    \"u_test_field\" : \"my_test_import_data\"\n"
+        + "}";
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.IMPORT_SET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .stagingTableName(stagingTable)
+                                                         .importData(importData)
+                                                         .build());
+    ServiceNowImportSetResponseNG importSetResponse = response.getServiceNowImportSetResponseNG();
+    assertThat(response.getDelegateMetaInfo()).isNull();
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList()).hasSize(3);
+    assertThat(importSetResponse.getStagingTable()).isEqualTo(stagingTable);
+    assertThat(importSetResponse.getImportSet()).isEqualTo("ISET0010075");
+
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTransformMap())
+        .isEqualTo("Testing 2 transform maps");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetTable())
+        .isEqualTo("incident");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayValue())
+        .isEqualTo("INC0083151");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getDisplayName())
+        .isEqualTo("number");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getStatus())
+        .isEqualTo("inserted");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(0).getTargetRecordURL())
+        .isEqualTo(
+            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=a639e9ccdb4651909e7c2a5913961911");
+
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTransformMap())
+        .isEqualTo("Testing Full Flow");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetTable())
+        .isEqualTo("problem");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayValue())
+        .isEqualTo("PRB0066379");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getDisplayName())
+        .isEqualTo("number");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getStatus())
+        .isEqualTo("inserted");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(1).getTargetRecordURL())
+        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/problem.do?sys_id=123929ccdb4651909e7c2a5913961985");
+
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTransformMap())
+        .isEqualTo("testing permissions");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getTargetTable())
+        .isEqualTo("sqanda_vote");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getErrorMessage())
+        .isEqualTo("No transform entry or scripts are defined; Target record not found");
+    assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList().get(2).getStatus()).isEqualTo("error");
+
+    assertThat(response.getTicket()).isNull();
+    assertThat(response.getServiceNowFieldNGList()).isNull();
+    assertThat(response.getServiceNowTemplateList()).isNull();
+    assertThat(response.getServiceNowStagingTableList()).isNull();
+
+    verify(serviceNowRestClient)
+        .createImportSet(anyString(), eq(stagingTable), eq("all"),
+            eq(JsonUtils.asObject(importData, new TypeReference<Map<String, String>>() {})));
+
+    serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                     .action(ServiceNowActionNG.IMPORT_SET)
+                                                     .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                     .stagingTableName(stagingTable)
+                                                     .importData("    ")
+                                                     .build());
+    verify(secretDecryptionService, times(2)).decrypt(any(), any());
+    verify(serviceNowRestClient).createImportSet(anyString(), eq(stagingTable), eq("all"), eq(new HashMap<>()));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testCreateImportSetWithMalformedResponse() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createImportSet(anyString(), anyString(), anyString(), any())).thenReturn(mockCall);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    String stagingTable = "u_testing0001";
+    String importData = "{\n"
+        + "    \"u_test_field\" : \"my_test_import_data\"\n"
+        + "}";
+    ClassLoader classLoader = this.getClass().getClassLoader();
+
+    // case 1 when import data number missing from response
+    when(mockCall.execute())
+        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse1.json", classLoader));
+
+    try {
+      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                       .action(ServiceNowActionNG.IMPORT_SET)
+                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                       .stagingTableName(stagingTable)
+                                                       .importData(importData)
+                                                       .build());
+      fail("Expected failure as import set is missing from response");
+    } catch (ServiceNowException ex) {
+      assertThat(ex.getParams().get("message"))
+          .isEqualTo(String.format("InvalidArgumentsException: Field not found: %s", "import_set"));
+    }
+
+    // case 2 when transform map is empty array in response
+    when(mockCall.execute())
+        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse2.json", classLoader));
+
+    try {
+      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                       .action(ServiceNowActionNG.IMPORT_SET)
+                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                       .stagingTableName(stagingTable)
+                                                       .importData(importData)
+                                                       .build());
+      fail("Expected failure as import set is missing from response");
+    } catch (ServiceNowException ex) {
+      assertThat(ex.getParams().get("message"))
+          .isEqualTo("Transformation details are missing or invalid in the response received from ServiceNow");
+    }
+
+    // case 3 when staging table missing from response
+    when(mockCall.execute())
+        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowImportSetBadResponse3.json", classLoader));
+
+    try {
+      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                       .action(ServiceNowActionNG.IMPORT_SET)
+                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                       .stagingTableName(stagingTable)
+                                                       .importData(importData)
+                                                       .build());
+      fail("Expected failure as import set is missing from response");
+    } catch (ServiceNowException ex) {
+      assertThat(ex.getParams().get("message"))
+          .isEqualTo(String.format("InvalidArgumentsException: Field not found: %s", "staging_table"));
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetStagingTableList() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStagingTableList(anyString())).thenReturn(mockCall);
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    when(mockCall.execute())
+        .thenReturn(getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListResponse.json", classLoader));
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .build());
+    List<ServiceNowStagingTable> stagingTableList = response.getServiceNowStagingTableList();
+    assertThat(response.getDelegateMetaInfo()).isNull();
+    assertThat(stagingTableList).hasSize(4);
+
+    assertThat(stagingTableList.get(0).getName()).isEqualTo("u_venkat_demo_table");
+    assertThat(stagingTableList.get(0).getLabel()).isEqualTo("venkat_demo_table");
+
+    assertThat(stagingTableList.get(1).getName()).isEqualTo("imp_computer");
+    assertThat(stagingTableList.get(1).getLabel()).isEqualTo("Computer");
+
+    assertThat(stagingTableList.get(2).getName()).isEqualTo("u_testing0001");
+    assertThat(stagingTableList.get(2).getLabel()).isEqualTo("Testing0001");
+
+    assertThat(stagingTableList.get(3).getName()).isEqualTo("u_name_without_label");
+    assertThat(stagingTableList.get(3).getLabel()).isEqualTo("u_name_without_label");
+
+    assertThat(response.getTicket()).isNull();
+    assertThat(response.getServiceNowFieldNGList()).isNull();
+    assertThat(response.getServiceNowTemplateList()).isNull();
+    assertThat(response.getServiceNowImportSetResponseNG()).isNull();
+
+    verify(serviceNowRestClient).getStagingTableList(anyString());
+    when(mockCall.execute())
+        .thenReturn(
+            getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader));
+    try {
+      serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                       .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
+                                                       .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                       .build());
+      fail("Expected failure as invalid response");
+    } catch (ServiceNowException ex) {
+      assertThat(ex.getParams().get("message"))
+          .isEqualTo(String.format("Failed to fetch staging tables received response: {%s}",
+              getJsonNodeResponseFromJsonFile("servicenow/serviceNowStagingTableListBadResponse.json", classLoader)
+                  .body()));
+    }
+    verify(secretDecryptionService, times(2)).decrypt(any(), any());
+    verify(serviceNowRestClient, times(2)).getStagingTableList(anyString());
+  }
+
+  private Response<JsonNode> getJsonNodeResponseFromJsonFile(String filePath, ClassLoader classLoader)
+      throws Exception {
+    URL jsonFile = classLoader.getResource(filePath);
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode responseNode = mapper.readTree(jsonFile);
+    return Response.success(responseNode);
   }
 }

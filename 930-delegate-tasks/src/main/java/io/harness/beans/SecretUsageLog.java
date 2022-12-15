@@ -10,11 +10,13 @@ package io.harness.beans;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -51,6 +53,7 @@ import org.mongodb.morphia.annotations.Transient;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "secretUsageLogs", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "SecretUsageLogKeys")
@@ -58,10 +61,11 @@ public class SecretUsageLog implements PersistentEntity, UuidAware, CreatedAtAwa
                                        UpdatedByAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("acctEncryptedDataIdx")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("acctEncryptedDataCreatedAtIdx")
                  .field(SecretUsageLogKeys.accountId)
                  .field(SecretUsageLogKeys.encryptedDataId)
+                 .descSortField(SecretUsageLogKeys.createdAt)
                  .build())
         .build();
   }

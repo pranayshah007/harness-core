@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
@@ -73,10 +73,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "NodeExecutionKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "nodeExecutions", noClassnameStored = true)
 @Document("nodeExecutions")
 @TypeAlias("nodeExecution")
-@StoreIn(DbAliases.PMS)
 public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecution {
   public static final long TTL_MONTHS = 6;
 
@@ -85,11 +85,13 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   @NotNull Ambiance ambiance;
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Node planNode;
   @NotNull ExecutionMode mode;
+  // Required for debugging, can be removed later
   @Wither @FdIndex @CreatedDate Long createdAt;
   private Long startTs;
   private Long endTs;
   private Duration initialWaitDuration;
   private Integer levelCount;
+  // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   // Resolved StepParameters stored just before invoking step.
@@ -183,7 +185,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList
         .<MongoIndex>builder()
-        // used
+        // used by getByPlanNodeUuid
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_nodeId_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -199,11 +201,13 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchNodeExecutionsStatusesWithoutOldRetries
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_idx")
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.status)
                  .build())
+        // Used by findCountByParentIdAndStatusIn and fetchChildrenNodeExecutionsIterator
         .add(CompoundMongoIndex.builder()
                  .name("parentId_status_idx")
                  .field(NodeExecutionKeys.parentId)
@@ -217,6 +221,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.status)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchAllStepNodeExecutions
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_stepCategory_identifier_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -228,27 +233,15 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.stageFqn)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("planExecutionId_parentId_status_oldRetry_idx")
-                 .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.parentId)
-                 .field(NodeExecutionKeys.status)
-                 .field(NodeExecutionKeys.oldRetry)
-                 .build())
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
+        // fetchChildrenNodeExecutionsIterator
         .add(SortCompoundMongoIndex.builder()
                  .name("planExecutionId_parentId_createdAt_idx")
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.parentId)
                  .descRangeField(NodeExecutionKeys.createdAt)
                  .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("planExecutionId_status_stepCategory_createdAt_idx")
-                 .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.status)
-                 .field(NodeExecutionKeys.stepCategory)
-                 .ascRangeField(NodeExecutionKeys.createdAt)
-                 .build())
+        .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
         .build();
   }
 

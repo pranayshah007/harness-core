@@ -24,7 +24,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.eraro.Level;
@@ -40,10 +39,10 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamBinding;
 import software.wings.beans.artifact.ArtifactStreamSummary;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
@@ -561,7 +560,7 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
     if (accountId == null) {
       return false;
     }
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   @Override

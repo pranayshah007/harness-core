@@ -7,12 +7,12 @@
 
 package io.harness.serializer;
 
+import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceKryoRegister;
-import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.RbacCoreKryoRegistrar;
 import io.harness.serializer.kryo.SMCoreKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
@@ -40,9 +40,9 @@ public class DelegateServiceRegistrars {
           .add(RbacCoreKryoRegistrar.class)
           .add(SMCoreKryoRegistrar.class)
           .add(SecretManagerClientKryoRegistrar.class)
-          .add(ProjectAndOrgKryoRegistrar.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
+          .addAll(FiltersRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -59,7 +59,7 @@ public class DelegateServiceRegistrars {
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .addAll(SMCoreRegistrars.morphiaRegistrars)
           .addAll(SecretManagerClientRegistrars.morphiaRegistrars)
-          .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
+          .addAll(FiltersRegistrars.morphiaRegistrars)
           .add(DelegateServiceMorphiaRegistrar.class)
           .build();
 }

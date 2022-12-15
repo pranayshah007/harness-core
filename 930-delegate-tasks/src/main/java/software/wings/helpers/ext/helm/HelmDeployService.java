@@ -44,7 +44,7 @@ public interface HelmDeployService {
    * @param commandRequest       the command request
    * @return the helm command response
    */
-  HelmCommandResponse rollback(HelmRollbackCommandRequest commandRequest);
+  HelmCommandResponse rollback(HelmRollbackCommandRequest commandRequest) throws IOException;
 
   /**
    * Ensure helm cli and tiller installed helm command response.

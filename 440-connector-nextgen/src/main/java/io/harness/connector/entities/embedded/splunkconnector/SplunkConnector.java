@@ -7,7 +7,9 @@
 
 package io.harness.connector.entities.embedded.splunkconnector;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
+import io.harness.ng.DbAliases;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -21,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "SplunkConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.splunkconnector.SplunkConnector")

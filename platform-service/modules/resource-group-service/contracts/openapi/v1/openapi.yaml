@@ -1,0 +1,933 @@
+openapi: 3.0.3
+x-stoplight:
+  id: bfet7n314xd4i
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1'
+  description: This is the Open Api Spec 3 for the Platform Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'http://api.harness.io'
+    description: Harness host url
+tags:
+  - name: Account Resource Groups
+    description: This contains APIs for performing CRUD operations on Account level Resource Groups.
+  - name: Organization Resource Groups
+    description: This contains APIs for performing CRUD operations on Organization level Resource Groups.
+  - name: Project Resource Groups
+    description: This contains APIs for performing CRUD operations on Project level Resource Groups.
+  - name: Filter Resource Groups
+    description: This contains the filter endpoint for Resource Groups.
+paths:
+  /v1/resource-groups:
+    parameters: []
+    get:
+      summary: List Resource Groups
+      operationId: list-resource-groups-acc
+      description: Returns a list of Resource Groups present in the Account scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsListResponse'
+      tags:
+        - Account Resource Groups
+    post:
+      summary: Create a Resource Group
+      operationId: create-resource-group-acc
+      description: Creates a custom Resource Group in the Account scope.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Resource Groups
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+  '/v1/resource-groups/{resource-group}':
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupParam'
+    get:
+      summary: Retrieve a Resource Group
+      operationId: get-resource-group-acc
+      description: Retrieves a Resource Group from Account scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Resource Groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      x-internal: false
+    put:
+      summary: Update a Resource Group
+      operationId: update-resource-group-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      description: Updates a Resource Group from Account scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Resource Groups
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+    delete:
+      summary: Delete a Resource Group
+      operationId: delete-resource-group-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      description: Deletes a custom Resource Group from Account scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Resource Groups
+  '/v1/orgs/{org}/resource-groups':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+    get:
+      summary: List Resource Groups
+      tags:
+        - Organization Resource Groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsListResponse'
+      operationId: list-resource-groups-org
+      description: Returns a list of Resource Groups present in the Organization scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+    post:
+      summary: Create a Resource Group
+      operationId: create-resource-group-org
+      description: Creates a custom Resource Group in the Organization scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Organization Resource Groups
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+  '/v1/orgs/{org}/resource-groups/{resource-group}':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ResourceGroupParam'
+    get:
+      summary: Retrieve a Resource Group
+      operationId: get-resource-group-org
+      description: Retrieves a Resource Group from Organization scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Organization Resource Groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+    put:
+      summary: Update a Resource Group
+      operationId: update-resource-group-org
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      description: Updates a Resource Group from Organization scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+      tags:
+        - Organization Resource Groups
+    delete:
+      summary: Delete a Resource Group
+      operationId: delete-resource-group-org
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      description: Deletes a custom Resource Group from Organization scope.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Organization Resource Groups
+  '/v1/orgs/{org}/projects/{project}/resource-groups':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    get:
+      summary: List Resource Groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsListResponse'
+      operationId: list-resource-groups-project
+      description: Returns a list of Resource Groups present in the Project scope.
+      parameters:
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      tags:
+        - Project Resource Groups
+    post:
+      summary: Create a Resource Group
+      operationId: create-resource-group-project
+      description: Creates a custom Resource Group in the Project scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Project Resource Groups
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+  '/v1/orgs/{org}/projects/{project}/resource-groups/{resource-group}':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/ResourceGroupParam'
+    get:
+      summary: Retrieve a Resource Group
+      operationId: get-resource-group-project
+      security:
+        - x-api-key: []
+      description: Retrieves a Resource Group from Project scope.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Project Resource Groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+    put:
+      summary: Update a Resource Group
+      operationId: update-resource-group-project
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResourceGroupRequest'
+      description: Updates a Resource Group from Project scope.
+      tags:
+        - Project Resource Groups
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    delete:
+      summary: Delete a Resource Group
+      operationId: delete-resource-group-project
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsResponse'
+      description: Deletes a custom Resource Group from Project scope.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Project Resource Groups
+  /v1/resource-groups/filter:
+    parameters: []
+    post:
+      summary: Filter Resource Groups
+      operationId: filter-resource-groups
+      responses:
+        '200':
+          $ref: '#/components/responses/ResourceGroupsListResponse'
+      description: Returns a list of Resource Groups based on filter criteria.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      tags:
+        - Filter Resource Groups
+      requestBody:
+        $ref: '#/components/requestBodies/FilterResourceGroupRequest'
+components:
+  schemas:
+    ResourceGroupsResponse:
+      title: Resource Groups Response
+      x-stoplight:
+        id: q6oq3jxkd2who
+      type: object
+      description: Resource Group response body
+      x-examples:
+        example-resource-group:
+          slug: example_resource_group
+          name: Example_Resource Group
+          color: '#0063F7'
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          description: This is an Example Resource Group
+          allowed_scope_levels:
+            - account
+          included_scope:
+            - filter: EXCLUDING_CHILD_SCOPES
+              account: sample_account
+              org: sample_organization
+              project: sample_project
+          resource_filter:
+            - resource_type: resource
+              identifiers:
+                - example_resource
+              attribute_name: resource_attribute
+              attribute_values:
+                - example_resource_attribute
+          include_all_resources: false
+          harness_managed: true
+          created: 1234567890
+          updated: 1234567890
+      properties:
+        slug:
+          type: string
+          description: Resource Group Identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          description: Resource Group Name
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        color:
+          type: string
+          description: Color associated with the Resource Group.
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Resource Group tags
+          maxProperties: 128
+        description:
+          type: string
+          description: Resource Group description
+          maxLength: 1024
+        allowed_scope_levels:
+          type: array
+          description: Allowed scope levels for this Resource Group.
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - account
+              - organization
+              - project
+        included_scope:
+          type: array
+          description: Included scopes for the resources belonging to the Resource Group.
+          items:
+            $ref: '#/components/schemas/ResourceGroupScope'
+        resource_filter:
+          type: array
+          description: Specifies the actual resources present in the Resource Group.
+          items:
+            $ref: '#/components/schemas/ResourceFilter'
+        include_all_resources:
+          type: boolean
+          description: Boolean value for including all resources in Resource Group.
+        harness_managed:
+          type: boolean
+          description: 'This indicates if this Resource Group is managed by Harness or not. If true, Harness can manage and modify this Resource Group.'
+        created:
+          type: integer
+          description: Creation timestamp for Resource Group.
+          format: int64
+        updated:
+          type: integer
+          description: Last modification timestamp for Resource Group.
+          format: int64
+      required:
+        - slug
+        - name
+    CreateResourceGroupRequest:
+      title: Create Resource Group Request
+      x-stoplight:
+        id: z8g6ol73nsqjs
+      type: object
+      description: Resource Group request body
+      x-examples:
+        resource-group-request:
+          slug: example_resource_group
+          name: Example_Resource Group
+          color: '#0063F7'
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          description: This is an Example Resource Group
+          included_scope:
+            - filter: EXCLUDING_CHILD_SCOPES
+              account: sample_account
+              org: sample_organization
+              project: sample_project
+          resource_filter:
+            - resource_type: resource
+              identifiers:
+                - example_resource
+              attribute_name: resource_attribute
+              attribute_values:
+                - example_resource_attribute
+          include_all_resources: false
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          description: Resource Group identifier
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          description: Resource Group name
+        color:
+          type: string
+          description: Color associated with the Resource Group.
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Resource Group tags
+        description:
+          type: string
+          maxLength: 1024
+          description: Resource Group description
+        included_scope:
+          type: array
+          description: Included scopes for the resources belonging to the Resource Group.
+          items:
+            $ref: '#/components/schemas/ResourceGroupScope'
+        resource_filter:
+          type: array
+          description: Specifies the actual resources present in the Resource Group.
+          items:
+            $ref: '#/components/schemas/ResourceFilter'
+        include_all_resources:
+          type: boolean
+          description: Boolean value for including all resources in Resource Group.
+      required:
+        - slug
+        - name
+    ResourceGroupScope:
+      title: Resource Group Scope
+      x-stoplight:
+        id: w8j3bc9323bxb
+      type: object
+      description: Included scopes for the Resources belonging to the Resource Group
+      x-examples:
+        example-1:
+          filter: EXCLUDING_CHILD_SCOPES
+          account: sample_account
+          org: sample_organization
+          project: sample_project
+      properties:
+        filter:
+          type: string
+          enum:
+            - EXCLUDING_CHILD_SCOPES
+            - INCLUDING_CHILD_SCOPES
+          description: Including or Excluding Child scopes.
+        account:
+          type: string
+          description: Account identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        org:
+          type: string
+          description: Organization identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        project:
+          type: string
+          description: Project identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+      required:
+        - filter
+    ResourceFilter:
+      title: Resource Filter
+      x-stoplight:
+        id: m5qhp13hm6o1z
+      type: object
+      description: Specifies resources in Resource Group.
+      x-examples:
+        example-resource-filter:
+          resource_type: resource
+          identifiers:
+            - example_resource
+          attribute_name: resource_attribute
+          attribute_values:
+            - example_resource_attribute
+      properties:
+        resource_type:
+          type: string
+          description: Specifies the type of Resource.
+        identifiers:
+          type: array
+          description: Identifiers for the Resource Type.
+          items:
+            type: string
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            minLength: 1
+            maxLength: 64
+        attribute_name:
+          type: string
+          description: Attribute name on the basis of which filtering will be done.
+        attribute_values:
+          type: array
+          description: Attribute values selected.
+          items:
+            type: string
+      required:
+        - resource_type
+    ResourceSelectorFilter:
+      title: Resource Selector Filter
+      x-stoplight:
+        id: 0eh9msctzz3fy
+      type: object
+      description: Filter by whether the Resource Group has a particular Resource.
+      x-examples:
+        example-resource-selector-filter:
+          resource_type: resource
+          resource_slug: example_resource
+      properties:
+        resource_type:
+          type: string
+          description: Filter by Resource type
+        resource_slug:
+          type: string
+          description: Filter by Resource identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+      required:
+        - resource_type
+    ResourceGroupFilterRequestBody:
+      title: Resource Group Filter Request Body
+      x-stoplight:
+        id: bzgvkhevpa4rq
+      type: object
+      description: Filter request body for Resource Groups.
+      x-examples:
+        example-filter:
+          account: example_account
+          org: example_organization
+          project: example_project
+          search_term: search
+          identifier_filter:
+            - example_resource_group
+          resource_selector_filter:
+            - resource_type: RESOURCE
+              resource_slug: example_resource
+          managed_filter: NO_FILTER
+      properties:
+        account:
+          type: string
+          description: Filter by Account identifier.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        org:
+          type: string
+          description: Filter by Organization identifier.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        project:
+          type: string
+          description: Filter by Project identifier.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        search_term:
+          type: string
+          description: Filter Resource Group matching by identifier/name.
+        identifier_filter:
+          type: array
+          description: Filter by Resource Group identifiers
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            minLength: 1
+            maxLength: 64
+        resource_selector_filter:
+          type: array
+          description: Filter based on whether it has a particular Resource.
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ResourceSelectorFilter'
+        managed_filter:
+          type: string
+          description: Filter based on whether the Resource Group is Harness Managed.
+          enum:
+            - NO_FILTER
+            - ONLY_MANAGED
+            - ONLY_CUSTOM
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+      description: API key is a token provided while making the API calls. This is used to authenticate the client at the exposed endpoint.
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 30
+        maximum: 100
+      description: 'Pagination: Number of items to return.'
+    PageIndex:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: 'Pagination page number strategy: Specify the page number within the paginated collection related to the number of items on each page.'
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching the search term.
+    OrgParam:
+      name: org
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Organization identifier
+    ProjectParam:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Project identifier
+    ResourceGroupParam:
+      name: resource-group
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Resource Group identifier
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - slug
+          - name
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
+  responses:
+    ResourceGroupsListResponse:
+      description: Resource Groups List response body
+      content:
+        application/json:
+          schema:
+            type: array
+            description: List of Resource Groups
+            items:
+              $ref: '#/components/schemas/ResourceGroupsResponse'
+          examples:
+            resource-group-list-response:
+              value:
+                - slug: example_resource_group
+                  name: Example Resource Group
+                  color: '#0063F7'
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  description: This is an Example Resource Group
+                  allowed_scope_levels:
+                    - account
+                  included_scope:
+                    - filter: EXCLUDING_CHILD_SCOPES
+                      account: sample_account
+                      org: sample_organization
+                      project: sample_project
+                  resource_filter:
+                    - resource_type: resource
+                      identifiers:
+                        - example_resource
+                      attribute_name: resource_attribute
+                      attribute_values:
+                        - example_resource_attribute
+                  include_all_resources: false
+                  harness_managed: true
+                  created: 1234567890
+                  updated: 1234567890
+        application/yaml:
+          schema:
+            type: array
+            description: List of Resource Groups
+            items:
+              $ref: '#/components/schemas/ResourceGroupsResponse'
+          examples:
+            resource-group-list-response:
+              value: |
+                - slug: example_resource_group
+                  name: Example Resource Group
+                  color: '#0063F7'
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  description: This is an Example Resource Group
+                  allowed_scope_levels:
+                    - account
+                  included_scope:
+                    - filter: EXCLUDING_CHILD_SCOPES
+                      account: sample_account
+                      org: sample_organization
+                      project: sample_project
+                  resource_filter:
+                    - resource_type: resource
+                      identifiers:
+                        - example_resource
+                      attribute_name: resource_attribute
+                      attribute_values:
+                        - example_resource_attribute
+                  include_all: false
+                  harness_managed: true
+                  created: 1234567890
+                  updated: 1234567890
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+          examples:
+            sample:
+              value: '</v1/resource-groups?page=2&limit=1>; rel="next", </v1/resource-groups?page=1&limit=1>; rel="self", </v1/resource-groups?page=0&limit=1>; rel="previous", '
+    ResourceGroupsResponse:
+      description: Resource Group response body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResourceGroupsResponse'
+          examples:
+            resource-group-response:
+              value:
+                slug: example_resource_group
+                name: Example Resource Group
+                color: '#0063F7'
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                description: This is an Example Resource Group
+                allowed_scope_levels:
+                  - account
+                included_scope:
+                  - filter: EXCLUDING_CHILD_SCOPES
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                resource_filter:
+                  - resource_type: resource
+                    identifiers:
+                      - example_resource
+                    attribute_name: resource_attribute
+                    attribute_values:
+                      - example_resource_attribute
+                include_all_resources: false
+                harness_managed: true
+                created: 1234567890
+                updated: 1234567890
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ResourceGroupsResponse'
+          examples:
+            resource-group-response:
+              value: |
+                slug: example_resource_group
+                name: Example Resource Group
+                color: '#0063F7'
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                description: This is an Example Resource Group
+                allowed_scope_levels:
+                  - account
+                included_scope:
+                  - filter: EXCLUDING_CHILD_SCOPES
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                resource_filter:
+                  - resource_type: resource
+                    identifiers:
+                      - example_resource
+                    attribute_name: resource_attribute
+                    attribute_values:
+                      - example_resource_attribute
+                include_all: false
+                harness_managed: true
+                created: 1234567890
+                updated: 1234567890
+  requestBodies:
+    CreateResourceGroupRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateResourceGroupRequest'
+          examples:
+            resource-group-request:
+              value:
+                slug: example_resource_group
+                name: Example Resource Group
+                color: '#0063F7'
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                description: This is an Example Resource Group
+                included_scope:
+                  - filter: EXCLUDING_CHILD_SCOPES
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                resource_filter:
+                  - resource_type: resource
+                    identifiers:
+                      - example_resource
+                    attribute_name: resource_attribute
+                    attribute_values:
+                      - example_resource_attribute
+                include_all_resources: false
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CreateResourceGroupRequest'
+          examples:
+            resource-group-request:
+              value: |
+                slug: example_resource_group
+                name: Example Resource Group
+                color: '#0063F7'
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                description: This is an Example Resource Group
+                included_scope:
+                  - filter: EXCLUDING_CHILD_SCOPES
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                resource_filter:
+                  - resource_type: resource
+                    identifiers:
+                      - example_resource
+                    attribute_name: resource_attribute
+                    attribute_values:
+                      - example_resource_attribute
+                include_all: false
+      description: Resource Group request body
+      required: true
+    FilterResourceGroupRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResourceGroupFilterRequestBody'
+          examples:
+            example-filter:
+              value:
+                account: example_account
+                org: example_organization
+                project: example_project
+                search_term: search
+                identifier_filter:
+                  - example_resource_group
+                resource_selector_filter:
+                  - resource_type: RESOURCE
+                    resource_slug: example_resource
+                managed_filter: NO_FILTER
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ResourceGroupFilterRequestBody'
+          examples:
+            example-filter:
+              value: |
+                account: example_account
+                org: example_organization
+                project: example_project
+                search_term: search
+                identifier_filter:
+                  - example_resource_group
+                resource_selector_filter:
+                  - resource_type: RESOURCE
+                    resource_slug: example_resource
+                managed_filter: NO_FILTER
+      description: Filter Resource Group request body
+      required: true

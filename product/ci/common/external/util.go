@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -23,29 +24,34 @@ import (
 )
 
 const (
-	accountIDEnv     = "HARNESS_ACCOUNT_ID"
-	orgIDEnv         = "HARNESS_ORG_ID"
-	projectIDEnv     = "HARNESS_PROJECT_ID"
-	buildIDEnv       = "HARNESS_BUILD_ID"
-	stageIDEnv       = "HARNESS_STAGE_ID"
-	pipelineIDEnv    = "HARNESS_PIPELINE_ID"
-	tiSvcEp          = "HARNESS_TI_SERVICE_ENDPOINT"
-	tiSvcToken       = "HARNESS_TI_SERVICE_TOKEN"
-	logSvcEp         = "HARNESS_LOG_SERVICE_ENDPOINT"
-	logSvcToken      = "HARNESS_LOG_SERVICE_TOKEN"
-	logPrefixEnv     = "HARNESS_LOG_PREFIX"
-	serviceLogKeyEnv = "HARNESS_SERVICE_LOG_KEY"
-	secretList       = "HARNESS_SECRETS_LIST"
-	dBranch          = "DRONE_COMMIT_BRANCH"
-	dSourceBranch    = "DRONE_SOURCE_BRANCH"
-	dTargetBranch    = "DRONE_TARGET_BRANCH"
-	dRemoteUrl       = "DRONE_REMOTE_URL"
-	dCommitSha       = "DRONE_COMMIT_SHA"
-	dCommitLink      = "DRONE_COMMIT_LINK"
-	wrkspcPath       = "HARNESS_WORKSPACE"
-	logUploadFf      = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
-	gitBin           = "git"
-	diffFilesCmd     = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	accountIDEnv       = "HARNESS_ACCOUNT_ID"
+	orgIDEnv           = "HARNESS_ORG_ID"
+	projectIDEnv       = "HARNESS_PROJECT_ID"
+	buildIDEnv         = "HARNESS_BUILD_ID"
+	stageIDEnv         = "HARNESS_STAGE_ID"
+	pipelineIDEnv      = "HARNESS_PIPELINE_ID"
+	tiSvcEp            = "HARNESS_TI_SERVICE_ENDPOINT"
+	tiSvcToken         = "HARNESS_TI_SERVICE_TOKEN"
+	logSvcEp           = "HARNESS_LOG_SERVICE_ENDPOINT"
+	logSvcToken        = "HARNESS_LOG_SERVICE_TOKEN"
+	logPrefixEnv       = "HARNESS_LOG_PREFIX"
+	serviceLogKeyEnv   = "HARNESS_SERVICE_LOG_KEY"
+	additionalCertsDir = "HARNESS_ADDITIONAL_CERTS_DIR"
+	secretList         = "HARNESS_SECRETS_LIST"
+	dBranch            = "DRONE_COMMIT_BRANCH"
+	dSourceBranch      = "DRONE_SOURCE_BRANCH"
+	dTargetBranch      = "DRONE_TARGET_BRANCH"
+	dRemoteUrl         = "DRONE_REMOTE_URL"
+	dCommitSha         = "DRONE_COMMIT_SHA"
+	dCommitLink        = "DRONE_COMMIT_LINK"
+	wrkspcPath         = "HARNESS_WORKSPACE"
+	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
+	gitBin             = "git"
+	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	harnessStepIndex   = "HARNESS_STEP_INDEX"
+	harnessStepTotal   = "HARNESS_STEP_TOTAL"
+	harnessStageIndex  = "HARNESS_STAGE_INDEX"
+	harnessStageTotal  = "HARNESS_STAGE_TOTAL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -161,7 +167,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
 	}
-	return client.NewHTTPClient(l, account, token, false), nil
+	return client.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 // GetLogKey returns a key for log service
@@ -184,6 +190,11 @@ func GetServiceLogKey() (string, error) {
 	return logKey, nil
 }
 
+// GetAdditionalCertsPath returns additional certs path
+func GetAdditionalCertsDir() string {
+	return os.Getenv(additionalCertsDir)
+}
+
 // GetTiHTTPClient returns a client to talk to the TI service
 func GetTiHTTPClient() (ticlient.Client, error) {
 	l, ok := os.LookupEnv(tiSvcEp)
@@ -198,7 +209,7 @@ func GetTiHTTPClient() (ticlient.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("TI service token not set %s", tiSvcToken)
 	}
-	return ticlient.NewHTTPClient(l, account, token, false), nil
+	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 // GetTiHTTPClientWithToken returns a client to talk to the TI service
@@ -211,7 +222,7 @@ func GetTiHTTPClientWithToken(token string) (ticlient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ticlient.NewHTTPClient(l, account, token, false), nil
+	return ticlient.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 func GetAccountId() (string, error) {
@@ -338,6 +349,54 @@ func GetTiSvcToken() (string, error) {
 	return token, nil
 }
 
+func GetStepStrategyIteration() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessStepIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessStepIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStepIndex)
+	}
+	return idx, nil
+}
+
+func GetStepStrategyIterations() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessStepTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessStepTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStepTotal)
+	}
+	return total, nil
+}
+
+func GetStageStrategyIteration() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessStageIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessStageIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStageIndex)
+	}
+	return idx, nil
+}
+
+func GetStageStrategyIterations() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessStageTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessStageTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStageTotal)
+	}
+	return total, nil
+}
+
 func IsManualExecution() bool {
 	_, err1 := GetSourceBranch()
 	_, err2 := GetTargetBranch()
@@ -346,4 +405,26 @@ func IsManualExecution() bool {
 		return true // if any of them are not set, treat as a manual execution
 	}
 	return false
+}
+
+func IsStepParallelismEnabled() bool {
+	v1, err1 := GetStepStrategyIteration()
+	v2, err2 := GetStepStrategyIterations()
+	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
+		return false
+	}
+	return true
+}
+
+func IsStageParallelismEnabled() bool {
+	v1, err1 := GetStageStrategyIteration()
+	v2, err2 := GetStageStrategyIterations()
+	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
+		return false
+	}
+	return true
+}
+
+func IsParallelismEnabled() bool {
+	return IsStepParallelismEnabled() || IsStageParallelismEnabled()
 }

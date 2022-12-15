@@ -212,6 +212,8 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String userId);
 
+  User get(@NotEmpty String userId, boolean includeSupportAccounts);
+
   List<User> getUsers(Set<String> userIds);
 
   /**
@@ -222,6 +224,10 @@ public interface UserService extends OwnedByAccount {
    * @return the user
    */
   User get(@NotEmpty String accountId, @NotEmpty String userId);
+
+  void loadSupportAccounts(User user);
+
+  void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded);
 
   /**
    * Gets user from cache or db.
@@ -256,6 +262,8 @@ public interface UserService extends OwnedByAccount {
    * @return the account
    */
   Account addAccount(Account account, User user, boolean addUser);
+
+  User getUserByEmail(String email, boolean loadSupportAccounts);
 
   /**
    * Retrieve an user by its email.
@@ -390,7 +398,7 @@ public interface UserService extends OwnedByAccount {
    * @param userInvite the user invite DTO
    * @param isScimInvite if the Invite is created for a SCIM user
    */
-  void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite);
+  void completeNGInvite(UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail);
 
   /**
    * Complete the user invite and login the user in one call.
@@ -651,4 +659,6 @@ public interface UserService extends OwnedByAccount {
 
   io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm);
+
+  boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 }

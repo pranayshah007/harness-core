@@ -13,6 +13,7 @@ import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static software.wings.beans.TaskType.SERVICENOW_TASK_NG;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
@@ -192,8 +193,18 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
                                     .projectIdentifier(projectIdentifier)
                                     .build();
 
-    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
-        NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(serviceNowConnector).build();
+    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer;
+    if (!isNull(serviceNowConnector.getAuth()) && !isNull(serviceNowConnector.getAuth().getCredentials())) {
+      ngAccessWithEncryptionConsumer = NGAccessWithEncryptionConsumer.builder()
+                                           .ngAccess(baseNGAccess)
+                                           .decryptableEntity(serviceNowConnector.getAuth().getCredentials())
+                                           .build();
+    } else {
+      ngAccessWithEncryptionConsumer = NGAccessWithEncryptionConsumer.builder()
+                                           .ngAccess(baseNGAccess)
+                                           .decryptableEntity(serviceNowConnector)
+                                           .build();
+    }
     List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
         secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 
@@ -238,7 +249,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
     return StepUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
   }
 
-  private void validateField(String name, String value) {
+  private void validateField(String value, String name) {
     if (isBlank(value)) {
       throw new InvalidRequestException(format("Field %s can't be empty", name));
     }

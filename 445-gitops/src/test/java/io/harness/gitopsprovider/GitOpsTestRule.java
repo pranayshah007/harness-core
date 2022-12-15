@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -74,6 +75,12 @@ public class GitOpsTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

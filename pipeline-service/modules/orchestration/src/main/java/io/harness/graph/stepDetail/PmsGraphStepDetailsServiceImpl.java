@@ -11,12 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
+import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoBuilder;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoKeys;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.observer.Subject;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
@@ -54,13 +56,15 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
 
   // TODO: Make this better this should be called from no where else
   @Override
-  public void addStepInputs(String nodeExecutionId, String planExecutionId, PmsStepParameters resolvedInputs) {
-    NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
-                                                .nodeExecutionId(nodeExecutionId)
-                                                .planExecutionId(planExecutionId)
-                                                .resolvedInputs(resolvedInputs)
-                                                .build();
-    nodeExecutionsInfoRepository.save(nodeExecutionsInfo);
+  public void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters resolvedInputs) {
+    NodeExecutionsInfoBuilder nodeExecutionsInfoBuilder =
+        NodeExecutionsInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId);
+    if (resolvedInputs == null) {
+      nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
+      return;
+    }
+    nodeExecutionsInfoBuilder.resolvedInputs(resolvedInputs);
+    nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
     stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
         StepDetailsUpdateInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId).build());
   }
@@ -121,9 +125,10 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
   }
 
   @Override
-  public ConcurrentChildInstance incrementCursor(String nodeExecutionId) {
+  public ConcurrentChildInstance incrementCursor(String nodeExecutionId, Status status) {
     Update update = new Update();
     update.inc(NodeExecutionsInfoKeys.concurrentChildInstance + ".cursor");
+    update.addToSet(NodeExecutionsInfoKeys.concurrentChildInstance + ".childStatuses", status);
     Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
     NodeExecutionsInfo nodeExecutionsInfo =
         mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);

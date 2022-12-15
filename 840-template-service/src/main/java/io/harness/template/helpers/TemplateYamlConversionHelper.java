@@ -56,6 +56,10 @@ public class TemplateYamlConversionHelper {
     YamlField rootFieldYamlField = new YamlField(rootFieldYamlNode);
     addAdditionalFieldsToYaml(templateEntityType, yamlConversionHandler, rootFieldYamlField);
 
+    // Removing stageType from yaml Node only for stepGroup Templates.
+    if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.STEPGROUP_TEMPLATE)) {
+      rootFieldYamlField.getNode().removePath("stepGroup/stageType");
+    }
     return YamlUtils.write(rootFieldYamlField.getNode().getCurrJsonNode()).replace("---\n", "");
   }
 
@@ -77,8 +81,10 @@ public class TemplateYamlConversionHelper {
       JsonNode fieldsToAdd = JsonPipelineUtils.asTree(templateYamlConversionRecord.getFieldsToAdd());
       if (fieldPlacementStrategy.equals(FieldPlacementStrategy.PARALLEL)) {
         String path = templateYamlConversionRecord.getPath();
-        String updatedPath = path.substring(0, path.lastIndexOf('/'));
-        YamlNodeUtils.addToPath(yamlField.getNode(), updatedPath, fieldsToAdd);
+        if (path.lastIndexOf('/') >= 0) {
+          path = path.substring(0, path.lastIndexOf('/'));
+        }
+        YamlNodeUtils.addToPath(yamlField.getNode(), path, fieldsToAdd);
       } else if (fieldPlacementStrategy.equals(FieldPlacementStrategy.REPLACE)) {
         yamlField.getNode().replacePath(templateYamlConversionRecord.getPath(), fieldsToAdd);
       }

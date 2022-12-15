@@ -15,6 +15,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,9 +44,18 @@ public class YamlMapGenerator {
    * refers to the pipeline of this input set
    */
   public JsonNode generateYamlMap(Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow) {
+    return generateYamlMap(fqnMap, originalYaml, isSanitiseFlow, false);
+  }
+
+  public JsonNode generateYamlMap(
+      Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow, boolean keepUuidFields) {
     Set<String> fieldNames = new LinkedHashSet<>();
     originalYaml.fieldNames().forEachRemaining(fieldNames::add);
     String topKey = fieldNames.iterator().next();
+
+    if (keepUuidFields && topKey.equals(YamlNode.UUID_FIELD_NAME) && fieldNames.size() > 1) {
+      topKey = fieldNames.stream().filter(o -> !o.equals(YamlNode.UUID_FIELD_NAME)).findAny().get();
+    }
 
     FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
     FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
@@ -85,9 +95,7 @@ public class YamlMapGenerator {
             && tempMap.containsKey(YAMLFieldNameConstants.TYPE)) {
           return;
         }
-        if (tempMap.size() == 1
-            && (tempMap.containsKey(YAMLFieldNameConstants.IDENTIFIER)
-                || tempMap.containsKey(YAMLFieldNameConstants.NAME))) {
+        if (tempMap.size() == 1 && tempMap.containsKey(YAMLFieldNameConstants.NAME)) {
           return;
         }
       }
@@ -116,7 +124,7 @@ public class YamlMapGenerator {
       return;
     }
     int noOfKeys = firstNode.size();
-    if (noOfKeys == 1) {
+    if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(list))) {
       generateYamlMapFromListOfSingleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
     } else {
       generateYamlMapFromListOfMultipleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
@@ -188,10 +196,12 @@ public class YamlMapGenerator {
               .uuidValue(element.get(uuidKey).asText())
               .build());
       Map<String, Object> tempRes = new LinkedHashMap<>();
-      if (uuidKey.equals(YAMLFieldNameConstants.IDENTIFIER)) {
+      if (FQNHelper.isKeyInsideUUIdsToIdentityElementInList(uuidKey)) {
         generateYamlMap(fqnMap, currFQN, element, tempRes, topKey, isSanitiseFlow);
         if (tempRes.containsKey(topKey)) {
-          topKeyList.add(tempRes.get(topKey));
+          Map<String, Object> map = (Map) tempRes.get(topKey);
+          map.put(uuidKey, element.get(uuidKey));
+          topKeyList.add(map);
         }
       } else {
         Map<String, Object> tempMap = new LinkedHashMap<>();

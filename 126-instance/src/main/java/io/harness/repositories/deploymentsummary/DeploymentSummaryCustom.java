@@ -18,4 +18,7 @@ import java.util.Optional;
 public interface DeploymentSummaryCustom {
   Optional<DeploymentSummary> fetchNthRecordFromNow(
       int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
+
+  Optional<DeploymentSummary> fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId);
 }

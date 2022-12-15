@@ -35,10 +35,10 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
 import io.harness.resource.VersionInfoResource;
 import io.harness.serializer.CommandLibraryServer;
-import io.harness.serializer.CommonsRegistrars;
 import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.morphia.PrimaryVersionManagerMorphiaRegistrar;
 
 import software.wings.app.CharsetResponseFilter;
@@ -185,6 +185,13 @@ public class CommandLibraryServerApplication extends Application<CommandLibraryS
             .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
 

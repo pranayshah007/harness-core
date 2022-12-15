@@ -19,6 +19,7 @@ import static software.wings.graphql.schema.type.permissions.QLAccountPermission
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.READ_USERS_AND_GROUPS;
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.VIEW_AUDITS;
 import static software.wings.graphql.schema.type.permissions.QLAccountPermissionType.VIEW_CE;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.CREATE;
 import static software.wings.security.PermissionAttribute.Action.DELETE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
@@ -37,6 +38,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEW
 import static software.wings.security.PermissionAttribute.PermissionType.CREATE_CUSTOM_DASHBOARDS;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.HIDE_NEXTGEN_BUTTON;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_API_KEYS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
@@ -227,6 +229,8 @@ public class UserGroupPermissionsController {
         return MANAGE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return MANAGE_RESTRICTED_ACCESS;
+      case HIDE_NEXTGEN_BUTTON:
+        return HIDE_NEXTGEN_BUTTON;
 
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
@@ -253,6 +257,8 @@ public class UserGroupPermissionsController {
         return EXECUTE_PIPELINE;
       case ROLLBACK_WORKFLOW:
         return EXECUTE_WORKFLOW_ROLLBACK;
+      case ABORT_WORKFLOW:
+        return ABORT_WORKFLOW;
       default:
         log.error("Invalid Action {} given by the user", action.toString());
     }
@@ -433,6 +439,7 @@ public class UserGroupPermissionsController {
       actionsList.add(QLActions.EXECUTE_WORKFLOW);
       actionsList.add(QLActions.EXECUTE_PIPELINE);
       actionsList.add(QLActions.ROLLBACK_WORKFLOW);
+      actionsList.add(QLActions.ABORT_WORKFLOW);
     }
   }
 
@@ -609,6 +616,8 @@ public class UserGroupPermissionsController {
         return QLAccountPermissionType.CREATE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return QLAccountPermissionType.MANAGE_RESTRICTED_ACCESS;
+      case HIDE_NEXTGEN_BUTTON:
+        return QLAccountPermissionType.HIDE_NEXTGEN_BUTTON;
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
     }
@@ -634,6 +643,8 @@ public class UserGroupPermissionsController {
         return QLActions.EXECUTE_WORKFLOW;
       case EXECUTE_WORKFLOW_ROLLBACK:
         return QLActions.ROLLBACK_WORKFLOW;
+      case ABORT_WORKFLOW:
+        return QLActions.ABORT_WORKFLOW;
       default:
         log.error("Invalid Action {} given by the user", action.toString());
     }

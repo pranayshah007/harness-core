@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesync;
 
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
@@ -15,14 +16,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -43,6 +47,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.ArtifactDetails;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
@@ -53,6 +58,7 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -62,6 +68,7 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +83,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Mock AbstractInstanceSyncHandler abstractInstanceSyncHandler;
@@ -91,6 +100,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Spy @InjectMocks InstanceSyncServiceUtils instanceSyncServiceUtils;
   @InjectMocks InstanceSyncServiceImpl instanceSyncService;
   @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  @Mock private AccountClient accountClient;
 
   private final String ACCOUNT_IDENTIFIER = "acc";
   private final String PERPETUAL_TASK = "perp";
@@ -108,7 +118,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
 
   @Before
   public void setup() {
-    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
+    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), eq(true), anyBoolean(), anyLong());
   }
 
   @Test
@@ -132,6 +142,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                                     .infrastructureMapping(infrastructureMappingDTO)
                                                     .deploymentInfoDTO(deploymentInfoDTO)
                                                     .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+                                                    .serverInstanceInfoList(Collections.emptyList())
                                                     .build();
     RollbackInfo rollbackInfo = RollbackInfo.builder().build();
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
@@ -160,7 +171,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void processInstanceSyncForNewDeploymentTestWithSuccessAdd() {
+  public void processInstanceSyncForNewDeploymentTestWithSuccessAdd() throws IOException {
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .id(INFRASTRUCTURE_MAPPING_ID)
@@ -221,6 +232,8 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(
@@ -276,7 +289,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void processInstanceSyncForNewDeploymentTestWithSuccessUpdate() {
+  public void processInstanceSyncForNewDeploymentTestWithSuccessUpdate() throws IOException {
     ArtifactDetails artifactDetails = ArtifactDetails.builder().artifactId(ID).build();
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -339,6 +352,8 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(
@@ -435,5 +450,39 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     verify(instanceSyncHandlerFactoryService, times(1))
         .getInstanceSyncHandler(
             instanceSyncPerpetualTaskResponse.getDeploymentType(), InfrastructureKind.KUBERNETES_DIRECT);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void processInstanceSyncByPerpetualTaskDeleteTest() {
+    EntityNotFoundException entityNotFoundException =
+        new EntityNotFoundException("Service not found for serviceId : " + SERVICE_IDENTIFIER);
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    ServerInstanceInfo serverInstanceInfo = K8sServerInstanceInfo.builder().build();
+    InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
+        K8sInstanceSyncPerpetualTaskResponse.builder().serverInstanceDetails(Arrays.asList(serverInstanceInfo)).build();
+    InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+        InstanceSyncPerpetualTaskInfoDTO.builder().infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID).build();
+    when(instanceSyncPerpetualTaskInfoService.findByPerpetualTaskId(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
+        .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
+    when(infrastructureMappingService.getByInfrastructureMappingId(
+             instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId()))
+        .thenReturn(Optional.of(infrastructureMappingDTO));
+    when(instanceSyncHelper.fetchService(infrastructureMappingDTO)).thenThrow(entityNotFoundException);
+
+    instanceSyncService.processInstanceSyncByPerpetualTask(
+        ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncPerpetualTaskResponse);
+    verify(instanceSyncHelper, times(1)).cleanUpInstanceSyncPerpetualTaskInfo(any());
   }
 }

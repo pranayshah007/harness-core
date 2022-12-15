@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.entities.SettingsConfigurationState;
@@ -64,14 +65,16 @@ public class SettingsCreationJob {
   }
 
   private void populateDefaultConfigs(SettingsConfig settingsConfig) {
-    settingsConfig.getSettings().forEach(settingConfiguration -> {
-      if (settingConfiguration.getAllowOverrides() == null) {
-        settingConfiguration.setAllowOverrides(true);
-      }
-    });
+    if (settingsConfig.getSettings() != null) {
+      settingsConfig.getSettings().forEach(settingConfiguration -> {
+        if (settingConfiguration.getAllowOverrides() == null) {
+          settingConfiguration.setAllowOverrides(true);
+        }
+      });
+    }
   }
 
-  private void validateConfig(SettingsConfig settingsConfig) {
+  public void validateConfig(SettingsConfig settingsConfig) {
     if (null == settingsConfig) {
       throw new InvalidRequestException("Missing settings config. Check settings.yml file");
     }
@@ -126,7 +129,7 @@ public class SettingsCreationJob {
     });
     Set<SettingConfiguration> upsertedSettings = new HashSet<>(latestSettings);
     upsertedSettings.removeAll(currentSettings);
-
+    deleteSettingsAtDisallowedScopes(currentSettings, upsertedSettings);
     upsertedSettings.forEach(setting -> {
       setting.setId(settingIdMap.get(setting.getIdentifier()));
       try {
@@ -136,12 +139,26 @@ public class SettingsCreationJob {
         throw exception;
       }
     });
-    removedIdentifiers.forEach(settingsService::removeSettingFromConfiguration);
+    removedIdentifiers.forEach(settingsService::removeSetting);
     log.info("Updated the settings in the database");
 
     SettingsConfigurationState configurationState =
         optional.orElseGet(() -> SettingsConfigurationState.builder().identifier(settingsConfig.getName()).build());
     configurationState.setConfigVersion(settingsConfig.getVersion());
     configurationStateRepository.upsert(configurationState);
+  }
+
+  private void deleteSettingsAtDisallowedScopes(
+      Set<SettingConfiguration> currentSettings, Set<SettingConfiguration> upsertedSettings) {
+    Map<String, SettingConfiguration> settingConfigurationMap =
+        currentSettings.stream().collect(Collectors.toMap(SettingConfiguration::getIdentifier, setting -> setting));
+    upsertedSettings.forEach(setting -> {
+      if (settingConfigurationMap.containsKey(setting.getIdentifier())) {
+        Set<ScopeLevel> existingScopes = settingConfigurationMap.get(setting.getIdentifier()).getAllowedScopes();
+        Set<ScopeLevel> updatedScopes = setting.getAllowedScopes();
+        Set<ScopeLevel> removedScopes = Sets.difference(existingScopes, updatedScopes);
+        removedScopes.forEach(scopeLevel -> settingsService.deleteByScopeLevel(scopeLevel, setting.getIdentifier()));
+      }
+    });
   }
 }

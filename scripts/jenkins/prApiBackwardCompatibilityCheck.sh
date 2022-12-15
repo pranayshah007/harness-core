@@ -22,7 +22,7 @@ CI_MANAGER_T=0
 bazel build ${BAZEL_ARGS} -- //332-ci-manager/app:module_deploy.jar || CI_MANAGER_T=$?
 echo "BUILD CE_NEXTGEN"
 CE_NEXTGEN_T=0
-bazel build ${BAZEL_ARGS} -- //340-ce-nextgen:module_deploy.jar || CE_NEXTGEN_T=$?
+bazel build ${BAZEL_ARGS} -- //ce-nextgen/service:module_deploy.jar || CE_NEXTGEN_T=$?
 echo "BUILD PIPELINE_SERVICE"
 PIPELINE_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_T=$?
@@ -75,13 +75,13 @@ fi
 if [ $CE_NEXTGEN_T -eq 0 ]
 then
     echo "====Generating CE-NextGen Target-Branch Api Spec===="
-    java -jar bazel-bin/340-ce-nextgen/module_deploy.jar generate-openapi-spec target/340_target.json || CE_NEXTGEN_T=$?
+    java -jar bazel-bin/ce-nextgen/service/module_deploy.jar generate-openapi-spec target/340_target.json || CE_NEXTGEN_T=$?
 fi
 
 if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "====Generating Pipeline-Service Target-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
+    java -jar bazel-bin/pipeline-service/service/module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
 fi
 
 if [ $TEMPLATE_SERVICE_T -eq 0 ]
@@ -105,7 +105,7 @@ fi
 if [ $STO_MANAGER_T -eq 0 ]
 then
     echo "====Generating STO-MANAGER Target-Branch Api Spec===="
-    java -jar bazel-bin/315-sto-manager/module_deploy.jar generate-openapi-spec target/315_target.json 315-sto-manager/sto-manager-config.yml || STO_MANAGER_T=$?
+    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_target.json 315-sto-manager/config/sto-manager-config.yml || STO_MANAGER_T=$?
 fi
 
 
@@ -148,7 +148,7 @@ if [ $CE_NEXTGEN_T -eq 0 ]
 then
     echo "BUILD CE_NEXTGEN"
     CE_NEXTGEN_S=0
-    bazel build ${BAZEL_ARGS} -- //340-ce-nextgen:module_deploy.jar || CE_NEXTGEN_S=$?
+    bazel build ${BAZEL_ARGS} -- //ce-nextgen/service:module_deploy.jar || CE_NEXTGEN_S=$?
 else
     CE_NEXTGEN_S=1
 fi
@@ -234,13 +234,13 @@ fi
 if [ $CE_NEXTGEN_S -eq 0 ]
 then
     echo "====Generating CE-NextGen Source-Branch Api Spec===="
-    java -jar bazel-bin/340-ce-nextgen/module_deploy.jar generate-openapi-spec target/340_source.json || CE_NEXTGEN_S=$?
+    java -jar bazel-bin/ce-nextgen/service/module_deploy.jar generate-openapi-spec target/340_source.json || CE_NEXTGEN_S=$?
 fi
 
 if [ $PIPELINE_SERVICE_S -eq 0 ]
 then
     echo "====Generating Pipeline-Service Source-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
+    java -jar bazel-bin/pipeline-service/service/module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
 fi
 
 if [ $TEMPLATE_SERVICE_S -eq 0 ]
@@ -264,7 +264,7 @@ fi
 if [ $STO_MANAGER_S -eq 0 ]
 then
     echo "====Generating STO-Manager Source-Branch Api Spec===="
-    java -jar bazel-bin/315-sto-manager/module_deploy.jar generate-openapi-spec target/315_source.json 315-sto-manager/sto-manager-config.yml || STO_MANAGER_S=$?
+    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_source.json 315-sto-manager/config/sto-manager-config.yml || STO_MANAGER_S=$?
 fi
 
 exit_code=0
@@ -337,7 +337,7 @@ else
 fi
 
 rc=0
-echo 340-CE-NEXTGEN
+echo CE-NEXTGEN
 if [[ $CE_NEXTGEN_S -eq 0 ]] && [[ $CE_NEXTGEN_T -eq 0 ]]
 then
     java -jar $3 target/340_target.json target/340_source.json --fail-on-incompatible || rc=$?
@@ -346,15 +346,15 @@ then
         if [ $rc -eq 1 ]
         then
             exit_code=1
-            issues+="340-CE-NEXTGEN "
+            issues+="CE-NEXTGEN "
         else
-            other+="340-CE-NEXTGEN "
+            other+="CE-NEXTGEN "
         fi
     else
-        success+="340-CE-NEXTGEN "
+        success+="CE-NEXTGEN "
     fi
 else
-    comp+="340-CE-NEXTGEN "
+    comp+="CE-NEXTGEN "
 fi
 
 rc=0

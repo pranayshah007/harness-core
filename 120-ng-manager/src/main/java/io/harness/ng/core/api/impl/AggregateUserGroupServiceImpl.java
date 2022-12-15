@@ -23,6 +23,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateRespo
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
@@ -31,6 +32,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.AggregateUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.RoleAssignmentMetadataDTO;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupAggregateDTO;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -76,12 +78,7 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
     Page<UserGroup> userGroupPageResponse = userGroupService.list(
         accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType, getPageRequest(pageRequest));
 
-    List<String> userIdentifiers = userGroupPageResponse.stream()
-                                       .map(ug -> getLastNElementsReversed(ug.getUsers(), userSize))
-                                       .flatMap(List::stream)
-                                       .filter(Objects::nonNull)
-                                       .distinct()
-                                       .collect(Collectors.toList());
+    List<String> userIdentifiers = getUsersInUserGroup(userGroupPageResponse, userSize);
     Map<String, UserMetadataDTO> userMetadataMap =
         ngUserService.getUserMetadata(userIdentifiers)
             .stream()
@@ -118,6 +115,42 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
                   .of(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier())
                   .toString()
                   .toLowerCase())))
+          .users(users)
+          .lastModifiedAt(userGroup.getLastModifiedAt())
+          .build();
+    }));
+  }
+
+  @Override
+  public PageResponse<UserGroupAggregateDTO> listAggregateUserGroupsForUser(PageRequest pageRequest,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<ScopeSelector> scopeFilter,
+      String userIdentifier, String searchTerm, int userCount) {
+    if (isEmpty(scopeFilter)) {
+      scopeFilter.add(ScopeSelector.builder()
+                          .accountIdentifier(accountIdentifier)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                          .build());
+    }
+
+    Page<UserGroup> userGroupPageResponse =
+        userGroupService.list(scopeFilter, userIdentifier, searchTerm, getPageRequest(pageRequest));
+
+    List<String> userIdentifiers = getUsersInUserGroup(userGroupPageResponse, userCount);
+    Map<String, UserMetadataDTO> userMetadataMap =
+        ngUserService.getUserMetadata(userIdentifiers)
+            .stream()
+            .collect(Collectors.toMap(UserMetadataDTO::getUuid, Function.identity()));
+
+    return PageUtils.getNGPageResponse(userGroupPageResponse.map(userGroup -> {
+      List<UserMetadataDTO> users = getLastNElementsReversed(userGroup.getUsers(), userCount)
+                                        .stream()
+                                        .map(userMetadataMap::get)
+                                        .filter(Objects::nonNull)
+                                        .collect(toList());
+      return UserGroupAggregateDTO.builder()
+          .userGroupDTO(UserGroupMapper.toDTO(userGroup))
           .users(users)
           .lastModifiedAt(userGroup.getLastModifiedAt())
           .build();
@@ -200,5 +233,13 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
                        .managedRoleAssignment(roleAssignment.isManaged())
                        .build(),
                 toList())));
+  }
+  private List<String> getUsersInUserGroup(Page<UserGroup> userGroupPageResponse, int userCount) {
+    return userGroupPageResponse.stream()
+        .map(ug -> getLastNElementsReversed(ug.getUsers(), userCount))
+        .flatMap(List::stream)
+        .filter(Objects::nonNull)
+        .distinct()
+        .collect(Collectors.toList());
   }
 }

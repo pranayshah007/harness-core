@@ -37,8 +37,15 @@ ENV LC_ALL en_US.UTF-8
 ENV CC /usr/bin/gcc
 ENV CXX /usr/bin/g++
 
+ARG KUBECTL_VERSION=v1.13.2
+ARG PLATFORM=linux
+ARG HELM_VERSION=2.17.0
+ARG SONARQUBE_VERSION=4.7.0.2747
+
 ##TODO: google-cloud-cli can be removed, update pipelines for the same
-RUN yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel --nodocs --skip-broken \
+RUN yum install -y nodejs python mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel yum-utils --nodocs --skip-broken \
+    && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\
+    && yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     && git --version \
     && curl -Lo /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.7.4/bazelisk-linux-amd64 \
     && chown root:root /usr/local/bin/bazel \
@@ -47,7 +54,16 @@ RUN yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glib
     && cd / \
     && rm -rf /tmp/* \
     && yum clean all \
-    && rm -rf /var/tmp/yum-*
+    && rm -rf /var/tmp/yum-* \
+    && curl  -s -L -o kubectl https://app.harness.io/storage/harness-download/kubernetes-release/release/${KUBECTL_VERSION}/bin/${PLATFORM}/amd64/kubectl \
+    && chmod +x kubectl \
+    && mv kubectl /usr/bin \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz -O - | tar -xzO linux-amd64/helm > /usr/local/bin/helm \
+    && chmod +x /usr/local/bin/helm \
+    && wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip \
+    && unzip sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip\
+    && mv sonar-scanner-${SONARQUBE_VERSION}-linux /opt/ \
+    && rm -f sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip
 
 CMD [ "/deployments/run-java.sh" ]
 
@@ -56,7 +72,7 @@ RUN curl -O https://dl.google.com/go/go1.18.linux-amd64.tar.gz \
     && mv go/ /usr/local/ \
     && rm -rf go1.18.linux-amd64.tar.gz
 
-ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin
+ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin:/opt/sonar-scanner-${SONARQUBE_VERSION}-linux/bin
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /usr/local

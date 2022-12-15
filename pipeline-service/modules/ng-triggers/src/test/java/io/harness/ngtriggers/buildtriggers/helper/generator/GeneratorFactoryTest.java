@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.buildtriggers.helper.generator;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
@@ -19,15 +20,23 @@ import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.AMIPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.AcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.ArtifactoryRegistryPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.AzureArtifactsPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.CustomPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.DockerRegistryPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.EcrPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GARPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GCSHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GitPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GithubPackagesPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.HttpHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.JenkinsPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.Nexus2RegistryPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.Nexus3PollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.PollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.S3HelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.S3PollingItemGenerator;
@@ -56,6 +65,9 @@ public class GeneratorFactoryTest extends CategoryTest {
   private DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator;
   private ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
   private JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
+  private AMIPollingItemGenerator amiPollingItemGenerator;
+
+  private GitPollingItemGenerator gitPollingItemGenerator;
   private GeneratorFactory generatorFactory;
   @InjectMocks private NGTriggerElementMapper ngTriggerElementMapper;
   private ClassLoader classLoader;
@@ -72,14 +84,27 @@ public class GeneratorFactoryTest extends CategoryTest {
     EcrPollingItemGenerator ecrPollingItemGenerator = new EcrPollingItemGenerator(buildTriggerHelper);
     DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator =
         new DockerRegistryPollingItemGenerator(buildTriggerHelper);
+    GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator =
+        new GithubPackagesPollingItemGenerator(buildTriggerHelper);
     JenkinsPollingItemGenerator jenkinsPollingItemGenerator = new JenkinsPollingItemGenerator(buildTriggerHelper);
     AcrPollingItemGenerator acrPollingItemGenerator = new AcrPollingItemGenerator(buildTriggerHelper);
+    CustomPollingItemGenerator customPollingItemGenerator = new CustomPollingItemGenerator(buildTriggerHelper);
     ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator =
         new ArtifactoryRegistryPollingItemGenerator(buildTriggerHelper);
+    GARPollingItemGenerator garPollingItemGenerator = new GARPollingItemGenerator(buildTriggerHelper);
+    Nexus2RegistryPollingItemGenerator nexus2RegistryPollingItemGenerator =
+        new Nexus2RegistryPollingItemGenerator(buildTriggerHelper);
+    Nexus3PollingItemGenerator nexus3PollingItemGenerator = new Nexus3PollingItemGenerator(buildTriggerHelper);
+    AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator =
+        new AzureArtifactsPollingItemGenerator(buildTriggerHelper);
+    AMIPollingItemGenerator amiPollingItemGenerator = new AMIPollingItemGenerator(buildTriggerHelper);
     generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
         s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
         ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
-        acrPollingItemGenerator, jenkinsPollingItemGenerator);
+        acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator, customPollingItemGenerator,
+        garPollingItemGenerator, githubPackagesPollingItemGenerator, nexus2RegistryPollingItemGenerator,
+        nexus3PollingItemGenerator, azureArtifactsPollingItemGenerator, amiPollingItemGenerator);
+
     classLoader = getClass().getClassLoader();
   }
 
@@ -129,7 +154,7 @@ public class GeneratorFactoryTest extends CategoryTest {
     String ngTriggerYaml_artifact_ecr =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(triggerYmlPath)), StandardCharsets.UTF_8);
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_ecr);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_ecr, false);
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
         triggerDetails, ecr_pipeline_artifact_snippet_runtime_all);
     PollingItemGenerator pollingItemGenerator = generatorFactory.retrievePollingItemGenerator(buildTriggerOpsData);

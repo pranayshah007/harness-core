@@ -90,8 +90,16 @@ public class ParameterDocumentFieldMapper {
     }
 
     if (!cls.isAssignableFrom(parameterFieldValueWrapper.getValue().getClass())) {
-      log.error(String.format("Expected value of type: %s, got: %s", cls.getSimpleName(),
-          parameterFieldValueWrapper.getValue().getClass().getSimpleName()));
+      /* There could be a case where parameterFieldValueWrapper.getValue() returns a String and cls is an Enum,
+         We need to check if enum class has any field with the given value. No error should be thrown in that case.
+         Apart from this case, the code will continue behaving as it was.
+       */
+      try {
+        cls.getField((String) parameterFieldValueWrapper.getValue());
+      } catch (Exception e) {
+        log.error(String.format("Expected value of type: %s, got: %s", cls.getSimpleName(),
+            parameterFieldValueWrapper.getValue().getClass().getSimpleName()));
+      }
     }
   }
 

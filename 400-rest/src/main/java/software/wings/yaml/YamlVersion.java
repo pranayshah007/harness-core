@@ -10,6 +10,8 @@ package software.wings.yaml;
 import static software.wings.yaml.YamlVersion.Builder.aYamlVersion;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 
@@ -22,6 +24,7 @@ import org.mongodb.morphia.annotations.Entity;
 /**
  * Created by bsollish on 8/30/17
  */
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "yamlVersion", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "YamlVersionKeys")

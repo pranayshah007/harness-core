@@ -16,8 +16,8 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
@@ -61,8 +61,8 @@ public class ScmPushTask extends AbstractDelegateRunnableTask {
             scmServiceClient.createNewBranch(scmPushTaskParams.getScmConnector(),
                 scmPushTaskParams.getGitFileDetails().getBranch(), scmPushTaskParams.getBaseBranch(), scmBlockingStub);
           }
-          return scmServiceClient.createFile(
-              scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(), scmBlockingStub);
+          return scmServiceClient.createFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
+              scmBlockingStub, scmPushTaskParams.isUseGitClient());
         });
         return ScmPushTaskResponseData.builder()
             .createFileResponse(createFileResponse.toByteArray())
@@ -85,8 +85,8 @@ public class ScmPushTask extends AbstractDelegateRunnableTask {
             scmServiceClient.createNewBranch(scmPushTaskParams.getScmConnector(),
                 scmPushTaskParams.getGitFileDetails().getBranch(), scmPushTaskParams.getBaseBranch(), scmBlockingStub);
           }
-          return scmServiceClient.updateFile(
-              scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(), scmBlockingStub);
+          return scmServiceClient.updateFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
+              scmBlockingStub, scmPushTaskParams.isUseGitClient());
         });
         return ScmPushTaskResponseData.builder()
             .updateFileResponse(updateFileResponse.toByteArray())
@@ -96,7 +96,7 @@ public class ScmPushTask extends AbstractDelegateRunnableTask {
       case ADD_V2:
         CreateFileResponse createFileResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.createFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
-                SCMGrpc.newBlockingStub(c)));
+                SCMGrpc.newBlockingStub(c), scmPushTaskParams.isUseGitClient()));
         return ScmPushTaskResponseData.builder()
             .createFileResponse(createFileResponse.toByteArray())
             .changeType(scmPushTaskParams.getChangeType())
@@ -104,7 +104,7 @@ public class ScmPushTask extends AbstractDelegateRunnableTask {
       case UPDATE_V2:
         UpdateFileResponse updateFileResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.updateFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
-                SCMGrpc.newBlockingStub(c)));
+                SCMGrpc.newBlockingStub(c), scmPushTaskParams.isUseGitClient()));
         return ScmPushTaskResponseData.builder()
             .updateFileResponse(updateFileResponse.toByteArray())
             .changeType(scmPushTaskParams.getChangeType())

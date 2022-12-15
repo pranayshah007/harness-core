@@ -8,8 +8,10 @@
 package io.harness.cdng.artifact.resources.artifactory.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
@@ -23,11 +25,13 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
@@ -36,7 +40,9 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
+import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -389,5 +395,39 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.VALIDATE_ARTIFACT_SERVER);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetImagePaths() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    List<ArtifactoryImagePath> imagePaths = new ArrayList<>();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ArtifactoryFetchImagePathResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .artifactoryImagePathsFetchDTO(imagePaths)
+                        .build());
+
+    ArtifactoryImagePathsDTO artifactoryResponseDTO = artifactoryResourceService.getImagePaths(
+        "docker", identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "repository");
+    assertThat(artifactoryResponseDTO).isNotNull();
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
+    ArtifactoryTaskParams artifactTaskParameters = (ArtifactoryTaskParams) delegateTaskRequest.getTaskParameters();
+    assertThat(artifactTaskParameters.getTaskType()).isEqualTo(FETCH_IMAGE_PATHS);
   }
 }

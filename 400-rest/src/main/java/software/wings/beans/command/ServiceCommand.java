@@ -11,10 +11,12 @@ import static software.wings.beans.EntityVersion.Builder.anEntityVersion;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.beans.EntityVersion;
@@ -38,6 +40,7 @@ import org.mongodb.morphia.annotations.Transient;
 /**
  * Created by peeyushaggarwal on 11/16/16.
  */
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serviceCommands", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ServiceCommandKeys")

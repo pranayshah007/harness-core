@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
@@ -70,6 +71,12 @@ public class NGMigrationTestRule implements InjectorRuleMixin, MethodRule, Mongo
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

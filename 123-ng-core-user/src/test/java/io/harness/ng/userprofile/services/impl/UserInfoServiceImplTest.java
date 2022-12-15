@@ -19,6 +19,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,18 +53,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SourcePrincipalContextBuilder.class})
 public class UserInfoServiceImplTest extends CategoryTest {
   private UserClient userClient;
   private NgUserService ngUserService;
@@ -94,14 +89,14 @@ public class UserInfoServiceImplTest extends CategoryTest {
         UserInfo.builder().uuid(randomAlphabetic(20)).name("abc").email("abc@harness.io").build();
     userInfoWithDiffNameAndEmailAndUuid =
         UserInfo.builder().uuid(randomAlphabetic(20)).name("abcx").email("abc@harness.io").build();
-    serviceAccountPrincipal = new ServiceAccountPrincipal("SA_ABC", "saabc@harness.io", "sa_abc");
+    serviceAccountPrincipal = new ServiceAccountPrincipal("SA_ABC", "saabc@harness.io", "sa_abc", "sa_accountId");
   }
 
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenUserTypeAndUserInfoMailNotPresent() throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(userPrincipal);
 
     RestResponse<Optional<UserInfo>> restResponse =
@@ -123,7 +118,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenUserTypeAndUserInfoMailNotEqualTargetUserEmail() {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(userPrincipal);
 
     try {
@@ -139,7 +134,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenUserTypeAndUserInfoMailEqualsTargetUserEmail() throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(userPrincipal);
 
     RestResponse<Optional<UserInfo>> restResponse =
@@ -161,7 +156,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenServiceAccountTypeAndAccountIdNotPresent() throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
 
     RestResponse<Optional<UserInfo>> restResponse =
@@ -186,7 +181,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenServiceAccountTypeAndTargetEmailIdNotPresent() {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
 
     try {
@@ -204,7 +199,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateWhenServiceAccountTypeAndTargetEmailIdNotPresentAndAccountIdNotPresent() {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
 
     try {
@@ -223,7 +218,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateWhenServiceAccountTypeAndTargetEmailIdPresentAndAccountIdPresentAndUserDne()
       throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
 
     RestResponse<Optional<UserInfo>> restResponse = new RestResponse<>(Optional.ofNullable(null));
@@ -249,7 +244,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   public void
   testUpdateWhenServiceAccountTypeAndTargetEmailIdPresentAndAccountIdPresentAndUserExistButNotPartOfAccount()
       throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
 
     RestResponse<Optional<UserInfo>> restResponse =
@@ -284,7 +279,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   public void
   testUpdateWhenServiceAccountTypeAndTargetEmailIdPresentAndAccountIdPresentAndUserExistAndPartOfAccountButAccessNot()
       throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
     String accountIdentifier = randomAlphabetic(10);
 
@@ -331,7 +326,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
   public void
   testUpdateWhenServiceAccountTypeAndTargetEmailIdPresentAndAccountIdPresentAndUserExistAndPartOfAccountAndAccess()
       throws IOException {
-    PowerMockito.mockStatic(SourcePrincipalContextBuilder.class);
+    mockStatic(SourcePrincipalContextBuilder.class);
     when(SourcePrincipalContextBuilder.getSourcePrincipal()).thenReturn(serviceAccountPrincipal);
     String accountIdentifier = randomAlphabetic(10);
 

@@ -23,9 +23,11 @@ import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
 import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
+import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.repository.Repository;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -110,6 +113,14 @@ public class RunTimeInputHandler {
       return null;
     } else {
       return TIBuildTool.fromString(buildTool.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public static String resolveSplitStrategy(ParameterField<TISplitStrategy> splitStrategy) {
+    if (splitStrategy == null || splitStrategy.isExpression() || splitStrategy.getValue() == null) {
+      return null;
+    } else {
+      return TISplitStrategy.fromString(splitStrategy.fetchFinalValue().toString()).getYamlName();
     }
   }
 
@@ -233,8 +244,11 @@ public class RunTimeInputHandler {
         return defaultValue;
       }
     }
-
-    return (String) parameterField.fetchFinalValue();
+    String finalVal = (String) parameterField.fetchFinalValue();
+    if (finalVal == null) {
+      finalVal = "";
+    }
+    return finalVal;
   }
 
   public static Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,
@@ -348,5 +362,13 @@ public class RunTimeInputHandler {
     }
 
     return parameterField.getValue();
+  }
+
+  public static Optional<Repository> resolveRepository(ParameterField<Repository> repository) {
+    if (repository == null || repository.isExpression() || repository.getValue() == null) {
+      return Optional.empty();
+    } else {
+      return Optional.of(repository.getValue());
+    }
   }
 }

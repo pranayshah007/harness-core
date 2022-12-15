@@ -45,9 +45,9 @@ public class ResourceTypeConstants {
   public static final String VARIABLE = "VARIABLE";
   public static final String CHAOS_HUB = "CHAOS_HUB";
   public static final String MONITORED_SERVICE = "MONITORED_SERVICE";
-  public static final String CHAOS_AGENT = "CHAOS_AGENT";
-  public static final String CHAOS_GITOPS = "CHAOS_GITOPS";
-  public static final String CHAOS_WORKFLOW = "CHAOS_WORKFLOW";
+  public static final String CHAOS_INFRASTRUCTURE = "CHAOS_INFRASTRUCTURE";
+  public static final String CHAOS_EXPERIMENT = "CHAOS_EXPERIMENT";
+  public static final String CHAOS_GAMEDAY = "CHAOS_GAMEDAY";
   public static final String SERVICE_LEVEL_OBJECTIVE = "SERVICE_LEVEL_OBJECTIVE";
   public static final String STO_TARGET = "STO_TARGET";
   public static final String STO_EXEMPTION = "STO_EXEMPTION";
@@ -61,4 +61,8 @@ public class ResourceTypeConstants {
   public static final String AUTOSTOPPING_LB = "AUTOSTOPPING_LB";
   public static final String AUTOSTOPPING_STARTSTOP = "AUTOSTOPPING_STARTSTOP";
   public static final String SETTING = "SETTING";
+  public static final String NG_LOGIN_SETTINGS = "NG_LOGIN_SETTINGS";
+  public static final String CLOUD_ASSET_GOVERNANCE_RULE = "CLOUD_ASSET_GOVERNANCE_RULE";
+  public static final String CLOUD_ASSET_GOVERNANCE_RULE_SET = "CLOUD_ASSET_GOVERNANCE_RULE_SET";
+  public static final String CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT = "CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT";
 }

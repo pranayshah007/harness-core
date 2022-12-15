@@ -21,8 +21,8 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
@@ -110,7 +110,7 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       // push case
       CompareCommitsResponse compareCommitsResponse = scmDelegateClient.processScmRequest(c
           -> scmServiceClient.compareCommits(
-              connector, params.getLatestCommit(), params.getPreviousCommit(), SCMGrpc.newBlockingStub(c)));
+              connector, params.getPreviousCommit(), params.getLatestCommit(), SCMGrpc.newBlockingStub(c)));
 
       Set<String> filepaths = emptySet();
       if (compareCommitsResponse.getFilesCount() > 0) {

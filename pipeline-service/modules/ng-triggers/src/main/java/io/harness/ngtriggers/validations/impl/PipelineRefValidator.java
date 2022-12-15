@@ -32,7 +32,7 @@ public class PipelineRefValidator implements TriggerValidator {
   public ValidationResult validate(TriggerDetails triggerDetails) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
-    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(ngTriggerEntity);
+    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
 
     if (!pipelineYmlOptional.isPresent()) {
       String ref = new StringBuilder(128)

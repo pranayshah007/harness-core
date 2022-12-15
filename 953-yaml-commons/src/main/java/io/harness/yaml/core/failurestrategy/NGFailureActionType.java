@@ -25,8 +25,12 @@ public enum NGFailureActionType {
   STAGE_ROLLBACK(NGFailureActionTypeConstants.STAGE_ROLLBACK),
   @JsonProperty(NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK)
   STEP_GROUP_ROLLBACK(NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK),
+  @JsonProperty(NGFailureActionTypeConstants.PIPELINE_ROLLBACK)
+  PIPELINE_ROLLBACK(NGFailureActionTypeConstants.PIPELINE_ROLLBACK),
   @JsonProperty(NGFailureActionTypeConstants.MANUAL_INTERVENTION)
-  MANUAL_INTERVENTION(NGFailureActionTypeConstants.MANUAL_INTERVENTION);
+  MANUAL_INTERVENTION(NGFailureActionTypeConstants.MANUAL_INTERVENTION),
+  @JsonProperty(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES)
+  PROCEED_WITH_DEFAULT_VALUES(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES);
 
   String yamlName;
 

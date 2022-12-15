@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -35,9 +36,14 @@ import io.harness.rule.Owner;
 import io.harness.service.ScmServiceClient;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -239,5 +245,36 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
 
     File file = new File("manifests/test/test2/path.txt");
     assertThat(file.exists()).isTrue();
+  }
+
+  @Test
+  @SneakyThrows(IOException.class)
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testShouldDownloadFilesUsingScmByFilepathWithLeadingSlash() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    LogCallback logCallback = mock(NGDelegateLogCallback.class);
+    String encodedValue = Base64.getEncoder().encodeToString("content: abc".getBytes(StandardCharsets.UTF_8));
+    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
+                                                        .paths(Collections.singletonList("/test/templates"))
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .branch("main")
+                                                        .build();
+    when(scmDelegateClient.processScmRequest(any()))
+        .thenReturn(FileContentBatchResponse.builder()
+                        .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                                      .addFileContents(FileContent.newBuilder()
+                                                                           .setStatus(200)
+                                                                           .setContent(encodedValue)
+                                                                           .setPath("test/templates/deployment.yaml")
+                                                                           .build())
+                                                      .build())
+                        .build());
+
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+
+    File file = new File("manifests/deployment.yaml");
+    assertThat(file.exists()).isTrue();
+    assertThat(FileUtils.readFileToString(file, StandardCharsets.UTF_8)).isEqualTo("content: abc");
   }
 }

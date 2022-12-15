@@ -29,6 +29,7 @@ public class EcsResizeParams extends ContainerResizeParams {
   private boolean previousEcsAutoScalarsAlreadyRemoved;
   private boolean isLastDeployPhase;
   private boolean ecsAutoscalarRedesignEnabled;
+  private boolean isFFMaxDesiredCountEnabled;
 
   public static final class EcsResizeParamsBuilder {
     private String region;
@@ -55,11 +56,17 @@ public class EcsResizeParams extends ContainerResizeParams {
     private boolean previousEcsAutoScalarsAlreadyRemoved;
     private boolean isLastDeployPhase;
     private boolean ecsAutoscalarRedesignEnabled;
+    private boolean isFFMaxDesiredCountEnabled;
 
     private EcsResizeParamsBuilder() {}
 
     public static EcsResizeParamsBuilder anEcsResizeParams() {
       return new EcsResizeParamsBuilder();
+    }
+
+    public EcsResizeParamsBuilder withFFMaxDesiredCountEnabled(boolean isFFMaxDesiredCountEnabled) {
+      this.isFFMaxDesiredCountEnabled = isFFMaxDesiredCountEnabled;
+      return this;
     }
 
     public EcsResizeParamsBuilder withIsLastDeployPhase(boolean isLastDeployPhase) {
@@ -210,7 +217,8 @@ public class EcsResizeParams extends ContainerResizeParams {
           .withAwsAutoScalarConfigForNewService(awsAutoScalarConfigForNewService)
           .withPreviousEcsAutoScalarsAlreadyRemoved(previousEcsAutoScalarsAlreadyRemoved)
           .withIsLastDeployPhase(isLastDeployPhase)
-          .withEcsAutoscalarRedesignEnabled(ecsAutoscalarRedesignEnabled);
+          .withEcsAutoscalarRedesignEnabled(ecsAutoscalarRedesignEnabled)
+          .withFFMaxDesiredCountEnabled(isFFMaxDesiredCountEnabled);
     }
 
     public EcsResizeParams build() {
@@ -239,6 +247,7 @@ public class EcsResizeParams extends ContainerResizeParams {
       ecsResizeParams.setPreviousEcsAutoScalarsAlreadyRemoved(previousEcsAutoScalarsAlreadyRemoved);
       ecsResizeParams.setLastDeployPhase(isLastDeployPhase);
       ecsResizeParams.setEcsAutoscalarRedesignEnabled(ecsAutoscalarRedesignEnabled);
+      ecsResizeParams.setFFMaxDesiredCountEnabled(isFFMaxDesiredCountEnabled);
       return ecsResizeParams;
     }
   }

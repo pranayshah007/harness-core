@@ -44,7 +44,6 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.graphql.datafetcher.MutationContext;
@@ -66,6 +65,7 @@ import software.wings.graphql.schema.type.QLExecuteOptions;
 import software.wings.graphql.schema.type.QLExecutedByAPIKey;
 import software.wings.graphql.schema.type.QLExecutedByTrigger;
 import software.wings.graphql.schema.type.QLExecutedByUser;
+import software.wings.graphql.schema.type.QLInputVariable;
 import software.wings.graphql.schema.type.QLPipelineExecution;
 import software.wings.graphql.schema.type.QLPipelineExecution.QLPipelineExecutionBuilder;
 import software.wings.graphql.schema.type.QLPipelineStageExecution;
@@ -75,6 +75,7 @@ import software.wings.graphql.schema.type.QLWorkflowStageExecution.QLWorkflowSta
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
@@ -251,7 +252,14 @@ public class PipelineExecutionController {
           log.warn("Exception was thrown try to fetch runtime variables for a paused pipeline stage", e);
         }
       }
+
+      List<QLInputVariable> inputVariables = new ArrayList<>();
+      if (isNotEmpty(execution.getWorkflowExecutions())) {
+        VariableController.populateInputVariables(inputVariables, execution.getWorkflowExecutions().get(0));
+      }
+
       return builder.pipelineStageElementId(execution.getPipelineStageElementId())
+          .inputVariables(inputVariables)
           .pipelineStageName(element.getProperties().get("stageName").toString())
           .pipelineStepName(element.getName())
           .status(ExecutionController.convertStatus(execution.getStatus()))

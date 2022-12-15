@@ -1,0 +1,31 @@
+Import-Module WebAdministration
+
+                                    $siteName="Default Web Site"
+                                    $releaseId="$env:ReleaseNo"
+                                    $virtualDirectoryName="<+service.name>"
+                                    $appPhysicalDirectory="$env:AppPhysicalDirectory" + "\Artifacts\" + $virtualDirectoryName + "\release-" + $releaseId
+      
+                                      # Copy configs to application directory
+                                    $userProfile = "$env:userprofile"
+                                    $targetPath="$userProfile\\<+service.name>\\<+env.name>\\runtime"
+                                    if(!(Test-Path "$targetPath"))
+                                    {
+                                      New-Item -ItemType Directory -Path "$targetPath"
+                                      Write-Host "$targetPath Folder Created Successfully."
+                                    }
+                                    else
+                                    {
+                                      Write-Host "$targetPath Folder already exists."
+                                    }
+                                    Copy-Item -Path "$targetPath\\*.config" -Destination $appPhysicalDirectory -Force
+      
+                                    Write-Host "Creating Virtual Directory" $virtualDirectoryName ".."
+                                    $VirtualDirPath = 'IIS:\Sites\' + $siteName + '\' + $virtualDirectoryName
+                                    if(Test-Path "$VirtualDirPath")
+                                    {
+                                      New-Item -Path $VirtualDirPath -Type VirtualDirectory -PhysicalPath $appPhysicalDirectory -Force
+                                    } else {
+                                      Write-Host "Virtual dir not found:" $VirtualDirPath
+                                    }                              
+      
+                                    Write-Host "Done."

@@ -113,20 +113,6 @@ public class GitAwareContextHelperTest extends CategoryTest {
     assertThat(GitAwareContextHelper.getFilepathInRequest()).isEqualTo(FilePath);
   }
 
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetWorkingBranch() {
-    String entityRepoURL = "https://github.com/wings-software/mohit-git-sync-local";
-    GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
-    setupGitContext(branchInfo);
-    assertThat(GitAwareContextHelper.getWorkingBranch(entityRepoURL)).isEqualTo(BranchName);
-    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoURL(entityRepoURL).build();
-    setupGitContext(branchInfo);
-    assertThat(GitAwareContextHelper.getWorkingBranch("random repo url")).isEqualTo("");
-    assertThat(GitAwareContextHelper.getWorkingBranch(entityRepoURL)).isEqualTo(BranchName);
-  }
-
   private void setupGitContext(GitEntityInfo branchInfo) {
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());

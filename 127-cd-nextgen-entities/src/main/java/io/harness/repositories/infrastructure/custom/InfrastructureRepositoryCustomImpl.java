@@ -12,9 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
 import lombok.AccessLevel;
@@ -22,7 +24,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -133,12 +134,37 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
     return mongoTemplate.find(query, InfrastructureEntity.class);
   }
 
+  @Override
+  public List<InfrastructureEntity> findAllFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier);
+
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.find(query, InfrastructureEntity.class);
+  }
+
+  @Override
+  public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifierList, Update update) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier)
+                                .and(InfrastructureEntityKeys.envIdentifier)
+                                .is(envIdentifier)
+                                .and(InfrastructureEntityKeys.identifier)
+                                .in(infraIdentifierList);
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.updateMulti(query, update, InfrastructureEntity.class);
+  }
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return new RetryPolicy<>()
-        .handle(OptimisticLockingFailureException.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 }

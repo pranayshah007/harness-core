@@ -25,6 +25,7 @@ import io.harness.rule.LifecycleRule;
 import io.harness.rule.Owner;
 import io.harness.sto.beans.entities.STOServiceConfig;
 
+import com.google.gson.JsonObject;
 import java.io.IOException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,9 +48,11 @@ public class STOServiceUtilsTest extends CategoryTest implements MockableTestMix
     String baseUrl = "http://localhost:4000";
     String accountID = "account";
     String globalToken = "token";
+    JsonObject stoServiceTokenResponse = new JsonObject();
+    stoServiceTokenResponse.addProperty("token", "sto-token");
     String stoServiceToken = "sto-token";
-    Call<String> stoServiceTokenCall = mock(Call.class);
-    when(stoServiceTokenCall.execute()).thenReturn(Response.success(stoServiceToken));
+    Call<JsonObject> stoServiceTokenCall = mock(Call.class);
+    when(stoServiceTokenCall.execute()).thenReturn(Response.success(stoServiceTokenResponse));
     when(stoServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(stoServiceTokenCall);
     STOServiceConfig stoServiceConfig = STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
     STOServiceUtils stoServiceUtils = new STOServiceUtils(stoServiceClient, stoServiceConfig);
@@ -67,7 +70,7 @@ public class STOServiceUtilsTest extends CategoryTest implements MockableTestMix
     String baseUrl = "http://localhost:4000";
     String accountID = "account";
     String globalToken = "token";
-    Call<String> stoServiceTokenCall = mock(Call.class);
+    Call<JsonObject> stoServiceTokenCall = mock(Call.class);
     when(stoServiceTokenCall.execute()).thenThrow(new IOException("Got error while trying to process!"));
     when(stoServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(stoServiceTokenCall);
     STOServiceConfig stoServiceConfig = STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();

@@ -13,7 +13,7 @@ public enum PluginField {
   ADDON("addonTag"),
   LITE_ENGINE("liteEngineTag"),
   GIT_CLONE("gitCloneTag"),
-  BUILD_PUSH_DOCKER_REGISTRY("buildAndPushDockerRegistry"),
+  BUILD_PUSH_DOCKER_REGISTRY("buildAndPushDockerRegistryTag"),
   BUILD_PUSH_ECR("buildAndPushECRTag"),
   BUILD_PUSH_GCR("buildAndPushGCRTag"),
   BUILD_PUSH_ACR("buildAndPushACRTag"),

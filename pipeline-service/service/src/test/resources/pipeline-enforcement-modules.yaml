@@ -1,0 +1,55 @@
+pipeline:
+  name: Xpto
+  identifier: Xpto
+  projectIdentifier: NGPipeAutoDemoProwfL3efERVI
+  orgIdentifier: Ng_Pipelines_K8s_Organisations
+  tags: {}
+  stages:
+    - stage:
+        name: Approval
+        identifier: Approval
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Procced
+                  identifier: Procced
+                  type: HarnessApproval
+                  timeout: 1d
+                  spec:
+                    approvalMessage: |-
+                      Please review the following information
+                      and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups:
+                        - account.NGPipeAutoSlackNotifygJEopurBfq
+                    approverInputs: []
+        tags: {}
+    - stage:
+        name: Custom
+        identifier: Custom
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Ping
+                  identifier: Ping
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Ping"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+        tags: {}

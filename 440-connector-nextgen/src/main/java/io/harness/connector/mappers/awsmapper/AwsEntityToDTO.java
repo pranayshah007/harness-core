@@ -46,7 +46,9 @@ public class AwsEntityToDTO implements ConnectorEntityToDTOMapper<AwsConnectorDT
         throw new InvalidRequestException("Invalid Credential type.");
     }
     return AwsConnectorDTO.builder()
-        .credential(awsCredentialDTOBuilder.crossAccountAccess(connector.getCrossAccountAccess()).build())
+        .credential(awsCredentialDTOBuilder.crossAccountAccess(connector.getCrossAccountAccess())
+                        .testRegion(connector.getTestRegion())
+                        .build())
         .delegateSelectors(connector.getDelegateSelectors())
         .build();
   }

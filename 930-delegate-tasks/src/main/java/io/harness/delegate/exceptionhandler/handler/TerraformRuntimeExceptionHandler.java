@@ -32,7 +32,9 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hin
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAIL_TO_INSTALL_PROVIDER;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_INVALID_CREDENTIALS_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_INVALID_CRED_FOR_S3_BACKEND;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.GENERIC_NO_TERRAFORM_ERROR;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_ERROR_INSPECTING_STATE_IN_BACKEND;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_ERROR_TOO_LONG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_INVALID_CREDENTIALS_AWS;
 
@@ -46,6 +48,7 @@ import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.runtime.TerraformCliRuntimeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -68,6 +71,7 @@ public class TerraformRuntimeExceptionHandler implements ExceptionHandler {
   private static final Pattern ERROR_LOCATION_LINE_BLOCK_PATTERN =
       Pattern.compile("on\\s(.+?)\\sline\\s(\\d+),\\sin\\s(.+?):\\s+\\d+:(.*)");
   private static final Pattern ERROR_ARGUMENT_PATTERN = Pattern.compile(".+?\\s\".+?\"");
+  private static final int ERROR_MAX_CHARACTERS_LIMIT = 512;
 
   public static Set<Class<? extends Exception>> exceptions() {
     return ImmutableSet.<Class<? extends Exception>>builder().add(TerraformCliRuntimeException.class).build();
@@ -134,11 +138,12 @@ public class TerraformRuntimeExceptionHandler implements ExceptionHandler {
     }
 
     if (hints.isEmpty() && explanations.isEmpty()) {
-      return new TerraformCommandExecutionException(
-          cleanError(cliRuntimeException.getCliError()), WingsException.USER_SRE);
+      return ExceptionMessageSanitizer.sanitizeException(new TerraformCommandExecutionException(
+          cleanError(cliRuntimeException.getCliError()), WingsException.USER_SRE));
     }
 
-    return getFinalException(explanations, hints, structuredErrors, cliRuntimeException);
+    return ExceptionMessageSanitizer.sanitizeException(
+        getFinalException(explanations, hints, structuredErrors, cliRuntimeException));
   }
 
   private void handleConfigDirectoryNotExistError(
@@ -266,7 +271,19 @@ public class TerraformRuntimeExceptionHandler implements ExceptionHandler {
   }
 
   private String cleanError(String error) {
-    return error.replaceAll("\\[\\d{1,3}m", "");
+    if (isEmpty(error.trim())) {
+      return GENERIC_NO_TERRAFORM_ERROR;
+    }
+
+    return getMessageWithLimit(error.replaceAll("\\[\\d{1,3}m|│|╵|╷", ""));
+  }
+
+  private String getMessageWithLimit(String message) {
+    if (message.length() > ERROR_MAX_CHARACTERS_LIMIT) {
+      return message.substring(0, ERROR_MAX_CHARACTERS_LIMIT) + "... (" + MESSAGE_ERROR_TOO_LONG + ")";
+    }
+
+    return message;
   }
 
   @VisibleForTesting

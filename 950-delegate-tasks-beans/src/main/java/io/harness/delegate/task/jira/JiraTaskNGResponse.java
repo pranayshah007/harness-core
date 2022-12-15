@@ -41,6 +41,7 @@ public class JiraTaskNGResponse implements DelegateTaskNotifyResponseData {
   JiraIssueNG issue;
   JiraIssueCreateMetadataNG issueCreateMetadata;
   JiraIssueUpdateMetadataNG issueUpdateMetadata;
+  JiraSearchUserData jiraSearchUserData;
 
   DelegateMetaInfo delegateMetaInfo;
 }

@@ -10,7 +10,6 @@ package software.wings.service.intfc;
 import static io.harness.annotations.dev.HarnessModule._945_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.account.ProvisionStep;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
@@ -24,6 +23,7 @@ import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
@@ -44,6 +44,7 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
+import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -99,13 +100,7 @@ public interface AccountService {
 
   Optional<String> getAccountType(String accountId);
 
-  String generateSampleDelegate(String accountId);
-
   boolean isPaidAccount(String accountId);
-
-  boolean sampleDelegateExists(String accountId);
-
-  List<ProvisionStep> sampleDelegateProgress(String accountId);
 
   /**
    * List.
@@ -115,7 +110,7 @@ public interface AccountService {
    */
   List<Account> list(@NotNull PageRequest<Account> request);
 
-  List<Account> listAccounts(Set<String> excludedAccountIds);
+  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
@@ -123,13 +118,15 @@ public interface AccountService {
 
   String getAccountPrimaryDelegateVersion(String accountId);
 
-  List<Account> listAllAccounts();
-
   List<Account> listAllAccountsWithoutTheGlobalAccount();
 
   List<Account> listAllActiveAccounts();
 
-  List<Account> listAllAccountWithDefaultsWithoutLicenseInfo();
+  List<Account> getAccountsWithBasicInfo(boolean includeLicenseInfo);
+
+  Query<Account> getBasicAccountQuery();
+
+  Query<Account> getBasicAccountWithLicenseInfoQuery();
 
   PageResponse<Account> getAccounts(PageRequest<Account> pageRequest);
 
@@ -148,6 +145,8 @@ public interface AccountService {
   boolean setAuthenticationMechanism(String accountId, AuthenticationMechanism authenticationMechanism);
 
   boolean isFeatureFlagEnabled(String featureName, String accountId);
+
+  Set<String> getFeatureFlagEnabledAccountIds(String featureName);
 
   PageResponse<CVEnabledService> getServices(
       String accountId, User user, PageRequest<String> request, String serviceId);
@@ -200,11 +199,6 @@ public interface AccountService {
   boolean isSSOEnabled(Account account);
 
   /**
-   * Validates subdomain URL
-   */
-  boolean validateSubdomainUrl(SubdomainUrl subdomainUrl);
-
-  /**
    * Set subdomainUrl of Account
    */
   void setSubdomainUrl(Account account, SubdomainUrl subdomainUrl);
@@ -249,13 +243,21 @@ public interface AccountService {
 
   boolean disableHarnessUserGroupAccess(String accountId);
 
-  boolean isRestrictedAccessEnabled(String accountId);
+  boolean isHarnessSupportAccessDisabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
+
+  boolean isPLNoEmailForSamlAccountInvitesEnabled(String accountId);
 
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
+
+  boolean isImmutableDelegateEnabled(String accountId);
+
+  boolean doMultipleAccountsExist();
+
+  List<AccountDTO> getAllAccounts();
 }

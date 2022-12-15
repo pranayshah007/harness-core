@@ -10,6 +10,7 @@ package io.harness.ng.core.service.services.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
@@ -22,10 +23,13 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.io.Resources;
@@ -34,6 +38,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -44,12 +50,16 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
   @Inject private SimpleVisitorFactory visitorFactory;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Inject private SetupUsageHelper setupUsageHelper;
+  @Inject private TemplateResourceClient templateResourceClient;
   @Mock private Producer producer;
   @InjectMocks private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
 
@@ -58,6 +68,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     MockitoAnnotations.openMocks(this);
     Reflect.on(entitySetupUsageHelper).set("simpleVisitorFactory", visitorFactory);
     Reflect.on(entitySetupUsageHelper).set("setupUsageHelper", setupUsageHelper);
+    Reflect.on(entitySetupUsageHelper).set("templateResourceClient", templateResourceClient);
     Reflect.on(setupUsageHelper).set("producer", producer);
   }
 
@@ -76,7 +87,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                .build();
     entitySetupUsageHelper.updateSetupUsages(entity);
 
-    verify(producer, times(EntityTypeProtoEnum.values().length)).send(msgCaptor.capture());
+    verify(producer, times(1)).send(msgCaptor.capture());
 
     Message value = msgCaptor.getValue();
     EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
@@ -97,7 +108,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
-    assertThat(metadataMap.get("referredEntityType")).isNotNull();
+    assertThat(metadataMap.get("referredEntityType")).isNull();
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
   }
 
@@ -109,8 +120,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     String serviceYaml = readFile("service/serviceWith3ConnectorReferences.yaml");
     ServiceEntity entity = ServiceEntity.builder()
-                               .identifier("id")
-                               .name("my-service")
+                               .identifier("newservice")
+                               .name("newservice")
                                .accountId("accountId")
                                .orgIdentifier("orgId")
                                .projectIdentifier("projId")
@@ -181,6 +192,79 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
     assertThat(metadataMap.get("referredEntityType")).isNotNull();
+    assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_2() throws InvalidProtocolBufferException, IOException {
+    // test template references
+    ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
+
+    String serviceYaml = readFile("service/serviceWith3ConnectorAndTemplateReferences.yaml");
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("v2serviceTEMP")
+                               .name("my-service")
+                               .accountId("accountId")
+                               .orgIdentifier("orgId")
+                               .projectIdentifier("projId")
+                               .yaml(serviceYaml)
+                               .build();
+
+    // template client call
+    Call call = Mockito.mock(Call.class);
+    TemplateReferenceRequestDTO templateReferenceRequestDTO =
+        TemplateReferenceRequestDTO.builder().yaml(serviceYaml).build();
+    IdentifierRefProtoDTO identifierRefProtoDTO =
+        identifierRefProtoDTOHelper.createIdentifierRefProtoDTO("accountId", "orgId", "projId", "ast1");
+
+    List<EntityDetailProtoDTO> expected = Collections.singletonList(EntityDetailProtoDTO.newBuilder()
+                                                                        .setType(EntityTypeProtoEnum.TEMPLATE)
+                                                                        .setIdentifierRef(identifierRefProtoDTO)
+                                                                        .build());
+    when(templateResourceClient.getTemplateReferenceForGivenYaml(
+             "accountId", "orgId", "projId", null, null, null, templateReferenceRequestDTO))
+        .thenReturn(call);
+
+    when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(expected)));
+
+    entitySetupUsageHelper.updateSetupUsages(entity);
+
+    verify(producer, times(1)).send(msgCaptor.capture());
+
+    Message value = msgCaptor.getValue();
+    EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
+    Map<String, String> metadataMap = value.getMetadataMap();
+
+    assertThat(createV2DTO.getReferredEntitiesList()).hasSize(1);
+    assertThat(createV2DTO.getReferredEntitiesList()
+                   .stream()
+                   .map(EntityDetailProtoDTO::getIdentifierRef)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder(IdentifierRefProtoDTO.newBuilder()
+                                       .setIdentifier(StringValue.of("ast1"))
+                                       .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                       .setOrgIdentifier(StringValue.of(entity.getOrgIdentifier()))
+                                       .setProjectIdentifier(StringValue.of(entity.getProjectIdentifier()))
+                                       .setScope(ScopeProtoEnum.PROJECT)
+                                       .build());
+
+    assertThat(createV2DTO.getReferredByEntity())
+        .isEqualTo(EntityDetailProtoDTO.newBuilder()
+                       .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                             .setIdentifier(StringValue.of(entity.getIdentifier()))
+                                             .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                             .setOrgIdentifier(StringValue.of(entity.getOrgIdentifier()))
+                                             .setProjectIdentifier(StringValue.of(entity.getProjectIdentifier()))
+                                             .setScope(ScopeProtoEnum.PROJECT)
+                                             .build())
+                       .setType(EntityTypeProtoEnum.SERVICE)
+                       .setName(entity.getName())
+                       .build());
+
+    assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
+    assertThat(metadataMap.get("referredEntityType")).isEqualTo("TEMPLATE");
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
   }
 

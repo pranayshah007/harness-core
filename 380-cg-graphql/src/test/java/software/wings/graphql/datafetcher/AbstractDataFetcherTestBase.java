@@ -48,7 +48,6 @@ import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.trigger.Trigger;
@@ -58,6 +57,7 @@ import software.wings.events.TestUtils;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfraMappingInfrastructureProvider;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
@@ -230,7 +230,7 @@ public abstract class AbstractDataFetcherTestBase extends WingsBaseTest {
             .executionArgs(ExecutionArgs.builder()
                                .artifacts(List.of(
                                    Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(metadata)).build()))
-                               .helmCharts(List.of(HelmChart.builder().version("helm1").build()))
+                               .helmCharts(List.of(HelmChart.builder().displayName("helm-1.23").build()))
                                .build())
             .build();
     return wingsPersistence.insert(workflowExecution);

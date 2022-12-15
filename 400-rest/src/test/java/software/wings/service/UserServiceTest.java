@@ -18,6 +18,7 @@ import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.RAMA;
@@ -111,6 +112,7 @@ import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
@@ -226,6 +228,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(PL)
 @TargetModule(_970_RBAC_CORE)
 public class UserServiceTest extends WingsBaseTest {
+  private static final String ADD_TO_ACCOUNT_OR_GROUP_EMAIL_TEMPLATE_NAME = "add_group";
   private final User.Builder userBuilder = anUser().appId(APP_ID).email(USER_EMAIL).name(USER_NAME).password(PASSWORD);
 
   /**
@@ -367,7 +370,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
 
     user = userService.get(USER_ID);
 
@@ -395,7 +398,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);
@@ -454,7 +457,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);
@@ -1746,6 +1749,118 @@ public class UserServiceTest extends WingsBaseTest {
         userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 10, "Test");
     assertThat(accountListAfterFilter.getContent().size() == 1);
     assertThat(accountListAfterFilter.getContent().get(0).getAccountName().equals("Test-Account"));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void shouldInviteNewUser_withSsoEnabled_withAutoInviteAcceptanceEnabled() {
+    UserInvite userInvite = anUserInvite()
+                                .withAppId(GLOBAL_APP_ID)
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmails(asList(USER_EMAIL))
+                                .withRoles(asList(aRole().withUuid(ROLE_ID).build()))
+                                .build();
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(account.getUuid())
+                                    .logoutUrl("logoutUrl")
+                                    .url("url")
+                                    .ssoType(SSOType.SAML)
+                                    .displayName("display_name")
+                                    .build();
+
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID)).thenReturn(true);
+    when(accountService.isSSOEnabled(any())).thenReturn(true);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
+    when(wingsPersistence.save(userInvite)).thenReturn(USER_INVITE_ID);
+    when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
+    when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
+    when(ssoSettingService.getSamlSettingsByAccountId(ACCOUNT_ID)).thenReturn(samlSettings);
+
+    List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
+
+    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
+    verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
+    assertThat(emailDataArgumentCaptor.getValue().getTemplateName())
+        .isEqualTo(ADD_TO_ACCOUNT_OR_GROUP_EMAIL_TEMPLATE_NAME);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void shouldInviteNewUser_withSsoEnabled_withPLNoEmailForSamlAccountInvitesEnabled() {
+    UserInvite userInvite = anUserInvite()
+                                .withAppId(GLOBAL_APP_ID)
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmails(asList(USER_EMAIL))
+                                .withRoles(asList(aRole().withUuid(ROLE_ID).build()))
+                                .build();
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
+    when(wingsPersistence.save(userInvite)).thenReturn(USER_INVITE_ID);
+    when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
+    when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
+    when(accountService.isPLNoEmailForSamlAccountInvitesEnabled(anyString())).thenReturn(true);
+
+    List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
+
+    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITE_NOT_REQUIRED);
+    verify(emailDataNotificationService, times(0)).send(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void shouldInviteNewUser_withScimEnabledAndSsoDisabled() {
+    UserInvite userInvite = anUserInvite()
+                                .withAppId(GLOBAL_APP_ID)
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmails(asList(USER_EMAIL))
+                                .withEmail(USER_EMAIL)
+                                .withRoles(asList(aRole().withUuid(ROLE_ID).build()))
+                                .build();
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.isSSOEnabled(any())).thenReturn(false);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
+    when(wingsPersistence.save(userInvite)).thenReturn(USER_INVITE_ID);
+    when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
+    when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
+    doNothing().when(signupService).checkIfEmailIsValid(any());
+
+    InviteOperationResponse inviteOperationResponse = userService.inviteUser(userInvite, false, true);
+
+    assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
+    verify(signupService, times(1)).sendEmail(any(), anyString(), any());
   }
 
   private List<Account> getAccounts() {

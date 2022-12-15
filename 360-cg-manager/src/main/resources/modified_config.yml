@@ -230,7 +230,6 @@ timescaledb:
   socketTimeout: 30
   logUnclosedConnections: false
   loggerLevel: OFF
-  instanceDataRetentionDays: 210
   instanceStatsMigrationEventsLimit: 150
   instanceStatsMigrationQueryBatchSize: 100
   deploymentDataMigrationRowLimit: 1000
@@ -261,6 +260,7 @@ mongo:
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -268,14 +268,17 @@ mongo:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 searchEnabled: false
 

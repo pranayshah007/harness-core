@@ -71,6 +71,7 @@ public class TemplateServiceModuleRegistrars {
           .addAll(NGCoreRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(PmsCommonsModuleRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .add(NGTemplateMorphiaRegistrar.class)
           .add(NotificationBeansMorphiaRegistrar.class)
           .build();

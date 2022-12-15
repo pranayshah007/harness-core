@@ -219,7 +219,7 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
       ServiceDashboardInfo serviceDashboardInfo = combinedIdToRecordMap.get(key);
 
       String status = aggregateServiceInfo.getServiceStatus();
-      if (ExecutionStatus.SUCCESS.name().equals(status)) {
+      if (CDDashboardServiceHelper.successStatusList.contains(status)) {
         serviceDashboardInfo.setSuccessDeploymentsCount(aggregateServiceInfo.getCount());
       } else if (CDDashboardServiceHelper.failedStatusList.contains(status)) {
         serviceDashboardInfo.setFailureDeploymentsCount(
@@ -364,9 +364,9 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
     }
     Table<Record2<String, String>> orgProjectTable = getOrgProjectTable(orgProjectIdentifiers);
 
-    List<String> requiredStatuses =
-        new ArrayList<>(Arrays.asList(ExecutionStatus.APPROVAL_WAITING.name(), ExecutionStatus.APPROVALWAITING.name(),
-            ExecutionStatus.INTERVENTION_WAITING.name(), ExecutionStatus.INTERVENTIONWAITING.name()));
+    List<String> requiredStatuses = new ArrayList<>(Arrays.asList(ExecutionStatus.APPROVAL_WAITING.name(),
+        ExecutionStatus.APPROVALWAITING.name(), ExecutionStatus.WAITSTEPRUNNING.name(),
+        ExecutionStatus.INTERVENTION_WAITING.name(), ExecutionStatus.INTERVENTIONWAITING.name()));
     requiredStatuses.addAll(io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.activeStatusList);
 
     List<PipelineExecutionSummaryCd> executionsList =
@@ -438,7 +438,7 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
       }
       prevTimeDeploymentInfo.setTotalCount(prevTimeDeploymentInfo.getTotalCount() + count);
       totalDeploymentsCount += count;
-      if (status.equals(ExecutionStatus.SUCCESS.name())) {
+      if (CDDashboardServiceHelper.successStatusList.contains(status)) {
         prevTimeDeploymentInfo.setSuccessCount(prevTimeDeploymentInfo.getSuccessCount() + count);
       } else if (CDDashboardServiceHelper.failedStatusList.contains(status)) {
         prevTimeDeploymentInfo.setFailedCount(prevTimeDeploymentInfo.getFailedCount() + count);
@@ -557,7 +557,7 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
       ProjectDashBoardInfo projectDashBoardInfo = combinedIdToRecordMap.get(key);
 
       String status = aggregateProjectInfo.getStatus();
-      if (ExecutionStatus.SUCCESS.name().equals(status)) {
+      if (CDDashboardServiceHelper.successStatusList.contains(status)) {
         projectDashBoardInfo.setSuccessDeploymentsCount(aggregateProjectInfo.getCount());
       } else if (CDDashboardServiceHelper.failedStatusList.contains(status)) {
         projectDashBoardInfo.setFailedDeploymentsCount(

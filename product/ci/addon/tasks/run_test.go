@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -440,4 +441,281 @@ func TestRunTaskCreate(t *testing.T) {
 	var buf bytes.Buffer
 	executor := NewRunTask(step, nil, tmpPath, log.Sugar(), &buf, false, log.Sugar())
 	assert.NotNil(t, executor)
+}
+
+func TestDetachRunTaskCreate(t *testing.T) {
+	tmpPath := "/tmp/"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	step := &pb.UnitStep{
+		Id: "test",
+		Step: &pb.UnitStep_Run{
+			Run: &pb.RunStep{
+				Command:    "redis-server",
+				Detach:     true,
+				Image:      "redis",
+				Entrypoint: []string{"redis-server", "--loglevel", "debug"},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	executor := NewRunTask(step, nil, tmpPath, log.Sugar(), &buf, false, log.Sugar())
+	assert.NotNil(t, executor)
+}
+
+func TestDetachRunExecuteWithEntrypointSuccess(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	var buf bytes.Buffer
+
+	fs := filesystem.NewMockFileSystem(ctrl)
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	pstate := mexec.NewMockProcessState(ctrl)
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	entrypoint := []string{"git", "status"}
+	r := &runTask{
+		id:                "step1",
+		logMetrics:        true,
+		log:               log.Sugar(),
+		addonLogger:       log.Sugar(),
+		fs:                fs,
+		cmdContextFactory: cmdFactory,
+		procWriter:        &buf,
+		entrypoint:        entrypoint,
+		image:             "plugin/drone-git",
+		numRetries:        int32(1),
+		detach:            true,
+	}
+
+	oldMlog := mlog
+	mlog = func(pid int32, id string, l *zap.SugaredLogger) {
+		return
+	}
+	defer func() { mlog = oldMlog }()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	cmdFactory.EXPECT().CmdContextWithSleep(gomock.Any(), cmdExitWaitTime, entrypoint[0], entrypoint[1]).Return(cmd)
+	cmd.EXPECT().WithStdout(&buf).Return(cmd)
+	cmd.EXPECT().WithStderr(&buf).Return(cmd)
+	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
+	cmd.EXPECT().Start().Return(nil)
+	cmd.EXPECT().Pid().Return(int(1))
+	cmd.EXPECT().ProcessState().Return(pstate)
+	pstate.EXPECT().MaxRss().Return(int64(100), nil)
+	cmd.EXPECT().Wait().Do(func() {
+		wg.Done()
+	}).Return(nil)
+
+	o, retries, err := r.Run(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, len(o), 0)
+	assert.Equal(t, retries, int32(1))
+}
+
+func TestDetachRunExecuteWithEntrypointNonZeroStatus(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	var buf bytes.Buffer
+	entrypoint := []string{"git", "status"}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	pstate := mexec.NewMockProcessState(ctrl)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	r := &runTask{
+		id:                "step1",
+		logMetrics:        false,
+		log:               log.Sugar(),
+		addonLogger:       log.Sugar(),
+		fs:                fs,
+		cmdContextFactory: cmdFactory,
+		procWriter:        &buf,
+		entrypoint:        entrypoint,
+		image:             "plugin/drone-git",
+		numRetries:        int32(1),
+		detach:            true,
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	cmdFactory.EXPECT().CmdContextWithSleep(gomock.Any(), cmdExitWaitTime, entrypoint[0], entrypoint[1]).Return(cmd)
+	cmd.EXPECT().WithStdout(&buf).Return(cmd)
+	cmd.EXPECT().WithStderr(&buf).Return(cmd)
+	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
+	cmd.EXPECT().Start().Return(nil)
+	cmd.EXPECT().ProcessState().Return(pstate)
+	pstate.EXPECT().MaxRss().Return(int64(100), nil)
+	cmd.EXPECT().Wait().Do(func() {
+		wg.Done()
+	}).Return(&exec.ExitError{})
+
+	o, retries, err := r.Run(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, len(o), 0)
+	assert.Equal(t, retries, int32(1))
+}
+
+func TestDetachRunExecuteWithCommandSuccess(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	var buf bytes.Buffer
+
+	fs := filesystem.NewMockFileSystem(ctrl)
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	pstate := mexec.NewMockProcessState(ctrl)
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	r := &runTask{
+		id:                "step1",
+		logMetrics:        true,
+		log:               log.Sugar(),
+		addonLogger:       log.Sugar(),
+		fs:                fs,
+		cmdContextFactory: cmdFactory,
+		procWriter:        &buf,
+		entrypoint:        nil,
+		image:             "plugin/drone-git",
+		numRetries:        int32(1),
+		detach:            true,
+		command:           "ls",
+	}
+
+	oldMlog := mlog
+	mlog = func(pid int32, id string, l *zap.SugaredLogger) {
+		return
+	}
+	defer func() { mlog = oldMlog }()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	cmdFactory.EXPECT().CmdContextWithSleep(gomock.Any(), cmdExitWaitTime, "sh", gomock.Any(), gomock.Any()).Return(cmd)
+	cmd.EXPECT().WithStdout(&buf).Return(cmd)
+	cmd.EXPECT().WithStderr(&buf).Return(cmd)
+	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
+	cmd.EXPECT().Start().Return(nil)
+	cmd.EXPECT().Pid().Return(int(1))
+	cmd.EXPECT().ProcessState().Return(pstate)
+	pstate.EXPECT().MaxRss().Return(int64(100), nil)
+	cmd.EXPECT().Wait().Do(func() {
+		wg.Done()
+	}).Return(nil)
+
+	o, retries, err := r.Run(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, len(o), 0)
+	assert.Equal(t, retries, int32(1))
+}
+
+func TestDetachRunExecuteWithCommandNonZeroStatus(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	var buf bytes.Buffer
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	pstate := mexec.NewMockProcessState(ctrl)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	r := &runTask{
+		id:                "step1",
+		logMetrics:        false,
+		log:               log.Sugar(),
+		addonLogger:       log.Sugar(),
+		fs:                fs,
+		cmdContextFactory: cmdFactory,
+		procWriter:        &buf,
+		entrypoint:        nil,
+		image:             "plugin/drone-git",
+		numRetries:        int32(1),
+		detach:            true,
+		command:           "ls",
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	cmdFactory.EXPECT().CmdContextWithSleep(gomock.Any(), cmdExitWaitTime, "sh", gomock.Any(), gomock.Any()).Return(cmd)
+	cmd.EXPECT().WithStdout(&buf).Return(cmd)
+	cmd.EXPECT().WithStderr(&buf).Return(cmd)
+	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
+	cmd.EXPECT().Start().Return(nil)
+	cmd.EXPECT().ProcessState().Return(pstate)
+	pstate.EXPECT().MaxRss().Return(int64(100), nil)
+	cmd.EXPECT().Wait().Do(func() {
+		wg.Done()
+	}).Return(&exec.ExitError{})
+
+	o, retries, err := r.Run(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, len(o), 0)
+	assert.Equal(t, retries, int32(1))
+}
+
+func TestDetachRunExecuteWithoutEntrypointAndCommandSuccess(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	var buf bytes.Buffer
+	commands := []string{"git"}
+
+	fs := filesystem.NewMockFileSystem(ctrl)
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	pstate := mexec.NewMockProcessState(ctrl)
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	r := &runTask{
+		id:                "step1",
+		logMetrics:        false,
+		log:               log.Sugar(),
+		addonLogger:       log.Sugar(),
+		fs:                fs,
+		cmdContextFactory: cmdFactory,
+		procWriter:        &buf,
+		entrypoint:        nil,
+		image:             "plugin/drone-git",
+		numRetries:        int32(1),
+		detach:            true,
+	}
+
+	oldImgMetadata := getImgMetadata
+	getImgMetadata = func(ctx context.Context, id, image, secret string, log *zap.SugaredLogger) ([]string, []string, error) {
+		return commands, nil, nil
+	}
+	defer func() { getImgMetadata = oldImgMetadata }()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	cmdFactory.EXPECT().CmdContextWithSleep(gomock.Any(), cmdExitWaitTime, gomock.Any()).Return(cmd)
+	cmd.EXPECT().WithStdout(&buf).Return(cmd)
+	cmd.EXPECT().WithStderr(&buf).Return(cmd)
+	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
+	cmd.EXPECT().Start().Return(nil)
+	cmd.EXPECT().ProcessState().Return(pstate)
+	pstate.EXPECT().MaxRss().Return(int64(100), nil)
+	cmd.EXPECT().Wait().Do(func() {
+		wg.Done()
+	}).Return(nil)
+
+	o, retries, err := r.Run(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, len(o), 0)
+	assert.Equal(t, retries, int32(1))
 }

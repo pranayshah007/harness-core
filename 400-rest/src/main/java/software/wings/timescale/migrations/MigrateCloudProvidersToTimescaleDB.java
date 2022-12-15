@@ -10,9 +10,9 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.SettingAttribute.SettingCategory.CLOUD_PROVIDER;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 
 import io.harness.persistence.HIterator;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.SettingAttribute;
@@ -24,30 +24,26 @@ import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateCloudProvidersToTimescaleDB {
+public class MigrateCloudProvidersToTimescaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject WingsPersistence wingsPersistence;
 
   private static final int MAX_RETRY = 5;
 
-  private static final String insert_statement =
-      "INSERT INTO CG_CLOUD_PROVIDERS (ID,NAME,ACCOUNT_ID,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?)";
+  private static final String upsert_statement =
+      "INSERT INTO CG_CLOUD_PROVIDERS (ID,NAME,ACCOUNT_ID,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
 
-  private static final String update_statement =
-      "UPDATE CG_CLOUD_PROVIDERS SET NAME=?, ACCOUNT_ID=?, APP_ID=?, CREATED_AT=?, LAST_UPDATED_AT=?, CREATED_BY=?, LAST_UPDATED_BY=? WHERE ID=?";
-
-  private static final String query_statement = "SELECT * FROM CG_CLOUD_PROVIDERS WHERE ID=?";
+  private static final String TABLE_NAME = "CG_CLOUD_PROVIDERS";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_CLOUD_PROVIDERS");
       return false;
     }
     int count = 0;
@@ -56,49 +52,43 @@ public class MigrateCloudProvidersToTimescaleDB {
       findOptions_cloud_providers.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<SettingAttribute> iterator =
-               new HIterator<>(wingsPersistence.createQuery(SettingAttribute.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(SettingAttribute.class, excludeAuthority)
                                    .filter(SettingAttributeKeys.category, CLOUD_PROVIDER)
                                    .field(SettingAttributeKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_cloud_providers))) {
         while (iterator.hasNext()) {
           SettingAttribute settingAttribute = iterator.next();
-          prepareTimeScaleQueries(settingAttribute);
+          saveToTimeScale(settingAttribute);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_CLOUD_PROVIDERS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_CLOUD_PROVIDERS", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(SettingAttribute settingAttribute) {
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
+  }
+
+  public void saveToTimeScale(SettingAttribute settingAttribute) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
     while (!successful && retryCount < MAX_RETRY) {
-      ResultSet queryResult = null;
-
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement queryStatement = connection.prepareStatement(query_statement);
-           PreparedStatement updateStatement = connection.prepareStatement(update_statement);
-           PreparedStatement insertStatement = connection.prepareStatement(insert_statement)) {
-        queryStatement.setString(1, settingAttribute.getUuid());
-        queryResult = queryStatement.executeQuery();
-        if (queryResult != null && queryResult.next()) {
-          log.info("CloudProvider found in the timescaleDB:[{}],updating it", settingAttribute.getUuid());
-          if (settingAttribute.getCategory().equals(CLOUD_PROVIDER)) {
-            updateDataInTimeScaleDB(settingAttribute, connection, updateStatement);
-          }
-        } else {
-          log.info("CloudProvider not found in the timescaleDB:[{}],inserting it", settingAttribute.getUuid());
-          if (settingAttribute.getCategory().equals(CLOUD_PROVIDER)) {
-            insertDataInTimeScaleDB(settingAttribute, connection, insertStatement);
-          }
+           PreparedStatement upsertStatement = connection.prepareStatement(upsert_statement)) {
+        if (settingAttribute.getCategory().equals(CLOUD_PROVIDER)) {
+          upsertDataInTimeScaleDB(settingAttribute, upsertStatement);
         }
         successful = true;
       } catch (SQLException e) {
@@ -112,61 +102,34 @@ public class MigrateCloudProvidersToTimescaleDB {
         log.error("Failed to save CloudProvider,[{}]", settingAttribute.getUuid(), e);
         retryCount = MAX_RETRY + 1;
       } finally {
-        DBUtils.close(queryResult);
         log.info("Total time =[{}] for CloudProvider:[{}]", System.currentTimeMillis() - startTime,
             settingAttribute.getUuid());
       }
     }
   }
 
-  private void insertDataInTimeScaleDB(SettingAttribute settingAttribute, Connection connection,
-      PreparedStatement insertPreparedStatement) throws SQLException {
-    insertPreparedStatement.setString(1, settingAttribute.getUuid());
-    insertPreparedStatement.setString(2, settingAttribute.getName());
-    insertPreparedStatement.setString(3, settingAttribute.getAccountId());
-    insertPreparedStatement.setString(4, settingAttribute.getAppId());
+  private void upsertDataInTimeScaleDB(SettingAttribute settingAttribute, PreparedStatement upsertPreparedStatement)
+      throws SQLException {
+    upsertPreparedStatement.setString(1, settingAttribute.getUuid());
+    upsertPreparedStatement.setString(2, settingAttribute.getName());
+    upsertPreparedStatement.setString(3, settingAttribute.getAccountId());
+    upsertPreparedStatement.setString(4, settingAttribute.getAppId());
 
-    insertPreparedStatement.setLong(5, settingAttribute.getCreatedAt());
-    insertPreparedStatement.setLong(6, settingAttribute.getLastUpdatedAt());
-
-    String created_by = null;
-    if (settingAttribute.getCreatedBy() != null) {
-      created_by = settingAttribute.getCreatedBy().getName();
-    }
-    insertPreparedStatement.setString(7, created_by);
-
-    String last_updated_by = null;
-    if (settingAttribute.getLastUpdatedBy() != null) {
-      last_updated_by = settingAttribute.getLastUpdatedBy().getName();
-    }
-    insertPreparedStatement.setString(8, last_updated_by);
-
-    insertPreparedStatement.execute();
-  }
-
-  private void updateDataInTimeScaleDB(
-      SettingAttribute settingAttribute, Connection connection, PreparedStatement updateStatement) throws SQLException {
-    updateStatement.setString(1, settingAttribute.getName());
-    updateStatement.setString(2, settingAttribute.getAccountId());
-    updateStatement.setString(3, settingAttribute.getAppId());
-
-    updateStatement.setLong(4, settingAttribute.getCreatedAt());
-    updateStatement.setLong(5, settingAttribute.getLastUpdatedAt());
+    upsertPreparedStatement.setLong(5, settingAttribute.getCreatedAt());
+    upsertPreparedStatement.setLong(6, settingAttribute.getLastUpdatedAt());
 
     String created_by = null;
     if (settingAttribute.getCreatedBy() != null) {
       created_by = settingAttribute.getCreatedBy().getName();
     }
-    updateStatement.setString(6, created_by);
+    upsertPreparedStatement.setString(7, created_by);
 
     String last_updated_by = null;
     if (settingAttribute.getLastUpdatedBy() != null) {
       last_updated_by = settingAttribute.getLastUpdatedBy().getName();
     }
-    updateStatement.setString(7, last_updated_by);
+    upsertPreparedStatement.setString(8, last_updated_by);
 
-    updateStatement.setString(8, settingAttribute.getUuid());
-
-    updateStatement.execute();
+    upsertPreparedStatement.execute();
   }
 }

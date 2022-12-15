@@ -94,6 +94,8 @@ public class MongoConfig {
 
   @JsonProperty(defaultValue = "90000") @Default @NotEmpty private int serverSelectionTimeout = 90000;
 
+  @JsonProperty(defaultValue = "360000") @Default @NotEmpty private int socketTimeout = 360000;
+
   @JsonProperty(defaultValue = "600000") @Default @NotEmpty private int maxConnectionIdleTime = 600000;
 
   @JsonProperty(defaultValue = "300") @Default @NotEmpty private int connectionsPerHost = 300;
@@ -107,6 +109,8 @@ public class MongoConfig {
   @JsonProperty(defaultValue = "MANUAL") @Default @NotEmpty private IndexManager.Mode indexManagerMode = MANUAL;
 
   private AnalyticNodeMongoConfig analyticNodeConfig = AnalyticNodeMongoConfig.builder().build();
+
+  @NotEmpty private int maxOperationTimeInMillis = 300000;
 
   @JsonIgnore
   public ReadPreference getReadPreference() {

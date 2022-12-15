@@ -72,7 +72,7 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testNotifyIfNullChildInstance() {
-    when(nodeExecutionInfoService.incrementCursor(PARENT_NODE_EXECUTION_ID)).thenReturn(null);
+    when(nodeExecutionInfoService.incrementCursor(PARENT_NODE_EXECUTION_ID, Status.SUCCEEDED)).thenReturn(null);
     maxConcurrentChildCallback.notify(new HashMap<>());
     verify(nodeExecutionService).errorOutActiveNodes(anyString());
   }
@@ -81,7 +81,7 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testNotify() {
-    when(nodeExecutionInfoService.incrementCursor(PARENT_NODE_EXECUTION_ID))
+    when(nodeExecutionInfoService.incrementCursor(PARENT_NODE_EXECUTION_ID, Status.SUCCEEDED))
         .thenReturn(ConcurrentChildInstance.builder()
                         .cursor(1)
                         .childrenNodeExecutionIds(Lists.newArrayList("a", "b", "c"))

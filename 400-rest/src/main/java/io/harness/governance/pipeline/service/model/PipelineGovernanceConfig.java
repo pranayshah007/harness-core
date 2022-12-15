@@ -10,11 +10,13 @@ package io.harness.governance.pipeline.service.model;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
@@ -35,6 +37,7 @@ import org.mongodb.morphia.annotations.Id;
  * Entity representing a pipeline governance standard.
  */
 @Value
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "pipelineGovernanceConfigs")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "PipelineGovernanceConfigKeys")

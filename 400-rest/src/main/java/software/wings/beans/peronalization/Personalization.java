@@ -8,8 +8,10 @@
 package software.wings.beans.peronalization;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 
@@ -29,6 +31,7 @@ import org.mongodb.morphia.annotations.Id;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PersonalizationKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "personalization", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class Personalization implements PersistentEntity, AccountAccess {

@@ -32,9 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sDeleteStepParameters")
 public class K8sDeleteStepParameters extends K8sDeleteBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sDeleteStepParameters(DeleteResourcesWrapper deleteResources, ParameterField<Boolean> skipDryRun,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(deleteResources, skipDryRun, delegateSelectors);
+  public K8sDeleteStepParameters(
+      DeleteResourcesWrapper deleteResources, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(deleteResources, delegateSelectors);
   }
 
   @Nonnull
@@ -46,12 +46,5 @@ public class K8sDeleteStepParameters extends K8sDeleteBaseStepInfo implements K8
           K8sCommandUnitConstants.FetchFiles, K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Delete);
     }
     return Arrays.asList(K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Delete);
-  }
-
-  @Nonnull
-  @Override
-  @JsonIgnore
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
-    return getCommandUnits();
   }
 }

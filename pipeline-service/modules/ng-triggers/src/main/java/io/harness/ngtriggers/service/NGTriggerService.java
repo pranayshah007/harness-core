@@ -10,11 +10,14 @@ package io.harness.ngtriggers.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
+import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 
@@ -64,7 +67,15 @@ public interface NGTriggerService {
   WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId);
   NGTriggerEntity updateTriggerWithValidationStatus(NGTriggerEntity ngTriggerEntity, ValidationResult validationResult);
   Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS);
-  TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml);
+  TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
+      String triggerId, String newYaml, boolean withServiceV2);
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
+
+  List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier);
+
+  Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails);
+
+  void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, List<HeaderConfig> headerConfigs);
+  TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails);
 }

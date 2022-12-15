@@ -8,6 +8,7 @@
 package software.wings.security.authentication;
 
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -50,6 +51,7 @@ import com.coveo.saml.SamlException;
 import com.coveo.saml.SamlResponse;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -475,6 +477,36 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     List<String> groups = authHandler.getUserGroupsForAzure(samlAssertionValue.getAttributeStatements(), samlSettings,
         groupMembershipAttribute, samlAssertionValue.getIssuer().getValue(), accountId);
     assertThat(groups.size()).isGreaterThan(150);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSamlAuthentication_withIdpUrlAsNULL() throws IOException, SamlException, URISyntaxException {
+    User user = new User();
+    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    Account account = new Account();
+    account.setUuid("AC1");
+    user.setAccounts(Arrays.asList(account));
+
+    String samlResponseString =
+        IOUtils.toString(getClass().getResourceAsStream("/SamlResponse.txt"), Charset.defaultCharset());
+    account.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    when(authenticationUtils.getUser(anyString())).thenReturn(user);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
+    SamlResponse samlResponse = mock(SamlResponse.class);
+    when(samlResponse.getNameID()).thenReturn("rushabh@harness.io");
+    SamlClient samlClient = mock(SamlClient.class);
+    final SamlSettings samlSettings = mock(SamlSettings.class);
+    when(samlSettings.getAccountId()).thenReturn("AC1");
+    List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
+    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
+    doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
+    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+
+    User returnedUser = authHandler.authenticate(null, samlResponseString, account.getUuid()).getUser();
+    assertThat(returnedUser).isEqualTo(user);
   }
 
   private Assertion getSamlAssertion(String samlResponse) throws IOException, XMLParserException, UnmarshallingException

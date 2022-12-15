@@ -10,9 +10,8 @@ package io.harness.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
@@ -23,8 +22,10 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.UuidAccess;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -54,11 +55,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PlanExecutionKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutions", noClassnameStored = true)
 @Document("planExecutions")
 @JsonIgnoreProperties(ignoreUnknown = true, value = {"plan"})
 @TypeAlias("planExecution")
-@StoreIn(DbAliases.PMS)
 public class PlanExecution implements PersistentRegularIterable, UuidAccess, PmsNodeExecution {
   public static final String EXEC_TAG_SET_BY_TRIGGER = "execution_trigger_tag_needed_for_abort";
   public static final long TTL_MONTHS = 6;
@@ -67,6 +68,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @CreatedDate Long createdAt;
   String planId;
   Map<String, String> setupAbstractions;
+  // TTL index
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   Status status;
@@ -80,6 +82,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @Version Long version;
 
   @Getter @NonFinal @Setter Long nextIteration;
+  Ambiance ambiance;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
@@ -108,12 +111,23 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   }
 
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("id_status_idx").field("_id").field(NodeExecutionKeys.status).build())
-        .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
+    return ImmutableList
+        .<MongoIndex>builder()
+        // PlanExecutionMonitorService
+        .add(CompoundMongoIndex.builder().name("status_idx").field(PlanExecutionKeys.status).build())
+        // findPrevUnTerminatedPlanExecutionsByExecutionTag
         .add(SortCompoundMongoIndex.builder()
                  .name("exec_tag_status_idx")
                  .field(ExecutionMetadataKeys.tagExecutionKey)
+                 .field(PlanExecutionKeys.status)
+                 .descSortField(PlanExecutionKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_pipelineId_status_createdAt_idx")
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
+                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
+                 .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
                  .field(PlanExecutionKeys.status)
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())

@@ -11,7 +11,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static java.lang.String.format;
 
@@ -30,6 +30,9 @@ import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.EditionActionDTO;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -39,12 +42,21 @@ import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.helpers.ModuleLicenseSummaryHelper;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.mappers.LicenseObjectConverter;
+import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.smp.license.models.AccountInfo;
+import io.harness.smp.license.models.LibraryVersion;
+import io.harness.smp.license.models.LicenseMeta;
+import io.harness.smp.license.models.SMPLicense;
+import io.harness.smp.license.models.SMPLicenseEnc;
+import io.harness.smp.license.models.SMPLicenseValidationResult;
+import io.harness.smp.license.v1.LicenseGenerator;
+import io.harness.smp.license.v1.LicenseValidator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -56,9 +68,11 @@ import com.google.inject.name.Named;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,11 +85,15 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final ModuleLicenseRepository moduleLicenseRepository;
   private final LicenseObjectConverter licenseObjectConverter;
   private final ModuleLicenseInterface licenseInterface;
-  private final AccountService accountService;
   private final TelemetryReporter telemetryReporter;
   private final CeLicenseClient ceLicenseClient;
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
+  protected final LicenseGenerator licenseGenerator;
+  protected final LicenseValidator licenseValidator;
+  protected final SMPLicenseMapper smpLicenseMapper;
+
+  protected final AccountService accountService;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -89,7 +107,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   public DefaultLicenseServiceImpl(ModuleLicenseRepository moduleLicenseRepository,
       LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
       AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
-      LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache) {
+      LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
+      LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -98,6 +117,9 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.ceLicenseClient = ceLicenseClient;
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
+    this.licenseGenerator = licenseGenerator;
+    this.licenseValidator = licenseValidator;
+    this.smpLicenseMapper = smpLicenseMapper;
   }
 
   @Override
@@ -225,7 +247,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType) {
+  public ModuleLicenseDTO startFreeLicense(
+      String accountIdentifier, ModuleType moduleType, String referer, String gaClientId) {
     ModuleLicenseDTO trialLicenseDTO = licenseInterface.generateFreeLicense(accountIdentifier, moduleType);
     verifyAccountExistence(accountIdentifier);
 
@@ -234,7 +257,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_FREE);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier, referer, gaClientId);
 
     log.info("Free license for module [{}] is started in account [{}]", moduleType, accountIdentifier);
 
@@ -266,7 +289,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO startTrialLicense(String accountIdentifier, StartTrialDTO startTrialRequestDTO) {
+  public ModuleLicenseDTO startTrialLicense(
+      String accountIdentifier, StartTrialDTO startTrialRequestDTO, String referer) {
     Edition edition = startTrialRequestDTO.getEdition();
     if (!checkTrialSupported(edition)) {
       throw new InvalidRequestException("Edition doesn't support trial");
@@ -280,7 +304,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_TRIAL);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier, referer, null);
 
     log.info("Trial license for module [{}] is started in account [{}]", startTrialRequestDTO.getModuleType(),
         accountIdentifier);
@@ -307,7 +331,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     licenseComplianceResolver.preCheck(licenseToBeExtended, EditionAction.EXTEND_TRIAL);
     ModuleLicense savedEntity = saveLicense(licenseToBeExtended);
 
-    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier, null, null);
     syncLicenseChangeToCGForCE(savedEntity);
     log.info("Trial license for module [{}] is extended in account [{}]", moduleType, accountIdentifier);
     return licenseObjectConverter.toDTO(savedEntity);
@@ -428,11 +452,66 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     return lastUpdatedAtMap;
   }
 
+  @Override
+  public List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier) {
+    List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
+    return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
+    SMPLicenseEnc smpLicenseEnc = smpLicenseMapper.toSMPLicenseEnc(licenseDTO);
+    SMPLicenseValidationResult validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
+    return smpLicenseMapper.toSMPValidationResultDTO(validationResult);
+  }
+
+  @Override
+  public SMPEncLicenseDTO generateSMPLicense(String accountId, SMPLicenseRequestDTO licenseRequest) {
+    SMPLicense smpLicense = createSmpLicense(accountId);
+    String license = licenseGenerator.generateLicense(smpLicense);
+    return SMPEncLicenseDTO.builder().encryptedLicense(license).build();
+  }
+
+  protected SMPLicense createSmpLicense(String accountId) {
+    AccountLicenseDTO accountLicenseDTO = getAccountLicense(accountId);
+    AccountDTO accountDTO = accountService.getAccount(accountId);
+
+    if (Objects.isNull(accountLicenseDTO) || Objects.isNull(accountLicenseDTO.getAllModuleLicenses())
+        || accountLicenseDTO.getAllModuleLicenses().isEmpty() || Objects.isNull(accountDTO)) {
+      throw new InvalidRequestException("There might be no account or module license present in db");
+    }
+    List<ModuleLicenseDTO> moduleLicenseDTOS = accountLicenseDTO.getAllModuleLicenses()
+                                                   .values()
+                                                   .stream()
+                                                   .flatMap(Collection::stream)
+                                                   .collect(Collectors.toList());
+    if (moduleLicenseDTOS.isEmpty()) {
+      throw new InvalidRequestException("No module license found for account: " + accountId);
+    }
+    LicenseMeta licenseMeta = new LicenseMeta();
+    licenseMeta.setAccountDTO(AccountInfo.builder()
+                                  .name(accountDTO.getName())
+                                  .identifier(accountDTO.getIdentifier())
+                                  .companyName(accountDTO.getCompanyName())
+                                  .build());
+    licenseMeta.setIssueDate(new Date());
+    licenseMeta.setLicenseVersion(0);
+    licenseMeta.setLibraryVersion(LibraryVersion.V1);
+    licenseMeta.setAccountOptional(true);
+    return SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicenseDTOS).build();
+  }
+
+  @Override
+  public void applySMPLicense(SMPEncLicenseDTO encLicenseDTO) {
+    throw new UnsupportedOperationException("API only available on Self Managed Platform");
+  }
+
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {
     return EditionActionDTO.builder().action(editionAction).reason(editionAction.getReason()).build();
   }
 
-  private void sendSucceedTelemetryEvents(String eventName, ModuleLicense moduleLicense, String accountIdentifier) {
+  private void sendSucceedTelemetryEvents(
+      String eventName, ModuleLicense moduleLicense, String accountIdentifier, String referer, String gaClientId) {
     String email = getEmailFromPrincipal();
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("email", email);
@@ -445,7 +524,12 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     if (moduleLicense.getEdition() != null) {
       properties.put("plan", moduleLicense.getEdition());
     }
-
+    if (referer != null) {
+      properties.put("refererURL", referer);
+    }
+    if (gaClientId != null) {
+      properties.put("ga_client_id", gaClientId);
+    }
     properties.put("platform", "NG");
     properties.put("startTime", String.valueOf(moduleLicense.getStartTime()));
     properties.put("duration", TRIAL_DURATION);

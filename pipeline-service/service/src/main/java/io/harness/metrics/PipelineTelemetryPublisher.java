@@ -16,7 +16,7 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -31,6 +31,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @Singleton
+/*
+ * Called only for community edition
+ */
 public class PipelineTelemetryPublisher {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   @Inject PMSPipelineService pmsPipelineService;
@@ -60,6 +63,7 @@ public class PipelineTelemetryPublisher {
         Criteria noCriteria = new Criteria();
         totalNumberOfPipelines = pmsPipelineService.countAllPipelines(noCriteria);
 
+        // Community devs only
         Criteria criteriaExecutions =
             Criteria.where(PlanExecutionSummaryKeys.createdAt).gt(System.currentTimeMillis() - MILLISECONDS_IN_A_DAY);
         pipelinesExecutedInADay = pmsExecutionService.getCountOfExecutions(criteriaExecutions);
@@ -89,7 +93,7 @@ public class PipelineTelemetryPublisher {
 
   @VisibleForTesting
   String getAccountId() {
-    List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
+    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
     String accountId = accountDTOList.get(0).getIdentifier();
     if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
       accountId = accountDTOList.get(1).getIdentifier();

@@ -59,13 +59,10 @@ BAZEL_MODULES="\
   //270-verification:module \
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
-  //300-cv-nextgen:module \
   //323-sto-utilities:module \
-  //325-sto-beans:module \
   //332-ci-manager/app:module \
   //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
-  //340-ce-nextgen:module \
   //350-event-server:module \
   //360-cg-manager:module \
   //380-cg-graphql:module \
@@ -81,7 +78,6 @@ BAZEL_MODULES="\
   //441-cg-instance-sync:module \
   //445-cg-connectors:module \
   //450-ce-views:module \
-  //460-capability:module \
   //490-ce-commons:module \
   //pipeline-service/service:module \
   //pipeline-service/modules/ng-triggers:module \
@@ -102,7 +98,6 @@ BAZEL_MODULES="\
   //platform-service/modules/notification-service/contracts:module \
   //platform-service/modules/notification-service/contracts/src/main/proto:all \
   //platform-service/modules/notification-service/delegate-tasks:module \
-  //platform-service/modules/resource-group-service/contracts:module \
   //platform-service/modules/audit-service:module \
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \
@@ -152,7 +147,7 @@ BAZEL_MODULES="\
   //950-events-framework-monitor:module \
   //950-log-client:module \
   //951-cg-git-sync:module \
-  //951-debezium-service:module \
+  //debezium-service/service:module \
   //952-debezium-engine:module \
   //959-debezium-beans:module \
   //950-ng-authentication-service:module \
@@ -204,9 +199,11 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
+  //ce-nextgen/service:module \
   //access-control/contracts:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
+  //srm-service/modules/cv-nextgen-service/service:module \
 "
 
 bazel ${bazelrc} build $BAZEL_MODULES `bazel query "//...:*" | grep "module_deploy.jar"` ${BAZEL_ARGUMENTS} --remote_download_outputs=all
@@ -298,7 +295,6 @@ build_protocol_info(){
 
 build_bazel_module 100-migrator
 build_bazel_module 323-sto-utilities
-build_bazel_module 325-sto-beans
 build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
@@ -310,7 +306,6 @@ build_bazel_module 440-connector-nextgen
 build_bazel_module 440-secret-management-service
 build_bazel_module 445-cg-connectors
 build_bazel_module 450-ce-views
-build_bazel_module 460-capability
 build_bazel_module 490-ce-commons
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events

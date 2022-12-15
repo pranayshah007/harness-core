@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.seeddata.SampleDataProviderConstants.ARTIFACT_VARIABLE_NAME;
 import static io.harness.seeddata.SampleDataProviderConstants.DOCKER_TODO_LIST_ARTIFACT_SOURCE_NAME;
 import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_DOCKER_HUB_CONNECTOR;
 import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP;
@@ -21,7 +20,6 @@ import static io.harness.seeddata.SampleDataProviderConstants.K8S_QA_ENVIRONMENT
 import static io.harness.seeddata.SampleDataProviderConstants.K8S_ROLLING_WORKFLOW_NAME;
 import static io.harness.seeddata.SampleDataProviderConstants.K8S_SERVICE_NAME;
 
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -41,7 +39,6 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.Workflow;
 import software.wings.beans.artifact.ArtifactStream;
-import software.wings.beans.artifact.ArtifactStreamBinding;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
@@ -234,15 +231,9 @@ public class HarnessSampleAppServiceImpl implements HarnessSampleAppService {
 
     // Verify artifact stream
     ArtifactStream existingArtifactStream = null;
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)
-        && existingDockerConnector != null) {
+    if (existingService != null) {
       existingArtifactStream = artifactStreamService.getArtifactStreamByName(
-          existingDockerConnector.getUuid(), DOCKER_TODO_LIST_ARTIFACT_SOURCE_NAME);
-    } else {
-      if (existingService != null) {
-        existingArtifactStream = artifactStreamService.getArtifactStreamByName(
-            appId, existingService.getUuid(), DOCKER_TODO_LIST_ARTIFACT_SOURCE_NAME);
-      }
+          appId, existingService.getUuid(), DOCKER_TODO_LIST_ARTIFACT_SOURCE_NAME);
     }
     if (existingArtifactStream != null) {
       entityStatusList.add(SampleAppEntityStatus.builder()
@@ -257,26 +248,6 @@ public class HarnessSampleAppServiceImpl implements HarnessSampleAppService {
                                .health(Health.BAD)
                                .build());
       health = Health.BAD;
-    }
-
-    // Verify Artifact Stream Binding for multi-artifact
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      ArtifactStreamBinding existingArtifactStreamBinding =
-          artifactStreamServiceBindingService.get(appId, serviceId, ARTIFACT_VARIABLE_NAME);
-      if (existingArtifactStreamBinding != null) {
-        entityStatusList.add(SampleAppEntityStatus.builder()
-                                 .entityName(ARTIFACT_VARIABLE_NAME)
-                                 .entityType(EntityType.SERVICE_VARIABLE.name())
-                                 .health(Health.GOOD)
-                                 .build());
-      } else {
-        entityStatusList.add(SampleAppEntityStatus.builder()
-                                 .entityName(ARTIFACT_VARIABLE_NAME)
-                                 .entityType(EntityType.SERVICE_VARIABLE.name())
-                                 .health(Health.BAD)
-                                 .build());
-        health = Health.BAD;
-      }
     }
 
     // Verify QA environment

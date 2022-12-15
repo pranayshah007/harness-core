@@ -39,6 +39,7 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
   private String description;
   @EqualsAndHashCode.Exclude private boolean applicable; // Corresponds to the on/off button for each window
   private List<ApplicationFilter> appSelections;
+  private List<ApplicationFilter> excludeAppSelections;
   private List<String> userGroups; // User groups to be notified
   private UserGroupFilter userGroupSelection;
 
@@ -48,6 +49,7 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
       @JsonProperty("environmentTypes") List<EnvironmentType> environmentTypes, @JsonProperty("name") String name,
       @JsonProperty("description") String description, @JsonProperty("applicable") boolean applicable,
       @JsonProperty("appSelections") List<ApplicationFilter> appSelections,
+      @JsonProperty("excludeAppSelections") List<ApplicationFilter> excludeAppSelections,
       @JsonProperty("userGroups") List<String> userGroups, @JsonProperty("uuid") String uuid,
       @JsonProperty("userGroupSelection") UserGroupFilter userGroupSelection) {
     this.freezeForAllApps = freezeForAllApps;
@@ -57,6 +59,7 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
     this.description = description;
     this.applicable = applicable;
     this.appSelections = appSelections;
+    this.excludeAppSelections = excludeAppSelections;
     this.uuid = EmptyPredicate.isEmpty(uuid) ? generateUuid() : uuid;
     this.userGroups = userGroups;
     this.userGroupSelection = userGroupSelection;
@@ -69,6 +72,11 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
   public List<EnvironmentType> getEnvironmentTypes() {
     return CollectionUtils.emptyIfNull(environmentTypes);
   }
+
+  public List<ApplicationFilter> getExcludeAppSelections() {
+    return CollectionUtils.emptyIfNull(excludeAppSelections);
+  }
+
   public boolean isFreezeForAllApps() {
     return freezeForAllApps;
   }

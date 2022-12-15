@@ -12,7 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.YamlException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
 
@@ -27,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +51,7 @@ public class YamlNode implements Visitable {
   public static final String NAME_FIELD_NAME = "name";
   public static final String KEY_FIELD_NAME = "key";
   public static final String TEMPLATE_FIELD_NAME = "template";
+  public static final String STRATEGY_IDENTIFIER_POSTFIX_ESCAPED = "<\\+strategy.identifierPostFix>";
 
   public static final String PATH_SEP = "/";
 
@@ -295,6 +302,21 @@ public class YamlNode implements Visitable {
     return null;
   }
 
+  public YamlField previousSiblingFromParentArray(String currentFieldName, List<String> possibleSiblingFieldNames) {
+    if (parentNode == null || parentNode.parentNode == null || parentNode.parentNode.isObject()) {
+      return null;
+    }
+    List<YamlNode> yamlNodes = parentNode.parentNode.asArray();
+    for (int i = 1; i < yamlNodes.size(); i++) {
+      YamlField givenNode = yamlNodes.get(i).getField(currentFieldName);
+      if (givenNode != null && givenNode.getNode().getUuid() != null
+          && givenNode.getNode().getUuid().equals(this.getUuid())) {
+        return getMatchingFieldNameFromParent(yamlNodes.get(i - 1), new HashSet<>(possibleSiblingFieldNames));
+      }
+    }
+    return null;
+  }
+
   public YamlField nextSiblingNodeFromParentObject(String siblingFieldName) {
     if (parentNode == null || parentNode.isArray()) {
       return null;
@@ -342,6 +364,14 @@ public class YamlNode implements Visitable {
       return null;
     }
     return uuidValue;
+  }
+
+  public String getNodeName() {
+    String name = this.getProperty("name");
+    if (EmptyPredicate.isEmpty(name)) {
+      return getType();
+    }
+    return name;
   }
 
   private boolean compareFirstChildOfArrayNode(YamlNode firstParent, YamlNode secondParent) {
@@ -433,5 +463,73 @@ public class YamlNode implements Visitable {
     Iterator<String> keysIterator = currJsonNode.fieldNames();
     keysIterator.forEachRemaining(keys::add);
     return keys;
+  }
+
+  // get the field/node yaml from the complete pipeline yaml.
+  public static String getNodeYaml(String yaml, Ambiance ambiance) {
+    YamlNode currentNode = null;
+    try {
+      currentNode = YamlNode.fromYamlPath(yaml, "");
+    } catch (IOException e) {
+      throw new InvalidYamlException("Yaml could not be converted to YamlNode. Please check if the yaml is correct.");
+    }
+    for (Level level : ambiance.getLevelsList()) {
+      if (level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        continue;
+      }
+      String nodeId = level.getOriginalIdentifier().replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
+      if (currentNode.isArray()) {
+        for (YamlNode yamlNode : currentNode.asArray()) {
+          // Checking the immediate element if it matches the nodeId. If matches then replace the currentYamlNode with
+          // the element.
+          if (getCurrentArrayElementIfMatches(yamlNode, nodeId)) {
+            currentNode = yamlNode;
+            break;
+          } else {
+            Set<String> fieldNames = new LinkedHashSet<>();
+            yamlNode.getCurrJsonNode().fieldNames().forEachRemaining(fieldNames::add);
+
+            // Checking all children of array element if any of them matches nodeId, then replace the currentYamlNode
+            // with that child.
+            Optional<String> matchingField =
+                fieldNames.stream()
+                    .filter(fieldName -> getCurrentArrayElementIfMatches(yamlNode.gotoPath(fieldName), nodeId))
+                    .findFirst();
+            if (matchingField.isPresent()) {
+              currentNode = yamlNode.gotoPath(matchingField.get());
+              break;
+            }
+          }
+        }
+      } else {
+        currentNode = currentNode.gotoPath(nodeId);
+      }
+    }
+    return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
+  }
+
+  /**
+   *
+   * This method just returns the textual representation of the poperty
+   * All the cases must be handled by the callers themselves.
+   * This method do not try to interpret any information from the json node
+   *
+   * @param name : name of the property whose value needed to be extrated
+   * @return : String representation of the node ig found else null
+   */
+  public String getProperty(String name) {
+    JsonNode value = getValueInternal(name);
+    if (value == null) {
+      return null;
+    }
+
+    return value.asText();
+  }
+
+  // Check if YamlNode matches the nodeId.
+  private static boolean getCurrentArrayElementIfMatches(YamlNode yamlNode, String nodeId) {
+    return yamlNode.gotoPath("identifier") != null && yamlNode.gotoPath("identifier").asText().equals(nodeId)
+        || yamlNode.gotoPath("name") != null && yamlNode.gotoPath("name").asText().equals(nodeId)
+        || yamlNode.gotoPath("key") != null && yamlNode.gotoPath("key").asText().equals(nodeId);
   }
 }

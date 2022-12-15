@@ -10,9 +10,12 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -23,6 +26,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
@@ -33,7 +37,9 @@ import software.wings.beans.artifact.ArtifactStreamBinding;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.persistence.AppContainer;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 import software.wings.utils.ArtifactType;
 import software.wings.yaml.BaseEntityYaml;
@@ -68,6 +74,7 @@ import org.mongodb.morphia.annotations.Version;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "ServiceKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "services", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(_957_CG_BEANS)
@@ -129,7 +136,7 @@ public class Service extends Base
   private boolean isPcfV2;
   private HelmVersion helmVersion;
   private CfCliVersion cfCliVersion;
-  @FdIndex private String accountId;
+  private String accountId;
   @FdIndex private List<String> artifactStreamIds;
   @Transient private List<ArtifactStreamBinding> artifactStreamBindings;
   private boolean sample;
@@ -220,6 +227,18 @@ public class Service extends Base
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(SERVICE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

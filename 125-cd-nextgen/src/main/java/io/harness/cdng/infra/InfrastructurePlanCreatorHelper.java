@@ -11,7 +11,11 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -21,6 +25,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -63,12 +68,19 @@ public class InfrastructurePlanCreatorHelper {
     return infrastructureConfigs;
   }
 
-  public void setInfraIdentifierAndName(Infrastructure infrastructure, String infraIdentifier, String infraName) {
+  public void setInfraIdentifierAndName(
+      Infrastructure infrastructure, String infraIdentifier, String infraName, boolean skipInstances) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         k8SDirectInfrastructure.setInfraIdentifier(infraIdentifier);
         k8SDirectInfrastructure.setInfraName(infraName);
+        return;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        customDeploymentInfrastructure.setInfraIdentifier(infraIdentifier);
+        customDeploymentInfrastructure.setInfraName(infraName);
         return;
 
       case InfrastructureKind.KUBERNETES_GCP:
@@ -94,24 +106,52 @@ public class InfrastructurePlanCreatorHelper {
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         pdcInfrastructure.setInfraName(infraName);
         pdcInfrastructure.setInfraIdentifier(infraIdentifier);
+        pdcInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         sshWinRmAwsInfrastructure.setInfraName(infraName);
         sshWinRmAwsInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAwsInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
         sshWinRmAzureInfrastructure.setInfraName(infraName);
         sshWinRmAzureInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAzureInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         azureWebAppInfrastructure.setInfraName(infraName);
         azureWebAppInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        ecsInfrastructure.setInfraName(infraName);
+        ecsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        elastigroupInfrastructure.setInfraName(infraName);
+        elastigroupInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        tanzuApplicationServiceInfrastructure.setInfraName(infraName);
+        tanzuApplicationServiceInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        asgInfrastructure.setInfraName(infraName);
+        asgInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

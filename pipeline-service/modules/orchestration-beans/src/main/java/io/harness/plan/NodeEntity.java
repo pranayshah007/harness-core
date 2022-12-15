@@ -9,7 +9,7 @@ package io.harness.plan;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -30,9 +30,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "NodeEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Document("nodes")
 @Entity(value = "nodes")
-@StoreIn(DbAliases.PMS)
 public class NodeEntity implements PersistentEntity, UuidAccess {
   private static final long TTL_MONTHS = 6;
 

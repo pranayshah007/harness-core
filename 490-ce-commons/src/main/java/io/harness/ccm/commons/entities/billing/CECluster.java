@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.billing;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,9 +35,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceCluster", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEClusterKeys")
-@StoreIn(DbAliases.CENG)
 public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -61,13 +61,14 @@ public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAw
   String parentAccountSettingId; // setting id of ce connectors
   Map<String, String> labels;
   @FdIndex String hash;
+  boolean isDeactivated;
   long lastReceivedAt;
   long createdAt;
   long lastUpdatedAt;
 
   @Builder(toBuilder = true)
   private CECluster(String accountId, String clusterName, String clusterArn, String region, String infraAccountId,
-      String infraMasterAccountId, String parentAccountSettingId, Map<String, String> labels) {
+      String infraMasterAccountId, String parentAccountSettingId, Map<String, String> labels, boolean isDeactivated) {
     this.accountId = accountId;
     this.clusterName = clusterName;
     this.clusterArn = clusterArn;
@@ -76,6 +77,7 @@ public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAw
     this.infraMasterAccountId = infraMasterAccountId;
     this.parentAccountSettingId = parentAccountSettingId;
     this.labels = labels;
+    this.isDeactivated = isDeactivated;
     this.hash = hash(accountId, clusterName, region, infraAccountId);
   }
 

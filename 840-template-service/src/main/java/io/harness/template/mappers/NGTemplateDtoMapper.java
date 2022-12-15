@@ -8,7 +8,10 @@
 package io.harness.template.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.utils.NGUtils.validate;
+
+import static java.lang.Double.compare;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGTemplateReference;
@@ -18,32 +21,40 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.TemplateFilterProperties;
-import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @UtilityClass
+@Slf4j
 public class NGTemplateDtoMapper {
+  public static final String BOOLEAN_TRUE_VALUE = "true";
+
   public TemplateResponseDTO writeTemplateResponseDto(TemplateEntity templateEntity) {
     return TemplateResponseDTO.builder()
         .accountId(templateEntity.getAccountId())
@@ -60,7 +71,36 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
+        .icon(templateEntity.getIcon())
         .gitDetails(getEntityGitDetails(templateEntity))
+        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .entityValidityDetails(templateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
+                : EntityValidityDetails.builder().valid(true).build())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
+        .cacheResponseMetadata(getCacheResponse(templateEntity))
+        .build();
+  }
+
+  public TemplateResponseDTO writeTemplateResponseDto(TemplateEntityGetResponse templateEntityGetResponse) {
+    TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
+    return TemplateResponseDTO.builder()
+        .accountId(templateEntity.getAccountId())
+        .orgIdentifier(templateEntity.getOrgIdentifier())
+        .projectIdentifier(templateEntity.getProjectIdentifier())
+        .yaml(templateEntity.getYaml())
+        .identifier(templateEntity.getIdentifier())
+        .description(templateEntity.getDescription())
+        .name(templateEntity.getName())
+        .isStableTemplate(templateEntity.isStableTemplate())
+        .childType(templateEntity.getChildType())
+        .templateEntityType(templateEntity.getTemplateEntityType())
+        .templateScope(templateEntity.getTemplateScope())
+        .versionLabel(templateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .version(templateEntity.getVersion())
+        .gitDetails(templateEntityGetResponse.getEntityGitDetails())
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
@@ -100,6 +140,7 @@ public class NGTemplateDtoMapper {
         .version(templateEntity.getVersion())
         .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .icon(templateEntity.getIcon())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -121,6 +162,7 @@ public class NGTemplateDtoMapper {
         .templateScope(templateEntity.getTemplateScope())
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .icon(templateEntity.getIcon())
         .version(templateEntity.getVersion())
         .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
@@ -153,6 +195,7 @@ public class NGTemplateDtoMapper {
         .name(templateConfig.getTemplateInfoConfig().getName())
         .description(description)
         .tags(TagMapper.convertToList(templateConfig.getTemplateInfoConfig().getTags()))
+        .icon(templateConfig.getTemplateInfoConfig().getIcon())
         .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
         .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
@@ -175,6 +218,25 @@ public class NGTemplateDtoMapper {
         .build();
   }
 
+  public CacheResponseMetadataDTO getCacheResponse(TemplateEntity templateEntity) {
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      return getCacheResponse();
+    }
+    return null;
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse() {
+    CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+    if (cacheResponse != null) {
+      return CacheResponseMetadataDTO.builder()
+          .cacheState(cacheResponse.getCacheState())
+          .ttlLeft(cacheResponse.getTtlLeft())
+          .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .build();
+    }
+    return null;
+  }
+
   public PageParamsDTO preparePageParamsDTO(int page, int size, List<String> sort) {
     return PageParamsDTO.builder().page(page).size(size).sort(sort).build();
   }
@@ -189,6 +251,7 @@ public class NGTemplateDtoMapper {
           .templateEntityTypes(filterProperties.getTemplateEntityTypes())
           .childTypes(filterProperties.getChildTypes())
           .description(filterProperties.getDescription())
+          .repoName(filterProperties.getRepoName())
           .build();
     }
   }
@@ -279,12 +342,63 @@ public class NGTemplateDtoMapper {
       throw new InvalidRequestException("OrgIdentifier for template is not matching as in template yaml.");
     }
 
-    if (EmptyPredicate.isEmpty(templateConfig.getTemplateInfoConfig().getVersionLabel())) {
+    if (isEmpty(templateConfig.getTemplateInfoConfig().getVersionLabel())) {
       throw new InvalidRequestException("Template version label cannot be empty.");
     }
     if (NGExpressionUtils.matchesInputSetPattern(templateConfig.getTemplateInfoConfig().getIdentifier())) {
       throw new InvalidRequestException("Template identifier cannot be runtime input");
     }
+    validateIconForTemplate(templateConfig.getTemplateInfoConfig().getIcon());
+  }
+  @VisibleForTesting
+  protected void validateIconForTemplate(String iconWithFormat) {
+    if (iconWithFormat == null || iconWithFormat.length() == 0) {
+      return;
+    }
+    String format, icon;
+    try {
+      String[] strings = iconWithFormat.split(",");
+      format = strings[0];
+      icon = strings[1];
+    } catch (Exception e) {
+      throw new InvalidRequestException("Icon string is invalid");
+    }
+    int iconLength = icon.length();
+    checkForTheCorrectFormat(format);
+    checkForTheCorrectSize(icon, iconLength);
+  }
+
+  private void checkForTheCorrectSize(String icon, int iconLength) {
+    int padding = getPadding(icon, iconLength);
+    double fileSizeInBytes = Math.ceil((double) iconLength / 4) * 3;
+    fileSizeInBytes = fileSizeInBytes - padding;
+    double fileSizeInKB = fileSizeInBytes / 1024;
+    if (compare(fileSizeInKB, 30.00) > 0) {
+      throw new InvalidRequestException("Icon Size can not be more than 30KB");
+    }
+  }
+
+  private void checkForTheCorrectFormat(String format) {
+    switch (format) { // check image's extension
+      case "data:image/jpeg;base64":
+      case "data:image/png;base64":
+      case "data:image/svg+xml;base64":
+      case "data:image/jpg;base64":
+        break;
+      default: // Icon should be of above-mentioned format
+        throw new InvalidRequestException("Invalid format for Icon Image");
+    }
+  }
+
+  private int getPadding(String icon, int iconLength) {
+    int pad = 0;
+    if (iconLength >= 1 && icon.charAt(iconLength - 1) == '=') {
+      pad++;
+    }
+    if (iconLength >= 2 && icon.charAt(iconLength - 2) == '=') {
+      pad++;
+    }
+    return pad;
   }
 
   public Scope getScopeFromTemplateDto(NGTemplateInfoConfig templateInfoConfig) {
@@ -295,5 +409,13 @@ public class NGTemplateDtoMapper {
       return Scope.ORG;
     }
     return Scope.ACCOUNT;
+  }
+
+  public boolean parseLoadFromCacheHeaderParam(String loadFromCache) {
+    if (isEmpty(loadFromCache)) {
+      return false;
+    } else {
+      return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
+    }
   }
 }

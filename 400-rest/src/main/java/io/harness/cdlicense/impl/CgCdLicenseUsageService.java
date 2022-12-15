@@ -8,7 +8,12 @@
 package io.harness.cdlicense.impl;
 
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
+import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 
 public interface CgCdLicenseUsageService {
   CgActiveServicesUsageInfo getActiveServiceLicenseUsage(String accountId);
+
+  CgServiceInstancesUsageInfo getServiceInstancesUsage(String accountId);
+
+  int getActiveServiceInTimePeriod(String accountId, int timePeriodInDays);
 }

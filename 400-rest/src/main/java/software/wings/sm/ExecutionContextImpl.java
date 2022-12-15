@@ -42,7 +42,6 @@ import static org.apache.commons.lang3.StringUtils.join;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
@@ -110,7 +109,6 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.customdeployment.CustomDeploymentTypeDTO;
 import software.wings.common.InfrastructureConstants;
@@ -125,6 +123,7 @@ import software.wings.expression.SubstitutionFunctor;
 import software.wings.expression.SweepingOutputFunctor;
 import software.wings.expression.SweepingOutputSecretManagerFunctor;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.PipelineWorkflowExecutionLogContext;
 import software.wings.service.impl.StateExecutionInstanceLogContext;
@@ -471,28 +470,15 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Override
   public List<Artifact> getArtifacts() {
     WorkflowStandardParams workflowStandardParams = fetchWorkflowStandardParamsFromContext();
-    String accountId = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams).getAccountId();
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      List<ServiceArtifactElement> artifactElements = getArtifactElements();
-      if (isEmpty(artifactElements)) {
-        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
-      }
-      List<Artifact> list = new ArrayList<>();
-      for (ServiceArtifactElement artifactElement : artifactElements) {
-        list.add(artifactService.get(artifactElement.getUuid()));
-      }
-      return list;
-    } else {
-      List<ServiceArtifactVariableElement> artifactVariableElements = getArtifactVariableElements();
-      if (isEmpty(artifactVariableElements)) {
-        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
-      }
-      List<Artifact> list = new ArrayList<>();
-      for (ServiceArtifactVariableElement artifactVariableElement : artifactVariableElements) {
-        list.add(artifactService.get(artifactVariableElement.getUuid()));
-      }
-      return list;
+    List<ServiceArtifactElement> artifactElements = getArtifactElements();
+    if (isEmpty(artifactElements)) {
+      return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
     }
+    List<Artifact> list = new ArrayList<>();
+    for (ServiceArtifactElement artifactElement : artifactElements) {
+      list.add(artifactService.get(artifactElement.getUuid()));
+    }
+    return list;
   }
 
   @Override
@@ -689,12 +675,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
 
   @Override
   public Artifact getDefaultArtifactForService(String serviceId) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, getAccountId())) {
-      Map<String, Artifact> map = getArtifactsForService(serviceId);
-      return map.getOrDefault(ExpressionEvaluator.DEFAULT_ARTIFACT_VARIABLE_NAME, null);
-    } else {
-      return getArtifactForService(serviceId);
-    }
+    return getArtifactForService(serviceId);
   }
 
   @Override
@@ -999,9 +980,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     }
 
     Application app = getApp();
-    if (stateExecutionContext != null && app != null
-        && featureFlagService.isEnabled(FeatureName.OPTIMIZED_TF_PLAN, app.getAccountId())) {
-      evaluator.addFunctor(TerraformPlanExpressionInterface.FUNCTOR_NAME,
+    if (stateExecutionContext != null && app != null) {
+      contextMap.put(TerraformPlanExpressionInterface.FUNCTOR_NAME,
           TerraformPlanExpressionFunctor.builder()
               .obtainTfPlanFunction(planName
                   -> sweepingOutputService.findSweepingOutput(

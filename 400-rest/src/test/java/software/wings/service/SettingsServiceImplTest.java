@@ -91,7 +91,6 @@ import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
@@ -402,7 +401,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     settingsService.delete(APP_ID, SETTING_ID);
     verify(mockWingsPersistence).delete(any(SettingAttribute.class));
@@ -430,7 +428,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), any(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     assertThatThrownBy(() -> settingsService.delete(APP_ID, SETTING_ID))
         .isInstanceOf(InvalidRequestException.class)
@@ -456,7 +453,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     settingsService.delete(APP_ID, SETTING_ID);
     verify(mockWingsPersistence).delete(any(SettingAttribute.class));
@@ -480,7 +476,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(infrastructureDefinitionService.listNamesByConnectionAttr(any(), any()))
         .thenReturn(Lists.newArrayList("infra-1", "infra-2"));
 
@@ -507,7 +502,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(artifactStreamService.listBySettingId(anyString())).thenReturn(null);
     settingsService.delete(APP_ID, SETTING_ID);
     verify(mockWingsPersistence).delete(any(SettingAttribute.class));
@@ -531,7 +525,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), any(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(artifactStreamService.listBySettingId(any()))
         .thenReturn(
             Lists.newArrayList(AzureArtifactsArtifactStream.builder().name("az-1").sourceName("az-source-1").build(),
@@ -559,7 +552,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(applicationManifestService.getAllByConnectorId(anyString(), anyString(), any())).thenReturn(null);
     settingsService.delete(APP_ID, SETTING_ID);
     verify(mockWingsPersistence).delete(any(SettingAttribute.class));
@@ -583,7 +575,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), any(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(applicationManifestService.getAllByConnectorId(any(), any(), any()))
         .thenReturn(
             Lists.newArrayList(ApplicationManifest.builder().storeType(StoreType.HelmChartRepo).serviceId("s1").build(),
@@ -631,7 +622,6 @@ public class SettingsServiceImplTest extends WingsBaseTest {
     when(userService.hasPermission(any(), any())).thenReturn(false);
     when(settingServiceHelper.userHasPermissionsToChangeEntity(eq(settingAttribute), anyString(), any(), eq(false)))
         .thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(applicationManifestService.getAllByConnectorId(anyString(), anyString(), any())).thenReturn(null);
     assertThatThrownBy(() -> settingsService.delete(APP_ID, SETTING_ID))
         .isInstanceOf(InvalidRequestException.class)

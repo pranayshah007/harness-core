@@ -52,6 +52,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.SourceType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -194,6 +195,12 @@ public class TriggerHelper {
           TriggerStatus.builder().webhookAutoRegistrationStatus(registrationStatus).build());
     } else {
       ngTriggerEntity.getTriggerStatus().setWebhookAutoRegistrationStatus(registrationStatus);
+    }
+  }
+
+  public static void stampWebhookIdInfo(NGTriggerEntity ngTriggerEntity, String webhookId) {
+    if (ngTriggerEntity.getTriggerStatus().getWebhookInfo() == null) {
+      ngTriggerEntity.getTriggerStatus().setWebhookInfo(WebhookInfo.builder().webhookId(webhookId).build());
     }
   }
 }

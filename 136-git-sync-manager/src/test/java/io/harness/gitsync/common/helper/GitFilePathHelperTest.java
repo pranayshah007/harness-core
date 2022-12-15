@@ -9,6 +9,7 @@ package io.harness.gitsync.common.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
@@ -51,6 +52,7 @@ public class GitFilePathHelperTest extends CategoryTest {
   String branch = "branch";
   String connectorRef = "connectorRef";
   String repoName = "repoName";
+  String org = "org";
   Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
   GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(repoName).build();
   @Before
@@ -83,36 +85,6 @@ public class GitFilePathHelperTest extends CategoryTest {
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
           .isEqualTo(String.format(GitFilePathHelper.INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE, filePath));
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testValidateFilePath_whenFilePathIsNotInHarnessDirectory() {
-    String filePath = "abc.yaml";
-    try {
-      gitFilePathHelper.validateFilePath(filePath);
-    } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
-      assertThat(exception).isNotNull();
-      assertThat(exception.getMessage())
-          .isEqualTo(String.format(GitFilePathHelper.FILE_PATH_INVALID_DIRECTORY_ERROR_FORMAT, filePath));
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testValidateFilePath_whenFilePathHasInvalidExtension() {
-    String filePath = ".harness/abc.py";
-    try {
-      gitFilePathHelper.validateFilePath(filePath);
-    } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(InvalidRequestException.class, ex);
-      assertThat(exception).isNotNull();
-      assertThat(exception.getMessage())
-          .isEqualTo(String.format(GitFilePathHelper.FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath));
     }
   }
 
@@ -205,6 +177,27 @@ public class GitFilePathHelperTest extends CategoryTest {
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
     assertThat(fileUrl).isEqualTo(
         "https://bitbucket.dev.harness.io/projects/harness/repos/repoName/browse/filePath?at=refs/heads/branch");
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFileUrlForBitbucketServerAccountLevelConnector() {
+    String accountUrl = "https://bitbucket.dev.harness.io/scm";
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(accountUrl)
+            .build();
+    doReturn(bitbucketConnectorDTO)
+        .when(gitSyncConnectorHelper)
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+    String repo = org + "/" + repoName;
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(repo).build();
+    String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
+    assertThat(fileUrl).isEqualTo(
+        "https://bitbucket.dev.harness.io/projects/org/repos/repoName/browse/filePath?at=refs/heads/branch");
   }
 
   @Test

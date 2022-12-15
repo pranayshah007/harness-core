@@ -9,7 +9,6 @@ package software.wings.delegatetasks.delegatecapability;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.MOHIT;
-import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,13 +29,12 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.KmsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.VaultConfig;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,16 +134,6 @@ public class CapabilityHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ROHIT_KUMAR)
-  @Category(UnitTests.class)
-  public void testGetHttpCapabilityForDecryption_secretconfig() throws Exception {
-    EncryptionConfig encryptionConfig = CyberArkConfig.builder().cyberArkUrl("https://harness.cyberark.com").build();
-    List<ExecutionCapability> capability =
-        EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null);
-    assertThat("https://harness.cyberark.com").isEqualTo(capability.get(0).fetchCapabilityBasis());
-  }
-
-  @Test
   @Owner(developers = MOHIT)
   @Category(UnitTests.class)
   public void testFetchEncryptionDetailsList_BATCH_SECRET_DECRYPT() throws Exception {
@@ -181,7 +169,7 @@ public class CapabilityHelperTest extends WingsBaseTest {
     Integer sshPort = 22;
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(sshPort);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     GitConfig gitConfig = GitConfig.builder().repoUrl(repoUrl).sshSettingAttribute(sshSettingAttribute).build();
 
@@ -202,7 +190,7 @@ public class CapabilityHelperTest extends WingsBaseTest {
     Integer sshPort = 22;
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(sshPort);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     GitConfig gitConfig = GitConfig.builder().repoUrl(repoUrl).sshSettingAttribute(sshSettingAttribute).build();
 

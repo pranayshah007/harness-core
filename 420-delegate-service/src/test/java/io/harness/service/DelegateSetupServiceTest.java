@@ -9,19 +9,18 @@ package io.harness.service;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.NICOLAS;
 import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VUK;
 
-import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -29,6 +28,7 @@ import io.harness.DelegateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateEntityOwner;
@@ -54,7 +54,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.service.intfc.DelegateInsightsService;
 
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.SelectorType;
@@ -64,7 +63,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -88,10 +86,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   private static final String TEST_DELEGATE_GROUP_ID_2 = "delegateGroupId2";
   private static final String TEST_DELEGATE_GROUP_ID_3 = "delegateGroupId3";
   private static final String TEST_DELEGATE_GROUP_ID_4 = "delegateGroupId4";
-  public static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
 
   @Mock private DelegateCache delegateCache;
-  @Mock private DelegateInsightsService delegateInsightsService;
 
   @InjectMocks @Inject private DelegateSetupServiceImpl delegateSetupService;
   @Inject private HPersistence persistence;
@@ -143,10 +139,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     // these three delegates should be returned for group 1
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
@@ -239,13 +231,45 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                           .uuid(delegate3.getUuid())
                           .lastHeartbeat(delegate3.getLastHeartBeat())
                           .activelyConnected(delegate3.getLastHeartBeat()
-                              > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+                              > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
                           .hostName(delegate3.getHostName())
                           .version("1.0.0")
                           .tokenActive(true)
                           .build());
       }
     }
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountForDelegateGroups() {
+    String accountId = generateUuid();
+    String delegateProfileId = generateUuid();
+
+    when(delegateCache.getDelegateProfile(accountId, delegateProfileId))
+        .thenReturn(DelegateProfile.builder().name("profile").selectors(ImmutableList.of("s1", "s2")).build());
+
+    DelegateSizeDetails grp1SizeDetails =
+        DelegateSizeDetails.builder().size(DelegateSize.LARGE).cpu(2.5d).label("size").ram(2048).replicas(2).build();
+
+    DelegateGroup delegateGroup1 = DelegateGroup.builder()
+                                       .name("grp1")
+                                       .accountId(accountId)
+                                       .ng(true)
+                                       .delegateType(KUBERNETES)
+                                       .description("description")
+                                       .sizeDetails(grp1SizeDetails)
+                                       .delegateConfigurationId(delegateProfileId)
+                                       .tags(ImmutableSet.of("custom-grp-tag"))
+                                       .build();
+    when(delegateCache.getDelegateGroup(accountId, delegateGroup1.getUuid())).thenReturn(delegateGroup1);
+    persistence.save(delegateGroup1);
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(1);
+    delegateSetupService.deleteByAccountId(accountId);
+    delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(0);
   }
 
   @Test
@@ -261,6 +285,10 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupListing.getDelegateGroupDetails())
         .extracting(DelegateGroupDetails::getGroupName)
         .containsOnly("grp1", "grp2", "grp4");
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getGroupVersion()).isEqualTo("22.09.76614");
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getAutoUpgrade())
+        .isEqualTo(AutoUpgrade.SYNCHRONIZING);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(1).getAutoUpgrade()).isEqualTo(AutoUpgrade.OFF);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -495,10 +523,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
                              .ng(true)
@@ -597,10 +621,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
                              .owner(owner)
@@ -1294,6 +1314,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .delegateGroupName("grp1")
                              .description("description1")
                              .hostName("kube-0")
+                             .version("22.09.76614")
+                             .immutable(true)
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .build();
@@ -1308,6 +1330,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .delegateGroupName("grp1")
                              .description("description")
                              .hostName("kube-1")
+                             .version("22.11.76800")
+                             .immutable(true)
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .lastHeartBeat(System.currentTimeMillis() - 60000)

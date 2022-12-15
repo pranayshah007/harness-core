@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.rest.RestResponse;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.CustomArtifactStream;
@@ -28,6 +27,7 @@ import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.gcs.GcsService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -246,7 +246,8 @@ public class BuildSourceResource {
     List<BuildDetails> buildDetails;
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled())) {
-      List<Artifact> artifacts = artifactService.listArtifactsByArtifactStreamId(appId, artifactStreamId);
+      List<Artifact> artifacts =
+          artifactService.listArtifactsByArtifactStreamId(artifactStream.getAccountId(), artifactStreamId);
       buildDetails =
           artifacts.stream()
               .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())

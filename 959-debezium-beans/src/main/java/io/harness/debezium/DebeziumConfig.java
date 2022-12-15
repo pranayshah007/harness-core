@@ -71,20 +71,12 @@ public class DebeziumConfig {
   @JsonProperty("connector.class") String connectorClass;
   @JsonProperty("producingCountPerBatch") long producingCountPerBatch;
   /**
-   * The comma-separated list of hostname and port pairs (in the form 'host' or 'host:port') of the MongoDB servers in
-   * the replica set. The list can contain a single hostname and port pair. If mongodb.members.auto.discover is set to
-   * false, then the host and port pair should be prefixed with the replica set name (e.g., rs0/localhost:27017)
-   */
-  @JsonProperty("mongodb.hosts") String mongodbHosts;
-  /**
    * A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector
    * monitors. Each server should be monitored by at most one Debezium connector, since this server name prefixes
    * all persisted Kafka topics emanating from the MongoDB replica set or cluster. Only alphanumeric characters
    * and underscores should be used.
    */
   @JsonProperty("mongodb.name") String mongodbName;
-  @JsonProperty("mongodb.user") String mongodbUser;
-  @JsonProperty("mongodb.password") String mongodbPassword;
   /** Connector will use SSL to connect to MongoDB instances. */
   @JsonProperty("mongodb.ssl.enabled") String sslEnabled;
   /**
@@ -107,7 +99,61 @@ public class DebeziumConfig {
    the server chooses an appropriate fetch size.
    */
   @JsonProperty("snapshot.fetch.size") private String snapshotFetchSize;
-
+  /**
+   * Specifies maximum topic size for redis stream
+   */
+  @JsonProperty("redisStreamSize") private int redisStreamSize;
+  /**
+   * Specifies the criteria for running a snapshot upon startup of the connector. The default is initial, and specifies
+   * that the connector reads a snapshot when either no offset is found or if the oplog/change stream no longer contains
+   * the previous offset. The never option specifies that the connector should never use snapshots, instead the
+   * connector should proceed to tail the log.
+   */
+  @JsonProperty("snapshot.mode") private String snapshotMode;
+  /**
+   * To bypass the impedance mismatch in heterogeneous array, it is possible to encode the array in two different ways
+   * using array.encoding configuration option. Value document will convert the array into a struct of structs in the
+   * similar way as done by BSON serialization. The main struct contains fields named _0, _1, _2 etc. where the name
+   * represents the index of the element in the array. Every element is then passed as the value for the given field.
+   */
+  @JsonProperty("transforms.unwrap.array.encoding") private String transformsUnwrapArrayEncoding;
+  /**
+   * Positive integer value that specifies the maximum number of records that the blocking queue can hold. When Debezium
+   * reads events streamed from the database, it places the events in the blocking queue before it writes them to Kafka.
+   * The blocking queue can provide backpressure for reading change events from the database in cases where the
+   * connector ingests messages faster than it can write them to Kafka, or when Kafka becomes unavailable. Events that
+   * are held in the queue are disregarded when the connector periodically records offsets.
+   */
+  @JsonProperty("max.queue.size") private String maxQueueSize;
+  /**
+   * Positive integer value that specifies the maximum size of each batch of events that should be processed during
+   * each iteration of this connector.
+   */
+  @JsonProperty("max.batch.size") private String maxBatchSize;
+  /**
+   * A long integer value that specifies the maximum volume of the blocking queue in bytes. By default, volume limits
+   * are not specified for the blocking queue. To specify the number of bytes that the queue can consume, set this
+   * property to a positive long value. If max.queue.size is also set, writing to the queue is blocked when the size of
+   * the queue reaches the limit specified by either property.
+   */
+  @JsonProperty("max.queue.size.in.bytes") private long maxQueueSizeInBytes;
+  /**
+   * Positive integer value that specifies the number of milliseconds the connector should wait during each iteration
+   * for new change events to appear.
+   */
+  @JsonProperty("poll.interval.ms") private String pollIntervalMs;
+  /**
+   * Controls how frequently heartbeat messages are sent. This property contains an interval in milliseconds that
+   * defines how frequently the connector sends messages into a heartbeat topic. This can be used to monitor whether the
+   * connector is still receiving change events from the database.
+   */
+  @JsonProperty("heartbeat.interval.ms") private String heartbeatIntervalMs;
+  /**
+   * A comma-separated list of the fully-qualified names of fields that should be excluded from change event message
+   * values.
+   */
+  @JsonProperty("field.exclude.list") private String fieldExcludeList;
+  @JsonProperty("mongodb.connection.string") private String mongodbConnectionString;
   public List<String> getMonitoredCollections() {
     if (EmptyPredicate.isEmpty(collectionIncludeList)) {
       return new ArrayList<>();

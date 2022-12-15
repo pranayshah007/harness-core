@@ -15,7 +15,6 @@ import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 
 import com.google.inject.Inject;
-import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -87,7 +86,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     return mongoTemplate.findAndModify(query, update, new FindAndModifyOptions().returnNew(true), Project.class);
   }
 
-  public boolean hardDelete(String accountIdentifier, String orgIdentifier, String identifier, Long version) {
+  public Project hardDelete(String accountIdentifier, String orgIdentifier, String identifier, Long version) {
     Criteria criteria = Criteria.where(ProjectKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(ProjectKeys.orgIdentifier)
@@ -98,8 +97,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
       criteria.and(ProjectKeys.version).is(version);
     }
     Query query = new Query(criteria);
-    DeleteResult removeResult = mongoTemplate.remove(query, Project.class);
-    return removeResult.wasAcknowledged();
+    return mongoTemplate.findAndRemove(query, Project.class);
   }
 
   @Override

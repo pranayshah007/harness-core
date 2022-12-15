@@ -58,6 +58,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -237,8 +238,35 @@ public class GitClientHelper {
       return "https://api.bitbucket.org/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
+      domain = fetchCustomBitbucketDomain(url, domain);
       return getHttpProtocolPrefix(url) + domain + "/";
     }
+  }
+
+  private static String fetchCustomBitbucketDomain(String url, String domain) {
+    final String SCM_SPLITTER = "/scm";
+    String[] splits = url.split(domain);
+    if (splits.length <= 1) {
+      // URL only contains the domain
+      return domain;
+    }
+
+    String scmString = splits[1];
+    if (!scmString.contains(SCM_SPLITTER)) {
+      // Remaining URL does not contain the custom splitter string
+      // Fallback to the original domain
+      return domain;
+    }
+
+    String[] endpointSplits = scmString.split(SCM_SPLITTER);
+    if (endpointSplits.length == 0) {
+      // URL does not have anything after the splitter
+      // as well as between domain and splitter
+      return domain;
+    }
+
+    String customEndpoint = endpointSplits[0];
+    return domain + customEndpoint;
   }
 
   public static String getAzureRepoApiURL(String url) {
@@ -252,7 +280,7 @@ public class GitClientHelper {
 
   public static String getAzureRepoOrgAndProjectHTTP(String url) {
     String temp = StringUtils.substringBeforeLast(url, "/_git/");
-    return StringUtils.substringAfter(temp, "azure.com/");
+    return StringUtils.substringAfter(temp, ".com/");
   }
 
   public static String getAzureRepoOrg(String orgAndProject) {
@@ -506,9 +534,32 @@ public class GitClientHelper {
   public static void validateURL(@NotNull String url) {
     Matcher m = GIT_URL_NO_OWNER.matcher(url);
     log.info("url==" + url);
+
+    checkInvalidCharacters(url.trim());
     if (!(m.find())) {
       throw new InvalidRequestException(
           format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
+    }
+    if (url.startsWith("git@") && !url.contains(":")) {
+      throw new InvalidRequestException(
+          format("Invalid repo url  %s, valid ssh url formats are git@provider.com:username/repo, "
+                  + "ssh://provider.com/username/repo, "
+                  + "ssh://git@provider.com/username/repo",
+              url));
+    }
+  }
+
+  private static void checkInvalidCharacters(String url) {
+    if (url.isEmpty()) {
+      throw new InvalidRequestException(format("Url cannot be left blank"));
+    }
+    if (url.trim().contains(" ")) {
+      throw new InvalidRequestException(format("Invalid repo url  %s, It should not contain spaces in between", url));
+    }
+    try {
+      URLDecoder.decode(url, StandardCharsets.UTF_8.name());
+    } catch (Exception e) {
+      throw new InvalidRequestException(format("Url %s is invalid", url));
     }
   }
 

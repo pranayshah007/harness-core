@@ -44,8 +44,7 @@ public class ApproachingLimitsMessage {
             "You have consumed {}% of allowed Infrastructure Provisioner creation limits. Please contact Harness Support to avoid any interruptions.";
         break;
       default:
-        log.error(
-            "No warning message configured. Please configure one or default message will be shown. ActionType: {}",
+        log.warn("No warning message configured. Please configure one or default message will be shown. ActionType: {}",
             actionType);
         return "Approaching resource usage limits. Please contact Harness Support to avoid any interruptions.";
     }

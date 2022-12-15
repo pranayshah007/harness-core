@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessModule._890_SM_CORE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.CYBERARK_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -30,13 +30,9 @@ import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.security.encryption.EncryptedRecord;
 
 import software.wings.beans.BaseVaultConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.VaultConfig;
-import software.wings.helpers.ext.cyberark.CyberArkReadResponse;
-import software.wings.helpers.ext.cyberark.CyberArkRestClient;
-import software.wings.helpers.ext.cyberark.CyberArkRestClientFactory;
 import software.wings.helpers.ext.vault.SSHVaultAuthResponse;
 import software.wings.helpers.ext.vault.SignedSSHVaultRequest;
 import software.wings.helpers.ext.vault.SignedSSHVaultResponse;
@@ -49,6 +45,8 @@ import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSecretMetadata;
 import software.wings.helpers.ext.vault.VaultSecretMetadata.VersionMetadata;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
+import software.wings.helpers.ext.vault.VaultTokenLookupResponse;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.inject.Singleton;
@@ -227,6 +225,29 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
   }
 
   @Override
+  public VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig) {
+    try {
+      VaultSysAuthRestClient restClient =
+          VaultRestClientFactory.getVaultRetrofit(vaultConfig.getVaultUrl(), vaultConfig.isCertValidationRequired())
+              .create(VaultSysAuthRestClient.class);
+
+      Response<VaultTokenLookupResponse> response =
+          restClient.tokenLookup(vaultConfig.getAuthToken(), vaultConfig.getNamespace()).execute();
+      VaultTokenLookupResult result = null;
+      if (response.isSuccessful()) {
+        result = response.body().getData();
+      } else {
+        logAndThrowVaultError(vaultConfig, response, "Token lookup");
+      }
+      return result;
+    } catch (IOException e) {
+      String message = "Failed to perform Token Lookup for secret manager " + vaultConfig.getName() + " at "
+          + vaultConfig.getVaultUrl();
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    }
+  }
+
+  @Override
   public List<SecretEngineSummary> listSecretEngines(BaseVaultConfig vaultConfig) {
     List<SecretEngineSummary> secretEngineSummaries = new ArrayList<>();
     try {
@@ -302,34 +323,6 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
     }
   }
 
-  @Override
-  public boolean validateCyberArkConfig(CyberArkConfig cyberArkConfig) {
-    String errorMessage;
-    // Basic connectivity and certificate validity checks
-    if (isNotEmpty(cyberArkConfig.getClientCertificate())
-        && !CyberArkRestClientFactory.validateClientCertificate(cyberArkConfig.getClientCertificate())) {
-      errorMessage = "Client certificate provided is not valid. Please check your configurations and try again";
-      throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, USER);
-    }
-
-    try {
-      CyberArkRestClient restClient = CyberArkRestClientFactory.create(cyberArkConfig);
-      String testQuery = "Username=svc_account_harness_validate_config";
-      Response<CyberArkReadResponse> response = restClient.readSecret(cyberArkConfig.getAppId(), testQuery).execute();
-      // Expecting a 404 response (or 200 by accident) as the test query of a non-existent account in normal cases.
-      int status = response.code();
-      if (status != 404 && status != 200) {
-        errorMessage = "Failed to query the CyberArk REST endpoint. Please check your configurations and try again";
-        throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, USER);
-      }
-    } catch (IOException e) {
-      errorMessage = "Failed to test a sample CyberArk query. Please check your configurations and try again";
-      throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, e, USER);
-    }
-
-    return false;
-  }
-
   private void logAndThrowVaultError(BaseVaultConfig baseVaultConfig, Response response, String operation)
       throws IOException {
     if (baseVaultConfig == null || response == null) {
@@ -361,6 +354,9 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (!vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

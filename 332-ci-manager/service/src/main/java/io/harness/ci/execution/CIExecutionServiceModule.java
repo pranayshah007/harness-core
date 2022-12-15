@@ -11,12 +11,17 @@ import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
+import io.harness.beans.steps.nodes.BackgroundStepNode;
+import io.harness.beans.steps.nodes.BitriseStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.beans.steps.nodes.GCSUploadNode;
+import io.harness.beans.steps.nodes.GitCloneStepNode;
+import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RestoreCacheGCSNode;
 import io.harness.beans.steps.nodes.RestoreCacheS3Node;
@@ -30,13 +35,13 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.integrationstage.InitializeStepInfoBuilder;
-import io.harness.ci.integrationstage.K8InitializeStepInfoBuilder;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
+import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.threading.ThreadPool;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
@@ -45,6 +50,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,6 +65,7 @@ public class CIExecutionServiceModule extends AbstractModule {
   public static Set<Class<?>> ciStepsMovedToNewSchema = new HashSet() {
     {
       add(RunStepNode.class);
+      add(BackgroundStepNode.class);
       add(RunTestStepNode.class);
       add(GCSUploadNode.class);
       add(S3UploadNode.class);
@@ -73,6 +80,10 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(PluginStepNode.class);
       add(SecurityNode.class);
       add(ArtifactoryUploadNode.class);
+      add(GitCloneStepNode.class);
+      add(InitializeStepNode.class);
+      add(ActionStepNode.class);
+      add(BitriseStepNode.class);
     }
   };
   @Inject
@@ -84,18 +95,36 @@ public class CIExecutionServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(CIBeansModule.getInstance());
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
+        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "ci-manager"));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
+        .toInstance(ThreadPool.create(
+            20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("RateLimt-Handler-%d").build()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciEventHandlerExecutor"))
         .toInstance(ThreadPool.create(
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciBackgroundTaskExecutor"))
+        .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciInitTaskExecutor"))
+        .toInstance(ThreadPool.create(
+            10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
-    bind(InitializeStepInfoBuilder.class).to(K8InitializeStepInfoBuilder.class);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginStepInfo>>() {}).toInstance(new PluginStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<RunTestsStepInfo>>() {
     }).toInstance(new RunTestsStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginCompatibleStep>>() {
     }).toInstance(new PluginCompatibleStepSerializer());
+    MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+        binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
+    CILiteEngineExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(CILiteEngineExceptionHandler.class));
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {

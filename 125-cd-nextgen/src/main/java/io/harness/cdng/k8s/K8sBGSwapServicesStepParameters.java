@@ -33,10 +33,8 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sBGSwapServicesStepParameters")
 public class K8sBGSwapServicesStepParameters extends K8sBGSwapServicesStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sBGSwapServicesStepParameters(ParameterField<Boolean> skipDryRun,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String blueGreenStepFqn,
-      String blueGreenSwapServicesFqn) {
-    this.skipDryRun = skipDryRun;
+  public K8sBGSwapServicesStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String blueGreenStepFqn, String blueGreenSwapServicesFqn) {
     this.delegateSelectors = delegateSelectors;
     this.blueGreenStepFqn = blueGreenStepFqn;
     this.blueGreenSwapServicesStepFqn = blueGreenSwapServicesFqn;
@@ -47,12 +45,5 @@ public class K8sBGSwapServicesStepParameters extends K8sBGSwapServicesStepInfo i
   @JsonIgnore
   public List<String> getCommandUnits() {
     return Collections.singletonList(K8sCommandUnitConstants.SwapServiceSelectors);
-  }
-
-  @Nonnull
-  @Override
-  @JsonIgnore
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
-    return getCommandUnits();
   }
 }

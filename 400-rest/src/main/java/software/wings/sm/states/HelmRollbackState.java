@@ -27,7 +27,6 @@ import software.wings.beans.Application;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
@@ -37,6 +36,7 @@ import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest.HelmRollbackCommandRequestBuilder;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContext;
@@ -125,12 +125,13 @@ public class HelmRollbackState extends HelmDeployState {
   protected void setNewAndPrevReleaseVersion(ExecutionContext context, Application app, String releaseName,
       ContainerServiceParams containerServiceParams, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
       GitConfig gitConfig, List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
-      int expressionFunctorToken, HelmCommandFlag helmCommandFlag) {
+      int expressionFunctorToken, HelmCommandFlag helmCommandFlag, String activityId) {
     HelmDeployContextElement contextElement = context.getContextElement(ContextElementType.HELM_DEPLOY);
     if (contextElement != null) {
       stateExecutionDataBuilder.releaseOldVersion(contextElement.getNewReleaseRevision());
       stateExecutionDataBuilder.releaseNewVersion(contextElement.getNewReleaseRevision() + 1);
       stateExecutionDataBuilder.rollbackVersion(contextElement.getPreviousReleaseRevision());
+      stateExecutionDataBuilder.activityId(activityId);
     }
   }
 

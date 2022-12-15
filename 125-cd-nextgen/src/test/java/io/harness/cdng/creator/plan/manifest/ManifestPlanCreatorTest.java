@@ -7,15 +7,18 @@
 
 package io.harness.cdng.creator.plan.manifest;
 
+import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE_ENTITY_DEFINITION_TYPE_KEY;
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +42,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -65,6 +69,7 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -73,6 +78,11 @@ import org.mockito.InjectMocks;
 public class ManifestPlanCreatorTest extends CDNGTestBase {
   @Inject private KryoSerializer kryoSerializer;
   @Inject @InjectMocks ManifestsPlanCreator manifestsPlanCreator;
+
+  private static final String ACCOUNT_ID = "account_id";
+  private static final String ORG_IDENTIFIER = "orgId";
+  private static final String PROJ_IDENTIFIER = "projId";
+  private static final String SERVICE_IDENTIFIER = "service1";
 
   private YamlField getYamlFieldFromGivenFileName(String file) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -84,6 +94,12 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     YamlField yamlField = YamlUtils.readTree(yaml);
     return yamlField;
   }
+
+  @Before
+  public void setUp() {
+    initMocks(this);
+  }
+
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
@@ -293,6 +309,49 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
 
     testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
         ServiceDefinitionType.NATIVE_HELM, serviceSpec, HELM_SUPPORTED_MANIFEST_TYPES);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreatePlanForChildrenNodesWithServiceEntity() throws IOException {
+    final ManifestConfigWrapper valuesManifest1 =
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder().identifier("values_test1").type(ManifestConfigType.VALUES).build())
+            .build();
+    final ManifestConfigWrapper valuesManifest2 =
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder().identifier("values_test2").type(ManifestConfigType.VALUES).build())
+            .build();
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(SERVICE_ENTITY_DEFINITION_TYPE_KEY,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ServiceDefinitionType.KUBERNETES)));
+    metadataDependency.put(YamlTypes.MANIFEST_LIST_CONFIG,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(Arrays.asList(valuesManifest1, valuesManifest2))));
+
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
+
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier(ACCOUNT_ID)
+            .setOrgIdentifier(ORG_IDENTIFIER)
+            .setProjectIdentifier(PROJ_IDENTIFIER)
+            .build());
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .currentField(manifestsYamlField)
+                                  .globalContext(globalContext)
+                                  .dependency(dependency)
+                                  .build();
+    List<String> expectedListOfIdentifier = Arrays.asList("values_test1", "values_test2");
+    List<String> actualListOfIdentifier = new ArrayList<>();
+    LinkedHashMap<String, PlanCreationResponse> response = manifestsPlanCreator.createPlanForChildrenNodes(ctx, null);
+    assertThat(response.size()).isEqualTo(2);
+    for (Map.Entry<String, PlanCreationResponse> entry : response.entrySet()) {
+      actualListOfIdentifier.add(fetchManifestIdentifier(entry.getKey(), entry.getValue()));
+    }
+    assertThat(expectedListOfIdentifier).isEqualTo(actualListOfIdentifier);
   }
 
   private void testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(

@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.billing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -34,9 +34,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "CEGcpServiceAccountKeys")
+@StoreIn(DbAliases.CENG)
 @Entity(value = "gcpServiceAccount", noClassnameStored = true)
 @OwnedBy(CE)
-@StoreIn(DbAliases.CENG)
 public class CEGcpServiceAccount implements PersistentEntity, UuidAware, AccountAccess, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

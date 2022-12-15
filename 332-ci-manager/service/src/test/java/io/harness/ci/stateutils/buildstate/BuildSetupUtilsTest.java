@@ -25,10 +25,10 @@ import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.K8BuildSetupUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.integrationstage.K8InitializeTaskParamsBuilder;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -53,7 +53,7 @@ import org.mockito.Mock;
 public class BuildSetupUtilsTest extends CIExecutionTestBase {
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
-  @Inject private K8BuildSetupUtils k8BuildSetupUtils;
+  @Inject private K8InitializeTaskParamsBuilder k8InitializeTaskParamsBuilder;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SecretUtils secretUtils;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
@@ -65,13 +65,9 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
 
   @Before
   public void setUp() {
-    on(buildSetupUtils).set("k8BuildSetupUtils", k8BuildSetupUtils);
-    on(k8BuildSetupUtils).set("secretVariableUtils", secretUtils);
-    on(k8BuildSetupUtils).set("connectorUtils", connectorUtils);
-    on(k8BuildSetupUtils).set("executionSweepingOutputResolver", executionSweepingOutputResolver);
-    on(k8BuildSetupUtils).set("logServiceUtils", logServiceUtils);
-    on(k8BuildSetupUtils).set("tiServiceUtils", tiServiceUtils);
-    on(k8BuildSetupUtils).set("stoServiceUtils", stoServiceUtils);
+    on(buildSetupUtils).set("k8InitializeTaskParamsBuilder", k8InitializeTaskParamsBuilder);
+    on(k8InitializeTaskParamsBuilder).set("connectorUtils", connectorUtils);
+    on(k8InitializeTaskParamsBuilder).set("executionSweepingOutputResolver", executionSweepingOutputResolver);
   }
 
   @Test

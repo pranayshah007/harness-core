@@ -56,8 +56,10 @@ import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.WorkflowService;
@@ -96,6 +98,7 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowResource {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
+  private AppService appService;
 
   private WorkflowService workflowService;
   private AuthService authService;
@@ -107,9 +110,10 @@ public class WorkflowResource {
    * @param authService the auth service
    */
   @Inject
-  public WorkflowResource(WorkflowService workflowService, AuthService authService) {
+  public WorkflowResource(WorkflowService workflowService, AuthService authService, AppService appService) {
     this.workflowService = workflowService;
     this.authService = authService;
+    this.appService = appService;
   }
 
   /**
@@ -125,6 +129,7 @@ public class WorkflowResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.WORKFLOW, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = WORKFLOW, action = Action.READ)
   public RestResponse<PageResponse<Workflow>> list(@QueryParam("appId") List<String> appIds,
       @BeanParam PageRequest<Workflow> pageRequest,
       @QueryParam("previousExecutionsCount") Integer previousExecutionsCount,
@@ -140,6 +145,10 @@ public class WorkflowResource {
     }
     if (isNotEmpty(appIds)) {
       pageRequest.addFilter("appId", IN, appIds.toArray());
+      String accountId = appService.getAccountIdByAppId(appIds.get(0));
+      if (accountId != null) {
+        pageRequest.addFilter("accountId", EQ, accountId);
+      }
     }
 
     if (!details) {
@@ -173,6 +182,7 @@ public class WorkflowResource {
   @Path("hpa-metric-yaml")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<String> getHPAYamlStringWithCustomMetric(@QueryParam("appId") String appId,
       @QueryParam("minAutoscaleInstances") Integer minAutoscaleInstances,
       @QueryParam("maxAutoscaleInstances") Integer maxAutoscaleInstances,
@@ -202,6 +212,7 @@ public class WorkflowResource {
   @Path("{workflowId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Workflow> read(@QueryParam("appId") String appId, @PathParam("workflowId") String workflowId,
       @QueryParam("version") Integer version,
       @QueryParam("withArtifactStreamSummary") @DefaultValue("false") boolean withArtifactStreamSummary) {
@@ -220,6 +231,7 @@ public class WorkflowResource {
   @Path("{workflowId}/traffic-shift-metadata")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<TrafficShiftMetadata> readTrafficShiftMetadata(
       @QueryParam("appId") String appId, @PathParam("workflowId") String workflowId) {
     return new RestResponse<>(workflowService.readWorkflowTrafficShiftMetadata(appId, workflowId));
@@ -515,6 +527,7 @@ public class WorkflowResource {
   @Path("{workflowId}/nodes/{nodeId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<GraphNode> readGraphNode(@QueryParam("appId") String appId,
       @PathParam("workflowId") String workflowId, @PathParam("nodeId") String nodeId) {
     return new RestResponse<>(workflowService.readGraphNode(appId, workflowId, nodeId));
@@ -594,6 +607,7 @@ public class WorkflowResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Stencil>> stencils(@QueryParam("appId") String appId, @QueryParam("envId") String envId,
       @QueryParam("workflowId") String workflowId, @QueryParam("phaseId") String phaseId) {
     return new RestResponse<>(
@@ -613,6 +627,7 @@ public class WorkflowResource {
   @Path("state-defaults")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> stateDefaults(@QueryParam("appId") String appId,
       @QueryParam("serviceId") String serviceId, @QueryParam("stateType") String strStateType) {
     if (isEmpty(strStateType)) {
@@ -624,6 +639,7 @@ public class WorkflowResource {
   @GET
   @Path("{workflowId}/infra-types")
   @Timed
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Boolean> workflowHasSSHInfraMapping(
       @QueryParam("appId") String appId, @PathParam("workflowId") String workflowId) {
     return new RestResponse(workflowService.workflowHasSshDeploymentPhase(appId, workflowId));
@@ -633,6 +649,7 @@ public class WorkflowResource {
   @Path("{workflowId}/deployed-nodes")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<InstanceElement>> getDeployedNodes(
       @QueryParam("appId") String appId, @PathParam("workflowId") String workflowId) {
     return new RestResponse<>(workflowService.getDeployedNodes(appId, workflowId));
@@ -642,6 +659,7 @@ public class WorkflowResource {
   @Path("steps/phase/{phaseId}/sections/{sectionId}/{position}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WorkflowCategorySteps> getSteps(@QueryParam("accountId") String accountId,
       @PathParam("phaseId") String phaseId, @PathParam("sectionId") String sectionId,
       @PathParam("position") int position, @QueryParam("rollbackSection") boolean rollbackSection,
@@ -659,6 +677,7 @@ public class WorkflowResource {
   @Path("required-entities")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<EntityType>> requiredEntities(
       @QueryParam("appId") String appId, @QueryParam("workflowId") String workflowId) {
     return new RestResponse<>(workflowService.getRequiredEntities(appId, workflowId));
@@ -668,6 +687,7 @@ public class WorkflowResource {
   @Path(VerificationConstants.LAST_SUCCESSFUL_WORKFLOW_IDS)
   @Timed
   @LearningEngineAuth
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<String>> getLastSuccessfulWorkflowExecutionIds(@QueryParam("appId") String appId,
       @QueryParam("workflowId") String workflowId, @QueryParam("serviceId") String serviceId) {
     return new RestResponse<>(workflowService.getLastSuccessfulWorkflowExecutionIds(appId, workflowId, serviceId));
@@ -677,6 +697,7 @@ public class WorkflowResource {
   @Path(VerificationConstants.CHECK_STATE_VALID)
   @Timed
   @LearningEngineAuth
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Boolean> isStateValid(
       @QueryParam("appId") String appId, @QueryParam("stateExecutionId") String stateExecutionId) {
     return new RestResponse<>(workflowService.isStateValid(appId, stateExecutionId));
@@ -686,6 +707,7 @@ public class WorkflowResource {
   @Path(VerificationConstants.WORKFLOW_FOR_STATE_EXEC)
   @Timed
   @LearningEngineAuth
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<WorkflowExecution> getWorkflowExecutionForStateExecution(
       @QueryParam("appId") String appId, @QueryParam("stateExecutionId") String stateExecutionId) {
     final WorkflowExecution workflowExecution =

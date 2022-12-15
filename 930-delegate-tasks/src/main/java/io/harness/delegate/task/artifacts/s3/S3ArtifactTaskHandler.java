@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -40,26 +41,37 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
     String filePath = s3ArtifactDelegateRequest.getFilePath();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse;
 
+    if (StringUtils.isBlank(s3ArtifactDelegateRequest.getBucketName())) {
+      throw new InvalidRequestException("Please specify the bucket for the S3 artifact source.");
+    }
+
+    if (StringUtils.isAllBlank(s3ArtifactDelegateRequest.getFilePath(), s3ArtifactDelegateRequest.getFilePathRegex())) {
+      throw new InvalidRequestException("Please specify a filePath or filePathRegex before executing the pipeline.");
+    }
+
+    AwsConnectorDTO awsConnectorDTO = s3ArtifactDelegateRequest.getAwsConnectorDTO();
+
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+
+    BuildDetails buildDetails = new BuildDetails();
+
     if (EmptyPredicate.isNotEmpty(filePath)) {
-      AwsConnectorDTO awsConnectorDTO = s3ArtifactDelegateRequest.getAwsConnectorDTO();
-      AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+      List<BuildDetails> builds = awsApiHelperService.listBuilds(
+          awsInternalConfig, s3ArtifactDelegateRequest.getRegion(), s3ArtifactDelegateRequest.getBucketName(), "*");
 
-      BuildDetails buildDetails = awsApiHelperService.getBuild(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
-          s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePath());
+      for (BuildDetails b : builds) {
+        if (b.getArtifactPath().equals(filePath)) {
+          buildDetails = b;
 
-      if (buildDetails == null) {
-        throw new InvalidRequestException("No build exists");
+          break;
+        }
       }
 
-      artifactTaskExecutionResponse =
-          ArtifactTaskExecutionResponse.builder()
-              .artifactDelegateResponse(S3RequestResponseMapper.toS3Response(buildDetails, s3ArtifactDelegateRequest))
-              .build();
+      if (!filePath.equals(buildDetails.getArtifactPath())) {
+        throw new InvalidRequestException("No build exist for the given file path.");
+      }
 
     } else {
-      AwsConnectorDTO awsConnectorDTO = s3ArtifactDelegateRequest.getAwsConnectorDTO();
-      AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
-
       List<BuildDetails> builds =
           awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
               s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex());
@@ -68,13 +80,14 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
         throw new InvalidRequestException("No last successful build");
       }
 
-      BuildDetails buildDetails = builds.get(builds.size() - 1);
-
-      artifactTaskExecutionResponse =
-          ArtifactTaskExecutionResponse.builder()
-              .artifactDelegateResponse(S3RequestResponseMapper.toS3Response(buildDetails, s3ArtifactDelegateRequest))
-              .build();
+      buildDetails = builds.get(builds.size() - 1);
     }
+
+    artifactTaskExecutionResponse =
+        ArtifactTaskExecutionResponse.builder()
+            .artifactDelegateResponse(S3RequestResponseMapper.toS3Response(buildDetails, s3ArtifactDelegateRequest))
+            .build();
+
     return artifactTaskExecutionResponse;
   }
 

@@ -9,11 +9,13 @@ package io.harness.file.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.file.GcsHarnessFileMetadata;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.util.Map;
@@ -37,6 +39,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngGcsFileMetadata", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "NgGcsFileMetadataKeys")
 @Document("ngGcsFileMetadata")

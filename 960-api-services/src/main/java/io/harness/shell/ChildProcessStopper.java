@@ -38,16 +38,16 @@ public class ChildProcessStopper implements ProcessStopper {
       try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
         String command = "list_descendants ()\n"
             + "{\n"
-            + "  local children=$(ps -ef | grep $1 | awk '{print $2}')\n"
+            + "  local children=$(ps -ef | grep -v grep | grep $1 | awk '{print $2}')\n"
             + "  kill -9 ${children[0]}\n"
             + "\n"
-            + "  for (( c=1; c<${#children[@]}-1 ; c++ ))\n"
+            + "  for (( c=1; c<${#children[@]} ; c++ ))\n"
             + "  do\n"
             + "    list_descendants ${children[c]}\n"
             + "  done\n"
             + "}\n"
             + "\n"
-            + "list_descendants $(ps -ef | grep -m1 " + fileName + " | awk '{print $2}')";
+            + "list_descendants $(ps -ef | grep -v grep | grep -m1 " + fileName + " | awk '{print $2}')";
         log.info("Kill child processes command: {}", command);
         outputStream.write(command.getBytes(Charset.forName("UTF-8")));
         processExecutor.command("/bin/bash", killFileName);

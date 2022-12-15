@@ -52,7 +52,7 @@ public class StaticLimitRestrictionHandlerTest extends CategoryTest {
     client = mock(EnforcementSdkClient.class);
     restriction = new StaticLimitRestriction(RestrictionType.STATIC_LIMIT, 11, false, client);
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

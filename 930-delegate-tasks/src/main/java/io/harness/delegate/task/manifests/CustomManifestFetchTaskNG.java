@@ -36,8 +36,8 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
@@ -91,8 +91,8 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     CustomManifestValuesFetchParams fetchParams = (CustomManifestValuesFetchParams) parameters;
-    LogCallback logCallback = new NGDelegateLogCallback(
-        getLogStreamingTaskClient(), fetchParams.getCommandUnitName(), true, commandUnitsProgress);
+    LogCallback logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), fetchParams.getCommandUnitName(),
+        fetchParams.isShouldOpenLogStream(), commandUnitsProgress);
 
     String defaultSourceWorkingDirectory = null;
     DelegateFile delegateFile = null;
@@ -150,6 +150,9 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       valuesFetchResponse =
           customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, false);
       if (valuesFetchResponse.getCommandExecutionStatus() == FAILURE) {
+        if (valuesFetchResponse.getUnitProgressData() == null) {
+          valuesFetchResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+        }
         return valuesFetchResponse;
       }
     } catch (Exception e) {
@@ -163,6 +166,9 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
 
     logCallback.saveExecutionLog(color("Successfully completed custom values fetch task \n \n", White, Bold), INFO);
 
+    if (fetchParams.isShouldCloseLogStream()) {
+      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+    }
     return CustomManifestValuesFetchResponse.builder()
         .commandExecutionStatus(SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
@@ -188,11 +194,23 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       String manifestFilesDirectory) throws IOException {
     CustomManifestSource customManifestSource = fetchParams.getCustomManifestSource();
     final String destZippedManifestDirectory = customManifestService.getWorkingDirectory();
-    final Path destZippedManifestFile = Paths.get(destZippedManifestDirectory, "destZipManifestFile.zip");
-    final Path pathToManifestFiles =
-        Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
-
-    zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+    Path destZippedManifestFile = Paths.get(destZippedManifestDirectory, "destZipManifestFile.zip");
+    Path pathToManifestFiles;
+    if (customManifestSource.getFilePaths().get(0).charAt(0) == '/') {
+      try {
+        pathToManifestFiles = Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+        zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+      } catch (Exception e) {
+        log.warn(
+            "Unable to fetch files from temporary working directory. Looking into Manifest File Location specified by user");
+        pathToManifestFiles = Path.of(customManifestSource.getFilePaths().get(0));
+        destZippedManifestFile = Paths.get(pathToManifestFiles.toString(), "destZipManifestFile.zip");
+        zipManifestFiles(customManifestSource.getFilePaths().get(0), destZippedManifestFile.toString());
+      }
+    } else {
+      pathToManifestFiles = Paths.get(manifestFilesDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+      zipManifestFiles(pathToManifestFiles.toString(), destZippedManifestFile.toString());
+    }
 
     final DelegateFile delegateFile = aDelegateFile()
                                           .withAccountId(fetchParams.getAccountId())

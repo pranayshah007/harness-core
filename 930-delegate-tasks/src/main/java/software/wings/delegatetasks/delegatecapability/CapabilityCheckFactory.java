@@ -41,6 +41,8 @@ import software.wings.delegatetasks.validation.capabilitycheck.GitConnectionCapa
 import software.wings.delegatetasks.validation.capabilitycheck.HelmCommandCapabilityCheck;
 import software.wings.delegatetasks.validation.capabilitycheck.SSHHostValidationCapabilityCheck;
 import software.wings.delegatetasks.validation.capabilitycheck.ShellConnectionCapabilityCheck;
+import software.wings.delegatetasks.validation.capabilitycheck.SshHostConnectionCapabilityCheck;
+import software.wings.delegatetasks.validation.capabilitycheck.WinrmHostConnectionCapabilityCheck;
 import software.wings.delegatetasks.validation.capabilitycheck.WinrmHostValidationCapabilityCheck;
 
 import com.google.inject.Inject;
@@ -80,6 +82,8 @@ public class CapabilityCheckFactory {
   @Inject CIVmConnectionCapabilityCheck ciVmConnectionCapabilityCheck;
   @Inject ServerlessInstallationCapabilityCheck serverlessInstallationCapabilityCheck;
   @Inject AwsCliInstallationCapabilityCheck awsCliInstallationCapabilityCheck;
+  @Inject WinrmHostConnectionCapabilityCheck winrmHostConnectionCapabilityCheck;
+  @Inject SshHostConnectionCapabilityCheck sshHostConnectionCapabilityCheck;
 
   public CapabilityCheck obtainCapabilityCheck(CapabilityType capabilityCheckType) {
     switch (capabilityCheckType) {
@@ -139,6 +143,10 @@ public class CapabilityCheckFactory {
         return noOpCapabilityCheck;
       case AWS_CLI_INSTALL:
         return awsCliInstallationCapabilityCheck;
+      case NG_WINRM_HOST_CONNECTION:
+        return winrmHostConnectionCapabilityCheck;
+      case NG_SSH_HOST_CONNECTION:
+        return sshHostConnectionCapabilityCheck;
       default:
         return null;
     }

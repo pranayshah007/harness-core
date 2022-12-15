@@ -9,7 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE;
+import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -149,7 +149,7 @@ public class K8sCanaryDeploy extends AbstractK8sState {
       return k8sStateHelper.getInvalidInfraDefFailedResponse();
     }
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId()) && inheritManifests) {
+    if (inheritManifests) {
       Activity activity = createK8sActivity(
           context, commandName(), stateType(), activityService, commandUnitList(false, context.getAccountId()));
       return executeK8sTask(context, activity.getUuid());
@@ -168,17 +168,15 @@ public class K8sCanaryDeploy extends AbstractK8sState {
     k8sDelegateManifestConfig.setShouldSaveManifest(shouldSaveManifest(context));
     K8sCanaryDeployTaskParametersBuilder builder = K8sCanaryDeployTaskParameters.builder();
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId())) {
-      builder.exportManifests(exportManifests);
-      if (inheritManifests) {
-        List<KubernetesResource> kubernetesResources =
-            k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
-        if (isEmpty(kubernetesResources)) {
-          throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
-        }
-        builder.inheritManifests(inheritManifests);
-        builder.kubernetesResources(kubernetesResources);
+    builder.exportManifests(exportManifests);
+    if (inheritManifests) {
+      List<KubernetesResource> kubernetesResources =
+          k8sStateHelper.getResourcesFromSweepingOutput(context, getStateType());
+      if (isEmpty(kubernetesResources)) {
+        throw new InvalidRequestException("No kubernetes resources found to inherit", USER);
       }
+      builder.inheritManifests(inheritManifests);
+      builder.kubernetesResources(kubernetesResources);
     }
 
     K8sTaskParameters k8sTaskParameters =
@@ -196,11 +194,11 @@ public class K8sCanaryDeploy extends AbstractK8sState {
                 appManifestMap.get(K8sValuesLocation.Service).getSkipVersioningForAllK8sObjects())
             .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
-            .cleanUpIncompleteCanaryDeployRelease(
-                featureFlagService.isEnabled(CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE, infraMapping.getAccountId()))
+            .cleanUpIncompleteCanaryDeployRelease(true)
             .build();
-
-    return queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
+    ExecutionResponse response = queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
+    saveK8sCanaryDeployRun(context);
+    return response;
   }
 
   @Override
@@ -244,8 +242,7 @@ public class K8sCanaryDeploy extends AbstractK8sState {
 
     K8sCanaryDeployResponse k8sCanaryDeployResponse = (K8sCanaryDeployResponse) executionResponse.getK8sTaskResponse();
 
-    if (k8sStateHelper.isExportManifestsEnabled(context.getAccountId())
-        && k8sCanaryDeployResponse.getResources() != null) {
+    if (k8sCanaryDeployResponse.getResources() != null) {
       k8sStateHelper.saveResourcesToSweepingOutput(context, k8sCanaryDeployResponse.getResources(), getStateType());
       stateExecutionData.setExportManifests(true);
       return ExecutionResponse.builder()
@@ -268,6 +265,9 @@ public class K8sCanaryDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
+    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
+      stateExecutionData.setPodsList(newPods);
+    }
 
     if (shouldSaveManifest(context)) {
       if (null != k8sCanaryDeployResponse.getGitFetchFilesConfig()) {

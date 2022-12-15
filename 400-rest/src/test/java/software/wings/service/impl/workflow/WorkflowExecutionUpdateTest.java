@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -27,8 +28,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,6 +47,8 @@ import io.harness.event.handler.impl.segment.SegmentHandler;
 import io.harness.event.handler.impl.segment.SegmentHelper;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.event.listener.EventListener;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.event.usagemetrics.UsageMetricsHelper;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.rule.Owner;
@@ -52,6 +57,7 @@ import software.wings.WingsBaseTest;
 import software.wings.app.GeneralNotifyEventListener;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
+import software.wings.beans.Application;
 import software.wings.beans.EntityType;
 import software.wings.beans.HarnessTagLink;
 import software.wings.beans.NameValuePair;
@@ -66,6 +72,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HarnessTagService;
 import software.wings.service.intfc.UserService;
+import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionContextImpl;
 
 import com.google.inject.Inject;
@@ -73,6 +80,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -82,6 +90,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -100,6 +109,9 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private ExecutionContextImpl context;
   @Mock AppService appService;
   @Mock HarnessTagService harnessTagService;
+  @Mock WorkflowExecutionService workflowExecutionService;
+  @Mock UsageMetricsHelper usageMetricsHelper;
+  @Mock UsageMetricsEventPublisher usageMetricsEventPublisher;
   @Inject WingsPersistence wingsPersistence;
 
   @InjectMocks @Inject private WorkflowExecutionUpdate workflowExecutionUpdate;
@@ -318,5 +330,34 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     assertThat(updated.getTags())
         .extracting(NameValuePair::getName, NameValuePair::getValue)
         .containsExactly(tuple("foo", ""), tuple("env", "QA"));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_publishEvent() {
+    Application app = Application.Builder.anApplication().build();
+    WorkflowExecution workflowExecution = WorkflowExecution.builder()
+                                              .accountId("accountId")
+                                              .appId("appId")
+                                              .uuid("uuid")
+                                              .serviceIds(Collections.singletonList("serviceId"))
+                                              .build();
+    WorkflowExecution updatedWorkflowExecution = WorkflowExecution.builder()
+                                                     .accountId("accountId")
+                                                     .appId("appId")
+                                                     .uuid("uuid")
+                                                     .serviceIds(Collections.singletonList("serviceId"))
+                                                     .deployedServices(Collections.singletonList("serviceId"))
+                                                     .build();
+    when(usageMetricsHelper.getApplication("appId")).thenReturn(app);
+    when(workflowExecutionService.getUpdatedWorkflowExecution("appId", "uuid")).thenReturn(updatedWorkflowExecution);
+    doNothing()
+        .when(usageMetricsEventPublisher)
+        .publishDeploymentTimeSeriesEvent("accountId", updatedWorkflowExecution, Collections.emptyMap());
+    workflowExecutionUpdate.publish(workflowExecution);
+    ArgumentCaptor<WorkflowExecution> captor = ArgumentCaptor.forClass(WorkflowExecution.class);
+    verify(usageMetricsEventPublisher, times(1)).publishDeploymentTimeSeriesEvent(any(), captor.capture(), anyMap());
+    assertThat(captor.getValue()).isEqualTo(updatedWorkflowExecution);
   }
 }

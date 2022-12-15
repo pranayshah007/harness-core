@@ -10,7 +10,7 @@ package io.harness.cdng.pipeline.executions;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.pms.plan.execution.AccountExecutionInfo;
@@ -30,11 +30,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "CDAccountExecutionMetadataKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "cdAccountExecutionMetadata", noClassnameStored = true)
 @Document("cdAccountExecutionMetadata")
 @TypeAlias("cdAccountExecutionMetadata")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 public class CDAccountExecutionMetadata {
   @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
   String accountId;

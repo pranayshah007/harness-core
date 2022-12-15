@@ -23,13 +23,17 @@ public class CDMigrationDetails implements MigrationDetails {
 
   @Override
   public boolean isBackground() {
-    return false;
+    return true;
   }
 
   @Override
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, DeleteOrphanInstancesOfDeletedEnvironments.class))
+        .add(Pair.of(2, DeleteInstanceOfDeletedProjects.class))
+        .add(Pair.of(3, DeleteInstanceOfDeletedConnectors.class))
+        // Adding DeleteInstanceOfDeletedProjects again as we want to run it for all accounts now.
+        .add(Pair.of(4, DeleteInstanceOfDeletedProjects.class))
         .build();
   }
 }

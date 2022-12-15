@@ -7,14 +7,13 @@
 
 package io.harness.migrations.all;
 
-import static io.harness.persistence.HQuery.excludeAuthority;
-
 import io.harness.migrations.Migration;
+import io.harness.persistence.HPersistence;
 
-import software.wings.beans.DelegateInsightsSummary;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.DBCollection;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,7 +22,9 @@ public class DeleteStaleDelegateInsightsSummaryMigration implements Migration {
 
   @Override
   public void migrate() {
-    wingsPersistence.delete(wingsPersistence.createQuery(DelegateInsightsSummary.class, excludeAuthority));
+    DBCollection delegateInsightsSummary =
+        wingsPersistence.getDatastore(HPersistence.DEFAULT_STORE).getDB().getCollection("delegateInsightsSummary");
+    delegateInsightsSummary.drop();
     log.info("Complete");
   }
 }

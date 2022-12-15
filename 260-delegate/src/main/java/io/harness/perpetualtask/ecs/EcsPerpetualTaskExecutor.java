@@ -7,7 +7,7 @@
 
 package io.harness.perpetualtask.ecs;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_START;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_STOP;

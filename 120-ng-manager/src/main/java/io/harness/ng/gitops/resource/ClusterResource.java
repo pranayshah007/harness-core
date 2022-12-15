@@ -60,7 +60,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.Valid;
@@ -129,8 +131,7 @@ public class ClusterResource {
   @Path("{identifier}")
   @ApiOperation(value = "Gets a Cluster by identifier", nickname = "getCluster")
   @Operation(operationId = "getCluster", summary = "Gets a Cluster by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Cluster") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "The saved Cluster") })
   public ResponseDTO<ClusterResponse>
   get(@Parameter(description = CLUSTER_PARAM_MESSAGE) @PathParam("identifier") @ResourceIdentifier String clusterRef,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -161,8 +162,7 @@ public class ClusterResource {
   @POST
   @ApiOperation(value = "Link a gitops cluster to an environment", nickname = "linkCluster")
   @Operation(operationId = "linkCluster", summary = "link a Cluster",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Cluster") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Cluster") })
   public ResponseDTO<ClusterResponse>
   link(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -186,8 +186,7 @@ public class ClusterResource {
   @Path("/batch")
   @ApiOperation(value = "Link gitops clusters to an environment", nickname = "linkClusters")
   @Operation(operationId = "linkClusters", summary = "Link Clusters",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") },
-      hidden = true)
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") })
   public ResponseDTO<ClusterBatchResponse>
   linkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                 NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -201,6 +200,10 @@ public class ClusterResource {
     checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
 
+    if (request.isUnlinkAllClusters()) {
+      throw new InvalidRequestException(
+          "This is api for linking clusters, please do not set `unlinkAllClusters` field or set it to false");
+    }
     List<Cluster> entities = new ArrayList<>();
     if (!request.isLinkAllClusters()) {
       entities = ClusterEntityMapper.toEntities(accountId, request);
@@ -219,13 +222,52 @@ public class ClusterResource {
     return ResponseDTO.newResponse(ClusterBatchResponse.builder().linked(linked).build());
   }
 
+  @POST
+  @Path("/batchunlink")
+  @ApiOperation(value = "Unlink gitops clusters to an environment", nickname = "unlinkClustersInBatch")
+  @Operation(operationId = "unlinkClustersInBatch", summary = "Unlink Clusters",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns true if all the Clusters are deleted")
+      })
+  public ResponseDTO<ClusterBatchResponse>
+  unlinkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = "Details of the createCluster to be created") @Valid ClusterBatchRequest request) {
+    throwExceptionForNoRequestDTO(request);
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+        request.getOrgIdentifier(), request.getProjectIdentifier(), accountId);
+    environmentValidationHelper.checkThatEnvExists(
+        accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
+
+    checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
+        ENVIRONMENT_UPDATE_PERMISSION, "delete");
+
+    if (request.isLinkAllClusters()) {
+      throw new InvalidRequestException(
+          "This is api for unlinking clusters, please do not set `linkAllClusters` field or set it to false");
+    }
+
+    long unlinked;
+    if (request.isUnlinkAllClusters()) {
+      unlinked = clusterService.deleteAllFromEnvAndReturnCount(
+          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
+    } else {
+      List<Cluster> entities = ClusterEntityMapper.toEntities(accountId, request);
+      unlinked = isNotEmpty(entities) ? clusterService.bulkDelete(entities, accountId, request.getOrgIdentifier(),
+                     request.getProjectIdentifier(), request.getEnvRef())
+                                      : 0;
+    }
+    return ResponseDTO.newResponse(ClusterBatchResponse.builder().unlinked(unlinked).build());
+  }
+
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a Cluster by identifier", nickname = "deleteCluster")
   @Operation(operationId = "deleteCluster", summary = "Delete a Cluster by identifier",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Cluster is deleted") },
-      hidden = true)
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Cluster is deleted") })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = CLUSTER_PARAM_MESSAGE) @PathParam("identifier") @ResourceIdentifier String clusterRef,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -251,8 +293,7 @@ public class ClusterResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of cluster for a Project")
-      },
-      hidden = true)
+      })
   public ResponseDTO<PageResponse<ClusterResponse>>
   list(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -279,9 +320,24 @@ public class ClusterResource {
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
+    // NG Clusters
     Page<Cluster> entities = clusterService.list(
         page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
-    return ResponseDTO.newResponse(getNGPageResponse(entities.map(ClusterEntityMapper::writeDTO)));
+
+    // Account level clusters
+    PageResponse<ClusterFromGitops> accountLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
+    // Project level clusters
+    PageResponse<ClusterFromGitops> projectLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm);
+
+    Map<String, ClusterFromGitops> allClusters =
+        Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(e
+                -> e.getScopeLevel().toString().toLowerCase() + "." + e.getIdentifier(),
+                Function.identity(), (c1, c2) -> c1));
+    return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
   }
 
   @GET

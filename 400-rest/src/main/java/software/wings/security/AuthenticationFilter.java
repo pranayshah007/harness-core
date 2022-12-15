@@ -7,9 +7,9 @@
 
 package software.wings.security;
 
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
@@ -447,8 +447,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       // In case of graphql, accountId comes as null. For the new version of api keys, we can get the accountId
       accountId = apiKeyService.getAccountIdFromApiKey(apiKey);
     }
-
-    apiKeyService.validate(apiKey, accountId);
+    if (!apiKeyService.validate(apiKey, accountId)) {
+      throw new UnauthorizedException("Invalid Api Key", USER);
+    }
   }
 
   protected boolean authenticationExemptedRequests(ContainerRequestContext requestContext) {

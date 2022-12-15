@@ -1,0 +1,195 @@
+{
+  "type": "object",
+  "properties": {
+    "template": {
+      "$ref": "#/definitions/NGTemplateInfoConfig"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "JsonNode": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NGTemplateConfig": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "$ref": "#/definitions/NGTemplateInfoConfig"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NGTemplateInfoConfig": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "name",
+        "type",
+        "versionLabel"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "spec": {
+          "$ref": "#/definitions/specNode"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Step",
+            "Stage",
+            "Pipeline",
+            "MonitoredService",
+            "SecretManager"
+          ]
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "specNode": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "delegateSelectors": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cd/FailureStrategyConfig"
+          }
+        },
+        "strategy": {
+          "$ref": "#/definitions/cd/StrategyConfig"
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Deployment"
+          ]
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/cd/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/cd/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/cd/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "when": {
+          "$ref": "#/definitions/cd/StageWhenCondition"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Deployment"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/cd/DeploymentStageConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cd": {
+      "DeploymentStageConfig": {
+        "type": "object",
+        "required": [
+          "execution"
+        ],
+        "properties": {
+          "deploymentType": {
+            "type": "string",
+            "enum": [
+              "Kubernetes",
+              "NativeHelm",
+              "Ssh",
+              "WinRm",
+              "ServerlessAwsLambda",
+              "AzureWebApp"
+            ]
+          },
+          "environment": {
+            "$ref": "#/definitions/cd/EnvironmentYamlV2"
+          },
+          "environmentGroup": {
+            "$ref": "#/definitions/cd/EnvironmentGroupYaml"
+          },
+          "execution": {
+            "$ref": "#/definitions/cd/ExecutionElementConfig"
+          },
+          "gitOpsEnabled": {
+            "type": "boolean"
+          },
+          "infrastructure": {
+            "$ref": "#/definitions/cd/PipelineInfrastructure"
+          },
+          "service": {
+            "$ref": "#/definitions/cd/ServiceYamlV2"
+          },
+          "serviceConfig": {
+            "$ref": "#/definitions/cd/ServiceConfig"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    }
+  }
+}

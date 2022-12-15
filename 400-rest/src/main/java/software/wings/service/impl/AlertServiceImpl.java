@@ -35,6 +35,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.eraro.ErrorCode;
@@ -43,6 +44,7 @@ import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HIterator;
 
@@ -107,9 +109,11 @@ public class AlertServiceImpl implements AlertService {
   @Inject private SettingsService settingsService;
   @Inject private ArtifactStreamService artifactStreamService;
 
+  @Inject private FeatureFlagService featureFlagService;
+
   @Override
   public PageResponse<Alert> list(PageRequest<Alert> pageRequest) {
-    return wingsPersistence.query(Alert.class, pageRequest);
+    return wingsPersistence.querySecondary(Alert.class, pageRequest);
   }
 
   @Override
@@ -199,6 +203,11 @@ public class AlertServiceImpl implements AlertService {
 
   private void postProcessAlertAfterCreating(String accountId, Alert alert, AlertType alertType) {
     AlertStatus status = alert.getTriggerCount() >= alertType.getPendingCount() ? Open : Pending;
+    // Since alert jobs are delayed. Removing the barrier check.
+    if (featureFlagService.isEnabled(FeatureName.INSTANT_DELEGATE_DOWN_ALERT, accountId)
+        && alertType.equals(DelegatesDown)) {
+      status = Open;
+    }
 
     UpdateOperations<Alert> updateOperations = wingsPersistence.createUpdateOperations(Alert.class);
     updateOperations.inc(AlertKeys.triggerCount);
@@ -291,7 +300,7 @@ public class AlertServiceImpl implements AlertService {
   @Override
   public Optional<Alert> findExistingAlert(String accountId, String appId, AlertType alertType, AlertData alertData) {
     try (AutoLogContext ignore = new AlertLogContext(accountId, alertType, appId, OVERRIDE_ERROR)) {
-      log.info("Finding existing alerts for accountId {}", accountId);
+      log.debug("Finding existing alerts for accountId {}", accountId);
       Query<Alert> query = getAlertsQuery(accountId, appId, alertType, alertData);
       try (HIterator<Alert> iterator = new HIterator<>(query.fetch())) {
         for (Alert alert : iterator) {
@@ -418,6 +427,16 @@ public class AlertServiceImpl implements AlertService {
         if (data.getArtifactStreamId().equals(artifactStreamId)) {
           wingsPersistence.delete(alert);
         }
+      }
+    }
+  }
+
+  @Override
+  public void deleteArtifactStreamAlertForAccount(String accountId) {
+    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED)) {
+      for (Alert alert : alerts) {
+        ArtifactCollectionFailedAlert data = (ArtifactCollectionFailedAlert) alert.getAlertData();
+        wingsPersistence.delete(alert);
       }
     }
   }

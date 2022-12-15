@@ -51,9 +51,13 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
 @JsonTypeName("Security")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("securityStepInfo")
@@ -66,7 +70,7 @@ public class SecurityStepInfo implements PluginCompatibleStep {
   private String uuid;
 
   @VariableExpression(skipVariableExpression = true) public static final int DEFAULT_RETRY = 1;
-  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.SECURITY).build();
+
   @JsonIgnore
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CIStepInfoType.SECURITY.getDisplayName())
@@ -77,42 +81,46 @@ public class SecurityStepInfo implements PluginCompatibleStep {
   @ApiModelProperty(hidden = true)
   @NotNull
   @EntityIdentifier
-  private String identifier;
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
-  @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
+  protected String identifier;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) protected String name;
+  @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) protected int retry;
 
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {string})
-  private ParameterField<Map<String, JsonNode>> settings;
+  protected ParameterField<Map<String, JsonNode>> settings;
 
   @VariableExpression(skipVariableExpression = true)
   @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true)
-  private ParameterField<String> connectorRef;
-  private ContainerResource resources;
+  protected ParameterField<String> connectorRef;
+  protected ContainerResource resources;
 
   @YamlSchemaTypes(value = {runtime})
   @VariableExpression(skipVariableExpression = true)
   @ApiModelProperty(dataType = "[Lio.harness.yaml.core.variables.OutputNGVariable;")
-  private ParameterField<List<OutputNGVariable>> outputVariables;
+  protected ParameterField<List<OutputNGVariable>> outputVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  private ParameterField<Boolean> privileged;
-  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  protected ParameterField<Boolean> privileged;
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  protected ParameterField<Integer> runAsUser;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
-  private ParameterField<ImagePullPolicy> imagePullPolicy;
+  protected ParameterField<ImagePullPolicy> imagePullPolicy;
 
-  @VariableExpression(skipVariableExpression = true) private static List<OutputNGVariable> defaultOutputVariables;
+  @VariableExpression(skipVariableExpression = true) protected static List<OutputNGVariable> defaultOutputVariables;
 
   static {
     defaultOutputVariables = Arrays.asList(OutputNGVariable.builder().name("JOB_ID").build(),
         OutputNGVariable.builder().name("JOB_STATUS").build(), OutputNGVariable.builder().name("CRITICAL").build(),
         OutputNGVariable.builder().name("HIGH").build(), OutputNGVariable.builder().name("MEDIUM").build(),
-        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("TOTAL").build(),
+        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("INFO").build(),
+        OutputNGVariable.builder().name("UNASSIGNED").build(), OutputNGVariable.builder().name("TOTAL").build(),
         OutputNGVariable.builder().name("NEW_CRITICAL").build(), OutputNGVariable.builder().name("NEW_HIGH").build(),
         OutputNGVariable.builder().name("NEW_MEDIUM").build(), OutputNGVariable.builder().name("NEW_LOW").build(),
-        OutputNGVariable.builder().name("NEW_VULNERABILITIES").build());
+        OutputNGVariable.builder().name("NEW_INFO").build(), OutputNGVariable.builder().name("NEW_UNASSIGNED").build(),
+        OutputNGVariable.builder().name("NEW_TOTAL").build());
   }
 
   @Builder
@@ -133,15 +141,22 @@ public class SecurityStepInfo implements PluginCompatibleStep {
     this.privileged = privileged;
     this.imagePullPolicy = imagePullPolicy;
   }
+  public ParameterField<Map<String, JsonNode>> getSettings() {
+    return this.settings;
+  }
 
   @Override
   public TypeInfo getNonYamlInfo() {
-    return typeInfo;
+    return TypeInfo.builder().stepInfoType(CIStepInfoType.SECURITY).build();
+  }
+
+  protected String getTypeName() {
+    return this.getClass().getAnnotation(JsonTypeName.class).value();
   }
 
   @Override
   public StepType getStepType() {
-    return STEP_TYPE;
+    return StepType.newBuilder().setType(getTypeName()).setStepCategory(StepCategory.STEP).build();
   }
 
   @Override

@@ -25,6 +25,7 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CVModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
@@ -32,6 +33,7 @@ import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
+import io.harness.licensing.interfaces.clients.local.CVLocalClient;
 import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -131,6 +133,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto = (CFModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.CF);
@@ -154,6 +157,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto = (CFModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.CF);
@@ -176,6 +180,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .status(LicenseStatus.ACTIVE)
                                        .startTime(0)
                                        .expiryTime(Long.MAX_VALUE)
+                                       .selfService(true)
                                        .build();
     CFModuleLicenseDTO dto =
         (CFModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.CF);
@@ -395,6 +400,73 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .build();
     STOModuleLicenseDTO dto =
         (STOModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.STO);
+    dto.setStartTime(0L);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.XIN)
+  @Category(UnitTests.class)
+  public void testStartEnterpriseTrialOnCV() {
+    when(clientMap.get(ModuleType.CV)).thenReturn(new CVLocalClient());
+    ModuleLicenseDTO expectedDTO = CVModuleLicenseDTO.builder()
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.CV)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.ENTERPRISE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .selfService(true)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .numberOfServices(Integer.valueOf(UNLIMITED))
+                                       .build();
+    CVModuleLicenseDTO dto = (CVModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.CV);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.XIN)
+  @Category(UnitTests.class)
+  public void testStartTeamTrialOnCV() {
+    when(clientMap.get(ModuleType.CV)).thenReturn(new CVLocalClient());
+    ModuleLicenseDTO expectedDTO = CVModuleLicenseDTO.builder()
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.CV)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.TEAM)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .selfService(true)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .numberOfServices(100)
+                                       .build();
+    CVModuleLicenseDTO dto = (CVModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.CV);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.XIN)
+  @Category(UnitTests.class)
+  public void testStartFreeLicenseOnCV() {
+    when(clientMap.get(ModuleType.CV)).thenReturn(new CVLocalClient());
+    ModuleLicenseDTO expectedDTO = CVModuleLicenseDTO.builder()
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.CV)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .edition(Edition.FREE)
+                                       .startTime(0)
+                                       .selfService(true)
+                                       .expiryTime(Long.MAX_VALUE)
+                                       .numberOfServices(5)
+                                       .build();
+    CVModuleLicenseDTO dto =
+        (CVModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.CV);
     dto.setStartTime(0L);
     assertThat(dto).isEqualTo(expectedDTO);
   }

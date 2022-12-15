@@ -44,6 +44,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
+import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ConnectionMode;
@@ -59,6 +60,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
+import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -80,7 +82,7 @@ import software.wings.beans.AccountPreferences;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
@@ -146,6 +148,8 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final KryoSerializer kryoSerializer = mock(KryoSerializer.class);
   private static final FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
+  private static final DelegatePollingHeartbeatService delegatePollingHeartbeatService =
+      mock(DelegatePollingHeartbeatService.class);
 
   @Parameter public String apiUrl;
 
@@ -161,7 +165,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
               delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
               instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
               kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher))
+              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -233,7 +237,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldRegisterDelegate() {
     DelegateRegisterResponse registerResponse = DelegateRegisterResponse.builder().delegateId(ID_KEY).build();
-    when(delegateService.register(any(DelegateParams.class))).thenReturn(registerResponse);
+    when(delegateService.register(any(DelegateParams.class), any(boolean.class))).thenReturn(registerResponse);
     RestResponse<DelegateRegisterResponse> restResponse =
         RESOURCES.client()
             .target("/agent/delegates/register?accountId=" + ACCOUNT_ID)
@@ -353,14 +357,14 @@ public class DelegateAgentResourceTest extends CategoryTest {
   public void shouldUpdateDelegateHB() {
     DelegateParams delegateParams = DelegateParams.builder().pollingModeEnabled(true).build();
 
-    Delegate delegate = Delegate.builder().polllingModeEnabled(true).build();
-    when(delegateService.updateHeartbeatForDelegateWithPollingEnabled(any(Delegate.class))).thenReturn(delegate);
+    DelegateHeartbeatResponse response = DelegateHeartbeatResponse.builder().build();
+    when(delegatePollingHeartbeatService.process(any(DelegateParams.class))).thenReturn(response);
     RestResponse<Delegate> restResponse =
         RESOURCES.client()
             .target("/agent/delegates/heartbeat-with-polling?accountId=" + ACCOUNT_ID)
             .request()
             .post(entity(delegateParams, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
-    verify(delegateService, atLeastOnce()).updateHeartbeatForDelegateWithPollingEnabled(delegate);
+    verify(delegatePollingHeartbeatService, atLeastOnce()).process(any(DelegateParams.class));
     assertThat(restResponse.getResource()).isInstanceOf(Delegate.class).isNotNull();
   }
 

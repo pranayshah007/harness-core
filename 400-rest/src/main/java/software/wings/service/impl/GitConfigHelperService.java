@@ -22,7 +22,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -99,7 +98,7 @@ public class GitConfigHelperService {
       if (sshSettingAttribute == null) {
         throw new InvalidRequestException("Could not find SettingAttribute for Id: " + gitConfig.getSshSettingId());
       } else {
-        gitConfig.setSshSettingAttribute(sshSettingAttribute);
+        gitConfig.setSshSettingAttribute(sshSettingAttribute.toDTO());
       }
     } else {
       if (gitConfig.getSshSettingId() != null) {
@@ -107,7 +106,7 @@ public class GitConfigHelperService {
         if (sshSettingAttribute == null) {
           throw new InvalidRequestException("Could not find SettingAttribute for Id: " + gitConfig.getSshSettingId());
         }
-        gitConfig.setSshSettingAttribute(sshSettingAttribute);
+        gitConfig.setSshSettingAttribute(sshSettingAttribute.toDTO());
       } else if (gitConfig.getUsername() == null
           || (gitConfig.getPassword() == null && gitConfig.getEncryptedPassword() == null)) {
         throw new InvalidRequestException("Username and password can not be empty", USER);
@@ -115,10 +114,6 @@ public class GitConfigHelperService {
     }
 
     if (gitConfig.getUrlType() == GitConfig.UrlType.ACCOUNT) {
-      if (!featureFlagService.isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, gitConfig.getAccountId())) {
-        throw new InvalidRequestException("Account level git connector is not enabled", USER);
-      }
-
       // Cannot throw exception here as validation is being called at many places and gitConfig.repoName is transient.
       if (isEmpty(gitConfig.getRepoName())) {
         return;
@@ -180,7 +175,7 @@ public class GitConfigHelperService {
             secretManager.getEncryptionDetails(attributeValue, GLOBAL_APP_ID, null);
         managerDecryptionService.decrypt(attributeValue, encryptionDetails);
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(attributeValue, encryptionDetails);
-        gitConfig.setSshSettingAttribute(settingAttribute);
+        gitConfig.setSshSettingAttribute(settingAttribute.toDTO());
       }
     }
   }

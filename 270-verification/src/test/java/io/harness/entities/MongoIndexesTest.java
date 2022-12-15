@@ -12,10 +12,13 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.VerificationBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexManagerSession;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.Store;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
@@ -43,14 +46,15 @@ public class MongoIndexesTest extends VerificationBase {
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexes() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
     morphia.getMapper().getOptions().setMapSubPackages(true);
     morphia.map(classes);
 
-    List<IndexCreator> indexCreators =
-        IndexManagerSession.allIndexes(persistence.getDatastore(Account.class), morphia, null, null);
+    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
+        persistence.getDatastore(Account.class), morphia, Store.builder().name(DbAliases.HARNESS).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

@@ -15,4 +15,5 @@ message AwsSshInstanceSyncPerpetualTaskParamsNg {
   string infrastructure_key = 3;
   repeated string hosts = 4;
   bytes infra_delegate_config = 5;
+  string host_connection_type = 6;
 }

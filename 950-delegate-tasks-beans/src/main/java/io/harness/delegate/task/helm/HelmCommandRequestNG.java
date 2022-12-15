@@ -74,6 +74,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String ocPath;
   private String commandName;
   private boolean useLatestKubectlVersion;
+  private String gcpKeyPath;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -136,9 +137,6 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case OCI_HELM:
             OciHelmStoreDelegateConfig ociHelmStoreConfig =
                 (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            if (!ociHelmStoreConfig.isHelmOciEnabled()) {
-              break;
-            }
             OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
             capabilities.add(HelmInstallationCapability.builder()
                                  .version(HelmVersion.V380)

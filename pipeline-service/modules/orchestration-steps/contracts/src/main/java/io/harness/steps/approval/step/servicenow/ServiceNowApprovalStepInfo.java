@@ -18,12 +18,14 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
@@ -59,6 +61,7 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
   @NotNull @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper approvalCriteria;
   @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper rejectionCriteria;
+  ServiceNowChangeWindowSpec changeWindow;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
@@ -83,6 +86,7 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
         .approvalCriteria(approvalCriteria)
         .rejectionCriteria(rejectionCriteria)
         .delegateSelectors(delegateSelectors)
+        .changeWindowSpec(changeWindow)
         .build();
   }
 
@@ -96,5 +100,10 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
   }
 }

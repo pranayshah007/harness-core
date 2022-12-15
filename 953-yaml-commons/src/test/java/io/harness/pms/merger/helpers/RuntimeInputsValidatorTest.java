@@ -8,6 +8,8 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.pms.merger.helpers.RuntimeInputsValidator.areInputsValidAgainstSourceNode;
+import static io.harness.pms.merger.helpers.RuntimeInputsValidator.validateInputsAgainstSourceNode;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +23,8 @@ import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -131,5 +135,64 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode(yamlToValidate),
                    convertYamlToJsonNode("field: <+input>.allowedValues(a,b,c)")))
         .isFalse();
+    yamlToValidate = "field:\n"
+        + "  a: <+input>";
+    assertThat(areInputsValidAgainstSourceNode(
+                   convertYamlToJsonNode("field: <+input>"), convertYamlToJsonNode(yamlToValidate)))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateInputsWithExtraKeys() throws IOException {
+    String yamlToValidate = "field: abc";
+    String sourceEntityYaml = "field: <+input>";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, new HashSet<>(), new HashSet<>()))
+        .isTrue();
+
+    // artifacts.primary.sources node has no runtime inputs hence not present in sourceNode
+    yamlToValidate = "serviceInputs:\n"
+        + "  serviceDefinition:\n"
+        + "    type: \"Ssh\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: \"Test\"\n"
+        + "          sources: \"<+input>\"";
+    sourceEntityYaml = "serviceInputs:\n"
+        + "  serviceDefinition:\n"
+        + "    type: \"Ssh\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: \"<+input>\"";
+
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, new HashSet<>(), new HashSet<>()))
+        .isFalse();
+
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, new HashSet<>(),
+                   new HashSet<>(Collections.singletonList("artifacts.primary.sources"))))
+        .isTrue();
+
+    // when primary artifact ref is fixed in the pipeline yaml
+    yamlToValidate = "serviceInputs:\n"
+        + "  serviceDefinition:\n"
+        + "    type: \"Ssh\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: \"Test\"";
+    sourceEntityYaml = "serviceInputs:\n"
+        + "  serviceDefinition:\n"
+        + "    type: \"Ssh\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: \"<+input>\"\n";
+
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, new HashSet<>(),
+                   new HashSet<>(Collections.singletonList("artifacts.primary.sources"))))
+        .isTrue();
   }
 }

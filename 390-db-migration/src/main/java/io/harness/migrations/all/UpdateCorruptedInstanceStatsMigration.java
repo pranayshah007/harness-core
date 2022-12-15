@@ -8,7 +8,6 @@
 package io.harness.migrations.all;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
-import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -16,7 +15,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.ff.FeatureFlagService;
@@ -29,7 +27,6 @@ import software.wings.beans.EntityType;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMapping.InfrastructureMappingKeys;
 import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot.AggregateCount;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot.InstanceStatsSnapshotKeys;
@@ -47,7 +44,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,36 +112,12 @@ public class UpdateCorruptedInstanceStatsMigration implements Migration {
                                  .project(InfrastructureMappingKeys.appId, true)
                                  .disableValidation()
                                  .fetch())) {
-      int updated = 0;
-      BulkWriteOperation instanceWriteOperation =
-          mongoPersistence.getCollection(Instance.class).initializeUnorderedBulkOperation();
       while (infraMappingIter.hasNext()) {
         InfrastructureMapping infraMapping = infraMappingIter.next();
         affectedAccounts.add(infraMapping.getAccountId());
-        if (featureFlagService.isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, infraMapping.getAccountId())) {
-          continue;
-        }
-
-        HashMap<String, Object> query = new HashMap<>();
-        query.put(InstanceKeys.appId, infraMapping.getAppId());
-        query.put(InstanceKeys.infraMappingId, infraMapping.getUuid());
-        query.put(InstanceKeys.createdAt, new BasicDBObject(ImmutableMap.of("$gte", FROM, "$lt", UNTIL)));
-        query.put(InstanceKeys.lastWorkflowExecutionId, null);
-        query.put(InstanceKeys.lastDeployedById, "AUTO_SCALE");
-
-        instanceWriteOperation.find(new BasicDBObject(query)).remove();
-        updated++;
-
-        if (updated >= INFRA_INSTANCE_BATCH_SIZE) {
-          log.info("Delete corrupted instances for {} infra mappings: {}", updated, instanceWriteOperation.execute());
-          sleep(Duration.ofMillis(100)); // give some relax time
-          instanceWriteOperation = mongoPersistence.getCollection(Instance.class).initializeUnorderedBulkOperation();
-          updated = 0;
-        }
-      }
-
-      if (updated != 0) {
-        log.info("Delete corrupted instances for {} infra mappings: {}", updated, instanceWriteOperation.execute());
+        // Since the FF KEEP_PT_AFTER_K8S_DOWNSCALE is going to be GA,
+        // none of the instances will be picked up for deletion.
+        // We would still return the affected accounts so that it can be used to update the corrupted instance stats.
       }
     }
 

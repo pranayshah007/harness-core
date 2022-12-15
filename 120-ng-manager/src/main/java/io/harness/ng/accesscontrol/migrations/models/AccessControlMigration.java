@@ -9,7 +9,7 @@ package io.harness.ng.accesscontrol.migrations.models;
 
 import static io.harness.ng.DbAliases.NG_MANAGER;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -31,10 +31,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "AccessControlMigrationKeys")
+@StoreIn(NG_MANAGER)
 @Document("aclMigrations")
 @Entity(value = "aclMigrations", noClassnameStored = true)
 @TypeAlias("aclMigrations")
-@StoreIn(NG_MANAGER)
 @OwnedBy(HarnessTeam.PL)
 public class AccessControlMigration {
   @Id @org.springframework.data.annotation.Id String id;

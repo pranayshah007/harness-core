@@ -10,9 +10,11 @@ package software.wings.beans.loginSettings;
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "LoginSettingKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "loginSettings")
 @HarnessEntity(exportable = true)
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)

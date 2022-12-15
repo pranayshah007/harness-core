@@ -26,6 +26,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
 import io.harness.gitops.GitopsResourceClientConfig;
 import io.harness.gitsync.GitSdkConfiguration;
+import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
@@ -67,6 +68,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -105,6 +107,8 @@ public class NextGenConfiguration extends Configuration {
   public static final String ARTIFACTS_PACKAGE = "io.harness.ng.core.artifacts.resources";
   public static final String AUTHENTICATION_SETTINGS_PACKAGE = "io.harness.ng.authenticationsettings.resources";
   public static final String SERVICE_PACKAGE = "io.harness.ng.core.service.resources";
+  public static final String CUSTOM_DEPLOYMENT_PACKAGE = "io.harness.ng.core.customDeployment.resources";
+  public static final String TAS_PACKAGE = "io.harness.ng.core.tas.resources";
   public static final String VARIABLE_RESOURCE_PACKAGE = "io.harness.ng.core.variable.resources";
   public static final String CD_OVERVIEW_PACKAGE = "io.harness.ng.overview.resource";
   public static final String ACTIVITY_HISTORY_PACKAGE = "io.harness.ng.core.activityhistory.resource";
@@ -142,6 +146,12 @@ public class NextGenConfiguration extends Configuration {
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
+  public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
+  public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
+  private static final String REFRESH_RESOURCE_PACKAGE = "io.harness.ng.core.refresh";
+  private static final String DEPLOYMENT_STAGE_PACKAGE = "io.harness.ng.core.deploymentstage";
+  private static final String SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE =
+      "io.harness.ng.core.migration.serviceenvmigrationv2.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -150,7 +160,6 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("disableResourceValidation") private boolean disableResourceValidation;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
-  @JsonProperty("pmsMongo") @ConfigSecret private MongoConfig pmsMongoConfig;
   @JsonProperty("allowedOrigins") private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("grpcClient") private GrpcClientConfig grpcClientConfig;
@@ -220,6 +229,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
+  @JsonProperty(value = "opaConnectivityEnabled") private boolean opaConnectivityEnabled;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
@@ -229,6 +239,9 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("ffServerClientConfig") ServiceHttpClientConfig ffServerClientConfig;
   @ConfigSecret @JsonProperty("gitopsResourceClientConfig") GitopsResourceClientConfig gitopsResourceClientConfig;
   @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
+  @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -279,7 +292,11 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
                 NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
                 NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
-                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE))
+                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE,
+                NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE,
+                NextGenConfiguration.REFRESH_RESOURCE_PACKAGE, DEPLOYMENT_STAGE_PACKAGE,
+                NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE, NextGenConfiguration.TAS_PACKAGE,
+                NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 
@@ -322,5 +339,13 @@ public class NextGenConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
     return HARNESS_RESOURCE_CLASSES.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

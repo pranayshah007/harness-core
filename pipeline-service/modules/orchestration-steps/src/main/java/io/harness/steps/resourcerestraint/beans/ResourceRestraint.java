@@ -9,13 +9,12 @@ package io.harness.steps.resourcerestraint.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
@@ -40,15 +39,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceRestraintKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "resourceRestraints")
 @Document("resourceRestraints")
 @TypeAlias("resourceRestraints")
-@StoreIn(DbAliases.PMS)
 public class ResourceRestraint {
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
   private EmbeddedUser createdBy;
 
-  @FdIndex @CreatedDate private long createdAt;
+  @CreatedDate private long createdAt;
   private EmbeddedUser lastUpdatedBy;
   @NotNull @LastModifiedDate private long lastUpdatedAt;
   @Version Long version;

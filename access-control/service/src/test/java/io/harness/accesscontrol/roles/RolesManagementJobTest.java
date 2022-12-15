@@ -318,6 +318,17 @@ public class RolesManagementJobTest extends AccessControlTestBase {
                                      .scopeLevel(projectScope.getLevel().toString())
                                      .resourceGroupIdentifier(RANDOM_IDENTIFIER)
                                      .build());
+    roleAssignmentService.create(RoleAssignment.builder()
+                                     .identifier("roleAssigmentIdentifierAtProjectScopeForInternalRole")
+                                     .principalIdentifier(RANDOM_IDENTIFIER)
+                                     .principalType(PrincipalType.USER)
+                                     .roleIdentifier("someOtherRole")
+                                     .scopeIdentifier(projectScope.toString())
+                                     .scopeLevel(projectScope.getLevel().toString())
+                                     .resourceGroupIdentifier(RANDOM_IDENTIFIER)
+                                     .internal(true)
+                                     .build());
+
     PageRequest pageRequest = PageRequest.builder().pageSize(100).pageIndex(0).build();
     assertEquals(3,
         roleAssignmentService

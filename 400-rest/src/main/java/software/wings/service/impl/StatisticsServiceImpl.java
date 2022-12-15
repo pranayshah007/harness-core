@@ -17,8 +17,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -32,11 +30,13 @@ import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.stats.DeploymentStatistics;
 import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats;
 import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats.DayStat;
 import software.wings.beans.stats.ServiceInstanceStatistics;
 import software.wings.beans.stats.TopConsumer;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.StatisticsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
@@ -48,11 +48,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @Singleton
+@Slf4j
 public class StatisticsServiceImpl implements StatisticsService {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private WingsPersistence wingsPersistence;
 
   private static final String[] workflowExecutionKeys = {WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.accountId,
       WorkflowExecutionKeys.appId, WorkflowExecutionKeys.appName, WorkflowExecutionKeys.createdAt,
@@ -110,6 +114,110 @@ public class StatisticsServiceImpl implements StatisticsService {
         ALL, merge(deploymentStats.getStatsMap().get(PROD), deploymentStats.getStatsMap().get(NON_PROD)));
 
     return deploymentStats;
+  }
+
+  @Override
+  public DeploymentStatistics getDeploymentStatisticsNew(String accountId, List<String> appIds, int numOfDays) {
+    long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
+    Query<WorkflowExecution> query =
+        wingsPersistence.createAuthorizedQueryOnAnalyticNode(WorkflowExecution.class)
+            .field(WorkflowExecutionKeys.createdAt)
+            .greaterThanOrEq(fromDateEpochMilli)
+            .filter(WorkflowExecutionKeys.accountId, accountId)
+            .field(WorkflowExecutionKeys.pipelineExecutionId)
+            .doesNotExist()
+            .project("pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries", true)
+            .project("serviceExecutionSummaries", true)
+            .project("accountId", true)
+            .project("appId", true)
+            .project("createdAt", true)
+            .project("envType", true)
+            .project("workflowType", true)
+            .project(WorkflowExecutionKeys.status, true);
+
+    if (isNotEmpty(appIds)) {
+      query.field(WorkflowExecutionKeys.appId).in(appIds);
+    }
+    List<WorkflowExecution> workflowExecutions = query.asList();
+
+    DeploymentStatistics deploymentStats = new DeploymentStatistics();
+    if (isEmpty(workflowExecutions)) {
+      return deploymentStats;
+    }
+
+    Map<EnvironmentType, List<WorkflowExecution>> wflExecutionByEnvType =
+        workflowExecutions.stream().collect(groupingBy(wex -> PROD == wex.getEnvType() ? PROD : NON_PROD));
+
+    deploymentStats.getStatsMap().put(
+        PROD, getDeploymentStatisticsByEnvType(numOfDays, wflExecutionByEnvType.get(EnvironmentType.PROD)));
+    deploymentStats.getStatsMap().put(
+        NON_PROD, getDeploymentStatisticsByEnvType(numOfDays, wflExecutionByEnvType.get(EnvironmentType.NON_PROD)));
+
+    notNullCheck("Non Production Deployment stats", deploymentStats.getStatsMap().get(NON_PROD));
+    deploymentStats.getStatsMap().put(
+        ALL, merge(deploymentStats.getStatsMap().get(PROD), deploymentStats.getStatsMap().get(NON_PROD)));
+
+    return deploymentStats;
+  }
+
+  @Override
+  public ServiceInstanceStatistics getServiceInstanceStatisticsNew(
+      String accountId, List<String> appIds, int numOfDays) {
+    long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
+
+    ServiceInstanceStatistics instanceStats = new ServiceInstanceStatistics();
+    Query<WorkflowExecution> query =
+        wingsPersistence.createAuthorizedQueryOnAnalyticNode(WorkflowExecution.class)
+            .field(WorkflowExecutionKeys.createdAt)
+            .greaterThanOrEq(fromDateEpochMilli)
+            .filter(WorkflowExecutionKeys.accountId, accountId)
+            .field(WorkflowExecutionKeys.pipelineExecutionId)
+            .doesNotExist()
+            .field(WorkflowExecutionKeys.status)
+            .in(ExecutionStatus.finalStatuses())
+            .project("pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries", true)
+            .project("serviceExecutionSummaries", true)
+            .project("accountId", true)
+            .project("appId", true)
+            .project("appName", true)
+            .project("createdAt", true)
+            .project("envType", true)
+            .project("workflowType", true)
+            .project(WorkflowExecutionKeys.status, true);
+
+    if (isNotEmpty(appIds)) {
+      query.field(WorkflowExecutionKeys.appId).in(appIds);
+    }
+
+    List<WorkflowExecution> workflowExecutions = query.asList();
+
+    if (isEmpty(workflowExecutions)) {
+      return instanceStats;
+    }
+
+    Comparator<TopConsumer> byCount = comparing(TopConsumer::getTotalCount, reverseOrder());
+
+    List<TopConsumer> allTopConsumers = new ArrayList<>();
+    getTopServicesDeployed(allTopConsumers, workflowExecutions);
+
+    allTopConsumers = allTopConsumers.stream().sorted(byCount).collect(toList());
+
+    Map<EnvironmentType, List<WorkflowExecution>> wflExecutionByEnvType =
+        workflowExecutions.stream().collect(groupingBy(wex -> PROD == wex.getEnvType() ? PROD : NON_PROD));
+
+    List<TopConsumer> prodTopConsumers = new ArrayList<>();
+    getTopServicesDeployed(prodTopConsumers, wflExecutionByEnvType.get(PROD));
+    prodTopConsumers = prodTopConsumers.stream().sorted(byCount).collect(toList());
+
+    List<TopConsumer> nonProdTopConsumers = new ArrayList<>();
+    getTopServicesDeployed(nonProdTopConsumers, wflExecutionByEnvType.get(NON_PROD));
+
+    nonProdTopConsumers = nonProdTopConsumers.stream().sorted(byCount).collect(toList());
+
+    instanceStats.getStatsMap().put(ALL, allTopConsumers);
+    instanceStats.getStatsMap().put(PROD, prodTopConsumers);
+    instanceStats.getStatsMap().put(NON_PROD, nonProdTopConsumers);
+    return instanceStats;
   }
 
   @Override

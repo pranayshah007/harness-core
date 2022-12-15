@@ -7,17 +7,14 @@
 
 package io.harness.monitoring;
 
-import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
-
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.utils.system.SystemWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Message;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,9 +29,6 @@ public class EventMonitoringServiceImpl implements EventMonitoringService {
   public <T extends Message> void sendMetric(
       String metricName, MonitoringInfo monitoringInfo, Map<String, String> metadataMap) {
     try {
-      if (!Objects.equals(metadataMap.getOrDefault(PIPELINE_MONITORING_ENABLED, "false"), "true")) {
-        return;
-      }
       long currentTimeMillis = SystemWrapper.currentTimeMillis();
       String metricValue = String.format(metricName, monitoringInfo.getMetricPrefix());
       long newCount = countMap.compute(metricValue, (k, v) -> v == null ? 1 : ((v + 1) % SAMPLE_SIZE));

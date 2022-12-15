@@ -15,6 +15,7 @@ import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -39,26 +40,47 @@ public class PlanCreatorUtils {
   public final String ANY_TYPE = "__any__";
   public final String TEMPLATE_TYPE = "__template__";
 
-  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field) {
+  public boolean supportsField(Map<String, Set<String>> supportedTypes, YamlField field, String version) {
     if (EmptyPredicate.isEmpty(supportedTypes)) {
       return false;
     }
 
-    String fieldName = field.getName();
-    Set<String> types = supportedTypes.get(fieldName);
-    if (EmptyPredicate.isEmpty(types)) {
-      return false;
-    }
+    switch (version) {
+      case PipelineVersion.V1:
+        Set<String> keys = supportedTypes.keySet();
+        String type = field.getNode().getType();
+        if (!EmptyPredicate.isEmpty(type)) {
+          if (supportedTypes.values().stream().anyMatch(v -> v.contains(type))) {
+            return true;
+          }
 
-    String fieldType = field.getNode().getType();
-    if (EmptyPredicate.isEmpty(fieldType)) {
-      if (field.getNode().getTemplate() == null) {
-        fieldType = ANY_TYPE;
-      } else {
-        fieldType = TEMPLATE_TYPE;
-      }
+          if (keys.contains(type)) {
+            return true;
+          }
+        }
+        if (EmptyPredicate.isEmpty(field.getName())) {
+          return false;
+        }
+        return keys.contains(field.getName());
+      case PipelineVersion.V0:
+        String fieldName = field.getName();
+        Set<String> types = supportedTypes.get(fieldName);
+        if (EmptyPredicate.isEmpty(types)) {
+          return false;
+        }
+
+        String fieldType = field.getNode().getType();
+        if (EmptyPredicate.isEmpty(fieldType)) {
+          if (field.getNode().getTemplate() == null) {
+            fieldType = ANY_TYPE;
+          } else {
+            fieldType = TEMPLATE_TYPE;
+          }
+        }
+        return types.contains(fieldType);
+      default:
+        throw new IllegalStateException("unsupported version");
     }
-    return types.contains(fieldType);
   }
 
   public YamlField getStageConfig(YamlField yamlField, String stageIdentifier) {

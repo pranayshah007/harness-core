@@ -13,6 +13,7 @@ import static io.harness.data.validator.EntityNameValidator.ALLOWED_CHARS_SERVIC
 import static io.harness.data.validator.EntityNameValidator.ALLOWED_CHARS_SERVICE_VARIABLE_STRING;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -24,6 +25,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -37,6 +39,9 @@ import io.harness.validation.Update;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.beans.entityinterface.ApplicationAccess;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -72,17 +77,13 @@ import org.mongodb.morphia.annotations.Transient;
 @ToString(exclude = {"encryptedValue", "encryptedBy"})
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ServiceVariableKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serviceVariables", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class ServiceVariable implements EncryptableSetting, PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
-                                        UpdatedAtAware, UpdatedByAware, ApplicationAccess {
+                                        UpdatedAtAware, UpdatedByAware, ApplicationAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("app_entityId")
-                 .field(ServiceVariableKeys.appId)
-                 .field(ServiceVariableKeys.entityId)
-                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("app_env_templateId")
                  .field(ServiceVariableKeys.appId)
@@ -117,7 +118,7 @@ public class ServiceVariable implements EncryptableSetting, PersistentEntity, Uu
   private String templateId = DEFAULT_TEMPLATE_ID;
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 
@@ -186,6 +187,24 @@ public class ServiceVariable implements EncryptableSetting, PersistentEntity, Uu
     }
 
     return EncryptionReflectUtils.getEncryptedFields(this.getClass());
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .name(getName())
+        .id(getUuid())
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .type(NGMigrationEntityType.SERVICE)
+        .build();
   }
 
   public enum OverrideType {

@@ -1,0 +1,238 @@
+pipeline:
+  name: test-repeat-strategy
+  identifier: testrepeatstrategy
+  projectIdentifier: default
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: repeat-strategy-stg-1
+        identifier: repeatstrategystg1
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Ssh
+          service:
+            serviceRef: testservice
+          environment:
+            environmentRef: preprod
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: testenv
+          execution:
+            steps:
+              - step:
+                  name: Deploy Count
+                  identifier: Deploy_1
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2", "host3","host4" ,"host5" ,"host6", "host7"]
+                      partitionSize: 2
+                      unit: Count
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits:
+                      - identifier: Setup_Runtime_Paths_1
+                        name: Setup Runtime Paths
+                        type: Script
+                        spec:
+                          shell: Bash
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                echo "testing"
+                      - identifier: Copy_Artifact_1
+                        name: Copy Artifact
+                        type: Copy
+                        spec:
+                          sourceType: Artifact
+                          destinationPath: $HARNESS_RUNTIME_PATH
+                      - identifier: Copy_Config_1
+                        name: Copy Config
+                        type: Copy
+                        spec:
+                          sourceType: Config
+                          destinationPath: $HARNESS_RUNTIME_PATH
+              - step:
+                  name: Deploy Count 2
+                  identifier: Deploy_2
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2", "host3","host4" ,"host5" ,"host6", "host7"]
+                      partitionSize: 3
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits:
+                      - identifier: Setup_Runtime_Paths_2
+                        name: Setup Runtime Paths
+                        type: Script
+                        spec:
+                          shell: Bash
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                echo "testing"
+                      - identifier: Copy_Artifact_2
+                        name: Copy Artifact
+                        type: Copy
+                        spec:
+                          sourceType: Artifact
+                          destinationPath: $HARNESS_RUNTIME_PATH
+                      - identifier: Copy_Config_2
+                        name: Copy Config
+                        type: Copy
+                        spec:
+                          sourceType: Config
+                          destinationPath: $HARNESS_RUNTIME_PATH
+              - step:
+                  name: Deploy Count 3
+                  identifier: Deploy_3
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2", "host3","host4" ,"host5" ,"host6", "host7"]
+                      partitionSize: -3
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits:
+                      - identifier: Setup_Runtime_Paths_3
+                        name: Setup Runtime Paths
+                        type: Script
+                        spec:
+                          shell: Bash
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                echo "testing"
+                      - identifier: Copy_Artifact_3
+                        name: Copy Artifact
+                        type: Copy
+                        spec:
+                          sourceType: Artifact
+                          destinationPath: $HARNESS_RUNTIME_PATH
+                      - identifier: Copy_Config_3
+                        name: Copy Config
+                        type: Copy
+                        spec:
+                          sourceType: Config
+                          destinationPath: $HARNESS_RUNTIME_PATH
+              - step:
+                  name: Deploy Percentage
+                  identifier: Deploy_Percentage
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2", "host3","host4" ,"host5" ,"host6", "host7"]
+                      partitionSize: 10
+                      unit: Percentage
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits:
+                      - identifier: Setup_Runtime_Paths_3
+                        name: Setup Runtime Paths
+                        type: Script
+                        spec:
+                          shell: Bash
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                echo "testing"
+                      - identifier: Copy_Artifact_3
+                        name: Copy Artifact
+                        type: Copy
+                        spec:
+                          sourceType: Artifact
+                          destinationPath: $HARNESS_RUNTIME_PATH
+                      - identifier: Copy_Config_3
+                        name: Copy Config
+                        type: Copy
+                        spec:
+                          sourceType: Config
+                          destinationPath: $HARNESS_RUNTIME_PATH
+              - step:
+                  name: Deploy Percentage
+                  identifier: Deploy_Percentage
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2"]
+                      partitionSize: 10
+                      unit: Percentage
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits: []
+              - step:
+                  name: Deploy Percentage
+                  identifier: Deploy_Percentage
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2"]
+                      partitionSize: 3
+                      unit: Count
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits: []
+              - step:
+                  name: Deploy Percentage With Start And End
+                  identifier: Deploy_Percentage_Start_End
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2"]
+                      start: 0
+                      end: 30
+                      unit: Percentage
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits: []
+              - step:
+                  name: Deploy Percentage With 1 Percent
+                  identifier: Deploy_Percentage_1_Percent
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2"]
+                      start: 0
+                      end: 1
+                      unit: Percentage
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

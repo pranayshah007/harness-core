@@ -13,9 +13,9 @@ import static io.harness.azure.model.AzureConstants.ASSIGNMENT_JSON_BLANK_VALIDA
 import static io.harness.azure.model.AzureConstants.ASSIGNMENT_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.BLUEPRINT_JSON_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.BLUEPRINT_NAME_BLANK_VALIDATION_MSG;
-import static io.harness.azure.model.AzureConstants.NEXT_PAGE_LINK_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.RESOURCE_SCOPE_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG;
+import static io.harness.azure.model.AzureConstants.REST_CLIENT_RESPONSE_TIMEOUT;
 import static io.harness.azure.model.AzureConstants.VERSION_ID_BLANK_VALIDATION_MSG;
 
 import static java.lang.String.format;
@@ -27,28 +27,24 @@ import io.harness.azure.client.AzureBlueprintRestClient;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.blueprint.Blueprint;
 import io.harness.azure.model.blueprint.PublishedBlueprint;
+import io.harness.azure.model.blueprint.PublishedBlueprintList;
 import io.harness.azure.model.blueprint.artifact.Artifact;
 import io.harness.azure.model.blueprint.assignment.Assignment;
+import io.harness.azure.model.blueprint.assignment.AssignmentList;
 import io.harness.azure.model.blueprint.assignment.WhoIsBlueprintContract;
 import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation;
+import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperationList;
 import io.harness.azure.utility.AzureResourceUtility;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.runtime.azure.AzureBPDeploymentException;
+import io.harness.exception.runtime.azure.AzureClientRuntimeException;
 import io.harness.serializer.JsonUtils;
 
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.reflect.TypeToken;
 import com.google.inject.Singleton;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.resources.implementation.PageImpl;
-import com.microsoft.rest.ServiceResponse;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ResponseBody;
-import retrofit2.Response;
-import rx.Observable;
-import rx.functions.Func1;
+import reactor.core.publisher.Mono;
 
 @Singleton
 @Slf4j
@@ -57,85 +53,59 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   public Blueprint createOrUpdateBlueprint(final AzureConfig azureConfig, final String resourceScope,
       final String blueprintName, final String blueprintJSON) {
     return createOrUpdateBlueprintWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, blueprintJSON)
-        .toBlocking()
-        .single()
-        .body();
+        .block(REST_CLIENT_RESPONSE_TIMEOUT);
   }
 
-  private Observable<ServiceResponse<Blueprint>> createOrUpdateBlueprintWithServiceResponseAsync(
-      final AzureConfig azureConfig, final String resourceScope, final String blueprintName,
-      final String blueprintJSON) {
+  private Mono<Blueprint> createOrUpdateBlueprintWithServiceResponseAsync(final AzureConfig azureConfig,
+      final String resourceScope, final String blueprintName, final String blueprintJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintJSON)) {
-      throw new IllegalArgumentException(BLUEPRINT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_JSON_BLANK_VALIDATION_MSG);
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
 
     JsonNode blueprintObj = JsonUtils.readTree(blueprintJSON);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .createOrUpdateBlueprint(getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, blueprintObj,
-            AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Blueprint>>>) response -> {
-          try {
-            ServiceResponse<Blueprint> clientResponse = createOrUpdateBlueprintDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<Blueprint> createOrUpdateBlueprintDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<Blueprint, CloudException>newInstance(azureJacksonAdapter)
-        .register(201, (new TypeToken<Blueprint>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .createOrUpdateBlueprint(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                  blueprintName, blueprintObj, AzureBlueprintRestClient.APP_VERSION),
+        Blueprint.class);
   }
 
   @Override
   public Blueprint getBlueprint(final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
-    return getBlueprintWithServiceResponseAsync(azureConfig, resourceScope, blueprintName).toBlocking().single().body();
+    try {
+      return getBlueprintWithServiceResponseAsync(azureConfig, resourceScope, blueprintName)
+          .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Blueprint", e);
+      return null;
+    }
   }
 
-  private Observable<ServiceResponse<Blueprint>> getBlueprintWithServiceResponseAsync(
+  private Mono<Blueprint> getBlueprintWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .getBlueprint(
-            getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Blueprint>>>) response -> {
-          try {
-            ServiceResponse<Blueprint> clientResponse = getBlueprintDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<Blueprint> getBlueprintDelegate(Response<ResponseBody> response) throws IOException {
-    return serviceResponseFactory.<Blueprint, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<Blueprint>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .getBlueprint(getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName,
+                                  AzureBlueprintRestClient.APP_VERSION),
+        Blueprint.class);
   }
 
   @Override
@@ -143,209 +113,133 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
       AzureConfig azureConfig, String resourceScope, String blueprintName, String artifactName, String artifactJSON) {
     return createOrUpdateArtifactWithServiceResponseAsync(
         azureConfig, resourceScope, blueprintName, artifactName, artifactJSON)
-        .toBlocking()
-        .single()
-        .body();
+        .block(REST_CLIENT_RESPONSE_TIMEOUT);
   }
 
-  private Observable<ServiceResponse<Artifact>> createOrUpdateArtifactWithServiceResponseAsync(
-      final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String artifactName,
-      final String artifactJSON) {
+  private Mono<Artifact> createOrUpdateArtifactWithServiceResponseAsync(final AzureConfig azureConfig,
+      final String resourceScope, final String blueprintName, final String artifactName, final String artifactJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(artifactJSON)) {
-      throw new IllegalArgumentException(ARTIFACT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ARTIFACT_JSON_BLANK_VALIDATION_MSG);
     }
     if (isBlank(artifactName)) {
-      throw new IllegalArgumentException(ARTIFACT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ARTIFACT_NAME_BLANK_VALIDATION_MSG);
     }
 
     JsonNode artifactObj = JsonUtils.readTree(artifactJSON);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .createOrUpdateArtifact(getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, artifactName,
-            artifactObj, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Artifact>>>) response -> {
-          try {
-            ServiceResponse<Artifact> clientResponse = createOrUpdateArtifactDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<Artifact> createOrUpdateArtifactDelegate(Response<ResponseBody> response) throws IOException {
-    return serviceResponseFactory.<Artifact, CloudException>newInstance(azureJacksonAdapter)
-        .register(201, (new TypeToken<Artifact>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .createOrUpdateArtifact(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                  blueprintName, artifactName, artifactObj, AzureBlueprintRestClient.APP_VERSION),
+        Artifact.class);
   }
 
   @Override
   public PublishedBlueprint publishBlueprintDefinition(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
     return publishBlueprintDefinitionWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, versionId)
-        .toBlocking()
-        .single()
-        .body();
+        .block(REST_CLIENT_RESPONSE_TIMEOUT);
   }
 
-  private Observable<ServiceResponse<PublishedBlueprint>> publishBlueprintDefinitionWithServiceResponseAsync(
+  private Mono<PublishedBlueprint> publishBlueprintDefinitionWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(versionId)) {
-      throw new IllegalArgumentException(VERSION_ID_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(VERSION_ID_BLANK_VALIDATION_MSG);
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .publishBlueprintDefinition(getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, versionId,
-            AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<PublishedBlueprint>>>) response -> {
-          try {
-            ServiceResponse<PublishedBlueprint> clientResponse = publishBlueprintDefinitionDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<PublishedBlueprint> publishBlueprintDefinitionDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<PublishedBlueprint, CloudException>newInstance(azureJacksonAdapter)
-        .register(201, (new TypeToken<PublishedBlueprint>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .publishBlueprintDefinition(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                  blueprintName, versionId, AzureBlueprintRestClient.APP_VERSION),
+        PublishedBlueprint.class);
   }
 
   @Override
   public PublishedBlueprint getPublishedBlueprintVersion(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
-    return getPublishedBlueprintVersionWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, versionId)
-        .toBlocking()
-        .single()
-        .body();
+    try {
+      return getPublishedBlueprintVersionWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, versionId)
+          .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Published Blueprint", e);
+      return null;
+    }
   }
 
-  private Observable<ServiceResponse<PublishedBlueprint>> getPublishedBlueprintVersionWithServiceResponseAsync(
+  private Mono<PublishedBlueprint> getPublishedBlueprintVersionWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(versionId)) {
-      throw new IllegalArgumentException(VERSION_ID_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(VERSION_ID_BLANK_VALIDATION_MSG);
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .getPublishedBlueprintVersion(getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, versionId,
-            AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<PublishedBlueprint>>>) response -> {
-          try {
-            ServiceResponse<PublishedBlueprint> clientResponse = getPublishedBlueprintVersionDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<PublishedBlueprint> getPublishedBlueprintVersionDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<PublishedBlueprint, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<PublishedBlueprint>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .getPublishedBlueprintVersion(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                  blueprintName, versionId, AzureBlueprintRestClient.APP_VERSION),
+        PublishedBlueprint.class);
   }
 
   @Override
-  public PagedList<PublishedBlueprint> listPublishedBlueprintVersions(
+  public PagedFlux<PublishedBlueprint> listPublishedBlueprintVersions(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
-    ServiceResponse<Page<PublishedBlueprint>> response =
-        listPublishedBlueprintVersionsSinglePageAsync(azureConfig, resourceScope, blueprintName).toBlocking().single();
-
-    return new PagedList<PublishedBlueprint>(response.body()) {
-      @Override
-      public Page<PublishedBlueprint> nextPage(String nextPageLink) {
-        return listPublishedBlueprintVersionsNextSinglePageAsync(azureConfig, nextPageLink)
-            .toBlocking()
-            .single()
-            .body();
-      }
-    };
+    return new PagedFlux(
+        ()
+            -> listPublishedBlueprintVersionsSinglePageAsync(azureConfig, resourceScope, blueprintName),
+        nextLink -> listPublishedBlueprintVersionsNextSinglePageAsync(azureConfig, String.valueOf(nextLink)));
   }
 
-  public Observable<ServiceResponse<Page<PublishedBlueprint>>> listPublishedBlueprintVersionsSinglePageAsync(
+  public Mono<PagedResponse<PublishedBlueprint>> listPublishedBlueprintVersionsSinglePageAsync(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      return Mono.error(new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG));
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      return Mono.error(new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope)));
     }
     if (isBlank(blueprintName)) {
-      throw new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG);
+      return Mono.error(new IllegalArgumentException(BLUEPRINT_NAME_BLANK_VALIDATION_MSG));
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listPublishedBlueprintVersions(
-            getAzureBearerAuthToken(azureConfig), resourceScope, blueprintName, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<PublishedBlueprint>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<PublishedBlueprint>> result = listPublishedBlueprintVersionsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<PublishedBlueprint>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listPublishedBlueprintVersions(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                       blueprintName, AzureBlueprintRestClient.APP_VERSION),
+        PublishedBlueprintList.class);
   }
 
-  public Observable<ServiceResponse<Page<PublishedBlueprint>>> listPublishedBlueprintVersionsNextSinglePageAsync(
+  public Mono<PagedResponse<PublishedBlueprint>> listPublishedBlueprintVersionsNextSinglePageAsync(
       final AzureConfig azureConfig, final String nextPageLink) {
-    if (nextPageLink == null) {
-      throw new IllegalArgumentException(NEXT_PAGE_LINK_BLANK_VALIDATION_MSG);
+    if (isBlank(nextPageLink)) {
+      return Mono.empty();
     }
-    String nextUrl = String.format("%s", nextPageLink);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listNext(getAzureBearerAuthToken(azureConfig), nextUrl, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<PublishedBlueprint>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<PublishedBlueprint>> result = listPublishedBlueprintVersionsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<PublishedBlueprint>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<PageImpl<PublishedBlueprint>> listPublishedBlueprintVersionsDelegate(
-      Response<ResponseBody> response) throws IOException {
-    return serviceResponseFactory.<PageImpl<PublishedBlueprint>, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<PageImpl<PublishedBlueprint>>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listPublishedBlueprintVersionsNextPage(getAzureBearerAuthToken(azureConfig),
+                                       nextPageLink, AzureBlueprintRestClient.APP_VERSION),
+        PublishedBlueprintList.class);
   }
 
   @Override
@@ -353,258 +247,154 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
       final String assignmentName, final String assignmentJSON) {
     return beginCreateOrUpdateAssignmentWithServiceResponseAsync(
         azureConfig, resourceScope, assignmentName, assignmentJSON)
-        .toBlocking()
-        .single()
-        .body();
+        .block();
   }
 
-  private Observable<ServiceResponse<Assignment>> beginCreateOrUpdateAssignmentWithServiceResponseAsync(
-      final AzureConfig azureConfig, final String resourceScope, final String assignmentName,
-      final String assignmentJSON) {
+  private Mono<Assignment> beginCreateOrUpdateAssignmentWithServiceResponseAsync(final AzureConfig azureConfig,
+      final String resourceScope, final String assignmentName, final String assignmentJSON) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
     if (isBlank(assignmentJSON)) {
-      throw new IllegalArgumentException(ASSIGNMENT_JSON_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_JSON_BLANK_VALIDATION_MSG);
     }
 
     JsonNode assignmentObj = JsonUtils.readTree(assignmentJSON);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .beginCreateOrUpdateAssignment(getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName,
-            assignmentObj, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Assignment>>>) response -> {
-          try {
-            ServiceResponse<Assignment> clientResponse = beginCreateOrUpdateAssignmentDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<Assignment> beginCreateOrUpdateAssignmentDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<Assignment, CloudException>newInstance(azureJacksonAdapter)
-        .register(201, (new TypeToken<Assignment>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .beginCreateOrUpdateAssignment(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                  assignmentName, assignmentObj, AzureBlueprintRestClient.APP_VERSION),
+        Assignment.class);
   }
 
   @Override
   public Assignment getAssignment(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
-    return getAssignmentWithServiceResponseAsync(azureConfig, resourceScope, assignmentName)
-        .toBlocking()
-        .single()
-        .body();
+    try {
+      return getAssignmentWithServiceResponseAsync(azureConfig, resourceScope, assignmentName).block();
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Blueprint Assignment", e);
+      return null;
+    }
   }
 
-  private Observable<ServiceResponse<Assignment>> getAssignmentWithServiceResponseAsync(
+  private Mono<Assignment> getAssignmentWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .getAssignment(
-            getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Assignment>>>) response -> {
-          try {
-            ServiceResponse<Assignment> clientResponse = getAssignmentDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<Assignment> getAssignmentDelegate(Response<ResponseBody> response) throws IOException {
-    return serviceResponseFactory.<Assignment, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<Assignment>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .getAssignment(getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName,
+                                  AzureBlueprintRestClient.APP_VERSION),
+        Assignment.class);
   }
 
   @Override
-  public PagedList<Assignment> listAssignments(final AzureConfig azureConfig, final String resourceScope) {
-    ServiceResponse<Page<Assignment>> response =
-        listBlueprintAssignmentsSinglePageAsync(azureConfig, resourceScope).toBlocking().single();
-
-    return new PagedList<Assignment>(response.body()) {
-      @Override
-      public Page<Assignment> nextPage(String nextPageLink) {
-        return listBlueprintAssignmentsNextSinglePageAsync(azureConfig, nextPageLink).toBlocking().single().body();
-      }
-    };
+  public PagedFlux<Assignment> listAssignments(final AzureConfig azureConfig, final String resourceScope) {
+    return new PagedFlux(()
+                             -> listBlueprintAssignmentsSinglePageAsync(azureConfig, resourceScope),
+        nextLink -> listBlueprintAssignmentsNextSinglePageAsync(azureConfig, String.valueOf(nextLink)));
   }
 
-  public Observable<ServiceResponse<Page<Assignment>>> listBlueprintAssignmentsSinglePageAsync(
+  public Mono<PagedResponse<Assignment>> listBlueprintAssignmentsSinglePageAsync(
       final AzureConfig azureConfig, final String resourceScope) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      return Mono.error(new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG));
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      return Mono.error(new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope)));
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listBlueprintAssignments(
-            getAzureBearerAuthToken(azureConfig), resourceScope, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<Assignment>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<Assignment>> result = listBlueprintAssignmentsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<Assignment>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listBlueprintAssignments(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                       AzureBlueprintRestClient.APP_VERSION),
+        AssignmentList.class);
   }
 
-  public Observable<ServiceResponse<Page<Assignment>>> listBlueprintAssignmentsNextSinglePageAsync(
+  public Mono<PagedResponse<Assignment>> listBlueprintAssignmentsNextSinglePageAsync(
       final AzureConfig azureConfig, final String nextPageLink) {
-    if (nextPageLink == null) {
-      throw new IllegalArgumentException(NEXT_PAGE_LINK_BLANK_VALIDATION_MSG);
+    if (isBlank(nextPageLink)) {
+      return Mono.empty();
     }
-    String nextUrl = String.format("%s", nextPageLink);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listNext(getAzureBearerAuthToken(azureConfig), nextUrl, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<Assignment>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<Assignment>> result = listBlueprintAssignmentsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<Assignment>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<PageImpl<Assignment>> listBlueprintAssignmentsDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<PageImpl<Assignment>, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<PageImpl<Assignment>>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listBlueprintAssignmentsNextPage(getAzureBearerAuthToken(azureConfig), nextPageLink,
+                                       AzureBlueprintRestClient.APP_VERSION),
+        AssignmentList.class);
   }
 
   @Override
-  public PagedList<AssignmentOperation> listAssignmentOperations(
+  public PagedFlux<AssignmentOperation> listAssignmentOperations(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
-    ServiceResponse<Page<AssignmentOperation>> response =
-        listAssignmentOperationsSinglePageAsync(azureConfig, resourceScope, assignmentName).toBlocking().single();
-
-    return new PagedList<AssignmentOperation>(response.body()) {
-      @Override
-      public Page<AssignmentOperation> nextPage(String nextPageLink) {
-        return listAssignmentOperationsNextSinglePageAsync(azureConfig, nextPageLink).toBlocking().single().body();
-      }
-    };
+    return new PagedFlux(()
+                             -> listAssignmentOperationsSinglePageAsync(azureConfig, resourceScope, assignmentName),
+        nextLink -> listAssignmentOperationsNextSinglePageAsync(azureConfig, String.valueOf(nextLink)));
   }
 
-  public Observable<ServiceResponse<Page<AssignmentOperation>>> listAssignmentOperationsSinglePageAsync(
+  public Mono<PagedResponse<AssignmentOperation>> listAssignmentOperationsSinglePageAsync(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      Mono.error(new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG));
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      Mono.error(new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope)));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      Mono.error(new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG));
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listAssignmentOperations(
-            getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<AssignmentOperation>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<AssignmentOperation>> result = listAssignmentOperationsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<AssignmentOperation>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listAssignmentOperations(getAzureBearerAuthToken(azureConfig), resourceScope,
+                                       assignmentName, AzureBlueprintRestClient.APP_VERSION),
+        AssignmentOperationList.class);
   }
 
-  public Observable<ServiceResponse<Page<AssignmentOperation>>> listAssignmentOperationsNextSinglePageAsync(
+  public Mono<PagedResponse<AssignmentOperation>> listAssignmentOperationsNextSinglePageAsync(
       final AzureConfig azureConfig, final String nextPageLink) {
-    if (nextPageLink == null) {
-      throw new IllegalArgumentException(NEXT_PAGE_LINK_BLANK_VALIDATION_MSG);
+    if (isBlank(nextPageLink)) {
+      return Mono.empty();
     }
-    String nextUrl = String.format("%s", nextPageLink);
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .listNext(getAzureBearerAuthToken(azureConfig), nextUrl, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<AssignmentOperation>>>>) response -> {
-          try {
-            ServiceResponse<PageImpl<AssignmentOperation>> result = listAssignmentOperationsDelegate(response);
-            return Observable.just(new ServiceResponse<Page<AssignmentOperation>>(result.body(), result.response()));
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<PageImpl<AssignmentOperation>> listAssignmentOperationsDelegate(
-      Response<ResponseBody> response) throws IOException {
-    return serviceResponseFactory.<PageImpl<AssignmentOperation>, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<PageImpl<AssignmentOperation>>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return executePagedRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                                   .listAssignmentOperationsNextPage(getAzureBearerAuthToken(azureConfig), nextPageLink,
+                                       AzureBlueprintRestClient.APP_VERSION),
+        AssignmentOperationList.class);
   }
 
   @Override
   public WhoIsBlueprintContract whoIsBlueprint(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
-    return whoIsBlueprintWithServiceResponseAsync(azureConfig, resourceScope, assignmentName)
-        .toBlocking()
-        .single()
-        .body();
+    return whoIsBlueprintWithServiceResponseAsync(azureConfig, resourceScope, assignmentName).block();
   }
 
-  private Observable<ServiceResponse<WhoIsBlueprintContract>> whoIsBlueprintWithServiceResponseAsync(
+  private Mono<WhoIsBlueprintContract> whoIsBlueprintWithServiceResponseAsync(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
     if (isBlank(resourceScope)) {
-      throw new IllegalArgumentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(RESOURCE_SCOPE_BLANK_VALIDATION_MSG);
     }
     if (!AzureResourceUtility.isValidResourceScope(resourceScope)) {
-      throw new IllegalArgumentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
+      throw new AzureBPDeploymentException(format(RESOURCE_SCOPE_IS_NOT_VALIDATION_MSG, resourceScope));
     }
     if (isBlank(assignmentName)) {
-      throw new IllegalArgumentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
+      throw new AzureBPDeploymentException(ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
-    return getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
-        .whoIsBlueprint(
-            getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName, AzureBlueprintRestClient.APP_VERSION)
-        .flatMap((Func1<Response<ResponseBody>, Observable<ServiceResponse<WhoIsBlueprintContract>>>) response -> {
-          try {
-            ServiceResponse<WhoIsBlueprintContract> clientResponse = whoIsBlueprintDelegate(response);
-            return Observable.just(clientResponse);
-          } catch (Exception t) {
-            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
-          }
-        });
-  }
-
-  private ServiceResponse<WhoIsBlueprintContract> whoIsBlueprintDelegate(Response<ResponseBody> response)
-      throws IOException {
-    return serviceResponseFactory.<WhoIsBlueprintContract, CloudException>newInstance(azureJacksonAdapter)
-        .register(200, (new TypeToken<WhoIsBlueprintContract>() {}).getType())
-        .registerError(CloudException.class)
-        .build(response);
+    return getMonoRequest(getAzureBlueprintRestClient(azureConfig.getAzureEnvironmentType())
+                              .whoIsBlueprint(getAzureBearerAuthToken(azureConfig), resourceScope, assignmentName,
+                                  AzureBlueprintRestClient.APP_VERSION),
+        WhoIsBlueprintContract.class);
   }
 }

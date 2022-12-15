@@ -7,9 +7,9 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.DMS;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.DMS;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_TOPIC_SIZE;
@@ -21,6 +21,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.LDAP_GROUP_SYNC;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 
@@ -33,8 +34,8 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -63,6 +64,7 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(SAML_AUTHORIZATION_ASSERTION))
           .toInstance(NoOpProducer.of(DUMMY_TOPIC_NAME));
+      bind(Producer.class).annotatedWith(Names.named(LDAP_GROUP_SYNC)).toInstance(NoOpProducer.of(DUMMY_TOPIC_NAME));
       bind(Producer.class)
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
           .toInstance(NoOpProducer.of(DUMMY_TOPIC_NAME));
@@ -70,7 +72,7 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
           .toInstance(NoOpConsumer.of(DUMMY_TOPIC_NAME, DUMMY_GROUP_NAME));
     } else {
-      RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Producer.class)
           .annotatedWith(Names.named(ENTITY_CRUD))
           .toInstance(RedisProducer.of(ENTITY_CRUD, redissonClient, ENTITY_CRUD_MAX_TOPIC_SIZE, MANAGER.getServiceId(),
@@ -87,6 +89,10 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(SAML_AUTHORIZATION_ASSERTION))
           .toInstance(RedisProducer.of(SAML_AUTHORIZATION_ASSERTION, redissonClient, DEFAULT_TOPIC_SIZE,
               MANAGER.getServiceId(), redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(LDAP_GROUP_SYNC))
+          .toInstance(RedisProducer.of(LDAP_GROUP_SYNC, redissonClient, DEFAULT_TOPIC_SIZE, MANAGER.getServiceId(),
+              redisConfig.getEnvNamespace()));
 
       String authorizationServiceHeader = MANAGER.getServiceId();
       if (isDmsMode) {

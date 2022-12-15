@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/drone/go-scm/scm"
+	"github.com/drone/go-scm/scm/driver/github"
 	"github.com/drone/go-scm/scm/transport/oauth2"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/scm/converter"
@@ -21,7 +22,7 @@ import (
 )
 
 func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
-	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:" , request.ClientID)
+	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:", request.ClientID)
 
 	before := &scm.Token{
 		Refresh: request.RefreshToken,
@@ -47,11 +48,11 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 	}
 
 	out = &pb.RefreshTokenResponse{
-		 AccessToken: after.Token,
-		 RefreshToken: after.Refresh,
+		AccessToken:  after.Token,
+		RefreshToken: after.Refresh,
 	}
 
-	return out ,err
+	return out, err
 }
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
@@ -539,14 +540,23 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 	log.Infow("GetUserRepos starting")
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
+
 	if err != nil {
 		log.Errorw("GetUserRepos failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
+	isGithubApp := isGithubApp(*&request.Provider)
 	paginatedCall := !request.GetFetchAllRepos()
 
 	if paginatedCall {
-		repoList, response, err := client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+		var repoList []*scm.Repository
+		var response *scm.Response
+
+		if isGithubApp {
+			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+		} else {
+			repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 			// this is a hard error with no response
@@ -573,7 +583,10 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 	} else {
 		// TODO as part of error plan improvement change the
 		// Repos function to return the status code as well
-		repoList, err := Repos(ctx, client, log)
+		listAllReposRequest := &ListAllReposRequest{
+			IsGithubApp: isGithubApp,
+		}
+		repoList, err := Repos(ctx, client, log, listAllReposRequest)
 		if err != nil {
 			log.Infow("GetAllUserRepos failed", err)
 			return nil, err
@@ -692,11 +705,18 @@ func convertChange(from *scm.Change) *pb.PRFile {
 
 // Repos returns the full repository list, traversing and
 // combining paginated responses if necessary.
-func Repos(ctx context.Context, client *scm.Client, log *zap.SugaredLogger) ([]*scm.Repository, error) {
+func Repos(ctx context.Context, client *scm.Client, log *zap.SugaredLogger, request *ListAllReposRequest) ([]*scm.Repository, error) {
 	list := []*scm.Repository{}
 	opts := scm.ListOptions{Size: 100}
 	for {
-		result, meta, err := client.Repositories.List(ctx, opts)
+		result := []*scm.Repository{}
+		var meta *scm.Response
+		var err error
+		if request.IsGithubApp {
+			result, meta, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, opts)
+		} else {
+			result, meta, err = client.Repositories.List(ctx, opts)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -711,4 +731,18 @@ func Repos(ctx context.Context, client *scm.Client, log *zap.SugaredLogger) ([]*
 		}
 	}
 	return list, nil
+}
+
+type ListAllReposRequest struct {
+	IsGithubApp bool
+}
+
+// Finds out if provider is github app
+func isGithubApp(p *pb.Provider) (out bool) {
+	gitProvider := gitclient.GetProvider(*p)
+	if gitProvider == "github" && p.GetGithub().GetIsGithubApp() {
+		return true
+	} else {
+		return false
+	}
 }

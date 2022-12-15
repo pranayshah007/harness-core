@@ -38,11 +38,11 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.infrastructure.Host;
 import software.wings.delegatetasks.validation.capabilities.BasicValidationInfo;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
@@ -103,6 +103,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
   private boolean inlineSshCommand;
   private boolean executeOnDelegate;
   private boolean disableWinRMCommandEncodingFFSet; // DISABLE_WINRM_COMMAND_ENCODING
+  private boolean winrmScriptCommandSplit; // WINRM_SCRIPT_COMMAND_SPLIT
   private boolean disableWinRMEnvVariables; // stop passing service variables as env variables
   private boolean useWinRMKerberosUniqueCacheFile;
   private List<String> delegateSelectors;
@@ -181,7 +182,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       ContainerResizeParams containerResizeParams, Map<String, String> metadata,
       CommandExecutionData commandExecutionData, Integer timeout, String deploymentType,
       List<EncryptedDataDetail> artifactServerEncryptedDataDetails, boolean inlineSshCommand, boolean executeOnDelegate,
-      boolean disableWinRMCommandEncodingFFSet, boolean disableWinRMEnvVariables,
+      boolean disableWinRMCommandEncodingFFSet, boolean winrmScriptCommandSplit, boolean disableWinRMEnvVariables,
       boolean useWinRMKerberosUniqueCacheFile, List<String> delegateSelectors, Map<String, Artifact> multiArtifactMap,
       Map<String, ArtifactStreamAttributes> artifactStreamAttributesMap, boolean multiArtifact,
       Map<String, List<EncryptedDataDetail>> artifactServerEncryptedDataDetailsMap, String artifactFileName,
@@ -224,6 +225,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     this.inlineSshCommand = inlineSshCommand;
     this.executeOnDelegate = executeOnDelegate;
     this.disableWinRMCommandEncodingFFSet = disableWinRMCommandEncodingFFSet;
+    this.winrmScriptCommandSplit = winrmScriptCommandSplit;
     this.disableWinRMEnvVariables = disableWinRMEnvVariables;
     this.useWinRMKerberosUniqueCacheFile = useWinRMKerberosUniqueCacheFile;
     this.delegateSelectors = delegateSelectors;
@@ -404,6 +406,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
     private boolean inlineSshCommand;
     private boolean executeOnDelegate;
     private boolean disableWinRMCommandEncodingFFSet; // DISABLE_WINRM_COMMAND_ENCODING
+    private boolean winrmScriptCommandSplit; // WINRM_SCRIPT_COMMAND_SPLIT
     private boolean disableWinRMEnvVariables; // stop passing service variables as env variables
     private List<String> delegateSelectors;
 
@@ -606,6 +609,11 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       return this;
     }
 
+    public Builder winrmScriptCommandSplit(boolean winrmScriptCommandSplit) {
+      this.winrmScriptCommandSplit = winrmScriptCommandSplit;
+      return this;
+    }
+
     public Builder disableWinRMEnvVariables(boolean disableWinRMEnvVariables) {
       this.disableWinRMEnvVariables = disableWinRMEnvVariables;
       return this;
@@ -691,6 +699,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
           .artifactServerEncryptedDataDetailsMap(artifactServerEncryptedDataDetailsMap)
           .artifactFileName(artifactFileName)
           .disableWinRMCommandEncodingFFSet(disableWinRMCommandEncodingFFSet)
+          .winrmScriptCommandSplit(winrmScriptCommandSplit)
           .disableWinRMEnvVariables(disableWinRMEnvVariables)
           .delegateSelectors(delegateSelectors)
           .sshVaultConfig(sshVaultConfig);
@@ -740,6 +749,7 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       commandExecutionContext.setArtifactServerEncryptedDataDetailsMap(artifactServerEncryptedDataDetailsMap);
       commandExecutionContext.setArtifactFileName(artifactFileName);
       commandExecutionContext.setDisableWinRMCommandEncodingFFSet(disableWinRMCommandEncodingFFSet);
+      commandExecutionContext.setWinrmScriptCommandSplit(winrmScriptCommandSplit);
       commandExecutionContext.setDisableWinRMEnvVariables(disableWinRMEnvVariables);
       commandExecutionContext.setDelegateSelectors(delegateSelectors);
       commandExecutionContext.setSshVaultConfig(sshVaultConfig);

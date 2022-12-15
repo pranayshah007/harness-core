@@ -8,6 +8,10 @@
 package io.harness.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
+import static io.harness.exception.WingsException.USER;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
@@ -34,6 +38,19 @@ public class ServiceNowUtils {
 
   public String prepareTicketUrlFromTicketId(String baseUrl, String ticketId, String ticketType) {
     return getUrlWithPath(baseUrl, ticketType) + ".do?sys_id=" + ticketId;
+  }
+
+  public String prepareTicketUrlFromTicketIdV2(String baseUrl, String ticketId, String ticketType) {
+    try {
+      if (isBlank(ticketId) || isBlank(ticketType)) {
+        return null;
+      }
+      URL issueUrl = new URL(getUrlWithPath(baseUrl, ticketType) + ".do?sys_id=" + ticketId);
+      return issueUrl.toString();
+    } catch (MalformedURLException ex) {
+      throw new ServiceNowException(
+          String.format("Invalid serviceNow base url: %s", baseUrl), SERVICENOW_ERROR, USER, ex);
+    }
   }
 
   @NotNull

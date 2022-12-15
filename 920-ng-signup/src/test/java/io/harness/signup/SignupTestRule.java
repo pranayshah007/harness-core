@@ -100,6 +100,13 @@ public class SignupTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
       }
 
       @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      MongoClient mongoClient() {
+        return mongoClient;
+      }
+
+      @Provides
       @Singleton
       @Nullable
       UserProvider userProvider() {

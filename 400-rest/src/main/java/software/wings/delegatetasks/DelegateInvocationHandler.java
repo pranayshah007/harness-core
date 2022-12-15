@@ -23,12 +23,13 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.aws.model.AwsRequest;
 import software.wings.service.intfc.DelegateService;
@@ -45,11 +46,15 @@ public class DelegateInvocationHandler implements InvocationHandler {
   private SyncTaskContext syncTaskContext;
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
 
+  // this variable is introduced to execute delegate task submission using KryoSerializer Reference False
+  private boolean executeV2Flow;
+
   public DelegateInvocationHandler(SyncTaskContext syncTaskContext, DelegateService delegateService,
-      TaskSetupAbstractionHelper taskSetupAbstractionHelper) {
+      TaskSetupAbstractionHelper taskSetupAbstractionHelper, boolean executeV2Flow) {
     this.delegateService = delegateService;
     this.syncTaskContext = syncTaskContext;
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
+    this.executeV2Flow = executeV2Flow;
   }
 
   @Override
@@ -59,38 +64,64 @@ public class DelegateInvocationHandler implements InvocationHandler {
     delegateArguments[0] = proxy.getClass().getInterfaces()[0].getName();
     delegateArguments[1] = method.getName();
     System.arraycopy(args, 0, delegateArguments, 2, args.length);
-    DelegateTaskBuilder builder =
-        DelegateTask.builder()
-            .data(TaskData.builder()
-                      .async(false)
-                      .taskType(taskType.name())
-                      .parameters(delegateArguments)
-                      .timeout(syncTaskContext.getTimeout())
-                      .build())
-            .accountId(syncTaskContext.getAccountId())
-            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, syncTaskContext.getAppId())
-            .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, syncTaskContext.getEnvId())
-            .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD,
-                syncTaskContext.getEnvType() == null ? null : syncTaskContext.getEnvType().name())
-            .setupAbstraction(
-                Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, syncTaskContext.getInfrastructureMappingId())
-            .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, syncTaskContext.getServiceId())
-            .setupAbstraction(OWNER,
-                taskSetupAbstractionHelper.getOwner(syncTaskContext.getAccountId(), syncTaskContext.getOrgIdentifier(),
-                    syncTaskContext.getProjectIdentifier()))
-            .setupAbstraction(NG, syncTaskContext.isNgTask() ? "true" : "false")
-            .tags(syncTaskContext.getTags());
+    DelegateTaskBuilder builder = executeV2Flow ? getDelegateTaskBuilderV2(taskType, delegateArguments)
+                                                : getDelegateTaskBuilder(taskType, delegateArguments);
 
     String awsConfigTag = getAwsConfigTags(args);
     if (isNotEmpty(awsConfigTag)) {
       builder.tags(singletonList(awsConfigTag));
     }
-    RemoteMethodReturnValueData returnValueData = delegateService.executeTask(builder.build());
+    RemoteMethodReturnValueData returnValueData =
+        executeV2Flow ? delegateService.executeTaskV2(builder.build()) : delegateService.executeTask(builder.build());
     if (returnValueData.getException() != null) {
       throw returnValueData.getException();
     } else {
       return returnValueData.getReturnValue();
     }
+  }
+
+  private DelegateTaskBuilder getDelegateTaskBuilderV2(TaskType taskType, Object[] delegateArguments) {
+    return DelegateTask.builder()
+        .taskDataV2(TaskDataV2.builder()
+                        .async(false)
+                        .taskType(taskType.name())
+                        .parameters(delegateArguments)
+                        .timeout(syncTaskContext.getTimeout())
+                        .build())
+        .accountId(syncTaskContext.getAccountId())
+        .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, syncTaskContext.getAppId())
+        .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, syncTaskContext.getEnvId())
+        .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD,
+            syncTaskContext.getEnvType() == null ? null : syncTaskContext.getEnvType().name())
+        .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, syncTaskContext.getInfrastructureMappingId())
+        .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, syncTaskContext.getServiceId())
+        .setupAbstraction(OWNER,
+            taskSetupAbstractionHelper.getOwner(syncTaskContext.getAccountId(), syncTaskContext.getOrgIdentifier(),
+                syncTaskContext.getProjectIdentifier()))
+        .setupAbstraction(NG, syncTaskContext.isNgTask() ? "true" : "false")
+        .tags(syncTaskContext.getTags());
+  }
+
+  private DelegateTaskBuilder getDelegateTaskBuilder(TaskType taskType, Object[] delegateArguments) {
+    return DelegateTask.builder()
+        .data(TaskData.builder()
+                  .async(false)
+                  .taskType(taskType.name())
+                  .parameters(delegateArguments)
+                  .timeout(syncTaskContext.getTimeout())
+                  .build())
+        .accountId(syncTaskContext.getAccountId())
+        .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, syncTaskContext.getAppId())
+        .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, syncTaskContext.getEnvId())
+        .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD,
+            syncTaskContext.getEnvType() == null ? null : syncTaskContext.getEnvType().name())
+        .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, syncTaskContext.getInfrastructureMappingId())
+        .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, syncTaskContext.getServiceId())
+        .setupAbstraction(OWNER,
+            taskSetupAbstractionHelper.getOwner(syncTaskContext.getAccountId(), syncTaskContext.getOrgIdentifier(),
+                syncTaskContext.getProjectIdentifier()))
+        .setupAbstraction(NG, syncTaskContext.isNgTask() ? "true" : "false")
+        .tags(syncTaskContext.getTags());
   }
 
   private String getAwsConfigTags(Object[] args) {
@@ -104,7 +135,8 @@ public class DelegateInvocationHandler implements InvocationHandler {
             return ((AwsConfig) settingValue).getTag();
           }
         } else if (arg instanceof ContainerServiceParams) {
-          SettingAttribute settingAttribute = ((ContainerServiceParams) arg).getSettingAttribute();
+          ContainerServiceParams containerServiceParams = (ContainerServiceParams) arg;
+          SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
           SettingValue settingValue = settingAttribute.getValue();
           if (settingValue instanceof AwsConfig) {
             return ((AwsConfig) settingValue).getTag();

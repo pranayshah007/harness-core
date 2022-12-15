@@ -20,7 +20,6 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
@@ -57,9 +56,7 @@ public class ServiceExpressionBuilder extends ExpressionBuilder {
   @Override
   public Set<String> getExpressions(String appId, String entityId) {
     SortedSet<String> expressions = new TreeSet<>();
-    String accountId = appService.getAccountIdByAppId(appId);
-    boolean isMultiArtifact = featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
-    expressions.addAll(getStaticExpressions(isMultiArtifact));
+    expressions.addAll(getStaticExpressions(false));
     expressions.addAll(getDynamicExpressions(appId, entityId));
     expressions.addAll(getServiceTemplateVariableExpressions(appId, entityId, ENVIRONMENT));
     return expressions;

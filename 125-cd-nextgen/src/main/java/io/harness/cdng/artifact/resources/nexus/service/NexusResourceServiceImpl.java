@@ -43,12 +43,15 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NexusRegistryException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
+
+import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -60,13 +63,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class NexusResourceServiceImpl implements NexusResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 30;
 
   @Inject
@@ -75,6 +81,30 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     this.connectorService = connectorService;
     this.secretManagerClientService = secretManagerClientService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
+  }
+
+  @Override
+  public NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
+      String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
+      String packageName, String group) {
+    NexusConnectorDTO connector = getConnector(nexusConnectorRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    NexusArtifactDelegateRequest nexusRequest =
+        ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(repositoryName, repositoryPort, artifactPath,
+            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
+            ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension, classifier, packageName, group);
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(nexusRequest,
+          ArtifactTaskType.GET_BUILDS, baseNGAccess, "Nexus Artifact Get Builds task failure due to error");
+      return getNexusResponseDTO(artifactTaskExecutionResponse);
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+    }
   }
 
   @Override
@@ -137,6 +167,21 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     return artifactTaskExecutionResponse.isArtifactServerValid();
   }
 
+  @Override
+  public List<NexusRepositories> getRepositories(
+      IdentifierRef nexusConnectorRef, String orgIdentifier, String projectIdentifier, String repositoryFormat) {
+    NexusConnectorDTO connector = getConnector(nexusConnectorRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    NexusArtifactDelegateRequest nexusRequest =
+        ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(null, null, null, repositoryFormat, null, null,
+            null, null, connector, encryptionDetails, ArtifactSourceType.NEXUS3_REGISTRY);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(nexusRequest,
+        ArtifactTaskType.GET_NEXUS_REPOSITORIES, baseNGAccess, "Nexus get Repository task failure due to error");
+    return artifactTaskExecutionResponse.getRepositories();
+  }
+
   private NexusConnectorDTO getConnector(IdentifierRef nexusConnectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.get(nexusConnectorRef.getAccountIdentifier(), nexusConnectorRef.getOrgIdentifier(),
@@ -197,7 +242,11 @@ public class NexusResourceServiceImpl implements NexusResourceService {
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskSelectors(delegateRequest.getNexusConnectorDTO().getDelegateSelectors())
             .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

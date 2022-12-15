@@ -27,6 +27,9 @@ public class YAMLFieldNameConstants {
   public final String STAGE = "stage";
   public final String STAGES = "stages";
   public final String STRATEGY = "strategy";
+  public final String CLONE = "clone";
+  public final String DISABLED = "disabled";
+  public final String WHEN = "when";
 
   public final String STEP = "step";
   public final String STEPS = "steps";
@@ -48,14 +51,17 @@ public class YAMLFieldNameConstants {
   public final String HEADERS = "headers";
   public final String OUTPUT = "output";
   public final String INPUT = "input";
+  public final String INPUTS = "inputs";
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
+  public final String COMMAND = "Command";
 
   public final String STORE = "store";
   public final String PIPELINE_INFRASTRUCTURE = "infrastructure";
@@ -66,12 +72,14 @@ public class YAMLFieldNameConstants {
   public final String CONFIGURATION = "configuration";
   public final String TEMPLATE = "template";
   public final String TEMPLATE_INPUTS = "templateInputs";
+  public final String TEMPLATE_VERSION = "versionLabel";
 
   public final String BASE_IMAGE_CONNECTOR_REFS = "baseImageConnectorRefs";
   public final String HARNESS_IMAGE_CONNECTOR_REF = "harnessImageConnectorRef";
 
   public final String CHILD_NODE_OF_SPEC = "childNodeOfSpec";
   public final String GITOPS_ENABLED = "gitOpsEnabled";
+  public final String SKIP_INSTANCES = "skipInstances";
 
   public final String ORG_IDENTIFIER = "orgIdentifier";
   public final String PROJECT_IDENTIFIER = "projectIdentifier";
@@ -81,4 +89,8 @@ public class YAMLFieldNameConstants {
 
   public final String INPUT_SET_REFERENCES = "inputSetReferences";
   public final String REPEAT = "repeat";
+  public final String SERVICE_REF = "serviceRef";
+  public final String ENVIRONMENT_REF = "environmentRef";
+  public final String GROUP = "group";
+  public static final String OUTPUTS = "outputs";
 }

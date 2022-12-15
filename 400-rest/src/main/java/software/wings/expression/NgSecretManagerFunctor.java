@@ -33,7 +33,7 @@ import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -47,18 +47,21 @@ import software.wings.service.intfc.security.SecretManager;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
 @Value
 @Builder
+@Slf4j
 @TargetModule(HarnessModule._950_NG_CORE)
 public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManagerFunctorInterface {
   int expressionFunctorToken;
@@ -69,11 +72,13 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   Cache<String, EncryptedDataDetails> secretsCache;
   SecretManagerClientService ngSecretService;
   SecretManagerMode mode;
+  private final ExecutorService expressionEvaluatorExecutor;
+  private final boolean evaluateSync;
 
-  @Builder.Default Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Builder.Default Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Builder.Default Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Builder.Default Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Builder.Default Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, EncryptionConfig> encryptionConfigs = new ConcurrentHashMap<>();
+  @Builder.Default Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 
@@ -83,6 +88,13 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       throw new FunctorException("Inappropriate usage of internal functor");
     }
     try {
+      if (!evaluateSync) {
+        if (expressionEvaluatorExecutor != null) {
+          // Offload expression evaluation of secrets to another threadpool.
+          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretIdentifier));
+        }
+      }
+      log.warn("Expression evaluation is being processed synchronously");
       return obtainInternal(secretIdentifier);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretIdentifier + "]", ex);
@@ -155,7 +167,9 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       if (isNotEmpty(encryptedDataDetailsToCache)) {
         EncryptedDataDetails objectToCache =
             EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetailsToCache).build();
-        secretsCache.put(String.valueOf(keyHash), objectToCache);
+        if (secretsCache != null) {
+          secretsCache.put(String.valueOf(keyHash), objectToCache);
+        }
         delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_INSERTS);
       }
     }

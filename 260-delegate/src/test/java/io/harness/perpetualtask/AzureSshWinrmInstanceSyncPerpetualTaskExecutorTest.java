@@ -11,13 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -82,6 +82,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
                  .subscriptionId("S")
                  .resourceGroup("R")
                  .tags(new HashMap<>())
+                 .hostConnectionType("PublicIP")
                  .build())
         .when(kryoSerializer)
         .asObject(any(byte[].class));
@@ -90,11 +91,11 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void testRunOnce() {
+  public void testRunOnce() throws IOException {
     doReturn(
         AzureHostsResponse.builder().hosts(Arrays.asList(AzureHostResponse.builder().hostName(HOST1).build())).build())
         .when(azureAsyncTaskHelper)
-        .listHosts(any(), any(), anyString(), anyString(), any(), any());
+        .listHosts(any(AzureConfigContext.class));
 
     PerpetualTaskExecutionParams perpetualTaskExecutionParams = getPerpetualTaskExecutionParams();
     PerpetualTaskResponse perpetualTaskResponse = executor.runOnce(

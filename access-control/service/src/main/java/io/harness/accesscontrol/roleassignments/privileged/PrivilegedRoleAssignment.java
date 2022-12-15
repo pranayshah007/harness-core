@@ -26,5 +26,5 @@ public class PrivilegedRoleAssignment {
   @Wither @NotNull PrincipalType principalType;
   @Wither @NotEmpty String principalIdentifier;
   @NotEmpty String roleIdentifier;
-  String linkedRoleAssignment; // for backward compatibility deleteByRoleAssignment
+  @Deprecated String linkedRoleAssignment; // for backward compatibility deleteByRoleAssignment
 }

@@ -35,17 +35,19 @@ import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
 import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.manifests.SampleManifestFileService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.CryptoUtils;
 
@@ -80,6 +82,9 @@ public class NGAccountSetupService {
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
+  private final DefaultUserGroupService defaultUserGroupService;
+
+  private final SampleManifestFileService sampleManifestFileService;
 
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
@@ -88,7 +93,8 @@ public class NGAccountSetupService {
       UserClient userClient, AccessControlMigrationService accessControlMigrationService,
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
-      ProjectService projectService, FeatureFlagService featureFlagService) {
+      ProjectService projectService, FeatureFlagService featureFlagService,
+      SampleManifestFileService sampleManifestFileService, DefaultUserGroupService defaultUserGroupService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -103,18 +109,24 @@ public class NGAccountSetupService {
     this.accountSettingService = accountSettingService;
     this.projectService = projectService;
     this.featureFlagService = featureFlagService;
+    this.sampleManifestFileService = sampleManifestFileService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
     if (!accountOrgProjectValidator.isPresent(accountIdentifier, null, null)) {
       log.info(String.format(
-          "Account with accountIdentifier %s not found, skipping creation of Default Organization", accountIdentifier));
+          "[NGAccountSetupService]: Account with accountIdentifier %s not found, skipping creation of Default Organization",
+          accountIdentifier));
       return;
     }
-
+    Scope accountScope = Scope.of(accountIdentifier, null, null);
+    defaultUserGroupService.create(accountScope, emptyList());
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
     if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
+      log.info(String.format("[NGAccountSetupService]: Setting up default project for account %s", accountIdentifier));
       Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
+      log.info(String.format("[NGAccountSetupService]: Setting up all levels rbac for account %s", accountIdentifier));
       setupAllLevelRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier(), defaultProject.getIdentifier());
     } else {
       setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
@@ -124,13 +136,30 @@ public class NGAccountSetupService {
     log.info("[NGAccountSetupService]: Global SM Created Successfully for account{}", accountIdentifier);
     harnessSMManager.createHarnessSecretManager(accountIdentifier, null, null);
     ciDefaultEntityManager.createCIDefaultEntities(accountIdentifier, null, null);
+    log.info("[NGAccountSetupService]: CI Default Entities Created Successfully for account{}", accountIdentifier);
     accountSettingService.setUpDefaultAccountSettings(accountIdentifier);
+    log.info("[NGAccountSetupService]: Default Account Settings Created Successfully for account{}", accountIdentifier);
+    createSampleFiles(accountIdentifier);
+  }
+
+  private void createSampleFiles(String accountIdentifier) {
+    try {
+      SampleManifestFileService.SampleManifestFileCreateResponse fileCreateResponse =
+          sampleManifestFileService.createDefaultFilesInFileStore(accountIdentifier);
+      if (!fileCreateResponse.isCreated()) {
+        log.error(String.format("Failed to create sample manifest files for account:%s. Reason %s", accountIdentifier,
+            fileCreateResponse.getErrorMessage()));
+      }
+    } catch (Exception ex) {
+      log.error("Failed to create sample manifest files for account:" + accountIdentifier, ex);
+    }
   }
 
   private Organization createDefaultOrg(String accountIdentifier) {
     Optional<Organization> organization = organizationService.get(accountIdentifier, DEFAULT_ORG_IDENTIFIER);
     if (organization.isPresent()) {
-      log.info(String.format("Default Organization for account %s already present", accountIdentifier));
+      log.info(String.format(
+          "[NGAccountSetupService]: Default Organization for account %s already present", accountIdentifier));
       return organization.get();
     }
     OrganizationDTO createOrganizationDTO = OrganizationDTO.builder().build();
@@ -139,29 +168,52 @@ public class NGAccountSetupService {
     createOrganizationDTO.setTags(emptyMap());
     createOrganizationDTO.setDescription("Default Organization");
     createOrganizationDTO.setHarnessManaged(true);
-    return organizationService.create(accountIdentifier, createOrganizationDTO);
+    Organization defaultOrganization = organizationService.create(accountIdentifier, createOrganizationDTO);
+    log.info(String.format("[NGAccountSetupService]: Created default org for account %s", accountIdentifier));
+    return defaultOrganization;
   }
 
   private Project createDefaultProject(String accountIdentifier, String organizationIdentifier) {
     Optional<Project> project =
         projectService.get(accountIdentifier, organizationIdentifier, DEFAULT_PROJECT_IDENTIFIER);
     if (project.isPresent()) {
-      log.info(String.format(
-          "Default Project for account %s organization %s already present", accountIdentifier, organizationIdentifier));
+      log.info(String.format("[NGAccountSetupService]: Default Project for account %s organization %s already present",
+          accountIdentifier, organizationIdentifier));
       return project.get();
     }
     ProjectDTO createProjectDTO = ProjectDTO.builder().build();
     createProjectDTO.setIdentifier(DEFAULT_PROJECT_IDENTIFIER);
     createProjectDTO.setName(DEFAULT_PROJECT_NAME);
-    return projectService.create(accountIdentifier, organizationIdentifier, createProjectDTO);
+    Project defaultProject = projectService.create(accountIdentifier, organizationIdentifier, createProjectDTO);
+    log.info(String.format("[NGAccountSetupService]: Default project created for account %s", accountIdentifier));
+    return defaultProject;
   }
 
   private void setupAllLevelRBAC(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    setupRBAC(accountIdentifier, orgIdentifier);
-
     Collection<UserInfo> cgUsers = getCGUsers(accountIdentifier);
     Collection<String> cgAdmins =
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
+
+    Scope accountScope = Scope.of(accountIdentifier, null, null);
+    if (!hasAdmin(accountScope)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      assignAdminRoleToUsers(accountScope, cgAdmins);
+      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+      }
+      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
+    }
+
+    Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
+    if (!hasAdmin(orgScope)) {
+      cgAdmins.forEach(user -> upsertUserMembership(orgScope, user));
+      assignAdminRoleToUsers(orgScope, cgAdmins);
+      if (shouldAssignAdmins && !hasAdmin(orgScope)) {
+        throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
+      }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
+    }
 
     Scope projectScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     if (!hasAdmin(projectScope)) {
@@ -176,6 +228,7 @@ public class NGAccountSetupService {
                                              .projectIdentifier(projectIdentifier)
                                              .build());
     }
+    log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
 
   private void setupRBAC(String accountIdentifier, String orgIdentifier) {
@@ -203,6 +256,7 @@ public class NGAccountSetupService {
       accessControlMigrationService.save(
           AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
+    log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
 
   private boolean hasAdmin(Scope scope) {
@@ -262,7 +316,7 @@ public class NGAccountSetupService {
       int limit = 500;
       int maxIterations = 50;
       while (maxIterations > 0) {
-        PageResponse<UserInfo> usersPage = RestClientUtils.getResponse(
+        PageResponse<UserInfo> usersPage = CGRestUtils.getResponse(
             userClient.list(accountId, String.valueOf(offset), String.valueOf(limit), null, true));
         if (isEmpty(usersPage.getResponse())) {
           break;

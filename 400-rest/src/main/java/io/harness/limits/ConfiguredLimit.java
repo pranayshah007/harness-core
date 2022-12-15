@@ -8,11 +8,13 @@
 package io.harness.limits;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.limits.lib.Limit;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.validation.Update;
@@ -30,6 +32,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Getter
 @EqualsAndHashCode(exclude = "id", callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "allowedLimits", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "ConfiguredLimitKeys")
 @HarnessEntity(exportable = true)

@@ -15,4 +15,5 @@ import io.harness.annotations.dev.OwnedBy;
 public interface CommandUnitSpecType {
   String SCRIPT = "Script";
   String COPY = "Copy";
+  String DOWNLOAD_ARTIFACT = "DownloadArtifact";
 }

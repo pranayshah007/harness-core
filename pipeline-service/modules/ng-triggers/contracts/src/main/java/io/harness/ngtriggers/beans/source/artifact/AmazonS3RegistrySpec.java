@@ -25,6 +25,7 @@ import lombok.Data;
 public class AmazonS3RegistrySpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  String region;
   String bucketName;
   String filePathRegex;
 

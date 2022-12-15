@@ -97,7 +97,11 @@ public class GitEnabledHelperTest extends CategoryTest {
     doReturn(true).when(yamlGitConfigService).isGitSyncEnabled(anyString(), anyString(), anyString());
     final GitEnabledDTO gitEnabledDTO = gitEnabledHelper.getGitEnabledDTO("proj", "org", "acc");
     assertThat(gitEnabledDTO)
-        .isEqualTo(GitEnabledDTO.builder().isGitSyncEnabled(true).connectivityMode(ConnectivityMode.DELEGATE).build());
+        .isEqualTo(GitEnabledDTO.builder()
+                       .isGitSyncEnabled(true)
+                       .connectivityMode(ConnectivityMode.DELEGATE)
+                       .isGitSyncEnabledOnlyForFF(false)
+                       .build());
   }
 
   @Test

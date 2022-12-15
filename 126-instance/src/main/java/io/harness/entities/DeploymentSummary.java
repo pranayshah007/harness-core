@@ -7,7 +7,7 @@
 
 package io.harness.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
@@ -32,10 +32,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DeploymentSummaryKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "deploymentSummaryNG", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("deploymentSummaryNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.DX)
 public class DeploymentSummary implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

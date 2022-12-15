@@ -42,6 +42,8 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -55,6 +57,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
 
@@ -93,7 +96,10 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     ShellScriptTaskResponseNG scriptTaskResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Failed to run Custom Approval script");
         logCallback.saveExecutionLog("Failed to run custom approval script: " + responseData, LogLevel.WARN);
@@ -113,11 +119,14 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     try {
       ShellExecutionData shellExecutionData =
           (ShellExecutionData) scriptTaskResponse.getExecuteCommandResponse().getCommandExecutionData();
-      ShellScriptOutcome shellScriptOutcome = shellScriptHelperService.prepareShellScriptOutcome(
-          shellExecutionData.getSweepingOutputEnvVariables(), instance.getOutputVariables());
+      ShellScriptOutcome shellScriptOutcome =
+          ShellScriptHelperService.prepareShellScriptOutcome(shellExecutionData.getSweepingOutputEnvVariables(),
+              instance.getOutputVariables(), instance.getSecretOutputVariables());
       CustomApprovalTicketNG ticketNG =
-          CustomApprovalTicketNG.builder().fields(shellScriptOutcome.getOutputVariables()).build();
-      checkApprovalAndRejectionCriteria(
+          CustomApprovalTicketNG.builder()
+              .fields(shellScriptOutcome != null ? shellScriptOutcome.getOutputVariables() : new HashMap<>())
+              .build();
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(
           ticketNG, instance, logCallback, instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       log.error("An error occurred with custom approval", ex);

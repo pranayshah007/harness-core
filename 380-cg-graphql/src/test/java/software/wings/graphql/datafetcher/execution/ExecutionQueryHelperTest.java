@@ -98,7 +98,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.envIds);
     Mockito.verify(query, Mockito.never()).field(WorkflowExecutionKeys.pipelineExecutionId);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_displayName);
   }
 
   @Test
@@ -155,7 +155,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
         .setIdFilter(eq(query.field(WorkflowExecutionKeys.pipelineExecutionId)),
             eq(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"PIPE_EXEC_ID"}).build()));
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_displayName);
   }
 
   @Test

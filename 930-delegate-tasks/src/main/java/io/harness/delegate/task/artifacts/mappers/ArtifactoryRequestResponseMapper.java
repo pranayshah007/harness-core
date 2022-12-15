@@ -22,6 +22,7 @@ import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -53,14 +54,15 @@ public class ArtifactoryRequestResponseMapper {
         .build();
   }
 
-  public ArtifactoryArtifactDelegateResponse toArtifactoryDockerResponse(
-      BuildDetailsInternal buildDetailsInternal, ArtifactoryArtifactDelegateRequest request) {
+  public ArtifactoryArtifactDelegateResponse toArtifactoryDockerResponse(BuildDetailsInternal buildDetailsInternal,
+      ArtifactoryArtifactDelegateRequest request, Map<String, String> label) {
     return ArtifactoryArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
         .repositoryName(request.getRepositoryName())
         .artifactPath(request.getArtifactPath())
         .repositoryFormat(request.getRepositoryFormat())
         .tag(buildDetailsInternal.getNumber())
+        .label(label)
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .build();
   }
@@ -70,7 +72,7 @@ public class ArtifactoryRequestResponseMapper {
     return ArtifactoryGenericArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .repositoryName(request.getRepositoryName())
-        .artifactPath(buildDetails.getArtifactPath())
+        .artifactPath(buildDetails != null ? buildDetails.getArtifactPath() : null)
         .repositoryFormat(request.getRepositoryFormat())
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .build();

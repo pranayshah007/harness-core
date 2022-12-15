@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsGraphStepDetailsService {
   void addStepDetail(String nodeExecutionId, String planExecutionId, PmsStepDetails stepDetails, String name);
-  void addStepInputs(String nodeExecutionId, String planExecutionId, PmsStepParameters stepParameters);
+  void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters stepParameters);
 
   PmsStepParameters getStepInputs(String planExecutionId, String nodeExecutionId);
 
@@ -32,7 +33,7 @@ public interface PmsGraphStepDetailsService {
 
   void addConcurrentChildInformation(ConcurrentChildInstance concurrentChildInstance, String nodeExecutionId);
 
-  ConcurrentChildInstance incrementCursor(String nodeExecutionId);
+  ConcurrentChildInstance incrementCursor(String nodeExecutionId, Status status);
 
   ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId);
 }

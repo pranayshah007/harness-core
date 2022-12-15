@@ -17,6 +17,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.subscription.services.SubscriptionService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -50,10 +51,12 @@ import javax.ws.rs.QueryParam;
 public class AdminLicenseResource {
   private static final String MODULE_TYPE_KEY = "moduleType";
   private final LicenseService licenseService;
+  private final SubscriptionService subscriptionService;
 
   @Inject
-  public AdminLicenseResource(LicenseService licenseService) {
+  public AdminLicenseResource(LicenseService licenseService, SubscriptionService subscriptionService) {
     this.licenseService = licenseService;
+    this.subscriptionService = subscriptionService;
   }
 
   @GET
@@ -73,6 +76,9 @@ public class AdminLicenseResource {
   public ResponseDTO<ModuleLicenseDTO> create(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @Valid ModuleLicenseDTO moduleLicenseDTO) {
     // TODO change to Admin Auth when it's ready
+    if (!moduleLicenseDTO.isSelfService()) {
+      subscriptionService.cancelAllSubscriptions(accountIdentifier);
+    }
     ModuleLicenseDTO created = licenseService.createModuleLicense(moduleLicenseDTO);
     return ResponseDTO.newResponse(created);
   }
@@ -84,6 +90,9 @@ public class AdminLicenseResource {
   public ResponseDTO<ModuleLicenseDTO> update(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @PathParam("identifier") String identifier, @NotNull @Valid ModuleLicenseDTO moduleLicenseDTO) {
     // TODO change to Admin Auth when it's ready
+    if (!moduleLicenseDTO.isSelfService()) {
+      subscriptionService.cancelAllSubscriptions(accountIdentifier);
+    }
     ModuleLicenseDTO updated = licenseService.updateModuleLicense(moduleLicenseDTO);
     return ResponseDTO.newResponse(updated);
   }

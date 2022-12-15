@@ -47,9 +47,9 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.handler.impl.segment.SegmentHandler;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.event.usagemetrics.UsageMetricsHelper;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.ExceptionLogger;
 import io.harness.queue.QueuePublisher;
 import io.harness.service.EventService;
 import io.harness.waiter.WaitNotifyEngine;
@@ -300,7 +300,22 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
            * the callBack says it is finalStatus (Check with Srinivas)
            */
           if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
-            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, workflowExecution);
+            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
+                accountID, workflowExecution, Collections.emptyMap());
+            if (workflowExecution.isOnDemandRollback() && workflowExecution.getOriginalExecution() != null
+                && workflowExecution.getOriginalExecution().getExecutionId() != null
+                && workflowExecution.getStatus() == SUCCESS) {
+              WorkflowExecution originalExecution = workflowExecutionService.getUpdatedWorkflowExecution(
+                  appId, workflowExecution.getOriginalExecution().getExecutionId());
+              originalExecution.setRollbackDuration(workflowExecution.getDuration());
+              try {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("manuallyRolledBack", true);
+                usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, originalExecution, metadata);
+              } catch (Exception e) {
+                log.error("Exception while syncing the data for original workflow execution", e);
+              }
+            }
           } else {
             log.warn("Workflow [{}] has executionStatus:[{}], different status:[{}]", workflowExecutionId,
                 workflowExecution.getStatus(), status);
@@ -445,8 +460,11 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     String accountID = applicationDataForReporting.getAccountId();
 
     updateDeploymentInformation(workflowExecution);
-    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, workflowExecution);
-    reportDeploymentEventToSegment(workflowExecution);
+    WorkflowExecution updatedWorkflowExecution =
+        workflowExecutionService.getUpdatedWorkflowExecution(workflowExecution.getAppId(), workflowExecution.getUuid());
+    usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
+        accountID, updatedWorkflowExecution, Collections.emptyMap());
+    reportDeploymentEventToSegment(updatedWorkflowExecution);
   }
 
   public void publish(WorkflowExecution execution, StateStatusUpdateInfo statusUpdateInfo, EventType eventType) {

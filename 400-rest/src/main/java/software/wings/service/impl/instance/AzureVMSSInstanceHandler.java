@@ -7,7 +7,6 @@
 
 package software.wings.service.impl.instance;
 
-import static io.harness.beans.FeatureName.AZURE_VMSS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -38,13 +37,13 @@ import software.wings.beans.AzureVMSSInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
 import software.wings.beans.infrastructure.instance.info.AzureVMSSInstanceInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.key.deployment.AzureVMSSDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.AzureVMSSInstanceSyncPerpetualTaskCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.intfc.azure.manager.AzureVMSSHelperServiceManager;
@@ -153,7 +152,7 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
 
   @Override
   public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return Optional.of(AZURE_VMSS);
+    return Optional.empty();
   }
 
   @Override
@@ -358,6 +357,6 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
 
   @Override
   public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return Optional.of(AZURE_VMSS);
+    return Optional.empty();
   }
 }

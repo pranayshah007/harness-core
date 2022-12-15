@@ -22,7 +22,7 @@ import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssi
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifier;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.util.Collections.singletonList;
@@ -51,9 +51,11 @@ import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.events.AddCollaboratorEvent;
 import io.harness.ng.core.events.RemoveCollaboratorEvent;
 import io.harness.ng.core.invites.InviteType;
@@ -85,8 +87,8 @@ import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.scim.PatchRequest;
@@ -99,18 +101,15 @@ import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
-import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeUtils;
 import io.harness.utils.TimeLogger;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -140,7 +139,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class NgUserServiceImpl implements NgUserService {
   private static final String ACCOUNT_ADMIN = "_account_admin";
   private static final String ACCOUNT_VIEWER = "_account_viewer";
-  private static final String ACCOUNT_BASIC = "_account_basic";
   private static final String ORGANIZATION_VIEWER = "_organization_viewer";
   private static final String ORG_ADMIN = "_organization_admin";
   private static final String PROJECT_ADMIN = "_project_admin";
@@ -163,12 +161,8 @@ public class NgUserServiceImpl implements NgUserService {
   private final LicenseService licenseService;
   private final LastAdminCheckService lastAccountAdminCheckService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
-
-  private static final RetryPolicy<Object> harnessSupportUsersFetchRetryPolicy =
-      RetryUtils.getRetryPolicy("Unexpected error, could not fetch the harness support group users",
-          "Unexpected error, could not fetch the harness support group users",
-          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
+  private final DefaultUserGroupService defaultUserGroupService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public NgUserServiceImpl(UserClient userClient, AccountClient accountClient,
@@ -178,7 +172,7 @@ public class NgUserServiceImpl implements NgUserService {
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
       LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -193,12 +187,13 @@ public class NgUserServiceImpl implements NgUserService {
     this.licenseService = licenseService;
     this.lastAccountAdminCheckService = lastAccountAdminCheckService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   @Override
   public Page<UserInfo> listCurrentGenUsers(String accountIdentifier, String searchString, Pageable pageable) {
     io.harness.beans.PageResponse<UserInfo> userPageResponse =
-        RestClientUtils.getResponse(userClient.list(accountIdentifier, String.valueOf(pageable.getOffset()),
+        CGRestUtils.getResponse(userClient.list(accountIdentifier, String.valueOf(pageable.getOffset()),
             String.valueOf(pageable.getPageSize()), searchString, false));
     List<UserInfo> users = userPageResponse.getResponse();
     return new PageImpl<>(users, pageable, users.size());
@@ -222,8 +217,18 @@ public class NgUserServiceImpl implements NgUserService {
         userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(userFilter.getSearchTerm(), "i"),
             Criteria.where(UserMetadataKeys.email).regex(userFilter.getSearchTerm(), "i"));
       }
-      if (userFilter.getIdentifiers() != null) {
-        userMembershipCriteria.and(UserMembershipKeys.userId).in(userFilter.getIdentifiers());
+      if (userFilter.getIdentifiers() != null || userFilter.getEmails() != null) {
+        List<String> userIds = new ArrayList<>();
+        if (userFilter.getIdentifiers() != null) {
+          userIds.addAll(userFilter.getIdentifiers());
+        }
+        if (userFilter.getEmails() != null) {
+          userIds.addAll(getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
+                             .stream()
+                             .map(UserMetadataDTO::getUuid)
+                             .collect(toList()));
+        }
+        userMembershipCriteria.and(UserMembershipKeys.userId).in(userIds);
       }
     }
     Page<String> userMembershipPage =
@@ -303,7 +308,7 @@ public class NgUserServiceImpl implements NgUserService {
       Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmail(email);
       return user.map(UserMetadataMapper::toDTO);
     } else {
-      Optional<UserInfo> userInfo = RestClientUtils.getResponse(userClient.getUserByEmailId(email));
+      Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));
       UserMetadataDTO userMetadataDTO = userInfo
                                             .map(user
                                                 -> UserMetadataDTO.builder()
@@ -320,12 +325,12 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   public Optional<UserInfo> getUserInfoByEmailFromCG(String email) {
-    return RestClientUtils.getResponse(userClient.getUserByEmailId(email));
+    return CGRestUtils.getResponse(userClient.getUserByEmailId(email));
   }
 
   @Override
   public List<UserInfo> listCurrentGenUsers(String accountId, UserFilterNG userFilter) {
-    return RestClientUtils.getResponse(userClient.listUsers(
+    return CGRestUtils.getResponse(userClient.listUsers(
         accountId, UserFilterNG.builder().emailIds(userFilter.getEmailIds()).userIds(userFilter.getUserIds()).build()));
   }
 
@@ -333,7 +338,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   public ScimListResponse<ScimUser> searchScimUsersByEmailQuery(
       String accountId, String searchQuery, Integer count, Integer startIndex) {
-    return RestClientUtils.getResponse(userClient.searchScimUsers(accountId, searchQuery, count, startIndex));
+    return CGRestUtils.getResponse(userClient.searchScimUsers(accountId, searchQuery, count, startIndex));
   }
 
   @Override
@@ -517,6 +522,14 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds) {
+    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.email).in(emailIds), Pageable.unpaged())
+        .map(UserMetadataMapper::toDTO)
+        .stream()
+        .collect(toList());
+  }
+
+  @Override
   public Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable) {
     return userMembershipRepository.findAll(criteria, pageable);
   }
@@ -537,7 +550,8 @@ public class NgUserServiceImpl implements NgUserService {
               .build();
       roleAssignmentDTOs.add(roleAssignmentDTO);
     }
-    createRoleAssignments(serviceAccountId, scope, roleAssignmentDTOs, false);
+    createRoleAssignments(serviceAccountId, scope, getManagedRoleAssignments(roleAssignmentDTOs), true);
+    createRoleAssignments(serviceAccountId, scope, getNonManagedRoleAssignments(roleAssignmentDTOs), false);
   }
 
   @Override
@@ -546,10 +560,16 @@ public class NgUserServiceImpl implements NgUserService {
     ensureUserMetadata(userId);
     boolean isAccountBasicFeatureFlagEnabled =
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
-    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
+    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope), isAccountBasicFeatureFlagEnabled);
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
-    createRoleAssignments(
-        userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    List<RoleAssignmentDTO> roleAssignmentDTOList = createRoleAssignmentDTOs(roleBindings, userId, scope);
+    if (isAccountBasicFeatureFlagEnabled) {
+      createRoleAssignments(userId, scope, roleAssignmentDTOList, false);
+    } else {
+      createRoleAssignments(userId, scope, getManagedRoleAssignments(roleAssignmentDTOList), true);
+      createRoleAssignments(userId, scope, getNonManagedRoleAssignments(roleAssignmentDTOList), false);
+    }
+    defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
@@ -567,38 +587,27 @@ public class NgUserServiceImpl implements NgUserService {
     return userGroupService.list(userGroupFilterDTO).stream().map(UserGroup::getIdentifier).collect(toList());
   }
 
+  private List<RoleAssignmentDTO> getManagedRoleAssignments(List<RoleAssignmentDTO> roleAssignmentDTOs) {
+    return roleAssignmentDTOs.stream().filter(role -> isRoleAssignmentManaged(role)).collect(toList());
+  }
+
+  private List<RoleAssignmentDTO> getNonManagedRoleAssignments(List<RoleAssignmentDTO> roleAssignmentDTOs) {
+    return roleAssignmentDTOs.stream()
+        .filter(((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role)).negate())
+        .collect(toList());
+  }
+
   @VisibleForTesting
-  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs,
-      boolean isAccountBasicFeatureFlagEnabled) {
+  protected void createRoleAssignments(
+      String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs, boolean managed) {
     if (isEmpty(roleAssignmentDTOs)) {
       return;
     }
-    List<RoleAssignmentDTO> managedRoleAssignments =
-        roleAssignmentDTOs.stream()
-            .filter(role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
-            .collect(toList());
-    List<RoleAssignmentDTO> userRoleAssignments =
-        roleAssignmentDTOs.stream()
-            .filter(
-                ((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
-                    .negate())
-            .collect(toList());
-
     try {
-      if (isNotEmpty(managedRoleAssignments)) {
-        RoleAssignmentCreateRequestDTO createRequestDTO =
-            RoleAssignmentCreateRequestDTO.builder().roleAssignments(managedRoleAssignments).build();
-        getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-            scope.getOrgIdentifier(), scope.getProjectIdentifier(), true, createRequestDTO));
-      }
-
-      if (isNotEmpty(userRoleAssignments)) {
-        RoleAssignmentCreateRequestDTO createRequestDTO =
-            RoleAssignmentCreateRequestDTO.builder().roleAssignments(userRoleAssignments).build();
-        getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-            scope.getOrgIdentifier(), scope.getProjectIdentifier(), false, createRequestDTO));
-      }
-
+      RoleAssignmentCreateRequestDTO createRequestDTO =
+          RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOs).build();
+      getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, createRequestDTO));
     } catch (Exception e) {
       log.error("Could not create all of the role assignments in [{}] for user [{}] at [{}]", roleAssignmentDTOs,
           userId,
@@ -606,31 +615,22 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private List<String> getManagedRoleIdentifiers(
-      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    if (roleAssignmentDTO.getPrincipal().getType().equals(USER) && isAccountBasicFeatureFlagEnabled) {
-      return ImmutableList.of(ACCOUNT_BASIC, ORGANIZATION_VIEWER, PROJECT_VIEWER);
-    }
+  private List<String> getManagedRoleIdentifiers() {
     return ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   }
 
-  private boolean isRoleAssignmentManaged(
-      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    return getManagedRoleIdentifiers(roleAssignmentDTO, isAccountBasicFeatureFlagEnabled)
-               .stream()
-               .anyMatch(roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
+  private boolean isRoleAssignmentManaged(RoleAssignmentDTO roleAssignmentDTO) {
+    return getManagedRoleIdentifiers().stream().anyMatch(
+               roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
         && MANAGED_RESOURCE_GROUP_IDENTIFIERS.stream().anyMatch(
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
 
-  private String getDefaultRoleIdentifier(Scope scope, boolean isAccountBasicFeatureFlagEnabled) {
+  private String getDefaultRoleIdentifier(Scope scope) {
     if (!isBlank(scope.getProjectIdentifier())) {
       return PROJECT_VIEWER;
     } else if (!isBlank(scope.getOrgIdentifier())) {
       return ORGANIZATION_VIEWER;
-    }
-    if (isAccountBasicFeatureFlagEnabled) {
-      return ACCOUNT_BASIC;
     }
     return ACCOUNT_VIEWER;
   }
@@ -669,22 +669,18 @@ public class NgUserServiceImpl implements NgUserService {
                            .accountIdentifier(scope.getAccountIdentifier())
                            .orgIdentifier(scope.getOrgIdentifier())
                            .build();
-      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER);
+      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER, isAccountBasicFeatureFlagEnabled);
     }
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
-      if (isAccountBasicFeatureFlagEnabled) {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
-      } else {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
-      }
+      addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER, isAccountBasicFeatureFlagEnabled);
     }
   }
 
   @VisibleForTesting
-  protected void addUserToScopeInternal(
-      String userId, UserMembershipUpdateSource source, Scope scope, String roleIdentifier) {
+  protected void addUserToScopeInternal(String userId, UserMembershipUpdateSource source, Scope scope,
+      String roleIdentifier, boolean isAccountBasicFeatureFlagEnabled) {
     Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
     String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
 
@@ -703,26 +699,29 @@ public class NgUserServiceImpl implements NgUserService {
       return userMembership;
     });
 
-    try {
-      RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTO.builder()
-                                                .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
-                                                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
-                                                .disabled(false)
-                                                .roleIdentifier(roleIdentifier)
-                                                .build();
-      NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-          scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
-          RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
-    } catch (Exception e) {
-      /**
-       *  It's expected that user might already have this roleassignment.
-       */
+    if (!isAccountBasicFeatureFlagEnabled) {
+      try {
+        RoleAssignmentDTO roleAssignmentDTO =
+            RoleAssignmentDTO.builder()
+                .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
+                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
+                .disabled(false)
+                .roleIdentifier(roleIdentifier)
+                .build();
+        NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+            scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
+            RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
+      } catch (Exception e) {
+        /**
+         *  It's expected that user might already have this roleassignment.
+         */
+      }
     }
   }
 
   public void addUserToCG(String userId, Scope scope) {
     try {
-      RestClientUtils.getResponse(userClient.addUserToAccount(userId, scope.getAccountIdentifier()));
+      CGRestUtils.getResponse(userClient.addUserToAccount(userId, scope.getAccountIdentifier()));
     } catch (Exception e) {
       log.error("Couldn't add user to the account", e);
     }
@@ -730,7 +729,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public Optional<UserInfo> getUserById(String userId) {
-    return RestClientUtils.getResponse(userClient.getUserById(userId));
+    return CGRestUtils.getResponse(userClient.getUserById(userId));
   }
 
   @Override
@@ -744,15 +743,20 @@ public class NgUserServiceImpl implements NgUserService {
     if (!savedUserOpt.isPresent()) {
       return true;
     }
-    if (!isBlank(user.getName())) {
-      Update update = new Update();
+    Update update = new Update();
+    if (!isBlank(user.getName()) && !user.getName().equals(savedUserOpt.get().getName())) {
       update.set(UserMetadataKeys.name, user.getName());
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
-      return userMetadataRepository.updateFirst(user.getUuid(), update) != null;
     }
-    return true;
+    if (!isBlank(user.getEmail()) && !user.getEmail().equals(savedUserOpt.get().getEmail())) {
+      update.set(UserMetadataKeys.email, user.getEmail());
+      update.set(UserMetadataKeys.locked, user.isLocked());
+      update.set(UserMetadataKeys.disabled, user.isDisabled());
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+    }
+    return userMetadataRepository.updateFirst(user.getUuid(), update) != null;
   }
 
   @Override
@@ -864,7 +868,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean isUserPasswordSet(String accountIdentifier, String email) {
-    return RestClientUtils.getResponse(userClient.isUserPasswordSet(accountIdentifier, email));
+    return CGRestUtils.getResponse(userClient.isUserPasswordSet(accountIdentifier, email));
   }
 
   @Override
@@ -882,30 +886,30 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean removeUser(String userId, String accountId) {
-    return RestClientUtils.getResponse(userClient.deleteUser(userId, accountId));
+    return CGRestUtils.getResponse(userClient.deleteUser(userId, accountId));
   }
 
   @Override
   public ScimUser updateScimUser(String accountId, String userId, PatchRequest patchRequest) {
-    return RestClientUtils.getResponse(userClient.scimUserPatchUpdate(accountId, userId, patchRequest));
+    return CGRestUtils.getResponse(userClient.scimUserPatchUpdate(accountId, userId, patchRequest));
   }
 
   @Override
   public boolean updateScimUser(String accountId, String userId, ScimUser scimUser) {
-    return RestClientUtils.getResponse(userClient.scimUserUpdate(accountId, userId, scimUser));
+    return CGRestUtils.getResponse(userClient.scimUserUpdate(accountId, userId, scimUser));
   }
 
   @Override
   public boolean updateUserDisabled(String accountId, String userId, boolean disabled) {
-    return RestClientUtils.getResponse(userClient.updateUserDisabled(accountId, userId, disabled));
+    return CGRestUtils.getResponse(userClient.updateUserDisabled(accountId, userId, disabled));
   }
 
   @Override
   public boolean verifyHarnessSupportGroupUser() {
     try {
       Collection<io.harness.ng.core.user.UserMetadata> supportUsers =
-          Failsafe.with(harnessSupportUsersFetchRetryPolicy)
-              .get(() -> RestClientUtils.getResponse(accountClient.listAllHarnessSupportUsers()));
+          CGRestUtils.getResponse(accountClient.listAllHarnessSupportUsers(),
+              "Unexpected error, could not fetch the harness support group users");
       if (supportUsers == null) {
         throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
       }
@@ -918,5 +922,20 @@ public class NgUserServiceImpl implements NgUserService {
     } catch (InvalidRequestException e) {
       throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
     }
+  }
+
+  @Override
+  public UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                            .is(scope.getProjectIdentifier())
+                            .and(UserMembershipKeys.createdAt)
+                            .gte(startInterval)
+                            .lt(endInterval);
+    long newUsersCount = userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).stream().count();
+    return UsersCountDTO.builder().totalCount(listUserIds(scope).stream().count()).newCount(newUsersCount).build();
   }
 }

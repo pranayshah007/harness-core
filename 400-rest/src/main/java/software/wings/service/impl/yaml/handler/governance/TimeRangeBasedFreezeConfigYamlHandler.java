@@ -64,6 +64,15 @@ public class TimeRangeBasedFreezeConfigYamlHandler
       appFiltersYaml.add(applicationFilterYamlHandler.toYaml(applicationFilter, accountId));
     }
 
+    List<ApplicationFilterYaml> excludeAppFiltersYaml = new ArrayList<>();
+    if (bean.getExcludeAppSelections() != null) {
+      for (ApplicationFilter applicationFilter : bean.getExcludeAppSelections()) {
+        applicationFilterYamlHandler =
+            yamlHandlerFactory.getYamlHandler(YamlType.APPLICATION_FILTER, applicationFilter.getFilterType().name());
+        excludeAppFiltersYaml.add(applicationFilterYamlHandler.toYaml(applicationFilter, accountId));
+      }
+    }
+
     TimeRange.Yaml timeRangeYaml = bean.getTimeRange().toYaml();
     final UserGroupFilterYaml userGroupFilterYaml =
         buildUserGroupSelectionYaml(bean.getUserGroupSelection(), accountId);
@@ -74,6 +83,7 @@ public class TimeRangeBasedFreezeConfigYamlHandler
         .description(bean.getDescription())
         .applicable(bean.isApplicable())
         .appSelections(appFiltersYaml)
+        .excludeAppSelections(excludeAppFiltersYaml)
         .userGroups(getUserGroupNames(bean.getUserGroups(), accountId))
         .userGroupSelection(userGroupFilterYaml)
         .timeRange(timeRangeYaml)
@@ -176,6 +186,19 @@ public class TimeRangeBasedFreezeConfigYamlHandler
     }
 
     bean.appSelections(applicationFilters);
+
+    List<ApplicationFilter> excludeApplicationFilters = new ArrayList<>();
+    if (yaml.getExcludeAppSelections() != null) {
+      for (ApplicationFilterYaml entry : yaml.getExcludeAppSelections()) {
+        applicationFilterYamlHandler =
+            yamlHandlerFactory.getYamlHandler(YamlType.APPLICATION_FILTER, entry.getFilterType().name());
+        ChangeContext.Builder clonedContext = cloneFileChangeContext(changeContext, entry);
+        excludeApplicationFilters.add(
+            applicationFilterYamlHandler.upsertFromYaml(clonedContext.build(), changeSetContext));
+      }
+    }
+
+    bean.excludeAppSelections(excludeApplicationFilters);
   }
 
   private UserGroupFilter convertSelectionToBean(UserGroupFilterYaml userGroupSelection, String accountId) {

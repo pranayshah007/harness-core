@@ -182,14 +182,6 @@ public class YamlHelper {
   }
 
   public SettingAttribute getSettingAttribute(String accountId, String yamlFilePath) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      YamlType yamlType = getSettingAttributeType(yamlFilePath);
-      notNullCheck("YamlType can not be null", yamlType);
-      String settingAttributeName =
-          extractParentEntityName(yamlType.getPrefixExpression(), yamlFilePath, PATH_DELIMITER);
-      notNullCheck("Setting Attribute name null in the given yaml file: " + yamlFilePath, settingAttributeName);
-      return settingsService.getSettingAttributeByName(accountId, settingAttributeName);
-    }
     return null;
   }
 
@@ -430,36 +422,14 @@ public class YamlHelper {
   }
 
   public ArtifactStream getArtifactStream(String accountId, String yamlFilePath) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      String appId = getAppId(accountId, yamlFilePath);
-      notNullCheck("App null in the given yaml file: " + yamlFilePath, appId);
-      String serviceId = getServiceId(appId, yamlFilePath);
-      notNullCheck("Service null in the given yaml file: " + yamlFilePath, serviceId);
-      String artifactStreamName =
-          extractEntityNameFromYamlPath(YamlType.ARTIFACT_STREAM.getPathExpression(), yamlFilePath, PATH_DELIMITER);
-      notNullCheck("Artifact stream name null in the given yaml file: " + yamlFilePath, artifactStreamName);
-      return artifactStreamService.getArtifactStreamByName(appId, serviceId, artifactStreamName);
-    } else {
-      YamlType entityType = getEntityType(yamlFilePath);
-      notNullCheck("YamlType can not be null", entityType);
-      if (entityType == ARTIFACT_STREAM) {
-        String appId = getAppId(accountId, yamlFilePath);
-        notNullCheck("App null in the given yaml file: " + yamlFilePath, appId);
-        String serviceId = getServiceId(appId, yamlFilePath);
-        notNullCheck("Service null in the given yaml file: " + yamlFilePath, serviceId);
-        String artifactStreamName =
-            extractEntityNameFromYamlPath(YamlType.ARTIFACT_STREAM.getPathExpression(), yamlFilePath, PATH_DELIMITER);
-        notNullCheck("Artifact stream name null in the given yaml file: " + yamlFilePath, artifactStreamName);
-        return artifactStreamService.getArtifactStreamByName(appId, serviceId, artifactStreamName);
-      } else {
-        String artifactStreamName =
-            extractEntityNameFromYamlPath(entityType.getPathExpression(), yamlFilePath, PATH_DELIMITER);
-        notNullCheck("Artifact stream name null in the given yaml file: " + yamlFilePath, artifactStreamName);
-        SettingAttribute settingAttribute = getSettingAttribute(accountId, yamlFilePath);
-        notNullCheck("SettingAttribute cant be null", settingAttribute);
-        return artifactStreamService.getArtifactStreamByName(settingAttribute.getUuid(), artifactStreamName);
-      }
-    }
+    String appId = getAppId(accountId, yamlFilePath);
+    notNullCheck("App null in the given yaml file: " + yamlFilePath, appId);
+    String serviceId = getServiceId(appId, yamlFilePath);
+    notNullCheck("Service null in the given yaml file: " + yamlFilePath, serviceId);
+    String artifactStreamName =
+        extractEntityNameFromYamlPath(YamlType.ARTIFACT_STREAM.getPathExpression(), yamlFilePath, PATH_DELIMITER);
+    notNullCheck("Artifact stream name null in the given yaml file: " + yamlFilePath, artifactStreamName);
+    return artifactStreamService.getArtifactStreamByName(appId, serviceId, artifactStreamName);
   }
 
   private YamlType getEntityType(String yamlFilePath) {
@@ -471,19 +441,6 @@ public class YamlHelper {
     }
     if (matchWithRegex(CLOUD_PROVIDER_ARTIFACT_STREAM_OVERRIDE.getPathExpression(), yamlFilePath)) {
       return CLOUD_PROVIDER_ARTIFACT_STREAM_OVERRIDE;
-    }
-    return null;
-  }
-
-  private YamlType getSettingAttributeType(String yamlFilePath) {
-    if (matchWithRegex(ARTIFACT_SERVER_ARTIFACT_STREAM_OVERRIDE.getPathExpression(), yamlFilePath)
-        || matchWithRegex(YamlType.ARTIFACT_SERVER_OVERRIDE.getPathExpression(), yamlFilePath)) {
-      return YamlType.ARTIFACT_SERVER_OVERRIDE;
-    }
-
-    if (matchWithRegex(CLOUD_PROVIDER_ARTIFACT_STREAM_OVERRIDE.getPathExpression(), yamlFilePath)
-        || matchWithRegex(CLOUD_PROVIDER_OVERRIDE.getPathExpression(), yamlFilePath)) {
-      return YamlType.CLOUD_PROVIDER_OVERRIDE;
     }
     return null;
   }

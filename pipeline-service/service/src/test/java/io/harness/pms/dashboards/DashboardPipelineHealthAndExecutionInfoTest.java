@@ -18,11 +18,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.pms.Dashboard.DashboardPipelineExecutionInfo;
-import io.harness.pms.Dashboard.DashboardPipelineHealthInfo;
-import io.harness.pms.Dashboard.PipelineCountInfo;
-import io.harness.pms.Dashboard.PipelineExecutionInfo;
-import io.harness.pms.Dashboard.StatusAndTime;
+import io.harness.pms.dashboard.DashboardPipelineExecutionInfo;
+import io.harness.pms.dashboard.DashboardPipelineHealthInfo;
+import io.harness.pms.dashboard.MeanAndMedian;
+import io.harness.pms.dashboard.PipelineCountInfo;
+import io.harness.pms.dashboard.PipelineExecutionInfo;
+import io.harness.pms.dashboard.StatusAndTime;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.service.PipelineDashboardQueryService;
 import io.harness.pms.pipeline.service.PipelineDashboardServiceImpl;
@@ -71,14 +72,9 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
         .when(pipelineDashboardQueryService)
         .getPipelineExecutionStatusAndTime(
             anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong(), anyString());
-    doReturn(0L)
+    doReturn(new MeanAndMedian(0L, 0L))
         .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMeanDuration(
-            anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong(), anyString());
-
-    doReturn(0L)
-        .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMedianDuration(
+        .getPipelineExecutionMeanAndMedianDuration(
             anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong(), anyString());
 
     DashboardPipelineHealthInfo dashboardPipelineHealthInfo = pipelineDashboardService.getDashboardPipelineHealthInfo(
@@ -109,24 +105,15 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
     String table = "pipeline_execution_summary_ci";
 
     // currentMean
-    doReturn(100L)
+    doReturn(new MeanAndMedian(100L, 150L))
         .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMeanDuration("ac", "or", "pr", "pip", startInterval, 1619827200000L, table);
-
-    // currentMedian
-    doReturn(150L)
-        .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMedianDuration("ac", "or", "pr", "pip", startInterval, 1619827200000L, table);
+        .getPipelineExecutionMeanAndMedianDuration("ac", "or", "pr", "pip", startInterval, 1619827200000L, table);
 
     // PreviousMean
-    doReturn(40L)
+    doReturn(new MeanAndMedian(40L, 180L))
         .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMeanDuration("ac", "or", "pr", "pip", previousStartInterval, startInterval, table);
-
-    // previousMedian
-    doReturn(180L)
-        .when(pipelineDashboardQueryService)
-        .getPipelineExecutionMedianDuration("ac", "or", "pr", "pip", previousStartInterval, startInterval, table);
+        .getPipelineExecutionMeanAndMedianDuration(
+            "ac", "or", "pr", "pip", previousStartInterval, startInterval, table);
 
     DashboardPipelineHealthInfo dashboardPipelineHealthInfoMeanMedian =
         pipelineDashboardService.getDashboardPipelineHealthInfo(
@@ -145,6 +132,7 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
     long endInterval = 1617580800000L;
 
     List<StatusAndTime> statusAndTime = Arrays.asList(new StatusAndTime(ExecutionStatus.SUCCESS.name(), 1617365265000L),
+        new StatusAndTime(ExecutionStatus.IGNOREFAILED.name(), 1617365265000L),
         new StatusAndTime(ExecutionStatus.FAILED.name(), 1617365265000L),
         new StatusAndTime(ExecutionStatus.ABORTED.name(), 1617321600000L),
         new StatusAndTime(ExecutionStatus.RUNNING.name(), 1617580800000L),
@@ -162,14 +150,16 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
             "ac", "or", "pr", "pip", startInterval, endInterval, "CI");
 
     List<PipelineExecutionInfo> pipelineExecutionInfoList = new ArrayList<>();
-    pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
-                                      .date(1617235200000L)
-                                      .count(PipelineCountInfo.builder().total(2).success(0).failure(2).build())
-                                      .build());
-    pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
-                                      .date(1617321600000L)
-                                      .count(PipelineCountInfo.builder().total(3).success(1).failure(2).build())
-                                      .build());
+    pipelineExecutionInfoList.add(
+        PipelineExecutionInfo.builder()
+            .date(1617235200000L)
+            .count(PipelineCountInfo.builder().total(2).success(0).failure(0).aborted(1).expired(1).build())
+            .build());
+    pipelineExecutionInfoList.add(
+        PipelineExecutionInfo.builder()
+            .date(1617321600000L)
+            .count(PipelineCountInfo.builder().total(4).success(2).failure(1).aborted(1).build())
+            .build());
     pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
                                       .date(1617408000000L)
                                       .count(PipelineCountInfo.builder().total(1).success(0).failure(1).build())

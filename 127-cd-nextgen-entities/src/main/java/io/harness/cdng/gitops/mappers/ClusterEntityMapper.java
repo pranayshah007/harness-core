@@ -19,7 +19,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -32,6 +34,7 @@ public class ClusterEntityMapper {
         .orgIdentifier(request.getOrgIdentifier())
         .projectIdentifier(request.getProjectIdentifier())
         .clusterRef(getScopedClusterRef(request.getScope(), request.getIdentifier()))
+        .agentIdentifier(request.getAgentIdentifier())
         .envRef(request.getEnvRef())
         .build();
   }
@@ -42,6 +45,7 @@ public class ClusterEntityMapper {
         .map(r
             -> Cluster.builder()
                    .accountId(accountId)
+                   .agentIdentifier(r.getAgentIdentifier())
                    .orgIdentifier(request.getOrgIdentifier())
                    .projectIdentifier(request.getProjectIdentifier())
                    .envRef(request.getEnvRef())
@@ -61,16 +65,19 @@ public class ClusterEntityMapper {
                    .accountId(accountId)
                    .orgIdentifier(orgId)
                    .projectIdentifier(projectId)
+                   .agentIdentifier(r.getAgentIdentifier())
                    .envRef(envRef)
                    .clusterRef(getScopedClusterRef(r.getScopeLevel(), r.getIdentifier()))
                    .build())
         .collect(Collectors.toList());
   }
+
   public ClusterResponse writeDTO(Cluster cluster) {
     final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(cluster.getClusterRef());
     return ClusterResponse.builder()
         .orgIdentifier(cluster.getOrgIdentifier())
         .projectIdentifier(cluster.getProjectIdentifier())
+        .agentIdentifier(cluster.getAgentIdentifier())
         .clusterRef(scopeFromClusterRef.getOriginalRef())
         .scope(scopeFromClusterRef.getScope())
         .envRef(cluster.getEnvRef())
@@ -78,11 +85,61 @@ public class ClusterEntityMapper {
         .build();
   }
 
+  public ClusterResponse writeDTO(Cluster cluster, Map<String, ClusterFromGitops> clusterFromGitops) {
+    String clusterRef = cluster.getClusterRef();
+    ClusterFromGitops gitOpsCluster = clusterFromGitops.getOrDefault(clusterRef, ClusterFromGitops.builder().build());
+    final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(clusterRef);
+
+    switch (scopeFromClusterRef.getScope()) {
+      case PROJECT:
+        return ClusterResponse.builder()
+            .name(
+                clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getName())
+            .tags(
+                clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getTags())
+            .orgIdentifier(cluster.getOrgIdentifier())
+            .projectIdentifier(cluster.getProjectIdentifier())
+            .agentIdentifier(cluster.getAgentIdentifier())
+            .clusterRef(scopeFromClusterRef.getOriginalRef())
+            .scope(scopeFromClusterRef.getScope())
+            .envRef(cluster.getEnvRef())
+            .linkedAt(cluster.getCreatedAt())
+            .build();
+      case ACCOUNT:
+        return ClusterResponse.builder()
+            .name(gitOpsCluster.getName())
+            .tags(gitOpsCluster.getTags())
+            .clusterRef(scopeFromClusterRef.getOriginalRef())
+            .accountIdentifier(cluster.getAccountId())
+            .agentIdentifier(cluster.getAgentIdentifier())
+            .scope(scopeFromClusterRef.getScope())
+            .envRef(cluster.getEnvRef())
+            .linkedAt(cluster.getCreatedAt())
+            .build();
+      case ORGANIZATION:
+        return ClusterResponse.builder()
+            .name(gitOpsCluster.getName())
+            .tags(gitOpsCluster.getTags())
+            .orgIdentifier(cluster.getOrgIdentifier())
+            .accountIdentifier(cluster.getAccountId())
+            .agentIdentifier(cluster.getAgentIdentifier())
+            .clusterRef(scopeFromClusterRef.getOriginalRef())
+            .scope(scopeFromClusterRef.getScope())
+            .envRef(cluster.getEnvRef())
+            .linkedAt(cluster.getCreatedAt())
+            .build();
+      default:
+        throw new InvalidRequestException("Invalid cluster reference %s:" + clusterRef);
+    }
+  }
+
   public ClusterFromGitops writeDTO(ScopeLevel scopeLevel, io.harness.gitops.models.Cluster cluster) {
     return ClusterFromGitops.builder()
         .identifier(cluster.getIdentifier())
+        .agentIdentifier(cluster.getAgentIdentifier())
         .name(cluster.name())
         .scopeLevel(scopeLevel)
+        .tags(cluster.getTags() == null ? Collections.emptyMap() : cluster.getTags())
         .build();
   }
   public String getScopedClusterRef(ScopeLevel scopeLevel, String ref) {

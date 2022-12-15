@@ -7,12 +7,11 @@
 
 package io.harness.platform.audit;
 
-import static io.harness.AuthorizationServiceHeader.AUDIT_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.AUDIT_SERVICE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.AuditFilterModule;
 import io.harness.audit.api.AuditService;
 import io.harness.audit.api.AuditSettingsService;
@@ -20,6 +19,8 @@ import io.harness.audit.api.AuditYamlService;
 import io.harness.audit.api.impl.AuditServiceImpl;
 import io.harness.audit.api.impl.AuditSettingsServiceImpl;
 import io.harness.audit.api.impl.AuditYamlServiceImpl;
+import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -30,9 +31,9 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
+import io.harness.queue.QueueController;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGAuditServiceRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
@@ -80,7 +81,6 @@ public class AuditServiceModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(NGAuditServiceRegistrars.morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -109,7 +109,17 @@ public class AuditServiceModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class);
 
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
+    bind(QueueController.class).toInstance(new QueueController() {
+      @Override
+      public boolean isPrimary() {
+        return true;
+      }
+
+      @Override
+      public boolean isNotPrimary() {
+        return false;
+      }
+    });
     install(new ValidationModule(getValidatorFactory()));
 
     install(new AuditPersistenceModule());
@@ -119,6 +129,7 @@ public class AuditServiceModule extends AbstractModule {
     bind(AuditYamlService.class).to(AuditYamlServiceImpl.class);
     bind(AuditService.class).to(AuditServiceImpl.class);
     bind(AuditSettingsService.class).to(AuditSettingsServiceImpl.class);
+    bind(StreamingService.class).to(StreamingServiceImpl.class);
     install(
         AccessControlClientModule.getInstance(appConfig.getAccessControlClientConfig(), AUDIT_SERVICE.getServiceId()));
     install(new TokenClientModule(this.appConfig.getManagerServiceConfig(),

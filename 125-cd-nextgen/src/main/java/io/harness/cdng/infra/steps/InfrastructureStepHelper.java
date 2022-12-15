@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Yellow;
@@ -18,6 +19,10 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
+import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -36,12 +41,15 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class InfrastructureStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private StageExecutionHelper stageExecutionHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance) {
@@ -59,14 +67,28 @@ public class InfrastructureStepHelper {
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream, String logSuffix) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, logSuffix, shouldOpenStream);
   }
+  public List<ConnectorInfoDTO> validateAndGetConnectors(
+      List<ParameterField<String>> connectorRefs, Ambiance ambiance, NGLogCallback logCallback) {
+    return connectorRefs.stream()
+        .map(connectorRef -> validateAndGetConnector(connectorRef, ambiance, logCallback))
+        .collect(Collectors.toList());
+  }
 
   public ConnectorInfoDTO validateAndGetConnector(
       ParameterField<String> connectorRef, Ambiance ambiance, NGLogCallback logCallback) {
-    saveExecutionLog(logCallback, "Fetching and validating connector...");
+    saveExecutionLogSafely(logCallback, "Fetching and validating connector...");
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {
       throw new InvalidRequestException("Connector ref field not present in infrastructure");
+    }
+    if (connectorRef.isExpression()) {
+      if (NGExpressionUtils.isRuntimeField(connectorRef.getExpressionValue())) {
+        throw new InvalidRequestException(
+            "Connector ref is a runtime input but its value is not provided in the infrastructure");
+      }
+      throw new InvalidRequestException(String.format(
+          "Connector ref [%s] could not be resolved in infrastructure", connectorRef.getExpressionValue()));
     }
     String connectorRefValue = connectorRef.getValue();
     IdentifierRef connectorIdentifierRef = IdentifierRefHelper.getIdentifierRef(connectorRefValue,
@@ -75,20 +97,20 @@ public class InfrastructureStepHelper {
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     ConnectorInfoDTO connectorInfoDTO;
-    if (!connectorDTO.isPresent()) {
+    if (connectorDTO.isEmpty()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     } else {
-      saveExecutionLog(logCallback, color("Connector fetched", Green));
+      saveExecutionLogSafely(logCallback, color("Connector fetched", Green));
 
       connectorInfoDTO = connectorDTO.get().getConnector();
       if (connectorInfoDTO != null) {
         if (EmptyPredicate.isNotEmpty(connectorInfoDTO.getName())) {
-          saveExecutionLog(logCallback, color(format("Connector Name: %s", connectorInfoDTO.getName()), Yellow));
+          saveExecutionLogSafely(logCallback, color(format("Connector Name: %s", connectorInfoDTO.getName()), Yellow));
         }
 
         if (connectorInfoDTO.getConnectorType() != null
             && EmptyPredicate.isNotEmpty(connectorInfoDTO.getConnectorType().name())) {
-          saveExecutionLog(
+          saveExecutionLogSafely(
               logCallback, color(format("Connector Type: %s", connectorInfoDTO.getConnectorType().name()), Yellow));
         }
       }
@@ -96,7 +118,7 @@ public class InfrastructureStepHelper {
       ConnectorConnectivityDetails connectorConnectivityDetails = connectorDTO.get().getStatus();
       if (connectorConnectivityDetails != null && connectorConnectivityDetails.getStatus() != null
           && EmptyPredicate.isNotEmpty(connectorConnectivityDetails.getStatus().name())) {
-        saveExecutionLog(logCallback,
+        saveExecutionLogSafely(logCallback,
             color(format("Connector Status: %s", connectorConnectivityDetails.getStatus().name()), Yellow));
       }
     }
@@ -125,9 +147,12 @@ public class InfrastructureStepHelper {
     }
   }
 
-  public void saveExecutionLog(NGLogCallback logCallback, String line) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(line);
+  public boolean getSkipInstances(Infrastructure infrastructure) {
+    boolean skipInstances = false;
+    if (stageExecutionHelper.isSshWinRmInfrastructureKind(infrastructure.getKind())
+        && (((InfrastructureDetailsAbstract) infrastructure).getSkipInstances() != null)) {
+      skipInstances = ((InfrastructureDetailsAbstract) infrastructure).getSkipInstances();
     }
+    return skipInstances;
   }
 }

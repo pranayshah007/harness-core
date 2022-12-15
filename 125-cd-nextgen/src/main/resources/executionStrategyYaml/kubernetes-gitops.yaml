@@ -8,16 +8,15 @@ spec:
   execution:
     steps:
       - step:
-          type: CreatePR
-          name: "Create PR"
-          identifier: createPR
+          type: GitOpsUpdateReleaseRepo
+          name: "Update Release Repo"
+          identifier: updateReleaseRepo
           timeout: 10m
-          spec:
-            overrideConfig: false
-            shell: Bash
+          spec: {}
       - step:
           type: MergePR
           name: Merge PR
           identifier: mergePR
-          spec: {}
+          spec:
+            deleteSourceBranch: false
           timeout: 10m

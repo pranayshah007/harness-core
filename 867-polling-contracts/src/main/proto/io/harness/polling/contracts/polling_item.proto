@@ -43,4 +43,5 @@ message BuildInfo {
 enum Category {
   ARTIFACT = 0;
   MANIFEST = 1;
+  GITPOLLING = 2;
 }

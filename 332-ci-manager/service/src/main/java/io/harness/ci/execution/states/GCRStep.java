@@ -66,6 +66,7 @@ public class GCRStep extends AbstractStepExecutable {
                                                           .imageName(image)
                                                           .tag(tag)
                                                           .url(format(GCR_URL_FORMAT, projectID, region, image, digest))
+                                                          .digest(digest)
                                                           .build());
         });
       }

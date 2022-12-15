@@ -90,6 +90,7 @@ Kamal Joshi kamal.joshi@harness.io
 Kanhaiya Rathi kanhaiya.rathi@harness.io
 Kapil Choudhary kapil.choudhary@harness.io
 Kapil Kumawat kapil.kumawat@harness.io
+Karan Saraswat karan.saraswat@harness.io
 Karan Siwach karan.siwach@harness.io
 Kshitij Rastogi kshitij.rastogi@harness.io
 Lazar Matovic lazar.matovic@harness.io
@@ -172,6 +173,7 @@ Samarth Singhal samarth.singhal@harness.io
 Sandesh Katta katta.sandesh@harness.io
 Sanja Jokic sanja.jokic@harness.io
 Sanyasi Naidu Annepu sanyasi.naidu@harness.io
+Sathish sathish.soundarapandian@harness.io
 Satyam Shanker satyam.shanker@harness.io
 Seán Dunne sean.dunne@harness.io
 Shalini Agrawal shalini.agarwal@harness.io
@@ -292,4 +294,8 @@ Sourabh Awashti sourabh.awashti@harness.io
 Vikyath Harekal vikyath.harekal@harness.io
 Vinícius Calasans vinicius.calasans@harness.io
 Xingchi Jin xingchi.jin@harness.io
-
+Varsha Lalwani varsha.lalwani@harness.io
+Divyanshu Chaubisa divyanshu.chaubisa@harness.io
+Ansuman Satapathy ansuman.satapathy@harness.io
+Sahiba Khan sahiba.khan@harness.io
+Raison Dsouza raison.dsouza@harness.io

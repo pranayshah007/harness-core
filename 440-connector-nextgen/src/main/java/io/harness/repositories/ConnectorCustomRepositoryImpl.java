@@ -12,6 +12,7 @@ import static io.harness.connector.entities.Connector.CONNECTOR_COLLECTION_NAME;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -39,6 +40,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
+@HarnessRepo
 @GitSyncableHarnessRepo
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(DX)

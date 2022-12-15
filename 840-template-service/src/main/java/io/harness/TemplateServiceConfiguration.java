@@ -65,6 +65,7 @@ import org.reflections.Reflections;
 @Singleton
 public class TemplateServiceConfiguration extends Configuration {
   public static final String RESOURCE_PACKAGE = "io.harness.template";
+  public static final String SERVER_STUB = "io.harness.spec.server.template.v1";
   public static final String FILTER_PACKAGE = "io.harness.filter";
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -130,7 +131,7 @@ public class TemplateServiceConfiguration extends Configuration {
   }
 
   public static Collection<Class<?>> getResourceClasses() {
-    Reflections reflections = new Reflections(RESOURCE_PACKAGE, FILTER_PACKAGE);
+    Reflections reflections = new Reflections(RESOURCE_PACKAGE, FILTER_PACKAGE, SERVER_STUB);
     return reflections.getTypesAnnotatedWith(Path.class);
   }
 
@@ -196,5 +197,13 @@ public class TemplateServiceConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

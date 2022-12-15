@@ -86,9 +86,12 @@ public class ServiceVariableCreator {
         case ServiceSpecType.KUBERNETES:
         case ServiceSpecType.NATIVE_HELM:
         case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
+        case ServiceSpecType.ELASTIGROUP:
+        case ServiceSpecType.ASG:
+        case ServiceSpecType.ECS:
           YamlField specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (specNode != null) {
-            addVariablesForKubernetesHelmServerlessServiceSpec(specNode, yamlPropertiesMap);
+            addVariablesForKubernetesHelmServerlessElastigroupEcsServiceSpec(specNode, yamlPropertiesMap);
           }
           break;
         case ServiceSpecType.SSH:
@@ -98,13 +101,42 @@ public class ServiceVariableCreator {
             addVariablesForSshServiceSpec(sshSpecNode, yamlPropertiesMap);
           }
           break;
+        case ServiceSpecType.CUSTOM_DEPLOYMENT:
+          YamlField customDeploymentSpecNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
+          if (customDeploymentSpecNode != null) {
+            addVariablesForCustomDeploymentServiceSpec(customDeploymentSpecNode, yamlPropertiesMap);
+          }
+          break;
+        case ServiceSpecType.TAS:
+          specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
+          if (specNode != null) {
+            addVariablesForTasServiceSpec(specNode, yamlPropertiesMap);
+          }
+          break;
         default:
           throw new InvalidRequestException("Invalid service type");
       }
     }
   }
 
-  private void addVariablesForKubernetesHelmServerlessServiceSpec(
+  private static void addVariablesForTasServiceSpec(
+      YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
+      addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);
+    }
+    YamlField manifestsNode = serviceSpecNode.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
+    if (manifestsNode != null) {
+      addVariablesForManifests(manifestsNode, yamlPropertiesMap);
+    }
+
+    YamlField variablesField = serviceSpecNode.getNode().getField(YAMLFieldNameConstants.VARIABLES);
+    if (variablesField != null) {
+      VariableCreatorHelper.addVariablesForVariables(variablesField, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+    }
+  }
+
+  private void addVariablesForKubernetesHelmServerlessElastigroupEcsServiceSpec(
       YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
@@ -122,6 +154,19 @@ public class ServiceVariableCreator {
   }
 
   private void addVariablesForSshServiceSpec(YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
+      addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);
+    }
+
+    YamlField variablesField = serviceSpecNode.getNode().getField(YAMLFieldNameConstants.VARIABLES);
+    if (variablesField != null) {
+      VariableCreatorHelper.addVariablesForVariables(variablesField, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+    }
+  }
+
+  private void addVariablesForCustomDeploymentServiceSpec(
+      YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
       addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);
@@ -176,6 +221,18 @@ public class ServiceVariableCreator {
       case ManifestType.ServerlessAwsLambda:
         addVariablesForServerlessAwsStoreConfigYaml(specNode, yamlPropertiesMap);
         break;
+      case ManifestType.EcsTaskDefinition:
+      case ManifestType.EcsServiceDefinition:
+      case ManifestType.EcsScalableTargetDefinition:
+      case ManifestType.EcsScalingPolicyDefinition:
+        addVariablesForEcsStoreConfigYaml(specNode, yamlPropertiesMap);
+        break;
+      case ManifestType.AsgLaunchTemplate:
+      case ManifestType.AsgConfiguration:
+      case ManifestType.AsgScalingPolicy:
+      case ManifestType.AsgScheduledUpdateGroupAction:
+        addVariablesForAsgManifest(specNode, yamlPropertiesMap);
+        break;
       default:
         throw new InvalidRequestException("Invalid manifest type");
     }
@@ -222,6 +279,17 @@ public class ServiceVariableCreator {
     addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
   }
 
+  private void addVariablesForAsgManifest(YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
+
+    List<YamlField> fields = manifestSpecNode.getNode().fields();
+    fields.forEach(field -> {
+      if (!field.getName().equals(YamlTypes.UUID) && !field.getName().equals(YamlTypes.STORE_CONFIG_WRAPPER)) {
+        VariableCreatorHelper.addFieldToPropertiesMap(field, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+      }
+    });
+  }
+
   private void addVariablesForStoreConfigYaml(
       YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField storeNode = manifestSpecNode.getNode().getField(YamlTypes.STORE_CONFIG_WRAPPER);
@@ -239,6 +307,17 @@ public class ServiceVariableCreator {
   }
 
   private void addVariablesForServerlessAwsStoreConfigYaml(
+      YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
+    List<YamlField> fields = manifestSpecNode.getNode().fields();
+    fields.forEach(field -> {
+      if (!field.getName().equals(YamlTypes.UUID) && !field.getName().equals(YamlTypes.STORE_CONFIG_WRAPPER)) {
+        VariableCreatorHelper.addFieldToPropertiesMap(field, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+      }
+    });
+  }
+
+  private void addVariablesForEcsStoreConfigYaml(
       YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
     List<YamlField> fields = manifestSpecNode.getNode().fields();

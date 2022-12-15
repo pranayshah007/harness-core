@@ -96,6 +96,7 @@ public class ApprovalInstanceResponseMapper {
                                                                           .map(ApproverInput::toApproverInputInfoDTO)
                                                                           .collect(Collectors.toList()))
                 .orElse(instance.getApproverInputs()))
+        .validatedApprovalUserGroups(instance.getValidatedApprovalUserGroups())
         .build();
   }
 
@@ -123,6 +124,7 @@ public class ApprovalInstanceResponseMapper {
             connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType()))
         .approvalCriteria(instance.getApprovalCriteria())
         .rejectionCriteria(instance.getRejectionCriteria())
+        .changeWindowSpec(instance.getChangeWindow())
         .build();
   }
 

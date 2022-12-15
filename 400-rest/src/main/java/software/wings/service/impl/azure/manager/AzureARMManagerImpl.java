@@ -27,6 +27,7 @@ import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
+import io.harness.delegate.task.azure.arm.AzureARMTaskType;
 import io.harness.delegate.task.azure.arm.response.AzureARMListManagementGroupResponse;
 import io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocationsResponse;
 import io.harness.exception.InvalidRequestException;
@@ -54,7 +55,7 @@ public class AzureARMManagerImpl implements AzureARMManager {
   public List<String> listSubscriptionLocations(
       AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails, String appId, String subscriptionId) {
     AzureARMTaskParameters parameters = new AzureARMTaskParameters();
-    parameters.setCommandType(AzureARMTaskParameters.AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS);
+    parameters.setCommandType(AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS);
     parameters.setSubscriptionId(subscriptionId);
 
     AzureTaskResponse azureTaskExecutionResponse = executeTask(parameters, azureConfig, encryptionDetails, appId);
@@ -65,7 +66,7 @@ public class AzureARMManagerImpl implements AzureARMManager {
   public List<String> listAzureCloudProviderLocations(
       AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails, String appId) {
     AzureARMTaskParameters parameters = new AzureARMTaskParameters();
-    parameters.setCommandType(AzureARMTaskParameters.AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS);
+    parameters.setCommandType(AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS);
 
     AzureTaskResponse azureTaskExecutionResponse = executeTask(parameters, azureConfig, encryptionDetails, appId);
     return ((AzureARMListSubscriptionLocationsResponse) azureTaskExecutionResponse).getLocations();
@@ -75,7 +76,7 @@ public class AzureARMManagerImpl implements AzureARMManager {
   public List<ManagementGroupData> listManagementGroups(
       AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails, String appId) {
     AzureARMTaskParameters parameters = new AzureARMTaskParameters();
-    parameters.setCommandType(AzureARMTaskParameters.AzureARMTaskType.LIST_MNG_GROUP);
+    parameters.setCommandType(AzureARMTaskType.LIST_MNG_GROUP);
 
     AzureTaskResponse azureTaskExecutionResponse = executeTask(parameters, azureConfig, encryptionDetails, appId);
     return ((AzureARMListManagementGroupResponse) azureTaskExecutionResponse).getMngGroups();

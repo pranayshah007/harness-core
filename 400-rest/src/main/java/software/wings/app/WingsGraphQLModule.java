@@ -117,6 +117,7 @@ import software.wings.graphql.datafetcher.execution.PipelineResumeRuntimeDataFet
 import software.wings.graphql.datafetcher.execution.ResumeExecutionDataFetcher;
 import software.wings.graphql.datafetcher.execution.RuntimeExecutionInputsToResumePipelineDataFetcher;
 import software.wings.graphql.datafetcher.execution.StartExecutionDataFetcher;
+import software.wings.graphql.datafetcher.frozenExecution.FrozenExecutionConnectionDataFetcher;
 import software.wings.graphql.datafetcher.infraDefinition.InfrastructureDefinitionConnectionDataFetcher;
 import software.wings.graphql.datafetcher.infraDefinition.InfrastructureDefinitionDataFetcher;
 import software.wings.graphql.datafetcher.infraDefinition.batch.InfrastructureDefinitionBatchDataFetcher;
@@ -324,6 +325,7 @@ public class WingsGraphQLModule extends AbstractModule {
     bindDataFetcherWithAnnotation(EnvironmentBatchDataFetcher.class);
     bindDataFetcherWithAnnotation(EnvironmentStatsDataFetcher.class);
     bindDataFetcherWithAnnotation(ExecutionConnectionDataFetcher.class);
+    bindDataFetcherWithAnnotation(FrozenExecutionConnectionDataFetcher.class);
     bindDataFetcherWithAnnotation(ExecutionDataFetcher.class);
     bindDataFetcherWithAnnotation(GcpBillingAccountDataFetcher.class);
     bindDataFetcherWithAnnotation(GcpBillingTimeSeriesStatsDataFetcher.class);

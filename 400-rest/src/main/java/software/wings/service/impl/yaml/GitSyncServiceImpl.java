@@ -74,10 +74,11 @@ import software.wings.yaml.gitSync.GitFileActivity.TriggeredBy;
 import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,6 +87,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
@@ -294,7 +296,10 @@ public class GitSyncServiceImpl implements GitSyncService {
             grouping(GitFileActivityKeys.errorMessage, first(GitFileActivityKeys.errorMessage)))
         .project(projection(GitFileActivityKeys.filePath, ID_KEY),
             projection(GitFileActivityKeys.errorMessage, GitFileActivityKeys.errorMessage))
-        .aggregate(LatestErrorInGitFileActivity.class)
+        .aggregate(LatestErrorInGitFileActivity.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitFileActivity.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(
             fileErrorPair -> fileNameErrorMap.put(fileErrorPair.getFilePath(), fileErrorPair.getErrorMessage()));
     return fileNameErrorMap;
@@ -438,18 +443,32 @@ public class GitSyncServiceImpl implements GitSyncService {
 
   @Override
   public boolean deleteGitCommits(List<String> gitFileActivitySummaryIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivitySummary.class)
-                                       .filter(GitFileActivitySummaryKeys.accountId, accountId)
-                                       .field(GitFileActivitySummaryKeys.uuid)
-                                       .in(gitFileActivitySummaryIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.uuid)
+                                               .in(gitFileActivitySummaryIds));
+  }
+
+  public boolean deleteGitCommitsBeforeTime(long expiryTime, String accountId) {
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.createdAt)
+                                               .lessThan(expiryTime));
   }
 
   @Override
   public boolean deleteGitActivity(List<String> gitFileActivityIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivity.class)
-                                       .filter(GitFileActivityKeys.accountId, accountId)
-                                       .field(GitFileActivityKeys.uuid)
-                                       .in(gitFileActivityIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.uuid)
+                                               .in(gitFileActivityIds));
+  }
+  @Override
+  public boolean deleteGitActivityBeforeTime(long time, String accountId) {
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.createdAt)
+                                               .lessThan(time));
   }
 
   private void populateConnectorNameInGitFileActivitySummaries(
@@ -567,7 +586,7 @@ public class GitSyncServiceImpl implements GitSyncService {
   }
 
   private GitFileActivityBuilder buildBaseGitFileActivity(GitFileChange change, String commitId, String commitMessage) {
-    YamlGitConfig gitConfig = change.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig gitConfig = change.getYamlGitConfig();
     String commitIdToPersist = StringUtils.isEmpty(commitId) ? change.getCommitId() : commitId;
     String processingCommitIdToPersist = StringUtils.isEmpty(commitId) ? change.getProcessingCommitId() : commitId;
     String commitMessageToPersist = StringUtils.isEmpty(commitMessage) ? change.getCommitMessage() : commitMessage;

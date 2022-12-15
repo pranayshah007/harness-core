@@ -8,6 +8,7 @@
 package io.harness.delegate.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
@@ -15,6 +16,7 @@ import io.harness.delegate.beans.DelegateEntityOwner.DelegateEntityOwnerKeys;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DelegateGroupKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateGroups", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)

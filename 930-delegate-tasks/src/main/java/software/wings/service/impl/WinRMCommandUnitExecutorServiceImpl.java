@@ -27,11 +27,11 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.ExceptionLogger;
 
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandUnit;
@@ -92,10 +92,10 @@ public class WinRMCommandUnitExecutorServiceImpl implements CommandUnitExecutorS
     String commandPath = getCommandPath(commandUnit, context);
 
     WinRmSessionConfig winRmSessionConfig = context.winrmSessionConfig(commandUnit.getName(), commandPath);
-    WinRmExecutor winRmExecutor =
-        winRmExecutorFactory.getExecutor(winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet());
+    WinRmExecutor winRmExecutor = winRmExecutorFactory.getExecutor(
+        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet(), context.isWinrmScriptCommandSplit());
     FileBasedWinRmExecutor fileBasedWinRmExecutor = winRmExecutorFactory.getFiledBasedWinRmExecutor(
-        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet());
+        winRmSessionConfig, context.isDisableWinRMCommandEncodingFFSet(), context.isWinrmScriptCommandSplit());
 
     ShellCommandExecutionContext shellCommandExecutionContext = new ShellCommandExecutionContext(context);
     shellCommandExecutionContext.setExecutor(winRmExecutor);

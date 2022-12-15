@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.event;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.NG_ACCOUNT_SETUP;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -34,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class NGAccountSetupConsumer implements Runnable {
+public class NGAccountSetupConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   private final List<MessageListener> messageListenersList;
@@ -96,18 +97,8 @@ public class NGAccountSetupConsumer implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      return processMessage(message);
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
     messageListenersList.forEach(messageListener -> {
       if (!messageListener.handleMessage(message)) {

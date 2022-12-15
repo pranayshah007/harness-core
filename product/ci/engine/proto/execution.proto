@@ -57,7 +57,10 @@ message RunTestsStep {
   map<string, string> environment = 14;
   string buildEnvironment = 15;  // Dot net build environment Core | Framework
   string frameworkVersion = 16;  // Dot net version 6.0 | 5.0
-  string namespaces = 17;        // Same funtion as java package for namespace languages
+  string namespaces = 17;        // Same function as java package for namespace languages
+  string test_split_strategy = 18;
+  bool parallelize_tests = 19;
+  string test_globs = 20;  // Comma separated strings which are test globs
 }
 
 message RunStep {
@@ -68,6 +71,9 @@ message RunStep {
   repeated Report reports = 5;
   map<string, string> environment = 6;
   ShellType shell_type = 7;
+  bool detach = 8;
+  repeated string entrypoint = 9;
+  string image = 10;
 }
 
 message PluginStep {
@@ -175,6 +181,10 @@ message ExecuteStepRequest {
   UnitStep step = 2;
   string tmp_file_path = 3;
   string delegate_svc_endpoint = 4;
+  string manager_svc_endpoint = 5;
+  string account_key = 6;
+  string manager_url = 7;
+  string delegate_id = 8;
 }
 
 message ExecuteStepResponse {}

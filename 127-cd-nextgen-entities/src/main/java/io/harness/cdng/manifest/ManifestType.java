@@ -20,6 +20,13 @@ public interface ManifestType {
   Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
       ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
   Set<String> HELM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
+  Set<String> ECS_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
+          ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
+  Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam);
+  Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
+      ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
   String K8Manifest = "K8sManifest";
   String VALUES = "Values";
@@ -31,10 +38,27 @@ public interface ManifestType {
   String KustomizePatches = "KustomizePatches";
   String ServerlessAwsLambda = "ServerlessAwsLambda";
   String ReleaseRepo = "ReleaseRepo";
+  String DeploymentRepo = "DeploymentRepo";
+  String EcsTaskDefinition = "EcsTaskDefinition";
+  String EcsServiceDefinition = "EcsServiceDefinition";
+  String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
+  String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
+  String EcsRunTaskRequestDefinition = "EcsRunTaskRequestDefinition";
+  String TAS_MANIFEST = "TasManifest";
+  String TAS_VARS = "TasVars";
+  String TAS_AUTOSCALER = "TasAutoScaler";
+  String AsgLaunchTemplate = "AsgLaunchTemplate";
+  String AsgConfiguration = "AsgConfiguration";
+  String AsgScalingPolicy = "AsgScalingPolicy";
+  String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
         ManifestType.KustomizePatches, ManifestType.Kustomize, ManifestType.HelmChart, ManifestType.CONFIG_FILE,
-        ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo));
+        ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo,
+        ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
+        ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
+        ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
+        AsgScheduledUpdateGroupAction));
   }
 }

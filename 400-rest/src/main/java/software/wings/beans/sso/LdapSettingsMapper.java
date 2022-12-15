@@ -21,6 +21,22 @@ public class LdapSettingsMapper {
         .uuid(ldapSettings.getUuid())
         .userSettings(ldapSettings.getUserSettings())
         .groupSettings(ldapSettings.getGroupSettings())
+        .disabled(ldapSettings.isDisabled())
         .build();
+  }
+
+  public LdapSettings fromLdapSettingsDTO(software.wings.beans.dto.LdapSettings ldapSettings) {
+    LdapSettings ssoSettings = LdapSettings.builder()
+                                   .accountId(ldapSettings.getAccountId())
+                                   .connectionSettings(ldapSettings.getConnectionSettings())
+                                   .userSettingsList(ldapSettings.getUserSettingsList())
+                                   .groupSettingsList(ldapSettings.getGroupSettingsList())
+                                   .displayName(ldapSettings.getDisplayName())
+                                   .build();
+    ssoSettings.setUserSettings(ldapSettings.getUserSettings());
+    ssoSettings.setGroupSettings(ldapSettings.getGroupSettings());
+    ssoSettings.setUuid(ldapSettings.getUuid());
+    ssoSettings.setDisabled(ldapSettings.isDisabled());
+    return ssoSettings;
   }
 }

@@ -59,13 +59,13 @@ public class RuntimeInputValuesValidator {
     String error = "";
     String templateValue = ((JsonNode) templateObject).asText();
     String inputSetValue = ((JsonNode) inputSetObject).asText();
-    ParameterField<String> inputSetField;
+    ParameterField<?> inputSetField;
     inputSetField = getInputSetParameterField(inputSetValue);
     String inputSetFieldValue;
     if (inputSetField == null || inputSetField.getValue() == null) {
       inputSetFieldValue = inputSetValue;
     } else {
-      inputSetFieldValue = inputSetField.getValue();
+      inputSetFieldValue = inputSetField.getValue().toString();
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(templateValue)
@@ -125,13 +125,13 @@ public class RuntimeInputValuesValidator {
 
     String sourceValue = ((JsonNode) sourceObject).asText();
     String objectToValidateValue = ((JsonNode) objectToValidate).asText();
-    ParameterField<String> inputSetField;
+    ParameterField<?> inputSetField;
     inputSetField = getInputSetParameterField(objectToValidateValue);
     String objectToValidateFieldValue;
-    if (inputSetField == null || inputSetField.getValue() == null) {
+    if (inputSetField == null || inputSetField.obtainValue() == null) {
       objectToValidateFieldValue = objectToValidateValue;
     } else {
-      objectToValidateFieldValue = inputSetField.getValue();
+      objectToValidateFieldValue = inputSetField.getValue().toString();
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(sourceValue)) {
@@ -140,7 +140,7 @@ public class RuntimeInputValuesValidator {
         if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
           if (sourceField.getInputSetValidator() != null) {
             // if both are runtime inputs with input set validator, they should match exactly else return false
-            return sourceValue.equals(objectToValidateValue);
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
           }
           return true;
         } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {

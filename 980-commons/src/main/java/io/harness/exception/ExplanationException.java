@@ -53,6 +53,7 @@ public class ExplanationException extends WingsException {
   public static String AZURE_SM_VAULT_ENGINE_FETCH_ERROR =
       "One or more of Client Id, Subscription, Tenant ID and Secret key is/are invalid.";
   public static String INVALID_PARAMETER = "The credentials provided are incorrect.";
+  public static String AZURE_INVALID = "There was an issue with Azure.";
 
   // GIT
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";
@@ -76,6 +77,13 @@ public class ExplanationException extends WingsException {
   public static String DELEGATE_TO_HOST_SOCKET_CONNECTION_FAILED =
       "Delegate(s) is(are) not able to establish socket connection to host(s)";
   public static String EXPLANATION_FILE_CREATION_ERROR = "Unable to create a new file";
+
+  // LDAP
+  public static String LDAP_ATTRIBUTES_INCORRECT = "One or more attributes of this query is incorrect";
+  public static String INVALID_LDAP_CREDENTIALS =
+      "The credentials of Ldap Connection settings you are using are incorrect";
+  public static String INVALID_LDAP_AUTH_EMAIL_PWD =
+      "The email, password value supplied for the configured Ldap settings is incorrect";
 
   public ExplanationException(String message, Throwable cause) {
     super(message, cause, EXPLANATION, INFO, USER_SRE, null);

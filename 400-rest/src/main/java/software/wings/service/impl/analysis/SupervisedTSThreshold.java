@@ -12,6 +12,8 @@ import static io.harness.persistence.GoogleDataStoreAware.readDouble;
 import static io.harness.persistence.GoogleDataStoreAware.readString;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.GoogleDataStoreAware;
@@ -44,6 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "supervisedTSThreshold", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @Slf4j

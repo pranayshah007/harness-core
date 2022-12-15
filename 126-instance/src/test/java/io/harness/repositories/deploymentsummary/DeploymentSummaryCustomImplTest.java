@@ -7,11 +7,15 @@
 
 package io.harness.repositories.deploymentsummary;
 
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -29,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Sort;
@@ -45,6 +50,7 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
   private static final String SERVICE_ID = "TEST_SERVICE_ID";
   private static final String INFRA_KEY = "TEST_INFRA_KEY";
   private static final String INSTANCE_SYNC_KEY = "instanceSyncKey";
+  private static final String PIPELINE_EXECUTION_ID = "PIPELINE_EXECUTION_ID";
   @Mock MongoTemplate mongoTemplate;
   @InjectMocks DeploymentSummaryCustomImpl deploymentSummaryCustom;
 
@@ -73,6 +79,40 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     when(mongoTemplate.find(query, DeploymentSummary.class)).thenReturn(deploymentSummaryList);
     assertThat(deploymentSummaryCustom.fetchNthRecordFromNow(N, INSTANCE_SYNC_KEY, infrastructureMappingDTO).get())
         .isEqualTo(deploymentSummary);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void fetchLatestByInstanceKeyAndPipelineExecutionIdNotTest() {
+    InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
+    Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
+                            .is(INSTANCE_SYNC_KEY)
+                            .and(DeploymentSummaryKeys.accountIdentifier)
+                            .is(infrastructureMappingDTO.getAccountIdentifier())
+                            .and(DeploymentSummaryKeys.orgIdentifier)
+                            .is(infrastructureMappingDTO.getOrgIdentifier())
+                            .and(DeploymentSummaryKeys.projectIdentifier)
+                            .is(infrastructureMappingDTO.getProjectIdentifier())
+                            .and(DeploymentSummaryKeys.infrastructureMappingId)
+                            .is(infrastructureMappingDTO.getId())
+                            .and(DeploymentSummaryKeys.pipelineExecutionId)
+                            .ne(PIPELINE_EXECUTION_ID);
+    Query query = new Query().addCriteria(criteria);
+    query.with(Sort.by(Sort.Direction.DESC, DeploymentSummaryKeys.createdAt));
+    query.limit(1);
+
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder().build();
+    List<DeploymentSummary> deploymentSummaryList = Arrays.asList(deploymentSummary);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+    when(mongoTemplate.find(any(), eq(DeploymentSummary.class))).thenReturn(deploymentSummaryList);
+    Optional<DeploymentSummary> deploymentSummaryResult =
+        deploymentSummaryCustom.fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
+            INSTANCE_SYNC_KEY, infrastructureMappingDTO, PIPELINE_EXECUTION_ID);
+
+    verify(mongoTemplate).find(queryArgumentCaptor.capture(), eq(DeploymentSummary.class));
+    assertThat(queryArgumentCaptor.getValue().getQueryObject()).isEqualTo(query.getQueryObject());
+    assertThat(deploymentSummaryResult.get()).isEqualTo(deploymentSummary);
   }
 
   @Test

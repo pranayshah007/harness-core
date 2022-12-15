@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -22,8 +23,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -32,6 +36,11 @@ public class RuntimeInputsValidator {
   private final String DUMMY_NODE = "dummy";
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
+    return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
+  }
+
+  public boolean areInputsValidAgainstSourceNode(
+      JsonNode nodeToValidate, JsonNode sourceNode, Set<String> skipValidationIfAbsentKeySet) {
     // if source node is null, should return true if nodeToValidate is null
     if (sourceNode == null) {
       return nodeToValidate == null;
@@ -59,10 +68,31 @@ public class RuntimeInputsValidator {
     dummyNodeToValidate.set(DUMMY_NODE, nodeToValidate);
     String dummyNodeToValidateYaml = convertToYaml(dummyNodeToValidate);
 
-    return validateInputsAgainstSourceNode(dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml);
+    return validateInputsAgainstSourceNode(
+        dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet);
   }
 
-  private boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
+  // Assume both have same root node and structure
+  public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
+    return validateInputsAgainstSourceNode(
+        nodeToValidateYaml, sourceNodeInputSetFormatYaml, new HashSet<>(), new HashSet<>());
+  }
+
+  public boolean validateInputsAgainstSourceNode(
+      String nodeToValidateYaml, String sourceNodeInputSetFormatYaml, Set<String> skipValidationIfAbsentKeySet) {
+    return validateInputsAgainstSourceNode(
+        nodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet, new HashSet<>());
+  }
+
+  /**
+   *
+   * @param nodeToValidateYaml node to be validated. Eg. Merged pipeline yaml
+   * @param sourceNodeInputSetFormatYaml source node of the entity. E.g. Service node, Template node
+   * @param skipValidationIfAbsentKeySet ignore these extra keys in source node. E.g. service.serviceInputs
+   * @param skipValidationIfExtraKeySet ignore these extra keys in node to validate. E.g. primary.sources
+   */
+  public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml,
+      Set<String> skipValidationIfAbsentKeySet, Set<String> skipValidationIfExtraKeySet) {
     YamlConfig sourceNodeYamlConfig = new YamlConfig(sourceNodeInputSetFormatYaml);
     Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
 
@@ -92,6 +122,12 @@ public class RuntimeInputsValidator {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(nodeToValidateFqnToValueMap, key);
         // If subMap is empty, return false since value is not present in nodeToValidateFqnToValueMap.
         if (isEmpty(subMap)) {
+          // if the following keys are runtime inputs, it's okay to ignore them if they are missing
+          String fqnExp = key.getExpressionFqn();
+          if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())
+              && skipValidationIfAbsentKeySet.stream().anyMatch(fqnExp::endsWith)) {
+            continue;
+          }
           return false;
         }
         // remove the subMap from nodeToValidateFqnToValueMap
@@ -100,6 +136,18 @@ public class RuntimeInputsValidator {
     }
 
     // if nodeToValidateFqnToValueMap is not empty, return false.
+    // if some entries are remaining which are expected, remove them for nodeToValidate
+    Set<FQN> toRemoveKeySet = new HashSet<>();
+    for (Map.Entry<FQN, Object> entry : nodeToValidateFqnToValueMap.entrySet()) {
+      String fqnExp = entry.getKey().getExpressionFqn();
+      if (isNotEmpty(fqnExp) && skipValidationIfExtraKeySet.stream().anyMatch(fqnExp::endsWith)) {
+        Object value = entry.getValue();
+        if (value instanceof TextNode) {
+          toRemoveKeySet.add(entry.getKey());
+        }
+      }
+    }
+    nodeToValidateFqnToValueMap.keySet().removeAll(toRemoveKeySet);
     return !isNotEmpty(nodeToValidateFqnToValueMap);
   }
 

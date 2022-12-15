@@ -27,7 +27,6 @@ import io.harness.accesscontrol.support.persistence.SupportMorphiaRegistrar;
 import io.harness.accesscontrol.support.persistence.SupportPersistenceConfig;
 import io.harness.aggregator.AggregatorPersistenceConfig;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -37,7 +36,6 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.morphia.OutboxEventMorphiaRegistrar;
-import io.harness.serializer.morphia.PrimaryVersionManagerMorphiaRegistrar;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.PersistenceModule;
 
@@ -89,14 +87,12 @@ public class AccessControlPersistenceModule extends PersistenceModule {
         return new NoopUserProvider();
       }
     });
-    install(PrimaryVersionManagerModule.getInstance());
     Multibinder<Class<? extends KryoRegistrar>> kryoRegistrar =
         Multibinder.newSetBinder(binder(), new TypeLiteral<Class<? extends KryoRegistrar>>() {});
 
     Multibinder<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
         Multibinder.newSetBinder(binder(), new TypeLiteral<Class<? extends MorphiaRegistrar>>() {});
     morphiaRegistrars.addBinding().toInstance(OutboxEventMorphiaRegistrar.class);
-    morphiaRegistrars.addBinding().toInstance(PrimaryVersionManagerMorphiaRegistrar.class);
     morphiaRegistrars.addBinding().toInstance(SupportMorphiaRegistrar.class);
     morphiaRegistrars.addBinding().toInstance(PrivilegedRoleAssignmentMorphiaRegistrar.class);
 

@@ -10,6 +10,7 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CLOUDFORMATION_CHANGE_SET;
 import static io.harness.context.ContextElementType.CLOUD_FORMATION_ROLLBACK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -31,6 +32,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HIterator;
@@ -45,6 +47,7 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig.CloudFormationRollbackConfigKeys;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
+import software.wings.helpers.ext.cloudformation.CloudFormationRollbackCompletionFlag;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest.CloudFormationCommandType;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest.CloudFormationCreateStackRequestBuilder;
@@ -64,8 +67,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -75,6 +81,7 @@ import org.mongodb.morphia.query.Sort;
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public class CloudFormationRollbackStackState extends CloudFormationState {
   private static final String COMMAND_UNIT = "Rollback Stack";
+  private static final String CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG = "CloudFormationRollbackCompletionFlag";
 
   public CloudFormationRollbackStackState(String name) {
     super(name, StateType.CLOUD_FORMATION_ROLLBACK_STACK.name());
@@ -144,6 +151,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     if (!rollbackElement.isPresent()) {
       return emptyList();
     }
+    saveRollbackCompletionFlag(context);
     CloudFormationRollbackInfoElement stackElement = rollbackElement.get();
     if (stackElement.isStackExisted()) {
       updateInfraMappings(commandResponse, context, stackElement.getProvisionerId());
@@ -161,9 +169,35 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     if (isNotEmpty(allRollbackElements)) {
       return allRollbackElements.stream()
           .filter(element -> element.getProvisionerId().equals(provisionerId))
+          .filter(filterByConfigId(context))
+          .filter(filterByStackNameAndRegion(context))
           .findFirst();
     }
     return Optional.empty();
+  }
+
+  @NotNull
+  private Predicate<CloudFormationRollbackInfoElement> filterByConfigId(ExecutionContext context) {
+    return cloudFormationRollbackInfoElement -> {
+      if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+        return cloudFormationRollbackInfoElement.getAwsConfigId().equals(fetchResolvedAwsConfigId(context));
+      } else {
+        return true;
+      }
+    };
+  }
+
+  private Predicate<CloudFormationRollbackInfoElement> filterByStackNameAndRegion(ExecutionContext context) {
+    return cloudFormationRollbackInfoElement -> {
+      if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())) {
+        String renderedCustomStackName =
+            useCustomStackName ? context.renderExpression(customStackName) : StringUtils.EMPTY;
+        return cloudFormationRollbackInfoElement.getCustomStackName().equals(renderedCustomStackName)
+            && cloudFormationRollbackInfoElement.getRegion().equals(context.renderExpression(region));
+      } else {
+        return true;
+      }
+    };
   }
 
   /**
@@ -183,6 +217,12 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
             .filter(CloudFormationRollbackConfigKeys.entityId, entityId);
     if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
       getRollbackConfig.filter(CloudFormationRollbackConfigKeys.awsConfigId, fetchResolvedAwsConfigId(context));
+    }
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CUSTOM_STACK_NAME, context.getAccountId())) {
+      String renderedCustomStackName =
+          useCustomStackName ? executionContext.renderExpression(customStackName) : StringUtils.EMPTY;
+      getRollbackConfig.filter(CloudFormationRollbackConfigKeys.customStackName, renderedCustomStackName);
+      getRollbackConfig.filter(CloudFormationRollbackConfigKeys.region, executionContext.renderExpression(region));
     }
     getRollbackConfig.order(Sort.descending(CloudFormationRollbackConfigKeys.createdAt)).fetch();
     try (HIterator<CloudFormationRollbackConfig> configIterator = new HIterator(getRollbackConfig.fetch())) {
@@ -259,18 +299,22 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                                                  .collect(Collectors.toList()));
       }
 
-      CloudFormationCreateStackRequest request = builder.stackNameSuffix(configParameter.getEntityId())
-                                                     .customStackName(configParameter.getCustomStackName())
-                                                     .region(configParameter.getRegion())
-                                                     .commandType(CloudFormationCommandType.CREATE_STACK)
-                                                     .accountId(context.getAccountId())
-                                                     .appId(context.getAppId())
-                                                     .cloudFormationRoleArn(roleArnRendered)
-                                                     .commandName(mainCommandUnit())
-                                                     .activityId(activityId)
-                                                     .variables(textVariables)
-                                                     .encryptedVariables(encryptedTextVariables)
-                                                     .build();
+      CloudFormationCreateStackRequest request =
+          builder.stackNameSuffix(configParameter.getEntityId())
+              .customStackName(configParameter.getCustomStackName())
+              .region(configParameter.getRegion())
+              .commandType(CloudFormationCommandType.CREATE_STACK)
+              .accountId(context.getAccountId())
+              .appId(context.getAppId())
+              .cloudFormationRoleArn(roleArnRendered)
+              .commandName(mainCommandUnit())
+              .activityId(activityId)
+              .variables(textVariables)
+              .encryptedVariables(encryptedTextVariables)
+              .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()))
+              .tags(configParameter.getTags())
+              .capabilities(configParameter.getCapabilities())
+              .build();
       setTimeOutOnRequest(request);
       DelegateTask delegateTask =
           DelegateTask.builder()
@@ -299,9 +343,18 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
 
   @Override
   protected ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
-    CloudFormationCompletionFlag cloudFormationCompletionFlag = getCloudFormationCompletionFlag(context);
-    if (cloudFormationCompletionFlag == null || !cloudFormationCompletionFlag.isCreateStackCompleted()) {
+    SweepingOutputInstance completionFlagSweepingOutputInstance =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_COMPLETION_FLAG);
+    if (completionFlagSweepingOutputInstance == null
+        || !((CloudFormationCompletionFlag) completionFlagSweepingOutputInstance.getValue()).isCreateStackCompleted()) {
       return ExecutionResponse.builder().executionStatus(SKIPPED).errorMessage("Skipping rollback").build();
+    } else {
+      if (isRollbackAlreadyDone(context)) {
+        return ExecutionResponse.builder()
+            .executionStatus(SKIPPED)
+            .errorMessage("Rollback done in a previous step, skipping")
+            .build();
+      }
     }
 
     ExecutionResponse executionResponse = executeInternalWithSavedElement(context, activityId);
@@ -371,7 +424,10 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
           .activityId(activityId)
           .commandName(mainCommandUnit())
           .variables(stackElement.getOldStackParameters())
-          .awsConfig(awsConfig);
+          .awsConfig(awsConfig)
+          .capabilities(stackElement.getCapabilities())
+          .tags(stackElement.getTags())
+          .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, context.getAccountId()));
       if (stackElement.isSkipBasedOnStackStatus() == false || isEmpty(stackElement.getStackStatusesToMarkAsSuccess())) {
         builder.stackStatusesToMarkAsSuccess(new ArrayList<>());
       } else {
@@ -412,5 +468,25 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
         .delegateTaskId(delegateTaskId)
         .stateExecutionData(ScriptStateExecutionData.builder().activityId(activityId).build())
         .build();
+  }
+
+  private boolean isRollbackAlreadyDone(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationRollbackCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG);
+    return cloudFormationRollbackCompletionFlag != null
+        && ((CloudFormationRollbackCompletionFlag) cloudFormationRollbackCompletionFlag.getValue())
+               .isRollbackCompleted();
+  }
+
+  private void saveRollbackCompletionFlag(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG);
+    if (cloudFormationCompletionFlag == null || cloudFormationCompletionFlag.getValue() == null) {
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+              .name(getCompletionStatusFlagSweepingOutputName(CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG, context))
+              .value(CloudFormationRollbackCompletionFlag.builder().rollbackCompleted(true).build())
+              .build());
+    }
   }
 }

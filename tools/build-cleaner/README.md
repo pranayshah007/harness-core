@@ -49,8 +49,18 @@ This script runs in two phases:
         2) One can specify the index file as a command line argument too.
     2) For resolving the maven targets, we have checked-in ~/main-manifest.json file, which has mapping from java
        package to maven target.
-        1) This file is generated using some external (Details to follow!) script by parsing the maven jar files listed
-           in our WORKSPACE
+        1) This file is generated using parse-jars script, which parses maven jars listed in the
+       project/main_maven_install.json
+       ```
+       # Pin Maven deps
+       bazel run @unpinned_maven//:pin
+       
+       # Download Maven deps so the Maven resolver can do its work
+       bazel fetch @maven//...
+       
+       bazel run @contrib_rules_jvm//java/gazelle/cmd/parsejars -- -maven-install project/main_maven_install.json --repo-root "$PWD" --output maven-manifest.json
+
+       ```
         2) There is also an option to override this mapping, by adding entries in ~/maven-manifest-override.txt file.
            This is required because certain packages are duplicated across maven targets.
 2) Resolving imports and generating BUILD files

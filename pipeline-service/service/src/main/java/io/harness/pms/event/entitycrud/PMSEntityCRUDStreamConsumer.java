@@ -7,8 +7,8 @@
 
 package io.harness.pms.event.entitycrud;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
@@ -17,9 +17,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
@@ -35,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(PIPELINE)
-public class PMSEntityCRUDStreamConsumer implements Runnable {
+public class PMSEntityCRUDStreamConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   private final List<MessageListener> messageListenersList;
@@ -58,6 +60,7 @@ public class PMSEntityCRUDStreamConsumer implements Runnable {
     log.info("Started the consumer for PMS entity crud stream");
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+      SourcePrincipalContextBuilder.setSourcePrincipal(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
       while (!Thread.currentThread().isInterrupted()) {
         if (queueController.isNotPrimary()) {
           log.info(this.getClass().getSimpleName()
@@ -100,18 +103,8 @@ public class PMSEntityCRUDStreamConsumer implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      return processMessage(message);
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
     messageListenersList.forEach(messageListener -> {
       if (!messageListener.handleMessage(message)) {

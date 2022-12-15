@@ -10,15 +10,16 @@ package io.harness.delegate.task.azure.appservice.deployment.context;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.deployment.SlotContainerLogStreamer;
 import io.harness.logging.LogCallback;
 
+import com.azure.core.http.rest.Response;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class SlotContainerDeploymentVerifierContext extends StatusVerifierContext {
@@ -27,8 +28,8 @@ public class SlotContainerDeploymentVerifierContext extends StatusVerifierContex
   @Builder
   public SlotContainerDeploymentVerifierContext(@NonNull LogCallback logCallback, @NonNull String slotName,
       @NonNull AzureWebClient azureWebClient, @NonNull AzureWebClientContext azureWebClientContext,
-      AzureServiceCallBack restCallBack, SlotContainerLogStreamer logStreamer) {
-    super(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+      Mono<Response<Void>> responseMono, SlotContainerLogStreamer logStreamer) {
+    super(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
     this.logStreamer = logStreamer;
   }
 }

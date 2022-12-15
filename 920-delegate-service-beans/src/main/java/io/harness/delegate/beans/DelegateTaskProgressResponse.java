@@ -7,7 +7,7 @@
 
 package io.harness.delegate.beans;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -23,9 +23,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.ALL)
 @Entity(value = "!!!custom_delegateTaskProgressResponses", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateTaskProgressResponseKeys")
-@StoreIn(DbAliases.ALL)
 public class DelegateTaskProgressResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private String correlationId;
@@ -33,4 +33,17 @@ public class DelegateTaskProgressResponse implements PersistentEntity {
   @FdIndex private long processAfter;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
+
+  private Boolean usingKryoWithoutReference;
+
+  public Boolean getUsingKryoWithoutReference() {
+    return isUsingKryoWithoutReference();
+  }
+
+  public boolean isUsingKryoWithoutReference() {
+    if (usingKryoWithoutReference == null) {
+      return false;
+    }
+    return usingKryoWithoutReference;
+  }
 }

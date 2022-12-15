@@ -19,7 +19,9 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,6 +61,12 @@ public class UserGroupDaoImpl implements UserGroupDao {
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
     Page<UserGroupDBO> userGroupPages = userGroupRepository.findByScopeIdentifier(scopeIdentifier, pageable);
     return PageUtils.getNGPageResponse(userGroupPages.map(UserGroupDBOMapper::fromDBO));
+  }
+
+  @Override
+  public List<UserGroup> list(String userIdentifier) {
+    List<UserGroupDBO> userGroupPages = userGroupRepository.findByUsersIn(userIdentifier);
+    return userGroupPages.stream().map(UserGroupDBOMapper::fromDBO).collect(Collectors.toList());
   }
 
   @Override

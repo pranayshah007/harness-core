@@ -19,8 +19,5 @@ import lombok.Data;
 public class CustomerDTO {
   private String billingEmail;
   private String companyName;
-  public CustomerDTO(String billingEmail, String companyName) {
-    this.billingEmail = billingEmail;
-    this.companyName = companyName;
-  }
+  private AddressDto address;
 }

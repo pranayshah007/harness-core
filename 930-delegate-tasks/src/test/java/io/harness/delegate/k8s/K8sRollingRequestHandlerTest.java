@@ -12,6 +12,7 @@ import static io.harness.delegate.k8s.K8sTestHelper.deployment;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -54,10 +55,11 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -68,8 +70,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
 @OwnedBy(CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class K8sRollingRequestHandlerTest extends CategoryTest {
@@ -123,6 +127,36 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
         rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(response.getK8sNGTaskResponse()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testExecuteTaskApplyFailureShouldSaveWorkloads() throws Exception {
+    K8sRollingDeployRequest rollingDeployRequest =
+        K8sRollingDeployRequest.builder()
+            .releaseName("releaseName")
+            .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+
+    RuntimeException thrownException = new RuntimeException("Failed to apply");
+    doThrow(thrownException)
+        .when(taskHelperBase)
+        .applyManifests(any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class),
+            eq(true), eq(true));
+    doReturn(Collections.singletonList(deployment()))
+        .when(taskHelperBase)
+        .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean(), anyBoolean());
+
+    assertThatThrownBy(()
+                           -> rollingRequestHandler.executeTask(
+                               rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
+        .isSameAs(thrownException);
+
+    Mockito.verify(taskHelperBase, times(1))
+        .getLatestRevision(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class));
   }
 
   @Test
@@ -193,15 +227,15 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testPruningWithNoResourceToPrune() throws Exception {
-    on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
+    on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
     assertThat(rollingRequestHandler.prune(null, null, logCallback)).isEmpty();
 
-    Release releaseWithEmptySpecs = Release.builder().resourcesWithSpec(emptyList()).build();
+    K8sLegacyRelease releaseWithEmptySpecs = K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build();
     assertThat(rollingRequestHandler.prune(null, releaseWithEmptySpecs, logCallback)).isEmpty();
 
     doReturn(emptyList()).when(taskHelperBase).getResourcesToBePrunedInOrder(any(), any());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    K8sLegacyRelease releaseWithDummySpec =
+        K8sLegacyRelease.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
     assertThat(rollingRequestHandler.prune(null, releaseWithDummySpec, logCallback)).isEmpty();
   }
 
@@ -209,9 +243,9 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testPruning() throws Exception {
-    on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
+    K8sLegacyRelease releaseWithDummySpec =
+        K8sLegacyRelease.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
     List<KubernetesResourceId> toBePruned = singletonList(
         KubernetesResourceId.builder().kind("Deployment").name("test-deployment").versioned(false).build());
     doReturn(toBePruned)

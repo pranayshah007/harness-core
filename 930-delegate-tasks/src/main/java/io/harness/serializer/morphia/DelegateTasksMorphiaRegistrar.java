@@ -8,9 +8,7 @@
 package io.harness.serializer.morphia;
 
 import io.harness.beans.EncryptedData;
-import io.harness.beans.MigrateSecretTask;
 import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretKey;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretUsageLog;
 import io.harness.morphia.MorphiaRegistrar;
@@ -69,7 +67,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
-import software.wings.beans.CyberArkConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -87,7 +85,6 @@ import software.wings.beans.PcfConfig;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
-import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.ServiceNowConfig;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
@@ -137,7 +134,6 @@ import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
@@ -188,28 +184,24 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(NewRelicMetricDataRecord.class);
-    set.add(DelegateConnectionResult.class);
     set.add(AwsSecretsManagerConfig.class);
     set.add(AzureVaultConfig.class);
-    set.add(CyberArkConfig.class);
     set.add(GcpKmsConfig.class);
     set.add(GcpSecretsManagerConfig.class);
     set.add(KmsConfig.class);
     set.add(LocalEncryptionConfig.class);
     set.add(VaultConfig.class);
-    set.add(SecretManagerRuntimeParameters.class);
     set.add(BaseVaultConfig.class);
     set.add(SecretManagerConfig.class);
     set.add(SSHVaultConfig.class);
     set.add(SecretChangeLog.class);
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);
-    set.add(MigrateSecretTask.class);
-    set.add(SecretKey.class);
     set.add(EmailData.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
     set.add(ServiceVariable.class);
+    set.add(CustomSecretNGManagerConfig.class);
   }
 
   @Override
@@ -270,7 +262,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("service.impl.logz.LogzDataCollectionInfo", LogzDataCollectionInfo.class);
     w.put("beans.AwsSecretsManagerConfig", AwsSecretsManagerConfig.class);
     w.put("beans.AzureVaultConfig", AzureVaultConfig.class);
-    w.put("beans.CyberArkConfig", CyberArkConfig.class);
     w.put("beans.GcpKmsConfig", GcpKmsConfig.class);
     w.put("beans.GcpSecretsManagerConfig", GcpSecretsManagerConfig.class);
     w.put("beans.KmsConfig", KmsConfig.class);

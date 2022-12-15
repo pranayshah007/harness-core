@@ -7,6 +7,8 @@
 
 package io.harness.delegate.serverless;
 
+import static io.harness.logging.LogLevel.ERROR;
+
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
@@ -110,8 +112,9 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
       setupDirectory(serverlessRollbackRequest, setupDirectoryLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
       setupDirectoryLogCallback.saveExecutionLog(
-          color(format("%n setup directory failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+          color(format("%n Setup directory failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
 
@@ -126,9 +129,10 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
           crossAccountAccessFlag, environmentVariables, awsCliClient, serverlessAwsLambdaInfraConfig);
       configureCredsLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
-      configureCredsLogCallback.saveExecutionLog(
-          color(format("%n configure credentials failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+      configureCredsLogCallback.saveExecutionLog(color(format("%n Configure credentials failed with error: %s",
+                                                           serverlessTaskHelperBase.getExceptionMessage(ex)),
+                                                     LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
     LogCallback pluginLogCallback = serverlessTaskHelperBase.getLogCallback(
@@ -136,10 +140,12 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     try {
       serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
           pluginLogCallback, serverlessClient, timeoutInMillis, serverlessManifestConfig);
-      pluginLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      pluginLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
     } catch (Exception ex) {
-      pluginLogCallback.saveExecutionLog(color(format("%n installing plugin failed."), LogColor.Red, LogWeight.Bold),
+      pluginLogCallback.saveExecutionLog(
+          color(format("%n Installing plugin failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -149,7 +155,9 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     try {
       return rollback(serverlessRollbackRequest, rollbackLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
-      rollbackLogCallback.saveExecutionLog(color(format("%n Rollback failed."), LogColor.Red, LogWeight.Bold),
+      rollbackLogCallback.saveExecutionLog(
+          color(format("%n Rollback failed with error: %s", serverlessTaskHelperBase.getExceptionMessage(ex)),
+              LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -220,6 +228,10 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
       executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       serverlessRollbackResponseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
     } else {
+      executionLogCallback.saveExecutionLog(
+          color(serverlessAwsCommandTaskHelper.serverlessCommandFailureMessage("Rollback ", response), LogColor.Red,
+              LogWeight.Bold),
+          ERROR);
       serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.rollback());
     }
     serverlessRollbackResponseBuilder.serverlessRollbackResult(serverlessAwsLambdaRollbackResultBuilder.build());

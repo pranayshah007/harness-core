@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public enum PipelineEventType {
@@ -33,6 +35,8 @@ public enum PipelineEventType {
 
   private String level;
   private String displayName;
+  public static List<PipelineEventType> notifyOnlyUserEvents =
+      Arrays.asList(PipelineEventType.PIPELINE_START, PipelineEventType.PIPELINE_END);
 
   PipelineEventType(String level, String displayName) {
     this.level = level;

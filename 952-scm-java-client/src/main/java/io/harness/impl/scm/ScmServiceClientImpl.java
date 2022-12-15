@@ -17,12 +17,18 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ContentType;
 import io.harness.beans.FileContentBatchResponse;
+import io.harness.beans.FileGitDetails;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -99,6 +105,7 @@ import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.service.ScmServiceClient;
+import io.harness.utils.FilePathUtils;
 import io.harness.utils.ScmGrpcClientUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -122,9 +129,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderHelper scmGitProviderHelper;
 
   @Override
-  public CreateFileResponse createFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    FileModifyRequest fileModifyRequest = getFileModifyRequest(scmConnector, gitFileDetails).build();
+  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient) {
+    FileModifyRequest fileModifyRequest =
+        getFileModifyRequest(scmConnector, gitFileDetails).setUseGitClient(useGitClient).build();
     CreateFileResponse createFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
     if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
@@ -159,8 +167,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public UpdateFileResponse updateFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient) {
     Optional<UpdateFileResponse> preChecksStatus =
         runUpdateFileOpsPreChecks(scmConnector, scmBlockingStub, gitFileDetails);
     if (preChecksStatus.isPresent()) {
@@ -170,7 +178,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
     handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
-        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
+        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
+            .setUseGitClient(useGitClient)
+            .build();
     UpdateFileResponse updateFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::updateFile, fileModifyRequest);
 
@@ -215,16 +225,35 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final GetFileRequest.Builder gitFileRequestBuilder =
         GetFileRequest.newBuilder().setPath(gitFilePathDetails.getFilePath()).setProvider(gitProvider).setSlug(slug);
     if (isNotEmpty(gitFilePathDetails.getBranch())) {
-      gitFileRequestBuilder.setBranch(gitFilePathDetails.getBranch());
+      if (checkIfBranchIsHavingSlashForBB(scmConnector, gitFilePathDetails.getBranch())) {
+        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+            scmConnector, scmBlockingStub, gitFilePathDetails.getBranch(), gitFilePathDetails.getFilePath());
+        if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+          return FileContent.newBuilder().setStatus(400).setError(getLatestCommitOnFileResponse.getError()).build();
+        }
+        gitFileRequestBuilder.setRef(getLatestCommitOnFileResponse.getCommitId());
+      } else {
+        gitFileRequestBuilder.setBranch(gitFilePathDetails.getBranch());
+      }
     } else if (isNotEmpty(gitFilePathDetails.getRef())) {
       gitFileRequestBuilder.setRef(gitFilePathDetails.getRef());
     }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getFile, gitFileRequestBuilder.build());
   }
 
-  private FileBatchContentResponse getContentOfFiles(
+  private boolean checkIfBranchIsHavingSlashForBB(ScmConnector scmConnector, String branchName) {
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType()) && branchName.contains("/");
+  }
+
+  private FileBatchContentResponse getContentOfFiles(List<String> filePaths, String slug, Provider gitProvider,
+      String ref, SCMGrpc.SCMBlockingStub scmBlockingStub, boolean base64Encoding) {
+    GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, base64Encoding);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFile, batchFileRequest);
+  }
+
+  private FileBatchContentResponse getContentOfFilesV2(
       List<String> filePaths, String slug, Provider gitProvider, String ref, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider);
+    GetBatchFileRequest batchFileRequest = createBatchFileRequest(filePaths, slug, ref, gitProvider, true);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getBatchFile, batchFileRequest);
   }
 
@@ -257,7 +286,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public FindFilesInCommitResponse findFilesInCommit(
+  public FindFilesInCommitResponse listFilesInCommit(
       ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     FindFilesInCommitRequest findFilesInCommitRequest = getFindFilesInCommitRequest(scmConnector, gitFilePathDetails);
     // still to be resolved
@@ -265,7 +294,42 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public FindFilesInCommitResponse findFilesInCommit(
+  public ListFilesInCommitResponse listFilesInCommit(
+      ScmConnector scmConnector, ListFilesInCommitRequest request, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    FindFilesInCommitResponse response = null;
+    FindFilesInCommitRequest.Builder findFilesInCommitRequestBuilder =
+        initFindFilesInCommitRequest(scmConnector, request);
+    List<FileGitDetails> fileGitDetailsList = new ArrayList<>();
+
+    do {
+      if (response != null) {
+        findFilesInCommitRequestBuilder.setPagination(PageRequest.newBuilder()
+                                                          .setPage(response.getPagination().getNext())
+                                                          .setUrl(response.getPagination().getNextUrl())
+                                                          .build());
+      }
+      response = ScmGrpcClientUtils.retryAndProcessException(
+          scmBlockingStub::findFilesInCommit, findFilesInCommitRequestBuilder.build());
+      response.getFileList().forEach(file
+          -> fileGitDetailsList.add(FileGitDetails.builder()
+                                        .blobId(file.getBlobId())
+                                        .commitId(file.getCommitId())
+                                        .contentType(ContentType.mapFromScmProtoValue(file.getContentType()))
+                                        .path(file.getPath())
+                                        .build()));
+      if (isFailureResponse(response.getStatus())) {
+        return ListFilesInCommitResponse.builder().statusCode(response.getStatus()).error(response.getError()).build();
+      }
+    } while (response.getPagination().getNext() != 0 || isNotEmpty(response.getPagination().getNextUrl()));
+
+    return ListFilesInCommitResponse.builder()
+        .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
+        .fileGitDetailsList(fileGitDetailsList)
+        .build();
+  }
+
+  @Override
+  public FindFilesInCommitResponse listFilesInCommit(
       ScmConnector scmConnector, String commitHash, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     FindFilesInCommitRequest findFilesInCommitRequest = getFindFilesInCommitRequest(scmConnector, commitHash);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::findFilesInCommit, findFilesInCommitRequest);
@@ -417,12 +481,17 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   private GetBatchFileRequest createBatchFileRequest(
-      List<String> harnessRelatedFilePaths, String slug, String ref, Provider gitProvider) {
+      List<String> harnessRelatedFilePaths, String slug, String ref, Provider gitProvider, boolean getBase64Content) {
     List<GetFileRequest> getBatchFileRequests = new ArrayList<>();
     // todo @deepak: Add the pagination logic to get the list of file content, once scm provides support
     for (String path : emptyIfNull(harnessRelatedFilePaths)) {
-      GetFileRequest getFileRequest =
-          GetFileRequest.newBuilder().setSlug(slug).setProvider(gitProvider).setRef(ref).setPath(path).build();
+      GetFileRequest getFileRequest = GetFileRequest.newBuilder()
+                                          .setSlug(slug)
+                                          .setProvider(gitProvider)
+                                          .setRef(ref)
+                                          .setPath(path)
+                                          .setBase64Encoding(getBase64Content)
+                                          .build();
       getBatchFileRequests.add(getFileRequest);
     }
     return GetBatchFileRequest.newBuilder().addAllFindRequest(getBatchFileRequests).build();
@@ -481,6 +550,15 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         .setRef(gitFilePathDetails.getBranch()) // How to get Ref for files????????????
         .setProvider(scmGitProviderMapper.mapToSCMGitProvider(scmConnector))
         .build();
+  }
+
+  private FindFilesInCommitRequest.Builder getFindFilesInCommitRequestBuilder(
+      ScmConnector scmConnector, ListFilesInCommitRequest request) {
+    return FindFilesInCommitRequest.newBuilder()
+        .setSlug(scmGitProviderHelper.getSlug(scmConnector))
+        .setRef(request.getRef())
+        .setPath(request.getFileDirectoryPath())
+        .setProvider(scmGitProviderMapper.mapToSCMGitProvider(scmConnector));
   }
 
   private FindFilesInCommitRequest getFindFilesInCommitRequest(ScmConnector scmConnector, String commitHash) {
@@ -544,7 +622,31 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, branchName, latestCommitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub);
+          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub, false);
+      return FileContentBatchResponse.builder()
+          .fileBatchContentResponse(contentOfFiles)
+          .commitId(latestCommitId)
+          .build();
+    }
+  }
+
+  @Override
+  public FileContentBatchResponse listFilesV2(
+      ScmConnector connector, Set<String> foldersList, String branchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    log.info("Fetching Optimized files via V2 API and base64 encoded data");
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);
+    String slug = scmGitProviderHelper.getSlug(connector);
+    final GetLatestCommitResponse latestCommitResponse =
+        ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getLatestCommit,
+            GetLatestCommitRequest.newBuilder().setBranch(branchName).setProvider(gitProvider).setSlug(slug).build());
+    ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+        latestCommitResponse.getStatus(), latestCommitResponse.getError());
+    String latestCommitId = latestCommitResponse.getCommitId();
+    try (AutoLogContext ignore = new RepoBranchLogContext(slug, branchName, latestCommitId, OVERRIDE_ERROR)) {
+      List<String> getFilesWhichArePartOfHarness =
+          getFileNames(foldersList, slug, gitProvider, branchName, latestCommitId, scmBlockingStub);
+      final FileBatchContentResponse contentOfFiles =
+          getContentOfFilesV2(getFilesWhichArePartOfHarness, slug, gitProvider, latestCommitId, scmBlockingStub);
       return FileContentBatchResponse.builder()
           .fileBatchContentResponse(contentOfFiles)
           .commitId(latestCommitId)
@@ -562,7 +664,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       List<String> getFilesWhichArePartOfHarness =
           getFileNames(foldersList, slug, gitProvider, null, commitId, scmBlockingStub);
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
+          getContentOfFilesV2(getFilesWhichArePartOfHarness, slug, gitProvider, commitId, scmBlockingStub);
       return FileContentBatchResponse.builder().fileBatchContentResponse(contentOfFiles).commitId(commitId).build();
     }
   }
@@ -601,6 +703,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public CreateBranchResponse createNewBranch(
       ScmConnector scmConnector, String branch, String baseBranchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    branch = FilePathUtils.removeStartingAndEndingSlash(branch);
     String slug = scmGitProviderHelper.getSlug(scmConnector);
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     String latestShaOfBranch = getLatestShaOfBranch(slug, gitProvider, baseBranchName, scmBlockingStub);
@@ -889,13 +992,70 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
   }
 
+  @Override
+  public GitFileResponse getFile(
+      ScmConnector scmConnector, GitFileRequest gitFileContentRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    String commitId = gitFileContentRequest.getCommitId();
+    String branch = gitFileContentRequest.getBranch();
+    // give higher precedence to commit id if not empty
+    if (isNotEmpty(commitId)) {
+      branch = null;
+    } else if (isEmpty(branch)) {
+      GetUserRepoResponse getUserRepoResponse = getRepoDetails(scmConnector, scmBlockingStub);
+      if (isFailureResponse(getUserRepoResponse.getStatus())) {
+        return GitFileResponse.builder()
+            .error(getUserRepoResponse.getError())
+            .statusCode(getUserRepoResponse.getStatus())
+            .build();
+      }
+      branch = getUserRepoResponse.getRepo().getBranch();
+    }
+
+    FileContent fileContent = getFileContent(scmConnector,
+        GitFilePathDetails.builder()
+            .filePath(gitFileContentRequest.getFilepath())
+            .ref(gitFileContentRequest.getCommitId())
+            .branch(branch)
+            .build(),
+        scmBlockingStub);
+    if (isFailureResponse(fileContent.getStatus())) {
+      return GitFileResponse.builder()
+          .error(fileContent.getError())
+          .statusCode(fileContent.getStatus())
+          .branch(branch)
+          .build();
+    }
+
+    if (isEmpty(commitId)) {
+      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+          getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
+      if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+        return GitFileResponse.builder()
+            .error(getLatestCommitOnFileResponse.getError())
+            .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+            .branch(branch)
+            .build();
+      }
+      commitId = getLatestCommitOnFileResponse.getCommitId();
+    }
+
+    return GitFileResponse.builder()
+        .commitId(commitId)
+        .filepath(gitFileContentRequest.getFilepath())
+        .content(fileContent.getContent())
+        .objectId(fileContent.getBlobId())
+        .branch(branch)
+        .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
+        .build();
+  }
+
   private FileContentBatchResponse processListFilesByFilePaths(ScmConnector connector, List<String> filePaths,
       String branch, String commitId, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);
     String slug = scmGitProviderHelper.getSlug(connector);
     try (AutoLogContext ignore = new RepoBranchLogContext(slug, branch, commitId, OVERRIDE_ERROR)) {
       final FileBatchContentResponse contentOfFiles =
-          getContentOfFiles(filePaths, slug, gitProvider, commitId, scmBlockingStub);
+          getContentOfFiles(filePaths, slug, gitProvider, commitId, scmBlockingStub, false);
       return FileContentBatchResponse.builder().fileBatchContentResponse(contentOfFiles).commitId(commitId).build();
     }
   }
@@ -1003,5 +1163,21 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   private boolean isBitbucketOnPrem(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())
         && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
+  }
+
+  private FindFilesInCommitRequest.Builder initFindFilesInCommitRequest(
+      ScmConnector scmConnector, ListFilesInCommitRequest listFilesInCommitRequest) {
+    FindFilesInCommitRequest.Builder findFilesInCommitRequestBuilder =
+        getFindFilesInCommitRequestBuilder(scmConnector, listFilesInCommitRequest);
+    int page = 1;
+    if (isBitbucket(scmConnector)) {
+      page = 0;
+    }
+    findFilesInCommitRequestBuilder.setPagination(PageRequest.newBuilder().setPage(page).build());
+    return findFilesInCommitRequestBuilder;
+  }
+
+  private boolean isBitbucket(ScmConnector scmConnector) {
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType());
   }
 }

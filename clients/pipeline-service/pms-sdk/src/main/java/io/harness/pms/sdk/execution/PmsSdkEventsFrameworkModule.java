@@ -40,8 +40,8 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -111,7 +111,7 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
     } else {
-      RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_INTERRUPT_CONSUMER))
           .toInstance(RedisConsumer.of(PIPELINE_INTERRUPT_TOPIC, serviceName, redissonClient,

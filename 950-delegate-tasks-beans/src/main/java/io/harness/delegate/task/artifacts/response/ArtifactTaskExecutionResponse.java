@@ -9,11 +9,18 @@ package io.harness.delegate.task.artifacts.response;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
 
+import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
+import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import java.util.List;
 import lombok.Builder;
@@ -30,6 +37,14 @@ public class ArtifactTaskExecutionResponse {
   List<String> artifactImages;
   List<BuildDetails> buildDetails;
   List<JobDetails> jobDetails;
+  List<AzureDevopsProject> azureArtifactsProjects;
+  List<AzureArtifactsFeed> azureArtifactsFeeds;
+  List<AzureArtifactsPackage> azureArtifactsPackages;
+  AMITagsResponse amiTags;
   List<String> artifactPath;
+  List<NexusRepositories> repositories;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
+  ExecuteCommandResponse executeCommandResponse;
+  CommandExecutionStatus status;
+  String errorMessage;
 }

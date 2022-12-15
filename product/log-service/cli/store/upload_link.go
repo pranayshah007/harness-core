@@ -18,7 +18,7 @@ type uploadLinkCommand struct {
 }
 
 func (c *uploadLinkCommand) run(*kingpin.ParseContext) error {
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	link, err := client.UploadLink(nocontext, c.key)
 	if err != nil {
 		return err

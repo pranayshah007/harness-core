@@ -9,7 +9,7 @@ package io.harness.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -38,10 +38,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder(builderClassName = "Builder")
 @FieldNameConstants(innerTypeName = "PlanExecutionMetadataKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsMetadata", noClassnameStored = true)
 @Document("planExecutionsMetadata")
 @TypeAlias("planExecutionMetadata")
-@StoreIn(DbAliases.PMS)
 public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNodeExecutionMetadata {
   public static final long TTL_MONTHS = 6;
 
@@ -49,9 +49,16 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
 
   private String planExecutionId;
 
+  // Merged input set given by the customer
   private String inputSetYaml;
+
+  // Final yaml after merging input sets to given yaml, given to plan creation
   private String yaml;
+
+  // Yaml having injectedUUid which is processed by PlanCreation
   private String processedYaml;
+
+  // Expanded pipeline (after connectors, etc) in json format.
   private String expandedPipelineJson;
 
   private StagesExecutionMetadata stagesExecutionMetadata;
@@ -59,6 +66,7 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   private Boolean executionInputConfigured;
   @Wither private String triggerJsonPayload;
   @Wither private TriggerPayload triggerPayload;
+  private Boolean notifyOnlyUser;
 
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 

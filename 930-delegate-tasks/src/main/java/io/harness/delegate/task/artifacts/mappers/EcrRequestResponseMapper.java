@@ -15,17 +15,19 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
 @UtilityClass
 public class EcrRequestResponseMapper {
   public EcrArtifactDelegateResponse toEcrResponse(
-      BuildDetailsInternal buildDetailsInternal, EcrArtifactDelegateRequest request) {
+      BuildDetailsInternal buildDetailsInternal, EcrArtifactDelegateRequest request, Map<String, String> label) {
     return EcrArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())
+        .label(label)
         .sourceType(ArtifactSourceType.ECR)
         .build();
   }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
+import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -35,6 +36,7 @@ import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.yaml.YamlConstants.CONN_STRINGS_FILE;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
+import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import static java.lang.String.format;
@@ -421,6 +423,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     ensureEnvironmentSafeToDelete(environment);
     cvConfigurationService.deleteConfigurationsForEnvironment(appId, envId);
     delete(environment);
+    if (featureFlagService.isEnabled(PURGE_DANGLING_APP_ENV_REFS, environment.getAccountId())) {
+      usageRestrictionsService.purgeDanglingAppEnvReferences(environment.getAccountId(), ALL);
+    }
   }
 
   @Override
@@ -658,6 +663,25 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
     final Map<String, List<Base>> appEnvMap = list.stream().collect(Collectors.groupingBy(Base::getAppId));
     appIds.forEach(appId -> appEnvMap.putIfAbsent(appId, emptyList));
+
+    return appEnvMap;
+  }
+
+  @Override
+  public Map<String, Set<String>> getAppIdEnvIdMap(Set<String> appIds) {
+    if (isEmpty(appIds)) {
+      return new HashMap<>();
+    }
+
+    List<Environment> environments =
+        wingsPersistence.createQuery(Environment.class).field(EnvironmentKeys.appId).in(appIds).asList();
+
+    final Map<String, Set<String>> appEnvMap = environments.stream().collect(
+        Collectors.groupingBy(Environment::getAppId, Collectors.mapping(Environment::getUuid, Collectors.toSet())));
+    appIds.forEach(appId -> {
+      appEnvMap.putIfAbsent(appId, new HashSet<>());
+      log.info("No environments found for app {}", appId);
+    });
 
     return appEnvMap;
   }

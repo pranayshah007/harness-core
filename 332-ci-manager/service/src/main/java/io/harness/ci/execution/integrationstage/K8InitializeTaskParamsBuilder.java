@@ -27,15 +27,17 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.environment.K8BuildJobEnvInfo;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
@@ -44,9 +46,11 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -57,12 +61,13 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.utils.IdentifierRefHelper;
@@ -92,7 +97,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private InternalContainerParamsProvider internalContainerParamsProvider;
   @Inject private SecretUtils secretUtils;
-
+  @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
@@ -147,7 +152,7 @@ public class K8InitializeTaskParamsBuilder {
 
   private CIK8PodParams<CIK8ContainerParams> getK8HostedPodParams(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, K8sHostedInfraYaml k8sHostedInfraYaml, Ambiance ambiance, String logPrefix) {
-    String podName = k8InitializeTaskUtils.generatePodName(initializeStepInfo.getStageIdentifier());
+    String podName = getPodName(ambiance, initializeStepInfo.getStageIdentifier());
     Map<String, String> buildLabels = k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails);
     List<PodVolume> volumes = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -168,12 +173,14 @@ public class K8InitializeTaskParamsBuilder {
         .initContainerParamsList(singletonList(podContainers.getLeft()))
         .volumes(volumes)
         .runtime(RUNTIME_CLASS_NAME)
+        .activeDeadLineSeconds(
+            IntegrationStageUtils.getStageTtl(ciLicenseService, ngAccess.getAccountIdentifier(), k8sHostedInfraYaml))
         .build();
   }
 
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, K8sDirectInfraYaml k8sDirectInfraYaml, Ambiance ambiance, String logPrefix) {
-    String podName = k8InitializeTaskUtils.generatePodName(initializeStepInfo.getStageIdentifier());
+    String podName = getPodName(ambiance, initializeStepInfo.getStageIdentifier());
     Map<String, String> buildLabels = k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails);
 
     Map<String, String> annotations = resolveMapParameter(
@@ -212,6 +219,7 @@ public class K8InitializeTaskParamsBuilder {
         .containerParamsList(podContainers.getRight())
         //.pvcParamList(pvcParamsList)
         .initContainerParamsList(singletonList(podContainers.getLeft()))
+        .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();
   }
@@ -229,8 +237,9 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> logEnvVars = k8InitializeTaskUtils.getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
-    Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
+    Map<String, String> gitEnvVars =
+        codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
+    Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
 
@@ -265,7 +274,7 @@ public class K8InitializeTaskParamsBuilder {
     List<ContainerDefinitionInfo> stageCtrDefinitions =
         getStageContainerDefinitions(initializeStepInfo, infrastructure, ambiance);
     consumePortDetails(ambiance, stageCtrDefinitions);
-    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> stepConnectors =
+    Map<String, List<ConnectorConversionInfo>> stepConnectors =
         k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
@@ -288,7 +297,7 @@ public class K8InitializeTaskParamsBuilder {
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
       Map<String, String> commonEnvVars, Map<String, String> stoEnvVars,
-      Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
+      Map<String, List<ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, ContainerSecurityContext ctrSecurityContext, String logPrefix,
       List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
       OSType os) {
@@ -298,10 +307,10 @@ public class K8InitializeTaskParamsBuilder {
     }
     Map<String, ConnectorDetails> stepConnectorDetails = new HashMap<>();
     if (isNotEmpty(containerDefinitionInfo.getStepIdentifier()) && isNotEmpty(connectorRefs)) {
-      List<K8BuildJobEnvInfo.ConnectorConversionInfo> connectorConversionInfos =
+      List<ConnectorConversionInfo> connectorConversionInfos =
           connectorRefs.get(containerDefinitionInfo.getStepIdentifier());
       if (connectorConversionInfos != null && connectorConversionInfos.size() > 0) {
-        for (K8BuildJobEnvInfo.ConnectorConversionInfo connectorConversionInfo : connectorConversionInfos) {
+        for (ConnectorConversionInfo connectorConversionInfo : connectorConversionInfos) {
           ConnectorDetails connectorDetails =
               connectorUtils.getConnectorDetailsWithConversionInfo(ngAccess, connectorConversionInfo);
           IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(connectorConversionInfo.getConnectorRef(),
@@ -386,21 +395,22 @@ public class K8InitializeTaskParamsBuilder {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    StageElementConfig stageElementConfig = StageElementConfig.builder()
-                                                .type("CI")
-                                                .identifier(initializeStepInfo.getStageIdentifier())
-                                                .variables(initializeStepInfo.getVariables())
-                                                .stageType(initializeStepInfo.getStageElementConfig())
-                                                .build();
+    IntegrationStageNode stageNode =
+        IntegrationStageNode.builder()
+            .type(IntegrationStageNode.StepType.CI)
+            .identifier(initializeStepInfo.getStageIdentifier())
+            .variables(initializeStepInfo.getVariables())
+            .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
+            .build();
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
                                           .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
                                           .executionSource(initializeStepInfo.getExecutionSource())
                                           .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
-        k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
+        k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
-        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageElementConfig, ciExecutionArgs,
-            portFinder, AmbianceUtils.getAccountId(ambiance), os, 0);
+        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageNode, ciExecutionArgs, portFinder,
+            AmbianceUtils.getAccountId(ambiance), os, ambiance, 0);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);
@@ -428,5 +438,19 @@ public class K8InitializeTaskParamsBuilder {
             .containerNames(containerNames)
             .build(),
         STAGE_INFRA_DETAILS);
+  }
+
+  private String getPodName(Ambiance ambiance, String stageId) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
+    if (optionalSweepingOutput.isFound()) {
+      StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
+      StageInfraDetails.Type type = stageInfraDetails.getType();
+      if (type == StageInfraDetails.Type.K8) {
+        K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
+        return k8StageInfraDetails.getPodName();
+      }
+    }
+    return k8InitializeTaskUtils.generatePodName(stageId);
   }
 }

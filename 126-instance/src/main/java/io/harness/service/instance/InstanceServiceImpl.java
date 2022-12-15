@@ -18,6 +18,7 @@ import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -72,7 +73,7 @@ public class InstanceServiceImpl implements InstanceService {
       if (undeleteInstance(instance) != null) {
         log.info("Undeleted instance : {}", instanceDTO);
       } else {
-        log.error("Duplicate key error while inserting instance : {}", instanceDTO);
+        log.error("Duplicate key error while inserting instance : {}", instanceDTO, duplicateKeyException);
       }
       return Optional.empty();
     }
@@ -82,6 +83,14 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public void deleteById(String id) {
     instanceRepository.deleteById(id);
+  }
+
+  @Override
+  public void softDeleteById(String id) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).is(id);
+    Update update =
+        new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
+    instanceRepository.findAndModify(criteria, update);
   }
 
   @Override
@@ -134,29 +143,10 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceDTO> getActiveInstancesByAccount(String accountIdentifier, long timestamp) {
-    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccount(accountIdentifier, timestamp));
-  }
-
-  @Override
-  public List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, long startTimestamp, long endTimeStamp) {
-    return InstanceMapper.toDTO(
-        instanceRepository.getInstancesDeployedInInterval(accountIdentifier, startTimestamp, endTimeStamp));
-  }
-
-  @Override
-  public List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp) {
-    return InstanceMapper.toDTO(instanceRepository.getInstancesDeployedInInterval(
-        accountIdentifier, organizationId, projectId, startTimestamp, endTimeStamp));
-  }
-
-  @Override
-  public List<InstanceDTO> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    return InstanceMapper.toDTO(
-        instanceRepository.getInstances(accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId));
+  public List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, long timestamp) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
   }
 
   /*
@@ -217,26 +207,96 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
   }
 
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String buildIdentifier) {
+    return instanceRepository.getActiveServiceInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  }
+
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String buildIdentifier) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+  }
+
   /*
     Returns aggregated result containing total {limit} instances for given buildIds
    */
+
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit) {
-    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
+      long lastDeployedAt) {
+    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId,
+        lastDeployedAt);
+  }
+
+  @Override
+  public List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId, int limit) {
+    return instanceRepository.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId,
+        envId, infraId, clusterIdentifier, pipelineExecutionId, buildId, limit);
   }
 
   /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceIds
   */
+
   @Override
   public AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
     return instanceRepository.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+  }
+  @Override
+  public void updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
+    for (String instanceId : instanceIds) {
+      try {
+        instanceRepository.updateInfrastructureMapping(instanceId, infrastructureMappingId);
+        log.info("Updated infrastructure mapping for instance {}", instanceId);
+      } catch (DuplicateKeyException ex) {
+        log.warn("Error while update instance {}. Instance already exists with infrastructure mapping {}", instanceId,
+            infrastructureMappingId, ex);
+        softDeleteById(instanceId);
+      }
+    }
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, startTS, endTS);
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countDistinctActiveServicesDeployedInInterval(
+        accountId, orgId, projectId, startTS, endTS);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceRepository.countDistinctActiveServicesDeployedInInterval(accountId, startTS, endTS);
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

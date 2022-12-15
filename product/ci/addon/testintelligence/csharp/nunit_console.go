@@ -42,6 +42,10 @@ func (_ *nunitConsoleRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
+func (b *nunitConsoleRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	return GetCsharpTests(testGlobs)
+}
+
 func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	/*
 		i) Get the DLL list from the command (assume it runs at the root of the repository)
@@ -51,11 +55,6 @@ func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTes
 		Working command:
 			. nunit3-console.exe <path-to-dll> --where "class =~ FirstTest || class =~ SecondTest"
 	*/
-	if ignoreInstr {
-		b.log.Infow("ignoring instrumentation and not attaching agent")
-		return userArgs, nil
-	}
-
 	var cmd string
 	pathToInjector := filepath.Join(b.agentPath, "dotnet-agent", "dotnet-agent.injector.exe")
 
@@ -69,6 +68,9 @@ func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTes
 	}
 
 	if runAll {
+		if ignoreInstr {
+			return userArgs, nil
+		}
 		return fmt.Sprintf("%s %s", cmd, userArgs), nil
 	}
 
@@ -100,5 +102,8 @@ func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTes
 		testStr += fmt.Sprintf("class =~ %s", t)
 	}
 
+	if ignoreInstr {
+		return fmt.Sprintf("%s --where %q", userArgs, testStr), nil
+	}
 	return fmt.Sprintf("%s %s --where %q", cmd, userArgs, testStr), nil
 }

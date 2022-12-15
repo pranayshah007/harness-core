@@ -22,6 +22,7 @@ enum AdviseType {
   END_PLAN = 4;
   MARK_SUCCESS = 5;
   IGNORE_FAILURE = 6;
+  PROCEED_WITH_DEFAULT = 7;
 }
 
 message AdviserResponse {
@@ -32,6 +33,7 @@ message AdviserResponse {
     EndPlanAdvise endPlanAdvise = 4;
     MarkSuccessAdvise markSuccessAdvise = 6;
     IgnoreFailureAdvise ignoreFailureAdvise = 8;
+    ProceedWithDefaultAdvise proceedWithDefaultAdvise = 9;
   }
   AdviseType type = 5;
   io.harness.pms.contracts.commons.RepairActionCode repairActionCode = 7;
@@ -63,3 +65,5 @@ message MarkSuccessAdvise {
 }
 
 message IgnoreFailureAdvise {}
+
+message ProceedWithDefaultAdvise {}

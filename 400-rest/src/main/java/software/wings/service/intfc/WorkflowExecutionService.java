@@ -43,7 +43,6 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.approval.PreviousApprovalDetails;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
@@ -51,7 +50,9 @@ import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.trigger.Trigger;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
+import software.wings.service.intfc.deployment.PreDeploymentChecker;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.PhaseExecutionSummary;
@@ -87,7 +88,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
       Query<WorkflowExecution> query, FindOptions findOptions, boolean includeGraph);
 
   PageResponse<WorkflowExecution> listExecutions(PageRequest<WorkflowExecution> pageRequest, boolean includeGraph,
-      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails);
+      boolean runningOnly, boolean withBreakdownAndSummary, boolean includeStatus, boolean withFailureDetails,
+      boolean fromUi);
 
   WorkflowExecution triggerPipelineExecution(
       @NotNull String appId, @NotNull String pipelineId, ExecutionArgs executionArgs, Trigger trigger);
@@ -111,6 +113,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
 
+  WorkflowExecution getUpdatedWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
+
   String getPipelineExecutionId(@NotNull String appId, @NotNull String workflowExecutionId);
 
   WorkflowExecution getExecutionDetailsWithoutGraph(String appId, String workflowExecutionId);
@@ -126,7 +130,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> getResumeHistory(String appId, WorkflowExecution workflowExecution);
 
-  WorkflowExecution triggerRollbackExecutionWorkflow(String appId, WorkflowExecution workflowExecution);
+  WorkflowExecution triggerRollbackExecutionWorkflow(
+      String appId, WorkflowExecution workflowExecution, boolean fromPipe);
 
   RollbackConfirmation getOnDemandRollbackConfirmation(String appId, WorkflowExecution workflowExecution);
 
@@ -233,6 +238,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId);
 
+  List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId, String serviceId);
+
   List<Artifact> obtainLastGoodDeployedArtifacts(
       WorkflowExecution workflowExecution, List<String> infraMappingList, boolean useInfraMappingBasedRollbackArtifact);
 
@@ -296,7 +303,7 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> fetchWorkflowExecutionsForResourceConstraint(List<String> entityIds);
 
-  boolean getOnDemandRollbackAvailable(String appId, WorkflowExecution lastSuccessfulWE);
+  boolean getOnDemandRollbackAvailable(String appId, WorkflowExecution lastSuccessfulWE, boolean fromPipe);
 
   boolean checkIfOnDemand(String appId, String workflowExecutionId);
 
@@ -339,6 +346,9 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
   List<WorkflowExecution> getLatestSuccessWorkflowExecutions(String appId, String workflowId, List<String> serviceIds,
       int executionsToSkip, int executionsToIncludeInResponse);
 
+  WorkflowExecution getLastWorkflowExecution(
+      String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId);
+
   PreviousApprovalDetails getPreviousApprovalDetails(
       String appId, String workflowExecutionId, String pipelineId, String approvalId);
 
@@ -353,4 +363,10 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
   WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
 
   WorkflowExecution getWorkflowExecutionWithFailureDetails(@NotNull String appId, @NotNull String workflowExecutionId);
+
+  List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
+      String appId, List<WorkflowExecution> workflowExecutions);
+
+  void checkDeploymentFreezeRejectedExecution(
+      String accountId, PreDeploymentChecker deploymentFreezeChecker, WorkflowExecution workflowExecution);
 }

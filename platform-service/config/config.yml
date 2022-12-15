@@ -85,6 +85,7 @@ notificationServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -106,6 +107,8 @@ notificationServiceConfig:
     target: localhost:9880
     authority: localhost
 
+  enableOpentelemetry: false
+
 auditServiceConfig:
   mongo:
     uri: mongodb://localhost:27017/ng-audits
@@ -116,6 +119,7 @@ auditServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -125,6 +129,8 @@ auditServiceConfig:
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
+
+  enableOpentelemetry: false
 
 resourceGroupServiceConfig:
   enableResourceGroup: true
@@ -194,6 +200,7 @@ resourceGroupServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -210,6 +217,8 @@ resourceGroupServiceConfig:
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
+  enableOpentelemetry: false
+
 hostname: ${HOSTNAME:-localhost}
 
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
@@ -220,3 +229,5 @@ secretsConfiguration:
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
+
+enableOpentelemetry: false

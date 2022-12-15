@@ -25,6 +25,7 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.ApplicationManifestService;
@@ -72,6 +73,7 @@ public class ApplicationManifestResource {
   @Path("{appManifestId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<ApplicationManifest> getApplicationManifest(@QueryParam("appId") String appId,
       @QueryParam("serviceId") String serviceId, @PathParam("appManifestId") String appManifestId) {
     return new RestResponse<>(applicationManifestService.getById(appId, appManifestId));
@@ -120,6 +122,7 @@ public class ApplicationManifestResource {
   @Path("{appManifestId}/manifest-file/{manifestFileId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<ManifestFile> getManifestFile(@QueryParam("appId") String appId,
       @QueryParam("serviceId") String serviceId, @PathParam("appManifestId") String appManifestId,
       @PathParam("manifestFileId") String manifestFileId) {
@@ -157,6 +160,7 @@ public class ApplicationManifestResource {
   @Path("{appManifestId}/manifest-files-from-git/")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<DirectoryNode> getManifestFilesFromGit(@QueryParam("appId") String appId,
       @QueryParam("serviceId") String serviceId, @PathParam("appManifestId") String appManifestId) {
     return new RestResponse<>(applicationManifestService.getManifestFilesFromGit(appId, appManifestId));
@@ -166,6 +170,7 @@ public class ApplicationManifestResource {
   @Path("{appManifestId}/manifest-files")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<List<ManifestFile>> listManifestFiles(
       @PathParam("appManifestId") String appManifestId, @QueryParam("appId") String appId) {
     return new RestResponse<>(applicationManifestService.listManifestFiles(appManifestId, appId));
@@ -184,6 +189,7 @@ public class ApplicationManifestResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<PageResponse<ApplicationManifest>> list(
       @QueryParam("appId") String appId, @BeanParam PageRequest<ApplicationManifest> pageRequest) {
     if (isNotBlank(appId)) {
@@ -197,6 +203,7 @@ public class ApplicationManifestResource {
   @Path("list-with-polling-enabled")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
   public RestResponse<PageResponse<ApplicationManifest>> listPollingEnabled(
       @QueryParam("appId") String appId, @BeanParam PageRequest<ApplicationManifest> pageRequest) {
     if (isNotBlank(appId)) {

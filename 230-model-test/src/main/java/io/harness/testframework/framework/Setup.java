@@ -48,6 +48,10 @@ public class Setup {
     return given().spec(rqProvider.useCISpec());
   }
 
+  public static RequestSpecification sto() {
+    return given().spec(rqProvider.useSTOSpec());
+  }
+
   public static RequestSpecification mock() {
     return given().spec(rqProvider.useMockSpec());
   }

@@ -25,4 +25,7 @@ public class AccessControlPermissions {
   public static final String MANAGE_USER_PERMISSION = "core_user_manage";
   public static final String VIEW_SERVICEACCOUNT_PERMISSION = "core_serviceaccount_view";
   public static final String EDIT_SERVICEACCOUNT_PERMISSION = "core_serviceaccount_edit";
+  public static final String VIEW_PROJECT_PERMISSION = "core_project_view";
+  public static final String VIEW_ORGANIZATION_PERMISSION = "core_organization_view";
+  public static final String VIEW_ACCOUNT_PERMISSION = "core_account_view";
 }

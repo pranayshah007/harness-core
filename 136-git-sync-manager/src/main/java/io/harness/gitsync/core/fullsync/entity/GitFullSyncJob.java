@@ -9,13 +9,18 @@ package io.harness.gitsync.core.fullsync.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.security.dto.UserPrincipal;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -37,6 +42,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitFullSyncJob", noClassnameStored = true)
 @Document("gitFullSyncJob")
 @TypeAlias("io.harness.gitsync.core.beans.gitFullSyncJob")
@@ -80,5 +86,16 @@ public class GitFullSyncJob implements PersistentEntity, PersistentRegularIterab
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project__idx")
+                 .field(GitFullSyncJobKeys.accountIdentifier)
+                 .field(GitFullSyncJobKeys.orgIdentifier)
+                 .field(GitFullSyncJobKeys.projectIdentifier)
+                 .build())
+        .build();
   }
 }

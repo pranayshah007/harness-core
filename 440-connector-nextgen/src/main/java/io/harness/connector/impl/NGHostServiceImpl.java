@@ -105,6 +105,8 @@ public class NGHostServiceImpl implements NGHostService {
       return hosts.stream()
           .filter(host -> hostFilterFunctor.filterByHostAttributes(filter.getFilter(), host))
           .collect(toList());
+    } else if (HostFilterType.ALL.equals(filter.getType())) {
+      return hosts;
     }
 
     return hosts;

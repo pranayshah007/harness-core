@@ -35,7 +35,7 @@ public class CEReportScheduleDao {
   }
 
   public CEReportSchedule get(String uuid, String accountId) {
-    log.info("Retrieving report schedule for reportId {} and accountId {}", uuid, accountId);
+    log.debug("Retrieving report schedule for reportId {} and accountId {}", uuid, accountId);
     Query<CEReportSchedule> query = persistence.createQuery(CEReportSchedule.class)
                                         .field(CEReportScheduleKeys.accountId)
                                         .equal(accountId)
@@ -45,7 +45,7 @@ public class CEReportScheduleDao {
   }
 
   public List<CEReportSchedule> getReportSettingByView(String viewsId, String accountId) {
-    log.info("Retrieving all report schedules for viewsId {} and accountId {}", viewsId, accountId);
+    log.debug("Retrieving all report schedules for viewsId {} and accountId {}", viewsId, accountId);
     Query<CEReportSchedule> query = persistence.createQuery(CEReportSchedule.class)
                                         .field(CEReportScheduleKeys.accountId)
                                         .equal(accountId)
@@ -55,7 +55,7 @@ public class CEReportScheduleDao {
   }
 
   public List<CEReportSchedule> getReportSettingByViewIds(List<String> viewsIds, String accountId) {
-    log.info("Retrieving all report schedules for viewsIds {} and accountId {}", viewsIds.size(), accountId);
+    log.debug("Retrieving all report schedules for viewsIds {} and accountId {}", viewsIds.size(), accountId);
     Query<CEReportSchedule> query = persistence.createQuery(CEReportSchedule.class)
                                         .field(CEReportScheduleKeys.accountId)
                                         .equal(accountId)
@@ -65,7 +65,7 @@ public class CEReportScheduleDao {
   }
 
   public List<CEReportSchedule> getAllByAccount(String accountId) {
-    log.info("Retrieving all report schedules for  accountId", accountId);
+    log.debug("Retrieving all report schedules for  accountId", accountId);
     Query<CEReportSchedule> query =
         persistence.createQuery(CEReportSchedule.class).field(CEReportScheduleKeys.accountId).equal(accountId);
     return query.asList(new FindOptions());
@@ -119,8 +119,8 @@ public class CEReportScheduleDao {
                                         .equal(accountId)
                                         .field(CEReportScheduleKeys.nextExecution)
                                         .lessThanOrEq(timeUpto);
-    log.info("Retrieving all report schedules <= this time {} for account {}", timeUpto.toString(), accountId);
-    log.info(query.toString());
+    log.debug("Retrieving all report schedules <= this time {} for account {}", timeUpto.toString(), accountId);
+    log.debug(query.toString());
     return query.asList();
   }
 

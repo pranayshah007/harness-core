@@ -12,17 +12,19 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigVisitorHelper;
 import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -59,10 +61,12 @@ public class EnvironmentPlanCreatorConfig implements Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   @ApiModelProperty(required = true) EnvironmentType type;
   List<NGVariable> variables;
-  NGServiceOverrides serviceOverrides;
+  NGServiceOverrideConfig serviceOverrideConfig;
+  NGEnvironmentGlobalOverride environmentGlobalOverride;
 
   // linked Infra Info
   boolean deployToAll;
   List<InfrastructurePlanCreatorConfig> infrastructureDefinitions;
   List<String> gitOpsClusterRefs;
+  ParameterField<List<FilterYaml>> filters;
 }

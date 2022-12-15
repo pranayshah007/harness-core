@@ -13,6 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.shell.ScriptType;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(CDP)
-public class ScriptCommandUnit implements NgCommandUnit {
+public class ScriptCommandUnit implements NgCommandUnit, NestedAnnotationResolver {
   String name;
   ScriptType scriptType;
   @Expression(ALLOW_SECRETS) String script;
@@ -33,5 +34,10 @@ public class ScriptCommandUnit implements NgCommandUnit {
   @Override
   public String getCommandUnitType() {
     return NGCommandUnitType.SCRIPT;
+  }
+
+  @Override
+  public String getDestinationPath() {
+    return null;
   }
 }

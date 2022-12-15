@@ -12,12 +12,17 @@ import io.harness.pms.yaml.ParameterField;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
+import lombok.Getter;
 
 public class MergePRStepParams extends MergePRBaseStepInfo implements GitOpsSpecParameters {
+  @Getter ParameterField<Map<String, Object>> variables;
   @Builder(builderMethodName = "infoBuilder")
-  public MergePRStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public MergePRStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> deleteSourceBranch, Map<String, Object> variables) {
+    super(delegateSelectors, deleteSourceBranch);
+    this.variables = ParameterField.createValueField(variables);
   }
 
   @Override

@@ -33,6 +33,7 @@ import io.harness.logging.LogCallback;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -86,9 +87,11 @@ public class JobCliWatcher implements WorkloadWatcher {
       GetJobCommand jobStatusCommand, GetJobCommand jobCompletionTimeCommand, boolean isErrorFrameworkEnabled)
       throws Exception {
     while (true) {
-      jobStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false);
+      jobStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false,
+          Collections.emptyMap());
 
-      ProcessResult result = jobCompleteCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+      ProcessResult result = jobCompleteCommand.execute(
+          k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
 
       boolean success = 0 == result.getExitValue();
       if (!success) {
@@ -110,7 +113,8 @@ public class JobCliWatcher implements WorkloadWatcher {
       // cli command outputs with single quotes
       String jobStatus = result.outputUTF8().replace("'", "");
       if ("True".equals(jobStatus)) {
-        result = jobCompletionTimeCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+        result = jobCompletionTimeCommand.execute(
+            k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
         success = 0 == result.getExitValue();
         if (!success) {
           log.warn(result.outputUTF8());
@@ -134,7 +138,8 @@ public class JobCliWatcher implements WorkloadWatcher {
         }
       }
 
-      result = jobFailedCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+      result = jobFailedCommand.execute(
+          k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
 
       success = 0 == result.getExitValue();
       if (!success) {

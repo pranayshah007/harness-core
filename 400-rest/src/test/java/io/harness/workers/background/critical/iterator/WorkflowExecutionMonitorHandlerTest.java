@@ -10,13 +10,16 @@ package io.harness.workers.background.critical.iterator;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.EXPIRED;
 import static io.harness.beans.ExecutionStatus.PREPARING;
+import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateType.JIRA_CREATE_UPDATE;
 import static software.wings.sm.StateType.SHELL_SCRIPT;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -35,8 +38,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.RepairActionCode;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.MongoPersistenceIteratorBuilder;
@@ -76,6 +81,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private StateMachineExecutor stateMachineExecutor;
   @Mock private WorkflowExecutionZombieHandler zombieHandler;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private WorkflowExecutionMonitorHandler workflowExecutionMonitorHandler;
@@ -144,6 +150,18 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     return expiredStateExecutionInstance;
   }
 
+  private StateExecutionInstance createStartingJiraStateExecutionInstance() {
+    StateExecutionInstance startingStateExecutionInstance = aStateExecutionInstance()
+                                                                .appId(APP_ID)
+                                                                .executionUuid(WORKFLOW_EXECUTION_ID)
+                                                                .stateType(JIRA_CREATE_UPDATE.getName())
+                                                                .status(STARTING)
+                                                                .build();
+    startingStateExecutionInstance.setStartTs(System.currentTimeMillis() - EXPIRE_THRESHOLD.toMillis());
+    persistence.save(startingStateExecutionInstance);
+    return startingStateExecutionInstance;
+  }
+
   private StateExecutionInstance createSuccessStateExecutionInstance() {
     StateExecutionInstance successStateExecutionInstance = aStateExecutionInstance()
                                                                .appId(APP_ID)
@@ -159,7 +177,12 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRegisterIterators() {
-    workflowExecutionMonitorHandler.registerIterators(5);
+    workflowExecutionMonitorHandler.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                               .name("WorkflowExecutionMonitor")
+                                                               .poolSize(5)
+                                                               .interval(Duration.ofSeconds(10))
+                                                               .build(),
+        Duration.ofMinutes(1));
     Mockito.verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(WorkflowExecution.class), captor.capture());
     MongoPersistenceIterator<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>> persistenceIterator =
@@ -252,5 +275,19 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
     assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.MARK_EXPIRED);
     persistence.delete(expiredStateExecutionInstance);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldRetryStateWhenItPassesStartThreshold() {
+    StateExecutionInstance startingStateExecutionInstance = createStartingJiraStateExecutionInstance();
+    ArgumentCaptor<ExecutionInterrupt> executionInterruptArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING), any())).thenReturn(true);
+    workflowExecutionMonitorHandler.handle(workflowExecution);
+    verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
+    ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
+    assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.RETRY);
   }
 }

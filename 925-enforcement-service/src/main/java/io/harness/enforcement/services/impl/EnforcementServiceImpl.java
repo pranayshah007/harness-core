@@ -35,7 +35,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.services.LicenseService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -281,8 +281,7 @@ public class EnforcementServiceImpl implements EnforcementService {
   }
 
   private boolean isFeatureFlagEnabled(String accountId) {
-    return RestClientUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(FEATURE_ENFORCEMENT_ENABLED.name(), accountId));
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(FEATURE_ENFORCEMENT_ENABLED.name(), accountId));
   }
 
   private boolean checkFeatureAvailability(boolean featureFlagEnabled, Restriction restriction) {

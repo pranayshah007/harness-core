@@ -31,7 +31,7 @@ import io.harness.rule.Owner;
 import software.wings.beans.User;
 import software.wings.beans.infrastructure.instance.InvocationCount.InvocationCountKey;
 import software.wings.beans.infrastructure.instance.stats.ServerlessInstanceStats;
-import software.wings.dl.WingsPersistence;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.resources.stats.model.ServerlessInstanceTimeline;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRequestContext;
@@ -43,6 +43,9 @@ import software.wings.service.intfc.instance.ServerlessDashboardService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import com.mongodb.Tag;
+import com.mongodb.TagSet;
 import java.time.Instant;
 import java.util.Collections;
 import org.junit.Before;
@@ -60,7 +63,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
 
 public class ServerlessInstanceStatServiceImplTest extends CategoryTest {
-  @Mock private WingsPersistence wingsPersistence;
+  @Mock private WingsMongoPersistence wingsPersistence;
   @Mock private ServerlessDashboardService serverlessDashboardService;
   @Mock private UserService userService;
 
@@ -94,9 +97,11 @@ public class ServerlessInstanceStatServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_getLastSnapshotTime() {
     final Mocks mocks = setup_wingspersistence();
-    doReturn(Collections.singletonList(getServerlessInstanceStats()))
-        .when(mocks.getQueryMock())
-        .asList(any(FindOptions.class));
+    doReturn(new FindOptions().readPreference(
+                 ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS")))))
+        .when(wingsPersistence)
+        .analyticNodePreferenceOptions();
+    doReturn(Collections.singletonList(getServerlessInstanceStats())).when(mocks.getQueryMock()).asList(any());
     final Instant lastSnapshotTime = serverlessInstanceStatService.getLastSnapshotTime(ACCOUNTID);
     assertThat(lastSnapshotTime).isBeforeOrEqualTo(Instant.now());
   }
@@ -106,9 +111,11 @@ public class ServerlessInstanceStatServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_getFirstSnapshotTime() {
     final Mocks mocks = setup_wingspersistence();
-    doReturn(Collections.singletonList(getServerlessInstanceStats()))
-        .when(mocks.getQueryMock())
-        .asList(any(FindOptions.class));
+    doReturn(new FindOptions().readPreference(
+                 ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS")))))
+        .when(wingsPersistence)
+        .analyticNodePreferenceOptions();
+    doReturn(Collections.singletonList(getServerlessInstanceStats())).when(mocks.getQueryMock()).asList(any());
     final Instant lastSnapshotTime = serverlessInstanceStatService.getFirstSnapshotTime(ACCOUNTID);
     assertThat(lastSnapshotTime).isBeforeOrEqualTo(Instant.now());
   }
@@ -123,7 +130,7 @@ public class ServerlessInstanceStatServiceImplTest extends CategoryTest {
     doReturn(morphiaIteratorMock).when(queryMock).fetch();
     doReturn(getServerlessInstanceStats()).when(morphiaIteratorMock).next();
     doReturn(true).doReturn(false).when(morphiaIteratorMock).hasNext();
-    doReturn(morphiaIteratorMock).when(queryMock).fetch();
+    doReturn(morphiaIteratorMock).when(queryMock).fetch(any());
     doReturn(Collections.emptySet())
         .when(serverlessDashboardService)
         .getDeletedAppIds(anyString(), anyLong(), anyLong());

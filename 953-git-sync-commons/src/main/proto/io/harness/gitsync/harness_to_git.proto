@@ -20,14 +20,16 @@ service HarnessToGitPushInfoService {
   rpc pushFromHarness(PushInfo) returns (PushResponse);
   rpc pushFile(FileInfo) returns (PushFileResponse);
   rpc isGitSyncEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo) returns (IsGitSyncEnabled);
-  rpc isGitSimplificationEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo)
-      returns (IsGitSimplificationEnabled);
+  rpc isGitSimplificationEnabledForScope(IsGitSimplificationEnabledRequest) returns (IsGitSimplificationEnabled);
   rpc getDefaultBranch(RepoDetails) returns (BranchDetails);
   rpc getFile(GetFileRequest) returns (GetFileResponse);
   rpc createFile(CreateFileRequest) returns (CreateFileResponse);
   rpc updateFile(UpdateFileRequest) returns (UpdateFileResponse);
   rpc createPullRequest(CreatePRRequest) returns (CreatePRResponse);
   rpc getRepoUrl(GetRepoUrlRequest) returns (GetRepoUrlResponse);
+  rpc isOldGitSyncEnabledForModule(IsOldGitSyncEnabledForModule) returns (IsOldGitSyncEnabledResponse);
+  rpc getBranchHeadCommitDetails(GetBranchHeadCommitRequest) returns (GetBranchHeadCommitResponse);
+  rpc listFiles(ListFilesRequest) returns (ListFilesResponse);
 }
 
 message PushInfo {
@@ -85,6 +87,13 @@ message IsGitSimplificationEnabled {
   bool enabled = 1;
 }
 
+message IsGitSimplificationEnabledRequest {
+  io.harness.eventsframework.schemas.entity.EntityScopeInfo entityScopeInfo = 1;
+  bool isNotForFFModule = 2;
+  // set it to false only for feature flag module,
+  // by default, we will show old git exp for feature flag module
+}
+
 message RepoDetails {
   string yaml_git_config_id = 1;
   string account_id = 2;
@@ -106,6 +115,8 @@ message GetFileRequest {
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
   io.harness.security.Principal principal = 8;
+  CacheRequestParams cacheRequestParams = 9;
+  EntityType entityType = 10;
 }
 
 message GetFileResponse {
@@ -113,6 +124,7 @@ message GetFileResponse {
   string fileContent = 2;
   ErrorDetails error = 3;
   GitMetaData gitMetaData = 4;
+  CacheResponseParams cacheResponse = 5;
 }
 
 message CreateFileRequest {
@@ -201,4 +213,83 @@ message ErrorDetails {
   string errorMessage = 1;
   string explanationMessage = 2;
   string hintMessage = 3;
+}
+
+message IsOldGitSyncEnabledForModule {
+  io.harness.eventsframework.schemas.entity.EntityScopeInfo entityScopeInfo = 1;
+  bool isNotFFModule = 2;
+}
+
+message IsOldGitSyncEnabledResponse {
+  bool isEnabled = 1;
+}
+
+message GetBranchHeadCommitRequest {
+  string repoName = 1;
+  string branchName = 2;
+  string connectorRef = 3;
+  ScopeIdentifiers scopeIdentifiers = 4;
+  map<string, string> contextMap = 5;
+}
+
+message GetBranchHeadCommitResponse {
+  int32 statusCode = 1;
+  string sha = 2;
+  string message = 3;
+  string link = 4;
+  ErrorDetails error = 5;
+}
+
+message ListFilesRequest {
+  string repoName = 1;
+  string ref = 2;
+  string connectorRef = 3;
+  string fileDirectoryPath = 4;
+  ScopeIdentifiers scopeIdentifiers = 5;
+  map<string, string> contextMap = 6;
+}
+
+message ListFilesResponse {
+  int32 statusCode = 1;
+  repeated FileGitDetails fileGitDetails = 2;
+  ErrorDetails error = 3;
+}
+
+message FileGitDetails {
+  string path = 1;
+  string commitId = 2;
+  string blobId = 3;
+  ContentType contentType = 4;
+}
+
+message CacheRequestParams {
+  bool useCache = 1;
+}
+
+message CacheResponseParams {
+  CacheState cacheState = 1;
+  uint64 lastUpdateAt = 2;
+  uint64 ttlLeft = 3;
+}
+
+enum ContentType {
+  INVALID_CONTENT_TYPE = 0;
+  UNKNOWN_CONTENT = 1;
+  FILE = 2;
+  DIRECTORY = 3;
+  SYMLINK = 4;
+  GITLINK = 5;
+}
+
+enum EntityType {
+  UNKNOWN_ENTITY = 0;
+  PIPELINE = 1;
+  TEMPLATE = 2;
+  PIPELINE_INPUT_SETS = 3;
+}
+
+enum CacheState {
+  UNKNOWN_STATE = 0;
+  VALID_CACHE = 1;
+  STALE_CACHE = 2;
 }

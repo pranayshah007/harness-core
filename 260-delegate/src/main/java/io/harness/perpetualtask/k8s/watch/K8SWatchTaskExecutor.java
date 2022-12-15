@@ -7,7 +7,7 @@
 
 package io.harness.perpetualtask.k8s.watch;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;

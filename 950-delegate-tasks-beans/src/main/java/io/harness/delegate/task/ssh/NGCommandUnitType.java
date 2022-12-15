@@ -17,4 +17,5 @@ public interface NGCommandUnitType {
   String COPY = "Copy";
   String INIT = "Init";
   String CLEANUP = "Cleanup";
+  String DOWNLOAD_ARTIFACT = "Download Artifact";
 }

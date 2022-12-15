@@ -22,10 +22,12 @@ import io.harness.observer.Subject;
 
 import com.google.common.collect.Sets;
 import com.mongodb.DBCollection;
+import com.mongodb.MongoExecutionTimeoutException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Key;
@@ -56,6 +58,7 @@ public class HQuery<T> extends QueryImpl<T> {
   private final TraceMode traceMode;
   private final Subject<Tracer> tracerSubject;
   private Set<QueryChecks> queryChecks = allChecks;
+  private final int maxOperationTimeInMillis;
 
   private static final Set<String> requiredFilterArgs = Sets.newHashSet("accountId", "accounts", "appId", "accountIds");
 
@@ -77,10 +80,12 @@ public class HQuery<T> extends QueryImpl<T> {
    * @param traceMode     the trace mode
    * @param tracerSubject the trace subject used in case trace mode is ENABLED
    */
-  public HQuery(Class<T> clazz, DBCollection coll, Datastore ds, TraceMode traceMode, Subject<Tracer> tracerSubject) {
+  public HQuery(Class<T> clazz, DBCollection coll, Datastore ds, TraceMode traceMode, Subject<Tracer> tracerSubject,
+      int maxOperationTimeInMillis) {
     super(clazz, coll, ds);
     this.traceMode = traceMode;
     this.tracerSubject = tracerSubject;
+    this.maxOperationTimeInMillis = maxOperationTimeInMillis;
   }
 
   public MorphiaIterator<T, T> iterator() {
@@ -94,9 +99,8 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 5000) {
-      if (log.isErrorEnabled()) {
-        log.error("Key list query returns {} items.", list.size(), new Exception(""));
-      }
+      log.warn("Key list query returns {} items.  Consider using an Iterator to avoid causing OOM", list.size(),
+          new Exception());
     }
   }
 
@@ -106,79 +110,164 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (list.size() > 1000) {
-      if (log.isErrorEnabled()) {
-        log.error("List query returns {} items.", list.size(), new Exception(""));
-      }
+      log.warn(
+          "List query returns {} items. Consider using an Iterator to avoid causing OOM", list.size(), new Exception());
     }
   }
 
   @Override
   @SuppressWarnings("deprecation")
   public T get(FindOptions options) {
-    try (AutoLogContext ignore = new CollectionLogContext(super.getCollection().getName(), OVERRIDE_ERROR)) {
+    String collectionName = super.getCollection().getName();
+    try (AutoLogContext ignore = new CollectionLogContext(collectionName, OVERRIDE_ERROR)) {
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
       return HPersistence.retry(() -> super.get(options));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("Get query {} exceeded max time limit of {} ms for collection {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, collectionName, ex);
+      throw ex;
     }
   }
 
   @Override
   public Key<T> getKey(FindOptions options) {
-    return HPersistence.retry(() -> super.getKey(options));
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> super.getKey(options));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("getKey query {} exceeded max time limit of {} ms for entityClass {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
   @Override
   public List<Key<T>> asKeyList(FindOptions options) {
-    enforceHarnessRules();
-    traceQuery();
-    return HPersistence.retry(() -> {
-      final List<Key<T>> list = super.asKeyList(options);
-      checkKeyListSize(list);
-      return list;
-    });
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      enforceHarnessRules();
+      traceQuery();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> {
+        final List<Key<T>> list = super.asKeyList(options);
+        checkKeyListSize(list);
+        return list;
+      });
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("asKeyList query {} exceeded max time limit of {} ms for entityClass {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
   @Override
   @SuppressWarnings("deprecation")
   public List<T> asList(FindOptions options) {
-    try (AutoLogContext ignore = new CollectionLogContext(super.getCollection().getName(), OVERRIDE_ERROR)) {
+    String collectionName = super.getCollection().getName();
+    try (AutoLogContext ignore = new CollectionLogContext(collectionName, OVERRIDE_ERROR)) {
       enforceHarnessRules();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
       traceQuery();
       return HPersistence.retry(() -> {
         final List<T> list = super.asList(options);
         checkListSize(list);
         return list;
       });
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("asList query {} exceeded max time limit of {} ms for collection {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, collectionName, ex);
+      throw ex;
     }
   }
 
   @Override
   public long count() {
-    return HPersistence.retry(() -> super.count());
+    CountOptions countOptions = new CountOptions();
+    return count(countOptions);
   }
 
   @Override
   public long count(final CountOptions options) {
-    return HPersistence.retry(() -> super.count(options));
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> super.count(options));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("count query {} exceeded max time limit of {} ms for entityClass {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
-  @Override
   public MorphiaIterator<T, T> fetch() {
     enforceHarnessRules();
     traceQuery();
     return super.fetch();
   }
 
+  public MorphiaIterator<T, T> fetch(FindOptions options) {
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> { return super.fetch(options); });
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("fetch query {} exceeded max time limit of {} ms for entityClass {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
+  }
+
   @Override
   public MorphiaIterator<T, T> fetchEmptyEntities(FindOptions options) {
-    enforceHarnessRules();
-    traceQuery();
-    return HPersistence.retry(() -> { return super.fetchEmptyEntities(options); });
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      enforceHarnessRules();
+      traceQuery();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> { return super.fetchEmptyEntities(options); });
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("fetchEmptyEntities query {} exceeded max time limit of {} ms for entityClass {} with error {}",
+          this.getQuery(), maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
   @Override
   public MorphiaKeyIterator<T> fetchKeys(FindOptions options) {
-    enforceHarnessRules();
-    traceQuery();
-    return HPersistence.retry(() -> super.fetchKeys(options));
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      enforceHarnessRules();
+      traceQuery();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      return HPersistence.retry(() -> super.fetchKeys(options));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("fetchKeys query {} exceeded max time limit of {} ms for entityClass {} with error {}", this.getQuery(),
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
   @Override
@@ -201,7 +290,7 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (!this.getChildren().stream().map(Criteria::getFieldName).anyMatch(requiredFilterArgs::contains)) {
-      log.error("QUERY-ENFORCEMENT: appId or accountId must be present in List(Object/Key)/Get/Count/Search query",
+      log.warn("QUERY-ENFORCEMENT: appId or accountId must be present in List(Object/Key)/Get/Count/Search query",
           new Exception(""));
     }
   }

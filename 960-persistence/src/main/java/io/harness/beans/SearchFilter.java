@@ -30,7 +30,8 @@ public class SearchFilter {
     HAS_ALL,
     OR,
     AND,
-    ELEMENT_MATCH;
+    ELEMENT_MATCH,
+    TEXT_SEARCH;
   }
 
   private String fieldName;

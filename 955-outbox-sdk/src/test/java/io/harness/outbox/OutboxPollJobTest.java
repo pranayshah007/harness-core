@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
@@ -52,6 +53,7 @@ public class OutboxPollJobTest extends CategoryTest {
     persistentLocker = mock(PersistentLocker.class);
     outboxEventPollJob = new OutboxEventPollJob(outboxService, outboxEventHandler, persistentLocker,
         OutboxPollConfiguration.builder().maximumRetryAttemptsForAnEvent(2).lockId("LOCK_ID").build());
+    MaintenanceController.forceMaintenance(false);
   }
 
   @Test

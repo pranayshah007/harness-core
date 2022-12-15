@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.FunctionalTests;
 import io.harness.ff.FeatureFlagService;
@@ -109,10 +108,6 @@ public class TerraformTest extends AbstractFunctionalTest {
   private void setupStuff(Applications applicationType, Services serviceType, Environments environmentType,
       Settings settings) throws Exception {
     ensurePredefinedStuff(applicationType, serviceType, environmentType, settings);
-
-    if (!featureFlagService.isEnabled(FeatureName.GIT_ACCOUNT_SUPPORT, application.getAccountId())) {
-      featureFlagService.enableAccount(FeatureName.GIT_ACCOUNT_SUPPORT, application.getAccountId());
-    }
 
     resetCache(application.getAccountId());
     terraformInfrastructureProvisioner = buildProvisionerObject();

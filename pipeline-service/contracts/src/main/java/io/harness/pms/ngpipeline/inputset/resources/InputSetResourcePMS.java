@@ -123,7 +123,11 @@ public interface InputSetResourcePMS {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
       @Parameter(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @QueryParam("pipelineBranch") @Parameter(
+          description = "Github branch of the Pipeline for which the Input Set is to be fetched") String pipelineBranch,
+      @QueryParam("pipelineRepoID")
+      @Parameter(description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
+      String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 
   @GET
   @Path("overlay/{inputSetIdentifier}")
@@ -148,7 +152,12 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @QueryParam("pipelineBranch") @Parameter(
+          description = "Github branch of the Pipeline for which the Input Set is to be fetched") String pipelineBranch,
+      @QueryParam("pipelineRepoID")
+      @Parameter(description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
+      String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)

@@ -159,6 +159,13 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
+  public Optional<FileDTO> get(@NotNull FileDTO fileDTO) {
+    Optional<NGFile> ngFileOpt = find(fileDTO.getAccountIdentifier(), fileDTO.getOrgIdentifier(),
+        fileDTO.getProjectIdentifier(), fileDTO.getIdentifier());
+    return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
+  }
+
+  @Override
   public Optional<FileDTO> getByPath(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String path) {
     if (isEmpty(accountIdentifier)) {
@@ -346,6 +353,29 @@ public class FileStoreServiceImpl implements FileStoreService {
     return SUPPORTED_ENTITY_TYPES;
   }
 
+  @Override
+  public void deleteBatch(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> identifiers) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
+    }
+    if (isEmpty(identifiers)) {
+      return;
+    }
+
+    log.info("Start batch deleting files and folders, accountIdentifier: {}, orgIdentifier: {}, projectIdentifier: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
+    identifiers.forEach(identifier -> {
+      NGFile ngFile = findOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (ngFile.isFile()) {
+        deleteFile(ngFile);
+      } else {
+        // folder
+        fileFailsafeService.deleteAndPublish(ngFile);
+      }
+    });
+  }
+
   private boolean isFileExistsByIdentifier(FileDTO fileDto) {
     return fileStoreRepository
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
@@ -497,7 +527,12 @@ public class FileStoreServiceImpl implements FileStoreService {
     try {
       fileService.deleteFile(file.getFileUuid(), FILE_STORE);
     } catch (Exception e) {
-      log.error("Failed to delete file from file store [{}].", file.getIdentifier(), e);
+      log.error(
+          "Failed to delete file store chunks id: {}, accountIdentifier: {}, orgIdentifier: {}, projectIdentifier: {}, identifier: {}",
+          file.getFileUuid(), file.getAccountIdentifier(), file.getOrgIdentifier(), file.getProjectIdentifier(),
+          file.getIdentifier(), e);
+      throw new InvalidRequestException(format(
+          "Failed to delete file store chunks id: %s, file identifier: %s", file.getFileUuid(), file.getIdentifier()));
     }
 
     return fileFailsafeService.deleteAndPublish(file);

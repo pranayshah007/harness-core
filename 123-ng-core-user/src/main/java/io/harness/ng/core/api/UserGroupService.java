@@ -14,8 +14,10 @@ import io.harness.beans.Scope;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.dto.UserInfo;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -31,6 +33,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+/**
+ * This interface exposes methods needed for User Group operations.
+ */
 @OwnedBy(PL)
 public interface UserGroupService {
   UserGroup create(UserGroupDTO userGroup);
@@ -50,6 +55,12 @@ public interface UserGroupService {
 
   UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO);
 
+  List<UserInfo> getUserMetaData(List<String> uuids);
+
+  List<String> getUserIds(List<String> emails);
+
+  List<String> getUserEmails(List<String> uuids);
+
   Page<UserGroup> list(String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm,
       UserGroupFilterType filterType, Pageable pageable);
 
@@ -59,6 +70,8 @@ public interface UserGroupService {
   List<UserGroup> list(Criteria criteria, Integer skip, Integer limit);
 
   List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
+
+  Page<UserGroup> list(List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable);
 
   PageResponse<UserMetadataDTO> listUsersInUserGroup(
       Scope scope, String userGroupIdentifier, UserFilter userFilter, PageRequest pageRequest);
@@ -92,4 +105,30 @@ public interface UserGroupService {
       @NotBlank String userGroupId, boolean retainMembers);
 
   void sanitize(Scope scope, String identifier);
+
+  /**
+   * This method is to be used only for Default User Group creation.
+   * @param userGroupDTO UserGroup to be created
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup createDefaultUserGroup(UserGroupDTO userGroupDTO);
+
+  /**
+   * This method is to be used only for adding members to Default User Group.
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param userGroupIdentifier
+   * @param userIdentifier
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup addMemberToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier);
+
+  /**
+   * This method is to be used only to update Default User Group.
+   * @param userGroup UserGroup to be updated
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup updateDefaultUserGroup(UserGroup userGroup);
 }

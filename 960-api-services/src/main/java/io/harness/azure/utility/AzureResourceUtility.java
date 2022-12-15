@@ -34,8 +34,8 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.serializer.JsonUtils;
 
+import com.azure.core.exception.AzureException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.microsoft.azure.CloudException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -116,8 +116,8 @@ public class AzureResourceUtility {
 
   public String getAzureCloudExceptionMessage(Exception ex) {
     String message = ex.getMessage() != null ? ex.getMessage() : EMPTY;
-    if (ex.getCause() instanceof CloudException) {
-      CloudException cloudException = (CloudException) ex.getCause();
+    if (ex.getCause() instanceof AzureException) {
+      AzureException cloudException = (AzureException) ex.getCause();
       String cloudExMsg = cloudException.getMessage();
       message = format("%s, %nAzure Cloud Exception Message: %s", message, cloudExMsg);
     }
@@ -134,11 +134,11 @@ public class AzureResourceUtility {
       return deploymentSlotName;
     }
 
-    if (deploymentSlotName.equals(appName)) {
+    if (deploymentSlotName.equalsIgnoreCase(appName)) {
       return DEPLOYMENT_SLOT_PRODUCTION_NAME;
     }
 
-    return deploymentSlotName.replace(format(DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN, appName), EMPTY);
+    return deploymentSlotName.replaceFirst(format(DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN, appName), EMPTY);
   }
 
   public String generateAssignmentNameIfBlank(final String assignmentName, final String blueprintName) {

@@ -9,8 +9,10 @@ package io.harness.connector.entities.embedded.sumologic;
 
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.ng.DbAliases;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "SumoLogicConnectorKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.sumologic.SumoLogicConnector")

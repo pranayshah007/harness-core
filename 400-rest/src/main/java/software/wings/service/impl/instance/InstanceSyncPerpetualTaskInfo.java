@@ -9,8 +9,10 @@ package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -35,6 +37,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "InstanceSyncPerpetualTaskInfoKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "instanceSyncPerpetualTasksInfo", noClassnameStored = true)
 public class InstanceSyncPerpetualTaskInfo implements PersistentEntity, UuidAware, UuidAccess, AccountAccess,
                                                       CreatedAtAccess, CreatedAtAware, UpdatedAtAware, UpdatedAtAccess {

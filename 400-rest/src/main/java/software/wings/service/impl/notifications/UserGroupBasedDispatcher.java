@@ -30,6 +30,7 @@ import software.wings.service.intfc.UserService;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -98,23 +99,7 @@ public class UserGroupBasedDispatcher implements NotificationDispatcher<UserGrou
       }
     }
 
-    // recommended to *not* log Slack Webhook urls and pager duty keys.
-    // see discussion here: https://harness.slack.com/archives/C838QA2CW/p1562774945009400
-
-    if (null != userGroup.getSlackConfig()) {
-      for (Notification notification : notifications) {
-        if (notification instanceof FailureNotification) {
-          fetchErrorMessages(notification);
-        }
-      }
-
-      try {
-        log.info("Trying to send slack message. slack configuration: {}", userGroup.getSlackConfig());
-        slackMessageDispatcher.dispatch(notifications, userGroup.getSlackConfig());
-      } catch (Exception e) {
-        log.error("Error sending slack message. Slack Config: {}", userGroup.getSlackConfig(), e);
-      }
-    }
+    dispatchSlack(notifications, userGroup);
 
     if (EmptyPredicate.isNotEmpty(userGroup.getMicrosoftTeamsWebhookUrl())) {
       try {
@@ -139,6 +124,28 @@ public class UserGroupBasedDispatcher implements NotificationDispatcher<UserGrou
         pagerDutyEventDispatcher.dispatch(accountId, notifications, userGroup.getPagerDutyIntegrationKey());
       } catch (Exception e) {
         log.error("Error sending pager duty event. userGroupId={} accountId={}", userGroup.getUuid(), accountId, e);
+      }
+    }
+  }
+
+  @VisibleForTesting
+  void dispatchSlack(List<Notification> notifications, UserGroup userGroup) {
+    // recommended to *not* log Slack Webhook urls and pager duty keys.
+    // see discussion here: https://harness.slack.com/archives/C838QA2CW/p1562774945009400
+
+    if (null != userGroup.getSlackConfig()
+        && EmptyPredicate.isNotEmpty(userGroup.getSlackConfig().getOutgoingWebhookUrl())) {
+      for (Notification notification : notifications) {
+        if (notification instanceof FailureNotification) {
+          fetchErrorMessages(notification);
+        }
+      }
+
+      try {
+        log.info("Trying to send slack message. slack configuration: {}", userGroup.getSlackConfig());
+        slackMessageDispatcher.dispatch(notifications, userGroup.getSlackConfig());
+      } catch (Exception e) {
+        log.error("Error sending slack message. Slack Config: {}", userGroup.getSlackConfig(), e);
       }
     }
   }

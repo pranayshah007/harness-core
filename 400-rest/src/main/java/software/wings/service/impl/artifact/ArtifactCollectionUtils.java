@@ -18,7 +18,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamType.ACR;
 import static software.wings.beans.artifact.ArtifactStreamType.AMAZON_S3;
 import static software.wings.beans.artifact.ArtifactStreamType.AMI;
@@ -37,6 +36,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.SFTP;
 import static software.wings.beans.artifact.ArtifactStreamType.SMB;
 import static software.wings.expression.SecretFunctor.Mode.CASCADING;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
 import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 
@@ -83,8 +83,6 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.AcrArtifactStream;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Builder;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -109,6 +107,8 @@ import software.wings.expression.SecretFunctor;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.ecr.EcrClassicService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Builder;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -724,7 +724,7 @@ public class ArtifactCollectionUtils {
   }
 
   private boolean multiArtifactEnabled(String accountId) {
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   private BuildSourceRequestType getBuildSourceRequestType(

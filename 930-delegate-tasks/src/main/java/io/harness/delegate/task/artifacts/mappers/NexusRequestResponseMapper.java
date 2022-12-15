@@ -12,11 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
-import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.nexus.NexusRequest;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -58,7 +59,19 @@ public class NexusRequestResponseMapper {
         .artifactPath(request.getArtifactPath())
         .repositoryFormat(request.getRepositoryFormat())
         .tag(buildDetailsInternal.getNumber())
-        .sourceType(ArtifactSourceType.NEXUS3_REGISTRY)
+        .sourceType(request.getSourceType())
+        .build();
+  }
+
+  public NexusArtifactDelegateResponse toNexusResponse(
+      BuildDetails buildDetailsInternal, NexusArtifactDelegateRequest request) {
+    return NexusArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .repositoryName(request.getRepositoryName())
+        .artifactPath(request.getArtifactPath())
+        .repositoryFormat(request.getRepositoryFormat())
+        .tag(buildDetailsInternal.getNumber())
+        .sourceType(request.getSourceType())
         .build();
   }
 }

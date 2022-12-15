@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -40,6 +41,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
@@ -73,6 +75,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,6 +108,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private DefaultUserGroupService defaultUserGroupService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -153,6 +157,44 @@ public class NgUserServiceImplTest extends CategoryTest {
     assertEquals(3, userMembershipCriteria.getCriteriaObject().size());
 
     assertUserMetadataCriteria(userMetadataCriteriaArgumentCaptor, userId);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void listUserWithEmailFilter() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    Scope scope = Scope.builder().accountIdentifier(accountIdentifier).build();
+    List<String> userIds = Arrays.asList("ug1", "ug2", "ug3");
+    List<UserMetadata> userMetadata = List.of(UserMetadata.builder().userId("ug1").build(),
+        UserMetadata.builder().userId("ug2").build(), UserMetadata.builder().userId("ug3").build());
+
+    final ArgumentCaptor<Criteria> userMembershipCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    final ArgumentCaptor<Criteria> userMetadataCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(userMembershipRepository.findAllUserIds(any(), any())).thenReturn(PageTestUtils.getPage(userIds, 1));
+    when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(userMetadata, 1));
+
+    UserFilter userFilter = UserFilter.builder()
+                                .emails(Sets.newHashSet("ug3@harness.io"))
+                                .identifiers(Sets.newHashSet("ug1", "ug2"))
+                                .build();
+    ngUserService.listUsers(scope, pageRequest, userFilter);
+
+    verify(userMembershipRepository, times(1)).findAllUserIds(userMembershipCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(2)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+
+    Criteria userMembershipCriteria = userMembershipCriteriaArgumentCaptor.getValue();
+    assertNotNull(userMembershipCriteria);
+    String userMembershipCriteriaAccount =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY);
+    String userMembershipCriteriaOrg =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.ORG_IDENTIFIER_KEY);
+    String userMembershipCriteriaProject =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.PROJECT_IDENTIFIER_KEY);
+    assertEquals(accountIdentifier, userMembershipCriteriaAccount);
+    assertNull(userMembershipCriteriaOrg);
+    assertNull(userMembershipCriteriaProject);
+    assertEquals(4, userMembershipCriteria.getCriteriaObject().size());
   }
 
   @Test
@@ -357,13 +399,14 @@ public class NgUserServiceImplTest extends CategoryTest {
         .thenReturn(isAccountBasicRoleFeatureFlag);
     doNothing()
         .when(ngUserService)
-        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope));
+        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope),
+            isAccountBasicRoleFeatureFlag);
 
     parentScopes.forEach(parentScope
         -> doNothing()
                .when(ngUserService)
-               .addUserToScopeInternal(
-                   userId, UserMembershipUpdateSource.USER, parentScope, getDefaultRoleIdentifier(parentScope)));
+               .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, parentScope,
+                   getDefaultRoleIdentifier(parentScope), isAccountBasicRoleFeatureFlag));
     doNothing()
         .when(ngUserService)
         .createRoleAssignments(
@@ -414,8 +457,9 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void assertAddUserToScope(Scope scope, List<String> userIds, List<String> userGroups) {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
-    verify(ngUserService, times(userIds.size() * getRank(scope))).addUserToScopeInternal(any(), any(), any(), any());
-    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * getRank(scope)))
+        .addUserToScopeInternal(any(), any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }

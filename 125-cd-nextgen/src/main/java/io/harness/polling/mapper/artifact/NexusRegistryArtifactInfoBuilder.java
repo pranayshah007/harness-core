@@ -20,9 +20,17 @@ public class NexusRegistryArtifactInfoBuilder implements PollingInfoBuilder {
   public PollingInfo toPollingInfo(PollingPayloadData pollingPayloadData) {
     return NexusRegistryArtifactInfo.builder()
         .connectorRef(pollingPayloadData.getConnectorRef())
-        .repositoryName(pollingPayloadData.getNexus3RegistryPayload().getRepository())
+        .repository(pollingPayloadData.getNexus3RegistryPayload().getRepository())
         .artifactPath(pollingPayloadData.getNexus3RegistryPayload().getArtifactPath())
-        .repositoryFormat(pollingPayloadData.getNexus3RegistryPayload().getFormat())
+        .repositoryFormat(pollingPayloadData.getNexus3RegistryPayload().getRepositoryFormat())
+        .artifactId(pollingPayloadData.getNexus3RegistryPayload().getArtifactId())
+        .groupId(pollingPayloadData.getNexus3RegistryPayload().getGroupId())
+        .repositoryUrl(pollingPayloadData.getNexus3RegistryPayload().getRepositoryUrl())
+        .repositoryPort(pollingPayloadData.getNexus3RegistryPayload().getRepositoryPort())
+        .packageName(pollingPayloadData.getNexus3RegistryPayload().getPackageName())
+        .classifier(pollingPayloadData.getNexus3RegistryPayload().getClassifier())
+        .extension(pollingPayloadData.getNexus3RegistryPayload().getExtension())
+        .group(pollingPayloadData.getNexus3RegistryPayload().getGroup())
         .build();
   }
 }

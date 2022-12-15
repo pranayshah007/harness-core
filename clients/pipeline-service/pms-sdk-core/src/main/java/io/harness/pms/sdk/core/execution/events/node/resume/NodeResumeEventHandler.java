@@ -16,14 +16,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
-import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.plan.NodeExecutionEventType;
 import io.harness.pms.contracts.resume.NodeResumeEvent;
-import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.events.base.PmsBaseEventHandler;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.EngineExceptionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.ChainDetails;
 import io.harness.pms.sdk.core.execution.ChainDetails.ChainDetailsBuilder;
@@ -39,7 +35,6 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
 
 import com.google.common.base.Preconditions;
@@ -89,22 +84,6 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance());
     Preconditions.checkArgument(isNotBlank(nodeExecutionId), "nodeExecutionId is null or empty");
     try {
-      if (event.getAsyncError()) {
-        log.info("Async Error for the Event Sending Error Response");
-        ErrorResponseData errorResponseData = (ErrorResponseData) response.values().iterator().next();
-        StepResponseProto stepResponse =
-            StepResponseProto.newBuilder()
-                .setStatus(Status.ERRORED)
-                .setFailureInfo(FailureInfo.newBuilder()
-                                    .addAllFailureTypes(EngineExceptionUtils.transformToOrchestrationFailureTypes(
-                                        errorResponseData.getFailureTypes()))
-                                    .setErrorMessage(errorResponseData.getErrorMessage())
-                                    .build())
-                .build();
-        sdkNodeExecutionService.handleStepResponse(event.getAmbiance(), stepResponse);
-        return;
-      }
-
       processor.handleResume(buildResumePackage(event, response));
     } catch (Exception ex) {
       log.error("Error while resuming execution", ex);

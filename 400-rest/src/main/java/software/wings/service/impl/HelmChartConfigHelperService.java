@@ -42,7 +42,9 @@ import software.wings.sm.ExecutionContext;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 @OwnedBy(CDP)
 public class HelmChartConfigHelperService {
@@ -124,21 +126,20 @@ public class HelmChartConfigHelperService {
       helmChartConfig.setChartVersion(context.renderExpression(helmChartConfig.getChartVersion()));
     }
 
+    HelmVersion helmVersion = getHelmVersionFromService(context);
+
     HelmChartConfigParamsBuilder helmChartConfigParamsBuilder =
         HelmChartConfigParams.builder().chartVersion(helmChartConfig.getChartVersion());
+
+    if (HelmVersion.isHelmV3(helmVersion)) {
+      helmChartConfigParamsBuilder.useRepoFlags(true);
+      helmChartConfigParamsBuilder.deleteRepoCacheDir(true);
+    }
 
     helmChartConfigParamsBuilder.useLatestChartMuseumVersion(
         featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
-    if (HelmVersion.isHelmV3(getHelmVersionFromService(context))) {
-      helmChartConfigParamsBuilder.useRepoFlags(
-          featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, context.getAccountId()));
-      helmChartConfigParamsBuilder.deleteRepoCacheDir(
-          featureFlagService.isEnabled(FeatureName.DELETE_HELM_REPO_CACHE_DIR, context.getAccountId()));
-    }
-
-    helmChartConfigParamsBuilder.checkIncorrectChartVersion(
-        featureFlagService.isEnabled(FeatureName.HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
+    helmChartConfigParamsBuilder.checkIncorrectChartVersion(true);
 
     if (isNotBlank(helmChartConfig.getChartName())) {
       String chartName = helmChartConfig.getChartName();
@@ -150,6 +151,8 @@ public class HelmChartConfigHelperService {
       if (!smartChartNameSplitEnabled || chartSourceIsUnknown(helmChartConfig)) {
         int lastIndex = chartName.lastIndexOf('/');
         if (lastIndex != -1) {
+          log.info(
+              "WARNING: Your chart name has `/` which will be deprecated soon. Please rename your chart. Reach out to Customer Support for details");
           helmChartConfigParamsBuilder.chartName(chartName.substring(lastIndex + 1))
               .repoName(chartName.substring(0, lastIndex));
         } else {
@@ -165,7 +168,7 @@ public class HelmChartConfigHelperService {
           .repoName(convertBase64UuidToCanonicalForm(context.getWorkflowExecutionId()));
     }
 
-    helmChartConfigParamsBuilder.helmVersion(getHelmVersionFromService(context));
+    helmChartConfigParamsBuilder.helmVersion(helmVersion);
 
     String connectorId = helmChartConfig.getConnectorId();
     if (isBlank(connectorId)) {
@@ -179,9 +182,19 @@ public class HelmChartConfigHelperService {
     List<EncryptedDataDetail> encryptionDataDetails =
         secretManager.getEncryptionDetails(helmRepoConfig, context.getAppId(), context.getWorkflowExecutionId());
 
-    String repoName = generateRepoName(helmRepoConfig, settingAttribute.getUuid(), context.getWorkflowExecutionId());
+    /*
+      going forward, we will be creating default cache based on connectorId unless FF is enabled
+      in which case we will create based on executionId
+      details here: https://harness.atlassian.net/wiki/spaces/CDP/pages/21134344193/Helm+FFs+cleanup
+     */
+    boolean useCache = helmVersion != HelmVersion.V2
+        && !featureFlagService.isEnabled(FeatureName.DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId());
+    String repoId = useCache ? settingAttribute.getUuid() : context.getWorkflowExecutionId();
+
+    String repoName = convertBase64UuidToCanonicalForm(repoId);
 
     helmChartConfigParamsBuilder.helmRepoConfig(helmRepoConfig)
+        .useCache(useCache)
         .encryptedDataDetails(encryptionDataDetails)
         .repoDisplayName(settingAttribute.getName())
         .repoName(repoName)
@@ -213,17 +226,5 @@ public class HelmChartConfigHelperService {
         ((PhaseElement) context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
             .getServiceElement()
             .getUuid());
-  }
-
-  private String generateRepoName(
-      HelmRepoConfig helmRepoConfig, String settingAttributeId, String workflowExecutionId) {
-    switch (helmRepoConfig.getSettingType()) {
-      case HTTP_HELM_REPO:
-      case OCI_HELM_REPO:
-        return convertBase64UuidToCanonicalForm(settingAttributeId);
-
-      default:
-        return convertBase64UuidToCanonicalForm(workflowExecutionId);
-    }
   }
 }

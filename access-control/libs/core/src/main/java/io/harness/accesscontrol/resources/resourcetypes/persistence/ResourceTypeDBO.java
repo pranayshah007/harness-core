@@ -9,7 +9,7 @@ package io.harness.accesscontrol.resources.resourcetypes.persistence;
 
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -43,10 +43,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "ResourceTypeDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "resourcetypes", noClassnameStored = true)
 @Document("resourcetypes")
 @TypeAlias("resourcetypes")
-@StoreIn(ACCESS_CONTROL)
 public class ResourceTypeDBO {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex @NotEmpty final String identifier;

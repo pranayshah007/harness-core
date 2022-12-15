@@ -11,6 +11,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -88,6 +89,12 @@ public class DelegateServiceDriverRule implements MethodRule, InjectorRuleMixin,
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

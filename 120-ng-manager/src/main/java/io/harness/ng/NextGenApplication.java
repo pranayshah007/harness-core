@@ -7,15 +7,15 @@
 
 package io.harness.ng;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPublicApi;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.NextGenConfiguration.HARNESS_RESOURCE_CLASSES;
@@ -45,11 +45,13 @@ import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
+import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -68,7 +70,10 @@ import io.harness.enforcement.executions.DeploymentRestrictionUsageImpl;
 import io.harness.enforcement.executions.DeploymentsPerMonthRestrictionUsageImpl;
 import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.freeze.FreezeNotificationTemplateRegistrar;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
@@ -84,7 +89,9 @@ import io.harness.gitsync.server.GitSyncServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
+import io.harness.licensing.services.LicenseService;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -96,13 +103,17 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotSupportedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
@@ -128,9 +139,14 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
+import io.harness.pms.expressions.functors.InstanceFunctor;
+import io.harness.pms.governance.EnvironmentExpansionHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -157,7 +173,6 @@ import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
-import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
@@ -178,9 +193,11 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
 import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+import io.harness.timescale.CDRetentionHandlerNG;
 import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -208,6 +225,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -230,6 +248,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -239,6 +258,7 @@ import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -256,7 +276,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      log.info("Shutdown hook, entering maintenance...");
+      log.warn("Shutdown hook, entering maintenance...");
       MaintenanceController.forceMaintenance(true);
     }));
     new NextGenApplication().run(args);
@@ -293,14 +313,21 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   @Override
   public void run(NextGenConfiguration appConfig, Environment environment) {
+    log.info("Entering startup maintenance mode");
+    MaintenanceController.forceMaintenance(true);
+    environment.lifecycle().addServerLifecycleListener(server -> {
+      log.info("Leaving startup maintenance mode");
+      MaintenanceController.forceMaintenance(false);
+    });
+
     log.info("Starting Next Gen Application ...");
 
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
 
-    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(appConfig.getCommonPoolConfig().getCorePoolSize(),
-        appConfig.getCommonPoolConfig().getMaxPoolSize(), appConfig.getCommonPoolConfig().getIdleTime(),
-        appConfig.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    ExecutorModule.getInstance().setExecutorService(
+        ThreadPool.create(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors() * 20,
+            appConfig.getCommonPoolConfig().getIdleTime(), appConfig.getCommonPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     MaintenanceController.forceMaintenance(true);
     List<Module> modules = new ArrayList<>();
     modules.add(new NextGenModule(appConfig));
@@ -315,6 +342,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       @Singleton
       public GitSyncServiceConfiguration gitSyncServiceConfiguration() {
         return GitSyncServiceConfiguration.builder().grpcServerConfig(appConfig.getGitSyncGrpcServerConfig()).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
       }
     });
     modules.add(new MetricRegistryModule(metricRegistry));
@@ -347,8 +381,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       });
       modules.add(new AbstractGitSyncModule() {
         @Override
-        public RedisConfig getRedisConfig() {
-          return appConfig.getEventsFrameworkConfiguration().getRedisConfig();
+        public EventsFrameworkConfiguration getEventsFrameworkConfiguration() {
+          return appConfig.getEventsFrameworkConfiguration();
         }
       });
     } else {
@@ -386,6 +420,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyProviders(environment, injector);
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
+    registerApiResponseFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -400,6 +435,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
+    registerNotificationTemplates(injector);
     registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
@@ -416,6 +452,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
     }
     registerMigrations(injector);
+    injector.getInstance(CDRetentionHandlerNG.class).configureRetentionPolicy();
+
+    if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
 
     log.info("NextGenApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
@@ -423,8 +464,25 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+    if (shouldCheckForSMPLicense()) {
+      log.info("Applying smp license");
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
+      String license = System.getenv("SMP_LICENSE");
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
+    }
+  }
 
-    MaintenanceController.forceMaintenance(false);
+  // ToDo-SMP: enable for future releases only for now (add condition on release tag)
+  private boolean shouldCheckForSMPLicense() {
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))
+        && Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
+  }
+
+  private void registerNotificationTemplates(Injector injector) {
+    ExecutorService executorService =
+        injector.getInstance(Key.get(ExecutorService.class, Names.named("freezeTemplateRegistrationExecutorService")));
+    executorService.submit(injector.getInstance(FreezeNotificationTemplateRegistrar.class));
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
@@ -517,7 +575,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .deployMode(GitSyncSdkConfiguration.DeployMode.IN_PROCESS)
         .microservice(Microservice.CORE)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
+        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .serviceHeader(NG_MANAGER)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(CoreGitEntityOrderComparator.class)
@@ -635,7 +693,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     Map<String, String> aliases = new HashMap<>();
     aliases.put("serviceConfig", "stage.spec.serviceConfig");
     aliases.put("serviceDefinition", "stage.spec.serviceConfig.serviceDefinition");
-    aliases.put("artifact", "stage.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.output");
+    aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
     return aliases;
@@ -646,6 +704,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
+    sdkFunctorMap.put(
+        TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
+    sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -663,15 +724,33 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                          .jsonExpansionInfo(serviceRefInfo)
                                                          .expansionHandler(ServiceRefExpansionHandler.class)
                                                          .build();
+
     JsonExpansionInfo envRefInfo =
-        JsonExpansionInfo.newBuilder().setKey(YamlTypes.ENVIRONMENT_REF).setExpansionType(KEY).build();
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/infrastructure/environmentRef")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
     JsonExpansionHandlerInfo envRefHandlerInfo = JsonExpansionHandlerInfo.builder()
                                                      .jsonExpansionInfo(envRefInfo)
                                                      .expansionHandler(EnvironmentRefExpansionHandler.class)
                                                      .build();
+
+    JsonExpansionInfo envInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environment")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo envHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                  .jsonExpansionInfo(envInfo)
+                                                  .expansionHandler(EnvironmentExpansionHandler.class)
+                                                  .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
+    jsonExpansionHandlers.add(envHandlerInfo);
     return jsonExpansionHandlers;
   }
 
@@ -706,6 +785,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
@@ -738,6 +818,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(NotSupportedExceptionMapper.class);
+    environment.jersey().register(MongoExecutionTimeoutExceptionMapper.class);
   }
 
   private void registerJerseyFeatures(Environment environment) {
@@ -748,8 +830,16 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(injector.getInstance(CharsetResponseFilter.class));
   }
 
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerEtagFilter(Environment environment, Injector injector) {
@@ -797,6 +887,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       NextGenConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
       registerAPIErrorsTelemetrySenderFilter(environment, injector);
     }
@@ -830,6 +921,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
+  }
+
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
   }
 
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {

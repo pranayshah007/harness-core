@@ -10,8 +10,10 @@ package io.harness.utils;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ConnectException;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import net.jodah.failsafe.RetryPolicy;
@@ -24,11 +26,20 @@ public class RetryUtils {
       List<Class> exceptionClasses, Duration retrySleepDuration, int maxAttempts, Logger log) {
     RetryPolicy<Object> retryPolicy =
         new RetryPolicy<>()
-            .withDelay(retrySleepDuration)
+            .withBackoff(retrySleepDuration.toMillis(), 10000, ChronoUnit.MILLIS)
             .withMaxAttempts(maxAttempts)
-            .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+            .onFailedAttempt(event -> log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
             .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
     exceptionClasses.forEach(retryPolicy::handle);
     return retryPolicy;
+  }
+
+  public RetryPolicy<Object> createRetryPolicy(
+      String failedAttemptMessage, Duration retryDelay, int maxRetries, Logger log) {
+    return new RetryPolicy<>()
+        .withDelay(retryDelay)
+        .withMaxAttempts(maxRetries)
+        .onFailedAttempt(event -> log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .handleIf(throwable -> throwable instanceof ConnectException);
   }
 }

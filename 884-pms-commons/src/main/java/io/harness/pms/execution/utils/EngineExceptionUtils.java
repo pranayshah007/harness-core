@@ -91,6 +91,7 @@ public class EngineExceptionUtils {
       case UNKNOWN_FAILURE:
       case SKIPPING_FAILURE:
       case APPLICATION_FAILURE:
+      case FREEZE_ACTIVE_FAILURE:
         return io.harness.exception.FailureType.APPLICATION_ERROR;
       case CONNECTIVITY_FAILURE:
         return io.harness.exception.FailureType.CONNECTIVITY;
@@ -104,6 +105,10 @@ public class EngineExceptionUtils {
         return io.harness.exception.FailureType.DELEGATE_PROVISIONING;
       case POLICY_EVALUATION_FAILURE:
         return io.harness.exception.FailureType.POLICY_EVALUATION_FAILURE;
+      case INPUT_TIMEOUT_FAILURE:
+        return io.harness.exception.FailureType.INPUT_TIMEOUT_FAILURE;
+      case APPROVAL_REJECTION:
+        return io.harness.exception.FailureType.APPROVAL_REJECTION;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }

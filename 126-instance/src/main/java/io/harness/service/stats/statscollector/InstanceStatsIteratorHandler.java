@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class InstanceStatsIteratorHandler implements Handler<DeploymentAccounts> {
-  public static final long TWO_MONTH_IN_MILLIS = 5184000000L;
   public static final String LOCK_KEY = "INSTANCE_STATS_ITERATOR:";
 
   private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -72,7 +71,7 @@ public class InstanceStatsIteratorHandler implements Handler<DeploymentAccounts>
       log.info("Running instance stats metrics iterator");
       createStats(accountId);
     } catch (Exception exception) {
-      log.error("Failed to publish instance stats metrics {}", exception);
+      log.error("Failed to publish instance stats metrics", exception);
     }
   }
 

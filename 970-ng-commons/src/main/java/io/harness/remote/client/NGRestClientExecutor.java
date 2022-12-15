@@ -8,8 +8,6 @@
 package io.harness.remote.client;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.remote.client.RestClientUtils.DEFAULT_CONNECTION_ERROR_MESSAGE;
-import static io.harness.remote.client.RestClientUtils.DEFAULT_ERROR_MESSAGE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -34,18 +32,12 @@ import retrofit2.Response;
 @Singleton
 @Slf4j
 public class NGRestClientExecutor {
+  public static final String DEFAULT_CONNECTION_ERROR_MESSAGE =
+      "Unable to connect to upstream systems, please try again.";
   private static final MediaType APPLICATION_KRYO_MEDIA_TYPE = MediaType.parse("application/x-kryo");
   @Inject private KryoSerializer kryoSerializer;
 
   public <T> T getResponse(Call<ResponseDTO<T>> request) {
-    return getResponse(request, DEFAULT_ERROR_MESSAGE, DEFAULT_CONNECTION_ERROR_MESSAGE);
-  }
-
-  public <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage) {
-    return getResponse(request, defaultErrorMessage, DEFAULT_CONNECTION_ERROR_MESSAGE);
-  }
-
-  public <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage, String connectionErrorMessage) {
     try {
       Response<ResponseDTO<T>> response = request.execute();
       if (response.isSuccessful()) {
@@ -66,12 +58,13 @@ public class NGRestClientExecutor {
         } catch (Exception e) {
           log.debug("Error while converting error received from upstream systems", e);
         }
-        throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
+        throw new InvalidRequestException(
+            StringUtils.isEmpty(errorMessage) ? CGRestUtils.DEFAULT_ERROR_MESSAGE : errorMessage);
       }
     } catch (IOException ex) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
       log.error("IO error while connecting to the service: {}", url, ex);
-      throw new UnexpectedException(connectionErrorMessage);
+      throw new UnexpectedException(DEFAULT_CONNECTION_ERROR_MESSAGE);
     }
   }
 }

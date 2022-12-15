@@ -14,4 +14,5 @@ import io.harness.annotations.dev.OwnedBy;
 public interface SshWinRmArtifactDelegateConfig {
   String getIdentifier();
   SshWinRmArtifactType getArtifactType();
+  String getArtifactPath();
 }

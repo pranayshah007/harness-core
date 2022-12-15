@@ -28,6 +28,7 @@ import lombok.Getter;
 
 @OwnedBy(PIPELINE)
 public class TestAsyncStep implements AsyncExecutable<TestStepParameters> {
+  public static int timeout = 100;
   public static final StepType ASYNC_STEP_TYPE =
       StepType.newBuilder().setType("TEST_STATE_PLAN_ASYNC").setStepCategory(StepCategory.STEP).build();
 
@@ -46,7 +47,7 @@ public class TestAsyncStep implements AsyncExecutable<TestStepParameters> {
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, TestStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     String resumeId = generateUuid();
-    return AsyncExecutableResponse.newBuilder().addCallbackIds(resumeId).build();
+    return AsyncExecutableResponse.newBuilder().setTimeout(timeout).addCallbackIds(resumeId).build();
   }
 
   @Override

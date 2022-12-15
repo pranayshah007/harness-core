@@ -22,7 +22,9 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -46,8 +48,10 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -96,7 +100,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
   @JsonProperty("asyncDelegateResponseConsumption") private ThreadPoolConfig asyncDelegateResponseConsumption;
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
-
+  @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;
@@ -118,6 +123,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("apiUrl") private String apiUrl;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
   public static Collection<Class<?>> getResourceClasses() {
     return HarnessReflections.get()
@@ -180,5 +186,19 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (harnessCIMongo != null) {
+      dbAliases.add(harnessCIMongo.getAliasDBName());
+    }
+    if (harnessMongo != null) {
+      dbAliases.add(harnessMongo.getAliasDBName());
+    }
+    if (pmsMongoConfig != null) {
+      dbAliases.add(pmsMongoConfig.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

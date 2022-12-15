@@ -25,11 +25,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDC)
 public class PollResourceHttpClientFactory
     extends AbstractHttpClientFactory implements Provider<PollingResourceClient> {
-  public PollResourceHttpClientFactory(ServiceHttpClientConfig secretManagerConfig, String serviceSecret,
-      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-    super(secretManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId);
-  }
-
   public PollResourceHttpClientFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
       ClientMode clientMode) {

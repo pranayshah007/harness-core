@@ -68,6 +68,7 @@ import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.impl.workflow.WorkflowNotificationHelper;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
@@ -111,6 +112,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
   public static final ExecutionInterruptType DEFAULT_ACTION_AFTER_TIMEOUT = ExecutionInterruptType.END_EXECUTION;
   public static final long DEFAULT_TIMEOUT = 1209600000L; // 14days
   private static final String DEBUG_APP_DEFAULTS = "DEBUG_APP_DEFAULTS";
+  @Inject @Transient private transient PipelineService pipelineService;
 
   @Inject @Transient private transient WorkflowExecutionService workflowExecutionService;
 
@@ -411,15 +413,20 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
                 state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW);
           }
           return computeExecutionEventAdvice(
-              orchestrationWorkflow, failureStrategy, executionEvent, null, stateExecutionInstance);
+              orchestrationWorkflow, failureStrategy, executionEvent, null, stateExecutionInstance, null);
         }
       }
 
       FailureStrategy failureStrategy = selectTopMatchingStrategy(workflowFailureStrategies,
           executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW);
 
+      String pipelineId = null;
+      if (workflowExecution.getPipelineSummary() != null) {
+        pipelineId = workflowExecution.getPipelineSummary().getPipelineId();
+      }
+
       return computeExecutionEventAdvice(
-          orchestrationWorkflow, failureStrategy, executionEvent, phaseSubWorkflow, stateExecutionInstance);
+          orchestrationWorkflow, failureStrategy, executionEvent, phaseSubWorkflow, stateExecutionInstance, pipelineId);
 
     } catch (Exception ex) {
       log.error("Error Occurred while calculating advise. This is really bad", ex);
@@ -576,7 +583,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
 
   ExecutionEventAdvice computeExecutionEventAdvice(CanaryOrchestrationWorkflow orchestrationWorkflow,
       FailureStrategy failureStrategy, ExecutionEvent executionEvent, PhaseSubWorkflow phaseSubWorkflow,
-      StateExecutionInstance stateExecutionInstance) {
+      StateExecutionInstance stateExecutionInstance, String pipelineId) {
     if (failureStrategy == null
         && workflowExecutionService.checkIfOnDemand(
             stateExecutionInstance.getAppId(), stateExecutionInstance.getExecutionUuid())) {
@@ -688,6 +695,13 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
           return null;
         }
 
+        if (featureFlagService.isEnabled(FeatureName.SPG_PIPELINE_ROLLBACK, stateExecutionInstance.getAccountId())) {
+          Pipeline pipeline = pipelineService.getPipeline(stateExecutionInstance.getAppId(), pipelineId);
+          if (pipeline != null && pipeline.isRollbackPreviousStages()) {
+            return null;
+          }
+        }
+
         return phaseSubWorkflowAdvice(orchestrationWorkflow, phaseSubWorkflow, stateExecutionInstance);
       }
 
@@ -699,7 +713,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
           // Retry is only at the leaf node
           FailureStrategy failureStrategyAfterRetry = getFailureStrategyAfterRetry(failureStrategy);
           return computeExecutionEventAdvice(orchestrationWorkflow, failureStrategyAfterRetry, executionEvent,
-              phaseSubWorkflow, stateExecutionInstance);
+              phaseSubWorkflow, stateExecutionInstance, null);
         }
 
         List<StateExecutionData> stateExecutionDataHistory = ((ExecutionContextImpl) executionEvent.getContext())
@@ -727,7 +741,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         } else {
           FailureStrategy failureStrategyAfterRetry = getFailureStrategyAfterRetry(failureStrategy);
           return computeExecutionEventAdvice(orchestrationWorkflow, failureStrategyAfterRetry, executionEvent,
-              phaseSubWorkflow, stateExecutionInstance);
+              phaseSubWorkflow, stateExecutionInstance, null);
         }
       }
       default:
@@ -944,6 +958,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     String phaseId = orchestrationWorkflow.getWorkflowPhases().get(index - 1).getUuid();
     WorkflowPhase rollbackPhase = orchestrationWorkflow.getRollbackWorkflowPhaseIdMap().get(phaseId);
     if (rollbackPhase == null) {
+      log.warn("Missing rollback phase to phase {}", phaseId);
       return null;
     }
     return anExecutionEventAdvice()
@@ -1003,7 +1018,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         selectTopMatchingStrategyInternal(failureStrategies, failureTypes, stateName, phaseElement, level);
 
     if (failureStrategy != null && isNotEmpty(failureStrategy.getFailureTypes()) && isEmpty(failureTypes)) {
-      log.error("Defaulting to accepting the action. "
+      log.warn("Defaulting to accepting the action. "
               + "the propagated failure types for state {} are unknown. ",
           stateName);
     }

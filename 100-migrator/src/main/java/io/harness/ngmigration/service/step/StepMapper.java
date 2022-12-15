@@ -7,24 +7,80 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.yaml.core.StepSpecType;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.ngmigration.CgEntityId;
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public interface StepMapper {
-  String getStepType();
+  int DEFAULT_TIMEOUT_MILLI = 600000;
 
-  StepSpecType getSpec(StepYaml stepYaml);
+  String getStepType(StepYaml stepYaml);
 
-  default String getTimeout(StepYaml stepYaml) {
+  State getState(StepYaml stepYaml);
+
+  AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml);
+
+  boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2);
+
+  default ParameterField<Timeout> getTimeout(StepYaml stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
-    return properties.getOrDefault("stateTimeoutInMinutes", "10") + "m";
+
+    String timeoutString = "10m";
+    if (properties.containsKey("timeoutMillis")) {
+      long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
+      timeoutString = t + "s";
+    }
+    return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
+  }
+
+  default ParameterField<Timeout> getTimeout(State state) {
+    return MigratorUtility.getTimeout(state.getTimeoutMillis());
+  }
+
+  default String getDescription(StepYaml stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
+    return properties.getOrDefault("description", "").toString();
   }
 
   default Map<String, Object> getProperties(StepYaml stepYaml) {
     return CollectionUtils.emptyIfNull(stepYaml.getProperties());
+  }
+
+  default void baseSetup(StepYaml stepYaml, AbstractStepNode stepNode) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(stepYaml.getName()));
+    stepNode.setName(stepYaml.getName());
+    stepNode.setDescription(getDescription(stepYaml));
+    if (stepNode instanceof PmsAbstractStepNode) {
+      PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
+      pmsAbstractStepNode.setTimeout(getTimeout(stepYaml));
+    }
+    if (stepNode instanceof CdAbstractStepNode) {
+      CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
+      cdAbstractStepNode.setTimeout(getTimeout(stepYaml));
+    }
+  }
+
+  default void baseSetup(State state, AbstractStepNode stepNode) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
+    stepNode.setName(state.getName());
+    if (stepNode instanceof PmsAbstractStepNode) {
+      PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
+      pmsAbstractStepNode.setTimeout(getTimeout(state));
+    }
+    if (stepNode instanceof CdAbstractStepNode) {
+      CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
+      cdAbstractStepNode.setTimeout(getTimeout(state));
+    }
   }
 }

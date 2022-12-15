@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.entities.NGEncryptedData;
@@ -29,9 +30,19 @@ public interface NGEncryptedDataService {
 
   NGEncryptedData get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
-  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  NGEncryptedData getFromReferenceExpression(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretIdentifier);
+
+  boolean delete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean forceDelete);
+
+  NGEncryptedData hardDelete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
   NGEncryptedData updateSecretText(String accountIdentifier, SecretDTOV2 dto);
 
   NGEncryptedData updateSecretFile(String accountIdentifier, SecretDTOV2 dto, InputStream inputStream);
+
+  DecryptedSecretValue decryptSecret(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 }

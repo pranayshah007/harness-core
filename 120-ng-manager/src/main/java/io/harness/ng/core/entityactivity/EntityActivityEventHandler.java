@@ -13,7 +13,9 @@ import io.harness.ng.core.entityactivity.connector.ConnectorEntityActivityEventH
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class EntityActivityEventHandler {
   @Inject ConnectorEntityActivityEventHandler connectorEntityActivityEventHandler;
@@ -22,7 +24,11 @@ public class EntityActivityEventHandler {
     // If in future, we need to update the activity for other entities like
     // secret, services, then we can change this if else to factory
     if (ngActivityDTO.getReferredEntity().getType() == EntityType.CONNECTORS) {
-      connectorEntityActivityEventHandler.updateActivityResultInConnectors(ngActivityDTO);
+      try {
+        connectorEntityActivityEventHandler.updateActivityResultInConnectors(ngActivityDTO);
+      } catch (Exception ex) {
+        log.error("Exception occurred while updating the activity result : ", ex);
+      }
     }
   }
 }

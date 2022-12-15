@@ -69,9 +69,10 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
+import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.WorkflowExecution;
@@ -97,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 /**
@@ -116,12 +118,13 @@ public class ExecutionInterruptManager {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowNotificationHelper workflowNotificationHelper;
   @Inject private AppService appService;
+  @Inject private UsageMetricsEventPublisher usageMetricsEventPublisher;
 
   Map<ExecutionInterruptType, List<ExecutionStatus>> acceptableIndividualStatusList =
       ImmutableMap.<ExecutionInterruptType, List<ExecutionStatus>>builder()
           .put(RESUME, asList(PAUSED))
           .put(IGNORE, asList(PAUSED, WAITING))
-          .put(RETRY, asList(WAITING, FAILED, ERROR, EXPIRED))
+          .put(RETRY, asList(WAITING, FAILED, ERROR, EXPIRED, STARTING))
           .put(ABORT, asList(NEW, STARTING, RUNNING, PAUSED, WAITING))
           .put(MARK_EXPIRED, asList(NEW, STARTING, RUNNING, PAUSED, WAITING, DISCONTINUING))
           .put(PAUSE, asList(NEW, STARTING, RUNNING))
@@ -158,7 +161,7 @@ public class ExecutionInterruptManager {
       }
     }
 
-    PageResponse<ExecutionInterrupt> res = listActiveExecutionInterrupts(executionInterrupt);
+    List<ExecutionInterrupt> res = listActiveExecutionInterrupts(executionInterrupt);
 
     if (executionInterruptType == ROLLBACK) {
       if (isPresent(res, ROLLBACK)) {
@@ -196,6 +199,14 @@ public class ExecutionInterruptManager {
       executionInterrupt.setAccountId(appService.getAccountIdByAppId(executionInterrupt.getAppId()));
     }
     wingsPersistence.save(executionInterrupt);
+
+    try {
+      usageMetricsEventPublisher.publishExecutionInterruptTimeSeriesEvent(
+          executionInterrupt.getAccountId(), executionInterrupt);
+    } catch (Exception e) {
+      log.error("Failed to publish execution interrupt [{}] , [{}]", executionInterrupt, e);
+    }
+
     stateMachineExecutor.handleInterrupt(executionInterrupt);
 
     sendNotificationIfRequired(executionInterrupt);
@@ -395,12 +406,11 @@ public class ExecutionInterruptManager {
     wingsPersistence.update(executionInterrupt, updateOps);
   }
 
-  private boolean isPresent(PageResponse<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
+  private boolean isPresent(List<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
     return getExecutionInterrupt(res, eventType) != null;
   }
 
-  private ExecutionInterrupt getExecutionInterrupt(
-      PageResponse<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
+  private ExecutionInterrupt getExecutionInterrupt(List<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
     if (isEmpty(res)) {
       return null;
     }
@@ -412,14 +422,15 @@ public class ExecutionInterruptManager {
     return null;
   }
 
-  private PageResponse<ExecutionInterrupt> listActiveExecutionInterrupts(ExecutionInterrupt executionInterrupt) {
-    PageRequest<ExecutionInterrupt> req = aPageRequest()
-                                              .addFilter("appId", EQ, executionInterrupt.getAppId())
-                                              .addFilter("executionUuid", EQ, executionInterrupt.getExecutionUuid())
-                                              .addFilter("seized", EQ, false)
-                                              .addOrder(ExecutionInterrupt.CREATED_AT_KEY, OrderType.DESC)
-                                              .build();
-    return wingsPersistence.query(ExecutionInterrupt.class, req);
+  private List<ExecutionInterrupt> listActiveExecutionInterrupts(ExecutionInterrupt executionInterrupt) {
+    return wingsPersistence.createQuery(ExecutionInterrupt.class)
+        .filter(ExecutionInterruptKeys.appId, executionInterrupt.getAppId())
+        .filter(ExecutionInterruptKeys.executionUuid, executionInterrupt.getExecutionUuid())
+        .filter(ExecutionInterruptKeys.seized, false)
+        .order(Sort.descending(ExecutionInterruptKeys.createdAt))
+        .project(ExecutionInterruptKeys.uuid, true)
+        .project(ExecutionInterruptKeys.executionInterruptType, true)
+        .asList();
   }
 
   public List<ExecutionInterrupt> listByIdsUsingSecondary(Collection<String> ids) {
@@ -427,7 +438,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.uuid)
         .in(ids)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
@@ -438,7 +449,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.stateExecutionInstanceId)
         .in(stateExecutionIds)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));

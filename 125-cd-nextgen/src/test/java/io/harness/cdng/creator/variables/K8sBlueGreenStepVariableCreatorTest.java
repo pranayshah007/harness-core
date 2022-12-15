@@ -56,6 +56,7 @@ public class K8sBlueGreenStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.Stage_Deployment.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.Stage_Deployment.description",
             "pipeline.stages.K8s.spec.execution.steps.Stage_Deployment.spec.skipDryRun",
+            "pipeline.stages.K8s.spec.execution.steps.Stage_Deployment.spec.pruningEnabled",
             "pipeline.stages.K8s.spec.execution.steps.Stage_Deployment.name");
   }
 }

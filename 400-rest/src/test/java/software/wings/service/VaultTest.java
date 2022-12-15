@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
@@ -35,6 +36,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -52,6 +54,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
 import io.harness.beans.SecretUsageLog;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
@@ -75,6 +78,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 import io.harness.threading.Morpheus;
 
 import software.wings.EncryptTestUtils;
@@ -107,6 +111,7 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.api.PremiumFeature;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.resources.secretsmanagement.SecretManagementResource;
 import software.wings.security.UsageRestrictions;
 import software.wings.security.UserThreadLocal;
@@ -148,12 +153,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mongodb.morphia.query.Query;
@@ -187,6 +195,7 @@ public class VaultTest extends WingsBaseTest {
   @Inject private SecretManagementTestHelper secretManagementTestHelper;
   @Mock private DelegateProxyFactory delegateProxyFactory;
   @Mock private SecretManagementDelegateService secretManagementDelegateService;
+  @Mock private DelegateTaskService delegateTaskService;
   @Mock private PremiumFeature secretsManagementFeature;
   @Mock protected AuditServiceHelper auditServiceHelper;
   @Mock private GlobalEncryptDecryptClient globalEncryptDecryptClient;
@@ -209,6 +218,7 @@ public class VaultTest extends WingsBaseTest {
   private String envId;
 
   @Inject KryoSerializer kryoSerializer;
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -324,22 +334,6 @@ public class VaultTest extends WingsBaseTest {
       fail("Saved invalid vault config");
     } catch (WingsException e) {
       assertThat(e.getCode()).isEqualTo(ErrorCode.UNKNOWN_ERROR);
-    }
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
-  public void saveConfigShouldFail_DefaultTrue_ReadOnlyTrue() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
-    vaultConfig.setReadOnly(true);
-    vaultConfig.setDefault(true);
-    try {
-      vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
-      fail("Saved invalid vault config with both default and read only true");
-    } catch (SecretManagementException e) {
-      log.info("Error", e);
-      assertThat(e.getCode()).isEqualTo(ErrorCode.SECRET_MANAGEMENT_ERROR);
     }
   }
 
@@ -578,6 +572,116 @@ public class VaultTest extends WingsBaseTest {
     assertThat(modifiedSavedConfig.getSecretId()).isEqualTo(savedConfig.getSecretId());
     assertThat(modifiedSavedConfig.getName()).isEqualTo(vaultConfig.getName());
     assertThat(modifiedSavedConfig.isDefault()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromTokenBased_ToK8sAuth_withoutAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
+    vaultConfig.setAuthToken(VAULT_TOKEN);
+
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromAppRole_ToK8sAuth_withoutAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    String approleId = UUID.randomUUID().toString();
+    String secretId = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole(approleId, secretId);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+    VaultAppRoleLoginResult vaultAppRoleLoginResult = mock(VaultAppRoleLoginResult.class);
+    when(secretManagementDelegateService.appRoleLogin(any())).thenReturn(vaultAppRoleLoginResult);
+    when(vaultAppRoleLoginResult.getClientToken()).thenReturn(VAULT_TOKEN);
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void updateVaultConfig_fromK8sWithoutAuthEndpoint_ToK8sAuthWithAuthEndpoint() {
+    Account account = getAccount(AccountType.PAID);
+    String accountId = account.getUuid();
+
+    when(accountService.get(accountId)).thenReturn(account);
+    when(secretsManagementFeature.isAvailableForAccount(accountId)).thenReturn(true);
+
+    String name = UUID.randomUUID().toString();
+    String k8sRole = UUID.randomUUID().toString();
+    String k8sSAPath = UUID.randomUUID().toString();
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithK8sAuth(null, k8sRole, k8sSAPath);
+    vaultConfig.setName(name);
+    vaultConfig.setAccountId(accountId);
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+
+    String k8sAuthEndpoint = "k8sAuthEndpoint";
+    String k8sAuthRole = "k8sRole";
+    String k8sServiceAccountTokenPath = "k8sServiceAccountTokenPath";
+
+    VaultConfig vaultConfigNew =
+        secretManagementTestHelper.getVaultConfigWithK8sAuth(k8sAuthEndpoint, k8sAuthRole, k8sServiceAccountTokenPath);
+    vaultConfigNew.setUuid(vaultConfig.getUuid());
+    ArgumentCaptor<VaultConfig> argumentCaptor = ArgumentCaptor.forClass(VaultConfig.class);
+    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfigNew, false);
+    verify(auditServiceHelper, times(2))
+        .reportForAuditingUsingAccountId(eq(accountId), any(), argumentCaptor.capture(), any());
+    assertThat(vaultConfigId).isEqualTo(vaultConfig.getUuid());
+    VaultConfig updatedConfig = argumentCaptor.getValue();
+    assertThat(updatedConfig.isUseK8sAuth()).isEqualTo(true);
+    assertThat(updatedConfig.getK8sAuthEndpoint()).isEqualTo(k8sAuthEndpoint);
+    assertThat(updatedConfig.getVaultK8sAuthRole()).isEqualTo(k8sAuthRole);
+    assertThat(updatedConfig.getServiceAccountTokenPath()).isEqualTo(k8sServiceAccountTokenPath);
   }
 
   @Test
@@ -2111,6 +2215,43 @@ public class VaultTest extends WingsBaseTest {
     } catch (InvalidRequestException ire) {
       assertThat(ire.getCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
     }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void save_tokenBasedAuth_withRootToken_withNonZeroRenewInterval_shouldFail() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setAccountId(accountId);
+    vaultConfig.setRenewalInterval(10L);
+    when(secretManagementDelegateService.tokenLookup(any()))
+        .thenReturn(VaultTokenLookupResult.builder().expiryTime(null).renewable(false).name("name").build());
+    when(delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, "VAULT_TOKEN_LOOKUP")).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a root token. Please set renewal interval as zero if you are using root token.");
+
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void save_tokenBasedAuth_withNonRootToken_withNonRenewableToken_shouldFail() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setAccountId(accountId);
+    vaultConfig.setRenewalInterval(10L);
+    when(secretManagementDelegateService.tokenLookup(any()))
+        .thenReturn(VaultTokenLookupResult.builder()
+                        .expiryTime(UUIDGenerator.generateUuid())
+                        .renewable(false)
+                        .name("name")
+                        .build());
+    when(delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, "VAULT_TOKEN_LOOKUP")).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a non-renewable token. Please set renewal interval as zero or use a renewable token.");
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
   }
 
   private Thread startTransitionListener() throws IllegalAccessException {

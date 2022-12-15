@@ -8,6 +8,8 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Reference;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "notificationBatch", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class NotificationBatch extends Base {

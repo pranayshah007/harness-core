@@ -7,6 +7,7 @@
 
 package io.harness.ci.connector;
 
+import static io.harness.connector.SecretSpecBuilder.RANDOM_LENGTH;
 import static io.harness.connector.SecretSpecBuilder.SECRET_KEY;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
@@ -65,6 +66,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class SecretSpecBuilderTest extends CategoryTest {
@@ -114,10 +116,48 @@ public class SecretSpecBuilderTest extends CategoryTest {
              secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
         .thenReturn(secretVariableDetails.getSecretVariableDTO());
     Map<String, SecretParams> decryptedSecrets =
-        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails));
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), new HashMap<>());
     assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
     assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
     assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldConvertCustomSecretVariablesOnlyOnce() {
+    SecretVariableDetails secretVariableDetails =
+        SecretVariableDetails.builder()
+            .secretVariableDTO(SecretVariableDTO.builder()
+                                   .name("abc")
+                                   .type(SecretVariableDTO.Type.TEXT)
+                                   .secret(SecretRefData.builder()
+                                               .decryptedValue("pass".toCharArray())
+                                               .identifier("secret_id")
+                                               .scope(Scope.ACCOUNT)
+                                               .build())
+                                   .build())
+            .encryptedDataDetailList(singletonList(
+                EncryptedDataDetail.builder()
+                    .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.KMS).build())
+                    .build()))
+            .build();
+    when(secretDecryptor.decrypt(
+             secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
+        .thenReturn(secretVariableDetails.getSecretVariableDTO());
+    Map<String, SecretVariableDTO> cache = new HashMap<>();
+    Map<String, SecretParams> decryptedSecrets =
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
+    assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+
+    decryptedSecrets = secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
+    assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+    Mockito.verify(secretDecryptor, Mockito.times(1))
+        .decrypt(secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList());
   }
 
   @Test
@@ -144,7 +184,7 @@ public class SecretSpecBuilderTest extends CategoryTest {
              secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
         .thenReturn(secretVariableDetails.getSecretVariableDTO());
     Map<String, SecretParams> decryptedSecrets =
-        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails));
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), new HashMap<>());
     assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
     assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
     assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(SecretParams.Type.FILE);
@@ -274,15 +314,25 @@ public class SecretSpecBuilderTest extends CategoryTest {
     when(secretDecryptor.decrypt(any(), any())).thenReturn(azureRepoUsernameTokenDTO);
     Map<String, SecretParams> gitSecretVariables = secretSpecBuilder.decryptGitSecretVariables(connectorDetails);
     assertThat(gitSecretVariables).containsOnlyKeys("DRONE_NETRC_USERNAME", "DRONE_NETRC_PASSWORD");
-    assertThat(gitSecretVariables.get("DRONE_NETRC_USERNAME"))
+
+    final SecretParams droneNetrcUsername = gitSecretVariables.get("DRONE_NETRC_USERNAME");
+    final String usernameSecretKey = droneNetrcUsername.getSecretKey();
+    final String usernamePrefix = "DRONE_NETRC_USERNAME_";
+    assertThat(usernameSecretKey.startsWith(usernamePrefix));
+    assertThat(usernameSecretKey.length()).isEqualTo(usernamePrefix.length() + RANDOM_LENGTH);
+
+    final SecretParams droneNetrcPassword = gitSecretVariables.get("DRONE_NETRC_PASSWORD");
+    final String passwordSecretKey = droneNetrcPassword.getSecretKey();
+    final String passwordPrefix = "DRONE_NETRC_PASSWORD_";
+    assertThat(passwordSecretKey.startsWith(passwordPrefix));
+    assertThat(passwordSecretKey.length()).isEqualTo(passwordPrefix.length() + RANDOM_LENGTH);
+
+    assertThat(droneNetrcUsername)
+        .isEqualTo(
+            SecretParams.builder().secretKey(usernameSecretKey).value(encodeBase64("username")).type(TEXT).build());
+    assertThat(droneNetrcPassword)
         .isEqualTo(SecretParams.builder()
-                       .secretKey("DRONE_NETRC_USERNAME")
-                       .value(encodeBase64("username"))
-                       .type(TEXT)
-                       .build());
-    assertThat(gitSecretVariables.get("DRONE_NETRC_PASSWORD"))
-        .isEqualTo(SecretParams.builder()
-                       .secretKey("DRONE_NETRC_PASSWORD")
+                       .secretKey(passwordSecretKey)
                        .value(encodeBase64("S3CR3TKEYEXAMPLE"))
                        .type(TEXT)
                        .build());

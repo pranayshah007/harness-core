@@ -15,6 +15,7 @@ import static java.util.Collections.singletonList;
 import io.harness.cf.CfClientConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.scheduler.SchedulerConfig;
 
 import software.wings.DataStorageMode;
@@ -35,8 +36,10 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.Data;
@@ -64,6 +67,7 @@ public class VerificationServiceConfiguration extends Configuration implements A
   @JsonProperty("dataStorageMode") private DataStorageMode dataStorageMode;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("serviceGuardIteratorConfig") private IteratorConfig serviceGuardIteratorConfig;
 
   /**
    * Instantiates a new Main configuration.
@@ -138,5 +142,13 @@ public class VerificationServiceConfiguration extends Configuration implements A
     fileAppenderFactory.setArchivedFileCount(14);
     logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
     return logbackAccessRequestLogFactory;
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

@@ -12,15 +12,19 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
@@ -111,6 +115,13 @@ public class AmbianceUtils {
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
   }
 
+  public static Level obtainParentLevel(Ambiance ambiance) {
+    if (isEmpty(ambiance.getLevelsList()) || ambiance.getLevelsCount() == 1) {
+      return null;
+    }
+    return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 2);
+  }
+
   public static String obtainStepIdentifier(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
@@ -161,6 +172,11 @@ public class AmbianceUtils {
 
   public static StepType getCurrentStepType(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
+    return level == null || level.getStepType() == null ? null : level.getStepType();
+  }
+
+  public static StepType getParentStepType(Ambiance ambiance) {
+    Level level = obtainParentLevel(ambiance);
     return level == null || level.getStepType() == null ? null : level.getStepType();
   }
 
@@ -256,7 +272,10 @@ public class AmbianceUtils {
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
-      return StringUtils.EMPTY;
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     return "_"
         + level.getStrategyMetadata()
@@ -278,5 +297,18 @@ public class AmbianceUtils {
       return true;
     }
     return false;
+  }
+
+  public String getEmail(Ambiance ambiance) {
+    TriggeredBy triggeredBy = ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
+    return triggeredBy.getExtraInfoOrDefault("email", null);
+  }
+
+  public static String getPipelineVersion(Ambiance ambiance) {
+    ExecutionMetadata metadata = ambiance.getMetadata();
+    if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
+      return PipelineVersion.V0;
+    }
+    return metadata.getHarnessVersion();
   }
 }

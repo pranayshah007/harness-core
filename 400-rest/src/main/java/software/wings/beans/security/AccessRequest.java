@@ -9,10 +9,12 @@ package software.wings.beans.security;
 
 import static io.harness.annotations.dev.HarnessModule._970_RBAC_CORE;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "accessRequest")
 @FieldNameConstants(innerTypeName = "AccessRequestKeys")
 @OwnedBy(HarnessTeam.PL)

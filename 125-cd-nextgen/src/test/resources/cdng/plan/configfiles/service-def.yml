@@ -1,0 +1,35 @@
+serviceDefinition:
+  type: "Kubernetes"
+  spec:
+    manifests:
+      - manifest:
+          identifier: "k8s2"
+          type: "K8sManifest"
+          spec:
+            store:
+              type: "Git"
+              spec:
+                connectorRef: "gitConnector"
+                gitFetchType: "Branch"
+                paths:
+                  - "basic-template"
+                branch: "master"
+            valuesPaths:
+              - "basic-template/values.yaml"
+            skipResourceVersioning: false
+      - manifest:
+          identifier: "v1"
+          type: "Values"
+          spec:
+            store:
+              type: "Git"
+              spec:
+                connectorRef: "gitConnector"
+                gitFetchType: "Branch"
+                paths:
+                  - "<+service.identifier>"
+                branch: "master"
+    variables:
+      - name: "sbVar"
+        type: "String"
+        value: "abc"

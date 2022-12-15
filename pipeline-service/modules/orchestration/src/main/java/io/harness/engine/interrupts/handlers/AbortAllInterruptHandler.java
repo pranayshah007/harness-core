@@ -20,6 +20,7 @@ import static io.harness.interrupts.Interrupt.State.PROCESSING;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.AbortHelper;
@@ -27,7 +28,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.logging.AutoLogContext;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -45,6 +48,7 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
   @Inject private AbortHelper abortHelper;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private PlanExecutionService planExecutionService;
 
   @Override
   public Interrupt registerInterrupt(Interrupt interrupt) {
@@ -61,6 +65,12 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
 
   private Interrupt validateAndSaveWithoutNodeExecution(@Valid @NonNull Interrupt interrupt) {
     List<Interrupt> interrupts = interruptService.fetchActiveInterrupts(interrupt.getPlanExecutionId());
+    // Use projections
+    Status status = planExecutionService.getStatus(interrupt.getPlanExecutionId());
+    if (StatusUtils.isFinalStatus(status)) {
+      throw new InvalidRequestException(String.format("Execution is already finished with status: [%s]", status));
+    }
+
     return processInterrupt(interrupt, interrupts);
   }
 

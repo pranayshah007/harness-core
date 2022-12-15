@@ -12,13 +12,20 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ErrorResponse;
@@ -38,6 +45,7 @@ import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -46,9 +54,11 @@ import com.google.protobuf.ByteString;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -63,17 +73,22 @@ public class FilterCreatorMergeService {
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
+  private final GitSyncSdkService gitSyncSdkService;
 
   public static final int MAX_DEPTH = 10;
   private final Executor executor = Executors.newFixedThreadPool(5);
 
   @Inject
   public FilterCreatorMergeService(PmsSdkHelper pmsSdkHelper, PipelineSetupUsageHelper pipelineSetupUsageHelper,
-      PmsGitSyncHelper pmsGitSyncHelper, PMSPipelineTemplateHelper pmsPipelineTemplateHelper) {
+      PmsGitSyncHelper pmsGitSyncHelper, PMSPipelineTemplateHelper pmsPipelineTemplateHelper,
+      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, GitSyncSdkService gitSyncSdkService) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pipelineSetupUsageHelper = pipelineSetupUsageHelper;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.pmsPipelineTemplateHelper = pmsPipelineTemplateHelper;
+    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
+    this.gitSyncSdkService = gitSyncSdkService;
   }
 
   public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
@@ -97,6 +112,10 @@ public class FilterCreatorMergeService {
           pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
       response = response.toBuilder().addAllReferredEntities(templateReferences).build();
+    }
+    Optional<EntityDetailProtoDTO> gitConnectorReference = getGitConnectorReference(pipelineEntity);
+    if (gitConnectorReference.isPresent()) {
+      response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
     }
     pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
     return FilterCreatorMergeServiceResponse.builder()
@@ -244,5 +263,32 @@ public class FilterCreatorMergeService {
 
     PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses, errorResponsesV2);
     return currentIteration.build();
+  }
+
+  @VisibleForTesting
+  public Optional<EntityDetailProtoDTO> getGitConnectorReference(PipelineEntity pipelineEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (isGitSimplificationEnabled(pipelineEntity, gitEntityInfo)) {
+      IdentifierRef identifierRef =
+          IdentifierRefHelper.getIdentifierRef(gitEntityInfo.getConnectorRef(), pipelineEntity.getAccountIdentifier(),
+              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+
+      IdentifierRefProtoDTO connectorReference =
+          identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
+              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+      EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
+                                                  .setIdentifierRef(connectorReference)
+                                                  .setType(EntityTypeProtoEnum.CONNECTORS)
+                                                  .build();
+      return Optional.of(connectorDetails);
+    }
+    return Optional.empty();
+  }
+
+  private boolean isGitSimplificationEnabled(PipelineEntity pipelineEntity, GitEntityInfo gitEntityInfo) {
+    return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType())
+        && gitSyncSdkService.isGitSimplificationEnabled(pipelineEntity.getAccountIdentifier(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
   }
 }

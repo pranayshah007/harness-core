@@ -21,7 +21,7 @@ import io.harness.account.AccountClient;
 import io.harness.beans.FeatureName;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -74,6 +74,7 @@ public class TemplateYamlSchemaMergeHelper {
     switch (templateEntityType) {
       case STAGE_TEMPLATE:
       case STEP_TEMPLATE:
+      case STEPGROUP_TEMPLATE:
         return new HashSet<>(Arrays.asList(NAME, IDENTIFIER, DESCRIPTION, ORG_IDENTIFIER, PROJECT_IDENTIFIER));
       case PIPELINE_TEMPLATE:
         return new HashSet<>(
@@ -85,6 +86,6 @@ public class TemplateYamlSchemaMergeHelper {
 
   public static boolean isFeatureFlagEnabled(
       FeatureName featureName, String accountIdentifier, AccountClient accountClient) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountIdentifier));
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountIdentifier));
   }
 }

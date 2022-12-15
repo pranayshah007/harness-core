@@ -35,17 +35,33 @@ func NewMavenRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory ex
 	}
 }
 
-func (b *mavenRunner) AutoDetectPackages() ([]string, error) {
-	return DetectPkgs(b.log, b.fs)
+func (m *mavenRunner) AutoDetectPackages() ([]string, error) {
+	return DetectPkgs(m.log, m.fs)
+}
+
+func (m *mavenRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	javaTests, err := GetJavaTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	scalaTests, err := GetScalaTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	kotlinTests, err := GetKotlinTests(testGlobs)
+	if err != nil {
+		return tests, err
+	}
+	tests = append(tests, javaTests...)
+	tests = append(tests, scalaTests...)
+	tests = append(tests, kotlinTests...)
+	return tests, nil
 }
 
 func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// If instrumentation needs to be ignored, we run all the tests without adding the agent config
-	if ignoreInstr {
-		m.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return strings.TrimSpace(fmt.Sprintf("%s %s", mavenCmd, userArgs)), nil
-	}
-
+	inputUserArgs := userArgs
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
 	instrArg := agentArg
 	re := regexp.MustCompile(`(-Duser\.\S*)`)
@@ -55,8 +71,11 @@ func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 		userArgs = re.ReplaceAllString(userArgs, "")                        // Remove from arg
 		instrArg = fmt.Sprintf("\"%s %s\"", strings.Join(s, " "), agentArg) // Add to instrumentation
 	}
+	// Run all the tests
 	if runAll {
-		// Run all the tests
+		if ignoreInstr {
+			return strings.TrimSpace(fmt.Sprintf("%s %s", mavenCmd, inputUserArgs)), nil
+		}
 		return strings.TrimSpace(fmt.Sprintf("%s -am -DharnessArgLine=%s -DargLine=%s %s", mavenCmd, instrArg, instrArg, userArgs)), nil
 	}
 	if len(tests) == 0 {
@@ -79,5 +98,9 @@ func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 		}
 	}
 	testStr := strings.Join(ut, ",")
+
+	if ignoreInstr {
+		return strings.TrimSpace(fmt.Sprintf("%s -Dtest=%s %s", mavenCmd, testStr, inputUserArgs)), nil
+	}
 	return strings.TrimSpace(fmt.Sprintf("%s -Dtest=%s -am -DharnessArgLine=%s -DargLine=%s %s", mavenCmd, testStr, instrArg, instrArg, userArgs)), nil
 }

@@ -18,7 +18,7 @@ import java.util.List;
 public interface PersistenceProvider<T extends PersistentIterable, F extends FilterExpander> {
   void updateEntityField(T entity, List<Long> nextIterations, Class<T> clazz, String fieldName);
   T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName, SchedulingType schedulingType,
-      Duration targetInterval, F filterExpander);
+      Duration targetInterval, F filterExpander, boolean unsorted);
   T findInstance(Class<T> clazz, String fieldName, F filterExpander);
   void recoverAfterPause(Class<T> clazz, String fieldName);
 }

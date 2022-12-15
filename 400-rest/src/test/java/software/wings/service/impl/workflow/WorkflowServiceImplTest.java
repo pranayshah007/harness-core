@@ -24,7 +24,7 @@ import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.VERIFY_SERVICE;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_MANIFEST_NAME;
@@ -102,11 +102,11 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.LastDeployedHelmChartInformation;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.stats.CloneMetadata;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
@@ -167,7 +167,6 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Before
   public void setUp() {
     when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString())).thenReturn(true);
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), anyString())).thenReturn(false);
     when(featureFlagService.isEnabled(eq(FeatureName.TIMEOUT_FAILURE_SUPPORT), anyString())).thenReturn(false);
   }
 
@@ -212,7 +211,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     when(query.get()).thenReturn(workflowExecution);
     PageResponse<Artifact> pageResponse = new PageResponse<>();
     pageResponse.setResponse(artifacts);
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
     LastDeployedArtifactInformation artifactInformation = workflowServiceImpl.fetchLastDeployedArtifact(
         workflow, asList(ARTIFACT_STREAM_ID, ARTIFACT_STREAM_ID_ARTIFACTORY), SERVICE_ID);
@@ -441,7 +440,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
             .withArtifactStreamId(ARTIFACT_STREAM_ID)
             .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, BUILD_NO + 2)))
             .build()));
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     when(helmChartService.listHelmChartsForService(APP_ID, SERVICE_ID, null, new PageRequest<>(), true))
         .thenReturn(ImmutableMap.of(APP_MANIFEST_NAME,
             asList(HelmChart.builder()
@@ -750,7 +749,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     when(query.get()).thenReturn(workflowExecution);
     PageResponse<Artifact> pageResponse = new PageResponse<>();
     pageResponse.setResponse(artifacts);
-    when(artifactService.listArtifactsForService(APP_ID, SERVICE_ID, new PageRequest<>())).thenReturn(pageResponse);
+    when(artifactService.listArtifactsForService(eq(APP_ID), eq(SERVICE_ID), any())).thenReturn(pageResponse);
     WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
     LastDeployedArtifactInformation artifactInformation = workflowServiceImpl.fetchLastDeployedArtifact(
         workflow, asList(ARTIFACT_STREAM_ID, ARTIFACT_STREAM_ID_ARTIFACTORY), SERVICE_ID);

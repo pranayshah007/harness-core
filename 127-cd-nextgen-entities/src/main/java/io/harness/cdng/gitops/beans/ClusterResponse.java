@@ -17,6 +17,7 @@ import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -33,8 +34,12 @@ public class ClusterResponse {
   @EntityIdentifier @Schema(description = "identifier of the gitops cluster") String clusterRef;
   @Schema(description = "organization identifier of the cluster") String orgIdentifier;
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
+  @Schema(description = "agent identifier of the cluster") String agentIdentifier;
+  @Schema(description = "account identifier of the cluster") String accountIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
   @Schema(description = "time at which the cluster was linked") Long linkedAt;
   @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
   ScopeLevel scope;
+  @Schema(description = "name of the gitops cluster") String name;
+  @Schema(description = "name of the gitops cluster") Map<String, String> tags;
 }

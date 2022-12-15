@@ -15,24 +15,31 @@ import lombok.Value;
 @Builder
 public class InstanceGroupedByArtifactList {
   List<InstanceGroupedByArtifact> instanceGroupedByArtifactList;
+
   @Value
   @Builder
   public static class InstanceGroupedByArtifact {
     String artifactVersion;
+    String artifactPath;
     List<InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
   }
+
   @Value
   @Builder
   public static class InstanceGroupedByEnvironment {
     String envId;
     String envName;
     List<InstanceGroupedByInfrastructure> instanceGroupedByInfraList;
+    List<InstanceGroupedByInfrastructure> instanceGroupedByClusterList;
   }
+
   @Value
   @Builder
   public static class InstanceGroupedByInfrastructure {
     String infraIdentifier;
     String infraName;
+    String clusterIdentifier;
+    String agentIdentifier;
     Integer count;
     String lastPipelineExecutionId;
     String lastPipelineExecutionName;

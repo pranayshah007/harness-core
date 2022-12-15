@@ -9,8 +9,10 @@ package io.harness.gitsync.common.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
@@ -28,9 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("gitToHarnessProgress")
 @TypeAlias("io.harness.gitsync.common.beans.GitToHarnessProcessingProgress")
-@EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity(value = "gitToHarnessProgress", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "GitToHarnessProgressKeys")

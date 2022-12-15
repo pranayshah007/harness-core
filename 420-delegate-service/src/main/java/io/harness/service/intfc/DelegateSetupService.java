@@ -9,6 +9,7 @@ package io.harness.service.intfc;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
@@ -80,4 +81,7 @@ public interface DelegateSetupService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags);
 
   List<String> listDelegateImplicitSelectors(Delegate delegate);
+
+  AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime,
+      String version, String delegateType);
 }

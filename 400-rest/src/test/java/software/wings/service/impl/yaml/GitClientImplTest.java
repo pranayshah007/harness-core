@@ -11,6 +11,7 @@ import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
@@ -29,6 +30,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anySet;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -505,6 +507,26 @@ public class GitClientImplTest extends WingsBaseTest {
 
     verify(gitClient, times(1)).clone(any(), any(), any(), anyBoolean());
     verify(gitClient, times(1)).checkout(any());
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testCloneRepoAndCopyToWorkingDir() throws Exception {
+    GitConfig gitConfig = GitConfig.builder().build();
+
+    when(gitClientHelper.getLockObject(any())).thenReturn(new File(format(INTER_PROCESS_LOCK_FILE, CONNECTOR_ID)));
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("testRepoDir");
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    FileIo.createDirectoryIfDoesNotExist("testRepoDir");
+    FileIo.createDirectoryIfDoesNotExist("testDestDir");
+
+    GitOperationContext gitOperationContext =
+        GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(GIT_CONNECTOR_ID).build();
+
+    gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, "testDestDir", null);
+
+    verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
   }
 
   private List<GitFileChange> getSampleGitFileChanges() {

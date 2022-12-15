@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.command.EcsSetupCommandUnit.ERROR;
 import static software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSwapRoutesCommandTaskHelper.BG_GREEN;
 import static software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSwapRoutesCommandTaskHelper.BG_VERSION;
@@ -44,7 +43,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsElbConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
 import software.wings.beans.command.ExecutionLogCallback;
@@ -52,6 +50,7 @@ import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.container.EcsContainerTaskUtils;
 import software.wings.beans.dto.EcsContainerTask;
 import software.wings.beans.dto.EcsServiceSpecification;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.UpdateServiceCountRequestData;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.cloudprovider.aws.EcsContainerService;
@@ -238,14 +237,14 @@ public class EcsSetupCommandTaskHelper {
     if (isFargateTaskLauchType(ecsSetupParams)) {
       registerTaskDefinitionRequest.withNetworkMode(NetworkMode.Awsvpc);
       registerTaskDefinitionRequest.setRequiresCompatibilities(Collections.singletonList(LaunchType.FARGATE.name()));
-      registerTaskDefinitionRequest.withCpu(taskDefinition.getCpu());
-      registerTaskDefinitionRequest.withMemory(taskDefinition.getMemory());
     }
+    registerTaskDefinitionRequest.withCpu(taskDefinition.getCpu());
+    registerTaskDefinitionRequest.withMemory(taskDefinition.getMemory());
 
     executionLogCallback.saveExecutionLog(
         format("Creating task definition %s with container image %s", ecsSetupParams.getTaskFamily(), dockerImageName),
         LogLevel.INFO);
-    return awsClusterService.createTask(ecsSetupParams.getRegion(), aSettingAttribute().withValue(awsConfig).build(),
+    return awsClusterService.createTask(ecsSetupParams.getRegion(), SettingAttribute.builder().value(awsConfig).build(),
         encryptedDataDetails, registerTaskDefinitionRequest);
   }
 
@@ -311,15 +310,12 @@ public class EcsSetupCommandTaskHelper {
     if (isFargateTaskLauchType(ecsSetupParams)) {
       registerTaskDefinitionRequest.withNetworkMode(NetworkMode.Awsvpc);
       registerTaskDefinitionRequest.setRequiresCompatibilities(Collections.singletonList(LaunchType.FARGATE.name()));
-    } else {
-      registerTaskDefinitionRequest.withCpu(null);
-      registerTaskDefinitionRequest.withMemory(null);
     }
 
     executionLogCallback.saveExecutionLog(
         format("Creating task definition %s with container image %s", ecsSetupParams.getTaskFamily(), dockerImageName),
         LogLevel.INFO);
-    return awsClusterService.createTask(ecsSetupParams.getRegion(), aSettingAttribute().withValue(awsConfig).build(),
+    return awsClusterService.createTask(ecsSetupParams.getRegion(), SettingAttribute.builder().value(awsConfig).build(),
         encryptedDataDetails, registerTaskDefinitionRequest);
   }
 

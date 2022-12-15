@@ -19,6 +19,8 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -36,41 +38,49 @@ import software.wings.service.intfc.security.VaultService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Slf4j
-public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerConfig> {
+public class VaultSecretManagerRenewalHandler extends IteratorPumpModeHandler implements Handler<SecretManagerConfig> {
   @Inject private AccountService accountService;
   @Inject private VaultService vaultService;
   @Inject private AlertService alertService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<SecretManagerConfig> persistenceProvider;
 
-  public void registerIterators(int threadPoolSize) {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("VaultSecretManagerRenewalHandler")
-            .poolSize(threadPoolSize)
-            .interval(ofSeconds(5))
-            .build(),
-        SecretManagerConfig.class,
-        MongoPersistenceIterator.<SecretManagerConfig, MorphiaFilterExpander<SecretManagerConfig>>builder()
-            .clazz(SecretManagerConfig.class)
-            .fieldName(SecretManagerConfigKeys.nextTokenRenewIteration)
-            .targetInterval(ofSeconds(31))
-            .acceptableNoAlertDelay(ofSeconds(62))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(query
-                -> query.criteria(SecretManagerConfigKeys.encryptionType)
-                       .in(Sets.newHashSet(EncryptionType.VAULT, EncryptionType.VAULT_SSH))
-                       .criteria(SecretManagerConfigKeys.ngMetadata + "." + NGSecretManagerMetadataKeys.deleted)
-                       .notEqual(true))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<SecretManagerConfig, MorphiaFilterExpander<SecretManagerConfig>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                SecretManagerConfig.class,
+                MongoPersistenceIterator.<SecretManagerConfig, MorphiaFilterExpander<SecretManagerConfig>>builder()
+                    .clazz(SecretManagerConfig.class)
+                    .fieldName(SecretManagerConfigKeys.nextTokenRenewIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofSeconds(62))
+                    .handler(this)
+                    .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                    .filterExpander(query
+                        -> query.criteria(SecretManagerConfigKeys.encryptionType)
+                               .in(Sets.newHashSet(EncryptionType.VAULT, EncryptionType.VAULT_SSH))
+                               .criteria(SecretManagerConfigKeys.ngMetadata + "." + NGSecretManagerMetadataKeys.deleted)
+                               .notEqual(true))
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "VaultSecretManagerRenewalHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override
@@ -99,7 +109,9 @@ public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerCo
         return;
       }
       if (baseVaultConfig.getAccessType() == APP_ROLE) {
-        vaultService.renewAppRoleClientToken(baseVaultConfig);
+        if (baseVaultConfig.getRenewAppRoleToken()) {
+          vaultService.renewAppRoleClientToken(baseVaultConfig);
+        }
       } else {
         vaultService.renewToken(baseVaultConfig);
       }

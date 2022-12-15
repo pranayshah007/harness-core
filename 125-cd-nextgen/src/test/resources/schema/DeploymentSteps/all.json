@@ -44,6 +44,424 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgCanaryDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "instanceSelection"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceSelection": {
+              "$ref": "#/definitions/Capacity"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgConfigurationManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgLaunchTemplateManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgScalingPolicyManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgScheduledUpdateGroupActionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AutoScalerManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "skipResourceVersioning": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureARMRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceParameterFile": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepConfiguration": {
+      "type": "object",
+      "required": [
+        "connectorRef",
+        "scope",
+        "template"
+      ],
+      "properties": {
+        "connectorRef": {
+          "type": "string"
+        },
+        "parameters": {
+          "$ref": "#/definitions/AzureCreateARMResourceParameterFile"
+        },
+        "scope": {
+          "$ref": "#/definitions/AzureCreateARMResourceStepScope"
+        },
+        "template": {
+          "$ref": "#/definitions/AzureTemplateFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/AzureCreateARMResourceStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepScope": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ManagementGroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureManagementSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ResourceGroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureResourceGroupSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Subscription"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureSubscriptionSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Tenant"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureTenantSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureCreateBPStepConfiguration": {
+      "type": "object",
+      "required": [
+        "connectorRef",
+        "scope",
+        "template"
+      ],
+      "properties": {
+        "assignmentName": {
+          "type": "string"
+        },
+        "connectorRef": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Subscription",
+            "ManagementGroup"
+          ]
+        },
+        "template": {
+          "$ref": "#/definitions/AzureTemplateFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateBPStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/AzureCreateBPStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureManagementSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location",
+            "managementGroupId"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            },
+            "managementGroupId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureRepoStore": {
       "allOf": [
         {
@@ -122,6 +540,243 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureResourceGroupSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "resourceGroup",
+            "subscription"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "Incremental",
+                "Complete"
+              ]
+            },
+            "resourceGroup": {
+              "type": "string"
+            },
+            "subscription": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureScopeType": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureSubscriptionSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location",
+            "subscription"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            },
+            "subscription": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureTemplateFile": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureTenantSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppSlotDeploymentStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "deploymentSlot",
+            "webApp"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "deploymentSlot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "webApp": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppSwapSlotStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "targetSlot"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "targetSlot": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppTrafficShiftStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "traffic"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "traffic": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "minLength": 1
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -211,6 +866,66 @@
     "CDStepInfo": {
       "type": "object",
       "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Capacity": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Count"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CountCapacitySpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Percentage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PercentageCapacitySpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CapacitySpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "instances": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CloudformationCreateStackStepConfiguration": {
@@ -756,6 +1471,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "DownloadArtifact"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DownloadArtifactCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Script"
               }
             }
@@ -790,6 +1521,33 @@
               "enum": [
                 "Artifact",
                 "Config"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CountCapacitySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CapacitySpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             }
           }
@@ -1127,6 +1885,641 @@
         }
       ]
     },
+    "DownloadArtifactCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "destinationPath"
+          ],
+          "properties": {
+            "destinationPath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenCreateServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenSwapTargetGroupsStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "doNotDownsizeOldService": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsCanaryDeleteStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsCanaryDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "forceNewDeployment": {
+              "type": "boolean"
+            },
+            "sameAsAlreadyRunningInstances": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsRollingRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsRunTaskStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "runTaskRequestDefinition": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "skipSteadyStateCheck": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "taskDefinition": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsScalableTargetDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsScalingPolicyDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsServiceDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsTaskDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupCurrentRunningInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "newService": {
+              "$ref": "#/definitions/Capacity"
+            },
+            "oldService": {
+              "$ref": "#/definitions/Capacity"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupFixedInstances": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ElastigroupInstancesSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "desired": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "max": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "min": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupInstances": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CurrentRunning"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupCurrentRunningInstances"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Fixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ElastigroupFixedInstances"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ElastigroupInstancesSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Fixed",
+            "CurrentRunning"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "instances"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instances": {
+              "$ref": "#/definitions/ElastigroupInstances"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "FetchInstanceScriptStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GcsStoreConfig": {
       "allOf": [
         {
@@ -1230,6 +2623,22 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GitOpsDeploymentRepoManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1398,6 +2807,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessFileStoreSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessStore": {
       "allOf": [
         {
@@ -1527,6 +2952,16 @@
                   "minLength": 1
                 }
               ]
+            },
+            "ignoreReleaseHistFailStatus": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -1551,7 +2986,10 @@
             "History",
             "Delete",
             "Uninstall",
-            "List"
+            "List",
+            "Add",
+            "Update",
+            "Version"
           ]
         },
         "flag": {
@@ -1773,6 +3211,38 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "InlineTerragruntBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineTerragruntVarFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntVarFileSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "InputSetValidator": {
       "type": "object",
       "properties": {
@@ -1853,9 +3323,6 @@
             "jobName"
           ],
           "properties": {
-            "captureEnvironmentVariable": {
-              "type": "boolean"
-            },
             "connectorRef": {
               "type": "string"
             },
@@ -1897,6 +3364,9 @@
             },
             "unstableStatusAsSuccess": {
               "type": "boolean"
+            },
+            "useConnectorUrlForJobExecution": {
+              "type": "boolean"
             }
           }
         }
@@ -1909,9 +3379,11 @@
         "value"
       ],
       "properties": {
+        "metadata": {
+          "type": "string"
+        },
         "name": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "value": {
           "type": "string"
@@ -2020,9 +3492,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "skipDryRun": {
-              "type": "boolean"
             }
           }
         }
@@ -2049,6 +3518,16 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
+                }
+              ]
+            },
+            "pruningEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
@@ -2080,9 +3559,6 @@
               "items": {
                 "type": "string"
               }
-            },
-            "skipDryRun": {
-              "type": "boolean"
             }
           }
         }
@@ -2161,16 +3637,6 @@
             },
             "deleteResources": {
               "$ref": "#/definitions/DeleteResourcesWrapper"
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -2247,7 +3713,7 @@
                 }
               ]
             },
-            "skipDryRun": {
+            "pruningEnabled": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -2282,6 +3748,16 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
+                }
+              ]
+            },
+            "pruningEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
@@ -2329,16 +3805,6 @@
             },
             "instanceSelection": {
               "$ref": "#/definitions/InstanceSelectionWrapper"
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "skipSteadyStateCheck": {
               "oneOf": [
@@ -2458,12 +3924,168 @@
             "OpenshiftTemplate",
             "Values",
             "ServerlessAwsLambda",
-            "ReleaseRepo"
+            "ReleaseRepo",
+            "DeploymentRepo",
+            "EcsTaskDefinition",
+            "EcsServiceDefinition",
+            "EcsScalableTargetDefinition",
+            "EcsScalingPolicyDefinition",
+            "TasManifest",
+            "TasVars",
+            "TasAutoScaler",
+            "AsgLaunchTemplate",
+            "AsgConfiguration",
+            "AsgScalingPolicy",
+            "AsgScheduledUpdateGroupAction"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgConfiguration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgConfigurationManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgLaunchTemplate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgLaunchTemplateManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgScalingPolicy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgScalingPolicyManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgScheduledUpdateGroupAction"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgScheduledUpdateGroupActionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeploymentRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitOpsDeploymentRepoManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsScalableTargetDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsScalableTargetDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsScalingPolicyDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsScalingPolicyDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsServiceDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsServiceDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsTaskDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsTaskDefinitionManifest"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -2596,6 +4218,54 @@
           "if": {
             "properties": {
               "type": {
+                "const": "TasAutoScaler"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AutoScalerManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasManifest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasVars"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/VarsManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Values"
               }
             }
@@ -2626,6 +4296,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "deleteSourceBranch"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -2641,6 +4314,32 @@
                   "minLength": 1
                 }
               ]
+            },
+            "deleteSourceBranch": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
             }
           }
         }
@@ -2713,7 +4412,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -2729,7 +4428,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
+                  "pattern": "((^[+-]?[0-9]*\\.?[0-9]+$)|(<\\+.+>.*))"
                 }
               ]
             }
@@ -3044,6 +4743,34 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PercentageCapacitySpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CapacitySpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "percentage": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PercentageInstanceSelection": {
       "allOf": [
         {
@@ -3127,10 +4854,67 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RemoteTerraformBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerraformBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RemoteTerraformVarFileSpec": {
       "allOf": [
         {
           "$ref": "#/definitions/TerraformVarFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RemoteTerragruntBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RemoteTerragruntVarFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntVarFileSpec"
         },
         {
           "type": "object",
@@ -3165,6 +4949,21 @@
             },
             "metadata": {
               "type": "string"
+            },
+            "paths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "region": {
               "type": "string"
@@ -3287,7 +5086,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -3410,6 +5209,56 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ShellScriptProvisionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ShellScriptSourceWrapper": {
       "type": "object",
       "required": [
@@ -3423,6 +5272,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessFileStoreSource"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -3737,7 +5602,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -3777,6 +5642,61 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "autoScalerPath": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "cfCliVersion": {
+              "type": "string",
+              "enum": [
+                "V7"
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "varsPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformApplyStepInfo": {
@@ -3841,6 +5761,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/InlineTerraformBackendConfigSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerraformBackendConfigSpec"
               }
             }
           }
@@ -3997,6 +5933,16 @@
               }
             ]
           }
+        },
+        "exportTerraformHumanReadablePlan": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "exportTerraformPlanJson": {
           "oneOf": [
@@ -4201,7 +6147,539 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerragruntApplyStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntBackendConfig": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineTerragruntBackendConfigSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerragruntBackendConfigSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TerragruntBackendConfigSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntConfigFilesWrapper": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "moduleSource": {
+          "$ref": "#/definitions/ModuleSource"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntDestroyStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntExecutionData": {
+      "type": "object",
+      "required": [
+        "configFiles",
+        "moduleConfig"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerragruntBackendConfig"
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerragruntConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "moduleConfig": {
+          "$ref": "#/definitions/TerragruntModuleConfig"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntVarFileWrapper"
+          }
+        },
+        "workspace": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntModuleConfig": {
+      "type": "object",
+      "required": [
+        "path",
+        "terragruntRunType"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "terragruntRunType": {
+          "type": "string",
+          "enum": [
+            "RunAll",
+            "RunModule"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntPlanExecutionData": {
+      "type": "object",
+      "required": [
+        "command",
+        "configFiles",
+        "moduleConfig",
+        "secretManagerRef"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerragruntBackendConfig"
+        },
+        "command": {
+          "type": "string",
+          "enum": [
+            "Apply",
+            "Destroy"
+          ]
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerragruntConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "exportTerragruntPlanJson": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "moduleConfig": {
+          "$ref": "#/definitions/TerragruntModuleConfig"
+        },
+        "secretManagerRef": {
+          "type": "string"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntVarFileWrapper"
+          }
+        },
+        "workspace": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntPlanStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntPlanExecutionData"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntStepConfiguration": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TerragruntExecutionData"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Inline",
+            "InheritFromPlan",
+            "InheritFromApply"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntVarFile": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineTerragruntVarFileSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerragruntVarFileSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TerragruntVarFileSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntVarFileWrapper": {
+      "type": "object",
+      "required": [
+        "varFile"
+      ],
+      "properties": {
+        "varFile": {
+          "$ref": "#/definitions/TerragruntVarFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateReleaseRepoStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "stringMap": {
+              "$ref": "#/definitions/ParameterFieldMapStringString"
+            },
+            "variables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ValuesManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "VarsManifest": {
       "allOf": [
         {
           "$ref": "#/definitions/ManifestAttributes"

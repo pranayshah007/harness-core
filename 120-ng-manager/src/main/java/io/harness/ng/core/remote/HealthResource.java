@@ -18,11 +18,13 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -42,18 +44,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @PublicApi
 public class HealthResource {
-  private HealthService healthService;
+  private final HealthService healthService;
+  private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
   @Inject
   public HealthResource(HealthService healthService) {
     this.healthService = healthService;
+    this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
   @GET
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get health for NGManager service", nickname = "getNGManagerHealthStatus")
-  public ResponseDTO<String> get() throws Exception {
+  public ResponseDTO<String> doReadinessCheck() throws Exception {
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
       throw NoResultFoundException.newBuilder()
@@ -67,6 +71,20 @@ public class HealthResource {
     if (check.isHealthy()) {
       return ResponseDTO.newResponse("healthy");
     }
+    throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @GET
+  @Path("liveness")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get liveness status for NGManager service", nickname = "getNGManagerLivenessStatus")
+  public RestResponse<String> doLivenessCheck() {
+    HealthCheck.Result check = threadDeadlockHealthCheck.execute();
+    if (check.isHealthy()) {
+      return new RestResponse<>("live");
+    }
+    log.info(check.getMessage());
     throw new HealthException(check.getMessage(), check.getError());
   }
 }

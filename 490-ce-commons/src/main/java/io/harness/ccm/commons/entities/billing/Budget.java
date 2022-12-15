@@ -7,8 +7,9 @@
 
 package io.harness.ccm.commons.entities.billing;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.budget.BudgetType;
@@ -44,6 +45,7 @@ public final class Budget implements PersistentEntity, UuidAware, AccountAccess,
   @Size(min = 1, max = 80, message = "for budget name must be between 1 and 80 characters long") @NotBlank String name;
   BudgetScope scope; // referred to as "Applies to" in the UI
   BudgetType type;
+  BudgetMonthlyBreakdown budgetMonthlyBreakdown;
   Double budgetAmount;
   BudgetPeriod period;
   Double growthRate;

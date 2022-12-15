@@ -56,13 +56,12 @@ public class AzureContainerRegistrySettingsProvider extends AbstractAzureRegistr
       username = azureConfig.getClientId();
       password = new String(azureConfig.getKey());
     } else {
-      String accessToken;
-      if (AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == azureConfig.getAzureAuthenticationType()) {
-        accessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE).getAccessToken();
-      } else {
-        // only MSI connection will/should reach here
-        accessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();
-      }
+      String accessToken =
+          azureAuthorizationClient
+              .getUserAccessToken(azureConfig,
+                  AzureUtils.convertToScope(
+                      AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
+              .getAccessToken();
 
       username = ACR_DEFAULT_DOCKER_USERNAME;
       password = azureContainerRegistryClient.getAcrRefreshToken(artifactConfig.getRegistryHostname(), accessToken);

@@ -108,8 +108,7 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
-  public String checkConnectivity(
-      CfConfig pcfConfig, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache) {
+  public String checkConnectivity(CfConfig pcfConfig, boolean limitPcfThreads) {
     return "FAILED: connection timed out";
   }
 

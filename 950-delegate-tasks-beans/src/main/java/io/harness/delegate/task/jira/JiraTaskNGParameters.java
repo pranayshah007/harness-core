@@ -35,12 +35,12 @@ import lombok.experimental.FieldDefaults;
 public class JiraTaskNGParameters implements TaskParameters, ExecutionCapabilityDemander {
   JiraConnectorDTO jiraConnectorDTO;
   List<EncryptedDataDetail> encryptionDetails;
+  JiraSearchUserParams jiraSearchUserParams;
 
   JiraActionNG action;
   String projectKey;
   String issueType;
   String issueKey;
-
   // Jira apis have an expand query param to fetch more information. Look at JiraClient apis to know more.
   String expand;
   // Fetch status along with create metadata.
@@ -54,6 +54,8 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
 
   // Fields sent while creating/updating issue.
   Map<String, String> fields;
+  // For new jira server versions old metadata endpoint is deprecated
+  boolean newMetadata;
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {

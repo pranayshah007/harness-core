@@ -8,15 +8,19 @@
 package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
+import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -35,7 +39,7 @@ import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateUpdateEvent;
 import io.harness.template.events.TemplateUpdateEventType;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -64,7 +68,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitSyncSdkService gitSyncSdkService;
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final MongoTemplate mongoTemplate;
-  private final NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+  private final TemplateGitXService templateGitXService;
   OutboxService outboxService;
 
   @Override
@@ -94,7 +98,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       }
       return savedTemplateEntity;
     }
-    if (isNewGitXEnabled(templateToSave, gitEntityInfo)) {
+    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToSave);
       String yamlToPush = templateToSave.getYaml();
       addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
@@ -136,11 +140,12 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly) {
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(
+        criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
   }
 
   @Override
@@ -157,11 +162,12 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(
+        criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
   }
 
   @Override
@@ -182,7 +188,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, false, false);
   }
 
   private Criteria
@@ -237,8 +243,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .is(accountId);
   }
 
-  private Optional<TemplateEntity> getTemplateEntity(
-      Criteria criteria, String accountId, String orgIdentifier, String projectIdentifier, boolean getMetadataOnly) {
+  private Optional<TemplateEntity> getTemplateEntity(Criteria criteria, String accountId, String orgIdentifier,
+      String projectIdentifier, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     Query query = new Query(criteria);
     TemplateEntity savedEntity = mongoTemplate.findOne(query, TemplateEntity.class);
     if (savedEntity == null) {
@@ -249,19 +255,56 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      String branchName = GitAwareContextHelper.getWorkingBranch(savedEntity.getRepoURL());
-      savedEntity = (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
-          Scope.of(accountId, orgIdentifier, projectIdentifier),
-          GitContextRequestParams.builder()
-              .branchName(branchName)
-              .connectorRef(savedEntity.getConnectorRef())
-              .filePath(savedEntity.getFilePath())
-              .repoName(savedEntity.getRepo())
-              .build(),
-          Collections.emptyMap());
+      String branchName = templateGitXService.getWorkingBranch(savedEntity.getRepoURL());
+      if (loadFromFallbackBranch) {
+        savedEntity = fetchRemoteEntityWithFallBackBranch(
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+      } else {
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+      }
     }
 
     return Optional.of(savedEntity);
+  }
+
+  TemplateEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      TemplateEntity savedEntity, String branchName, boolean loadFromCache) {
+    return (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
+        Scope.of(accountId, orgIdentifier, projectIdentifier),
+        GitContextRequestParams.builder()
+            .branchName(branchName)
+            .connectorRef(savedEntity.getConnectorRef())
+            .filePath(savedEntity.getFilePath())
+            .repoName(savedEntity.getRepo())
+            .entityType(EntityType.TEMPLATE)
+            .loadFromCache(loadFromCache)
+            .build(),
+        Collections.emptyMap());
+  }
+
+  TemplateEntity fetchRemoteEntityWithFallBackBranch(String accountId, String orgIdentifier, String projectIdentifier,
+      TemplateEntity savedEntity, String branch, boolean loadFromCache) {
+    try {
+      savedEntity = fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
+    } catch (WingsException ex) {
+      String fallBackBranch = savedEntity.getFallBackBranch();
+      if (shouldRetryWithFallBackBranch(TemplateUtils.getScmException(ex), branch, fallBackBranch)) {
+        log.info(String.format(
+            "Retrieving template [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
+      } else {
+        throw ex;
+      }
+    }
+    return savedEntity;
+  }
+
+  @VisibleForTesting
+  boolean shouldRetryWithFallBackBranch(ScmException scmException, String branchTried, String templateFallBackBranch) {
+    return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
+        && (isNotEmpty(templateFallBackBranch) && !branchTried.equals(templateFallBackBranch));
   }
 
   @Override
@@ -292,9 +335,9 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   @Override
   public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
-    if (templateToUpdate.getStoreType() == StoreType.REMOTE
-        && gitSyncSdkService.isGitSimplificationEnabled(templateToUpdate.getAccountIdentifier(),
-            templateToUpdate.getOrgIdentifier(), templateToUpdate.getProjectIdentifier())) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToUpdate, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToUpdate);
       gitAwareEntityHelper.updateEntityOnGit(templateToUpdate, templateToUpdate.getYaml(), scope);
     } else if (templateToUpdate.getStoreType() == StoreType.REMOTE) {
@@ -456,6 +499,38 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
   }
 
+  @Override
+  public Long countFileInstances(String accountIdentifier, String repoURL, String filePath) {
+    return countTemplates(Criteria.where(TemplateEntityKeys.accountId)
+                              .is(accountIdentifier)
+                              .and(TemplateEntityKeys.repoURL)
+                              .is(repoURL)
+                              .and(TemplateEntityKeys.filePath)
+                              .is(filePath));
+  }
+
+  @Override
+  public TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments) {
+    TemplateEntity savedTemplateEntity = mongoTemplate.save(templateEntity);
+    if (shouldLogAudits(
+            templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())) {
+      outboxService.save(new TemplateCreateEvent(templateEntity.getAccountIdentifier(),
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  @Override
+  public List<String> getListOfRepos(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, TemplateEntityKeys.repo, TemplateEntity.class, String.class);
+  }
+
+  private Long countTemplates(Criteria criteria) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, TemplateEntity.class);
+  }
+
   private Criteria buildCriteria(TemplateEntity templateEntity) {
     return Criteria.where(TemplateEntityKeys.accountId)
         .is(templateEntity.getAccountId())
@@ -487,23 +562,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
     templateEntity.setRepo(gitEntityInfo.getRepoName());
     templateEntity.setFilePath(gitEntityInfo.getFilePath());
-  }
-
-  @VisibleForTesting
-  boolean isNewGitXEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    if (templateToSave.getProjectIdentifier() != null) {
-      return isGitSimplificationEnabled(templateToSave, gitEntityInfo);
-    } else {
-      return ngTemplateFeatureFlagHelperService.isEnabled(
-                 templateToSave.getAccountId(), FeatureName.FF_TEMPLATE_GITSYNC)
-          && TemplateUtils.isRemoteEntity(gitEntityInfo);
-    }
-  }
-
-  private boolean isGitSimplificationEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
-               templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
-        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+    templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
   }
 
   private boolean isAuditEnabled(TemplateEntity templateEntity, boolean skipAudits) {

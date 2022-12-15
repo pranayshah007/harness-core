@@ -15,7 +15,15 @@ import io.harness.annotations.dev.OwnedBy;
 public enum SettingCategory {
   CD,
   CI,
-  CCM,
+  CE,
   CV,
-  CORE;
+  CF,
+  STO,
+  CORE,
+  PMS,
+  TEMPLATESERVICE,
+  GOVERNANCE,
+  CHAOS,
+  SCIM,
+  GIT_EXPERIENCE
 }

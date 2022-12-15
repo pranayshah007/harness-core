@@ -25,7 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -110,7 +110,7 @@ public class DelegateDownloadResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     DelegateDownloadResponse delegateDownloadResponse =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.downloadKubernetesDelegate(
+        CGRestUtils.getResponse(delegateNgManagerCgManagerClient.downloadKubernetesDelegate(
             accountIdentifier, orgIdentifier, projectIdentifier, delegateDownloadRequest));
     if (isNotEmpty(delegateDownloadResponse.getErrorMsg())) {
       throw new InvalidRequestException(delegateDownloadResponse.getErrorMsg());
@@ -150,7 +150,7 @@ public class DelegateDownloadResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     DelegateDownloadResponse delegateDownloadResponse =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.downloadDockerDelegate(
+        CGRestUtils.getResponse(delegateNgManagerCgManagerClient.downloadDockerDelegate(
             accountIdentifier, orgIdentifier, projectIdentifier, delegateDownloadRequest));
     if (isNotEmpty(delegateDownloadResponse.getErrorMsg())) {
       throw new InvalidRequestException(delegateDownloadResponse.getErrorMsg());

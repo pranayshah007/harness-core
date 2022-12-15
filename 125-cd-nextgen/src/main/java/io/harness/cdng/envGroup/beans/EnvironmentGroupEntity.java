@@ -9,6 +9,7 @@ package io.harness.cdng.envGroup.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -16,6 +17,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
 
@@ -42,6 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Data
 @Builder
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "environmentGroupNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "EnvironmentGroupKeys")
 @Document("environmentGroupNG")

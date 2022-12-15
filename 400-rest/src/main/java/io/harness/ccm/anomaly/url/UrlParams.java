@@ -41,6 +41,7 @@ public enum UrlParams {
 
   CURRENT_TAB("currentTab"),
   FILTER("filter"),
+  FILTERS("filters"),
   SELECTED_VIEW("selectedView");
 
   private String param;

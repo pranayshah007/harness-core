@@ -18,6 +18,8 @@ import static io.harness.beans.RepairActionCode.CONTINUE_WITH_DEFAULTS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.PHASE;
+import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.StateType.SHELL_SCRIPT;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -26,12 +28,14 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
@@ -64,7 +68,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecution> {
+public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler implements Handler<WorkflowExecution> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
@@ -78,24 +82,30 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
   private static final Duration SHELL_SCRIPT_EXPIRE_THRESHOLD = Duration.ofSeconds(10);
 
-  public void registerIterators(int threadPoolSize) {
-    PumpExecutorOptions options = PumpExecutorOptions.builder()
-                                      .interval(Duration.ofSeconds(10))
-                                      .poolSize(threadPoolSize)
-                                      .name("WorkflowExecutionMonitor")
-                                      .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, WorkflowExecution.class,
-        MongoPersistenceIterator.<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>builder()
-            .clazz(WorkflowExecution.class)
-            .fieldName(WorkflowExecutionKeys.nextIteration)
-            .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
-            .targetInterval(Duration.ofMinutes(1))
-            .acceptableNoAlertDelay(Duration.ofSeconds(30))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(SchedulingType.REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       WorkflowExecution.class,
+                       MongoPersistenceIterator.<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>builder()
+                           .clazz(WorkflowExecution.class)
+                           .fieldName(WorkflowExecutionKeys.nextIteration)
+                           .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofSeconds(30))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .schedulingType(SchedulingType.REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "WorkflowExecutionMonitor";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override
@@ -120,6 +130,10 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
         while (stateExecutionInstances.hasNext()) {
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
           long now = System.currentTimeMillis();
+
+          if (featureFlagService.isEnabled(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING, entity.getAccountId())) {
+            checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
+          }
 
           if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
             continue;
@@ -233,6 +247,26 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
                                                         .unset(WorkflowExecutionKeys.message);
 
     wingsPersistence.findAndModify(query, updateOps, HPersistence.returnNewOptions);
+  }
+
+  private void checkIfStateExecutionIsStartingOrRunningWithoutResponse(
+      StateExecutionInstance stateExecutionInstance, long currentTimeMillis, String envId) {
+    if (stateExecutionInstance.getStateType() != null && !stateExecutionInstance.getStateType().equals(PHASE.getType())
+        && !stateExecutionInstance.getStateType().equals(PHASE_STEP.getType())
+        && stateExecutionInstance.getStatus().equals(ExecutionStatus.STARTING)
+        && (currentTimeMillis - stateExecutionInstance.getStartTs()) > EXPIRE_THRESHOLD.toMillis()) {
+      log.info("Restart StateExecutionInstance found: {}", stateExecutionInstance.getUuid());
+      ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
+                                                  .accountId(stateExecutionInstance.getAccountId())
+                                                  .executionInterruptType(ExecutionInterruptType.RETRY)
+                                                  .envId(envId)
+                                                  .appId(stateExecutionInstance.getAppId())
+                                                  .executionUuid(stateExecutionInstance.getExecutionUuid())
+                                                  .stateExecutionInstanceId(stateExecutionInstance.getUuid())
+                                                  .build();
+
+      executionInterruptManager.registerExecutionInterrupt(executionInterrupt);
+    }
   }
 
   private boolean shouldAvoidExpiringWithThreshold(

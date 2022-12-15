@@ -8,6 +8,7 @@
 package io.harness.connector.apis.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
@@ -407,12 +408,14 @@ public class ConnectorResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       @ProjectIdentifier @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Connector ID") @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @NotBlank
-      @ResourceIdentifier String connectorIdentifier, @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo) {
+      @ResourceIdentifier String connectorIdentifier, @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorIdentifier)) {
       throw new InvalidRequestException("Delete operation not supported for Harness Secret Manager");
     }
     return ResponseDTO.newResponse(
-        connectorService.delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
+        connectorService.delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, forceDelete));
   }
 
   @POST
@@ -577,7 +580,7 @@ public class ConnectorResource {
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
   }
 
-  // TODO(UTSAV): will be moved to 340-ce-nextgen
+  // TODO(UTSAV): will be moved to ce-nextgen
   @POST
   @Path("/getceawstemplateurl")
   @ApiOperation(value = "Get CCM Aws Connector Template URL Environment Wise", nickname = "getCEAwsTemplate")

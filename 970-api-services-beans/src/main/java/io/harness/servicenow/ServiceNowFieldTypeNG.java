@@ -10,7 +10,6 @@ package io.harness.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidArgumentsException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
@@ -18,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 public enum ServiceNowFieldTypeNG {
@@ -25,7 +25,8 @@ public enum ServiceNowFieldTypeNG {
   @JsonProperty("integer") INTEGER(Collections.singletonList("integer")),
   @JsonProperty("boolean") BOOLEAN(Collections.singletonList("boolean")),
   @JsonProperty("string") STRING(Collections.singletonList("string")),
-  @JsonProperty("option") OPTION(Collections.singletonList("option"));
+  @JsonProperty("option") OPTION(Collections.singletonList("option")),
+  @JsonProperty("unknown") UNKNOWN(Collections.emptyList());
 
   @Getter private List<String> snowInternalTypes;
   ServiceNowFieldTypeNG(List<String> types) {
@@ -33,14 +34,13 @@ public enum ServiceNowFieldTypeNG {
   }
 
   public static ServiceNowFieldTypeNG fromTypeString(String typeStr) {
+    if (StringUtils.isBlank(typeStr)) {
+      return null;
+    }
     Optional<ServiceNowFieldTypeNG> serviceNowFieldTypeNG =
         Arrays.stream(ServiceNowFieldTypeNG.values())
             .filter(type -> type.getSnowInternalTypes().contains(typeStr))
             .findFirst();
-    if (serviceNowFieldTypeNG.isPresent()) {
-      return serviceNowFieldTypeNG.get();
-    } else {
-      throw new InvalidArgumentsException("Invalid type");
-    }
+    return serviceNowFieldTypeNG.orElse(UNKNOWN);
   }
 }

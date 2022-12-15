@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginRequest;
@@ -28,6 +29,8 @@ import software.wings.helpers.ext.vault.VaultK8sLoginResponse;
 import software.wings.helpers.ext.vault.VaultK8sLoginResult;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
+import software.wings.helpers.ext.vault.VaultTokenLookupResponse;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import com.amazonaws.DefaultRequest;
 import com.amazonaws.auth.AWS4Signer;
@@ -86,6 +89,28 @@ public class NGVaultTaskHelper {
       return result;
     } catch (IOException e) {
       String message = "NG: Failed to perform AppRole based login for secret manager " + vaultConfig.getName() + " at "
+          + vaultConfig.getVaultUrl();
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    }
+  }
+
+  public static VaultTokenLookupResult getVaultTokenLookupResult(BaseVaultConfig vaultConfig) {
+    try {
+      VaultSysAuthRestClient restClient =
+          VaultRestClientFactory.getVaultRetrofit(vaultConfig.getVaultUrl(), vaultConfig.isCertValidationRequired())
+              .create(VaultSysAuthRestClient.class);
+
+      Response<VaultTokenLookupResponse> response =
+          restClient.tokenLookup(vaultConfig.getAuthToken(), vaultConfig.getNamespace()).execute();
+      VaultTokenLookupResult result = null;
+      if (response.isSuccessful()) {
+        result = response.body().getData();
+      } else {
+        logAndThrowVaultError(vaultConfig, response, "Token lookup");
+      }
+      return result;
+    } catch (IOException e) {
+      String message = "Failed to perform Token Lookup for secret manager " + vaultConfig.getName() + " at "
           + vaultConfig.getVaultUrl();
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
     }
@@ -212,9 +237,10 @@ public class NGVaultTaskHelper {
     }
     String errorMsg = "";
     if (response.errorBody() != null) {
-      errorMsg =
-          String.format("Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".",
-              operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.errorBody().string());
+      errorMsg = String.format(
+          "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\" \"%s\".",
+          operation, baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.message(),
+          response.errorBody().string());
     } else {
       errorMsg = String.format(
           "Failed to %s for Vault: %s And Namespace: %s due to the following error from vault: \"%s\".", operation,
@@ -239,6 +265,9 @@ public class NGVaultTaskHelper {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

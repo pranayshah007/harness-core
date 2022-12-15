@@ -34,8 +34,8 @@ public class CatalogueHelper {
     final Map<ConnectorCategory, List<ConnectorType>> connectorCategoryListMap =
         Arrays.stream(ConnectorType.values())
             .filter(enumFilter.filter(accountIdentifier, FeatureName.SSH_NG))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.AZURE_REPO_CONNECTOR))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.JENKINS_ARTIFACT))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.AZURE_ARTIFACTS_NG))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TAS_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()

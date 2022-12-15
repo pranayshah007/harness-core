@@ -14,8 +14,10 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -64,6 +66,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -76,6 +79,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitProviderHelper scmGitProviderHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -126,14 +130,26 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
+    OptionalSweepingOutput optionalSweepingOutputUpdateReleaseRepo = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
+
     int prNumber;
     String prLink;
     String sha;
+    String ref;
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
       prNumber = createPROutcome.getPrNumber();
       prLink = createPROutcome.getPrlink();
       sha = createPROutcome.getCommitId();
+      ref = createPROutcome.getRef();
+    } else if (optionalSweepingOutputUpdateReleaseRepo != null && optionalSweepingOutputUpdateReleaseRepo.isFound()) {
+      UpdateReleaseRepoOutcome updateReleaseRepoOutcome =
+          (UpdateReleaseRepoOutcome) optionalSweepingOutputUpdateReleaseRepo.getOutput();
+      prNumber = updateReleaseRepoOutcome.getPrNumber();
+      prLink = updateReleaseRepoOutcome.getPrlink();
+      sha = updateReleaseRepoOutcome.getCommitId();
+      ref = updateReleaseRepoOutcome.getRef();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
@@ -143,6 +159,12 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
+    Map<String, Object> apiParamOptions = null;
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_API_PARAMS_MERGE_PR)) {
+      apiParamOptions = gitOpsSpecParams.getVariables().getValue();
+    }
+
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
             connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
@@ -151,44 +173,54 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
 
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
-    String repoOwner, repoName;
     GitApiTaskParams gitApiTaskParams;
     switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.GITHUB)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
-                               .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITHUB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .ref(ref)
+                .build();
         break;
       case AZURE_REPO:
         AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.AZURE_REPO)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
-                               .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.AZURE_REPO)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .apiParamOptions(emptyIfNull(apiParamOptions))
+                .build();
         break;
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
         String slug = scmGitProviderHelper.getSlug(gitlabConnectorDTO);
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.GITLAB)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .slug(slug)
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITLAB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .slug(slug)
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
         break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);

@@ -27,6 +27,9 @@ public class NoOpGitSyncSdkServiceImpl implements GitSyncSdkService {
   }
 
   @Override
+  public void resetGitSyncSDKCache(String accountIdentifier, String orgIdentifier, String projectIdentifier) {}
+
+  @Override
   public boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return false;
   }

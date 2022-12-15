@@ -15,6 +15,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -22,6 +23,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -67,6 +69,7 @@ import org.mongodb.morphia.annotations.Transient;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "UserGroupKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "userGroups", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
@@ -93,6 +96,12 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
                 .field(UserGroupKeys.accountId)
                 .field(UserGroupKeys.appFilterType)
                 .field(UserGroupKeys.appIds)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountId_linkedSsoId_isSsoLinked")
+                .field(UserGroupKeys.accountId)
+                .field(UserGroupKeys.linkedSsoId)
+                .field(UserGroupKeys.isSsoLinked)
                 .build())
         .build();
   }
@@ -136,7 +145,7 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
 
   private boolean importedByScim;
 
-  @FdIndex private String accountId;
+  private String accountId;
   private List<String> memberIds;
 
   @Transient private List<User> members;
@@ -230,7 +239,7 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
         .ssoGroupId(ssoGroupId)
         .ssoGroupName(ssoGroupName)
         .importedByScim(importedByScim)
-        .parents(parents)
+        .parents(Collections.emptySet())
         .build();
   }
 

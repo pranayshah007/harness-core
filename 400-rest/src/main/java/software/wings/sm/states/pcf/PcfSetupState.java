@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CF_ALLOW_SPECIAL_CHARACTERS;
 import static io.harness.beans.FeatureName.CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.CF_CUSTOM_EXTRACTION;
-import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -84,7 +83,6 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -96,6 +94,8 @@ import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -307,7 +307,7 @@ public class PcfSetupState extends State {
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
-    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()).toDTO());
     artifactStreamAttributes.setArtifactServerEncryptedDataDetails(
         secretManager.getEncryptionDetails((EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(),
             context.getAppId(), context.getWorkflowExecutionId()));
@@ -334,7 +334,7 @@ public class PcfSetupState extends State {
             .artifactStreamAttributes(artifactStreamAttributes)
             .manifestYaml(applicationManifestYmlContent)
             .workflowExecutionId(context.getWorkflowExecutionId())
-            .artifactFiles(artifact.getArtifactFiles())
+            .artifactFiles(artifact.getArtifactFiles().stream().map(ArtifactFile::toDTO).collect(toList()))
             .routeMaps(isOriginalRoute ? routeMaps : tempRouteMaps)
             .serviceVariables(serviceVariables)
             .timeoutIntervalInMin(timeoutIntervalInMinutes == null ? Integer.valueOf(5) : timeoutIntervalInMinutes)
@@ -349,8 +349,6 @@ public class PcfSetupState extends State {
             .useAppAutoscalar(useAppAutoscalar)
             .enforceSslValidation(enforceSslValidation)
             .limitPcfThreads(featureFlagService.isEnabled(LIMIT_PCF_THREADS, pcfConfig.getAccountId()))
-            .ignorePcfConnectionContextCache(
-                featureFlagService.isEnabled(IGNORE_PCF_CONNECTION_CONTEXT_CACHE, pcfConfig.getAccountId()))
             .cfCliVersion(pcfStateHelper.getCfCliVersionOrDefault(app.getAppId(), serviceElement.getUuid()))
             .isNonVersioning(nonVersioningInactiveRollbackEnabled && isNonVersioning)
             .nonVersioningInactiveRollbackEnabled(nonVersioningInactiveRollbackEnabled)
@@ -479,11 +477,13 @@ public class PcfSetupState extends State {
         return artifact.getArtifactFileMetadata().get(0).getUrl();
       case ARTIFACTORY:
         return artifactStreamAttributes.getMetadata().get("artifactPath");
-      default:
+      case NEXUS:
         if (isEmpty(artifactStreamAttributes.getMetadata())
             || isEmpty(artifactStreamAttributes.getMetadata().get(URL))) {
           throw new InvalidRequestException("artifact url is required");
         }
+        return artifactStreamAttributes.getMetadata().get(URL);
+      default:
         return artifactStreamAttributes.getMetadata().get(URL);
     }
   }

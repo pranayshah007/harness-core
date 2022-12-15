@@ -8,6 +8,7 @@
 package io.harness.shell;
 
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,8 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -105,5 +108,23 @@ public class ScriptSshExecutorTest extends CategoryTest {
     assertThat(executor.getExecutionId()).isEqualTo(ACTIVITY_ID);
     assertThat(executor.getHost()).isEqualTo("host");
     assertThat(executor.getCommandUnitName()).isEqualTo("MyCommandUnit");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testBuildingEnvironmentVars() {
+    Map<String, String> envVars = new HashMap<>();
+    envVars.put("var", "value");
+    String e1 = scriptSshExecutor.buildExportForEnvironmentVariables(envVars);
+    assertThat(e1).isEqualTo("export var=\"value\"\n");
+
+    envVars.put("var", "spaced value");
+    e1 = scriptSshExecutor.buildExportForEnvironmentVariables(envVars);
+    assertThat(e1).isEqualTo("export var=\"spaced value\"\n");
+
+    envVars.put("var", "\"#1$010");
+    e1 = scriptSshExecutor.buildExportForEnvironmentVariables(envVars);
+    assertThat(e1).isEqualTo("export var=\"\"#1$010\"\n");
   }
 }

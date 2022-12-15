@@ -24,7 +24,7 @@ import io.harness.PersistenceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.iterator.TestRegularIterableEntity.RegularIterableEntityKeys;
 import io.harness.maintenance.MaintenanceGuard;
-import io.harness.metrics.impl.IteratorMetricsServiceImpl;
+import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -51,7 +51,7 @@ public class PersistenceRegularIteratorTest extends PersistenceTestBase {
   @Inject private HPersistence persistence;
   @Inject private MorphiaPersistenceProvider<TestRegularIterableEntity> persistenceProvider;
   @Inject private QueueController queueController;
-  @Inject private IteratorMetricsServiceImpl iteratorMetricsService;
+  @Inject private PersistenceMetricsServiceImpl iteratorMetricsService;
 
   private ExecutorService executorService = ThreadPool.create(4, 15, 1, TimeUnit.SECONDS);
 

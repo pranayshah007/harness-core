@@ -8,6 +8,7 @@
 package io.harness.filesystem;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.govern.Switch.noop;
@@ -46,6 +47,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.zeroturnaround.exec.InvalidExitValueException;
@@ -54,6 +56,7 @@ import org.zeroturnaround.exec.ProcessResult;
 
 @OwnedBy(PL)
 @UtilityClass
+@Slf4j
 public class FileIo {
   public static void createDirectoryIfDoesNotExist(final String directoryPath) throws IOException {
     createDirectoryIfDoesNotExist(Paths.get(directoryPath));
@@ -109,9 +112,12 @@ public class FileIo {
   }
 
   public static void deleteDirectoryAndItsContentIfExists(final String directoryPath) throws IOException {
-    if (!Files.exists(Paths.get(directoryPath))) {
+    if (isEmpty(directoryPath) || !Files.exists(Paths.get(directoryPath))) {
+      log.info("Directory at path: " + directoryPath + " doesn't exist");
       return;
     }
+
+    log.info("Deleting directory at path: " + directoryPath);
 
     Files.walkFileTree(Paths.get(directoryPath), new SimpleFileVisitor<Path>() {
       @Override

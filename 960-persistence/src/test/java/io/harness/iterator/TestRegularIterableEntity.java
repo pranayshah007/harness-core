@@ -7,6 +7,9 @@
 
 package io.harness.iterator;
 
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -15,6 +18,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testRegularIterable")
 @FieldNameConstants(innerTypeName = "RegularIterableEntityKeys")
 public class TestRegularIterableEntity implements PersistentRegularIterable {

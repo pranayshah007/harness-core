@@ -1,0 +1,263 @@
+openapi: 3.0.3
+x-stoplight:
+  id: d7aclnawwa0g4
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1.0'
+  description: This is the Open Api Spec 3 for the Audit Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'http://api.harness.io'
+    description: Harness host url
+paths:
+  /v1/streaming-destinations:
+    parameters: []
+    post:
+      summary: Create a Streaming Destination
+      operationId: create-streaming-destinations
+      description: Creates a custom Streaming Destination
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/StreamingDestinationResponse'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateStreamingDestinationRequest'
+      x-internal: true
+      tags:
+        - Streaming Destinations
+    get:
+      summary: List Streaming Destinations
+      operationId: get-streaming-destinations
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamingDestinationListResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Status'
+      description: Get list of Streaming Destinations
+      security:
+        - x-api-key: []
+      tags:
+        - Streaming Destinations
+      x-internal: true
+components:
+  schemas:
+    StreamingDestinationDTO:
+      title: StreamingDestinationDTO
+      x-stoplight:
+        id: ooye81jxpefty
+      type: object
+      description: Streaming Destination model
+      properties:
+        slug:
+          type: string
+          description: Streaming Destination slug
+        name:
+          type: string
+          description: Streaming Destination name
+        status:
+          type: string
+          description: Streaming Destination status
+          enum:
+            - ACTIVE
+            - INACTIVE
+        connector_ref:
+          type: string
+          description: Streaming Destination scoped connector reference identifier
+        spec:
+          $ref: '#/components/schemas/StreamingDestinationSpecDTO'
+      required:
+        - slug
+        - name
+        - status
+        - connector_ref
+        - spec
+    StreamingDestinationSpecDTO:
+      title: StreamingDestinationSpecDTO
+      x-stoplight:
+        id: s4mguy0st7rtt
+      type: object
+      discriminator:
+        propertyName: type
+        mapping:
+          AWS_S3: '#/components/schemas/AwsS3StreamingDestinationSpecDTO'
+      properties:
+        type:
+          type: string
+          enum:
+            - AWS_S3
+          description: This specifies the type of Streaming Destination
+      required:
+        - type
+      description: ''
+    AwsS3StreamingDestinationSpecDTO:
+      allOf:
+        - $ref: '#/components/schemas/StreamingDestinationSpecDTO'
+        - type: object
+          properties:
+            bucket:
+              type: string
+              description: The bucket in AWS S3 where audit records are to be written
+          required:
+            - bucket
+      title: AwsS3StreamingDestinationSpecDTO
+      description: AwsS3 Streaming Destination model
+      x-discriminator-value: AWS_S3
+    StreamingDestinationResponse:
+      title: StreamingDestinationResponse
+      x-stoplight:
+        id: rulrehs9nk5a3
+      type: object
+      description: Streaming Destination response model
+      properties:
+        streaming_destination:
+          $ref: '#/components/schemas/StreamingDestinationDTO'
+        created:
+          type: integer
+          format: int64
+          description: Created time of the Streaming Destination
+        updated:
+          type: integer
+          format: int64
+          description: Last updated time of the Streaming Destination
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+      description: API key is a token provided while making the API calls. This is used to authenticate the client at the exposed endpoint.
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 30
+        maximum: 100
+      description: 'Pagination: Number of items to return.'
+    PageIndex:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: 'Pagination page number strategy: Specify the page number within the paginated collection related to the number of items on each page.'
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching the search term.
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - slug
+          - name
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
+    Status:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Status of the Streaming Destination
+  responses:
+    StreamingDestinationResponse:
+      description: Streaming Destination response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StreamingDestinationResponse'
+          examples:
+            example-streaming-destination-response:
+              value:
+                streaming_destination:
+                  slug: example_destination
+                  name: example desitnation name
+                  status: ACTIVE
+                  connector_ref: account.example_connector
+                  spec:
+                    type: AWS_S3
+                    bucket: example_bucket
+                created: 1670304106000
+                update: 1670304106000
+    StreamingDestinationListResponse:
+      description: Streaming Destination list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/StreamingDestinationResponse'
+          examples:
+            example-list-streaming-destination-response:
+              value:
+                - streaming_destination:
+                    slug: example_destination
+                    name: example desitnation name
+                    status: ACTIVE
+                    connector_ref: account.example_connector
+                    spec:
+                      type: AWS_S3
+                      bucket: example_bucket
+                  created: 1670304106000
+                  update: 1670304106000
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+  requestBodies:
+    CreateStreamingDestinationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StreamingDestinationDTO'
+          examples:
+            example-aws-s3-stream-destination-request:
+              value:
+                slug: example_destination
+                name: example destination name
+                status: ACTIVE
+                connector_ref: account.example_aws_connector
+                spec:
+                  type: AWS_S3
+                  bucket: example_bucket
+      description: Streaming Destination request body
+tags:
+  - name: Streaming Destinations

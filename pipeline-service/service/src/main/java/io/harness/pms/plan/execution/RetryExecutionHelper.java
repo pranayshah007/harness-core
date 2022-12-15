@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +41,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,7 +71,7 @@ public class RetryExecutionHelper {
   private static final String LAST_STAGE_IDENTIFIER = "last_stage_identifier";
   private final NodeExecutionService nodeExecutionService;
   private final PlanExecutionMetadataService planExecutionMetadataService;
-  private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  private final PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   private final PMSPipelineService pmsPipelineService;
   private final PMSExecutionService pmsExecutionService;
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
@@ -102,18 +103,15 @@ public class RetryExecutionHelper {
   }
 
   public boolean isFailedStatus(ExecutionStatus status) {
-    if (status.equals(ExecutionStatus.ABORTED) || status.equals(ExecutionStatus.FAILED)
+    return status.equals(ExecutionStatus.ABORTED) || status.equals(ExecutionStatus.FAILED)
         || status.equals(ExecutionStatus.EXPIRED) || status.equals(ExecutionStatus.APPROVAL_REJECTED)
-        || status.equals(ExecutionStatus.APPROVALREJECTED)) {
-      return true;
-    }
-    return false;
+        || status.equals(ExecutionStatus.APPROVALREJECTED);
   }
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId) {
     Optional<PipelineEntity> updatedPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
 
     if (!updatedPipelineEntity.isPresent()) {
       return RetryInfo.builder()
@@ -160,7 +158,7 @@ public class RetryExecutionHelper {
     // if pipeline is having templates we need to use resolved yaml
     if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
       templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
-          accountId, orgIdentifier, projectIdentifier, updatedPipeline);
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline, BOOLEAN_FALSE_VALUE);
       if (templateMergeResponseDTO != null) {
         updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
             ? templateMergeResponseDTO.getMergedPipelineYaml()
@@ -370,11 +368,11 @@ public class RetryExecutionHelper {
   }
 
   public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId,
-      List<String> stageIdentifiersToRetrytWith) {
+      List<String> stageIdentifiersToRetryWith) {
     List<Node> planNodes = plan.getPlanNodes();
 
     List<String> stagesFqnToRetryWith =
-        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetrytWith);
+        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetryWith);
     List<NodeExecution> strategyNodeExecutions =
         nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
     List<Node> strategyNodes = new ArrayList<>();

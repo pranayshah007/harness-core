@@ -42,4 +42,5 @@ public class ResourceGroupServiceConfig {
   @JsonProperty("exportMetricsToStackDriver") boolean exportMetricsToStackDriver;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 }

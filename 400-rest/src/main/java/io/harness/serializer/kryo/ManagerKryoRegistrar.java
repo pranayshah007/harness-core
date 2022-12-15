@@ -18,6 +18,10 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.cvng.state.CVNGVerificationTask;
+import io.harness.event.reconciliation.DetectionStatus;
+import io.harness.event.reconciliation.ReconcilationAction;
+import io.harness.event.reconciliation.ReconciliationStatus;
+import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -79,6 +83,7 @@ import software.wings.api.helm.HelmReleaseInfoElement;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
@@ -195,6 +200,7 @@ import software.wings.delegatetasks.event.EventsDeliveryCallback;
 import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ShellScriptEnvironmentVariables;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
+import software.wings.helpers.ext.cloudformation.CloudFormationRollbackCompletionFlag;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.AwsEcsInfrastructure;
@@ -213,6 +219,8 @@ import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.infra.RancherKubernetesInfrastructure;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
@@ -258,8 +266,10 @@ import software.wings.sm.states.EnvState.EnvExecutionResponseData;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import software.wings.sm.states.RepeatState.RepeatStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSDeployExecutionSummary;
+import software.wings.sm.states.azure.AzureVMSSDeployStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSSetupExecutionSummary;
 import software.wings.sm.states.azure.AzureVMSSSetupStateExecutionData;
+import software.wings.sm.states.azure.AzureVMSSSwitchRouteStateExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionSummary;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotShiftTrafficExecutionData;
@@ -281,6 +291,8 @@ import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -288,6 +300,8 @@ import com.esotericsoftware.kryo.Kryo;
 public class ManagerKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(BasicDBList.class, 2015);
+    kryo.register(BasicDBObject.class, 2016);
     kryo.register(AmiStepExecutionSummary.class, 5219);
     kryo.register(ApprovalStateExecutionData.class, 5087);
     kryo.register(ArtifactCollectionExecutionData.class, 5252);
@@ -590,5 +604,17 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(RancherStateExecutionData.class, 50009);
     kryo.register(UserGroupEntityReference.class, 50010);
     kryo.register(EncryptedDataDetails.class, 50013);
+    kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
+    kryo.register(AzureVMSSDeployStateExecutionData.class, 50017);
+    kryo.register(AzureVMSSSwitchRouteStateExecutionData.class, 50018);
+    kryo.register(CloudFormationRollbackCompletionFlag.class, 50019);
+    kryo.register(DeploymentReconRecord.class, 50020);
+    kryo.register(DetectionStatus.class, 50021);
+    kryo.register(ReconciliationStatus.class, 50022);
+    kryo.register(ReconcilationAction.class, 50023);
+    kryo.register(ArtifactFile.class, 50028);
+    kryo.register(Artifact.class, 50029);
+    kryo.register(Artifact.ContentStatus.class, 50030);
+    kryo.register(Artifact.Status.class, 50031);
   }
 }

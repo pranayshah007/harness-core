@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.ArtifactoryArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -55,6 +56,10 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
   String imagePullSecret;
 
   String registryHostname;
+
+  Map<String, String> metadata;
+
+  Map<String, String> label;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

@@ -11,15 +11,21 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PL)
 public class NGFeatureFlagHelperService {
-  @Inject AccountClient accountClient;
+  @Inject @Named("PRIVILEGED") AccountClient accountClient;
 
   public boolean isEnabled(String accountId, FeatureName featureName) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+  }
+
+  public Set<String> getFeatureFlagEnabledAccountIds(String featureName) {
+    return CGRestUtils.getResponse(accountClient.featureFlagEnabledAccounts(featureName));
   }
 }

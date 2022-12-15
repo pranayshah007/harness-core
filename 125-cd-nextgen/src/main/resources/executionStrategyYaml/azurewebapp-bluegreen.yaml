@@ -11,7 +11,7 @@ spec:
           name: "Slot Deployment"
           identifier: slotDeployment
           type: AzureSlotDeployment
-          timeout: 10m
+          timeout: 20m
           spec:
             webApp: ""
             deploymentSlot: ""
@@ -19,7 +19,7 @@ spec:
           name: "Swap slots"
           identifier: swapSlots
           type: AzureSwapSlot
-          timeout: 10m
+          timeout: 20m
           spec:
             targetSlot: ""
     rollbackSteps:
@@ -27,5 +27,5 @@ spec:
           name: "WebApp rollback"
           identifier: webAppRollback
           type: AzureWebAppRollback
-          timeout: 10m
+          timeout: 20m
           spec: {}

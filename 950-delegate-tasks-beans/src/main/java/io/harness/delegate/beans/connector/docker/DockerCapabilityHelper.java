@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.docker;
 
+import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.generateConnectivityUrl;
+
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -23,9 +25,10 @@ public class DockerCapabilityHelper extends ConnectorCapabilityBaseHelper {
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorConfigDTO;
-    final String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
+    String dockerRegistryUrl = generateConnectivityUrl(
+        ((DockerConnectorDTO) connectorConfigDTO).getDockerRegistryUrl(), dockerConnectorDTO.getProviderType());
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        dockerRegistryUrl.endsWith("/") ? dockerRegistryUrl : dockerRegistryUrl.concat("/"), maskingEvaluator));
+        dockerRegistryUrl, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, dockerConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }

@@ -10,9 +10,12 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -21,15 +24,17 @@ import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.LogKeyUtils;
 import io.harness.persistence.NameAccess;
 
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
@@ -58,6 +63,7 @@ import org.mongodb.morphia.annotations.Transient;
  */
 @OwnedBy(CDC)
 @TargetModule(_957_CG_BEANS)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "applications", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ApplicationKeys")
@@ -103,6 +109,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
 
   @Getter @Setter private Boolean isManualTriggerAuthorized;
   @Getter @Setter private Boolean areWebHookSecretsMandated;
+  @Getter @Setter private Boolean disableTriggers;
 
   public boolean isSample() {
     return sample;
@@ -126,6 +133,18 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(APPLICATION)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   /**
@@ -367,6 +386,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
     private boolean sample;
     private Boolean isManualTriggerAuthorized;
     private Boolean areWebHookSecretsMandated;
+    private Boolean disableTriggers;
 
     private Builder() {}
 
@@ -474,6 +494,11 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
       return this;
     }
 
+    public Builder disableTriggers(Boolean disableTriggers) {
+      this.disableTriggers = disableTriggers;
+      return this;
+    }
+
     public Builder but() {
       return anApplication()
           .name(name)
@@ -494,7 +519,8 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
           .yamlGitConfig(yamlGitConfig)
           .sample(sample)
           .isManualTriggerAuthorized(isManualTriggerAuthorized)
-          .areWebHookSecretsMandated(areWebHookSecretsMandated);
+          .areWebHookSecretsMandated(areWebHookSecretsMandated)
+          .disableTriggers(disableTriggers);
     }
 
     public Application build() {
@@ -519,6 +545,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
       application.setSample(sample);
       application.setIsManualTriggerAuthorized(isManualTriggerAuthorized);
       application.setAreWebHookSecretsMandated(areWebHookSecretsMandated);
+      application.setDisableTriggers(disableTriggers);
       return application;
     }
   }
@@ -537,6 +564,7 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
     private String description;
     private Boolean isManualTriggerAuthorized;
     private Boolean areWebHookSecretsMandated;
+    private Boolean disableTriggers;
     private Boolean isGitSyncEnabled;
     private String gitConnector;
     private String branchName;

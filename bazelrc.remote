@@ -1,5 +1,4 @@
 import bazelrc.common
-import bazelrc.coverage
 
 # Add properties that are specific for ci build system
 

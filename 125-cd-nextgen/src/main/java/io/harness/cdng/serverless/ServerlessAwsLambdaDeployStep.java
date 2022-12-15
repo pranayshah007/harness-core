@@ -17,6 +17,7 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
+import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -181,6 +182,8 @@ public class ServerlessAwsLambdaDeployStep
     if (passThroughData instanceof ServerlessGitFetchFailurePassThroughData) {
       return serverlessStepCommonHelper.handleGitTaskFailure(
           (ServerlessGitFetchFailurePassThroughData) passThroughData);
+    } else if (passThroughData instanceof ServerlessS3FetchFailurePassThroughData) {
+      return serverlessStepCommonHelper.handleS3TaskFailure((ServerlessS3FetchFailurePassThroughData) passThroughData);
     } else if (passThroughData instanceof ServerlessStepExceptionPassThroughData) {
       return serverlessStepCommonHelper.handleStepExceptionFailure(
           (ServerlessStepExceptionPassThroughData) passThroughData);

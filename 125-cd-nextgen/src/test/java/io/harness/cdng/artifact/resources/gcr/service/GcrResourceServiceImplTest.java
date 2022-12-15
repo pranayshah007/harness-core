@@ -8,8 +8,10 @@
 package io.harness.cdng.artifact.resources.gcr.service;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +28,7 @@ import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -35,6 +38,12 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -65,7 +74,7 @@ public class GcrResourceServiceImplTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-
+  @Mock ExceptionManager exceptionManager;
   @Spy @InjectMocks GcrResourceServiceImpl gcrResourceService;
 
   @Before
@@ -242,5 +251,120 @@ public class GcrResourceServiceImplTest extends CategoryTest {
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.VALIDATE_ARTIFACT_SOURCE);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testimagePathBlankCheck() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    assertThatThrownBy(()
+                           -> gcrResourceService.getBuildDetails(
+                               identifierRef, "", REGISTRY_HOSTNAME, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("imagePath cannot be null");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testDelegateServiceDriverException() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
+                .build());
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
+
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenThrow(new WingsException("wings exception message"));
+
+    assertThatThrownBy(()
+                           -> gcrResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, REGISTRY_HOSTNAME, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("wings exception message");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testErrorNotifyResponseDataException() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ErrorNotifyResponseData.builder().errorMessage("Testing").build());
+
+    assertThatThrownBy(()
+                           -> gcrResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, REGISTRY_HOSTNAME, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Gcr Get Builds task failure due to error - Testing");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testFailureExecution() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+
+    ConnectorResponseDTO connectorResponse = getConnector();
+
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                .errorCode(ErrorCode.DEFAULT_ERROR_CODE)
+                .errorMessage("Test failed")
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
+                .build());
+
+    assertThatThrownBy(()
+                           -> gcrResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, REGISTRY_HOSTNAME, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Gcr Get Builds task failure due to error - Test failed with error code: DEFAULT_ERROR_CODE");
   }
 }

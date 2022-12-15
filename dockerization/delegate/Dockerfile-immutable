@@ -1,4 +1,4 @@
-FROM redhat/ubi8-minimal:8.4
+FROM redhat/ubi8-minimal:latest
 
 LABEL name="harness/delegate-immutable" \
       vendor="Harness" \
@@ -21,7 +21,8 @@ COPY scripts/client_tools.sh /opt/harness-delegate/client_tools.sh
 WORKDIR /opt/harness-delegate
 
 ARG disable_client_tools=true
-RUN ./client_tools.sh $disable_client_tools \
+ARG TARGETARCH
+RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
     && chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \
     && chmod -R g=u /opt/harness-delegate \
@@ -29,7 +30,7 @@ RUN ./client_tools.sh $disable_client_tools \
 
 RUN rm /opt/harness-delegate/client_tools.sh
 
-COPY --from=adoptopenjdk/openjdk11:x86_64-ubi-minimal-jre-11.0.14_9 /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV HOME=/opt/harness-delegate
 ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools

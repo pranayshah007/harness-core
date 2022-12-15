@@ -7,10 +7,11 @@
 
 package io.harness.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instanceinfo.InstanceInfo;
+import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -34,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InstanceKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "instanceNG", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("instanceNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.DX)
 public class Instance {
   public static List<MongoIndex> mongoIndexes() {
@@ -74,6 +75,19 @@ public class Instance {
                  .sortField(InstanceKeys.createdAt)
                  .sortField(InstanceKeys.deletedAt)
                  .build())
+        .add(
+            SortCompoundMongoIndex.builder()
+                .name("accountId_organizationId_projectId_serviceId_instanceInfo.Agent_ClusterIdentifier_createdAt_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoAgentIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .sortField(InstanceKeys.createdAt)
+                .sortField(InstanceKeys.deletedAt)
+                .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_infrastructureMappingId_isDeleted_createdAt_deletedAt_idx")
                  .field(InstanceKeys.accountIdentifier)
@@ -122,6 +136,43 @@ public class Instance {
                  .sortField(InstanceKeys.deletedAt)
                  .sortField(InstanceKeys.createdAt)
                  .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_organizationId_projectId_isDeleted_envId_clusterIdentifier_serviceId_primaryArtifact_lastPipelineExecutionId_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .field(InstanceKeys.envIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                .field(InstanceKeys.lastPipelineExecutionId)
+                .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_organizationId_projectId_isDeleted_envId_serviceId_primaryArtifact_lastPipelineExecutionId_infraIdentifier_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .field(InstanceKeys.envIdentifier)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                .field(InstanceKeys.lastPipelineExecutionId)
+                .field(InstanceKeys.infraIdentifier)
+                .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_lastDeployedAt_serviceIdentifier_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeys.orgIdentifier)
+                 .field(InstanceKeys.projectIdentifier)
+                 .field(InstanceKeys.lastDeployedAt)
+                 .field(InstanceKeys.serviceIdentifier)
+                 .sortField(InstanceKeys.lastDeployedAt)
+                 .build())
         .build();
   }
 
@@ -166,5 +217,7 @@ public class Instance {
   public static class InstanceKeysAdditional {
     public static final String instanceInfoPodName = "instanceInfo.podName";
     public static final String instanceInfoNamespace = "instanceInfo.namespace";
+    public static final String instanceInfoClusterIdentifier = "instanceInfo.clusterIdentifier";
+    public static final String instanceInfoAgentIdentifier = "instanceInfo.agentIdentifier";
   }
 }

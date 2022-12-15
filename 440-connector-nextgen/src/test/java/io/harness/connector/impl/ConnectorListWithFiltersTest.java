@@ -25,12 +25,14 @@ import static io.harness.encryption.SecretRefData.SECRET_DOT_DELIMINITER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorConnectivityDetails;
+import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -64,16 +66,21 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +94,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.data.domain.Page;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(DX)
@@ -98,7 +107,8 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Inject @InjectMocks @Spy DefaultConnectorServiceImpl connectorService;
   @Inject ConnectorRepository connectorRepository;
   @Inject FilterService filterService;
-  @Mock NGAccountSettingService accountSettingService;
+  @Mock NGSettingsClient settingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   String accountIdentifier = "accountIdentifier";
   String orgIdentifier = "orgIdentifier";
   String projectIdentifier = "projectIdentifier";
@@ -108,12 +118,17 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   ConnectorType connectorType = ConnectorType.DOCKER;
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
     doNothing().when(connectorService).assurePredefined(any(), any());
-    doReturn(true)
-        .when(accountSettingService)
-        .getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
   }
   private ConnectorInfoDTO getConnector(String name, String identifier, String description) {
     return ConnectorInfoDTO.builder()
@@ -403,6 +418,16 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     }
   }
 
+  private void createConnectorsWithExecuteOnDelegate(int numberOfConnectors, Boolean mode) {
+    for (int i = 0; i < numberOfConnectors; i++) {
+      KubernetesClusterConfig connector = getConnectorEntity();
+      connector.setName(name + System.currentTimeMillis());
+      connector.setIdentifier(generateUuid());
+      connector.setExecuteOnDelegate(mode);
+      connectorRepository.save(connector, ChangeType.ADD);
+    }
+  }
+
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
@@ -533,6 +558,34 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
                                      filterIdentifier, null, false, false)
                                  .getNumberOfElements();
     assertThat(numberOfConnectors).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TEJAS)
+  @Category(UnitTests.class)
+  public void testListConnectivityModes() {
+    createConnectorsWithExecuteOnDelegate(4, true);
+    createConnectorsWithExecuteOnDelegate(6, false);
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .connectorConnectivityModes(Arrays.asList(ConnectorConnectivityMode.DELEGATE))
+            .build();
+    Page<ConnectorResponseDTO> connectorWithDelegateMode = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(connectorWithDelegateMode.getTotalElements()).isEqualTo(4);
+    connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder()
+                                       .connectorConnectivityModes(Arrays.asList(ConnectorConnectivityMode.MANAGER))
+                                       .build();
+    Page<ConnectorResponseDTO> connectorWithManagerMode = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(connectorWithManagerMode.getTotalElements()).isEqualTo(6);
+    connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder()
+                                       .connectorConnectivityModes(Arrays.asList(
+                                           ConnectorConnectivityMode.DELEGATE, ConnectorConnectivityMode.MANAGER))
+                                       .build();
+    Page<ConnectorResponseDTO> allConnectors = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(allConnectors.getTotalElements()).isEqualTo(10);
   }
 
   private void createConnectorsWithGivenValues(

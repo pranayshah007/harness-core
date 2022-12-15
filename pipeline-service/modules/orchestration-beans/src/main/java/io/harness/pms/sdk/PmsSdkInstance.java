@@ -8,10 +8,9 @@
 package io.harness.pms.sdk;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -46,11 +45,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PmsSdkInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pmsSdkInstances", noClassnameStored = true)
 @Document("pmsSdkInstances")
 @TypeAlias("pmsSdkInstances")
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.PMS)
 public class PmsSdkInstance implements PersistentEntity, UuidAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
 
@@ -73,7 +72,7 @@ public class PmsSdkInstance implements PersistentEntity, UuidAware {
   ConsumerConfig nodeResumeEventConsumerConfig;
   ConsumerConfig startPlanCreationEventConsumerConfig;
 
-  @Default @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt = System.currentTimeMillis();
+  @Default @Setter @NonFinal @SchemaIgnore @CreatedDate Long createdAt = System.currentTimeMillis();
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
   @Setter @NonFinal @Version Long version;
 

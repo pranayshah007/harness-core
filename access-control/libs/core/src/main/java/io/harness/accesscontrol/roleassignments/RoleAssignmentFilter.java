@@ -29,7 +29,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(PL)
 @Getter
@@ -40,8 +39,9 @@ import org.hibernate.validator.constraints.NotEmpty;
 @EqualsAndHashCode
 @ValidRoleAssignmentFilter
 public class RoleAssignmentFilter {
-  @NotEmpty final String scopeFilter;
+  final String scopeFilter;
   final boolean includeChildScopes;
+  @Setter @Builder.Default @NotNull @Size(max = 100) Set<ScopeFilter> scopeFilters = new HashSet<>();
   @Builder.Default @NotNull @Size(max = 100) final Set<String> scopeLevelFilter = new HashSet<>();
   @Builder.Default @NotNull @Size(max = 100) final Set<String> resourceGroupFilter = new HashSet<>();
   @Builder.Default @NotNull @Size(max = 100) final Set<String> roleFilter = new HashSet<>();

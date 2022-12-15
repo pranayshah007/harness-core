@@ -21,7 +21,7 @@ import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.schema.SchemaGeneratorUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;

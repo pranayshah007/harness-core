@@ -26,6 +26,9 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredentia
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsManualCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsStsCredential;
 import io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerConnector;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsAuthentication;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsConnector;
+import io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsTokenCredentials;
 import io.harness.connector.entities.embedded.azureconnector.AzureConfig;
 import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentityCredential;
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
@@ -47,10 +50,12 @@ import io.harness.connector.entities.embedded.ceawsconnector.S3BucketDetails;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig;
 import io.harness.connector.entities.embedded.cek8s.CEK8sDetails;
 import io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnector;
+import io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector;
 import io.harness.connector.entities.embedded.datadogconnector.DatadogConnector;
 import io.harness.connector.entities.embedded.docker.DockerConnector;
 import io.harness.connector.entities.embedded.docker.DockerUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.dynatraceconnector.DynatraceConnector;
+import io.harness.connector.entities.embedded.elkconnector.ELKConnector;
 import io.harness.connector.entities.embedded.errortrackingconnector.ErrorTrackingConnector;
 import io.harness.connector.entities.embedded.gcpccm.GcpBillingExportDetails;
 import io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig;
@@ -58,6 +63,7 @@ import io.harness.connector.entities.embedded.gcpconnector.GcpConfig;
 import io.harness.connector.entities.embedded.gcpconnector.GcpDelegateDetails;
 import io.harness.connector.entities.embedded.gcpconnector.GcpServiceAccountKey;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
+import io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector;
 import io.harness.connector.entities.embedded.gitconnector.GitConfig;
 import io.harness.connector.entities.embedded.gitconnector.GitSSHAuthentication;
 import io.harness.connector.entities.embedded.gitconnector.GitUserNamePasswordAuthentication;
@@ -96,8 +102,11 @@ import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
+import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
+import io.harness.connector.entities.embedded.tasconnector.TasConfig;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -123,6 +132,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(PhysicalDataCenterConnector.class);
     set.add(GcpConfig.class);
     set.add(AwsConfig.class);
+    set.add(SpotConfig.class);
+    set.add(TasConfig.class);
     set.add(CEAwsConfig.class);
     set.add(ArtifactoryConnector.class);
     set.add(JiraConnector.class);
@@ -148,6 +159,10 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureRepoConnector.class);
     set.add(JenkinsConnector.class);
     set.add(OciHelmConnector.class);
+    set.add(CustomSecretManagerConnector.class);
+    set.add(ELKConnector.class);
+    set.add(GcpSecretManagerConnector.class);
+    set.add(AzureArtifactsConnector.class);
   }
 
   @Override
@@ -215,5 +230,9 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication",
         AzureRepoHttpAuthentication.class);
     h.put("connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
+    h.put("connector.entities.embedded.azureartifacts.AzureRepoHttpAuthentication", AzureArtifactsAuthentication.class);
+    h.put("connector.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
+    h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
+        ServiceNowUserNamePasswordAuthentication.class);
   }
 }

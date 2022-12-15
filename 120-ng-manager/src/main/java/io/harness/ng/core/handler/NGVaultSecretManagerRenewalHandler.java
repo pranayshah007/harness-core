@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.handler;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.connector.entities.Connector.ConnectorKeys;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
@@ -95,13 +95,20 @@ public class NGVaultSecretManagerRenewalHandler implements Handler<VaultConnecto
           log.info("Vault {} not configured for renewal.", vaultConnector.getUuid());
           return;
         }
+        // for existing soft deleted vault entries, do not renew token. Remove this code after existing soft deleted
+        // entries are removed from dB
+        if (vaultConnector.getDeleted()) {
+          return;
+        }
         if (!checkIfEligibleForRenewal(vaultConnector.getRenewedAt(), renewalInterval)) {
           log.info("Vault config {} renewed at {} not renewing now", vaultConnector.getUuid(),
               vaultConnector.getRenewedAt());
           return;
         }
         if (vaultConnector.getAccessType() == APP_ROLE) {
-          vaultService.renewAppRoleClientToken(vaultConnector);
+          if (vaultConnector.getRenewAppRoleToken()) {
+            vaultService.renewAppRoleClientToken(vaultConnector);
+          }
         } else {
           vaultService.renewToken(vaultConnector);
         }

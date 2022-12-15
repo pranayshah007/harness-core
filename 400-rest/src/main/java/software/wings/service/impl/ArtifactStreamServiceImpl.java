@@ -84,10 +84,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
-import software.wings.beans.Workflow;
 import software.wings.beans.artifact.AcrArtifactStream;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
 import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
@@ -103,6 +100,8 @@ import software.wings.beans.config.NexusConfig;
 import software.wings.beans.template.TemplateHelper;
 import software.wings.beans.trigger.Trigger;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.intfc.AlertService;
@@ -468,19 +467,32 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     setServiceId(artifactStream);
 
     boolean originalMetadataOnly = artifactStream.isMetadataOnly();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    boolean isArtifactStreamMetadataFFEnabled = featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId);
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(true);
     }
     artifactStream.validateRequiredFields();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(originalMetadataOnly);
     }
 
     validateIfNexus2AndDockerRepositoryType(artifactStream, accountId);
 
+    // Set collectionEnabled status
+    if (artifactStream.getCollectionEnabled() == null) {
+      artifactStream.setCollectionEnabled(true);
+    }
+
+    // Set collection status initially to UNSTABLE.
+    artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.UNSTABLE.name());
+
     // check if artifact stream is parameterized
     boolean streamParameterized = artifactStream.checkIfStreamParameterized();
     if (streamParameterized) {
+      // parameterised artifact stream cannot have collection enabled true, forcing it to be false.
+      artifactStream.setCollectionEnabled(false);
+      // setting parameterised artifact stream status to be STOPPED since collection cannot be enabled for it.
+      artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.STOPPED.name());
       // if nexus check if its not version 3
       validateIfNexus2AndParameterized(artifactStream, accountId);
       artifactStream.setArtifactStreamParameterized(true);
@@ -524,8 +536,6 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     handleArtifactoryDockerSupportForPcf(artifactStream);
     // Add keywords.
     artifactStream.setKeywords(trimmedLowercaseSet(artifactStream.generateKeywords()));
-    // Set collection status initially to UNSTABLE.
-    artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.UNSTABLE.name());
     // Trim out whitespaces
     artifactStream.setName(artifactStream.getName().trim());
 
@@ -712,11 +722,12 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     artifactStream.setAccountId(accountId);
 
     boolean originalMetadataOnly = artifactStream.isMetadataOnly();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    boolean isArtifactStreamMetadataFFEnabled = featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId);
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(true);
     }
     artifactStream.validateRequiredFields();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(originalMetadataOnly);
     }
 
@@ -756,10 +767,15 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     if (!fromTemplate) {
       populateCustomArtifactStreamFields(artifactStream, existingArtifactStream);
     }
+    if (artifactStream.getCollectionEnabled() == null) {
+      artifactStream.setCollectionEnabled(true);
+    }
 
     // check if artifact stream is parameterized
     boolean streamParameterized = artifactStream.checkIfStreamParameterized();
     if (streamParameterized) {
+      // parameterised artifact stream cannot have collection enabled true, forcing it to be false.
+      artifactStream.setCollectionEnabled(false);
       validateIfNexus2AndParameterized(artifactStream, accountId);
     }
     artifactStream.setArtifactStreamParameterized(streamParameterized);
@@ -906,6 +922,42 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
       resetPerpetualTask(artifactStream);
     }
     return artifactStream;
+  }
+
+  @Override
+  public boolean resetStoppedArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class)
+            .filter(ArtifactStreamKeys.accountId, accountId)
+            .filter(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.UNSTABLE)
+            .set(ArtifactStreamKeys.failedCronAttempts, 0);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to reset with accountId {}", accountId);
+    }
+    alertService.deleteArtifactStreamAlertForAccount(accountId);
+    // not handlng PT cases since they are deprecated.
+    return true;
+  }
+
+  @Override
+  public boolean stopArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class).filter(ArtifactStreamKeys.accountId, accountId);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to stop collecting for accountId {}", accountId);
+    }
+    // not handlng PT cases since they are deprecated.
+    return true;
   }
 
   @Override
@@ -1171,38 +1223,11 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     }
   }
 
-  private void ensureArtifactStreamSafeToDelete(String appId, String artifactStreamId, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      validateTriggerUsages(accountId, appId, artifactStreamId);
-    } else if (appId.equals(GLOBAL_APP_ID)) {
-      validateTriggerUsages(accountId, appId, artifactStreamId);
-      validateServiceVariableUsages(artifactStreamId);
-      validateWorkflowUsages(artifactStreamId);
-    }
+  private void ensureArtifactStreamSafeToDelete(String appId, String artifactStreamId) {
+    validateTriggerUsages(appId, artifactStreamId);
   }
 
-  private void validateServiceVariableUsages(String artifactStreamId) {
-    List<Service> services = artifactStreamServiceBindingService.listServices(artifactStreamId);
-    if (isEmpty(services)) {
-      return;
-    }
-
-    List<String> serviceNames = services.stream().map(Service::getName).collect(toList());
-    throw new InvalidRequestException(
-        format("Artifact Stream linked to Services [%s]", String.join(", ", serviceNames)), USER);
-  }
-
-  private void validateWorkflowUsages(String artifactStreamId) {
-    List<Workflow> workflows = artifactStreamServiceBindingService.listWorkflows(artifactStreamId);
-    if (isEmpty(workflows)) {
-      return;
-    }
-    List<String> workflowNames = workflows.stream().map(Workflow::getName).collect(toList());
-    throw new InvalidRequestException(
-        format("Artifact Stream linked to Workflows [%s]", String.join(", ", workflowNames)), USER);
-  }
-
-  private void validateTriggerUsages(String accountId, String appId, String artifactStreamId) {
+  private void validateTriggerUsages(String appId, String artifactStreamId) {
     List<String> triggerNames;
     List<Trigger> triggers = triggerService.getTriggersHasArtifactStreamAction(appId, artifactStreamId);
     if (isEmpty(triggers)) {
@@ -1242,7 +1267,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
               settingsService.getUsageRestrictionsForSettingId(artifactStream.getSettingId()), false)) {
         throw new UnauthorizedUsageRestrictionsException(USER);
       }
-      ensureArtifactStreamSafeToDelete(GLOBAL_APP_ID, artifactStreamId, accountId);
+      ensureArtifactStreamSafeToDelete(GLOBAL_APP_ID, artifactStreamId);
     }
 
     artifactStream.setSyncFromGit(syncFromGit);
@@ -1277,7 +1302,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
 
     String artifactStreamId = artifactStream.getUuid();
     if (!forceDelete) {
-      ensureArtifactStreamSafeToDelete(appId, artifactStreamId, accountId);
+      ensureArtifactStreamSafeToDelete(appId, artifactStreamId);
     }
 
     artifactStream.setSyncFromGit(syncFromGit);
@@ -1572,45 +1597,14 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
   public List<ArtifactStreamSummary> listArtifactStreamSummary(String appId) {
     Map<String, ArtifactStream> artifactStreamMap = getArtifactStreamMap(appId);
     List<ArtifactStreamSummary> artifactStreamSummaries = new ArrayList<>();
-    String accountId = appService.getAccountIdByAppId(appId);
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      try (HIterator<Service> serviceHIterator = new HIterator<>(wingsPersistence.createQuery(Service.class)
-                                                                     .filter(ServiceKeys.appId, appId)
-                                                                     .project(ServiceKeys.uuid, true)
-                                                                     .project(ServiceKeys.name, true)
-                                                                     .project(ServiceKeys.artifactStreamIds, true)
-                                                                     .fetch())) {
-        for (Service service : serviceHIterator) {
-          List<String> artifactStreamIds = service.getArtifactStreamIds();
-          if (isEmpty(artifactStreamIds)) {
-            continue;
-          }
-
-          String serviceName = service.getName();
-          artifactStreamSummaries.addAll(artifactStreamIds.stream()
-                                             .filter(artifactStreamMap::containsKey)
-                                             .map(artifactStreamId -> {
-                                               ArtifactStream artifactStream = artifactStreamMap.get(artifactStreamId);
-                                               return ArtifactStreamSummary.builder()
-                                                   .artifactStreamId(artifactStreamId)
-                                                   .settingId(artifactStream.getSettingId())
-                                                   .displayName(artifactStream.getName() + " (" + serviceName + ")")
-                                                   .build();
-                                             })
-                                             .collect(Collectors.toList()));
-        }
-      }
-
-      return artifactStreamSummaries;
-    }
-
     try (HIterator<Service> serviceHIterator = new HIterator<>(wingsPersistence.createQuery(Service.class)
                                                                    .filter(ServiceKeys.appId, appId)
                                                                    .project(ServiceKeys.uuid, true)
                                                                    .project(ServiceKeys.name, true)
+                                                                   .project(ServiceKeys.artifactStreamIds, true)
                                                                    .fetch())) {
       for (Service service : serviceHIterator) {
-        List<String> artifactStreamIds = artifactStreamServiceBindingService.listArtifactStreamIds(service);
+        List<String> artifactStreamIds = service.getArtifactStreamIds();
         if (isEmpty(artifactStreamIds)) {
           continue;
         }

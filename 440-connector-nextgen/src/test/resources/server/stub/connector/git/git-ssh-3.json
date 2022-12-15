@@ -1,0 +1,42 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Git",
+    "spec" : {
+      "url" : "https://github.com/example/example-repo.git",
+      "validationRepo" : "https://github.com/example/example-validation-repo.git",
+      "branchName" : "example_branch",
+      "delegateSelectors" : [ ],
+      "executeOnDelegate" : false,
+      "type" : "Ssh",
+      "connectionType" : "Repo",
+      "spec" : {
+        "sshKeyRef" : "account.git-ssh-key"
+      }
+    }
+  },
+  "createdAt" : 1234567890,
+  "lastModifiedAt" : 1234567890,
+  "harnessManaged" : false,
+  "status" : {
+    "status" : "FAILURE",
+    "errorSummary" : "Error Encountered (Check your credentials)",
+    "errors" : [
+      {
+        "reason" : "Unexpected Error",
+        "message" : "Check your credentials",
+        "code" : 450
+      }
+    ],
+    "testedAt" : 1234567890,
+    "lastTestedAt" : 0,
+    "lastConnectedAt" : 1234567890
+  }
+}

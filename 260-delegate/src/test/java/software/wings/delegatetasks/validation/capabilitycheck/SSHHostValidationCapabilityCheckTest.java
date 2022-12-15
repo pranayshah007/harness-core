@@ -10,7 +10,6 @@ package software.wings.delegatetasks.validation.capabilitycheck;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -33,7 +32,7 @@ import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHExecutionCredential;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.infrastructure.Host;
 import software.wings.delegatetasks.validation.capabilities.BasicValidationInfo;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
@@ -56,19 +55,19 @@ public class SSHHostValidationCapabilityCheckTest extends WingsBaseTest {
 
   private Host host = Host.Builder.aHost().withPublicDns(WingsTestConstants.PUBLIC_DNS).build();
   private SettingAttribute hostConnectionAttributes =
-      aSettingAttribute()
-          .withValue(HostConnectionAttributes.Builder.aHostConnectionAttributes()
-                         .withAccessType(AccessType.USER_PASSWORD)
-                         .withAccountId(WingsTestConstants.ACCOUNT_ID)
-                         .build())
+      SettingAttribute.builder()
+          .value(HostConnectionAttributes.Builder.aHostConnectionAttributes()
+                     .withAccessType(AccessType.USER_PASSWORD)
+                     .withAccountId(WingsTestConstants.ACCOUNT_ID)
+                     .build())
           .build();
 
   private SettingAttribute bastionConnectionAttributes =
-      aSettingAttribute()
-          .withValue(BastionConnectionAttributes.Builder.aBastionConnectionAttributes()
-                         .withAccessType(AccessType.USER_PASSWORD)
-                         .withAccountId(WingsTestConstants.ACCOUNT_ID)
-                         .build())
+      SettingAttribute.builder()
+          .value(BastionConnectionAttributes.Builder.aBastionConnectionAttributes()
+                     .withAccessType(AccessType.USER_PASSWORD)
+                     .withAccountId(WingsTestConstants.ACCOUNT_ID)
+                     .build())
           .build();
 
   private final SSHHostValidationCapability validationCapability =

@@ -17,6 +17,7 @@ import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
 import io.harness.gitsync.persistance.EntityKeySource;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoRegistrar;
@@ -91,6 +92,12 @@ public class GitSdkTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

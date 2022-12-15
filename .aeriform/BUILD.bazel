@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("//:tools/bazel/aeriform.bzl", "aeriform")
 
 aeriform("//001-microservice-intfc-tool:module")
@@ -80,17 +85,21 @@ aeriform("//300-cv-nextgen:module")
 
 aeriform("//300-cv-nextgen:tests")
 
-aeriform("//315-sto-manager:module")
+aeriform("//310-iacm-manager:module")
 
-aeriform("//315-sto-manager:tests")
+aeriform("//311-iacm-utilities:module")
+
+aeriform("//315-sto-manager/app:module")
+
+aeriform("//315-sto-manager/app:tests")
+
+aeriform("//315-sto-manager/contracts:module")
+
+aeriform("//315-sto-manager/contracts:tests")
 
 aeriform("//323-sto-utilities:module")
 
 aeriform("//323-sto-utilities:tests")
-
-aeriform("//325-sto-beans:module")
-
-aeriform("//325-sto-beans:tests")
 
 aeriform("//332-ci-manager/app:module")
 
@@ -104,9 +113,9 @@ aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
 
-aeriform("//340-ce-nextgen:module")
+aeriform("//ce-nextgen:module")
 
-aeriform("//340-ce-nextgen:tests")
+aeriform("//ce-nextgen:tests")
 
 aeriform("//350-event-server:module")
 
@@ -169,10 +178,6 @@ aeriform("//445-gitops:tests")
 aeriform("//450-ce-views:module")
 
 aeriform("//450-ce-views:tests")
-
-aeriform("//460-capability:module")
-
-aeriform("//460-capability:tests")
 
 aeriform("//470-alert:module")
 
@@ -344,7 +349,7 @@ aeriform("//950-wait-engine:tests")
 
 aeriform("//951-cg-git-sync:module")
 
-aeriform("//951-debezium-service")
+aeriform("//debezium-service")
 
 aeriform("//952-debezium-engine")
 

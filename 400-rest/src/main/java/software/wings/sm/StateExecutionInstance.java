@@ -10,6 +10,7 @@ package software.wings.sm;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -26,6 +27,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -51,7 +54,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
-import org.simpleframework.xml.Transient;
 
 /**
  * Represents State Machine Instance.
@@ -62,6 +64,7 @@ import org.simpleframework.xml.Transient;
 @Data
 @FieldNameConstants(innerTypeName = "StateExecutionInstanceKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "stateExecutionInstances", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -87,14 +90,25 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.parentInstanceId)
                  .field(StateExecutionInstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_endTs")
+                 .field(StateExecutionInstanceKeys.appId)
+                 .ascSortField(StateExecutionInstanceKeys.endTs)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_status_stateType")
+                 .field(StateExecutionInstanceKeys.accountId)
+                 .field(StateExecutionInstanceKeys.status)
+                 .field(StateExecutionInstanceKeys.stateType)
+                 .build())
         .build();
   }
   @Id private String uuid;
-  @FdIndex protected String appId;
+  protected String appId;
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
 
-  @FdIndex private String accountId;
+  private String accountId;
   private String childStateMachineId;
   private String displayName;
   private String stateName;
@@ -141,7 +155,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
 
   private WorkflowType executionType;
 
-  @FdIndex private String executionUuid;
+  private String executionUuid;
 
   @FdIndex private String parentInstanceId;
 
@@ -168,12 +182,12 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
 
   private boolean hasInspection;
 
-  @Transient private String workflowId;
-  @Transient private String pipelineStageElementId;
-  @Transient private int pipelineStageParallelIndex;
-  @Transient private String stageName;
-  @Transient private String phaseSubWorkflowId;
-  @Transient private String stepId;
+  private String workflowId;
+  private String pipelineStageElementId;
+  private int pipelineStageParallelIndex;
+  private String stageName;
+  private String phaseSubWorkflowId;
+  private String stepId;
 
   private OrchestrationWorkflowType orchestrationWorkflowType;
   private Boolean isOnDemandRollback;
@@ -239,6 +253,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
     private long lastUpdatedAt;
     private Long stateTimeout;
     private String accountId;
+    private boolean rollback;
 
     private Builder() {}
 
@@ -426,10 +441,16 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
       return this;
     }
 
+    public Builder rollback(boolean rollback) {
+      this.rollback = rollback;
+      return this;
+    }
+
     public Builder but() {
       return aStateExecutionInstance()
           .stateName(stateName)
           .displayName(displayName)
+          .rollback(rollback)
           .stateType(stateType)
           .contextElement(contextElement)
           .contextTransition(contextTransition)
@@ -491,6 +512,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
       stateExecutionInstance.setLastUpdatedAt(lastUpdatedAt);
       stateExecutionInstance.setStateTimeout(stateTimeout);
       stateExecutionInstance.setAccountId(accountId);
+      stateExecutionInstance.setRollback(rollback);
       return stateExecutionInstance;
     }
   }

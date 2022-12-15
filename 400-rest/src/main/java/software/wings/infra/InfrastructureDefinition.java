@@ -10,7 +10,10 @@ package software.wings.infra;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA;
+
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -18,6 +21,7 @@ import io.harness.data.validator.EntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -31,6 +35,7 @@ import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.entityinterface.ApplicationAccess;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 
@@ -51,6 +56,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "InfrastructureDefinitionKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "infrastructureDefinitions", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(_957_CG_BEANS)
@@ -132,5 +138,17 @@ public class InfrastructureDefinition
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(INFRA)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 }

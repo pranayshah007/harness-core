@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -7,6 +12,7 @@ HarnessTeam = "CE"
 shared_dependencies = [
     "@ce_nextgen//:com_graphql_java_graphql_java",
     "@ce_nextgen//:org_antlr_antlr4_runtime",
+    "@maven//:org_apache_commons_commons_math3",
 ] + [
     "//:lombok",
     "//450-ce-views:module",
@@ -18,6 +24,7 @@ shared_dependencies = [
     "@maven//:com_google_inject_guice",
     "@maven//:io_leangen_graphql_spqr",
     "@maven//:org_jooq_jooq",
+    "@maven//:com_amazonaws_aws_java_sdk_costexplorer",
 ]
 
 java_library(

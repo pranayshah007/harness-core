@@ -24,9 +24,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.executioncapability.ProtoCapabilityCheck;
 import io.harness.delegate.task.executioncapability.ProtoCapabilityCheckFactory;
+import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 
-import software.wings.delegatetasks.validation.AbstractDelegateValidateTask;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.AbstractDelegateValidateTask;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -42,12 +42,12 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
   @Inject ProtoCapabilityCheckFactory protoCapabilityCheckFactory;
 
   public CapabilityCheckController(String delegateId, DelegateTaskPackage delegateTaskPackage,
-      Consumer<List<DelegateConnectionResult>> postExecute) {
+      Consumer<List<DelegateConnectionResultDetail>> postExecute) {
     super(delegateId, delegateTaskPackage, postExecute);
   }
 
   @Override
-  public List<DelegateConnectionResult> validate() {
+  public List<DelegateConnectionResultDetail> validate() {
     List<CapabilityResponse> checkResponses = new ArrayList<>();
     try {
       List<ExecutionCapability> executionCapabilities = getExecutionCapabilities();
@@ -77,7 +77,7 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
           ProtoCapabilityCheck protoCheck = protoCapabilityCheckFactory.obtainCapabilityCheck(parameters);
           if (CapabilityProtoConverter.shouldCompareResults(parameters)) {
             CapabilitySubjectPermission permission = protoCheck.performCapabilityCheckWithProto(parameters);
-            if (CapabilityProtoConverter.hasDivergingResults(capabilityResponse, permission)) {
+            if (hasDivergingResults(capabilityResponse, permission)) {
               log.warn("Diverging capabilities: " + delegateCapability.toString() + " -vs- " + parameters);
             } else {
               log.info("Proto/execution capability have the same result: " + parameters);
@@ -117,13 +117,13 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
   // Manager expects DelegateConnectionResult. This is to be deprecated in future,
   // So we receive output with new data structure "CapabilityResponse"
   // and convert in into something manager understands for now
-  private List<DelegateConnectionResult> convertResponsesIntoDelegateConnectionResults(
+  private List<DelegateConnectionResultDetail> convertResponsesIntoDelegateConnectionResults(
       List<CapabilityResponse> checkResponses) {
-    List<DelegateConnectionResult> delegateConnectionResults = new ArrayList<>();
+    List<DelegateConnectionResultDetail> delegateConnectionResults = new ArrayList<>();
 
     if (isNotEmpty(checkResponses)) {
       checkResponses.forEach(checkResponse -> {
-        delegateConnectionResults.add(DelegateConnectionResult.builder()
+        delegateConnectionResults.add(DelegateConnectionResultDetail.builder()
                                           .validated(checkResponse.isValidated())
                                           .criteria(checkResponse.getDelegateCapability().fetchCapabilityBasis())
                                           .build());
@@ -131,5 +131,11 @@ public class CapabilityCheckController extends AbstractDelegateValidateTask {
     }
 
     return delegateConnectionResults;
+  }
+
+  private static boolean hasDivergingResults(
+      CapabilityResponse capabilityResponse, CapabilitySubjectPermission capabilitySubjectPermission) {
+    return capabilityResponse.isValidated()
+        ^ (capabilitySubjectPermission.getPermissionResult() == CapabilitySubjectPermission.PermissionResult.ALLOWED);
   }
 }

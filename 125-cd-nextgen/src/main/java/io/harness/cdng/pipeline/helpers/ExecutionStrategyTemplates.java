@@ -1,7 +1,17 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.pipeline.helpers;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static freemarker.template.Configuration.VERSION_2_3_23;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.utils.LazyInitHelper;
 
@@ -13,10 +23,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 
+@OwnedBy(CDP)
 public class ExecutionStrategyTemplates {
   public static final String SSH_WINRM_ROLLING_SH_FTL = "ssh-winrm-rolling.sh.ftl";
   public static final String SSH_WINRM_CANARY_SH_FTL = "ssh-winrm-canary.sh.ftl";
   public static final String SSH_WINRM_BASIC_SH_FTL = "ssh-winrm-basic.sh.ftl";
+  public static final String SSH_WINRM_BASIC_SH_FTL_V2 = "ssh-winrm-basic-v2.sh.ftl";
+  public static final String SSH_WINRM_ROLLING_SH_FTL_V2 = "ssh-winrm-rolling-v2.sh.ftl";
+  public static final String SSH_WINRM_CANARY_SH_FTL_V2 = "ssh-winrm-canary-v2.sh.ftl";
 
   private static final Configuration cfgV2 = new Configuration(VERSION_2_3_23);
 
@@ -58,6 +72,9 @@ public class ExecutionStrategyTemplates {
     putTemplateToConfig(SSH_WINRM_ROLLING_SH_FTL, templateLoader);
     putTemplateToConfig(SSH_WINRM_CANARY_SH_FTL, templateLoader);
     putTemplateToConfig(SSH_WINRM_BASIC_SH_FTL, templateLoader);
+    putTemplateToConfig(SSH_WINRM_BASIC_SH_FTL_V2, templateLoader);
+    putTemplateToConfig(SSH_WINRM_ROLLING_SH_FTL_V2, templateLoader);
+    putTemplateToConfig(SSH_WINRM_CANARY_SH_FTL_V2, templateLoader);
     cfgV2.setTemplateLoader(templateLoader);
     initV2 = true;
   }

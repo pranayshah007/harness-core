@@ -45,6 +45,7 @@ import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.jenkins.BuildDetails.BuildStatus;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.TimeLimiter;
@@ -151,6 +152,12 @@ public class JenkinsImpl implements Jenkins {
       throws URISyntaxException {
     jenkinsHttpClient = new CustomJenkinsHttpClient(new URI(jenkinsUrl), new String(token), getUnSafeBuilder());
     jenkinsServer = new CustomJenkinsServer(jenkinsHttpClient);
+  }
+
+  @VisibleForTesting
+  JenkinsImpl(CustomJenkinsServer jenkinsServer, CustomJenkinsHttpClient jenkinsHttpClient) {
+    this.jenkinsHttpClient = jenkinsHttpClient;
+    this.jenkinsServer = jenkinsServer;
   }
 
   /* (non-Javadoc)
@@ -556,6 +563,9 @@ public class JenkinsImpl implements Jenkins {
     if (queueItem == null) {
       log.info("Queue item value is null");
       return null;
+    } else if (queueItem.isCancelled()) {
+      log.info("Queued job cancelled for URL {}", queueReference.getQueueItemUrlPart());
+      throw new ArtifactServerException("Queued job cancelled", USER);
     } else if (queueItem.getExecutable() == null) {
       log.info("Executable value is null");
       return null;
@@ -798,28 +808,45 @@ public class JenkinsImpl implements Jenkins {
    * @param jobname        job name
    * @return job path details.
    */
-  private JobPathDetails constructJobPathDetails(String jobname) {
+  JobPathDetails constructJobPathDetails(String jobname) {
     String parentJobName = null;
     String parentJobUrl = null;
     String childJobName;
 
-    try {
-      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+    boolean isAlreadyEncoding = jobname.contains("/");
 
-      String[] jobNameSplit = decodedJobName.split("/");
+    if (isAlreadyEncoding) {
+      String[] jobNameSplit = jobname.split("/");
       int parts = jobNameSplit.length;
       if (parts > 1) {
         parentJobUrl = constructParentJobPath(jobNameSplit);
         parentJobName = jobNameSplit[parts - 2];
         childJobName = jobNameSplit[parts - 1];
       } else {
-        childJobName = decodedJobName;
+        childJobName = jobname;
       }
 
       return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
 
-    } catch (UnsupportedEncodingException e) {
-      throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+    } else {
+      try {
+        String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+
+        String[] jobNameSplit = decodedJobName.split("/");
+        int parts = jobNameSplit.length;
+        if (parts > 1) {
+          parentJobUrl = constructParentJobPath(jobNameSplit);
+          parentJobName = jobNameSplit[parts - 2];
+          childJobName = jobNameSplit[parts - 1];
+        } else {
+          childJobName = decodedJobName;
+        }
+
+        return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
+
+      } catch (UnsupportedEncodingException e) {
+        throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+      }
     }
   }
 
@@ -839,7 +866,7 @@ public class JenkinsImpl implements Jenkins {
   }
 
   @Data
-  private class JobPathDetails {
+  class JobPathDetails {
     String parentJobUrl;
     String parentJobName;
     String childJobName;

@@ -16,6 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import org.joor.Reflect;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,18 +27,19 @@ import org.mockito.junit.MockitoRule;
 public class MigratorExpressionUtilsTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
-  MigratorExpressionUtils migratorExpressionUtils = new MigratorExpressionUtils();
-  MigratorResolveFunctor migratorResolveFunctor =
-      new MigratorResolveFunctor(migratorExpressionUtils.prepareContextMap());
+  MigratorResolveFunctor migratorResolveFunctor = new MigratorResolveFunctor(MigratorExpressionUtils.prepareContextMap(
+      ImmutableMap.of("workflow.variables.var2", "<+pqr>", "app.name", "<+org.name>")));
 
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testRender() {
     Reflect.on(migratorResolveFunctor).set("expressionEvaluator", expressionEvaluator);
-    String input = "echo ${workflow.variables.var1} ${pipeline.variables.var1} ${infra.kubernetes.namespace}";
+    String input =
+        "echo ${workflow.variables.var1} ${pipeline.variables.var1} ${infra.kubernetes.namespace} ${workflow.variables.var2} ${app.name}";
     String output = migratorResolveFunctor.processString(input);
 
-    assertThat(output).isEqualTo("echo <+stage.variables.var1> <+pipeline.variables.var1> <+infra.namespace>");
+    assertThat(output).isEqualTo(
+        "echo <+stage.variables.var1> <+pipeline.variables.var1> <+infra.namespace> <+stage.variables.var2> <+org.name>");
   }
 }

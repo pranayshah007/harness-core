@@ -18,5 +18,5 @@ public interface GitlabService {
       List<EncryptedDataDetail> encryptionDetails, String sha, String owner, String repo,
       Map<String, Object> bodyObjectMap);
 
-  JSONObject mergePR(String apiUrl, String slug, String token, String prNumber);
+  JSONObject mergePR(String apiUrl, String slug, String token, String prNumber, Boolean deleteSourceBranch);
 }

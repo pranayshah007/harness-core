@@ -247,6 +247,7 @@ enum NexusRepositoryFormat {
   MAVEN
   NPM
   NUGET
+  RAW
 }
 
 type NexusDockerProps implements NexusProps {
@@ -275,6 +276,13 @@ type NexusNugetProps implements NexusProps {
 }
 
 type NexusNpmProps implements NexusProps {
+  nexusConnectorId: String
+  repository: String
+  repositoryFormat: NexusRepositoryFormat
+  packageName: String
+}
+
+type NexusRawProps implements NexusProps {
   nexusConnectorId: String
   repository: String
   repositoryFormat: NexusRepositoryFormat

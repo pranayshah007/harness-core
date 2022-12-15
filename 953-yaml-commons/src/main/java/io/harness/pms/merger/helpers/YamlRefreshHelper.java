@@ -85,12 +85,16 @@ public class YamlRefreshHelper {
    * @param sourceNodeInputSetFormatYaml
    * @return refreshed jsonNode with updated values
    */
-  private JsonNode refreshYamlFromSourceYaml(String nodeToRefreshYaml, String sourceNodeInputSetFormatYaml) {
+  public JsonNode refreshYamlFromSourceYaml(String nodeToRefreshYaml, String sourceNodeInputSetFormatYaml) {
     YamlConfig sourceNodeYamlConfig = new YamlConfig(sourceNodeInputSetFormatYaml);
-    Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
-
     YamlConfig nodeToRefreshYamlConfig = new YamlConfig(nodeToRefreshYaml);
-    Map<FQN, Object> nodeToRefreshFqnToValueMap = new LinkedHashMap<>(nodeToRefreshYamlConfig.getFqnToValueMap());
+    return refreshYamlConfigFromSourceYamlConfig(sourceNodeYamlConfig, nodeToRefreshYamlConfig);
+  }
+
+  public JsonNode refreshYamlConfigFromSourceYamlConfig(
+      YamlConfig sourceNodeYamlConfig, YamlConfig nodeToRefreshYamlConfig) {
+    Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
+    Map<FQN, Object> nodeToRefreshFqnToValueMap = nodeToRefreshYamlConfig.getFqnToValueMap();
 
     Map<FQN, Object> refreshedFqnToValueMap = new LinkedHashMap<>();
     // Iterating all the Runtime Inputs in the sourceNodeFqnToValueMap and adding the updated values of the runtime

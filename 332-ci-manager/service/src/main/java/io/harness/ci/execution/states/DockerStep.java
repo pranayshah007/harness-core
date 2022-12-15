@@ -54,7 +54,7 @@ public class DockerStep extends AbstractStepExecutable {
             url = format(DOCKER_URL_FORMAT, repo, tag, digest);
           }
           stepArtifactsBuilder.publishedImageArtifact(
-              PublishedImageArtifact.builder().imageName(image).tag(tag).url(url).build());
+              PublishedImageArtifact.builder().imageName(image).tag(tag).url(url).digest(desc.getDigest()).build());
         });
       }
     }

@@ -39,16 +39,22 @@ type StepExecutor interface {
 type stepExecutor struct {
 	tmpFilePath         string // File path to store generated temporary files
 	delegateSvcEndpoint string // Delegate service endpoint
+	managerSvcEndpoint  string // Manager service endpoint
+	delegateID          string //delegate id
+	accountKey          string ////account secret key
 	log                 *zap.SugaredLogger
 	procWriter          io.Writer
 }
 
 // NewStepExecutor creates a unit step executor
-func NewStepExecutor(tmpFilePath, delegateSvcEndpoint string,
+func NewStepExecutor(tmpFilePath, delegateSvcEndpoint, managerSvcEndpoint, delegateID, accountKey string,
 	log *zap.SugaredLogger, procWriter io.Writer) StepExecutor {
 	return &stepExecutor{
 		tmpFilePath:         tmpFilePath,
 		delegateSvcEndpoint: delegateSvcEndpoint,
+		managerSvcEndpoint:  managerSvcEndpoint,
+		delegateID:          delegateID,
+		accountKey:          accountKey,
 		log:                 log,
 		procWriter:          procWriter,
 	}
@@ -77,7 +83,13 @@ func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 	// Stops the addon container if step executed successfully.
 	// If step fails, then it can be retried on the same container.
 	// Hence, not stopping failed step containers.
-	if err == nil {
+
+	detach := false
+	if _, ok := step.GetStep().(*pb.UnitStep_Run); ok {
+		detach = step.GetRun().GetDetach()
+	}
+
+	if err == nil && !detach {
 		stopAddon(context.Background(), step.GetId(), step.GetContainerPort(), e.log)
 	}
 
@@ -146,7 +158,7 @@ func (e *stepExecutor) updateStepStatus(ctx context.Context, step *pb.UnitStep,
 		}
 	}
 
-	err := sendStepStatus(ctx, stepID, e.delegateSvcEndpoint, accountID, callbackToken,
+	err := sendStepStatus(ctx, stepID, e.delegateSvcEndpoint, e.managerSvcEndpoint, e.delegateID, e.accountKey, accountID, callbackToken,
 		taskID, int32(1), timeTaken, stepStatus, errMsg, so, artifact, e.log)
 	if err != nil {
 		e.log.Errorw("Failed to send step status. Failing execution of step",

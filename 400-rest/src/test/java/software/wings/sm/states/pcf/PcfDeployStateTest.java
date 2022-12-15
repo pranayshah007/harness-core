@@ -25,9 +25,9 @@ import static software.wings.beans.InstanceUnitType.COUNT;
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.states.pcf.PcfStateTestHelper.PHASE_NAME;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -288,8 +288,8 @@ public class PcfDeployStateTest extends WingsBaseTest {
         .thenReturn(setupSweepingOutputPcf);
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
-    workflowStandardParamsExtensionService = spy(
-        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService, null, null));
+    workflowStandardParamsExtensionService = spy(new WorkflowStandardParamsExtensionService(
+        appService, null, artifactService, environmentService, null, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     FieldUtils.writeField(

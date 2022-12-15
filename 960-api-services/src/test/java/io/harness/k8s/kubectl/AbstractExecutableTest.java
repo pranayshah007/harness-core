@@ -13,6 +13,8 @@ import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,37 +25,29 @@ import io.harness.rule.Owner;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.mockito.MockedStatic;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.zeroturnaround.exec.ProcessResult;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({Utils.class})
 @OwnedBy(HarnessTeam.CDP)
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*"})
 public class AbstractExecutableTest {
   @Test
   @Owner(developers = BOGDAN)
   @Category(UnitTests.class)
   public void shouldAddGoogleCredentialsIfFileExists() throws Exception {
-    // given
-    PowerMockito.mockStatic(Utils.class);
-
     Path tempDirectory = Files.createTempDirectory("abstractExecTest");
     Path gcpFile = Files.createFile(tempDirectory.resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME));
 
     // when
-    dummyExecutable().execute(tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false);
+    Map<String, String> capturedEnvironment = captureEnvironment(tempDirectory);
 
     // then
-    Map<String, String> capturedEnvironment = captureEnvironment();
     assertThat(capturedEnvironment).containsEntry("GOOGLE_APPLICATION_CREDENTIALS", gcpFile.toString());
   }
 
@@ -62,22 +56,28 @@ public class AbstractExecutableTest {
   @Category(UnitTests.class)
   public void shouldNotAddGoogleCredentialsEnvVarIfFileNotExist() throws Exception {
     // given
-    PowerMockito.mockStatic(Utils.class);
     Path tempDirectory = Files.createTempDirectory("abstractExecTest");
 
     // when
-    dummyExecutable().execute(tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false);
+    Map<String, String> capturedEnvironment = captureEnvironment(tempDirectory);
 
     // then
-    Map<String, String> environment = captureEnvironment();
-    assertThat(environment).doesNotContainKey("GOOGLE_APPLICATION_CREDENTIALS");
+    assertThat(capturedEnvironment).doesNotContainKey("GOOGLE_APPLICATION_CREDENTIALS");
   }
 
-  private Map<String, String> captureEnvironment() throws Exception {
+  private Map<String, String> captureEnvironment(Path tempDirectory) throws Exception {
     ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
-    PowerMockito.verifyStatic(Utils.class, Mockito.times(1));
-    Utils.executeScript(
-        anyString(), anyString(), any(OutputStream.class), any(OutputStream.class), mapArgumentCaptor.capture());
+    try (MockedStatic<Utils> mockedStatic = mockStatic(Utils.class)) {
+      ProcessResult processResultMock = new ProcessResult(0, null);
+      ProcessResult processResultSpy = spy(processResultMock);
+      mockedStatic
+          .when(()
+                    -> Utils.executeScript(anyString(), anyString(), any(OutputStream.class), any(OutputStream.class),
+                        mapArgumentCaptor.capture()))
+          .thenReturn(processResultSpy);
+      dummyExecutable().execute(
+          tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false, Collections.emptyMap());
+    }
     return (Map<String, String>) mapArgumentCaptor.getValue();
   }
 

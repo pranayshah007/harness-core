@@ -8,6 +8,8 @@
 package software.wings.beans.alert;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 
@@ -16,6 +18,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 @Value
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "notificationRulesStatuses", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class NotificationRulesStatus implements PersistentEntity, AccountAccess {

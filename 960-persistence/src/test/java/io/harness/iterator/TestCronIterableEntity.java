@@ -9,6 +9,9 @@ package io.harness.iterator;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
+
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -20,6 +23,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testCronIterable")
 @FieldNameConstants(innerTypeName = "CronIterableEntityKeys")
 @Slf4j

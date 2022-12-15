@@ -25,4 +25,5 @@ public class ExecutionInputDTO {
   @Schema(description = PlanExecutionResourceConstants.INPUT_INSTANCE_ID_PARAM_MESSAGE) String inputInstanceId;
   @Schema(description = "template for Execution time inputs.") String inputTemplate;
   @Schema(description = "submitted user input for Execution time input") String userInput;
+  @Schema(description = "Yaml of the field/node for provided nodeExecutionId") String fieldYaml;
 }

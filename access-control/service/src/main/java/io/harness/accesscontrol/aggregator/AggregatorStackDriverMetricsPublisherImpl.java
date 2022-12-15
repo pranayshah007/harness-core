@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.aggregator;
 
+import io.harness.accesscontrol.commons.metrics.AccessControlMetricsContext;
 import io.harness.aggregator.AggregatorMetricsService;
 import io.harness.aggregator.SnapshotMetrics;
 import io.harness.aggregator.StreamingMetrics;
@@ -34,7 +35,7 @@ public class AggregatorStackDriverMetricsPublisherImpl implements MetricsPublish
     Optional<SnapshotMetrics> snapshotMetricsOptional = aggregatorMetricsService.getSnapshotMetrics();
 
     if (streamingMetricsOptional.isPresent()) {
-      try (AggregatorMetricsContext ignored = new AggregatorMetricsContext(namespace, containerName)) {
+      try (AccessControlMetricsContext ignored = new AccessControlMetricsContext(namespace, containerName)) {
         StreamingMetrics streamingMetrics = streamingMetricsOptional.get();
         metricService.recordMetric(
             "aggregator_streaming_numberOfDisconnects", streamingMetrics.getNumberOfDisconnects());
@@ -56,7 +57,7 @@ public class AggregatorStackDriverMetricsPublisherImpl implements MetricsPublish
     }
 
     if (snapshotMetricsOptional.isPresent()) {
-      try (AggregatorMetricsContext ignored = new AggregatorMetricsContext(namespace, containerName)) {
+      try (AccessControlMetricsContext ignored = new AccessControlMetricsContext(namespace, containerName)) {
         SnapshotMetrics snapshotMetrics = snapshotMetricsOptional.get();
         metricService.recordMetric(
             "aggregator_snapshot_millisSinceLastEvent", snapshotMetrics.getMillisSinceLastEvent());

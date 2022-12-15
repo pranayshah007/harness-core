@@ -79,11 +79,12 @@ import software.wings.yaml.errorhandling.GitSyncError.GitSyncErrorKeys;
 import software.wings.yaml.errorhandling.GitToHarnessErrorDetails;
 import software.wings.yaml.errorhandling.HarnessToGitErrorDetails;
 import software.wings.yaml.gitSync.GitFileActivity;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -246,7 +248,10 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
         .sort(Sort.descending(GitToHarnessErrorCommitStatsKeys.commitTime))
         .skip(offset)
         .limit(limit)
-        .aggregate(GitToHarnessErrorCommitStats.class)
+        .aggregate(GitToHarnessErrorCommitStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitSyncError.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(commitWiseErrorDetails::add);
 
     List<GitToHarnessErrorCommitStats> gitDetailsAfterRemovingNewAppCommits =
@@ -282,7 +287,10 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
                 grouping("$push", projection(GitSyncErrorKeys.yamlFilePath, GitSyncErrorKeys.yamlFilePath),
                     projection(APP_ID_KEY, APP_ID_KEY))))
         .project(projection("gitCommitId", "_id"), projection(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView))
-        .aggregate(GitToHarnessErrorCommitStats.class)
+        .aggregate(GitToHarnessErrorCommitStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(GitSyncError.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(commit -> commitsDetails.add(commit));
     List<GitToHarnessErrorCommitStats> actualCommitsForThatApp =
         removeNewAppCommitsInCaseOfSetupFilter(commitsDetails, appId);
@@ -667,9 +675,9 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
 
   private <T extends Change> void populateGitDetails(
       UpdateOperations<GitSyncError> failedUpdateOperations, GitFileChange failedGitFileChange, String appId) {
-    final YamlGitConfig yamlGitConfig = failedGitFileChange.getYamlGitConfig() != null
+    final software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = failedGitFileChange.getYamlGitConfig() != null
         ? failedGitFileChange.getYamlGitConfig()
-        : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId());
+        : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId()).toDTO();
 
     if (yamlGitConfig != null) {
       final String gitConnectorId = Strings.emptyIfNull(yamlGitConfig.getGitConnectorId());
@@ -834,6 +842,16 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
     return deleted;
   }
 
+  @Override
+  public boolean deleteGitSyncErrorsBeforeTime(long time, String accountId) {
+    Query<GitSyncError> query = wingsPersistence.createQuery(GitSyncError.class);
+    query.filter(GitSyncErrorKeys.accountId, accountId);
+    query.field(CREATED_AT_KEY).lessThan(time);
+    boolean deleted = wingsPersistence.delete(query);
+    alertsUtils.closeAlertIfApplicable(accountId);
+    return deleted;
+  }
+
   private GitProcessingError getGitProcessingError(Alert alert) {
     GitConnectionErrorAlert alertData = (GitConnectionErrorAlert) alert.getAlertData();
     if (alertData == null) {
@@ -902,5 +920,11 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
     Map<String, SettingAttribute> connectorMap = gitSyncService.getGitConnectorMap(connectorIds, accountId);
     populateTheConnectorName(gitProcessingErrors, connectorMap);
     return aPageResponse().withTotal(gitProcessingErrors.size()).withResponse(gitProcessingErrors).build();
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(GitSyncError.class).filter(GitSyncErrorKeys.accountId, accountId));
   }
 }

@@ -1,0 +1,48 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "elk6.dev.harness.io:9200"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAHyRu26DMBSGd57CYk4scMJFbJWiDr0MVbqkCzJwKFaMTXyBoijvXsBtVTp09Pn+zz7n+Ooh5Avago8y5L/kRROPD/5mrpbcagMq/6HAqTas1EBV2awz1rJqueGsDpenMRyOCe2e7893fX05HQYX7kFpJsWcu07n+WHbFqAWMcYpTpfcVC8s41Vec9pLRyuoqeVmzc3YubYrKNakobpZCKn3JSH7Na2ocR4JSLANdtswfSW7jJAsTHFMSBJFb2tDC9rpRprZqinX8NUntyUIyH8N5ic4weTbbplgrW3zgSnIS9l21LCCcWbGlRPhGAd/HSYq+PhXCiZp2tdtWa6h75wJN9dJWvQo5LBBtVTo6P7Lu3mfAAAA//8DAFuPwDTtAQAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "300" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-09-19T11:31:52Z"
+  }
+}

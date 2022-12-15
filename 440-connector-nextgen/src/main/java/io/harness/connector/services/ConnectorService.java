@@ -35,6 +35,8 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
    */
   void resetHeartbeatForReferringConnectors(List<Pair<String, String>> connectorPerpetualTaskInfoList);
 
+  void resetHeartBeatTask(String accountId, String taskId);
+
   boolean checkConnectorExecutableOnDelegate(ConnectorInfoDTO connectorInfo);
 
   boolean markEntityInvalid(String accountIdentifier, EntityReference entityReference, String invalidYaml);

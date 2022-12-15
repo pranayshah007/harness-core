@@ -9,6 +9,7 @@ package io.harness.gitsync.core.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.gitsync.common.beans.GitSyncDirection;
@@ -17,6 +18,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -45,6 +47,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitCommitNG", noClassnameStored = true)
 @Document("gitCommitNG")
 @TypeAlias("io.harness.gitsync.core.beans.gitCommit")
@@ -74,7 +77,7 @@ public class GitCommit
 
   @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id private String uuid;
   private String accountIdentifier;
-  @FdIndex private String commitId;
+  private String commitId;
   @FdIndex private GitCommitProcessingStatus status;
   private FailureReason failureReason;
   private GitFileProcessingSummary fileProcessingSummary;

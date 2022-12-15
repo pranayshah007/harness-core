@@ -8,11 +8,14 @@
 package io.harness.pms.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.time.LocalDate.now;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -25,6 +28,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
@@ -148,7 +153,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
             .build();
 
     PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
-        PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity);
+        PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity, false);
 
     assertThat(deploymentList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getDeployments());
     assertThat(numberOfErrorsList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getNumOfErrors());
@@ -319,7 +324,8 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                        .stageCount(23)
                                        .filters(Collections.singletonMap("cd", null))
                                        .build();
-    PMSPipelineSummaryResponseDTO pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldNonGitSync);
+    PMSPipelineSummaryResponseDTO pipelineSummaryResponse =
+        PMSPipelineDtoMapper.preparePipelineSummary(oldNonGitSync, false);
     assertThat(pipelineSummaryResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
@@ -339,7 +345,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                          .yamlGitConfigRef("repo")
                                          .branch("br1")
                                          .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncValid);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncValid, false);
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
@@ -362,7 +368,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                            .branch("br1")
                                            .isEntityInvalid(true)
                                            .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncInvalid);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncInvalid, false);
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
@@ -382,7 +388,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .filters(Collections.singletonMap("cd", null))
                                 .storeType(StoreType.INLINE)
                                 .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(inline);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(inline, false);
     assertThat(pipelineSummaryResponse.getGitDetails()).isNull();
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
@@ -404,7 +410,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .repo("repoName")
                                 .connectorRef("conn")
                                 .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(remote);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(remote, false);
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoName("repoName").branch("brName").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
@@ -608,7 +614,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .filters(Collections.singletonMap("cd", null))
                                 .storeType(StoreType.INLINE)
                                 .build();
-    PMSPipelineSummaryResponseDTO pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(inline);
+    PMSPipelineSummaryResponseDTO pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(inline, false);
     assertThat(pipelineSummaryResponse.getGitDetails()).isNull();
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
@@ -616,5 +622,39 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
     assertThat(pipelineSummaryResponse.getIsDraft()).isEqualTo(false);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testWritePipelineDtoWithCache() {
+    CacheResponse cacheResponse = CacheResponse.builder().cacheState(CacheState.VALID_CACHE).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+
+    PipelineEntity remote = PipelineEntity.builder()
+                                .yaml(yaml)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.REMOTE)
+                                .build();
+    PMSPipelineResponseDTO pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(remote);
+    assertThat(pipelineResponseDTO.getCacheResponse().getCacheState()).isEqualTo(CacheState.VALID_CACHE);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testParseLoadFromCacheHeaderParam() {
+    //    when null is passed for string loadFromCache
+    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(null));
+    //    when empty is passed for string loadFromCache
+    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(""));
+    //    when true is passed for string loadFromCache
+    assertTrue(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("true"));
+    //    when false is passed for string loadFromCache
+    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("false"));
+    //    when junk value is passed for string loadFromCache
+    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
   }
 }

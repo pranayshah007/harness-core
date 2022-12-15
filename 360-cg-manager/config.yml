@@ -57,7 +57,8 @@ serviceScheduler:
   enabled: true
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
-enableIterators: true
+enableIterators: ${ENABLE_ITERATORS:-true}
+iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
@@ -127,7 +128,7 @@ datadogConfig:
   enabled: false #datadogConfigEnable
   apiKey: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -248,12 +249,13 @@ timescaledb:
   socketTimeout: 30
   logUnclosedConnections: false
   loggerLevel: OFF
-  instanceDataRetentionDays: 210
   instanceStatsMigrationEventsLimit: 150
   instanceStatsMigrationQueryBatchSize: 100
   deploymentDataMigrationRowLimit: 1000
   deploymentDataMigrationQueryBatchSize: 100
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 grpcServerConfig:
   connectors:
@@ -290,6 +292,7 @@ mongo:
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -301,14 +304,18 @@ mongo:
   analyticNodeConfig:
     mongoTagKey: none
     mongoTagValue: none
+  aliasDBName: harness
+  maxOperationTimeInMillis: 300000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 searchEnabled: false
 graphQLEnabled: true
@@ -328,7 +335,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 36d92fd8
+scmVersion: 9ddfb2b9
 
 ngAuthUIEnabled: false
 
@@ -378,6 +385,8 @@ cfClientConfig:
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
+  streamEnabled: true
+  sseReadTimeout: 5
   connectionTimeout: 10000
   readTimeout: 45000
   bufferSize: 10240
@@ -572,22 +581,10 @@ pipelineConfig:
   envStateTimeout: -1
   approvalStateTimeout: -1
 
-currentJre: openjdk8u242
+currentJre: openjdk11014_9
 migrateToJre: openjdk11014_9
 
 jreConfigs:
-  oracle8u191:
-    version: 1.8.0_191
-    jreDirectory: jre1.8.0_191
-    jreMacDirectory: jre1.8.0_191.jre
-    jreTarPath: jre/8u191/jre-8u191-${OS}-x64.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  openjdk8u242:
-    version: 1.8.0_242
-    jreDirectory: jdk8u242-b08-jre
-    jreMacDirectory: jdk8u242-b08-jre
-    jreTarPath: jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
   openjdk11014_9:
     version: 11.0.14
     jreDirectory: jdk-11.0.14+9-jre
@@ -602,11 +599,6 @@ cdnConfig:
   watcherJarBasePath: public/shared/watchers/builds
   watcherJarPath: oracle-8u191/%s/watcher.jar
   watcherMetaDataFilePath: public/%s/%s/watchers/current.version
-  alpnJarPath: public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  cdnJreTarPaths:
-    oracle8u191: public/shared/jre/oracle-8u191/jre-8u191-${OS}-x64.tar.gz
-    openjdk8u242: public/shared/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
-    openjdk11014_9: public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
 commandLibraryServiceConfig:
   baseUrl: https://localhost:5050/command-library-service/
@@ -668,9 +660,13 @@ eventListenersCountConfig:
   deploymentEventListenerCount: ${DEPLOYMENT_EVENT_LISTENER_COUNT:-2}
   instanceEventListenerCount: ${INSTANCE_EVENT_LISTENER_COUNT:-2}
   deploymentTimeSeriesEventListenerCount: ${DEPLOYMENT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  deploymentStepTimeSeriesEventListenerCount: ${DEPLOYMENT_STEP_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  executionInterruptTimeSeriesEventListenerCount: ${EXECUTION_INTERRUPT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}
+  notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
+  generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
@@ -691,16 +687,22 @@ iteratorsConfig:
     threadPoolSize: ${BLOCKING_CAPABILITY_PERMISSIONS_RECORD_ITERATOR_THREAD_COUNT:-5}
   vaultSecretManagerRenewalIteratorConfig:
     threadPoolSize: ${VAULT_SECRET_MANAGER_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskExpiryCheckIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_EXPIRY_CHECK_ITERATOR_THREAD_COUNT:-5}
-  perpetualTaskRebalanceIteratorConfig:
-    threadPoolSize: ${PERPETUAL_TASK_REBALANCE_ITERATOR_THREAD_COUNT:-5}
+  delegateDisconnectDetectorIteratorConfig:
+    threadPoolSize: ${DELEGATE_DISCONNECT_DETECTOR_CHECK_ITERATOR_THREAD_COUNT:-2}
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskRebroadcastIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-2}
   failDelegateTaskIteratorConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
+  gitSyncPollingIteratorConfig:
+      threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
+
+executorsConfig:
+  dataReconciliationExecutorConfig:
+    corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+    maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+    idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+    timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 
 disableDelegateMgmtInManager: false
 
@@ -709,8 +711,18 @@ secretsConfiguration:
   gcpSecretManagerProject: harness-playground
 
 ldapSyncJobConfig:
-  poolSize: 3
+  poolSize: 8
   syncInterval: 15
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
 useGlobalKMSAsBaseAlgo: false
+
+cdTsDbRetentionPeriodMonths: 7
+
+enableOpentelemetry: false
+
+disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
+
+redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}

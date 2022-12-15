@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
@@ -19,13 +20,16 @@ import static io.harness.rule.OwnerRule.VIKAS;
 
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.Application.Builder.anApplication;
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.Role.Builder.aRole;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_NAME;
 import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.PASSWORD;
 import static software.wings.utils.WingsTestConstants.USER_EMAIL;
@@ -59,9 +63,14 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.usermembership.remote.UserMembershipClient;
 
 import software.wings.WingsBaseTest;
 import software.wings.app.PortalConfig;
@@ -75,6 +84,7 @@ import software.wings.beans.RoleType;
 import software.wings.beans.User;
 import software.wings.beans.User.Builder;
 import software.wings.beans.Workflow;
+import software.wings.core.events.LoginEvent;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.GenericDbCache;
 import software.wings.security.AppPermissionSummary;
@@ -92,11 +102,15 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.cache.Cache;
@@ -107,7 +121,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mongodb.morphia.AdvancedDatastore;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Created by anubhaw on 8/31/16.
@@ -135,6 +152,8 @@ public class AuthServiceTest extends WingsBaseTest {
   @Mock private DelegateTokenAuthenticator delegateTokenAuthenticator;
   @Inject @InjectMocks private UserService userService;
   @Inject @InjectMocks private AuthService authService;
+  @Mock private UserMembershipClient userMembershipClient;
+  @Inject private OutboxService outboxService;
 
   private Builder userBuilder = anUser().appId(APP_ID).email(USER_EMAIL).name(USER_NAME).password(PASSWORD);
   private String accountKey = "2f6b0988b6fb3370073c3d0505baee59";
@@ -887,5 +906,36 @@ public class AuthServiceTest extends WingsBaseTest {
       UserThreadLocal.unset();
     }
     assertThat(exceptionThrown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testAuditLoginToNg() throws IOException {
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .withAppId(GLOBAL_APP_ID)
+                          .build();
+    User user = anUser().uuid(generateUuid()).accounts(Collections.singletonList(account)).name("user-name").build();
+    UserThreadLocal.set(user);
+
+    Call<ResponseDTO<Boolean>> call = Mockito.mock(Call.class);
+    when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    when(userMembershipClient.isUserInScope(any(), any(), any(), any())).thenReturn(call);
+    authService.auditLoginToNg(Collections.singletonList(account.getUuid()), user);
+
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo("Login");
+    LoginEvent loginEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), LoginEvent.class);
+
+    assertThat(loginEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(loginEvent.getUserId()).isEqualTo(user.getUuid());
+    assertThat(loginEvent.getUserName()).isEqualTo(user.getName());
+    UserThreadLocal.unset();
   }
 }

@@ -10,22 +10,30 @@ package io.harness.cdng.jira.resources.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.task.jira.JiraSearchUserData;
+import io.harness.delegate.task.jira.JiraSearchUserParams;
+import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HarnessJiraException;
@@ -43,9 +51,11 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(CDC)
 public class JiraResourceServiceTest extends CategoryTest {
@@ -64,8 +74,9 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
 
-  @InjectMocks JiraResourceServiceImpl jiraResourceService;
+  @Spy @InjectMocks JiraResourceServiceImpl jiraResourceService;
 
   @Before
   public void setup() {
@@ -113,6 +124,28 @@ public class JiraResourceServiceTest extends CategoryTest {
     assertThat(jiraResourceService.getIssueCreateMetadata(
                    identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, null, false, false))
         .isEqualTo(createMetadata);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testSearchUser() {
+    when(cdFeatureFlagHelper.isEnabled(ACCOUNT_ID, FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA)).thenReturn(true);
+    String connectorId = "connectorId";
+    long defaultSyncTimeout = 10;
+    String offset = "0";
+    JiraSearchUserParams jiraSearchUserParams =
+        JiraSearchUserParams.builder().accountId(ACCOUNT_ID).userQuery("search").startAt(offset).build();
+    ArgumentCaptor<JiraTaskNGParametersBuilder> captor = ArgumentCaptor.forClass(JiraTaskNGParametersBuilder.class);
+
+    JiraSearchUserData jiraSearchUserData = JiraSearchUserData.builder().build();
+    JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().jiraSearchUserData(jiraSearchUserData).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(jiraTaskNGResponse);
+    jiraResourceService.searchUser(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, connectorId, defaultSyncTimeout, "search", offset);
+
+    verify(jiraResourceService, times(1)).obtainJiraTaskNGResponse(any(), any(), any(), captor.capture());
+    assertThat(captor.getValue().build().getJiraSearchUserParams()).isEqualTo(jiraSearchUserParams);
   }
 
   private ConnectorResponseDTO getConnector() {

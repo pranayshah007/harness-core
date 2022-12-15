@@ -27,6 +27,7 @@ public enum FileBucket {
   TERRAFORM_PLAN,
   TERRAFORM_PLAN_JSON,
   EXPORT_EXECUTIONS,
+  TERRAFORM_HUMAN_READABLE_PLAN,
   FILE_STORE;
 
   private int chunkSize;

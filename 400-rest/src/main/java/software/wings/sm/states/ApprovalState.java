@@ -63,9 +63,9 @@ import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ScriptType;
@@ -662,8 +662,6 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
               .stateExecutionData(executionData));
     }
 
-    // Create a cron job which polls JIRA for approval status
-    log.info("IssueId = {} while creating Jira polling Job", jiraApprovalParams.getIssueId());
     ApprovalPollingJobEntity approvalPollingJobEntity =
         ApprovalPollingJobEntity.builder()
             .accountId(app.getAccountId())
@@ -680,7 +678,11 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
             .workflowExecutionId(context.getWorkflowExecutionId())
             .build();
     try {
-      approvalPolingService.save(approvalPollingJobEntity);
+      // Create a cron job which polls JIRA for approval status
+
+      String id = approvalPolingService.save(approvalPollingJobEntity);
+      log.info("IssueId = {} while creating Jira polling Job. ApprovalPollingJobId: {}",
+          jiraApprovalParams.getIssueId(), id);
       return respondWithStatus(context, executionData, null,
           ExecutionResponse.builder()
               .async(true)
@@ -854,22 +856,21 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
     // need to remove delegate selector due to modelmapper issue
-    Object delegateSelectors = removeDelegateSelectorsForShellScriptApproval((HashMap<String, Object>) from);
+    Object delegateSelectors = removeDelegateSelectorsForShellScriptApproval((Map<String, Object>) from);
     modelMapper.map(from, to);
     repopulateDelegateSelector(from, delegateSelectors, to);
   }
 
   private void repopulateDelegateSelector(Object from, Object delegateSelectors, Object to) {
-    repopulateSourceHashmapWithDelegateSelector((HashMap<String, Object>) from, delegateSelectors);
+    repopulateSourceHashmapWithDelegateSelector((Map<String, Object>) from, delegateSelectors);
     setDelegateSelectorForShellScriptApproval(delegateSelectors, to);
   }
 
-  private void repopulateSourceHashmapWithDelegateSelector(HashMap<String, Object> source, Object delegateSelectors) {
+  private void repopulateSourceHashmapWithDelegateSelector(Map<String, Object> source, Object delegateSelectors) {
     if (delegateSelectors != null) {
-      HashMap<String, Object> approvalStateParams =
-          (HashMap<String, Object>) source.get(ApprovalStateKeys.approvalStateParams);
-      HashMap<String, Object> shellScriptApprovalParams =
-          (HashMap<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.shellScriptApprovalParams);
+      Map<String, Object> approvalStateParams = (Map<String, Object>) source.get(ApprovalStateKeys.approvalStateParams);
+      Map<String, Object> shellScriptApprovalParams =
+          (Map<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.shellScriptApprovalParams);
       shellScriptApprovalParams.put(ShellScriptApprovalParamsKeys.delegateSelectors, delegateSelectors);
     }
   }
@@ -883,13 +884,12 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     }
   }
 
-  private Object removeDelegateSelectorsForShellScriptApproval(HashMap<String, Object> source) {
+  private Object removeDelegateSelectorsForShellScriptApproval(Map<String, Object> source) {
     if (source.get(ApprovalStateKeys.approvalStateParams) != null) {
-      HashMap<String, Object> approvalStateParams =
-          (HashMap<String, Object>) source.get(ApprovalStateKeys.approvalStateParams);
+      Map<String, Object> approvalStateParams = (Map<String, Object>) source.get(ApprovalStateKeys.approvalStateParams);
       if (approvalStateParams.get(ApprovalStateParamsKeys.shellScriptApprovalParams) != null) {
-        HashMap<String, Object> shellScriptApprovalParams =
-            (HashMap<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.shellScriptApprovalParams);
+        Map<String, Object> shellScriptApprovalParams =
+            (Map<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.shellScriptApprovalParams);
         Object delegateSelector = shellScriptApprovalParams.get(ShellScriptApprovalParamsKeys.delegateSelectors);
         shellScriptApprovalParams.remove(ShellScriptApprovalParamsKeys.delegateSelectors);
         return delegateSelector;

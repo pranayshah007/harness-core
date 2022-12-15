@@ -13,10 +13,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -43,6 +45,7 @@ import org.mongodb.morphia.annotations.PrePersist;
 /**
  * The Class Host.
  */
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "hosts", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -56,12 +59,19 @@ public class Host implements PersistentEntity, UuidAware, CreatedAtAware, Update
                  .field(HostKeys.appId)
                  .field(HostKeys.infraMappingId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_envId_inframappingId_hostName")
+                 .field(HostKeys.appId)
+                 .field(HostKeys.envId)
+                 .field(HostKeys.infraMappingId)
+                 .field(HostKeys.hostName)
+                 .build())
         .build();
   }
 
   // Pulled out of Base
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
   @SchemaIgnore @NotNull private long lastUpdatedAt;
 

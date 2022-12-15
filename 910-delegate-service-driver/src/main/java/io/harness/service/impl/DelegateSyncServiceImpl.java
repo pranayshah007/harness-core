@@ -48,6 +48,7 @@ import org.jooq.tools.StringUtils;
 public class DelegateSyncServiceImpl implements DelegateSyncService {
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
 
   @VisibleForTesting public final ConcurrentMap<String, AtomicLong> syncTaskWaitMap = new ConcurrentHashMap<>();
@@ -111,23 +112,28 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
           }
         }
       }
-      String errorMsg =
-          "Task has expired. It wasn't picked up by any delegate or delegate did not have enough time to finish the execution";
+      String errorMsg = "Task has expired.";
       if (CollectionUtils.isNotEmpty(capabilityErrorMsgsList)) {
         errorMsg = errorMsg
-            + String.format(" or None of the delegate had following capabilities [%s]",
+            + String.format(" None of the delegate had following capabilities [%s]",
                 StringUtils.join(capabilityErrorMsgsList, ","));
       } else {
-        errorMsg = errorMsg + ".";
+        errorMsg = errorMsg
+            + " It wasn't picked up by any delegate or delegate did not have enough time to finish the execution";
       }
       throw new InvalidArgumentsException(errorMsg);
     }
 
     if (disableDeserialization) {
-      return (T) BinaryResponseData.builder().data(taskResponse.getResponseData()).build();
+      return (T) BinaryResponseData.builder()
+          .data(taskResponse.getResponseData())
+          .usingKryoWithoutReference(taskResponse.isUsingKryoWithoutReference())
+          .build();
     }
     // throw exception here
-    Object response = kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    Object response = taskResponse.isUsingKryoWithoutReference()
+        ? referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
+        : kryoSerializer.asInflatedObject(taskResponse.getResponseData());
     if (response instanceof ErrorNotifyResponseData) {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
       // if task registered to error handling framework on delegate, then exception won't be null
@@ -136,6 +142,8 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
       }
     }
 
-    return (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    return taskResponse.isUsingKryoWithoutReference()
+        ? (T) referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
+        : (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
   }
 }

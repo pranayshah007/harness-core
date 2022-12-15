@@ -17,10 +17,15 @@ import io.harness.gitsync.CreateFileResponse;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBranchHeadCommitRequest;
+import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
+import io.harness.gitsync.ListFilesRequest;
+import io.harness.gitsync.ListFilesResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -34,7 +39,7 @@ public interface HarnessToGitHelperService {
 
   Boolean isGitSyncEnabled(EntityScopeInfo entityScopeInfo);
 
-  Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo);
+  Boolean isGitSimplificationEnabled(IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest);
 
   BranchDetails getBranchDetails(RepoDetails repoDetails);
 
@@ -51,4 +56,10 @@ public interface HarnessToGitHelperService {
   CreatePRResponse createPullRequest(CreatePRRequest createPRRequest);
 
   GetRepoUrlResponse getRepoUrl(GetRepoUrlRequest getRepoUrlRequest);
+
+  Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule);
+
+  GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest);
+
+  ListFilesResponse listFiles(ListFilesRequest listFilesRequest);
 }

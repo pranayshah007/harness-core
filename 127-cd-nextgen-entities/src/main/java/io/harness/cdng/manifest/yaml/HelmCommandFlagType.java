@@ -29,7 +29,13 @@ public enum HelmCommandFlagType {
   History(HelmSubCommandType.HISTORY, ImmutableSet.of(ServiceSpecType.NATIVE_HELM), ManifestStoreType.HelmAllRepo),
   Delete(HelmSubCommandType.DELETE, ImmutableSet.of(ServiceSpecType.NATIVE_HELM), ManifestStoreType.HelmAllRepo),
   Uninstall(HelmSubCommandType.UNINSTALL, ImmutableSet.of(ServiceSpecType.NATIVE_HELM), ManifestStoreType.HelmAllRepo),
-  List(HelmSubCommandType.LIST, ImmutableSet.of(ServiceSpecType.NATIVE_HELM), ManifestStoreType.HelmAllRepo);
+  List(HelmSubCommandType.LIST, ImmutableSet.of(ServiceSpecType.NATIVE_HELM), ManifestStoreType.HelmAllRepo),
+  Add(HelmSubCommandType.REPO_ADD, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
+      ManifestStoreType.HelmChartRepo),
+  Update(HelmSubCommandType.REPO_UPDATE, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
+      ManifestStoreType.HelmChartRepo),
+  Version(HelmSubCommandType.VERSION, ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES),
+      ManifestStoreType.HelmAllRepo);
 
   private final HelmSubCommandType subCommandType;
   private final Set<String> serviceSpecTypes;

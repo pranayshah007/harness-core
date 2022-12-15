@@ -9,7 +9,7 @@ package io.harness.cdng.gitops.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.Trimmed;
@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ClusterKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitopsClusters", noClassnameStored = true)
 @Document("gitopsClusters")
 @TypeAlias("io.harness.cdng.gitops.entity.Cluster")
-@StoreIn(DbAliases.NG_MANAGER)
 public class Cluster implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -50,6 +50,7 @@ public class Cluster implements PersistentEntity {
                  .field(ClusterKeys.accountId)
                  .field(ClusterKeys.orgIdentifier)
                  .field(ClusterKeys.projectIdentifier)
+                 .field(ClusterKeys.agentIdentifier)
                  .field(ClusterKeys.envRef)
                  .field(ClusterKeys.clusterRef)
                  .build())
@@ -58,6 +59,7 @@ public class Cluster implements PersistentEntity {
                  .field(ClusterKeys.accountId)
                  .field(ClusterKeys.orgIdentifier)
                  .field(ClusterKeys.projectIdentifier)
+                 .field(ClusterKeys.agentIdentifier)
                  .field(ClusterKeys.envRef)
                  .sortField(ClusterKeys.createdAt)
                  .build())
@@ -69,6 +71,7 @@ public class Cluster implements PersistentEntity {
 
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
+  @Trimmed String agentIdentifier;
 
   @NotEmpty String envRef;
 

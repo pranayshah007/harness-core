@@ -24,13 +24,19 @@ public enum ModuleType {
   @JsonProperty("CF") CF("Continuous Features"),
   @JsonProperty("CE") CE("Continuous Efficiency"),
   @JsonProperty("STO") STO("Security Testing Orchestration"),
+  @JsonProperty("CHAOS") CHAOS("Chaos Engineering"),
+
+  // TODO: Remove internal flag once licensing is added.
+  @JsonProperty("CODE") CODE("Code", true, true),
 
   // Internal
   @JsonProperty("CORE") CORE("Core", true, false),
   @JsonProperty("PMS") PMS("Pipelines", true, false),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
-  @JsonProperty("CHAOS") CHAOS("Chaos Engineering");
+  @JsonProperty("IACM")
+  IACM("Infrastructure as Code Manager", true,
+      true); // TODO: This will be enabled once pipeline has consumed the code and can be safely enabled
 
   String displayName;
   boolean internal;

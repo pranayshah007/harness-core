@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.jenkins.dtos.JenkinsJobDetailsDTO;
 import io.harness.cdng.artifact.resources.jenkins.mappers.JenkinsResourceMapper;
@@ -19,6 +20,7 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -38,6 +40,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -57,11 +60,14 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JenkinsResourceServiceImpl implements JenkinsResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 30;
 
   @Inject
@@ -80,7 +86,7 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     JenkinsArtifactDelegateRequest jenkinsRequest =
         ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(jenkinsConnectorRef.getIdentifier(), connector,
-            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null);
+            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           jenkinsRequest, ArtifactTaskType.GET_JOBS, baseNGAccess, "Jenkins Get Job task failure due to error");
@@ -178,19 +184,32 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    final DelegateTaskRequest delegateTaskRequest =
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.JENKINS_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
             .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors())
-            .build();
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors());
+    if (EmptyPredicate.isEmpty(ngAccess.getOrgIdentifier())
+        && EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())) {
+      delegateTaskRequestBuilder.taskSetupAbstraction("owner", ngAccess.getAccountIdentifier());
+    } else if (EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())
+        && EmptyPredicate.isNotEmpty(ngAccess.getOrgIdentifier())) {
+      delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
+          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier());
+    } else {
+      delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
+          .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
+          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
+    }
+    final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

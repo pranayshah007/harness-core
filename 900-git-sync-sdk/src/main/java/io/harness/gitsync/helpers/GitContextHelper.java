@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -33,6 +34,12 @@ public class GitContextHelper {
     if (gitBranchInfo == null || gitBranchInfo.getYamlGitConfigId() == null || gitBranchInfo.getBranch() == null
         || gitBranchInfo.getYamlGitConfigId().equals(DEFAULT) || gitBranchInfo.getBranch().equals(DEFAULT)) {
       if (gitBranchInfo != null && gitBranchInfo.getStoreType() != null) {
+        return gitBranchInfo;
+      }
+      // TODO: write cleaner logic to get the branchInfo
+      if (gitBranchInfo != null
+          && (!isNullOrDefault(gitBranchInfo.getParentEntityConnectorRef())
+              || !isNullOrDefault(gitBranchInfo.getConnectorRef()))) {
         return gitBranchInfo;
       }
       return null;
@@ -69,6 +76,18 @@ public class GitContextHelper {
     GitEntityInfo gitEntityInfo = getGitEntityInfo();
     if (gitEntityInfo.isNewBranch()) {
       return gitEntityInfo.getBaseBranch();
+    }
+    return gitEntityInfo.getBranch();
+  }
+
+  public boolean isNullOrDefault(String val) {
+    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+  }
+
+  public String getBranch() {
+    GitEntityInfo gitEntityInfo = getGitEntityInfo();
+    if (gitEntityInfo == null) {
+      return null;
     }
     return gitEntityInfo.getBranch();
   }

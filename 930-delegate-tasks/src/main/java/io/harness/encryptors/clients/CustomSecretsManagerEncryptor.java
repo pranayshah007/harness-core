@@ -17,6 +17,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerValidationUtils.buildShellScriptParameters;
 
+import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -73,14 +74,15 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60),
             () -> fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig));
       } catch (SecretManagementDelegateException e) {
         throw e;
       } catch (Exception e) {
         failedAttempts++;
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Faild to decrypt " + encryptedRecord.getName() + " after " + NUM_OF_RETRIES + " retries";
+          String message = String.format(
+              "Failed to read '%s' from shell script after %s retries", encryptedRecord.getName(), NUM_OF_RETRIES);
           throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));
@@ -99,8 +101,12 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
     ShellExecutionData shellExecutionData = (ShellExecutionData) commandExecutionResult.getCommandExecutionData();
     String result = shellExecutionData.getSweepingOutputEnvVariables().get(OUTPUT_VARIABLE);
     if (isEmpty(result) || result.equals("null")) {
-      String errorMessage = "Empty or null value returned by custom shell script for the given secret: "
-          + encryptedRecord.getName() + ", for accountId: " + customSecretsManagerConfig.getAccountId();
+      String secretId = (customSecretsManagerConfig.getNgMetadata() != null)
+          ? customSecretsManagerConfig.getNgMetadata().getIdentifier()
+          : encryptedRecord.getName();
+      String errorMessage =
+          format("The custom shell script returned an empty or null value - accountId: %s, secret: %s",
+              customSecretsManagerConfig.getAccountId(), secretId);
       throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, errorMessage, USER);
     }
     return result.toCharArray();

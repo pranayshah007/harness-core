@@ -13,8 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @JsonTypeName("PdcServerInstanceInfo")
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 public class PdcServerInstanceInfo extends SshWinrmServerInstanceInfo {

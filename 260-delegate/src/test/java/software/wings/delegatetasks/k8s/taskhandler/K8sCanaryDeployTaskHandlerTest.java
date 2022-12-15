@@ -60,8 +60,8 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
@@ -190,7 +190,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, null, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, null, executionLogCallback, false);
     doReturn(1)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
@@ -264,7 +264,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         .when(k8sCanaryBaseHandler)
         .getAllPods(eq(canaryHandlerConfig), any(), anyLong());
 
-    releaseHistory.setReleases(asList(Release.builder().number(2).build()));
+    releaseHistory.setReleases(asList(K8sLegacyRelease.builder().number(2).build()));
     canaryHandlerConfig.setCanaryWorkload(deployment);
     canaryHandlerConfig.setResources(Collections.emptyList());
     canaryHandlerConfig.setReleaseHistory(releaseHistory);
@@ -348,7 +348,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                              .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false);
     doReturn(1)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
@@ -372,7 +372,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                              .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false);
     doReturn(currentInstances)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
@@ -396,7 +396,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("chart").version("1.0.0").build();
     handler.getCanaryHandlerConfig().setCanaryWorkload(ManifestHelper.processYaml(DEPLOYMENT_YAML).get(0));
     handler.getCanaryHandlerConfig().setReleaseHistory(ReleaseHistory.createNew());
-    handler.getCanaryHandlerConfig().setCurrentRelease(Release.builder().build());
+    handler.getCanaryHandlerConfig().setCurrentRelease(K8sLegacyRelease.builder().build());
     doReturn(true).when(handler).init(any(), any(), any());
     doReturn(true).when(handler).prepareForCanary(any(), any(), any());
     doReturn(helmChartInfo)
@@ -426,7 +426,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     handler.getCanaryHandlerConfig().setCanaryWorkload(deployment);
     handler.getCanaryHandlerConfig().setResources(Collections.emptyList());
     ReleaseHistory releaseHist = ReleaseHistory.createNew();
-    releaseHist.setReleases(asList(Release.builder().number(2).build()));
+    releaseHist.setReleases(asList(K8sLegacyRelease.builder().number(2).build()));
     handler.getCanaryHandlerConfig().setReleaseHistory(releaseHist);
     handler.getCanaryHandlerConfig().setCurrentRelease(releaseHist.getLatestRelease());
     handler.getCanaryHandlerConfig().setTargetInstances(3);
@@ -531,7 +531,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     K8sCanaryHandlerConfig canaryHandlerConfig = handler.getCanaryHandlerConfig();
     canaryHandlerConfig.setCanaryWorkload(deployment);
     canaryHandlerConfig.setReleaseHistory(ReleaseHistory.builder().build());
-    canaryHandlerConfig.setCurrentRelease(Release.builder().number(1).build());
+    canaryHandlerConfig.setCurrentRelease(K8sLegacyRelease.builder().number(1).build());
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
                                                       .workingDirectory("./working-dir")
                                                       .kubectlPath("kubectl")

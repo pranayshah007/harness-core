@@ -8,11 +8,13 @@
 package software.wings.beans.infrastructure.instance;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -39,6 +41,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @EqualsAndHashCode(of = {"uuid", "appId"}, callSuper = false)
 @FieldNameConstants(innerTypeName = "ServerlessInstanceKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serverlessInstance", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ServerlessInstance implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, UpdatedAtAware,
@@ -89,7 +92,7 @@ public class ServerlessInstance implements PersistentEntity, UuidAware, CreatedA
 
   @Id @NotNull(groups = {Update.class}) private String uuid;
 
-  @FdIndex @NotNull protected String appId;
+  @NotNull protected String appId;
 
   private EmbeddedUser createdBy;
 
@@ -104,7 +107,7 @@ public class ServerlessInstance implements PersistentEntity, UuidAware, CreatedA
   private String envId;
   private String envName;
   private EnvironmentType envType;
-  @FdIndex private String accountId;
+  private String accountId;
   private String appName;
   private String serviceId;
   private String serviceName;

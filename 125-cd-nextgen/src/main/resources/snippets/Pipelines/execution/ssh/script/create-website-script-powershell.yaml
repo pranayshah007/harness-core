@@ -1,0 +1,23 @@
+Import-Module WebAdministration
+
+                        $releaseId = "$env:ReleaseNo"
+                        $SiteName = "<+service.name>"
+                        $SitePhysicalDirectory = "$env:AppPhysicalDirectory" + "\Artifacts\" + $SiteName + "\release-" + $releaseId
+                        $AppPoolName = "$env:AppPoolName"
+                        
+                        if (!(Test-Path IIS:\Sites\$SiteName -pathType container))
+                        {
+                        $site = New-Item IIS:\Sites\$SiteName -physicalPath $sitePhysicalDirectory -bindings @{protocol="$env:SiteProtocol";bindingInformation=":"+ "$env:SitePort" +":"+ "$env:SiteHostName"} -ApplicationPool $AppPoolName -AutoStart $true
+                        Write-Host "Created Website:" $SiteName
+                        }
+                        else
+                        {
+                        $site = Get-Item IIS:\Sites\$SiteName
+                        $Site | Set-ItemProperty -Name "physicalPath" -Value $sitePhysicalDirectory
+                        $Site | Set-ItemProperty -Name "bindings" -Value @{protocol="$env:SiteProtocol";bindingInformation=":"+ "$env:SitePort" +":"+ "$env:SiteHostName"}
+                        Write-Host "Updated Website:" $SiteName
+                        }
+                        Write-Host "Starting Website..."
+                        Start-WebSite $SiteName
+                        Get-Item IIS:\Sites\$SiteName
+                        Write-Host "Done."

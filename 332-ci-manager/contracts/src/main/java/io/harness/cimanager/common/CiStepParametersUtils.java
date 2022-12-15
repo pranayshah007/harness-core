@@ -31,6 +31,7 @@ public class CiStepParametersUtils {
 
     return stepBuilder;
   }
+
   public static StepElementParametersBuilder getStepParameters(
       CIAbstractStepNode stepNode, OnFailRollbackParameters failRollbackParameters) {
     StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);

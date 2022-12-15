@@ -15,5 +15,5 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.STO)
 public class STOCommonEndpointConstants {
-  public static final String STO_SERVICE_TOKEN_ENDPOINT = "api/v1/token";
+  public static final String STO_SERVICE_TOKEN_ENDPOINT = "api/v2/token";
 }

@@ -11,65 +11,82 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.harness.CategoryTest;
-import io.harness.azure.AzureClient;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.network.Http;
 import io.harness.rule.Owner;
 
-import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.LoadBalancerBackend;
-import com.microsoft.azure.management.network.LoadBalancerProbe;
-import com.microsoft.azure.management.network.LoadBalancerTcpProbe;
-import com.microsoft.azure.management.network.LoadBalancers;
-import com.microsoft.azure.management.network.LoadBalancingRule;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.ClientSecretCredential;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.LoadBalancerBackend;
+import com.azure.resourcemanager.network.models.LoadBalancerProbe;
+import com.azure.resourcemanager.network.models.LoadBalancerTcpProbe;
+import com.azure.resourcemanager.network.models.LoadBalancers;
+import com.azure.resourcemanager.network.models.LoadBalancingRule;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import com.azure.resourcemanager.resources.models.Subscription;
+import com.azure.resourcemanager.resources.models.Subscriptions;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class AzureNetworkClientImplTest extends CategoryTest {
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  @Mock private AzureResourceManager.Configurable configurable;
+  @Mock private AzureResourceManager.Authenticated authenticated;
+  @Mock private AzureResourceManager azure;
 
   @InjectMocks AzureNetworkClientImpl azureNetworkClient;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = mock(ApplicationTokenCredentials.class);
-    whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    MockitoAnnotations.openMocks(this);
+
+    ClientSecretCredential clientSecretCredential = Mockito.mock(ClientSecretCredential.class);
+    PowerMockito.whenNew(ClientSecretCredential.class).withAnyArguments().thenReturn(clientSecretCredential);
+
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    PowerMockito.whenNew(AccessToken.class).withAnyArguments().thenReturn(accessToken);
+
+    Mockito.when(clientSecretCredential.getToken(any())).thenReturn(Mono.just(accessToken));
+
+    MockedStatic<AzureResourceManager> azureResourceManagerMockedStatic = mockStatic(AzureResourceManager.class);
+
+    azureResourceManagerMockedStatic.when(() -> AzureResourceManager.configure()).thenReturn(configurable);
+
+    Mockito.when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    Mockito.when(configurable.withHttpClient(any())).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
+    Mockito.when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(configurable.authenticate(any(ClientSecretCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(authenticated.subscriptions()).thenReturn(getSubscriptions());
+    Mockito.when(authenticated.withSubscription(any())).thenReturn(azure);
+    Mockito.when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
 
   @Test
@@ -81,11 +98,12 @@ public class AzureNetworkClientImplTest extends CategoryTest {
 
     LoadBalancers loadBalancers = mock(LoadBalancers.class);
     LoadBalancer loadBalancer = mock(LoadBalancer.class);
-    PagedList<LoadBalancer> loadBalancersList = getPageList();
-    loadBalancersList.add(loadBalancer);
+    List<LoadBalancer> responseList = new ArrayList<>();
+    responseList.add(loadBalancer);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     when(azure.loadBalancers()).thenReturn(loadBalancers);
-    when(loadBalancers.listByResourceGroup(resourceGroupName)).thenReturn(loadBalancersList);
+    when(loadBalancers.listByResourceGroup(resourceGroupName)).thenReturn(getPagedIterable(simpleResponse));
 
     List<LoadBalancer> response =
         azureNetworkClient.listLoadBalancersByResourceGroup(getAzureComputeConfig(), subscriptionId, resourceGroupName);
@@ -211,23 +229,38 @@ public class AzureNetworkClientImplTest extends CategoryTest {
     assertThat(response.get(0)).isInstanceOf(LoadBalancerProbe.class);
   }
 
-  @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
+  private Subscriptions getSubscriptions() {
+    Subscription subscription = PowerMockito.mock(Subscription.class);
+    List<Subscription> responseList = new ArrayList<>();
+    responseList.add(subscription);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
+
+    return new Subscriptions() {
       @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
+      public Subscription getById(String s) {
+        return null;
+      }
+
+      @Override
+      public Mono<Subscription> getByIdAsync(String s) {
+        return null;
+      }
+
+      @Override
+      public PagedIterable<Subscription> list() {
+        return getPagedIterable(simpleResponse);
+      }
+
+      @Override
+      public PagedFlux<Subscription> listAsync() {
+        return null;
       }
     };
+  }
+
+  @NotNull
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 
   private AzureConfig getAzureComputeConfig() {

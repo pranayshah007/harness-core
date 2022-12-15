@@ -8,6 +8,7 @@
 package io.harness.shell;
 
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 
 import java.util.List;
 
@@ -16,12 +17,19 @@ public interface BaseScriptExecutor {
 
   CommandExecutionStatus executeCommandString(String command, boolean displayCommand);
 
+  CommandExecutionStatus executeCommandString(String command, boolean displayCommand, boolean winrmScriptCommandSplit);
+
   CommandExecutionStatus executeCommandString(String command, StringBuffer output);
 
   CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand);
+
+  CommandExecutionStatus executeCommandString(
+      String command, boolean winrmScriptCommandSplit, StringBuffer output, boolean displayComman);
 
   ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect);
 
   ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis);
+
+  LogCallback getLogCallback();
 }

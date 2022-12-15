@@ -8,6 +8,8 @@
 package io.harness.pms.sdk.core.plan.creation.mappers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.pms.sdk.core.steps.io.PipelineViewObject.DEFAULT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,9 +29,11 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class PlanNodeProtoMapper {
   @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String serviceName;
   @Inject private KryoSerializer kryoSerializer;
@@ -40,7 +44,7 @@ public class PlanNodeProtoMapper {
             .setUuid(node.getUuid())
             .setName(isEmpty(node.getName()) ? "" : node.getName())
             .setStepType(node.getStepType())
-            .setStageFqn(node.getStageFqn())
+            .setStageFqn(emptyIfNull(node.getStageFqn()))
             .setIdentifier(isEmpty(node.getIdentifier()) ? "" : node.getIdentifier())
             .setStepParameters(
                 node.getStepParameters() == null ? "" : RecastOrchestrationUtils.toJson(node.getStepParameters()))
@@ -48,6 +52,7 @@ public class PlanNodeProtoMapper {
             .addAllAdviserObtainments(CollectionUtils.emptyIfNull(node.getAdviserObtainments()))
             .addAllFacilitatorObtainments(CollectionUtils.emptyIfNull(node.getFacilitatorObtainments()))
             .setSkipExpressionChain(node.isSkipExpressionChain())
+            .setExpressionMode(node.getExpressionMode())
             .setSkipType(node.getSkipGraphType())
             .setServiceName(serviceName)
             .addAllTimeoutObtainments(toTimeoutObtainments(node.getTimeoutObtainments()))
@@ -61,7 +66,8 @@ public class PlanNodeProtoMapper {
     if (node.getGroup() != null) {
       builder.setGroup(node.getGroup());
     }
-    if (node.getStepParameters() != null && node.getStepParameters().toViewJson() != null) {
+    if (node.getStepParameters() != null && node.getStepParameters().toViewJson() != null
+        && node.getStepParameters().toViewJson() != DEFAULT) {
       builder.setStepInputs(node.getStepParameters().toViewJson());
     }
     if (node.getExecutionInputTemplate() != null) {

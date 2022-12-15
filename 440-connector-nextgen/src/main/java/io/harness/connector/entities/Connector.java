@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -57,9 +57,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @FieldNameConstants(innerTypeName = "ConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("connectors")
 @Persistent
 @OwnedBy(HarnessTeam.DX)
@@ -116,6 +116,13 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
   @Override
   public String getUuid() {
     return getId();
+  }
+
+  public boolean getDeleted() {
+    if (deleted == null) {
+      return Boolean.FALSE;
+    }
+    return deleted;
   }
 
   @UtilityClass
@@ -175,6 +182,12 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
         .add(CompoundMongoIndex.builder()
                  .name("type_nextTokenRenewIteration")
                  .fields(Arrays.asList(ConnectorKeys.type, VaultConnectorKeys.nextTokenRenewIteration))
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_type_decreasing_sort_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.type))
+                 .descSortField(ConnectorKeys.createdAt)
                  .build())
         .build();
   }

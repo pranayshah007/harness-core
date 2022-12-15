@@ -8,6 +8,7 @@
 package software.wings.beans.infrastructure.instance;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -47,6 +49,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "InstanceKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "instance", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -85,6 +88,7 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .name("instance_index6")
                  .field(InstanceKeys.accountId)
                  .field(InstanceKeys.isDeleted)
+                 .field(InstanceKeys.serviceId)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("instance_index7")
@@ -117,12 +121,6 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .field(InstanceKeys.isDeleted)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("instance_index12")
-                 .field(InstanceKeys.accountId)
-                 .field(InstanceKeys.createdAt)
-                 .field(InstanceKeys.isDeleted)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("instance_index13")
                  .field(InstanceKeys.appId)
                  .field(InstanceKeys.isDeleted)
@@ -147,6 +145,19 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .name("inframapping_lastUpdated")
                  .field(InstanceKeys.infraMappingId)
                  .descSortField(InstanceKeys.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appid_inframapping_isdeleted_createdatdesc")
+                 .field(InstanceKeys.appId)
+                 .field(InstanceKeys.infraMappingId)
+                 .field(InstanceKeys.isDeleted)
+                 .descSortField(InstanceKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_createdAt_appId")
+                 .field(InstanceKeys.accountId)
+                 .descSortField(InstanceKeys.createdAt)
+                 .rangeField(InstanceKeys.appId)
                  .build())
         .build();
   }

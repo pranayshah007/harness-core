@@ -11,6 +11,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -22,12 +23,15 @@ public class DockerArtifactDelegateResponse extends ArtifactDelegateResponse {
   String imagePath;
   /** Tag refers to exact tag number */
   String tag;
+  /** Label refers to tag */
+  Map<String, String> label;
 
   @Builder
-  public DockerArtifactDelegateResponse(
-      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String imagePath, String tag) {
+  public DockerArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
+      String imagePath, String tag, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.imagePath = imagePath;
     this.tag = tag;
+    this.label = label;
   }
 }

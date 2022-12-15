@@ -21,6 +21,7 @@ import lombok.experimental.UtilityClass;
 public class TemplateRefHelper {
   public final String TEMPLATE_REF = "templateRef";
   public final String TEMPLATE = "template";
+  public final String CUSTOM_DEPLOYMENT_TEMPLATE = "customDeploymentRef";
 
   public boolean hasTemplateRef(String yaml) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
@@ -35,6 +36,28 @@ public class TemplateRefHelper {
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
         if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean hasTemplateRefOrCustomDeploymentRef(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    return hasTemplateRefOrCustomDeploymentRef(yamlConfig);
+  }
+
+  public boolean hasTemplateRefOrCustomDeploymentRef(YamlConfig yamlConfig) {
+    Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
+    for (FQN key : fqnSet) {
+      if (key.getFqnList().size() >= 2) {
+        List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
+        FQNNode lastNode = fqnList.get(fqnList.size() - 1);
+        FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
+        if (TEMPLATE_REF.equals(lastNode.getKey())
+            && (TEMPLATE.equals(secondLastNode.getKey())
+                || CUSTOM_DEPLOYMENT_TEMPLATE.equals(secondLastNode.getKey()))) {
           return true;
         }
       }

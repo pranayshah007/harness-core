@@ -31,27 +31,28 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.protobuf.ByteString;
@@ -87,20 +88,19 @@ public class EnvironmentPlanCreatorHelper {
         .build();
   }
 
-  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContextValue metadata,
-      EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled, String serviceRef,
-      ServiceOverrideService serviceOverrideService, EnvironmentService environmentService,
-      InfrastructureEntityService infrastructure) {
-    String accountIdentifier = metadata.getAccountIdentifier();
-    String orgIdentifier = metadata.getOrgIdentifier();
-    String projectIdentifier = metadata.getProjectIdentifier();
+  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContext ctx, EnvironmentYamlV2 environmentV2,
+      boolean gitOpsEnabled, String serviceRef, ServiceOverrideService serviceOverrideService,
+      EnvironmentService environmentService, InfrastructureEntityService infrastructure) {
+    String accountIdentifier = ctx.getAccountIdentifier();
+    String orgIdentifier = ctx.getOrgIdentifier();
+    String projectIdentifier = ctx.getProjectIdentifier();
 
     // TODO: check the case when its a runtime value if its possible for it to have here
     Optional<Environment> environment = environmentService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), false);
 
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environment.isPresent()) {
+    if (environment.isEmpty()) {
       throw new InvalidRequestException(
           String.format("No environment found with %s identifier in %s project in %s org and %s account", envIdentifier,
               projectIdentifier, orgIdentifier, accountIdentifier));
@@ -109,7 +109,7 @@ public class EnvironmentPlanCreatorHelper {
     // Fetch service overrides And resolve inputs for service override
     Optional<NGServiceOverridesEntity> serviceOverridesOptional = serviceOverrideService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), serviceRef);
-    NGServiceOverrides serviceOverride = getNgServiceOverrides(environmentV2, serviceOverridesOptional);
+    NGServiceOverrideConfig serviceOverrideConfig = getNgServiceOverrides(environmentV2, serviceOverridesOptional);
 
     String originalEnvYaml = environment.get().getYaml();
 
@@ -141,19 +141,19 @@ public class EnvironmentPlanCreatorHelper {
       }
 
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          mergedEnvYaml, infrastructureConfigs, serviceOverride);
+          mergedEnvYaml, infrastructureConfigs, serviceOverrideConfig);
     } else {
       if (!environmentV2.getDeployToAll().getValue() && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
         throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false");
       }
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-          mergedEnvYaml, environmentV2, serviceOverride);
+          mergedEnvYaml, environmentV2, serviceOverrideConfig);
     }
   }
 
-  private NGServiceOverrides getNgServiceOverrides(
+  private NGServiceOverrideConfig getNgServiceOverrides(
       EnvironmentYamlV2 environmentV2, Optional<NGServiceOverridesEntity> serviceOverridesOptional) {
-    NGServiceOverrides serviceOverride = NGServiceOverrides.builder().build();
+    NGServiceOverrideConfig serviceOverrideConfig = NGServiceOverrideConfig.builder().build();
     if (serviceOverridesOptional.isPresent()) {
       NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesOptional.get();
       String mergedYaml = serviceOverridesEntity.getYaml();
@@ -162,13 +162,13 @@ public class EnvironmentPlanCreatorHelper {
             serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs().getValue());
       }
       if (mergedYaml != null) {
-        serviceOverride = ServiceOverridesMapper.toServiceOverrides(mergedYaml);
+        serviceOverrideConfig = ServiceOverridesMapper.toNGServiceOverrideConfig(mergedYaml);
       }
     }
-    return serviceOverride;
+    return serviceOverrideConfig;
   }
 
-  private String resolveServiceOverrideInputs(
+  public String resolveServiceOverrideInputs(
       String originalServiceOverrideYaml, Map<String, Object> serviceOverrideInputs) {
     Map<String, Object> serviceOverrideInputYaml = new HashMap<>();
     serviceOverrideInputYaml.put(YamlTypes.SERVICE_OVERRIDE, serviceOverrideInputs);
@@ -191,18 +191,28 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.getDeployToAll().getValue()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
-        String ref = infraYaml.getIdentifier();
+      if (ParameterField.isNotNull(environmentV2.getInfrastructureDefinitions())) {
+        for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+          String ref = infraYaml.getIdentifier().getValue();
+          infraIdentifierList.add(ref);
+          if (isNotEmpty(infraYaml.getInputs().getValue())) {
+            refToInputMap.put(ref, infraYaml.getInputs().getValue());
+          }
+        }
+      } else {
+        InfraStructureDefinitionYaml infraYaml = environmentV2.getInfrastructureDefinition().getValue();
+        String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
-        if (isNotEmpty(infraYaml.getInputs())) {
-          refToInputMap.put(ref, infraYaml.getInputs());
+        if (isNotEmpty(infraYaml.getInputs().getValue())) {
+          refToInputMap.put(ref, infraYaml.getInputs().getValue());
         }
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromIdentifierList(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())
+          || ParameterField.isBlank(environmentV2.getInfrastructureDefinition())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
             environmentV2.getInfrastructureDefinitions().getValue()));
       }
@@ -227,7 +237,7 @@ public class EnvironmentPlanCreatorHelper {
   }
 
   public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeId, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializer kryoSerializer) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
     metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
@@ -236,14 +246,16 @@ public class EnvironmentPlanCreatorHelper {
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
     metadataDependency.put(
         YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)));
+    metadataDependency.put(
+        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(skipInstances)));
 
     return metadataDependency;
   }
 
   public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
-      boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
-      KryoSerializer kryoSerializer) throws IOException {
+      boolean gitOpsEnabled, boolean skipInstances, String environmentUuid, String infraSectionUuid,
+      String serviceSpecNodeUuid, KryoSerializer kryoSerializer) throws IOException {
     YamlField updatedEnvironmentYamlField =
         fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
@@ -252,7 +264,7 @@ public class EnvironmentPlanCreatorHelper {
     // preparing meta data
     final Dependency envDependency = Dependency.newBuilder()
                                          .putAllMetadata(prepareMetadata(environmentUuid, infraSectionUuid,
-                                             serviceSpecNodeUuid, gitOpsEnabled, kryoSerializer))
+                                             serviceSpecNodeUuid, gitOpsEnabled, skipInstances, kryoSerializer))
                                          .build();
 
     planCreationResponseMap.put(environmentUuid,

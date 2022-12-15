@@ -11,13 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMI;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AZURE_ARTIFACTS;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GITHUB_PACKAGES;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GoogleArtifactRegistry;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS2_REGISTRY;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS3_REGISTRY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -44,6 +52,14 @@ public class GeneratorFactory {
   private final ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
   private final AcrPollingItemGenerator acrPollingItemGenerator;
   private final JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
+  private final GitPollingItemGenerator gitPollingItemGenerator;
+  private final CustomPollingItemGenerator customPollingItemGenerator;
+  private final GARPollingItemGenerator garPollingItemGenerator;
+  private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
+  private final Nexus2RegistryPollingItemGenerator nexus2RegistryPollingItemGenerator;
+  private final Nexus3PollingItemGenerator nexus3PollingItemGenerator;
+  private final AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator;
+  private final AMIPollingItemGenerator amiPollingItemGenerator;
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
@@ -51,6 +67,8 @@ public class GeneratorFactory {
       return retrievePollingItemGeneratorForManifest(buildTriggerOpsData);
     } else if (ngTriggerEntity.getType() == ARTIFACT) {
       return retrievePollingItemGeneratorForArtifact(buildTriggerOpsData);
+    } else if (ngTriggerEntity.getType() == WEBHOOK) {
+      return retrievePollingItemGeneratorForGitPolling(buildTriggerOpsData);
     }
 
     return null;
@@ -72,6 +90,20 @@ public class GeneratorFactory {
       return s3PollingItemGenerator;
     } else if (JENKINS.getValue().equals(buildType)) {
       return jenkinsPollingItemGenerator;
+    } else if (CUSTOM_ARTIFACT.getValue().equals(buildType)) {
+      return customPollingItemGenerator;
+    } else if (GoogleArtifactRegistry.getValue().equals(buildType)) {
+      return garPollingItemGenerator;
+    } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {
+      return githubPackagesPollingItemGenerator;
+    } else if (NEXUS2_REGISTRY.getValue().equals(buildType)) {
+      return nexus2RegistryPollingItemGenerator;
+    } else if (NEXUS3_REGISTRY.getValue().equals(buildType)) {
+      return nexus3PollingItemGenerator;
+    } else if (AZURE_ARTIFACTS.getValue().equals(buildType)) {
+      return azureArtifactsPollingItemGenerator;
+    } else if (AMI.getValue().equals(buildType)) {
+      return amiPollingItemGenerator;
     }
     return null;
   }
@@ -96,5 +128,9 @@ public class GeneratorFactory {
     }
 
     return null;
+  }
+
+  private PollingItemGenerator retrievePollingItemGeneratorForGitPolling(BuildTriggerOpsData buildTriggerOpsData) {
+    return gitPollingItemGenerator;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -10,6 +10,10 @@ package io.harness.ng.core.template;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.NAME_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.ng.core.template.TemplateEntityConstants.ARTIFACT_SOURCE;
+import static io.harness.ng.core.template.TemplateEntityConstants.ARTIFACT_SOURCE_ROOT_FIELD;
+import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT;
+import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
@@ -19,6 +23,8 @@ import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP_ROOT_FIELD;
 
 import static java.util.Arrays.asList;
@@ -35,27 +41,42 @@ import lombok.Getter;
 
 @OwnedBy(CDC)
 public enum TemplateEntityType {
-  @JsonProperty(STEP) STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
-  @JsonProperty(STAGE) STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  @JsonProperty(STEP)
+  STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
+  @JsonProperty(STAGE)
+  STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
   @JsonProperty(PIPELINE)
-  PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
+  @JsonProperty(CUSTOM_DEPLOYMENT)
+  CUSTOM_DEPLOYMENT_TEMPLATE(
+      CUSTOM_DEPLOYMENT, CUSTOM_DEPLOYMENT_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CDP, false),
   @JsonProperty(MONITORED_SERVICE)
   MONITORED_SERVICE_TEMPLATE(
-      MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV),
+      MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV, false),
 
   @JsonProperty(SECRET_MANAGER)
-  SECRET_MANAGER_TEMPLATE(SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL);
+  SECRET_MANAGER_TEMPLATE(
+      SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL, false),
+
+  @JsonProperty(ARTIFACT_SOURCE)
+  ARTIFACT_SOURCE_TEMPLATE(ARTIFACT_SOURCE, ARTIFACT_SOURCE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), CDC, false),
+
+  @JsonProperty(STEP_GROUP)
+  STEPGROUP_TEMPLATE(STEP_GROUP, STEP_GROUP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, false);
 
   private final String yamlType;
   private String rootYamlName;
   private final List<String> yamlFieldKeys;
   @Getter private HarnessTeam ownerTeam;
+  private boolean isGitEntity;
 
-  TemplateEntityType(String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam) {
+  TemplateEntityType(
+      String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam, boolean isGitEntity) {
     this.yamlType = yamlType;
     this.rootYamlName = rootYamlName;
     this.yamlFieldKeys = yamlFieldKeys;
     this.ownerTeam = ownerTeam;
+    this.isGitEntity = isGitEntity;
   }
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
@@ -85,5 +106,9 @@ public enum TemplateEntityType {
 
   public HarnessTeam getOwnerTeam() {
     return ownerTeam;
+  }
+
+  public boolean isGitEntity() {
+    return isGitEntity;
   }
 }

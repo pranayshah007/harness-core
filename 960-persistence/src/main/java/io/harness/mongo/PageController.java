@@ -189,7 +189,10 @@ public class PageController {
 
           query.field(filter.getFieldName()).elemMatch(elementMatchQuery);
           break;
-
+        case TEXT_SEARCH:
+          assertOne(filter.getFieldValues());
+          query.search(String.valueOf(filter.getFieldValues()[0]));
+          break;
         default:
           FieldEnd<? extends Query<T>> fieldEnd = query.field(filter.getFieldName());
           query = applyOperator(fieldEnd, filter);

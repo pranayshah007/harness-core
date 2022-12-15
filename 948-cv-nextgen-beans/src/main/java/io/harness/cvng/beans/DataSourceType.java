@@ -7,6 +7,10 @@
 
 package io.harness.cvng.beans;
 
+import static io.harness.cvng.beans.DataSourceType.Constants.DEMO_TEMPLATE_APPDYNAMICS;
+import static io.harness.cvng.beans.DataSourceType.Constants.DEMO_TEMPLATE_PROMETHEUS;
+import static io.harness.cvng.beans.DataSourceType.Constants.DEMO_TEMPLATE_SPLUNK;
+
 import io.harness.cvng.models.VerificationType;
 
 import java.util.ArrayList;
@@ -14,21 +18,25 @@ import java.util.EnumSet;
 import java.util.List;
 
 public enum DataSourceType {
-  APP_DYNAMICS("Appdynamics", VerificationType.TIME_SERIES, "appdynamics"),
-  SPLUNK("Splunk", VerificationType.LOG, "splunk"),
-  SPLUNK_METRIC("Splunk Metrics", VerificationType.TIME_SERIES, "prometheus"),
-  STACKDRIVER("Stackdriver", VerificationType.TIME_SERIES, "prometheus"),
-  STACKDRIVER_LOG("Stackdriver Log", VerificationType.LOG, "splunk"),
-  KUBERNETES("Kubernetes", VerificationType.TIME_SERIES, "prometheus"),
-  NEW_RELIC("New Relic", VerificationType.TIME_SERIES, "appdynamics"),
-  PROMETHEUS("Prometheus", VerificationType.TIME_SERIES, "prometheus"),
-  DATADOG_METRICS("DatadogMetrics", VerificationType.TIME_SERIES, "prometheus"),
-  DATADOG_LOG("DatadogLog", VerificationType.LOG, "splunk"),
-  ERROR_TRACKING("ErrorTracking", VerificationType.LOG, "splunk"),
-  DYNATRACE("Dynatrace", VerificationType.TIME_SERIES, "prometheus"),
-  CUSTOM_HEALTH_METRIC("CustomHealthMetric", VerificationType.TIME_SERIES, "prometheus"),
-  CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk");
-
+  APP_DYNAMICS("Appdynamics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_APPDYNAMICS),
+  SPLUNK("Splunk", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  SPLUNK_METRIC("Splunk Metrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  STACKDRIVER("Stackdriver", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  STACKDRIVER_LOG("Stackdriver Log", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  KUBERNETES("Kubernetes", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  NEW_RELIC("New Relic", VerificationType.TIME_SERIES, DEMO_TEMPLATE_APPDYNAMICS),
+  PROMETHEUS("Prometheus", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  DATADOG_METRICS("DatadogMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  DATADOG_LOG("DatadogLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  ERROR_TRACKING("ErrorTracking", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  DYNATRACE("Dynatrace", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  CUSTOM_HEALTH_METRIC("CustomHealthMetric", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  ELASTICSEARCH("ElasticSearch", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK),
+  CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_APPDYNAMICS),
+  AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  SUMOLOGIC_METRICS("SumologicMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS),
+  SUMOLOGIC_LOG("SumologicLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK);
   private String displayName;
   private VerificationType verificationType;
   // template prefix that should be used for demo data.
@@ -49,11 +57,21 @@ public enum DataSourceType {
   }
 
   public static List<DataSourceType> getTimeSeriesTypes() {
-    return new ArrayList<>(
-        EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE, CUSTOM_HEALTH_METRIC));
+    return new ArrayList<>(EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE,
+        CUSTOM_HEALTH_METRIC, CLOUDWATCH_METRICS, SUMOLOGIC_METRICS));
   }
 
   public String getDemoTemplatePrefix() {
     return demoTemplatePrefix;
+  }
+
+  static final class Constants {
+    static final String DEMO_TEMPLATE_SPLUNK = "splunk";
+    static final String DEMO_TEMPLATE_PROMETHEUS = "prometheus";
+    static final String DEMO_TEMPLATE_APPDYNAMICS = "appdynamics";
+
+    private Constants() {
+      throw new IllegalStateException("Utility class");
+    }
   }
 }

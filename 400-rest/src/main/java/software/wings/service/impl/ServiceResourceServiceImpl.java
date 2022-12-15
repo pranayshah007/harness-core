@@ -107,7 +107,6 @@ import software.wings.beans.AccountEvent;
 import software.wings.beans.AccountEventType;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityKeys;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Base;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.CommandCategory;
@@ -142,7 +141,6 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.AppManifestSource;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.command.AmiCommandUnit;
 import software.wings.beans.command.AwsLambdaCommandUnit;
@@ -174,6 +172,8 @@ import software.wings.common.NotificationMessageResolver.NotificationMessageType
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.helm.HelmHelper;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.AppContainer;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.ServiceHelper;
@@ -519,16 +519,6 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     validateArtifactType(service);
 
     // TODO: ASR: IMP: update the block below for artifact variables as service variable
-    if (createdFromYaml) {
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        List<String> artifactStreamIds = service.getArtifactStreamIds();
-        if (artifactStreamIds == null) {
-          artifactStreamIds = new ArrayList<>();
-        }
-        service.setArtifactStreamIds(artifactStreamIds);
-      }
-    }
-
     StaticLimitCheckerWithDecrement checker = (StaticLimitCheckerWithDecrement) limitCheckerFactory.getInstance(
         new Action(accountId, ActionType.CREATE_SERVICE));
 
@@ -738,8 +728,19 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     } else if (ArtifactType.AWS_LAMBDA == originalService.getArtifactType()) {
       cloneLambdaFunctionSpecification(appId, clonedServiceId, originalServiceId);
     }
-
+    if (originalService.getDeploymentType() == ECS) {
+      cloneECSServiceDefinition(appId, clonedServiceId, originalServiceId);
+    }
     cloneAppManifests(appId, clonedServiceId, originalServiceId);
+  }
+
+  private void cloneECSServiceDefinition(String appId, String clonedServiceId, String originalServiceId) {
+    EcsServiceSpecification ecsServiceSpecification = getEcsServiceSpecification(appId, originalServiceId);
+    if (ecsServiceSpecification != null) {
+      EcsServiceSpecification newEcsServiceSpecification = ecsServiceSpecification.cloneInternal();
+      newEcsServiceSpecification.setServiceId(clonedServiceId);
+      createEcsServiceSpecification(newEcsServiceSpecification);
+    }
   }
 
   private void cloneContainerTasks(String appId, String clonedServiceId, String originalServiceId) {
@@ -984,14 +985,6 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
         updateOperations.set("helmValueYaml", service.getHelmValueYaml());
       } else {
         updateOperations.unset("helmValueYaml");
-      }
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, savedService.getAccountId())) {
-        // TODO: ASR: IMP: update the block below for artifact variables as service variable
-        List<String> artifactStreamIds = service.getArtifactStreamIds();
-        if (artifactStreamIds == null) {
-          artifactStreamIds = new ArrayList<>();
-        }
-        updateOperations.set("artifactStreamIds", artifactStreamIds);
       }
     }
 

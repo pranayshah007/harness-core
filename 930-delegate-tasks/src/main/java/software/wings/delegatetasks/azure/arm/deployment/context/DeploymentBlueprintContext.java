@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.blueprint.Blueprint;
 import io.harness.azure.model.blueprint.assignment.Assignment;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -38,6 +38,6 @@ public class DeploymentBlueprintContext {
   private String roleAssignmentName;
   private String assignmentSubscriptionId;
   private String assignmentResourceScope;
-  private ILogStreamingTaskClient logStreamingTaskClient;
+  private AzureLogCallbackProvider logStreamingTaskClient;
   private int steadyStateTimeoutInMin;
 }

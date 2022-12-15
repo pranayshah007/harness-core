@@ -20,10 +20,10 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.azure.AzureClient;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.context.ARMDeploymentSteadyStateContext;
 import io.harness.azure.context.AzureClientContext;
@@ -34,71 +34,81 @@ import io.harness.azure.model.AzureARMTemplate.AzureARMTemplateBuilder;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.category.element.UnitTests;
-import io.harness.network.Http;
+import io.harness.exception.runtime.azure.AzureARMManagementScopeException;
+import io.harness.exception.runtime.azure.AzureARMResourceGroupScopeException;
+import io.harness.exception.runtime.azure.AzureARMSubscriptionScopeException;
+import io.harness.exception.runtime.azure.AzureARMTenantScopeException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
-import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.resources.Deployment;
-import com.microsoft.azure.management.resources.DeploymentMode;
-import com.microsoft.azure.management.resources.DeploymentPropertiesExtended;
-import com.microsoft.azure.management.resources.Deployments;
-import com.microsoft.azure.management.resources.Location;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.azure.management.resources.ResourceGroupExportResult;
-import com.microsoft.azure.management.resources.ResourceGroupExportTemplateOptions;
-import com.microsoft.azure.management.resources.ResourceGroups;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.Subscriptions;
-import com.microsoft.azure.management.resources.implementation.DeploymentExtendedInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentsInner;
-import com.microsoft.azure.management.resources.implementation.ResourceManagementClientImpl;
-import com.microsoft.azure.management.resources.implementation.ResourceManager;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.http.HttpClient;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.PollerFlux;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.resources.fluent.DeploymentsClient;
+import com.azure.resourcemanager.resources.fluent.ResourceManagementClient;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentExtendedInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentValidateResultInner;
+import com.azure.resourcemanager.resources.fluentcore.model.Accepted;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import com.azure.resourcemanager.resources.models.Deployment;
+import com.azure.resourcemanager.resources.models.DeploymentExportResult;
+import com.azure.resourcemanager.resources.models.DeploymentMode;
+import com.azure.resourcemanager.resources.models.DeploymentPropertiesExtended;
+import com.azure.resourcemanager.resources.models.Deployments;
+import com.azure.resourcemanager.resources.models.Location;
+import com.azure.resourcemanager.resources.models.ProvisioningState;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.ResourceGroupExportResult;
+import com.azure.resourcemanager.resources.models.ResourceGroupExportTemplateOptions;
+import com.azure.resourcemanager.resources.models.ResourceGroups;
+import com.azure.resourcemanager.resources.models.ScopedDeployment;
+import com.azure.resourcemanager.resources.models.Subscription;
+import com.azure.resourcemanager.resources.models.Subscriptions;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, ResourceManager.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class AzureManagementClientImplTest extends CategoryTest {
   public static final String CLIENT_ID = "CLIENT_ID";
   public static final String TENANT_ID = "TENANT_ID";
   public static final String KEY = "KEY";
 
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  private AzureResourceManager.Configurable configurable;
+  private AzureResourceManager.Authenticated authenticated;
+  private AzureResourceManager azure;
 
   @InjectMocks AzureManagementClientImpl azureManagementClient;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = mock(ApplicationTokenCredentials.class);
-    PowerMockito.whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(Matchers.any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(Matchers.any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+    MockitoAnnotations.openMocks(this);
+    azure = mock(AzureResourceManager.class);
+    configurable = mock(AzureResourceManager.Configurable.class);
+    authenticated = mock(AzureResourceManager.Authenticated.class);
+
+    MockedStatic<AzureResourceManager> azureMockStatic = mockStatic(AzureResourceManager.class);
+    azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
+    when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
+    when(configurable.authenticate(any(), any())).thenReturn(authenticated);
     when(authenticated.withSubscription(anyString())).thenReturn(azure);
     when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
@@ -107,19 +117,14 @@ public class AzureManagementClientImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
   public void testListLocationsByDefaultSubscription() {
-    Subscription mockSubscription = mock(Subscription.class);
-    Location mockLocation = mock(Location.class);
-    PagedList<Location> listLocations = getPageList();
-    listLocations.add(mockLocation);
-
-    doReturn(mockSubscription).when(azure).getCurrentSubscription();
-    doReturn(listLocations).when(mockSubscription).listLocations();
-    doReturn("West US").when(mockLocation).displayName();
+    Location locationMock = mockLocation("West US");
+    Subscription subscriptionMock = mockSubscription(null, Arrays.asList(locationMock));
+    doReturn(subscriptionMock).when(azure).getCurrentSubscription();
 
     List<String> locations = azureManagementClient.listLocationsBySubscriptionId(getAzureConfig(), EMPTY);
 
     assertThat(locations).isNotNull();
-    assertThat(locations.size()).isEqualTo(46);
+    assertThat(locations.size()).isEqualTo(51);
   }
 
   @Test
@@ -128,16 +133,10 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testListLocationsBySubscription() {
     String subscriptionId = "SUBSCRIPTION_ID";
 
-    Subscription mockSubscription = mock(Subscription.class);
-    Subscriptions mockSubscriptions = mock(Subscriptions.class);
-    Location mockLocation = mock(Location.class);
-    PagedList<Location> listLocations = getPageList();
-    listLocations.add(mockLocation);
-
-    doReturn(mockSubscriptions).when(azure).subscriptions();
-    doReturn(mockSubscription).when(mockSubscriptions).getById(subscriptionId);
-    doReturn(listLocations).when(mockSubscription).listLocations();
-    doReturn("West US").when(mockLocation).displayName();
+    Location locationMock = mockLocation("West US");
+    Subscription subscriptionMock = mockSubscription(subscriptionId, Arrays.asList(locationMock));
+    Subscriptions subscriptionsMock = mockSubscriptions(subscriptionMock);
+    doReturn(subscriptionsMock).when(azure).subscriptions();
 
     List<String> locations = azureManagementClient.listLocationsBySubscriptionId(getAzureConfig(), subscriptionId);
 
@@ -155,15 +154,12 @@ public class AzureManagementClientImplTest extends CategoryTest {
     AzureARMRGTemplateExportOptions includeParameterDefaultValue =
         AzureARMRGTemplateExportOptions.INCLUDE_PARAMETER_DEFAULT_VALUE;
 
-    ResourceGroups mockResourceGroups = mock(ResourceGroups.class);
-    ResourceGroup mockResourceGroup = mock(ResourceGroup.class);
-    ResourceGroupExportResult mockResourceGroupExportResult = mock(ResourceGroupExportResult.class);
-    doReturn(mockResourceGroups).when(azure).resourceGroups();
-    doReturn(mockResourceGroup).when(mockResourceGroups).getByName(resourceGroupName);
-    doReturn(mockResourceGroupExportResult)
-        .when(mockResourceGroup)
-        .exportTemplate(ResourceGroupExportTemplateOptions.INCLUDE_PARAMETER_DEFAULT_VALUE);
-    doReturn(resourceGroupExportTemplate).when(mockResourceGroupExportResult).templateJson();
+    ResourceGroupExportResult resourceGroupExportResultMock =
+        mockResourceGroupExportResult(resourceGroupExportTemplate);
+    ResourceGroup resourceGroupMock = mockResourceGroup(resourceGroupName,
+        ResourceGroupExportTemplateOptions.INCLUDE_PARAMETER_DEFAULT_VALUE, resourceGroupExportResultMock);
+    ResourceGroups resourceGroupsMock = mockResourceGroups(resourceGroupMock);
+    doReturn(resourceGroupsMock).when(azure).resourceGroups();
 
     AzureClientContext azureClientContext = getAzureClientContext(subscriptionId, resourceGroupName);
 
@@ -182,11 +178,10 @@ public class AzureManagementClientImplTest extends CategoryTest {
     String resourceGroupName = "RESOURCE_GROUP_NAME";
     String deploymentName = "DEPLOYMENT_NAME";
 
-    Deployments mockDeployments = mock(Deployments.class);
-    Deployment mockDeployment = mock(Deployment.class);
-    doReturn(mockDeployments).when(azure).deployments();
-    doReturn(mockDeployment).when(mockDeployments).getByResourceGroup(resourceGroupName, deploymentName);
-    doReturn("Accepted").when(mockDeployment).provisioningState();
+    Deployment deploymentMock = mockDeployment("Accepted");
+    Deployments deploymentsMock = mockDeployments(deploymentMock, Arrays.asList(deploymentMock));
+    doReturn(deploymentMock).when(deploymentsMock).getByResourceGroup(resourceGroupName, deploymentName);
+    doReturn(deploymentsMock).when(azure).deployments();
 
     AzureClientContext azureClientContext = getAzureClientContext(subscriptionId, resourceGroupName);
     Deployment deployment = azureManagementClient.getDeploymentAtResourceGroup(azureClientContext, deploymentName);
@@ -206,22 +201,23 @@ public class AzureManagementClientImplTest extends CategoryTest {
     AzureARMTemplate azureARMTemplate = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder(),
         accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentValidateResultInner result = mockDeploymentValidateResultInner(
         accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
+
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
+
     doReturn(result)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .validate(eq(resourceGroupName), eq(deploymentName), any(DeploymentInner.class));
 
     DeploymentValidateResultInner deploymentValidateResult =
-        azureManagementClient.validateDeploymentAtResourceGroupScope(azureClientContext, azureARMTemplate);
+        azureManagementClient.validateDeploymentAtResourceGroupScope(
+            azureClientContext, azureARMTemplate, deploymentsClientMock);
 
     assertThat(deploymentValidateResult).isNotNull();
     assertThat(deploymentValidateResult.error()).isNull();
     assertThat(deploymentValidateResult.properties()).isNotNull();
-    assertThat(deploymentValidateResult.properties().template().toString())
-        .contains("Microsoft.Storage/storageAccounts");
-    assertThat(deploymentValidateResult.properties().parameters().toString()).contains("storageAccountType");
+    assertThat(deploymentValidateResult.properties().parameters()).isNotNull();
   }
 
   @Test
@@ -236,15 +232,15 @@ public class AzureManagementClientImplTest extends CategoryTest {
     AzureARMTemplate azureARMTemplate = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder(),
         accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
 
-    Deployments mockDeployments = mock(Deployments.class);
+    Deployment deploymentMock =
+        mockDeployment(accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
+    Deployments mockDeployments = mockDeployments(deploymentMock, Arrays.asList(deploymentMock));
     Deployment.DefinitionStages.Blank mockBlank = mock(Deployment.DefinitionStages.Blank.class);
     Deployment.DefinitionStages.WithTemplate mockWithTemplate = mock(Deployment.DefinitionStages.WithTemplate.class);
     Deployment.DefinitionStages.WithParameters mockWithParameters =
         mock(Deployment.DefinitionStages.WithParameters.class);
     Deployment.DefinitionStages.WithMode mockWithMode = mock(Deployment.DefinitionStages.WithMode.class);
     Deployment.DefinitionStages.WithCreate mockWithCreate = mock(Deployment.DefinitionStages.WithCreate.class);
-    Deployment mockDeployment =
-        mockDeployment(accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
 
     doReturn(mockDeployments).when(azure).deployments();
     doReturn(mockBlank).when(mockDeployments).define(deploymentName);
@@ -252,13 +248,21 @@ public class AzureManagementClientImplTest extends CategoryTest {
     doReturn(mockWithParameters).when(mockWithTemplate).withTemplate(accountTemplateJSONAtResourceGroupScope);
     doReturn(mockWithMode).when(mockWithParameters).withParameters(accountTemplateJSONParamsAtResourceGroupScope);
     doReturn(mockWithCreate).when(mockWithMode).withMode(mode);
-    doReturn(mockDeployment).when(mockWithCreate).beginCreate();
 
-    Deployment deployment = azureManagementClient.deployAtResourceGroupScope(azureClientContext, azureARMTemplate);
+    SyncPoller<Void, Deployment> deploymentSyncPollerMock = mock(SyncPoller.class);
+    Accepted<Deployment> acceptedMock = mock(Accepted.class);
+    doReturn(deploymentSyncPollerMock).when(acceptedMock).getSyncPoller();
+    doReturn(deploymentMock).when(deploymentSyncPollerMock).getFinalResult();
 
-    assertThat(deployment).isNotNull();
-    assertThat(deployment.template()).isNotNull();
-    assertThat(deployment.template().toString()).contains("Microsoft.Storage/storageAccounts");
+    doReturn(acceptedMock).when(mockWithCreate).beginCreate();
+
+    SyncPoller<Void, Deployment> deploymentSyncPoller =
+        azureManagementClient.deployAtResourceGroupScope(azureClientContext, azureARMTemplate);
+
+    assertThat(deploymentSyncPoller).isNotNull();
+    Deployment deployment = deploymentSyncPoller.getFinalResult();
+    assertThat(deployment.exportTemplate().template()).isNotNull();
+    assertThat(deployment.exportTemplate().template().toString()).contains("Microsoft.Storage/storageAccounts");
     assertThat(deployment.parameters()).isNotNull();
     assertThat(deployment.parameters().toString()).contains("storageAccountType");
   }
@@ -270,20 +274,20 @@ public class AzureManagementClientImplTest extends CategoryTest {
     String subscriptionId = "SUBSCRIPTION_ID";
     String deploymentName = "DEPLOYMENT_NAME";
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
+
     DeploymentExtendedInner mockDeploymentExtendedInner =
         mockDeploymentExtendedInner(createNewRGAtSubscriptionScope, createNewRGAtSubscriptionScopeParameters);
 
-    doReturn(mockDeploymentExtendedInner).when(mockDeploymentsInner).getAtSubscriptionScope(deploymentName);
+    doReturn(mockDeploymentExtendedInner).when(deploymentsClientMock).getAtSubscriptionScope(deploymentName);
 
-    DeploymentExtendedInner deployment =
-        azureManagementClient.getDeploymentAtSubscriptionScope(getAzureConfig(), subscriptionId, deploymentName);
+    DeploymentExtendedInner deployment = azureManagementClient.getDeploymentAtSubscriptionScope(
+        getAzureConfig(), subscriptionId, deploymentName, deploymentsClientMock);
 
     assertThat(deployment).isNotNull();
     assertThat(deployment.location()).isNotNull();
     assertThat(deployment.location()).contains("West US");
     assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Resources/resourceGroups");
     assertThat(deployment.properties().parameters().toString()).contains("rgName");
   }
 
@@ -293,25 +297,24 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testValidateDeploymentAtSubscriptionScope() {
     String subscriptionId = "SUBSCRIPTION_ID";
     String deploymentName = "DEPLOYMENT_NAME";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentValidateResultInner result = mockDeploymentValidateResultInner(
         accountTemplateJSONAtResourceGroupScope, accountTemplateJSONParamsAtResourceGroupScope);
     doReturn(result)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .validateAtSubscriptionScope(eq(deploymentName), any(DeploymentInner.class));
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         createNewRGAtSubscriptionScope, createNewRGAtSubscriptionScopeParameters);
 
     DeploymentValidateResultInner deploymentValidateResult =
-        azureManagementClient.validateDeploymentAtSubscriptionScope(getAzureConfig(), subscriptionId, template);
+        azureManagementClient.validateDeploymentAtSubscriptionScope(
+            getAzureConfig(), subscriptionId, template, deploymentsClientMock);
 
     assertThat(deploymentValidateResult).isNotNull();
     assertThat(deploymentValidateResult.error()).isNull();
     assertThat(deploymentValidateResult.properties()).isNotNull();
-    assertThat(deploymentValidateResult.properties().template().toString())
-        .contains("Microsoft.Storage/storageAccounts");
     assertThat(deploymentValidateResult.properties().parameters().toString()).contains("storageAccountType");
   }
 
@@ -321,29 +324,46 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testDeployAtSubscriptionScope() {
     String subscriptionId = "SUBSCRIPTION_ID";
     String deploymentName = "DEPLOYMENT_NAME";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
+    PollResult<DeploymentExtendedInner> pollResultMock = mock(PollResult.class);
+
     DeploymentExtendedInner mockDeploymentExtendedInner =
         mockDeploymentExtendedInner(createNewRGAtSubscriptionScope, createNewRGAtSubscriptionScopeParameters);
 
-    doReturn(mockDeploymentExtendedInner)
-        .when(mockDeploymentsInner)
-        .beginCreateOrUpdateAtSubscriptionScope(eq(deploymentName), any(DeploymentInner.class));
+    doReturn(mockDeploymentExtendedInner).when(pollResultMock).getValue();
+
+    LongRunningOperationStatus longRunningOperationStatus = LongRunningOperationStatus.SUCCESSFULLY_COMPLETED;
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponseMock = mock(PollResponse.class);
+    doReturn(longRunningOperationStatus).when(pollResponseMock).getStatus();
+    doReturn(pollResultMock).when(pollResponseMock).getValue();
+
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerMock = mock(SyncPoller.class);
+    doReturn(pollResponseMock).when(syncPollerMock).waitForCompletion();
+
+    PollerFlux<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> pollerFluxMock = mock(PollerFlux.class);
+    doReturn(pollerFluxMock)
+        .when(deploymentsClientMock)
+        .beginCreateOrUpdateAtSubscriptionScopeAsync(eq(deploymentName), any(DeploymentInner.class));
+    doReturn(syncPollerMock).when(pollerFluxMock).getSyncPoller();
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         createNewRGAtSubscriptionScope, createNewRGAtSubscriptionScopeParameters);
 
-    DeploymentExtendedInner deployment =
-        azureManagementClient.deployAtSubscriptionScope(getAzureConfig(), subscriptionId, template);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+        azureManagementClient.deployAtSubscriptionScope(
+            getAzureConfig(), subscriptionId, template, deploymentsClientMock);
 
-    assertThat(deployment).isNotNull();
-    assertThat(deployment.location()).isNotNull();
-    assertThat(deployment.location()).contains("West US");
-    assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Resources/resourceGroups");
-    assertThat(deployment.properties().parameters().toString()).contains("rgName");
-    assertThat(deployment.properties().outputs().toString())
-        .isEqualTo("{storageAccountName={type=String, value=devarmtemplatessdn}}");
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponse = syncPoller.waitForCompletion();
+    LongRunningOperationStatus status = pollResponse.getStatus();
+    DeploymentExtendedInner deploymentExtendedInner = pollResponse.getValue().getValue();
+
+    assertThat(status).isEqualTo(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED);
+    assertThat(deploymentExtendedInner).isNotNull();
+    assertThat(deploymentExtendedInner.location()).isNotNull();
+    assertThat(deploymentExtendedInner.location()).contains("West US");
+    assertThat(deploymentExtendedInner.properties()).isNotNull();
+    assertThat(deploymentExtendedInner.properties().parameters().toString()).contains("rgName");
   }
 
   @Test
@@ -352,21 +372,22 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testGetDeploymentAtManagementScope() {
     String deploymentName = "DEPLOYMENT_NAME";
     String groupId = "GROUP_ID";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentExtendedInner mockDeploymentExtendedInner = mockDeploymentExtendedInner(
         policyAssignmentsAtManagementGroupScope, policyAssignmentsAtManagementGroupScopeParams);
 
-    doReturn(mockDeploymentExtendedInner).when(mockDeploymentsInner).getAtManagementGroupScope(groupId, deploymentName);
+    doReturn(mockDeploymentExtendedInner)
+        .when(deploymentsClientMock)
+        .getAtManagementGroupScope(groupId, deploymentName);
 
-    DeploymentExtendedInner deployment =
-        azureManagementClient.getDeploymentAtManagementScope(getAzureConfig(), groupId, deploymentName);
+    DeploymentExtendedInner deployment = azureManagementClient.getDeploymentAtManagementScope(
+        getAzureConfig(), groupId, deploymentName, deploymentsClientMock);
 
     assertThat(deployment).isNotNull();
     assertThat(deployment.location()).isNotNull();
     assertThat(deployment.location()).contains("West US");
     assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Authorization/policyDefinitions");
     assertThat(deployment.properties().parameters().toString()).contains("targetMG");
   }
 
@@ -376,25 +397,24 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testValidateTemplateAtManagementGroupScope() {
     String deploymentName = "DEPLOYMENT_NAME";
     String groupId = "GROUP_ID";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentValidateResultInner result = mockDeploymentValidateResultInner(
         policyAssignmentsAtManagementGroupScope, policyAssignmentsAtManagementGroupScopeParams);
     doReturn(result)
-        .when(mockDeploymentsInner)
-        .validateAtManagementGroupScope(eq(groupId), eq(deploymentName), any(DeploymentInner.class));
+        .when(deploymentsClientMock)
+        .validateAtManagementGroupScope(eq(groupId), eq(deploymentName), any(ScopedDeployment.class));
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         policyAssignmentsAtManagementGroupScope, policyAssignmentsAtManagementGroupScopeParams);
 
     DeploymentValidateResultInner deploymentValidateResult =
-        azureManagementClient.validateDeploymentAtManagementGroupScope(getAzureConfig(), groupId, template);
+        azureManagementClient.validateDeploymentAtManagementGroupScope(
+            getAzureConfig(), groupId, template, deploymentsClientMock);
 
     assertThat(deploymentValidateResult).isNotNull();
     assertThat(deploymentValidateResult.error()).isNull();
     assertThat(deploymentValidateResult.properties()).isNotNull();
-    assertThat(deploymentValidateResult.properties().template().toString())
-        .contains("Microsoft.Authorization/policyDefinitions");
     assertThat(deploymentValidateResult.properties().parameters().toString()).contains("targetMG");
   }
 
@@ -404,29 +424,46 @@ public class AzureManagementClientImplTest extends CategoryTest {
   public void testDeployAtManagementGroupScope() {
     String deploymentName = "DEPLOYMENT_NAME";
     String groupId = "GROUP_ID";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
+    PollResult<DeploymentExtendedInner> pollResultMock = mock(PollResult.class);
+
     DeploymentExtendedInner mockDeploymentExtendedInner = mockDeploymentExtendedInner(
         policyAssignmentsAtManagementGroupScope, policyAssignmentsAtManagementGroupScopeParams);
 
-    doReturn(mockDeploymentExtendedInner)
-        .when(mockDeploymentsInner)
-        .beginCreateOrUpdateAtManagementGroupScope(eq("GROUP_ID"), eq(deploymentName), any(DeploymentInner.class));
+    doReturn(mockDeploymentExtendedInner).when(pollResultMock).getValue();
+
+    LongRunningOperationStatus longRunningOperationStatus = LongRunningOperationStatus.SUCCESSFULLY_COMPLETED;
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponseMock = mock(PollResponse.class);
+    doReturn(longRunningOperationStatus).when(pollResponseMock).getStatus();
+    doReturn(pollResultMock).when(pollResponseMock).getValue();
+
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerMock = mock(SyncPoller.class);
+    doReturn(pollResponseMock).when(syncPollerMock).waitForCompletion();
+
+    PollerFlux<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> pollerFluxMock = mock(PollerFlux.class);
+    doReturn(pollerFluxMock)
+        .when(deploymentsClientMock)
+        .beginCreateOrUpdateAtManagementGroupScopeAsync(
+            eq("GROUP_ID"), eq(deploymentName), any(ScopedDeployment.class));
+    doReturn(syncPollerMock).when(pollerFluxMock).getSyncPoller();
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         policyAssignmentsAtManagementGroupScope, policyAssignmentsAtManagementGroupScopeParams);
 
-    DeploymentExtendedInner deployment =
-        azureManagementClient.deployAtManagementGroupScope(getAzureConfig(), groupId, template);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+        azureManagementClient.deployAtManagementGroupScope(getAzureConfig(), groupId, template, deploymentsClientMock);
 
-    assertThat(deployment).isNotNull();
-    assertThat(deployment.location()).isNotNull();
-    assertThat(deployment.location()).contains("West US");
-    assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Authorization/policyDefinitions");
-    assertThat(deployment.properties().parameters().toString()).contains("targetMG");
-    assertThat(deployment.properties().outputs().toString())
-        .isEqualTo("{storageAccountName={type=String, value=devarmtemplatessdn}}");
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponse = syncPoller.waitForCompletion();
+    LongRunningOperationStatus status = pollResponse.getStatus();
+    DeploymentExtendedInner deploymentExtendedInner = pollResponse.getValue().getValue();
+
+    assertThat(status).isEqualTo(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED);
+    assertThat(deploymentExtendedInner).isNotNull();
+    assertThat(deploymentExtendedInner.location()).isNotNull();
+    assertThat(deploymentExtendedInner.location()).contains("West US");
+    assertThat(deploymentExtendedInner.properties()).isNotNull();
+    assertThat(deploymentExtendedInner.properties().parameters().toString()).contains("targetMG");
   }
 
   @Test
@@ -434,21 +471,20 @@ public class AzureManagementClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetDeploymentAtTenant() {
     String deploymentName = "DEPLOYMENT_NAME";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentExtendedInner mockDeploymentExtendedInner =
         mockDeploymentExtendedInner(createNewMGAtTenantScope, createNewMGAtTenantScopeParams);
 
-    doReturn(mockDeploymentExtendedInner).when(mockDeploymentsInner).getAtTenantScope(deploymentName);
+    doReturn(mockDeploymentExtendedInner).when(deploymentsClientMock).getAtTenantScope(deploymentName);
 
     DeploymentExtendedInner deployment =
-        azureManagementClient.getDeploymentAtTenantScope(getAzureConfig(), deploymentName);
+        azureManagementClient.getDeploymentAtTenantScope(getAzureConfig(), deploymentName, deploymentsClientMock);
 
     assertThat(deployment).isNotNull();
     assertThat(deployment.location()).isNotNull();
     assertThat(deployment.location()).contains("West US");
     assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Management/managementGroups");
     assertThat(deployment.properties().parameters().toString()).contains("mgName");
   }
 
@@ -457,23 +493,21 @@ public class AzureManagementClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateTemplateAtTenant() {
     String deploymentName = "DEPLOYMENT_NAME";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentValidateResultInner result =
         mockDeploymentValidateResultInner(createNewMGAtTenantScope, createNewMGAtTenantScopeParams);
-    doReturn(result).when(mockDeploymentsInner).validateAtTenantScope(eq(deploymentName), any(DeploymentInner.class));
+    doReturn(result).when(deploymentsClientMock).validateAtTenantScope(eq(deploymentName), any(ScopedDeployment.class));
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         createNewMGAtTenantScope, createNewMGAtTenantScopeParams);
 
     DeploymentValidateResultInner deploymentValidateResult =
-        azureManagementClient.validateDeploymentAtTenantScope(getAzureConfig(), template);
+        azureManagementClient.validateDeploymentAtTenantScope(getAzureConfig(), template, deploymentsClientMock);
 
     assertThat(deploymentValidateResult).isNotNull();
     assertThat(deploymentValidateResult.error()).isNull();
     assertThat(deploymentValidateResult.properties()).isNotNull();
-    assertThat(deploymentValidateResult.properties().template().toString())
-        .contains("Microsoft.Management/managementGroups");
     assertThat(deploymentValidateResult.properties().parameters().toString()).contains("mgName");
   }
 
@@ -482,28 +516,44 @@ public class AzureManagementClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeployAtTenant() {
     String deploymentName = "DEPLOYMENT_NAME";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
+    PollResult<DeploymentExtendedInner> pollResultMock = mock(PollResult.class);
+
     DeploymentExtendedInner mockDeploymentExtendedInner =
         mockDeploymentExtendedInner(createNewMGAtTenantScope, createNewMGAtTenantScopeParams);
+    doReturn(mockDeploymentExtendedInner).when(pollResultMock).getValue();
 
-    doReturn(mockDeploymentExtendedInner)
-        .when(mockDeploymentsInner)
-        .beginCreateOrUpdateAtTenantScope(eq(deploymentName), any(DeploymentInner.class));
+    LongRunningOperationStatus longRunningOperationStatus = LongRunningOperationStatus.SUCCESSFULLY_COMPLETED;
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponseMock = mock(PollResponse.class);
+    doReturn(longRunningOperationStatus).when(pollResponseMock).getStatus();
+    doReturn(pollResultMock).when(pollResponseMock).getValue();
+
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerMock = mock(SyncPoller.class);
+    doReturn(pollResponseMock).when(syncPollerMock).waitForCompletion();
+
+    PollerFlux<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> pollerFluxMock = mock(PollerFlux.class);
+    doReturn(pollerFluxMock)
+        .when(deploymentsClientMock)
+        .beginCreateOrUpdateAtTenantScopeAsync(eq(deploymentName), any(ScopedDeployment.class));
+    doReturn(syncPollerMock).when(pollerFluxMock).getSyncPoller();
 
     AzureARMTemplate template = getAzureARMTemplate(deploymentName, AzureARMTemplate.builder().location("East US"),
         createNewMGAtTenantScope, createNewMGAtTenantScopeParams);
 
-    DeploymentExtendedInner deployment = azureManagementClient.deployAtTenantScope(getAzureConfig(), template);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPoller =
+        azureManagementClient.deployAtTenantScope(getAzureConfig(), template, deploymentsClientMock);
 
-    assertThat(deployment).isNotNull();
-    assertThat(deployment.location()).isNotNull();
-    assertThat(deployment.location()).contains("West US");
-    assertThat(deployment.properties()).isNotNull();
-    assertThat(deployment.properties().template().toString()).contains("Microsoft.Management/managementGroups");
-    assertThat(deployment.properties().parameters().toString()).contains("mgName");
-    assertThat(deployment.properties().outputs().toString())
-        .isEqualTo("{storageAccountName={type=String, value=devarmtemplatessdn}}");
+    PollResponse<PollResult<DeploymentExtendedInner>> pollResponse = syncPoller.waitForCompletion();
+    LongRunningOperationStatus status = pollResponse.getStatus();
+    DeploymentExtendedInner deploymentExtendedInner = pollResponse.getValue().getValue();
+
+    assertThat(status).isEqualTo(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED);
+    assertThat(deploymentExtendedInner).isNotNull();
+    assertThat(deploymentExtendedInner.location()).isNotNull();
+    assertThat(deploymentExtendedInner.location()).contains("West US");
+    assertThat(deploymentExtendedInner.properties()).isNotNull();
+    assertThat(deploymentExtendedInner.properties().parameters().toString()).contains("mgName");
   }
 
   @Test
@@ -515,6 +565,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     String managementGroup = "managementGroup";
     String tenantId = "tenantId";
     String deploymentName = "deploy";
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
     ARMDeploymentSteadyStateContext context = ARMDeploymentSteadyStateContext.builder()
                                                   .resourceGroup(resourceGroup)
                                                   .scopeType(ARMScopeType.RESOURCE_GROUP)
@@ -523,61 +574,60 @@ public class AzureManagementClientImplTest extends CategoryTest {
                                                   .deploymentName(deploymentName)
                                                   .build();
 
-    DeploymentsInner mockDeploymentsInner = mockDeploymentsInner();
     DeploymentExtendedInner deploymentExtendedInner = mockDeploymentExtendedInnerForStatus();
 
     // resource group scope
-    doReturn(true).when(mockDeploymentsInner).checkExistence(eq(resourceGroup), eq(deploymentName));
+    doReturn(true).when(deploymentsClientMock).checkExistence(eq(resourceGroup), eq(deploymentName));
     doReturn(deploymentExtendedInner)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .getByResourceGroup(eq(resourceGroup), eq(deploymentName));
-    String deploymentStatus = azureManagementClient.getARMDeploymentStatus(context);
+    String deploymentStatus = azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock);
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
-    doReturn(false).when(mockDeploymentsInner).checkExistence(eq(resourceGroup), eq(deploymentName));
-    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+    doReturn(false).when(deploymentsClientMock).checkExistence(eq(resourceGroup), eq(deploymentName));
+    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock))
+        .isInstanceOf(AzureARMResourceGroupScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_RESOURCE_GROUP, deploymentName, resourceGroup));
 
     // subscription scope
     context.setScopeType(ARMScopeType.SUBSCRIPTION);
-    doReturn(true).when(mockDeploymentsInner).checkExistenceAtSubscriptionScope(eq(deploymentName));
-    doReturn(deploymentExtendedInner).when(mockDeploymentsInner).getAtSubscriptionScope(eq(deploymentName));
-    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context);
+    doReturn(true).when(deploymentsClientMock).checkExistenceAtSubscriptionScope(eq(deploymentName));
+    doReturn(deploymentExtendedInner).when(deploymentsClientMock).getAtSubscriptionScope(eq(deploymentName));
+    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock);
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
-    doReturn(false).when(mockDeploymentsInner).checkExistenceAtSubscriptionScope(eq(deploymentName));
-    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+    doReturn(false).when(deploymentsClientMock).checkExistenceAtSubscriptionScope(eq(deploymentName));
+    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock))
+        .isInstanceOf(AzureARMSubscriptionScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_SUBSCRIPTION, deploymentName, subscriptionId));
 
     // management group scope
     context.setScopeType(ARMScopeType.MANAGEMENT_GROUP);
     context.setManagementGroupId(managementGroup);
     doReturn(true)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .checkExistenceAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
     doReturn(deploymentExtendedInner)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .getAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
-    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context);
+    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock);
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
     doReturn(false)
-        .when(mockDeploymentsInner)
+        .when(deploymentsClientMock)
         .checkExistenceAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
-    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock))
+        .isInstanceOf(AzureARMManagementScopeException.class)
         .hasMessageContaining(
             String.format(DEPLOYMENT_DOES_NOT_EXIST_MANAGEMENT_GROUP, deploymentName, managementGroup));
 
     // tenant scope
     context.setScopeType(ARMScopeType.TENANT);
     context.setTenantId(tenantId);
-    doReturn(true).when(mockDeploymentsInner).checkExistenceAtTenantScope(eq(deploymentName));
-    doReturn(deploymentExtendedInner).when(mockDeploymentsInner).getAtTenantScope(eq(deploymentName));
-    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context);
+    doReturn(true).when(deploymentsClientMock).checkExistenceAtTenantScope(eq(deploymentName));
+    doReturn(deploymentExtendedInner).when(deploymentsClientMock).getAtTenantScope(eq(deploymentName));
+    deploymentStatus = azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock);
     assertThat(deploymentStatus.equalsIgnoreCase("Succeeded")).isTrue();
-    doReturn(false).when(mockDeploymentsInner).checkExistenceAtTenantScope(eq(deploymentName));
-    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context))
-        .isInstanceOf(IllegalArgumentException.class)
+    doReturn(false).when(deploymentsClientMock).checkExistenceAtTenantScope(eq(deploymentName));
+    assertThatThrownBy(() -> azureManagementClient.getARMDeploymentStatus(context, deploymentsClientMock))
+        .isInstanceOf(AzureARMTenantScopeException.class)
         .hasMessageContaining(String.format(DEPLOYMENT_DOES_NOT_EXIST_TENANT, deploymentName, tenantId));
   }
 
@@ -589,7 +639,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     String subscriptionId = "subId";
     String managementGroup = "managementGroup";
     String deploymentName = "deploy";
-
+    DeploymentsClient deploymentsClientMock = mockDeploymentsClient(mock(ResourceManagementClient.class));
     ARMDeploymentSteadyStateContext context = ARMDeploymentSteadyStateContext.builder()
                                                   .resourceGroup(resourceGroup)
                                                   .scopeType(ARMScopeType.RESOURCE_GROUP)
@@ -598,31 +648,129 @@ public class AzureManagementClientImplTest extends CategoryTest {
                                                   .deploymentName(deploymentName)
                                                   .build();
 
-    DeploymentsInner deploymentsInner = mockDeploymentsInner();
     DeploymentExtendedInner extendedInner = mockDeploymentExtendedInner("", "");
 
-    doReturn(extendedInner).when(deploymentsInner).getByResourceGroup(eq(resourceGroup), eq(deploymentName));
-    String armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context);
+    doReturn(extendedInner).when(deploymentsClientMock).getByResourceGroup(eq(resourceGroup), eq(deploymentName));
+    String armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context, deploymentsClientMock);
     assertThat(armDeploymentOutputs).isNotEmpty();
 
-    doReturn(extendedInner).when(deploymentsInner).getAtSubscriptionScope(eq(deploymentName));
-    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context);
+    doReturn(extendedInner).when(deploymentsClientMock).getAtSubscriptionScope(eq(deploymentName));
+    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context, deploymentsClientMock);
     assertThat(armDeploymentOutputs).isNotEmpty();
 
-    doReturn(extendedInner).when(deploymentsInner).getAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
-    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context);
+    doReturn(extendedInner)
+        .when(deploymentsClientMock)
+        .getAtManagementGroupScope(eq(managementGroup), eq(deploymentName));
+    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context, deploymentsClientMock);
     assertThat(armDeploymentOutputs).isNotEmpty();
 
-    doReturn(extendedInner).when(deploymentsInner).getAtTenantScope(eq(deploymentName));
-    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context);
+    doReturn(extendedInner).when(deploymentsClientMock).getAtTenantScope(eq(deploymentName));
+    armDeploymentOutputs = azureManagementClient.getARMDeploymentOutputs(context, deploymentsClientMock);
     assertThat(armDeploymentOutputs).isNotEmpty();
+  }
+
+  private Deployments mockDeployments(Deployment deployment, List<Deployment> deployments) {
+    Deployments deploymentsMock = mock(Deployments.class);
+
+    if (deployment != null) {
+      doReturn(deployment).when(deploymentsMock).getByResourceGroup(any(), any());
+    }
+
+    if (deployments != null) {
+      Response list = new SimpleResponse(null, 200, null, deployments);
+      doReturn(getPagedIterable(list)).when(deploymentsMock).list();
+    }
+
+    return deploymentsMock;
+  }
+
+  private Deployment mockDeployment(String provisioningState) {
+    Deployment deploymentMock = mock(Deployment.class);
+
+    if (provisioningState != null) {
+      doReturn(provisioningState).when(deploymentMock).provisioningState();
+    }
+
+    return deploymentMock;
+  }
+
+  private ResourceGroups mockResourceGroups(ResourceGroup resourceGroupMock) {
+    ResourceGroups resourceGroupsMock = mock(ResourceGroups.class);
+
+    if (resourceGroupsMock != null) {
+      doReturn(resourceGroupMock).when(resourceGroupsMock).getByName(any());
+    }
+
+    return resourceGroupsMock;
+  }
+
+  private ResourceGroup mockResourceGroup(String name, ResourceGroupExportTemplateOptions exportTemplateOptions,
+      ResourceGroupExportResult resourceGroupExportResultMock) {
+    ResourceGroup resourceGroupMock = mock(ResourceGroup.class);
+
+    if (name != null) {
+      doReturn(name).when(resourceGroupMock).name();
+    }
+
+    if (exportTemplateOptions != null && resourceGroupExportResultMock != null) {
+      doReturn(resourceGroupExportResultMock).when(resourceGroupMock).exportTemplate(exportTemplateOptions);
+    }
+
+    return resourceGroupMock;
+  }
+
+  private ResourceGroupExportResult mockResourceGroupExportResult(String templateJson) {
+    ResourceGroupExportResult resourceGroupExportResultMock = mock(ResourceGroupExportResult.class);
+
+    if (templateJson != null) {
+      doReturn(templateJson).when(resourceGroupExportResultMock).templateJson();
+    }
+
+    return resourceGroupExportResultMock;
+  }
+
+  private Subscriptions mockSubscriptions(Subscription subscriptionMock) {
+    Subscriptions subscriptionsMock = mock(Subscriptions.class);
+
+    if (subscriptionsMock != null) {
+      doReturn(subscriptionMock).when(subscriptionsMock).getById(any());
+    }
+
+    return subscriptionsMock;
+  }
+
+  private Subscription mockSubscription(String id, List<Location> locations) {
+    Subscription subscriptionMock = mock(Subscription.class);
+
+    if (id != null) {
+      doReturn(id).when(subscriptionMock).subscriptionId();
+    }
+
+    if (locations != null) {
+      Response list = new SimpleResponse(null, 200, null, locations);
+      doReturn(getPagedIterable(list)).when(subscriptionMock).listLocations();
+    }
+
+    return subscriptionMock;
+  }
+
+  private Location mockLocation(String displayName) {
+    Location locationMock = mock(Location.class);
+
+    if (displayName != null) {
+      doReturn(displayName).when(locationMock).displayName();
+    }
+
+    return locationMock;
   }
 
   private DeploymentExtendedInner mockDeploymentExtendedInnerForStatus() {
     DeploymentExtendedInner mockDeploymentExtendedInner = mock(DeploymentExtendedInner.class);
     DeploymentPropertiesExtended deploymentPropertiesExtended = mock(DeploymentPropertiesExtended.class);
     doReturn(deploymentPropertiesExtended).when(mockDeploymentExtendedInner).properties();
-    doReturn("Succeeded").when(deploymentPropertiesExtended).provisioningState();
+    ProvisioningState provisioningStateMock = mock(ProvisioningState.class);
+    doReturn("Succeeded").when(provisioningStateMock).toString();
+    doReturn(provisioningStateMock).when(deploymentPropertiesExtended).provisioningState();
     return mockDeploymentExtendedInner;
   }
 
@@ -631,11 +779,12 @@ public class AzureManagementClientImplTest extends CategoryTest {
     DeploymentExtendedInner mockDeploymentExtendedInner = mock(DeploymentExtendedInner.class);
     doReturn("West US").when(mockDeploymentExtendedInner).location();
 
-    DeploymentPropertiesExtended properties = new DeploymentPropertiesExtended();
-    properties.withTemplate(templateJSON);
-    properties.withParameters(parametersJSON);
-    properties.withOutputs("{storageAccountName={type=String, value=devarmtemplatessdn}}");
-    doReturn(properties).when(mockDeploymentExtendedInner).properties();
+    DeploymentPropertiesExtended mockDeploymentPropertiesExtended = mock(DeploymentPropertiesExtended.class);
+    doReturn(parametersJSON).when(mockDeploymentPropertiesExtended).parameters();
+    doReturn("{storageAccountName={type=String, value=devarmtemplatessdn}}")
+        .when(mockDeploymentPropertiesExtended)
+        .outputs();
+    doReturn(mockDeploymentPropertiesExtended).when(mockDeploymentExtendedInner).properties();
 
     return mockDeploymentExtendedInner;
   }
@@ -648,7 +797,9 @@ public class AzureManagementClientImplTest extends CategoryTest {
   @NotNull
   private Deployment mockDeployment(String templateJSON, String parametersJSON) {
     Deployment mockDeployment = mock(Deployment.class);
-    doReturn(templateJSON).when(mockDeployment).template();
+    DeploymentExportResult mockDeploymentExportResult = mock(DeploymentExportResult.class);
+    doReturn(templateJSON).when(mockDeploymentExportResult).template();
+    doReturn(mockDeploymentExportResult).when(mockDeployment).exportTemplate();
     doReturn(parametersJSON).when(mockDeployment).parameters();
     doReturn("{storageAccountName={type=String, value=devarmtemplatessdn}}").when(mockDeployment).outputs();
     return mockDeployment;
@@ -656,25 +807,13 @@ public class AzureManagementClientImplTest extends CategoryTest {
 
   @NotNull
   private DeploymentValidateResultInner mockDeploymentValidateResultInner(String templateJSON, String parametersJSON) {
-    DeploymentValidateResultInner result = new DeploymentValidateResultInner();
-    DeploymentPropertiesExtended properties = new DeploymentPropertiesExtended();
-    properties.withTemplate(templateJSON);
-    properties.withParameters(parametersJSON);
-    result.withProperties(properties);
-    return result;
-  }
+    DeploymentPropertiesExtended deploymentPropertiesExtendedMock = mock(DeploymentPropertiesExtended.class);
+    doReturn(parametersJSON).when(deploymentPropertiesExtendedMock).parameters();
 
-  private DeploymentsInner mockDeploymentsInner() {
-    Deployments mockDeployments = mock(Deployments.class);
-    ResourceManager mockResourceManager = PowerMockito.mock(ResourceManager.class);
-    ResourceManagementClientImpl mockManagementClient = mock(ResourceManagementClientImpl.class);
-    DeploymentsInner mockDeploymentsInner = mock(DeploymentsInner.class);
+    DeploymentValidateResultInner deploymentValidateResultInnerMock = mock(DeploymentValidateResultInner.class);
+    doReturn(deploymentPropertiesExtendedMock).when(deploymentValidateResultInnerMock).properties();
 
-    doReturn(mockDeployments).when(azure).deployments();
-    doReturn(mockResourceManager).when(mockDeployments).manager();
-    doReturn(mockManagementClient).when(mockResourceManager).inner();
-    doReturn(mockDeploymentsInner).when(mockManagementClient).deployments();
-    return mockDeploymentsInner;
+    return deploymentValidateResultInnerMock;
   }
 
   private AzureARMTemplate getAzureARMTemplate(
@@ -696,22 +835,14 @@ public class AzureManagementClientImplTest extends CategoryTest {
   }
 
   @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
-      @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
+  }
+
+  private DeploymentsClient mockDeploymentsClient(ResourceManagementClient resourceManagementClientMock) {
+    DeploymentsClient deploymentsClient = mock(DeploymentsClient.class);
+    when(resourceManagementClientMock.getDeployments()).thenReturn(deploymentsClient);
+    return deploymentsClient;
   }
 
   String resourceGroupExportTemplate = "{\n"

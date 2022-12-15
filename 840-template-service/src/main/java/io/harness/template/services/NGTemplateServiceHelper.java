@@ -31,12 +31,14 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
@@ -74,12 +76,27 @@ public class NGTemplateServiceHelper {
   private final FilterService filterService;
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
+  private TemplateGitXService templateGitXService;
+
+  public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean loadFromCache) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache);
+  }
+
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true, false);
+  }
 
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly, boolean loadFromCache) {
     try {
-      Optional<TemplateEntity> optionalTemplate =
-          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+      Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
+          templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -146,6 +163,19 @@ public class NGTemplateServiceHelper {
       criteria.and(TemplateEntityKeys.projectIdentifier).is(projectId);
     }
 
+    if (filterProperties != null && filterProperties.getListingScope() != null) {
+      ListingScope listingScope = filterProperties.getListingScope();
+      if (listingScope.getAccountIdentifier() != null) {
+        if (gitSyncSdkService.isGitSyncEnabled(listingScope.getAccountIdentifier(), listingScope.getOrgIdentifier(),
+                listingScope.getProjectIdentifier())) {
+          criteria.and("storeType").in(StoreType.INLINE.name(), null);
+        } else if (!templateGitXService.isNewGitXEnabled(listingScope.getAccountIdentifier(),
+                       listingScope.getOrgIdentifier(), listingScope.getProjectIdentifier())) {
+          criteria.and("storeType").in(StoreType.INLINE.name(), null);
+        }
+      }
+    }
+
     criteria.and(TemplateEntityKeys.deleted).is(deleted);
 
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
@@ -210,6 +240,37 @@ public class NGTemplateServiceHelper {
     return criteria;
   }
 
+  public Criteria formCriteriaForRepoListing(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllTemplatesAccessibleAtScope) {
+    Criteria criteria = new Criteria();
+    criteria.and(TemplateEntityKeys.accountId).is(accountIdentifier);
+
+    Criteria includeAllTemplatesCriteria = null;
+    if (includeAllTemplatesAccessibleAtScope) {
+      includeAllTemplatesCriteria = getCriteriaToReturnAllTemplatesAccessible(orgIdentifier, projectIdentifier);
+    } else {
+      if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+        criteria.and(TemplateEntityKeys.orgIdentifier).is(orgIdentifier);
+        if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+          criteria.and(TemplateEntityKeys.projectIdentifier).is(projectIdentifier);
+        } else {
+          criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+        }
+      } else {
+        criteria.and(TemplateEntityKeys.orgIdentifier).exists(false);
+        criteria.and(TemplateEntityKeys.projectIdentifier).exists(false);
+      }
+    }
+    List<Criteria> criteriaList = new ArrayList<>();
+    if (includeAllTemplatesCriteria != null) {
+      criteriaList.add(includeAllTemplatesCriteria);
+    }
+    if (criteriaList.size() != 0) {
+      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+    }
+    return criteria;
+  }
+
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {
@@ -246,6 +307,7 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
@@ -274,9 +336,16 @@ public class NGTemplateServiceHelper {
     if (criteriaList.size() != 0) {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
+    addRepoFilter(criteria, templateFilter.getRepoName());
     populateTagsFilter(criteria, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
+  }
+
+  private static void addRepoFilter(Criteria criteria, String repoName) {
+    if (EmptyPredicate.isNotEmpty(repoName)) {
+      criteria.and(TemplateEntityKeys.repo).is(repoName);
+    }
   }
 
   private static Criteria getSearchTermCriteria(String searchTerm) {
@@ -360,41 +429,45 @@ public class NGTemplateServiceHelper {
   }
 
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
+      return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted,
+          getMetadataOnly, loadFromCache, loadFromFallbackBranch);
 
     } else {
-      return getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
+      return getTemplateWithVersionLabel(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel,
+          deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
               accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
     } else {
       return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(accountId,
+              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
+              loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
               accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted);
     } else {
       return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(accountId,
+              orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
+              loadFromCache, loadFromFallbackBranch);
     }
   }
 
@@ -507,6 +580,15 @@ public class NGTemplateServiceHelper {
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier, accountId, e.getMessage());
       log.error(errorMessage, e);
       return false;
+    }
+  }
+
+  public String getComment(String operationType, String templateIdentifier, String commitMessage) {
+    if (isNotEmpty(commitMessage)) {
+      return commitMessage;
+    } else {
+      return String.format(
+          "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
     }
   }
 }

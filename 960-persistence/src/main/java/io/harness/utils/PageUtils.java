@@ -19,16 +19,18 @@ import io.harness.ng.beans.PageResponse;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 @UtilityClass
 @OwnedBy(PL)
 public class PageUtils {
-  private final String COMMA_SEPARATOR = ",";
+  public final String COMMA_SEPARATOR = ",";
 
   public static Pageable getPageRequest(int page, int size, List<String> sort) {
     if (isEmpty(sort)) {
@@ -126,6 +128,28 @@ public class PageUtils {
         .build();
   }
 
+  public static <T> Page<T> getPage(List<T> input, int offset, int pageSize) {
+    if (offset < 0) {
+      throw new IllegalArgumentException("Page index must not be less than zero!");
+    }
+    if (pageSize < 1) {
+      throw new IllegalArgumentException("Page size must not be less than one!");
+    }
+    if (input == null) {
+      return Page.empty();
+    }
+    if (input.size() < offset * pageSize) {
+      return new PageImpl(Collections.emptyList(), PageUtils.getPageRequest(offset, pageSize, Collections.EMPTY_LIST),
+          (long) input.size());
+    }
+
+    int startIndex = offset * pageSize;
+    int endIndex = Math.min(startIndex + pageSize, input.size());
+    List<T> returnList = input.subList(startIndex, endIndex);
+    return new PageImpl(
+        returnList, PageUtils.getPageRequest(offset, pageSize, Collections.EMPTY_LIST), (long) input.size());
+  }
+
   public Pageable getPageRequest(int page, int size, List<String> sort, Sort sortBy) {
     try {
       if (EmptyPredicate.isEmpty(sort)) {
@@ -135,6 +159,38 @@ public class PageUtils {
       }
     } catch (Exception e) {
       throw new InvalidRequestException(e.getMessage(), e);
+    }
+  }
+
+  public enum SortFields {
+    SLUG("slug"),
+    NAME("name"),
+    CREATED("created"),
+    UPDATED("updated"),
+    UNSUPPORTED(null);
+
+    private String field;
+
+    SortFields(String field) {
+      this.field = field;
+    }
+
+    public String value() {
+      return field;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(field);
+    }
+
+    public static SortFields fromValue(String value) {
+      for (SortFields sortField : SortFields.values()) {
+        if (String.valueOf(sortField.field).equals(value)) {
+          return sortField;
+        }
+      }
+      return null;
     }
   }
 }

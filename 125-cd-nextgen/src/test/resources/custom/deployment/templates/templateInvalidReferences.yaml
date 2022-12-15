@@ -1,0 +1,45 @@
+customDeployment:
+  infrastructure:
+    variables:
+      - name: clusterUrl
+        type: String
+        value: <+input>
+      - name: accountConnector
+        type: Connector
+        value: account.accountConnector
+        description: "accountConnector"
+      - name: orgConnector
+        type: Connector
+        value: org.orgConnector
+        description: "orgConnector"
+      - name: projectConnector
+        type: Connector
+        value: projectConnector
+        description: "projectConnector"
+      - name: inputConnector
+        type: Connector
+        value: <+input>
+        description: "inputConnector"
+      - name: expressionConnector
+        type: Connector
+        value: <+pipeline.name>
+        description: "expressionConnector"
+      - name: emptyConnector
+        type: Connector
+        value: ""
+        description: "emptyConnector"
+    fetchInstancesScript:
+      store:
+        type: Harness
+        spec:
+          files:
+            - account:/manifest.yml
+    instancesListPath: instances
+    instanceAttributes:
+      - name: hostName
+        jsonPath: <+input>
+        description: "IP address of the host"
+  execution:
+    stepTemplateRefs:
+      - "account.accountTemplate"
+      - ""

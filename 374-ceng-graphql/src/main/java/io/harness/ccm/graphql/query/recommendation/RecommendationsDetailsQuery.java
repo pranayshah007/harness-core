@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
+import io.harness.ccm.graphql.core.recommendation.EC2RecommendationService;
 import io.harness.ccm.graphql.core.recommendation.ECSRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.WorkloadRecommendationService;
@@ -46,6 +47,7 @@ public class RecommendationsDetailsQuery {
   @Inject private WorkloadRecommendationService workloadRecommendationService;
   @Inject private NodeRecommendationService nodeRecommendationService;
   @Inject private ECSRecommendationService ecsRecommendationService;
+  @Inject private EC2RecommendationService ec2RecommendationService;
 
   /**
    * Note: If this query becomes slow due to n+1 serial calls in future. Then,
@@ -56,11 +58,12 @@ public class RecommendationsDetailsQuery {
   public RecommendationDetailsDTO recommendationDetails(@GraphQLContext RecommendationItemDTO nodeDTO,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
-      @GraphQLEnvironment final ResolutionEnvironment env) {
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0")
+      Long bufferPercentage, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(
-        accountIdentifier, nodeDTO.getResourceType(), nodeDTO.getId(), startTime, endTime);
+        accountIdentifier, nodeDTO.getResourceType(), nodeDTO.getId(), startTime, endTime, bufferPercentage);
   }
 
   @GraphQLQuery(description = "recommendation details/drillDown")
@@ -68,10 +71,11 @@ public class RecommendationsDetailsQuery {
       @GraphQLNonNull @GraphQLArgument(name = "resourceType") ResourceType resourceType,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
-      @GraphQLEnvironment final ResolutionEnvironment env) {
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0")
+      Long bufferPercentage, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
-    return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime);
+    return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime, bufferPercentage);
   }
 
   @GraphQLQuery(name = "nodeRecommendationRequest")
@@ -88,7 +92,7 @@ public class RecommendationsDetailsQuery {
 
   private RecommendationDetailsDTO recommendationDetailsInternal(@NotNull final String accountIdentifier,
       @NotNull ResourceType resourceType, @NotNull String id, @Nullable OffsetDateTime startTime,
-      @Nullable OffsetDateTime endTime) {
+      @Nullable OffsetDateTime endTime, @Nullable Long bufferPercentage) {
     switch (resourceType) {
       case WORKLOAD:
         return workloadRecommendationService.getWorkloadRecommendationById(accountIdentifier, id,
@@ -97,7 +101,10 @@ public class RecommendationsDetailsQuery {
         return nodeRecommendationService.getRecommendation(accountIdentifier, id);
       case ECS_SERVICE:
         return ecsRecommendationService.getECSRecommendationById(accountIdentifier, id,
-            firstNonNull(startTime, OffsetDateTime.now().minusDays(7)), firstNonNull(endTime, OffsetDateTime.now()));
+            firstNonNull(startTime, OffsetDateTime.now().minusDays(7)), firstNonNull(endTime, OffsetDateTime.now()),
+            bufferPercentage);
+      case EC2_INSTANCE:
+        return ec2RecommendationService.getEC2RecommendationById(accountIdentifier, id);
       default:
         throw new InvalidRequestException(String.format("Recommendation not yet implemented for %s", resourceType));
     }

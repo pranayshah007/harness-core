@@ -55,6 +55,8 @@ import okhttp3.ResponseBody;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 import retrofit2.Response;
 
 @Singleton
@@ -147,6 +149,9 @@ public class DelegateFileManagerImpl implements DelegateFileManager {
       log.info("check if artifact:[{}] exists at location: [{}]", key, file.getAbsolutePath());
       if (!file.isDirectory() && file.exists()) {
         log.info("artifact:[{}] found locally", key);
+        if (isZipFile(file)) {
+          logZipMetadata(file);
+        }
         return new FileInputStream(file);
       }
       log.info("file:[{}] doesn't exist locally. Download from manager", key);
@@ -169,6 +174,9 @@ public class DelegateFileManagerImpl implements DelegateFileManager {
       log.info("check if downloaded file [{}] exists locally", key);
       if (!file.isDirectory() && file.exists()) {
         log.info("file[{}] found locally", key);
+        if (isZipFile(file)) {
+          logZipMetadata(file);
+        }
         return new FileInputStream(file);
       }
 
@@ -312,5 +320,43 @@ public class DelegateFileManagerImpl implements DelegateFileManager {
       log.warn("Error uploading file: " + file.getName(), e);
     }
     return delegateFile;
+  }
+
+  private boolean isZipFile(File file) {
+    return file.getName().toLowerCase().endsWith(".zip");
+  }
+
+  private void logZipMetadata(File file) {
+    ProcessExecutor processExecutor = new ProcessExecutor()
+                                          .timeout(1000, TimeUnit.MILLISECONDS)
+                                          .command("/bin/sh", "-c", format("zipinfo %s", file.getName()))
+                                          .readOutput(true)
+                                          .directory(file.getParentFile());
+
+    try {
+      ProcessResult processResult = processExecutor.execute();
+      String output = processResult.outputUTF8();
+      if (processResult.getExitValue() == 0) {
+        log.info("Zip file metadata: [{}]", prepareZipLogOutput(output));
+      } else {
+        log.warn("Error getting metadata for zip file: [{}]. ERROR: [{}]", file.getName(), output);
+      }
+    } catch (Exception e) {
+      log.warn("Error getting metadata for zip file: [{}]", file.getName(), e);
+    }
+  }
+
+  private String prepareZipLogOutput(String output) {
+    StringBuilder sb = new StringBuilder();
+    String[] rows = output.split("\n");
+    if (rows.length >= 4) {
+      sb.append(rows[0]).append(", ").append(rows[1]).append(". ").append(rows[rows.length - 1]);
+      String[] fileInfo = rows[2].split(" +");
+      if (fileInfo.length >= 2) {
+        sb.append(", Zip version: ").append(fileInfo[1]);
+      }
+      return sb.toString();
+    }
+    return "Error, could not get zip metadata";
   }
 }

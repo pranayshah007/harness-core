@@ -39,11 +39,11 @@ public enum ResourceType {
   VARIABLE(ResourceTypeConstants.VARIABLE),
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
-  CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
-  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  CHAOS_INFRASTRUCTURE(ResourceTypeConstants.CHAOS_INFRASTRUCTURE),
+  CHAOS_EXPERIMENT(ResourceTypeConstants.CHAOS_EXPERIMENT),
+  CHAOS_GAMEDAY(ResourceTypeConstants.CHAOS_GAMEDAY),
   STO_TARGET(ResourceTypeConstants.STO_TARGET),
   STO_EXEMPTION(ResourceTypeConstants.STO_EXEMPTION),
-  CHAOS_GITOPS(ResourceTypeConstants.CHAOS_GITOPS),
   SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE),
   PERSPECTIVE(ResourceTypeConstants.PERSPECTIVE),
   PERSPECTIVE_BUDGET(ResourceTypeConstants.PERSPECTIVE_BUDGET),
@@ -54,7 +54,11 @@ public enum ResourceType {
   AUTOSTOPPING_RULE(ResourceTypeConstants.AUTOSTOPPING_RULE),
   AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
   AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP),
-  SETTING(ResourceTypeConstants.SETTING);
+  SETTING(ResourceTypeConstants.SETTING),
+  NG_LOGIN_SETTINGS(ResourceTypeConstants.NG_LOGIN_SETTINGS),
+  CLOUD_ASSET_GOVERNANCE_RULE(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE),
+  CLOUD_ASSET_GOVERNANCE_RULE_SET(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET),
+  CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

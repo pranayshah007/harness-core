@@ -10,10 +10,13 @@ package io.harness.gitsync.common.helper;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -35,6 +38,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -42,6 +46,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -105,6 +110,18 @@ public class GitSyncConnectorHelper {
   public ScmConnector getDecryptedConnector(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     return decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+  }
+
+  public ScmConnector getDecryptedConnectorForNewGitX(
+      String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
+    PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
+    // setting service principal for connector decryption in case of Git Connector
+    GitSyncUtils.setGitSyncServicePrincipal();
+    ScmConnector scmConnector =
+        decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
+    // setting back current principal for all other operations
+    GitSyncUtils.setCurrentPrincipalContext(currentPrincipal);
+    return scmConnector;
   }
 
   public ScmConnector getDecryptedConnector(
@@ -265,7 +282,7 @@ public class GitSyncConnectorHelper {
     throw new ConnectorNotFoundException(
         String.format(
             "No connector found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
-            accountIdentifier, orgIdentifier, projectIdentifier, connectorDTO),
+            accountIdentifier, orgIdentifier, projectIdentifier, connectorRef),
         USER);
   }
 
@@ -273,7 +290,7 @@ public class GitSyncConnectorHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector gitConnectorConfig =
         getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    return getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
+    return getDecryptedConnectorForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
   }
 
   public ScmConnector getScmConnectorForGivenRepo(
@@ -291,5 +308,21 @@ public class GitSyncConnectorHelper {
     scmConnector.setGitConnectionUrl(
         scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
+  }
+
+  public void testConnectionAsync(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    CompletableFuture.runAsync(() -> {
+      try {
+        ConnectorValidationResult testConnectionResult =
+            connectorService.testConnection(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+        log.info(format("testConnectionResult for %s Connector: %s, project %s, org %s, account %s", connectorRef,
+            testConnectionResult.getStatus(), projectIdentifier, orgIdentifier, accountIdentifier));
+      } catch (Exception ex) {
+        log.error(format("failed to test connection for %s Connector for project %s, org %s, account %s", connectorRef,
+                      projectIdentifier, orgIdentifier, accountIdentifier),
+            ex);
+      }
+    });
   }
 }

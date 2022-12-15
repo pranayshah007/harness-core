@@ -10,6 +10,7 @@ package software.wings.service.impl.newrelic;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,6 +19,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.version.ServiceApiVersion;
 
@@ -52,6 +54,7 @@ import org.mongodb.morphia.annotations.Entity;
 @FieldNameConstants(innerTypeName = "LearningEngineAnalysisTaskKeys")
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "learningEngineAnalysisTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(CV)
@@ -139,7 +142,7 @@ public class LearningEngineAnalysisTask extends Base implements AccountAccess {
   @JsonProperty("log_ml_result_url") private String logMLResultUrl;
   @JsonProperty("use_supervised_model") private boolean shouldUseSupervisedModel;
   private String feature_name;
-  @FdIndex private ExecutionStatus executionStatus;
+  private ExecutionStatus executionStatus;
   private String cvConfigId;
   private boolean is24x7Task;
   private String tag = "default";

@@ -48,8 +48,25 @@ public class YamlConfig {
     fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
   }
 
+  public YamlConfig(JsonNode jsonNode, boolean keepUuidFields) {
+    yamlMap = jsonNode;
+    fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap, keepUuidFields);
+  }
+
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml) {
     yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);
+    // fqnToValueMap can be missing some values which need to be taken from originalYaml. These values are there in
+    // yamlMap generated in the above line, hence the fqn map needs to be regenerated
+    if (!yamlMap.isEmpty()) {
+      this.fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
+    } else {
+      this.fqnToValueMap = new LinkedHashMap<>();
+    }
+  }
+
+  public YamlConfig(
+      Map<FQN, Object> fqnToValueMap, JsonNode originalYaml, boolean isSanitiseFlow, boolean keepUuidFields) {
+    yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, isSanitiseFlow, keepUuidFields);
     // fqnToValueMap can be missing some values which need to be taken from originalYaml. These values are there in
     // yamlMap generated in the above line, hence the fqn map needs to be regenerated
     if (!yamlMap.isEmpty()) {

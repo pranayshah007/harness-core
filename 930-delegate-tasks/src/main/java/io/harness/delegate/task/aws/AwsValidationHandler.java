@@ -16,6 +16,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
@@ -24,6 +25,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -34,6 +36,8 @@ public class AwsValidationHandler implements ConnectorValidationHandler {
   @Inject AwsNgConfigMapper ngConfigMapper;
   @Inject private AwsClient awsClient;
   @Inject private NGErrorHelper ngErrorHelper;
+
+  private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
   @Override
   public ConnectorValidationResult validate(
@@ -53,8 +57,12 @@ public class AwsValidationHandler implements ConnectorValidationHandler {
         connectorDTO.getCredential(), connectorDTO.getCredential().getAwsCredentialType(), encryptedDataDetails);
 
     ConnectorValidationResult connectorValidationResult;
+    String region = DEFAULT_REGION.getName();
+    if (EmptyPredicate.isNotEmpty(connectorDTO.getCredential().getTestRegion())) {
+      region = connectorDTO.getCredential().getTestRegion();
+    }
     try {
-      connectorValidationResult = handleValidateTask(awsConfig);
+      connectorValidationResult = handleValidateTask(awsConfig, region);
     } catch (Exception e) {
       String errorMessage = e.getMessage();
       connectorValidationResult = ConnectorValidationResult.builder()
@@ -68,10 +76,10 @@ public class AwsValidationHandler implements ConnectorValidationHandler {
     return connectorValidationResult;
   }
 
-  private ConnectorValidationResult handleValidateTask(AwsConfig awsConfig) {
+  private ConnectorValidationResult handleValidateTask(AwsConfig awsConfig, String region) {
     ConnectorValidationResult result = null;
     try {
-      awsClient.validateAwsAccountCredential(awsConfig);
+      awsClient.validateAwsAccountCredential(awsConfig, region);
       result = ConnectorValidationResult.builder()
                    .status(ConnectivityStatus.SUCCESS)
                    .testedAt(System.currentTimeMillis())

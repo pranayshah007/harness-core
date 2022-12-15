@@ -28,7 +28,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.security.annotations.AuthRule;
@@ -104,11 +104,30 @@ public class AccountResource {
           "accountIdentifier") String accountIdentifier,
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @NotNull @AccountIdentifier String accountId) {
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
 
     accountDTO.setCluster(accountConfig.getDeploymentClusterName());
 
     return ResponseDTO.newResponse(accountDTO);
+  }
+
+  @GET
+  @Path("{accountIdentifier}/immutable-delegate-enabled")
+  @ApiOperation(value = "Get Immutable delegate enabled flag", nickname = "isImmutableDelegateEnabled")
+  @Operation(operationId = "isImmutableDelegateEnabled",
+      summary = "Checks if immutable delegate is enabled for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns true if immutable delegate is enabled for account")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  public ResponseDTO<Boolean>
+  immutableDelegateEnabled(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+      "accountIdentifier") @AccountIdentifier String accountIdentifier) {
+    Boolean immutableDelegateEnabled =
+        CGRestUtils.getResponse(accountClient.isImmutableDelegateEnabled(accountIdentifier));
+    return ResponseDTO.newResponse(immutableDelegateEnabled);
   }
 
   @PUT
@@ -126,7 +145,7 @@ public class AccountResource {
                         "accountIdentifier") @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is details of the Account. Name is mandatory.") AccountDTO dto) {
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateAccountName(accountIdentifier, dto));
+    AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.updateAccountName(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
   }
@@ -149,7 +168,7 @@ public class AccountResource {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("Operation is not supported");
     }
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
+    AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
   }

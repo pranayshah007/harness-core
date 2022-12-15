@@ -46,7 +46,10 @@ import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
@@ -55,6 +58,7 @@ import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
@@ -64,6 +68,8 @@ import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -111,6 +117,8 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private VmInitializeUtils vmInitializeUtils;
   @Inject ValidationUtils validationUtils;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SecretSpecBuilder secretSpecBuilder;
 
@@ -122,7 +130,8 @@ public class VmInitializeTaskParamsBuilder {
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
 
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
@@ -149,17 +158,21 @@ public class VmInitializeTaskParamsBuilder {
     return getVmInitializeParams(initializeStepInfo, ambiance, poolId);
   }
 
-  private CIVmInitializeTaskParams getVmInitializeParams(
+  public CIVmInitializeTaskParams getVmInitializeParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
+    if (infrastructure == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    // InfraInfo infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure);
+    CIInitializeTaskParams.Type infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure);
+
     String accountID = AmbianceUtils.getAccountId(ambiance);
-
-    validateInfrastructure(infrastructure);
-
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    OSType os = vmInitializeUtils.getOS(infrastructure);
+    OSType os = InfraInfoUtils.getInfraOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
@@ -171,8 +184,7 @@ public class VmInitializeTaskParamsBuilder {
       harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
     }
 
-    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath,
-        initializeStepInfo.getInfrastructure().getType());
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
@@ -183,12 +195,20 @@ public class VmInitializeTaskParamsBuilder {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
+    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
+        gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
+
+    Map<String, String> stoEnvVars = vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountID);
+    Map<String, String> commonEnvVars =
+        vmInitializeUtils.getCommonStepEnvVariables(stageDetails.getStageID(), ambiance);
+
+    envVars.putAll(stoEnvVars);
+    envVars.putAll(commonEnvVars);
 
     Map<String, String> stageVars = getEnvironmentVariables(
         NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken()));
@@ -219,20 +239,18 @@ public class VmInitializeTaskParamsBuilder {
         .secrets(new ArrayList<>(secrets))
         .volToMountPath(volToMountPath)
         .serviceDependencies(getServiceDependencies(ambiance, integrationStageConfig))
+        .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
+        .infraInfo(infraInfo)
         .build();
   }
 
-  private void validateInfrastructure(Infrastructure infrastructure) {
+  public static void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-
-    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
-      return;
+      throw new CIStageExecutionException("Input infrastructure for vm can not be empty");
     }
 
     if (((VmInfraYaml) infrastructure).getSpec() == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
+      throw new CIStageExecutionException("VM input infrastructure can not be empty");
     }
 
     VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
@@ -242,7 +260,24 @@ public class VmInitializeTaskParamsBuilder {
     }
   }
 
-  private String getPoolName(VmPoolYaml vmPoolYaml) {
+  //  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  //    validateInfrastructure(infrastructure);
+  //
+  //    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+  //    String poolId = VmInitializeTaskParamsBuilder.getPoolName(vmPoolYaml);
+  //
+  //    return VmInfraInfo.builder().poolId(poolId).build();
+  //  }
+
+  public static CIInitializeTaskParams.Type validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+    validateInfrastructure(infrastructure);
+
+    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+
+    return CIInitializeTaskParams.Type.VM;
+  }
+
+  public static String getPoolName(VmPoolYaml vmPoolYaml) {
     String poolName = vmPoolYaml.getSpec().getPoolName().getValue();
     if (isNotEmpty(poolName)) {
       return poolName;
@@ -255,30 +290,59 @@ public class VmInitializeTaskParamsBuilder {
     return poolId;
   }
 
+  //  private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String
+  //  harnessImageConnectorRef,
+  //                                     Map<String, String> volToMountPath, InfraInfo infraInfo) {
+  //    InfraInfo.Type type = infraInfo.getType();
+  //    if (type == InfraInfo.Type.VM || type == InfraInfo.Type.DOCKER) {
+  //      consumeSweepingOutput(ambiance,
+  //              VmStageInfraDetails.builder()
+  //                      .poolId(poolId)
+  //                      .workDir(workDir)
+  //                      .volToMountPathMap(volToMountPath)
+  //                      .harnessImageConnectorRef(harnessImageConnectorRef)
+  //                      .infraInfo(infraInfo)
+  //                      .build(),
+  //              STAGE_INFRA_DETAILS);
+  //    } else if (type == InfraInfo.Type.DLITE_VM) {
+  //      consumeSweepingOutput(ambiance,
+  //              DliteVmStageInfraDetails.builder()
+  //                      .poolId(poolId)
+  //                      .workDir(workDir)
+  //                      .volToMountPathMap(volToMountPath)
+  //                      .harnessImageConnectorRef(harnessImageConnectorRef)
+  //                      .infraInfo(infraInfo)
+  //                      .build(),
+  //              STAGE_INFRA_DETAILS);
+  //    }
+  //  }
+
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath, Infrastructure.Type infraType) {
-    if (infraType == Infrastructure.Type.VM) {
+      Map<String, String> volToMountPath, CIInitializeTaskParams.Type infraInfo) {
+    if (infraInfo == CIVmInitializeTaskParams.Type.VM || infraInfo == CIVmInitializeTaskParams.Type.DOCKER) {
       consumeSweepingOutput(ambiance,
           VmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
-    } else if (infraType == Infrastructure.Type.HOSTED_VM) {
+    } else if (infraInfo == CIVmInitializeTaskParams.Type.DLITE_VM) {
       consumeSweepingOutput(ambiance,
           DliteVmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
     }
   }
 
-  private StageDetails getStageDetails(Ambiance ambiance) {
+  public StageDetails getStageDetails(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
@@ -426,19 +490,35 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public String getHostedPoolId(ParameterField<Platform> platform) {
+  public String getHostedPoolId(ParameterField<Platform> platform, String accountId) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
     if (platform != null && platform.getValue() != null) {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
     }
+    boolean isLinux = os == OSType.Linux && (arch == ArchType.Amd64 || arch == ArchType.Arm64);
+    boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
 
-    if (os != OSType.Linux || arch != ArchType.Amd64) {
-      throw new CIStageExecutionException("Only linux amd64 platform is supported for hosted builds");
+    if (isLinux || isMacArm) {
+      if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
+        throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
+      }
+      log.info(format("%s %s platform is supported for hosted builds", os, arch));
+    } else {
+      throw new CIStageExecutionException(format("%s %s platform is not supported for hosted builds", os, arch));
     }
 
-    return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+    boolean isLinuxAmd64 = os == OSType.Linux && arch == ArchType.Amd64;
+    String pool = format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+    if (isLinuxAmd64 && ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxAmd64Pool()) {
+      LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+      if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+        pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+      }
+    }
+
+    return pool;
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {
@@ -475,10 +555,12 @@ public class VmInitializeTaskParamsBuilder {
                                        .build();
     return SetupVmRequest.builder()
         .id(params.getStageRuntimeId())
+        .tags(params.getTags())
         //            .correlationID(taskId)
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
+        .infraType(Infrastructure.Type.HOSTED_VM.toString())
         .build();
   }
 

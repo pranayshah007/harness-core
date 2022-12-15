@@ -1,0 +1,890 @@
+pipeline:
+  name: partner-gateway-ci
+  identifier: partnergatewayci
+  projectIdentifier: lfs
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: dkdigitalbankreadonly
+        repoName: services/ms-partner-gateway
+        build: <+input>
+  stages:
+    - parallel:
+        - stage:
+            name: Lint
+            identifier: lint
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: labscomsfr
+                  namespace: harness-delegate-ng
+                  automountServiceAccountToken: true
+                  nodeSelector: {}
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: RestoreCacheGCS
+                      name: Restore node_modules
+                      identifier: Restore_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        archiveFormat: Tar
+                  - step:
+                      type: Run
+                      name: lint
+                      identifier: lint
+                      spec:
+                        connectorRef: cidigibankdockergroupnexusbankartosio
+                        image: node-base:14.20.0-bullseye-slim
+                        shell: Sh
+                        command: |-
+                          set -e
+
+                          npm install
+                          npm run lint
+                          npm run build
+                        resources:
+                          limits:
+                            memory: 1Gi
+                            cpu: "1"
+                  - step:
+                      type: SaveCacheGCS
+                      name: Save node_modules
+                      identifier: Save_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        sourcePaths:
+                          - node_modules
+                        archiveFormat: Tar
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: Ignore
+        - stage:
+            name: Integration Test
+            identifier: Integration_Test
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: labscomsfr
+                  namespace: harness-delegate-ng
+                  volumes:
+                    - mountPath: /certs
+                      type: EmptyDir
+                      spec:
+                        medium: ""
+                  nodeSelector: {}
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: RestoreCacheGCS
+                      name: Restore node_modules
+                      identifier: Restore_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        archiveFormat: Tar
+                  - step:
+                      type: Run
+                      name: Integration Test
+                      identifier: Integration_Test
+                      spec:
+                        connectorRef: cidigibankdockergroupnexusbankartosio
+                        image: digibank-docker-group-nexus.bankartos.io/node-base:18.7.0-bullseye-slim
+                        shell: Sh
+                        command: |
+                          set -e
+
+                          npm install
+                          npm run test:it -- --forceExit
+                        envVariables:
+                          DOCKER_HOST: tcp://127.0.0.1:2376
+                          DOCKER_TLS_VERIFY: "0"
+                          DOCKER_CERT_PATH: /certs/client
+                        resources:
+                          limits:
+                            memory: 1Gi
+                            cpu: "1"
+                      timeout: 5m
+                  - step:
+                      type: SaveCacheGCS
+                      name: Save node_modules
+                      identifier: Save_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        sourcePaths:
+                          - node_modules
+                        archiveFormat: Tar
+              serviceDependencies:
+                - identifier: Docker
+                  name: Docker
+                  type: Service
+                  spec:
+                    connectorRef: docker_public
+                    image: docker:19.03.15-dind
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: Ignore
+        - stage:
+            name: Unit Test
+            identifier: Unit_Test
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: labscomsfr
+                  namespace: harness-delegate-ng
+                  automountServiceAccountToken: true
+                  nodeSelector: {}
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: RestoreCacheGCS
+                      name: Restore node_modules
+                      identifier: Restore_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        archiveFormat: Tar
+                  - step:
+                      type: Run
+                      name: Unit Test
+                      identifier: Unit_Test
+                      spec:
+                        connectorRef: cidigibankdockergroupnexusbankartosio
+                        image: digibank-docker-group-nexus.bankartos.io/node-base:18.7.0-bullseye-slim
+                        shell: Sh
+                        command: |
+                          set -e
+
+                          npm install --force
+                          npm run test:cov -- --forceExit
+                        reports:
+                          type: JUnit
+                          spec:
+                            paths:
+                              - junit.xml
+                        envVariables:
+                          NODE_OPTIONS: "--max-old-space-size=4096"
+                        resources:
+                          limits:
+                            memory: 4Gi
+                            cpu: "2"
+                      timeout: 10m
+                  - step:
+                      type: SaveCacheGCS
+                      name: Save node_modules
+                      identifier: Save_node_modules
+                      spec:
+                        connectorRef: labsproject
+                        bucket: harness_cache
+                        key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                        sourcePaths:
+                          - node_modules
+                        archiveFormat: Tar
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: Ignore
+        - stage:
+            name: Sonarqube Scan
+            identifier: Sonarqube_Scan
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
+                spec:
+                  connectorRef: labscomsfr
+                  namespace: harness-delegate-ng
+                  nodeSelector: {}
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Sonar Scan
+                      identifier: Sonar_Scan
+                      spec:
+                        connectorRef: docker_public
+                        image: sonarsource/sonar-scanner-cli:latest
+                        shell: Sh
+                        command: |
+                          set -e
+
+                          SONAR_HOST="http://admin-coms-sonarqube.bankartos.io"
+                          SONAR_LOGIN="b66c8e99ced178f8e6e8c8fb8932f5b56fc0d0ac"
+                          SONAR_PROJECT_KEY="dk-digital-bank_memberships_sre_gilang-test_AYAIFjj_ow4_lvs4HPib"
+
+                          BRANCH="<+codebase.branch>"
+                          # If branch is empty then use tag
+                          if [ "$BRANCH" == "null" ]; then
+                              BRANCH="refs/tags/<+codebase.tag>"
+                          fi
+
+                          # For pull request
+                          if [ "<+codebase.build.type>" == "PR" ]; then
+                              sonar-scanner \
+                                  -Dsonar.host.url=$SONAR_HOST \
+                                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                  -Dsonar.login=$SONAR_LOGIN \
+                                  -Dsonar.sources=./src \
+                                  -Dsonar.pullrequest.key="<+codebase.prNumber>" \
+                                  -Dsonar.pullrequest.branch="<+codebase.sourceBranch>" \
+                                  -Dsonar.pullrequest.base="<+codebase.targetBranch>" \
+                                  -Dsonar.qualitygate.wait=true
+                          else
+                              sonar-scanner \
+                                  -Dsonar.host.url=$SONAR_HOST \
+                                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                                  -Dsonar.login=$SONAR_LOGIN \
+                                  -Dsonar.sources=./src \
+                                  -Dsonar.branch.name=$BRANCH \
+                                  -Dsonar.qualitygate.wait=true
+                          fi
+                        envVariables:
+                          SONAR_USER_HOME: /harness/.sonar
+                          GIT_DEPTH: "0"
+                        resources:
+                          limits:
+                            memory: 1Gi
+                            cpu: "1"
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: Ignore
+    - stage:
+        name: Docker Build
+        identifier: Docker_Build
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: labscomsfr
+              namespace: harness-delegate-ng
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: Build and Push
+                  identifier: Build_and_Push
+                  spec:
+                    connectorRef: dockerhub
+                    repo: digibank-docker-hosted-nexus.bankartos.io/partner-gateway
+                    tags:
+                      - <+pipeline.variables.release_version>
+                    dockerfile: ./deploy/Dockerfile
+                    context: .
+                    resources:
+                      limits:
+                        memory: 2Gi
+                        cpu: "2"
+                  failureStrategies: []
+        variables: []
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+    - stage:
+        name: Deploy Dev
+        identifier: Deploy_Dev
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: $serviceRef
+            serviceDefinition:
+              spec:
+                variables:
+                  - name: release_name
+                    type: String
+                    value: partner-gateway
+                manifests:
+                  - manifest:
+                      identifier: helm chart
+                      type: HelmChart
+                      spec:
+                        store:
+                          type: GitLab
+                          spec:
+                            connectorRef: dkdigitalbankreadonly
+                            gitFetchType: Branch
+                            folderPath: /
+                            repoName: helm-chart/banking
+                            branch: feature/istio-poc
+                        skipResourceVersioning: false
+                        helmVersion: V3
+                  - manifest:
+                      identifier: partner-gateway helm values
+                      type: Values
+                      spec:
+                        store:
+                          type: GitLab
+                          spec:
+                            connectorRef: dkdigitalbankreadonly
+                            gitFetchType: Commit
+                            paths:
+                              - deploy/<+stage.spec.infrastructure.environmentRef>/values.yaml
+                            repoName: services/ms-partner-gateway
+                            commitId: <+trigger.tag>
+                artifacts:
+                  primary:
+                    spec:
+                      connectorRef: dockerhub
+                      imagePath: partner-gateway
+                      tag: <+pipeline.variables.release_version>
+                    type: DockerRegistry
+              type: Kubernetes
+          infrastructure:
+            environmentRef: dev
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: labscomsfr
+                namespace: banking
+                releaseName: <+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>
+            allowSimultaneousDeployments: true
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec: {}
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+    - stage:
+        name: E2E Test
+        identifier: E2E_Test
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: labscomsfr
+              namespace: harness-delegate-ng
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: RestoreCacheGCS
+                  name: Restore node_modules
+                  identifier: Restore_node_modules
+                  spec:
+                    connectorRef: labsproject
+                    bucket: harness_cache
+                    key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                    archiveFormat: Tar
+              - step:
+                  type: Run
+                  name: E2E Test
+                  identifier: E2E_Test
+                  spec:
+                    connectorRef: cidigibankdockergroupnexusbankartosio
+                    image: digibank-docker-group-nexus.bankartos.io/node-base:18.7.0-bullseye-slim
+                    shell: Sh
+                    command: |-
+                      set -e
+
+                      npm install --force
+
+                      npm run test:e2e
+
+                      ls -alh
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - e2e-junit.xml
+                    envVariables:
+                      JEST_JUNIT_OUTPUT_NAME: e2e-junit.xml
+                      NODE_OPTIONS: "--max-old-space-size=4096"
+                    resources:
+                      limits:
+                        memory: 4Gi
+                        cpu: "2"
+                  timeout: 10m
+              - step:
+                  type: SaveCacheGCS
+                  name: Save node_modules
+                  identifier: Save_node_modules
+                  spec:
+                    connectorRef: labsproject
+                    bucket: harness_cache
+                    key: <+pipeline.identifier>-node_modules-{{ checksum "./package.json" }}
+                    sourcePaths:
+                      - node_modules
+                    archiveFormat: Tar
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: Ignore
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+    - stage:
+        name: Promote Image
+        identifier: Promote_Image
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: lfsdev2
+              namespace: harness-delegate-ng
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Generate Dockerfile
+                  identifier: Generate_Dockerfile
+                  spec:
+                    connectorRef: docker_public
+                    image: alpine
+                    shell: Sh
+                    command: echo "FROM digibank-docker-hosted-nexus.bankartos.io/partner-gateway:<+pipeline.variables.release_version>" > Dockerfile
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: Promote Image to Prod
+                  identifier: Promote_Image_to_Prod
+                  spec:
+                    connectorRef: dockerhub
+                    repo: digibank-docker-hosted-nexus.bankartos.io/prod/partner-gateway
+                    tags:
+                      - <+pipeline.variables.release_version>
+                    resources:
+                      limits:
+                        memory: 1Gi
+                        cpu: "1"
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+    - stage:
+        name: Jira Approval
+        identifier: Jira_Approval
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Create Jira
+                  identifier: Create_Jira
+                  type: JiraCreate
+                  timeout: 5m
+                  spec:
+                    connectorRef: bankjagojira
+                    projectKey: HJAD
+                    issueType: Task
+                    fields:
+                      - name: Description
+                        value: https://app.harness.io/ng#/account/26TRmCAhRRKVB3UUD_q11g/cd/orgs/<+org.name>/projects/<+project.name>/pipelines/<+pipeline.identifier>/deployments/<+pipeline.executionId>/pipeline
+                      - name: Summary
+                        value: ms-partner-gateway version <+pipeline.variables.release_version>
+              - step:
+                  name: Jira Approval
+                  identifier: Jira_Approval
+                  type: JiraApproval
+                  timeout: 1d
+                  spec:
+                    approvalCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: false
+                        conditions:
+                          - key: Status
+                            operator: equals
+                            value: READY TO DEPLOY
+                    rejectionCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions:
+                          - key: Status
+                            operator: equals
+                            value: REJECTED
+                    connectorRef: bankjagojira
+                    projectKey: HJAD
+                    issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+              - step:
+                  name: Jira Update
+                  identifier: Jira_Update
+                  type: JiraUpdate
+                  timeout: 5m
+                  spec:
+                    connectorRef: bankjagojira
+                    issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+                    transitionTo:
+                      transitionName: deploying
+                      status: In Progress
+                    fields: []
+        tags: {}
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+    - stage:
+        name: Deploy Production
+        identifier: Deploy_Production
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            useFromStage:
+              stage: Deploy_Dev
+            stageOverrides:
+              artifacts:
+                sidecars: []
+                primary:
+                  spec:
+                    connectorRef: dockerhub
+                    imagePath: prod/partner-gateway
+                    tag: <+pipeline.variables.release_version>
+                  type: DockerRegistry
+              manifests: []
+              variables: []
+          infrastructure:
+            environmentRef: $environmentRef
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: lfsdev2
+                namespace: banking
+                releaseName: <+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>
+            allowSimultaneousDeployments: true
+          execution:
+            steps:
+              - stepGroup:
+                  name: Canary Phase 1
+                  identifier: canaryDepoyment
+                  steps:
+                    - step:
+                        name: Canary Deployment
+                        identifier: canaryDeployment
+                        type: K8sCanaryDeploy
+                        timeout: 10m
+                        spec:
+                          instanceSelection:
+                            spec:
+                              percentage: 50
+                            type: Percentage
+                          skipDryRun: false
+                    - step:
+                        type: ShellScript
+                        name: Canary Traffic 20 Percent
+                        identifier: Canary_Traffic_20_Percent
+                        spec:
+                          shell: Bash
+                          onDelegate: true
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                set -x
+
+                                RELEASE_NAME="<+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>"
+
+                                kubectl -n banking patch virtualservices $RELEASE_NAME --type=json \
+                                    -p='[{"op": "replace", "path": "/spec/http/0/route/0/weight", "value": 80},{"op": "replace", "path": "/spec/http/0/route/1/weight", "value": 20}]' \
+                                    -o yaml
+                          environmentVariables: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: JiraUpdate
+                        name: Jira Update Notify Canary Phase 1
+                        identifier: Jira_Update_Notify_Canary_Phase_1
+                        spec:
+                          connectorRef: bankjagojira
+                          issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+                          fields:
+                            - name: Comment
+                              value: Canary Update Phase 1 (20%)
+                        timeout: 5m
+                    - step:
+                        type: Verify
+                        name: verify
+                        identifier: verify
+                        spec:
+                          type: Canary
+                          monitoredService:
+                            type: Default
+                            spec: {}
+                          spec:
+                            sensitivity: HIGH
+                            duration: 5m
+                            deploymentTag: <+serviceConfig.artifacts.primary.tag>
+                        timeout: 2h
+                        failureStrategies:
+                          - onFailure:
+                              errors:
+                                - Verification
+                              action:
+                                type: ManualIntervention
+                                spec:
+                                  timeout: 2h
+                                  onTimeout:
+                                    action:
+                                      type: StageRollback
+                          - onFailure:
+                              errors:
+                                - Unknown
+                              action:
+                                type: ManualIntervention
+                                spec:
+                                  timeout: 2h
+                                  onTimeout:
+                                    action:
+                                      type: Ignore
+                    - step:
+                        type: HarnessApproval
+                        name: Approve Canary Phase 1
+                        identifier: Approve_Canary_Phase_1
+                        spec:
+                          approvalMessage: Please review the following information and approve the pipeline progression
+                          includePipelineExecutionHistory: true
+                          approvers:
+                            userGroups:
+                              - account.Team_Lead
+                            minimumCount: 1
+                            disallowPipelineExecutor: false
+                          approverInputs: []
+                        timeout: 1d
+              - stepGroup:
+                  name: Canary Phase 2
+                  identifier: Canary_Phase_2
+                  steps:
+                    - step:
+                        type: ShellScript
+                        name: Canary Traffic 50 Percent
+                        identifier: Canary_Traffic_50_Percent
+                        spec:
+                          shell: Bash
+                          onDelegate: true
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                set -x
+
+                                RELEASE_NAME="<+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>"
+
+                                kubectl -n banking patch virtualservices $RELEASE_NAME --type=json \
+                                    -p='[{"op": "replace", "path": "/spec/http/0/route/0/weight", "value": 50},{"op": "replace", "path": "/spec/http/0/route/1/weight", "value": 50}]' \
+                                    -o yaml
+                          environmentVariables: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: JiraUpdate
+                        name: Jira Update Notify Canary Phase 2
+                        identifier: Jira_Update_Notify_Canary_Phase_2
+                        spec:
+                          connectorRef: bankjagojira
+                          issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+                          fields:
+                            - name: Comment
+                              value: Canary Update Phase 2 (50%)
+                        timeout: 5m
+                    - step:
+                        type: HarnessApproval
+                        name: Approve Canary Phase 2
+                        identifier: Approve_Canary_Phase_2
+                        spec:
+                          approvalMessage: Please review the following information and approve the pipeline progression
+                          includePipelineExecutionHistory: true
+                          approvers:
+                            userGroups:
+                              - account.Team_Lead
+                            minimumCount: 1
+                            disallowPipelineExecutor: false
+                          approverInputs: []
+                        timeout: 1d
+              - stepGroup:
+                  name: Primary Deployment
+                  identifier: primaryDepoyment
+                  steps:
+                    - step:
+                        type: ShellScript
+                        name: Stable Traffic 100 Percent
+                        identifier: Stable_Traffic_100_Percent
+                        spec:
+                          shell: Bash
+                          onDelegate: true
+                          source:
+                            type: Inline
+                            spec:
+                              script: |-
+                                set -x
+
+                                RELEASE_NAME="<+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>"
+
+                                kubectl -n banking patch virtualservices $RELEASE_NAME --type=json \
+                                    -p='[{"op": "replace", "path": "/spec/http/0/route/0/weight", "value": 100},{"op": "replace", "path": "/spec/http/0/route/1/weight", "value": 0}]' \
+                                    -o yaml
+                          environmentVariables: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: K8sCanaryDelete
+                        name: Delete Canary
+                        identifier: Delete_Canary
+                        spec:
+                          skipDryRun: false
+                        timeout: 10m
+                    - step:
+                        name: Rolling Deployment
+                        identifier: rollingDeployment
+                        type: K8sRollingDeploy
+                        timeout: 10m
+                        spec:
+                          skipDryRun: false
+                    - step:
+                        type: JiraUpdate
+                        name: Jira Update Full Rolled Out
+                        identifier: Jira_Update_Full_Rolled_Out
+                        spec:
+                          connectorRef: bankjagojira
+                          issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+                          transitionTo:
+                            transitionName: deployment success
+                            status: Success
+                          fields:
+                            - name: Comment
+                              value: Deployment is fully rolled out
+                        timeout: 1d
+            rollbackSteps:
+              - step:
+                  type: ShellScript
+                  name: Stable Traffic 100 Percent
+                  identifier: Rollback_Stable_Traffic_100_Percent
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -x
+
+                          RELEASE_NAME="<+stage.spec.serviceConfig.serviceDefinition.spec.variables.release_name>"
+
+                          kubectl -n banking patch virtualservices $RELEASE_NAME --type=json \
+                              -p='[{"op": "replace", "path": "/spec/http/0/route/0/weight", "value": 100},{"op": "replace", "path": "/spec/http/0/route/1/weight", "value": 0}]' \
+                              -o yaml
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 1m
+                  when:
+                    stageStatus: All
+                  failureStrategies: []
+              - step:
+                  name: Canary Delete
+                  identifier: rollbackCanaryDelete
+                  type: K8sCanaryDelete
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                  when:
+                    stageStatus: All
+                  failureStrategies: []
+              - step:
+                  name: Rolling Rollback
+                  identifier: rollingRollback
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                  when:
+                    stageStatus: All
+                  failureStrategies: []
+              - step:
+                  type: JiraUpdate
+                  name: Jira Update Full Rolled Out
+                  identifier: Jira_Update_Rollback
+                  spec:
+                    connectorRef: bankjagojira
+                    issueKey: <+pipeline.stages.Jira_Approval.spec.execution.steps.Create_Jira.issue.key>
+                    transitionTo:
+                      transitionName: deployment failed
+                      status: FAILED
+                    fields: []
+                  timeout: 1d
+                  when:
+                    stageStatus: All
+                  failureStrategies: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.tag> =~ "release.*"
+  allowStageExecutions: true
+  variables:
+    - name: release_version
+      type: String
+      value: <+input>

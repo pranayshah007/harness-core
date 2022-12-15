@@ -68,13 +68,14 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Tag;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest.AwsLambdaExecuteWfRequestBuilder;
@@ -353,7 +354,7 @@ public class AwsLambdaState extends State {
     ArtifactStreamAttributes artifactStreamAttributes =
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     if (!ArtifactStreamType.CUSTOM.name().equalsIgnoreCase(artifactStreamAttributes.getArtifactStreamType())) {
-      artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+      artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()).toDTO());
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));
@@ -495,7 +496,7 @@ public class AwsLambdaState extends State {
     wfRequestBuilder.accountId(accountId);
     wfRequestBuilder.appId(appId);
     wfRequestBuilder.activityId(activityId);
-    wfRequestBuilder.artifactFiles(artifact.getArtifactFiles());
+    wfRequestBuilder.artifactFiles(artifact.getArtifactFiles().stream().map(ArtifactFile::toDTO).collect(toList()));
     wfRequestBuilder.commandName(getCommandName());
     wfRequestBuilder.artifactStreamAttributes(artifactStreamAttributes);
     wfRequestBuilder.roleArn(infrastructureMapping.getRole());

@@ -13,4 +13,6 @@ public interface LogCallback {
   void saveExecutionLog(String line, LogLevel logLevel);
 
   void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus);
+
+  default void dispatchLogs() {}
 }

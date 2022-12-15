@@ -131,7 +131,8 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
     return requestContext.getMethod().equals(OPTIONS) || publicAPI()
         || requestContext.getUriInfo().getAbsolutePath().getPath().endsWith("/version")
         || requestContext.getUriInfo().getAbsolutePath().getPath().endsWith("/swagger")
-        || requestContext.getUriInfo().getAbsolutePath().getPath().endsWith("/swagger.json");
+        || requestContext.getUriInfo().getAbsolutePath().getPath().endsWith("/swagger.json")
+        || requestContext.getUriInfo().getAbsolutePath().getPath().endsWith("/openapi.json");
   }
 
   protected boolean isDelegateRequest(ContainerRequestContext requestContext) {

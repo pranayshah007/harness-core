@@ -1,0 +1,71 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_push")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+container_image(
+    name = "ce_nextgen",
+    base = "//dockerization/base-jdk:base_jdk",
+    cmd = ["./run.sh"],
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+    tars = [
+        ":files",
+        ":scripts",
+    ],
+)
+
+pkg_tar(
+    name = "files",
+    srcs = [
+        "//ce-nextgen/config:config.yml",
+        "//ce-nextgen/config:keystore.jks",
+    ],
+    files = {
+        "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
+        "//ce-nextgen:module_deploy.jar": "ce-nextgen-capsule.jar",
+    },
+    mode = "0600",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+)
+
+pkg_tar(
+    name = "scripts",
+    srcs = glob([
+        "scripts/*",
+    ]),
+    mode = "0500",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+)
+
+container_push(
+    name = "push",
+    format = "Docker",
+    image = "ce_nextgen",
+    registry = "us.gcr.io",
+    repository = "platform-205701/harness/ce-nextgen",
+    tag = "{STABLE_BUILD_NUMBER}",
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+)

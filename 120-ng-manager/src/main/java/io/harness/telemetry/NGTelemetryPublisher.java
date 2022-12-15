@@ -12,9 +12,8 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.account.AccountClient;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.dtos.InstanceDTO;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.service.instance.InstanceService;
 
 import com.google.inject.Inject;
@@ -28,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class NGTelemetryPublisher {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  private static final long MILLISECONDS_IN_A_DAY = 86400000L;
+  private static final long MILLISECONDS_IN_A_MONTH = 2592000000L;
   @Inject TelemetryReporter telemetryReporter;
   @Inject CDPipelineInstrumentationHelper cdPipelineInstrumentationHelper;
   @Inject InstanceService instanceService;
@@ -41,28 +42,22 @@ public class NGTelemetryPublisher {
   public void recordTelemetry() {
     log.info("NGTelemetryPublisher recordTelemetry execute started.");
     try {
-      Long CURRENT_TIMESTAMP = System.currentTimeMillis();
-      Long MILLISECONDS_IN_A_DAY = 86400000L;
-      Long MILLISECONDS_IN_A_MONTH = 2592000000L;
-      Long totalDistinctActiveServicesInADay = 0L;
-      Long totalDistinctActiveServicesInAMonth = 0L;
-      Long totalNumberOfServiceInstancesInADay = 0L;
-      Long totalNumberOfServiceInstancesInAMonth = 0L;
-
       String accountId = getAccountId();
-
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-        List<InstanceDTO> serviceInstancesInAMonth = cdPipelineInstrumentationHelper.getServiceInstancesInInterval(
-            accountId, CURRENT_TIMESTAMP - MILLISECONDS_IN_A_MONTH, CURRENT_TIMESTAMP);
-        totalNumberOfServiceInstancesInAMonth = (long) serviceInstancesInAMonth.size();
-        totalDistinctActiveServicesInAMonth =
-            cdPipelineInstrumentationHelper.getTotalNumberOfActiveServices(serviceInstancesInAMonth);
+        long currentTimeMillis = System.currentTimeMillis();
+        long totalNumberOfServiceInstancesInAMonth =
+            cdPipelineInstrumentationHelper.getCountOfServiceInstancesDeployedInInterval(
+                accountId, currentTimeMillis - MILLISECONDS_IN_A_MONTH, currentTimeMillis);
+        long totalDistinctActiveServicesInAMonth =
+            cdPipelineInstrumentationHelper.getCountOfDistinctActiveServicesDeployedInInterval(
+                accountId, currentTimeMillis - MILLISECONDS_IN_A_MONTH, currentTimeMillis);
 
-        List<InstanceDTO> serviceInstancesInADay = cdPipelineInstrumentationHelper.getServiceInstancesInInterval(
-            accountId, CURRENT_TIMESTAMP - MILLISECONDS_IN_A_DAY, CURRENT_TIMESTAMP);
-        totalNumberOfServiceInstancesInADay = (long) serviceInstancesInADay.size();
-        totalDistinctActiveServicesInADay =
-            cdPipelineInstrumentationHelper.getTotalNumberOfActiveServices(serviceInstancesInADay);
+        long totalNumberOfServiceInstancesInADay =
+            cdPipelineInstrumentationHelper.getCountOfServiceInstancesDeployedInInterval(
+                accountId, currentTimeMillis - MILLISECONDS_IN_A_DAY, currentTimeMillis);
+        long totalDistinctActiveServicesInADay =
+            cdPipelineInstrumentationHelper.getCountOfDistinctActiveServicesDeployedInInterval(
+                accountId, currentTimeMillis - MILLISECONDS_IN_A_DAY, currentTimeMillis);
 
         HashMap<String, Object> map = new HashMap<>();
         map.put("group_type", "Account");
@@ -77,6 +72,7 @@ public class NGTelemetryPublisher {
       } else {
         log.info("There is no Account found!. Can not send scheduled NGTelemetryPublisher event.");
       }
+
     } catch (Exception e) {
       log.error("NGTelemetryPublisher recordTelemetry execute failed.", e);
     } finally {
@@ -85,7 +81,7 @@ public class NGTelemetryPublisher {
   }
 
   private String getAccountId() {
-    List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
+    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
     String accountId = accountDTOList.get(0).getIdentifier();
     if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
       accountId = accountDTOList.get(1).getIdentifier();

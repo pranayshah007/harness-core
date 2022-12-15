@@ -62,4 +62,5 @@ public class UserGroupDTO {
 
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) @Size(max = 1024) String description;
   @Schema(description = NGCommonEntityConstants.TAGS) @Size(max = 128) Map<String, String> tags;
+  @Schema(description = "Specifies whether or not the userGroup is managed by harness.") private boolean harnessManaged;
 }

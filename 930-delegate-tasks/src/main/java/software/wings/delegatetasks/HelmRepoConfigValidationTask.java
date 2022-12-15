@@ -15,16 +15,14 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 
-import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.HelmVersion;
@@ -110,19 +108,6 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     helmTaskHelper.initHelm(workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
     String repoName = convertBase64UuidToCanonicalForm(generateUuid());
 
-    if (helmRepoConfig instanceof AmazonS3HelmRepoConfig) {
-      ((AmazonS3HelmRepoConfig) helmRepoConfig)
-          .setUseLatestChartMuseumVersion(taskParams.isUseLatestChartMuseumVersion());
-
-    } else if (helmRepoConfig instanceof GCSHelmRepoConfig) {
-      ((GCSHelmRepoConfig) helmRepoConfig).setUseLatestChartMuseumVersion(taskParams.isUseLatestChartMuseumVersion());
-    }
-
-    if (!taskParams.isUseOCIHelmRepo() && helmRepoConfig.getSettingType().equals(OCI_HELM_REPO)) {
-      unhandled(helmRepoConfig.getSettingType());
-      throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
-    }
-
     switch (helmRepoConfig.getSettingType()) {
       case HTTP_HELM_REPO:
         tryAddingHttpHelmRepo(helmRepoConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory);
@@ -169,7 +154,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
 
     helmTaskHelper.addRepo(repoName, repoDisplayName, httpHelmRepoConfig.getChartRepoUrl(),
         httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, helmVersion,
-        DEFAULT_TIMEOUT_IN_MILLIS);
+        DEFAULT_TIMEOUT_IN_MILLIS, null);
   }
 
   private void tryAddingAmazonS3HelmRepo(HelmRepoConfig helmRepoConfig, String repoName,

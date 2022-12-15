@@ -82,6 +82,7 @@ public class PrincipalProtoMapperTest extends CategoryTest {
     assertThat(principal.getType()).isEqualTo(SERVICE_ACCOUNT);
     io.harness.security.dto.ServiceAccountPrincipal serviceAccountPrincipal =
         (io.harness.security.dto.ServiceAccountPrincipal) principal;
+    assertThat(serviceAccountPrincipal.getAccountId()).isEqualTo("accountId");
     assertThat(serviceAccountPrincipal.getEmail()).isEqualTo("email");
     assertThat(serviceAccountPrincipal.getUsername()).isEqualTo("service account username");
     assertThat(serviceAccountPrincipal.getName()).isEqualTo("SERVICE_ACCOUNT");

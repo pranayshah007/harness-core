@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.delegate.resources;
 
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 
@@ -19,10 +20,14 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.utilities.DelegateDeleteResponse;
+import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.rest.RestResponse;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -39,10 +44,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
@@ -74,9 +82,6 @@ public class DelegateSetupNgResource {
   private static final String CONTENT_DISPOSITION = "Content-Disposition";
   private static final String ATTACHMENT_FILENAME = "attachment; filename=";
   private static final String YAML = ".yaml";
-  private static final String APPLICATION_ZIP_CHARSET_BINARY = "application/zip; charset=binary";
-  private static final String TAR_GZ = ".tar.gz";
-  private static final String HARNESS_NG_DELEGATE = "harness-ng-delegate";
 
   private final DelegateNgManagerCgManagerClient delegateNgManagerCgManagerClient;
   private final AccessControlClient accessControlClient;
@@ -108,7 +113,7 @@ public class DelegateSetupNgResource {
       DelegateSetupDetails delegateSetupDetails) throws IOException {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-    String yamlString = RestClientUtils.getResponse(delegateNgManagerCgManagerClient.generateHelmValuesFile(
+    String yamlString = CGRestUtils.getResponse(delegateNgManagerCgManagerClient.generateHelmValuesFile(
         accountIdentifier, orgIdentifier, projectIdentifier, delegateSetupDetails));
 
     // convert String to file and send as response
@@ -119,5 +124,38 @@ public class DelegateSetupNgResource {
         .type("text/plain; charset=UTF-8")
         .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + HARNESS_DELEGATE_VALUES_YAML + YAML)
         .build();
+  }
+
+  @DELETE
+  @Path("delegate/{delegateIdentifier}")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "Deletes delegate", nickname = "deleteDelegate")
+  @Operation(operationId = "deleteDelegate", summary = "Deletes a Delegate by its identifier.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "200 Ok response if everything successfully deleted delegate")
+      })
+  public RestResponse<DelegateDeleteResponse>
+  deleteDelegateGroup(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @PathParam(
+          NGCommonEntityConstants.DELEGATE_IDENTIFIER_KEY) @NotEmpty String delegateGroupIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, delegateGroupIdentifier), DELEGATE_DELETE_PERMISSION);
+
+    DelegateGroupDeleteResponse groupDeleteResponse =
+        CGRestUtils.getResponse(delegateNgManagerCgManagerClient.deleteDelegateGroup(
+            accountIdentifier, orgIdentifier, projectIdentifier, delegateGroupIdentifier));
+
+    if (!groupDeleteResponse.isStatusSuccess()) {
+      throw new InvalidRequestException(groupDeleteResponse.getErrorMsg());
+    }
+    return new RestResponse<>(new DelegateDeleteResponse("Successfully deleted delegate."));
   }
 }

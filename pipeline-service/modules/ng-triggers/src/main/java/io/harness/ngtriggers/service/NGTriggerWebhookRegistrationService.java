@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
-import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatusData;
 
 @OwnedBy(PIPELINE)
 public interface NGTriggerWebhookRegistrationService {
-  WebhookAutoRegistrationStatus registerWebhook(NGTriggerEntity ngTriggerEntity);
+  WebhookRegistrationStatusData registerWebhook(NGTriggerEntity ngTriggerEntity);
 }

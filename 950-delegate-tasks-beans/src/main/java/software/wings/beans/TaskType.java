@@ -14,15 +14,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
-import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -108,6 +105,7 @@ public enum TaskType {
   AZURE_ARTIFACTS_GET_FEEDS(TaskGroup.AZURE_ARTIFACTS),
   AZURE_ARTIFACTS_GET_PACKAGES(TaskGroup.AZURE_ARTIFACTS),
   AZURE_ARTIFACTS_COLLECTION(TaskGroup.AZURE_ARTIFACTS),
+  AZURE_ARTIFACTS_CONNECTIVITY_TEST_TASK(TaskGroup.AZURE_ARTIFACTS),
   AZURE_GET_SUBSCRIPTIONS(TaskGroup.AZURE_ARTIFACTS),
   AZURE_MACHINE_IMAGE_GET_IMAGE_GALLERIES(TaskGroup.AZURE_ARTIFACTS),
   AZURE_MACHINE_IMAGE_GET_IMAGE_DEFINITIONS(TaskGroup.AZURE_ARTIFACTS),
@@ -195,6 +193,7 @@ public enum TaskType {
   LOGZ_GET_LOG_SAMPLE(TaskGroup.LOGZ),
   LOGZ_GET_HOST_RECORDS(TaskGroup.ELK),
   ARTIFACTORY_GET_BUILDS(TaskGroup.ARTIFACTORY),
+  ARTIFACTORY_GET_LABELS(TaskGroup.ARTIFACTORY),
   ARTIFACTORY_GET_JOBS(TaskGroup.ARTIFACTORY),
   ARTIFACTORY_GET_PLANS(TaskGroup.ARTIFACTORY),
   ARTIFACTORY_GET_ARTIFACTORY_PATHS(TaskGroup.ARTIFACTORY),
@@ -205,7 +204,6 @@ public enum TaskType {
   ARTIFACTORY_VALIDATE_ARTIFACT_STREAM(TaskGroup.ARTIFACTORY),
 
   // Secret Management (Old Tasks)
-  CYBERARK_VALIDATE_CONFIG(TaskGroup.KMS),
   VAULT_GET_CHANGELOG(TaskGroup.KMS),
   VAULT_RENEW_TOKEN(TaskGroup.KMS),
   VAULT_LIST_ENGINES(TaskGroup.KMS),
@@ -295,15 +293,20 @@ public enum TaskType {
   GIT_FETCH_NEXT_GEN_TASK(TaskGroup.GIT, "Git Fetch Files Task"),
   BUILD_SOURCE_TASK(TaskGroup.BUILD_SOURCE),
   DOCKER_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "DockerHub Task"),
+  GOOGLE_ARTIFACT_REGISTRY_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Artifact Registry Task"),
   JENKINS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Jenkins Task"),
   GCR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "GCR Task"),
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
+  GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
+  AZURE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Azure Task"),
+  AMI_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "AMI Task"),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
   CUSTOM_VALIDATE_ARTIFACT_STREAM(TaskGroup.CUSTOM),
+  CUSTOM_ARTIFACT_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Custom Artifacts Task"),
   SHELL_SCRIPT_PROVISION_TASK(TaskGroup.SHELL_SCRIPT_PROVISION),
   SERVICENOW_ASYNC(TaskGroup.SERVICENOW),
   SERVICENOW_SYNC(TaskGroup.SERVICENOW),
@@ -314,7 +317,7 @@ public enum TaskType {
   HELM_COLLECT_CHART(TaskGroup.HELM),
   SLACK(TaskGroup.SLACK),
   INITIALIZATION_PHASE(TaskGroup.CI),
-  CI_LE_STATUS(TaskGroup.CI),
+  CI_LE_STATUS(TaskGroup.CI, null, StepStatusTaskResponseData.class, false),
   EXECUTE_COMMAND(TaskGroup.CI),
   CI_CLEANUP(TaskGroup.CI),
   CI_EXECUTE_STEP(TaskGroup.CI),
@@ -372,15 +375,53 @@ public enum TaskType {
   OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
   AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
-  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
+  VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
+  FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
+  RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
   NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
-  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP);
+  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
+  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
+  NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Task"),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS, "ECS Command Task"),
+  WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task"),
+  SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
+  ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
+  TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
+  SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
+  FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
+  AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
+  HELM_FETCH_CHART_VERSIONS_TASK_NG(TaskGroup.HELM, "Fetch Helm Chart Versions Task"),
+  TERRAFORM_TASK_NG_V2(TaskGroup.TERRAFORM_NG, "Terraform Task NG V2"),
+  ELASTIGROUP_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Command Task"),
+  ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
+  TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task"),
+  TERRAGRUNT_PLAN_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task", true),
+  TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", true),
+  TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", true),
+  TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true),
+  GITOPS_FETCH_APP_TASK(TaskGroup.GITOPS, "Gitops Fetch App Task"),
+  VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
+  NG_VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
+  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
+  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
+  ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task"),
+  SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task"),
+  CONTAINER_INITIALIZATION(TaskGroup.CONTAINER_PMS, "Run task container initialization"),
+  AWS_ASG_CANARY_DEPLOY_TASK_NG(TaskGroup.AWS, "AWS Asg Canary Deploy"),
+  ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task"),
+  ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task"),
+  ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),
+  ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task"),
+  ELASTIGROUP_ROLLBACK(TaskGroup.ELASTIGROUP, "Elastigroup Rollback Task"),
+  ELASTIGROUP_PRE_FETCH_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Pre Fetch Task"),
+  CONTAINER_LE_STATUS(TaskGroup.CONTAINER_PMS, "Get lite engine status"),
+  CONTAINER_CLEANUP(TaskGroup.CONTAINER_PMS, "Cleanup container for run task"),
+  CONTAINER_EXECUTE_STEP(TaskGroup.CONTAINER_PMS, "Run step on a container spawned");
 
   private final TaskGroup taskGroup;
   private final String displayName;
@@ -404,6 +445,14 @@ public enum TaskType {
     this.request = null;
     this.response = null;
     this.unsupported = false;
+  }
+
+  TaskType(TaskGroup taskGroup, String displayName, boolean unsupported) {
+    this.taskGroup = taskGroup;
+    this.displayName = displayName;
+    this.request = null;
+    this.response = null;
+    this.unsupported = unsupported;
   }
 
   TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,

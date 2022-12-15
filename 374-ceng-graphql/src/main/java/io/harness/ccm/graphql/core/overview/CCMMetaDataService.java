@@ -48,6 +48,7 @@ public class CCMMetaDataService {
       ccmMetaDataBuilder.gcpConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getGcpConnectorConfigured()));
       ccmMetaDataBuilder.azureConnectorsPresent(getFieldBooleanValue(ceMetadataRecord.getAzureConnectorConfigured()));
       ccmMetaDataBuilder.cloudDataPresent(isCloudDataPresent(ceMetadataRecord));
+      ccmMetaDataBuilder.currencyPreference(ceMetadataRecord.getCurrencyPreference());
     }
     DefaultViewIdDto defaultViewIds = ceViewService.getDefaultViewIds(accountId);
     ccmMetaDataBuilder.defaultAwsPerspectiveId(defaultViewIds.getAwsViewId());

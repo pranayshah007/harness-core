@@ -8,8 +8,10 @@
 package io.harness.dashboard;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "keys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "dashboardSettings", noClassnameStored = true)
 @JsonIgnoreProperties(value = {"lastUpdatedBy"}, allowSetters = true)
 @HarnessEntity(exportable = true)

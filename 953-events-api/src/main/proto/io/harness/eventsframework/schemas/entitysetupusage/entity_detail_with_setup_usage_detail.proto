@@ -17,6 +17,8 @@ message EntityDetailWithSetupUsageDetailProtoDTO {
   oneof setupUsageDetail {
     SecretReferredByConnectorSetupUsageDetailProtoDTO secretConnectorDetail = 3;
     EntityReferredByPipelineDetailProtoDTO entityInPipelineDetail = 4;
+    EntityReferredByInfraSetupUsageDetailProtoDTO entityInInfraDetail = 5;
+    TemplateReferredByConnectorSetupUsageDetailProtoDTO templateConnectorDetail = 6;
   }
 
   message SecretReferredByConnectorSetupUsageDetailProtoDTO {
@@ -26,6 +28,15 @@ message EntityDetailWithSetupUsageDetailProtoDTO {
   message EntityReferredByPipelineDetailProtoDTO {
     string identifier = 1;
     PipelineDetailType type = 2;
+  }
+
+  message EntityReferredByInfraSetupUsageDetailProtoDTO {
+    string environmentIdentifier = 1;
+  }
+
+  message TemplateReferredByConnectorSetupUsageDetailProtoDTO {
+    string identifier = 1;
+    string version = 2;
   }
 
   enum PipelineDetailType {

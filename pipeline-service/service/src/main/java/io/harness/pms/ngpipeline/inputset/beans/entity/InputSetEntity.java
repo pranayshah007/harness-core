@@ -10,7 +10,7 @@ package io.harness.pms.ngpipeline.inputset.beans.entity;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
@@ -59,11 +59,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "InputSetEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "inputSetsPMS", noClassnameStored = true)
 @Document("inputSetsPMS")
 @TypeAlias("inputSetsPMS")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 public class InputSetEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

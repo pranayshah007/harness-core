@@ -34,4 +34,6 @@ public class CgServiceUsage {
   String serviceId;
   long licensesUsed;
   long instanceCount;
+  String appId;
+  String appName;
 }

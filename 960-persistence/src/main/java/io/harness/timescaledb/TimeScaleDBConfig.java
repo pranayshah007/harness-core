@@ -21,17 +21,19 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldNameConstants(innerTypeName = "TimeScaleDBConfigFields")
 @FieldDefaults(makeFinal = false)
 public class TimeScaleDBConfig {
-  @JsonProperty(defaultValue = "jdbc:postgresql://localhost:5432/harness") @NotEmpty private String timescaledbUrl;
-  @ConfigSecret private String timescaledbUsername;
-  @ConfigSecret private String timescaledbPassword;
+  @JsonProperty(defaultValue = "jdbc:postgresql://localhost:5432/harness") @NotEmpty String timescaledbUrl;
+  @ConfigSecret String timescaledbUsername;
+  @ConfigSecret String timescaledbPassword;
   int connectTimeout;
   int socketTimeout;
   boolean logUnclosedConnections;
-  private String loggerLevel;
-  private int instanceDataRetentionDays;
-  private int instanceStatsMigrationEventsLimit;
-  private int instanceStatsMigrationQueryBatchSize;
-  private int deploymentDataMigrationRowLimit;
-  private int deploymentDataMigrationQueryBatchSize;
+  String loggerLevel;
+  int instanceStatsMigrationEventsLimit;
+  int instanceStatsMigrationQueryBatchSize;
+  int deploymentDataMigrationRowLimit;
+  int deploymentDataMigrationQueryBatchSize;
   boolean isHealthCheckNeeded;
+  boolean isConnectionValidationNeeded;
+  String sslMode;
+  String sslRootCert;
 }

@@ -7,14 +7,21 @@
 
 package io.harness.ng.core.environment.mappers;
 
+import static io.harness.ng.core.environment.EnvironmentTestHelper.readFile;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -28,6 +35,7 @@ import io.harness.rule.OwnerRule;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +48,7 @@ public class EnvironmentMapperTest extends CategoryTest {
   Environment responseEnvironment;
   List<NGTag> tags;
   NGEnvironmentConfig ngEnvironmentConfig;
+
   @Before
   public void setUp() {
     tags = Arrays.asList(NGTag.builder().key("k1").value("v1").build(), NGTag.builder().key("k2").value("v2").build());
@@ -104,6 +113,176 @@ public class EnvironmentMapperTest extends CategoryTest {
     Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO);
     assertThat(environment).isNotNull();
     assertThat(environment).isEqualTo(requestEnvironment);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateManifestOverride() {
+    final String filename = "env-with-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateConfigFilesAndManifestOverride() {
+    final String filename = "env-with-all-override.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    final NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles())
+        .hasSize(2);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
+                   .getNgEnvironmentGlobalOverride()
+                   .getConfigFiles()
+                   .stream()
+                   .map(ConfigFileWrapper::getConfigFile)
+                   .map(ConfigFile::getIdentifier))
+        .containsExactly("c1", "c2");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateConfigFilesOverrideOnly() {
+    final String filename = "env-with-only-config-files-only.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    final NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles())
+        .hasSize(2);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
+                   .getNgEnvironmentGlobalOverride()
+                   .getConfigFiles()
+                   .stream()
+                   .map(ConfigFileWrapper::getConfigFile)
+                   .map(ConfigFile::getIdentifier))
+        .containsExactly("c1", "c2");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvForInputFromRequestDTO() {
+    final String filename = "env-with-no-override.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV1")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .description("dto description")
+                                                 .type(PreProduction)
+                                                 .tags(Collections.singletonMap("dto_key", "dto_value"))
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    assertThat(environment.getTags()).hasSize(1);
+    assertThat(environment.getTags().get(0).getKey()).isEqualTo("dto_key");
+    assertThat(environment.getTags().get(0).getValue()).isEqualTo("dto_value");
+    assertThat(environment.getDescription()).isEqualTo(requestDTO.getDescription());
+    assertThat(environment.getType()).isEqualTo(requestDTO.getType());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentNoOverrideFfBehaviour() {
+    final String filename = "env-with-no-override.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV1")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
+
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
+
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
+
+    environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig()).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride()).isNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateConfigFileOverrideFail() {
+    final String filename = "env-with-invalid-config-files-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Found duplicate configFiles identifiers [c1,c2]");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateManifestOverrideFail() {
+    final String filename = "env-with-invalid-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Found duplicate manifest identifiers [m1]");
   }
 
   @Test
@@ -206,5 +385,101 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThat(cfg.getType()).isEqualTo(PreProduction);
     assertThat(cfg.getTags().get("k1")).isEqualTo("v1");
     assertThat(cfg.getVariables()).isNull();
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidOrgId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("default1")
+                                                 .projectIdentifier("pq")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Org Identifier ORG_ID passed in yaml is not same as passed in query params default1");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidProjectId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("proj")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Project Identifier PROJECT_ID passed in yaml is not same as passed in query params proj");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("env")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Environment Identifier ENV passed in yaml is not same as passed in query params env");
+  }
+
+  // org level templates
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToOrgLevelEnvironment() {
+    final String filename = "env-org-level.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("env")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThat(EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO)).isNotNull();
+  }
+
+  // When org passed in query is null
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToOrgAsNull() {
+    final String filename = "env-org-level.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO =
+        EnvironmentRequestDTO.builder().identifier("env").type(PreProduction).yaml(yaml).build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Org Identifier ORG_ID passed in yaml is not same as passed in query params null");
   }
 }

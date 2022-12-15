@@ -19,8 +19,10 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +33,7 @@ public class ProgressUpdateService implements Runnable {
   @Inject private Injector injector;
   @Inject private PersistenceWrapper persistenceWrapper;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitInstanceService waitInstanceService;
 
   private final LoadingCache<String, String> busyCorrelationIds = CacheBuilder.newBuilder()
@@ -59,9 +62,13 @@ public class ProgressUpdateService implements Runnable {
           busyCorrelationIds.put(progressUpdate.getCorrelationId(), progressUpdate.getCorrelationId());
           continue;
         }
-        log.info("Starting to process progress response");
+        if (log.isDebugEnabled()) {
+          log.debug("Starting to process progress response");
+        }
 
-        ProgressData progressData = (ProgressData) kryoSerializer.asInflatedObject(progressUpdate.getProgressData());
+        ProgressData progressData = progressUpdate.isUsingKryoWithoutReference()
+            ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData())
+            : (ProgressData) kryoSerializer.asInflatedObject(progressUpdate.getProgressData());
 
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {
@@ -69,7 +76,11 @@ public class ProgressUpdateService implements Runnable {
           injector.injectMembers(progressCallback);
           progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
         }
-        log.info("Processed progress response");
+        if (log.isDebugEnabled()) {
+          log.debug("Processed progress response for correlationId - " + progressUpdate.getCorrelationId()
+              + " and waitInstanceIds - "
+              + waitInstances.stream().map(WaitInstance::getUuid).collect(Collectors.toList()));
+        }
         persistenceWrapper.delete(progressUpdate);
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);

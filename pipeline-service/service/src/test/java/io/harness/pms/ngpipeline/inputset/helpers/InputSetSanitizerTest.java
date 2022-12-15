@@ -71,6 +71,23 @@ public class InputSetSanitizerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testSanitizeInputSetsWithIncorrectVariableType() {
+    String filename = "pipeline-extensive.yml";
+    String yaml = readFile(filename);
+
+    String wrongRuntimeInputFile = "runtimeInputWrong2.yml";
+    String wrongRuntimeInput = readFile(wrongRuntimeInputFile);
+
+    String sanitizedYaml1 = sanitizeRuntimeInput(yaml, wrongRuntimeInput);
+
+    String correctFile = "runtimeInput2.yml";
+    String correctYaml = readFile(correctFile).replace("\"", "");
+    assertThat(sanitizedYaml1.replace("\"", "")).isEqualTo(correctYaml);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testSanitizeInputSetsWithAllWrongFields() {
     String filename = "pipeline-extensive.yml";
     String yaml = readFile(filename);
@@ -78,11 +95,17 @@ public class InputSetSanitizerTest extends CategoryTest {
     String inputSetWrongFile = "input-set-all-fields-wrong.yml";
     String inputSetWrongYaml = readFile(inputSetWrongFile);
 
-    String emptyAfterSanitised = sanitizeInputSet(yaml, inputSetWrongYaml);
-    assertThat(emptyAfterSanitised).isNullOrEmpty();
+    String inputSetWrongFileMatch = "input-set-all-fields-wrong-match.yml";
+    String inputSetWrongYamlMatch = readFile(inputSetWrongFileMatch).replace("\"", "");
 
+    String emptyAfterSanitised = sanitizeInputSet(yaml, inputSetWrongYaml);
+    assertThat(emptyAfterSanitised.replace("\"", "").trim()).isEqualTo(inputSetWrongYamlMatch.trim());
+
+    String fullInputSetWrongFileMatch = "input-set-yaml-all-fields-wrong-match.yml";
+    String fullInputSetWrongYamlMatch = readFile(fullInputSetWrongFileMatch).replace("\"", "");
     emptyAfterSanitised = sanitizeInputSetAndUpdateInputSetYAML(yaml, inputSetWrongYaml);
-    assertThat(emptyAfterSanitised).isNullOrEmpty();
+
+    assertThat(emptyAfterSanitised.replace("\"", "").trim()).isEqualTo(fullInputSetWrongYamlMatch.trim());
   }
 
   @Test

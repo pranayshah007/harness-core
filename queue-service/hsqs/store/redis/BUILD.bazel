@@ -1,0 +1,35 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "redis",
+    srcs = ["redis_store.go"],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs/store/redis",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//queue-service/hsqs/store",
+        "//queue-service/hsqs/utils",
+        "@com_github_go_redis_redis_v8//:redis",
+        "@com_github_rs_zerolog//:zerolog",
+    ],
+)
+
+go_test(
+    name = "redis_test",
+    srcs = [
+        "redis_store_test.go",
+    ],
+    embed = [":redis"],
+    deps = [
+        "//queue-service/hsqs/store",
+        "//queue-service/hsqs/utils",
+        "@com_github_go_redis_redis_v8//:redis",
+        "@com_github_go_redis_redismock_v8//:redismock",
+        "@com_github_rs_zerolog//:zerolog",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

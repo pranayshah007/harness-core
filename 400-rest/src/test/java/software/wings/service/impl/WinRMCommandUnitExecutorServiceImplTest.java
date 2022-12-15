@@ -160,15 +160,15 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .useNoProfile(false)
                                                 .build();
 
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
   }
 
   /**
@@ -204,15 +204,15 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .timeout(null)
                                                 .build();
 
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     winRMCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .winRmConnectionAttributes(winRmConnectionAttributes)
             .build());
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
   }
 
   /**
@@ -249,7 +249,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -257,13 +257,13 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
     when(commandUnit.execute(any()))
         .thenThrow(new TimeoutException(
             "Timed out waiting for tasks to be in running state", "Timeout", null, WingsException.SRE));
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("UNKNOWN_ERROR");
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
     verify(delegateLogService)
         .save(ACCOUNT_ID,
             aLog()
@@ -322,20 +322,20 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any()))
         .thenThrow(new WingsException(ErrorCode.INVALID_KEY, "Test error", WingsException.USER_SRE));
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("Test error");
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
   }
 
   /**
@@ -372,19 +372,19 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any())).thenThrow(new NullPointerException("Test Exception"));
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("UNKNOWN_ERROR");
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
   }
 
   /**
@@ -421,19 +421,19 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(10)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
 
     when(commandUnit.execute(any())).thenThrow(new UncheckedTimeoutException());
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("WINRM_COMMAND_EXECUTION_TIMEOUT");
 
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
   }
 
   @Test
@@ -487,7 +487,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
 
@@ -495,12 +495,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     CommandUnit commandUnit = mock(CommandUnit.class);
     when(commandUnit.execute(any())).thenThrow(createSOAPFaultException(errorMessage));
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(ShellExecutionException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("Script Execution Failed");
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
     verify(delegateLogService)
         .save(ACCOUNT_ID,
             aLog()
@@ -556,7 +556,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
                                                           .timeout(0)
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .winRmConnectionAttributes(winRmConnectionAttributes)
                                                           .build();
 
@@ -564,12 +564,12 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     CommandUnit commandUnit = mock(CommandUnit.class);
     when(commandUnit.execute(any())).thenThrow(new RuntimeException(new SocketException(errorMessage)));
-    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false)).thenReturn(winRmExecutor);
+    when(winRmExecutorFactory.getExecutor(winRmSessionConfig, false, false)).thenReturn(winRmExecutor);
 
     assertThatExceptionOfType(ShellExecutionException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
         .withMessage("Unable to connect to remote host");
-    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
+    verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false, false);
     verify(delegateLogService)
         .save(ACCOUNT_ID,
             aLog()

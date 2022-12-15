@@ -38,22 +38,21 @@ import io.harness.beans.RepairActionCode;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.DeploymentFreezeException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.ExceptionLogger;
 import io.harness.logging.Misc;
 import io.harness.tasks.ResponseData;
 
-import software.wings.api.ArtifactCollectionExecutionData;
 import software.wings.api.EnvStateExecutionData;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
-import software.wings.api.artifact.ServiceArtifactVariableElements;
 import software.wings.api.helm.ServiceHelmElement;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.beans.Application;
@@ -70,14 +69,15 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
@@ -86,7 +86,7 @@ import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
-import software.wings.sm.StateExecutionInstance;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -127,6 +127,7 @@ public class EnvState extends State implements WorkflowState {
   public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
 
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
+  private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
   @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
@@ -147,6 +148,7 @@ public class EnvState extends State implements WorkflowState {
 
   @Inject private Injector injector;
   @Transient @Inject private WorkflowService workflowService;
+  @Transient @Inject private PipelineService pipelineService;
   @Transient @Inject private WorkflowExecutionService executionService;
   @Transient @Inject private WorkflowExecutionUpdate executionUpdate;
   @Transient @Inject private ArtifactService artifactService;
@@ -231,6 +233,7 @@ public class EnvState extends State implements WorkflowState {
       }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
+
       envStateExecutionData.setWorkflowExecutionId(execution.getUuid());
       return ExecutionResponse.builder()
           .async(true)
@@ -266,12 +269,23 @@ public class EnvState extends State implements WorkflowState {
       ExecutionContext context, ExecutionArgs executionArgs, List<String> workflowVariablesWithExpressionValue) {
     if (isNotEmpty(workflowVariablesWithExpressionValue)) {
       workflowVariablesWithExpressionValue.forEach(variable -> {
-        String secretVariable = executionArgs.getWorkflowVariables().get(variable);
-        Matcher matcher = secretNamePattern.matcher(secretVariable);
+        String variableValue = executionArgs.getWorkflowVariables().get(variable);
+        Matcher matcher = secretNamePattern.matcher(variableValue);
         if (!matcher.matches()) {
-          String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
-          executionArgs.getWorkflowVariables().put(variable,
-              value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          String renderedValue = context.renderExpression(variableValue,
+              StateExecutionContext.builder()
+                  .adoptDelegateDecryption(true)
+                  .expressionFunctorToken(HashGenerator.generateIntegerHash())
+                  .build());
+          // In case we are not able to resolve expression, keep the original expression in the value.
+          if (renderedValue == null || "null".equals(renderedValue)) {
+            renderedValue = variableValue;
+          }
+          // If rendered expression turns out to be a secret manager expression, keep the original expression
+          if (secretManagerObtainPattern.matcher(renderedValue).matches()) {
+            renderedValue = variableValue;
+          }
+          executionArgs.getWorkflowVariables().put(variable, renderedValue);
         }
       });
     }
@@ -479,11 +493,7 @@ public class EnvState extends State implements WorkflowState {
 
     EnvStateExecutionData stateExecutionData = context.getStateExecutionData();
     if (stateExecutionData.getOrchestrationWorkflowType() == OrchestrationWorkflowType.BUILD) {
-      if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, context.getAccountId())) {
-        saveArtifactAndManifestElements(context, stateExecutionData);
-      } else {
-        saveArtifactVariableElements(context, stateExecutionData);
-      }
+      saveArtifactAndManifestElements(context, stateExecutionData);
     }
 
     if (context.getWorkflowType() == WorkflowType.PIPELINE
@@ -552,39 +562,6 @@ public class EnvState extends State implements WorkflowState {
         context.prepareSweepingOutputBuilder(Scope.PIPELINE)
             .name(ServiceHelmElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
             .value(ServiceHelmElements.builder().helmElements(helmElements).build())
-            .build());
-  }
-
-  private void saveArtifactVariableElements(ExecutionContext context, EnvStateExecutionData stateExecutionData) {
-    List<StateExecutionInstance> allStateExecutionInstances =
-        executionService.getStateExecutionInstances(context.getAppId(), stateExecutionData.getWorkflowExecutionId());
-    if (isEmpty(allStateExecutionInstances)) {
-      return;
-    }
-
-    List<ServiceArtifactVariableElement> artifactVariableElements = new ArrayList<>();
-    allStateExecutionInstances.forEach(stateExecutionInstance -> {
-      if (!(stateExecutionInstance.fetchStateExecutionData() instanceof ArtifactCollectionExecutionData)) {
-        return;
-      }
-
-      ArtifactCollectionExecutionData artifactCollectionExecutionData =
-          (ArtifactCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      Artifact artifact = artifactService.get(artifactCollectionExecutionData.getArtifactId());
-      artifactVariableElements.add(ServiceArtifactVariableElement.builder()
-                                       .uuid(artifact.getUuid())
-                                       .name(artifact.getDisplayName())
-                                       .entityType(artifactCollectionExecutionData.getEntityType())
-                                       .entityId(artifactCollectionExecutionData.getEntityId())
-                                       .serviceId(artifactCollectionExecutionData.getServiceId())
-                                       .artifactVariableName(artifactCollectionExecutionData.getArtifactVariableName())
-                                       .build());
-    });
-
-    sweepingOutputService.save(
-        context.prepareSweepingOutputBuilder(Scope.PIPELINE)
-            .name(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
-            .value(ServiceArtifactVariableElements.builder().artifactVariableElements(artifactVariableElements).build())
             .build());
   }
 

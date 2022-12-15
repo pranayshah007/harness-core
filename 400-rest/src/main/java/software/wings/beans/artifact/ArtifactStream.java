@@ -10,10 +10,13 @@ package software.wings.beans.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
+
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,6 +29,7 @@ import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -35,6 +39,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.config.ArtifactSourceable;
 import software.wings.beans.entityinterface.KeywordsAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.utils.Utils;
 import software.wings.yaml.BaseEntityYaml;
@@ -69,6 +74,7 @@ import org.mongodb.morphia.annotations.Transient;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ArtifactStreamKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "artifactStream")
 @BreakDependencyOn("io.harness.ff.FeatureFlagService")
 @HarnessEntity(exportable = true)
@@ -90,9 +96,16 @@ public abstract class ArtifactStream
                  .field(ArtifactStreamKeys.collectionEnabled)
                  .field(ArtifactStreamKeys.nextCleanupIteration)
                  .build())
+        // TODO: drop this index in later release
         .add(CompoundMongoIndex.builder()
                  .name("artifactStream_collection")
                  .field(ArtifactStreamKeys.collectionEnabled)
+                 .field(ArtifactStreamKeys.nextIteration)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("artifact_collection_index")
+                 .field(ArtifactStreamKeys.collectionEnabled)
+                 .field(ArtifactStreamKeys.collectionStatus)
                  .field(ArtifactStreamKeys.nextIteration)
                  .build())
         .build();
@@ -255,6 +268,18 @@ public abstract class ArtifactStream
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(ARTIFACT_STREAM)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

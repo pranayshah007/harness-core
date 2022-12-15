@@ -106,8 +106,23 @@ public interface RoleAssignmentResource {
           required = true) @Body RoleAssignmentFilterDTO roleAssignmentFilter);
 
   @POST
-  @Path("filter/internal/childscopes")
+  @Path("v2/filter")
   @InternalApi
+  @ApiOperation(value = "Get Filtered Role Assignments By Scopes", nickname = "getFilteredRoleAssignmentByScopeList")
+  @Operation(operationId = "getFilteredRoleAssignmentByScopeList", summary = "List Role Assignments by scope filter",
+      description = "List role assignments in the scope according to the given filter",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Paginated list of role assignments in the scope according to the given filter")
+      })
+  ResponseDTO<PageResponse<RoleAssignmentAggregate>>
+  getList(@BeanParam PageRequest pageRequest, @BeanParam HarnessScopeParams harnessScopeParams,
+      @Body RoleAssignmentFilterV2 roleAssignmentFilterV2);
+
+  @POST
+  @Path("filter/internal/childscopes")
+  @Hidden
   @ApiOperation(value = "Get Filtered Role Assignments including child scopes",
       nickname = "getFilteredRoleAssignmentListIncludingChildScopes", hidden = true)
   @Operation(operationId = "getFilteredRoleAssignmentListIncludingChildScopes",
@@ -224,6 +239,21 @@ public interface RoleAssignmentResource {
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Deleted role assignment") })
   ResponseDTO<RoleAssignmentResponseDTO>
   delete(@BeanParam HarnessScopeParams harnessScopeParams,
+      @Parameter(description = "Identifier for role assignment") @NotEmpty @PathParam(
+          IDENTIFIER_KEY) String identifier);
+
+  @GET
+  @Path("{identifier}")
+  @ApiOperation(value = "Get Role Assignment", nickname = "getRoleAssignment")
+  @Operation(operationId = "getRoleAssignment", summary = "Get Role Assignment",
+      description = "Get an existing role assignment by identifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Get an existing role assignment by identifier in the given scope")
+      })
+  ResponseDTO<RoleAssignmentResponseDTO>
+  get(@BeanParam HarnessScopeParams harnessScopeParams,
       @Parameter(description = "Identifier for role assignment") @NotEmpty @PathParam(
           IDENTIFIER_KEY) String identifier);
 }

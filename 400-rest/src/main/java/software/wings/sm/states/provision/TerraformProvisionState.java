@@ -15,6 +15,7 @@ import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
+import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
@@ -252,6 +253,7 @@ public abstract class TerraformProvisionState extends State {
   @Getter @Setter private boolean runPlanOnly;
   @Getter @Setter private boolean inheritApprovedPlan;
   @Getter @Setter private boolean exportPlanToApplyStep;
+  @Getter @Setter private boolean exportPlanToHumanReadableOutput;
   @Getter @Setter private String workspace;
   @Getter @Setter private String delegateTag;
   @Attributes(title = "awsConfigId") @Getter @Setter private String awsConfigId;
@@ -271,6 +273,7 @@ public abstract class TerraformProvisionState extends State {
   }
 
   protected abstract TerraformCommandUnit commandUnit();
+
   protected abstract TerraformCommand command();
 
   @Override
@@ -344,7 +347,7 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformProvisionInheritPlanElement inheritPlanElement =
         TerraformProvisionInheritPlanElement.builder()
-            .entityId(generateEntityId(context, terraformExecutionData.getWorkspace(), terraformProvisioner, true))
+            .entityId(terraformExecutionData.getEntityId())
             .provisionerId(provisionerId)
             .targets(terraformExecutionData.getTargets())
             .delegateTag(terraformExecutionData.getDelegateTag())
@@ -382,6 +385,19 @@ public abstract class TerraformProvisionState extends State {
     TerraformPlanParamBuilder tfPlanParamBuilder = TerraformPlanParam.builder();
     boolean saveTfPlanSweepingOutput =
         executionData.getTfPlanJsonFiledId() != null || executionData.getTfPlanJson() != null;
+
+    if (exportPlanToHumanReadableOutput) {
+      // Backward compatible changes, incase delegate doesn't send this field back
+      try {
+        tfPlanParamBuilder.tfplanHumanReadable(executionData.getTfPlanHumanReadable());
+        tfPlanParamBuilder.tfplanHumanReadableFileId(executionData.getTfPlanHumanReadableFileId());
+      } catch (Exception e) {
+        String message =
+            "Terraform tfplanHumanReadable not found in Delegate sent Execution Data, Possible reason could be that delegate is on a older version not supporting human readable plan for Terraform";
+        log.error(message, e);
+      }
+    }
+
     if (featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()) && saveTfPlanSweepingOutput) {
       String variableName = terraformCommand == TerraformCommand.APPLY ? TF_APPLY_VAR_NAME : TF_DESTROY_VAR_NAME;
       // if the plan variable exists overwrite it
@@ -945,6 +961,8 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .syncGitCloneAndCopyToDestDir(
+                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
@@ -1225,6 +1243,7 @@ public abstract class TerraformProvisionState extends State {
             .targets(targets)
             .runPlanOnly(runPlanOnly)
             .exportPlanToApplyStep(exportPlanToApplyStep)
+            .exportPlanToHumanReadableOutput(exportPlanToHumanReadableOutput)
             .saveTerraformJson(featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()))
             .useOptimizedTfPlanJson(featureFlagService.isEnabled(FeatureName.OPTIMIZED_TF_PLAN, context.getAccountId()))
             .tfVarFiles(getRenderedTfVarFiles(tfVarFiles, context))
@@ -1241,6 +1260,8 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .syncGitCloneAndCopyToDestDir(
+                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 

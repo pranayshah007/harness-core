@@ -48,12 +48,14 @@ mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   mongoSSLConfig:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
+  aliasDBName: harness
 
 cfClientConfig:
   apiKey: ""
@@ -66,3 +68,8 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+serviceGuardIteratorConfig:
+  threadPoolCount: 3
+  enabled: true
+  targetIntervalInSeconds: 60

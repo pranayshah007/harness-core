@@ -7,6 +7,7 @@
 
 package software.wings.resources;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +18,7 @@ import io.harness.rest.RestResponse;
 
 import software.wings.beans.ServiceVariable;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AppService;
@@ -66,6 +68,7 @@ public class ServiceVariableResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ServiceVariable>> list(@BeanParam PageRequest<ServiceVariable> pageRequest,
       @QueryParam("withArtifactStreamSummary") @DefaultValue("false") boolean withArtifactStreamSummary) {
     PageResponse<ServiceVariable> pageResponse = serviceVariablesService.list(pageRequest, MASKED);
@@ -100,6 +103,7 @@ public class ServiceVariableResource {
   @Path("{serviceVariableId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ServiceVariable> get(@QueryParam("appId") String appId,
       @PathParam("serviceVariableId") String serviceVariableId,
       @QueryParam("withArtifactStreamSummary") @DefaultValue("false") boolean withArtifactStreamSummary) {

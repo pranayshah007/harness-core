@@ -15,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -23,6 +24,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.loginSettings.UserLockoutInfo;
 import software.wings.beans.security.UserGroup;
@@ -62,6 +64,7 @@ import org.mongodb.morphia.annotations.Transient;
  */
 @OwnedBy(PL)
 @JsonInclude(NON_EMPTY)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "users", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "UserKeys")
@@ -77,13 +80,32 @@ public class User extends Base implements Principal {
                  .field(UserKeys.accounts)
                  .field(UserKeys.externalUserId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("name_accounts_disabled")
+                 .field(UserKeys.name)
+                 .field(UserKeys.accounts)
+                 .field(UserKeys.disabled)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("email_accounts_disabled")
+                 .field(UserKeys.email)
+                 .field(UserKeys.accounts)
+                 .field(UserKeys.disabled)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("email_pendingAccounts_disabled")
+                 .field(UserKeys.email)
+                 .field(UserKeys.pendingAccounts)
+                 .field(UserKeys.disabled)
+                 .build())
         .build();
   }
 
   public static final String EMAIL_KEY = "email";
   public static final String ROLES_KEY = "roles";
 
-  @NotEmpty @FdIndex private String name;
+  @NotEmpty private String name;
+
   @FdIndex private String externalUserId;
 
   private String givenName;

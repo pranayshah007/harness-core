@@ -28,6 +28,7 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.tag.AzureListTagsResponse;
 import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.model.tag.TagValue;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ClusterNotFoundException;
 import io.harness.exception.ExceptionUtils;
@@ -46,19 +47,21 @@ import software.wings.beans.AzureKubernetesCluster;
 import software.wings.beans.AzureTagDetails;
 import software.wings.service.intfc.security.EncryptionService;
 
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.identity.implementation.util.ScopeUtil;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.containerregistry.models.Registry;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.aad.adal4j.AuthenticationException;
-import com.microsoft.azure.AzureEnvironment;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
-import com.microsoft.rest.LogLevel;
+import com.microsoft.aad.msal4j.MsalException;
 import io.kubernetes.client.util.KubeConfig;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -145,7 +148,7 @@ public class AzureDelegateHelperService {
   }
 
   public List<AzureContainerRegistry> listContainerRegistries(AzureConfig azureConfig, String subscriptionId) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     List<AzureContainerRegistry> registries = new ArrayList<>();
     azure.containerRegistries().list().forEach(registry
         -> registries.add(AzureContainerRegistry.builder()
@@ -170,7 +173,7 @@ public class AzureDelegateHelperService {
 
   public Map<String, String> listSubscriptions(AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig);
+    AzureResourceManager azure = getAzureClient(azureConfig);
     return azure.subscriptions().list().stream().collect(
         Collectors.toMap(Subscription::subscriptionId, Subscription::displayName));
   }
@@ -180,9 +183,9 @@ public class AzureDelegateHelperService {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
 
     try {
-      Azure azure = getAzureClient(azureConfig, subscriptionId);
+      AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
       notNullCheck("Azure Client", azure);
-      List<ResourceGroup> resourceGroupList = azure.resourceGroups().list();
+      List<ResourceGroup> resourceGroupList = azure.resourceGroups().list().stream().collect(toList());
       return resourceGroupList.stream().map(HasName::name).collect(Collectors.toSet());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
@@ -241,7 +244,7 @@ public class AzureDelegateHelperService {
   }
 
   public List<String> listRepositories(AzureConfig azureConfig, String subscriptionId, String registryName) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     try {
       Registry registry = azure.containerRegistries()
                               .list()
@@ -278,7 +281,7 @@ public class AzureDelegateHelperService {
   public List<AzureImageGallery> listImageGalleries(AzureConfig azureConfig,
       List<EncryptedDataDetail> encryptionDetails, String subscriptionId, String resourceGroupName) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     return azure.galleries()
         .listByResourceGroup(resourceGroupName)
         .stream()
@@ -295,7 +298,7 @@ public class AzureDelegateHelperService {
   public List<String> listRepositoryTags(AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails,
       String subscriptionId, String registryName, String repositoryName) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     try {
       Registry registry = azure.containerRegistries()
                               .list()
@@ -338,7 +341,7 @@ public class AzureDelegateHelperService {
   }
 
   public List<String> listContainerRegistryNames(AzureConfig azureConfig, String subscriptionId) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     List<String> registries = new ArrayList<>();
     azure.containerRegistries().list().forEach(registry -> registries.add(registry.name()));
     return registries;
@@ -363,7 +366,7 @@ public class AzureDelegateHelperService {
   }
 
   AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
-    String url = getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
+    String url = getAzureEnvironment(azureEnvironmentType).getResourceManagerEndpoint();
     OkHttpClient okHttpClient = getOkHttpClientBuilder()
                                     .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
                                     .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
@@ -396,12 +399,19 @@ public class AzureDelegateHelperService {
   @VisibleForTesting
   String getAzureBearerAuthToken(AzureConfig azureConfig) {
     try {
-      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
-      ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(
-          azureConfig.getClientId(), azureConfig.getTenantId(), new String(azureConfig.getKey()), azureEnvironment);
+      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                          .clientId(azureConfig.getClientId())
+                                                          .tenantId(azureConfig.getTenantId())
+                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .build();
 
-      String token = credentials.getToken(azureEnvironment.managementEndpoint());
-      return "Bearer " + token;
+      String token =
+          clientSecretCredential
+              .getToken(AzureUtils.getTokenRequestContext(ScopeUtil.resourceToScopes(
+                  AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+              .block()
+              .getToken();
+      return format("Bearer %s", token);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -425,13 +435,25 @@ public class AzureDelegateHelperService {
   }
 
   @VisibleForTesting
-  protected Azure getAzureClient(AzureConfig azureConfig) {
+  protected AzureResourceManager getAzureClient(AzureConfig azureConfig) {
     try {
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              new String(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
+      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
+      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                          .clientId(azureConfig.getClientId())
+                                                          .tenantId(azureConfig.getTenantId())
+                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .build();
 
-      return Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withDefaultSubscription();
+      AzureResourceManager.Authenticated authenticated =
+          AzureResourceManager.configure()
+              .withLogLevel(HttpLogDetailLevel.NONE)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+              .authenticate(clientSecretCredential,
+                  AzureUtils.getAzureProfile(azureConfig.getTenantId(), null, azureEnvironment));
+
+      Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
+      return authenticated.withSubscription(subscription.subscriptionId());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -439,13 +461,20 @@ public class AzureDelegateHelperService {
   }
 
   @VisibleForTesting
-  protected Azure getAzureClient(AzureConfig azureConfig, String subscriptionId) {
+  protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
     try {
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              new String(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
-
-      return Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withSubscription(subscriptionId);
+      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
+      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                          .clientId(azureConfig.getClientId())
+                                                          .tenantId(azureConfig.getTenantId())
+                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .build();
+      return AzureResourceManager.configure()
+          .withLogLevel(HttpLogDetailLevel.NONE)
+          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+          .authenticate(clientSecretCredential,
+              AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId, azureEnvironment))
+          .withSubscription(subscriptionId);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -485,7 +514,7 @@ public class AzureDelegateHelperService {
     Throwable e1 = e;
     while (e1.getCause() != null) {
       e1 = e1.getCause();
-      if (e1 instanceof AuthenticationException) {
+      if (e1 instanceof MsalException) {
         throw new InvalidRequestException("Invalid Azure credentials.", USER);
       }
     }
@@ -497,7 +526,7 @@ public class AzureDelegateHelperService {
       List<EncryptedDataDetail> encryptionDetails, String subscriptionId, String resourceGroupName, String galleryName,
       String imageDefinition) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     // Only fetch successful Azure Image versions
     return azure.galleryImageVersions()
         .listByGalleryImage(resourceGroupName, galleryName, imageDefinition)
@@ -519,7 +548,7 @@ public class AzureDelegateHelperService {
       List<EncryptedDataDetail> encryptionDetails, String subscriptionId, String resourceGroupName,
       String galleryName) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     return azure.galleryImages()
         .listByGallery(resourceGroupName, galleryName)
         .stream()

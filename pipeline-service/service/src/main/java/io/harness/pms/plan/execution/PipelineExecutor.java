@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
@@ -19,8 +20,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -57,9 +61,9 @@ public class PipelineExecutor {
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
-      String moduleType, String runtimeInputYaml, boolean useV2) {
+      String moduleType, String runtimeInputYaml, boolean useV2, boolean notifyOnlyUser) {
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null, moduleType,
-        runtimeInputYaml, Collections.emptyList(), Collections.emptyMap(), useV2);
+        runtimeInputYaml, Collections.emptyList(), Collections.emptyMap(), useV2, notifyOnlyUser);
   }
 
   public PlanExecutionResponseDto runPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
@@ -68,7 +72,7 @@ public class PipelineExecutor {
     String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null, moduleType,
-        mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false);
+        mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false, false);
   }
 
   public PlanExecutionResponseDto runStagesWithRuntimeInputYaml(@NotNull String accountId,
@@ -76,7 +80,7 @@ public class PipelineExecutor {
       String moduleType, RunStageRequestDTO runStageRequestDTO, boolean useV2) {
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null, moduleType,
         runStageRequestDTO.getRuntimeInputYaml(), runStageRequestDTO.getStageIdentifiers(),
-        runStageRequestDTO.getExpressionValues(), useV2);
+        runStageRequestDTO.getExpressionValues(), useV2, false);
   }
 
   public PlanExecutionResponseDto rerunStagesWithRuntimeInputYaml(@NotNull String accountId,
@@ -84,14 +88,14 @@ public class PipelineExecutor {
       String moduleType, String originalExecutionId, RunStageRequestDTO runStageRequestDTO, boolean useV2) {
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, originalExecutionId,
         moduleType, runStageRequestDTO.getRuntimeInputYaml(), runStageRequestDTO.getStageIdentifiers(),
-        runStageRequestDTO.getExpressionValues(), useV2);
+        runStageRequestDTO.getExpressionValues(), useV2, false);
   }
 
   public PlanExecutionResponseDto rerunPipelineWithInputSetPipelineYaml(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String moduleType, String originalExecutionId,
       String runtimeInputYaml, boolean useV2) {
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, originalExecutionId,
-        moduleType, runtimeInputYaml, Collections.emptyList(), Collections.emptyMap(), useV2);
+        moduleType, runtimeInputYaml, Collections.emptyList(), Collections.emptyMap(), useV2, false);
   }
 
   public PlanExecutionResponseDto rerunPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
@@ -100,12 +104,12 @@ public class PipelineExecutor {
     String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, originalExecutionId,
-        moduleType, mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false);
+        moduleType, mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false, false);
   }
 
   private PlanExecutionResponseDto startPlanExecution(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String originalExecutionId, String moduleType, String runtimeInputYaml,
-      List<String> stagesToRun, Map<String, String> expressionValues, boolean useV2) {
+      List<String> stagesToRun, Map<String, String> expressionValues, boolean useV2, boolean notifyOnlyUser) {
     sendExecutionStartTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     PipelineEntity pipelineEntity =
         executionHelper.fetchPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
@@ -113,13 +117,14 @@ public class PipelineExecutor {
       throw new InvalidRequestException(String.format(
           "Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineIdentifier, projectIdentifier));
     }
-    ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(originalExecutionId);
+    ExecArgs execArgs = getExecArgs(originalExecutionId, moduleType, runtimeInputYaml, stagesToRun, expressionValues,
+        notifyOnlyUser, pipelineEntity);
 
-    // RetryExecutionParameters
-    RetryExecutionParameters retryExecutionParameters = buildRetryExecutionParameters(false, null, null, null);
+    return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
+  }
 
-    ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stagesToRun,
-        expressionValues, triggerInfo, originalExecutionId, retryExecutionParameters);
+  private PlanExecutionResponseDto getPlanExecutionResponseDto(String accountId, String orgIdentifier,
+      String projectIdentifier, boolean useV2, PipelineEntity pipelineEntity, ExecArgs execArgs) {
     PlanExecution planExecution;
     if (useV2) {
       planExecution = executionHelper.startExecutionV2(accountId, orgIdentifier, projectIdentifier,
@@ -132,6 +137,18 @@ public class PipelineExecutor {
         .planExecution(planExecution)
         .gitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity))
         .build();
+  }
+
+  private ExecArgs getExecArgs(String originalExecutionId, String moduleType, String runtimeInputYaml,
+      List<String> stagesToRun, Map<String, String> expressionValues, boolean notifyOnlyUser,
+      PipelineEntity pipelineEntity) {
+    ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(originalExecutionId);
+
+    // RetryExecutionParameters
+    RetryExecutionParameters retryExecutionParameters = buildRetryExecutionParameters(false, null, null, null);
+
+    return executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stagesToRun,
+        expressionValues, triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser);
   }
 
   public PlanExecutionResponseDto retryPipelineWithInputSetPipelineYaml(@NotNull String accountId,
@@ -167,7 +184,7 @@ public class PipelineExecutor {
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, inputSetPipelineYaml,
         stagesExecutionMetadata == null ? null : stagesExecutionMetadata.getStageIdentifiers(),
         stagesExecutionMetadata == null ? null : stagesExecutionMetadata.getExpressionValues(), triggerInfo,
-        previousExecutionId, retryExecutionParameters);
+        previousExecutionId, retryExecutionParameters, false);
     PlanExecution planExecution;
     if (useV2) {
       planExecution = executionHelper.startExecutionV2(accountId, orgIdentifier, projectIdentifier,
@@ -205,5 +222,38 @@ public class PipelineExecutor {
     propertiesMap.put(ORG_IDENTIFIER, orgId);
     propertiesMap.put(PIPELINE_ID, pipelineIdentifier);
     pipelineTelemetryHelper.sendTelemetryEventWithAccountName(START_PIPELINE_EXECUTION_EVENT, accountId, propertiesMap);
+  }
+
+  public PlanExecutionResponseDto runPipelineAsChildPipeline(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String moduleType, String runtimeYaml, boolean useV2,
+      boolean notifyOnlyUser, List<String> inputSetReferences, PipelineStageInfo info) {
+    String inputSetYaml = runtimeYaml;
+    if (!isEmpty(inputSetReferences)) {
+      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      inputSetYaml =
+          validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier, projectIdentifier,
+              pipelineIdentifier, inputSetReferences, gitEntityInfo.getBranch(), gitEntityInfo.getRepoName(), null);
+    }
+    return startPlanExecutionForChildPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null,
+        moduleType, inputSetYaml, Collections.emptyList(), Collections.emptyMap(), useV2, notifyOnlyUser, info);
+  }
+
+  private PlanExecutionResponseDto startPlanExecutionForChildPipeline(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String originalExecutionId, String moduleType,
+      String runtimeInputYaml, List<String> stagesToRun, Map<String, String> expressionValues, boolean useV2,
+      boolean notifyOnlyUser, PipelineStageInfo info) {
+    PipelineEntity pipelineEntity =
+        executionHelper.fetchPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+      throw new InvalidRequestException(String.format(
+          "Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineIdentifier, projectIdentifier));
+    }
+    ExecArgs execArgs = getExecArgs(originalExecutionId, moduleType, runtimeInputYaml, stagesToRun, expressionValues,
+        notifyOnlyUser, pipelineEntity);
+
+    if (info != null) {
+      execArgs.setMetadata(execArgs.getMetadata().toBuilder().setPipelineStageInfo(info).build());
+    }
+    return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }
 }

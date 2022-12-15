@@ -12,7 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.waiter.NotifyCallback;
 import io.harness.waiter.ProgressCallback;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface AsyncWaitEngine {
-  void waitForAllOn(NotifyCallback notifyCallback, ProgressCallback progressCallback, String... correlationIds);
+  void waitForAllOn(
+      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout);
 }

@@ -1,9 +1,23 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("//tools/bazel/sonarqube:defs.bzl", "sq_project")
 load("//tools/checkstyle:rules.bzl", "checkstyle")
 load("//tools/bazel/pmd:defs.bzl", "pmd")
 load("//:tools/bazel/duplicated.bzl", "report_duplicated")
 load("@rules_jvm_external//:specs.bzl", "maven")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests_targets")
+load("//:tools/bazel/openapi.bzl", "openapi_gen")
+
+def openapi_stub_generator(name):
+    openapi_gen(
+        name = name,
+        config_file = "jaxrs-spec-config.json",
+        language = "jaxrs-spec",
+        spec = "openapi.yaml",
+    )
 
 def resources(name = "resources", runtime_deps = [], testonly = 0, visibility = None):
     native.java_library(
@@ -22,7 +36,7 @@ def sonarqube_test(
         name = None,
         project_key = None,
         project_name = None,
-        srcs = [],
+        srcs = ["src/main/java/**/*.java"],
         source_encoding = None,
         targets = [],
         test_srcs = [],
@@ -32,7 +46,7 @@ def sonarqube_test(
         sq_properties_template = None,
         tags = [],
         visibility = []):
-    srcs = native.glob(["src/main/java/**/*.java"])
+    srcs = native.glob(srcs)
     targets = [":module"]
     if name == None:
         name = "sonarqube"
@@ -65,9 +79,17 @@ def sonarqube_test(
         checkstyle_report_path = getCheckstyleReportPathForSonar(),
     )
 
+def run_analysis_per_module(
+        checkstyle_srcs = ["*"],
+        pmd_srcs = ["*"],
+        sonarqube_srcs = ["*.java"],
+        run_duplicated = True):
+    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_duplicated = run_duplicated)
+
 def run_analysis(
         checkstyle_srcs = ["src/**/*"],
         pmd_srcs = ["src/main/**/*"],
+        sonarqube_srcs = ["src/main/java/**/*.java"],
         run_checkstyle = True,
         run_pmd = True,
         run_sonar = True,
@@ -80,7 +102,7 @@ def run_analysis(
         pmd(pmd_srcs)
 
     if run_sonar:
-        sonarqube_test(test_targets = test_targets)
+        sonarqube_test(srcs = sonarqube_srcs, test_targets = test_targets)
 
     if run_duplicated:
         report_duplicated()

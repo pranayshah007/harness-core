@@ -47,8 +47,10 @@ mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
+  aliasDBName: harness
 
 serviceSecret:
   managerToCommandLibraryServiceSecret: a611aa13eb1d5e77bc3295517ebe65gh1

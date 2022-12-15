@@ -460,7 +460,7 @@ public class SweepingOutputServiceImplTest extends WingsBaseTest {
     doReturn(appId).when(workflowStandardParams).getAppId();
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        spy(new WorkflowStandardParamsExtensionService(null, null, null, null, null, null));
+        spy(new WorkflowStandardParamsExtensionService(null, null, null, null, null, null, null));
     doReturn(null).when(workflowStandardParamsExtensionService).getApp(workflowStandardParams);
     doReturn(null).when(workflowStandardParamsExtensionService).getEnv(workflowStandardParams);
 

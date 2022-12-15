@@ -68,7 +68,7 @@ public class LicenseRateLimitRestrictionHandlerTest extends CategoryTest {
     restriction = new LicenseRateLimitRestriction(
         RestrictionType.LICENSE_RATE_LIMIT, "totalWorkload", new TimeUnit(ChronoUnit.DAYS, 1), client);
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

@@ -1,19 +1,21 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 # Add properties that are shared between developers and ci build system
 build --java_language_version=11
+build --java_runtime_version=local_jdk
+build --tool_java_language_version=11
+build --tool_java_runtime_version=local_jdk
 
 build --enable_platform_specific_config
-
-build --javabase=@local_jdk//:jdk
-build --host_javabase=@local_jdk//:jdk
-
-build --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
-build --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
 
 build --action_env=HARNESS_GENERATION_PASSPHRASE
 
 build --workspace_status_command=tools/bazel/workspace_status_command.sh
 
-build --strict_java_deps=off
+build --experimental_strict_java_deps=off
 build --java_header_compilation=false
 build --javacopt='-XepDisableAllChecks'
 build --javacopt='-Xlint:none'
@@ -21,7 +23,6 @@ build --javacopt='--release 11'
 
 #CV-Nextgen
 build --action_env=VERIFICATION_SERVICE_SECRET=67d9b94d9856665afc21acd3aa745401
-build --action_env=CLASSPATH_LIMIT=200000
 
 # Test specific
 build --test_env=MAX_ALLOWED_THREAD_LEAKS
@@ -35,12 +36,11 @@ test --define=HARNESS_ARGS=
 build --define=HARNESS_ARGS=
 
 # Bazel SonarQube Integration
-coverage --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11
 coverage --collect_code_coverage
 coverage --combined_report=lcov
 coverage --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator
 coverage --experimental_fetch_all_coverage_outputs
-coverage --strict_java_deps=off
+coverage --experimental_strict_java_deps=off
 coverage --cache_test_results=yes
 coverage --test_output=summary
 coverage --build_runfile_links

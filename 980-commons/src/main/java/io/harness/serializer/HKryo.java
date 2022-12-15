@@ -12,24 +12,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FileData;
-import io.harness.context.GlobalContext;
-import io.harness.context.GlobalContextData;
-import io.harness.context.MdcGlobalContextData;
-import io.harness.eraro.ErrorCode;
-import io.harness.eraro.Level;
-import io.harness.eraro.ResponseMessage;
-import io.harness.exception.ExplanationException;
-import io.harness.exception.FailureType;
-import io.harness.exception.FunctorException;
-import io.harness.exception.HintException;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnauthorizedException;
-import io.harness.exception.UnexpectedException;
-import io.harness.exception.WingsException;
 import io.harness.reflection.CodeUtils;
-import io.harness.rest.RestResponse;
 
 import com.esotericsoftware.kryo.ClassResolver;
 import com.esotericsoftware.kryo.Kryo;
@@ -68,7 +51,6 @@ import de.javakaffee.kryoserializers.guava.UnmodifiableNavigableSetSerializer;
 import java.lang.reflect.InvocationHandler;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Instant;
@@ -214,30 +196,9 @@ public class HKryo extends Kryo {
     ImmutableMapSerializer.registerSerializers(this);
     ImmutableMultimapSerializer.registerSerializers(this);
 
-    register(ErrorCode.class, 5233);
-    register(Level.class, 5590);
-    register(ResponseMessage.class, 5316);
-    register(RestResponse.class, 5224);
-
-    register(ExplanationException.class, 5324);
-    register(FunctorException.class, 5589);
-    register(HintException.class, 5325);
-    register(InvalidArgumentsException.class, 5326);
-    register(InvalidRequestException.class, 5327);
-    register(UnauthorizedException.class, 5329);
-    register(UnexpectedException.class, 5330);
-    register(WingsException.ReportTarget.class, 5348);
-    register(WingsException.class, 5174);
-
     register(JSONArray.class, 5583);
     register(JSONObject.class, 5584);
 
-    register(FileData.class, 1201);
-    register(GlobalContext.class, 1202);
-    register(GlobalContextData.class, 1203);
-    register(SocketException.class, 1204);
-    register(FailureType.class, 1205);
-    register(MdcGlobalContextData.class, 1206);
     try {
       register(Class.forName("java.util.HashMap$KeySet"), 1207);
     } catch (ClassNotFoundException e) {
@@ -248,9 +209,11 @@ public class HKryo extends Kryo {
   private Registration check(Registration registration, int id) {
     if (CodeUtils.isHarnessClass(registration.getType()) && !this.skipHarnessClassOriginRegistrarCheck) {
       final String location = CodeUtils.location(registration.getType());
-      if (currentLocation != null && !currentLocation.equals(location)) {
-        throw new IllegalStateException(format("The class %s in %s is registered from registrar from module %s",
-            registration.getType().getCanonicalName(), location, currentLocation));
+      if (log.isDebugEnabled()) {
+        if (currentLocation != null && !currentLocation.equals(location)) {
+          log.debug(format("The class %s in %s is registered from registrar from module %s",
+              registration.getType().getCanonicalName(), location, currentLocation));
+        }
       }
     }
 

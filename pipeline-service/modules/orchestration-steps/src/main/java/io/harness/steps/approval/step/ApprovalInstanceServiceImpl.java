@@ -8,11 +8,16 @@
 package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -32,26 +37,23 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
 import io.harness.tasks.ResponseData;
-import io.harness.utils.RetryUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.mapping.Mapper;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -62,18 +64,17 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private final TransactionTemplate transactionTemplate;
   private final WaitNotifyEngine waitNotifyEngine;
   private final PlanExecutionService planExecutionService;
-
-  private final RetryPolicy<Object> transactionRetryPolicy = RetryUtils.getRetryPolicy("[Retrying] attempt: {}",
-      "[Failed] attempt: {}", ImmutableList.of(TransactionException.class), Duration.ofSeconds(1), 3, log);
+  private final LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Inject
   public ApprovalInstanceServiceImpl(ApprovalInstanceRepository approvalInstanceRepository,
       TransactionTemplate transactionTemplate, WaitNotifyEngine waitNotifyEngine,
-      PlanExecutionService planExecutionService) {
+      PlanExecutionService planExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.approvalInstanceRepository = approvalInstanceRepository;
     this.transactionTemplate = transactionTemplate;
     this.waitNotifyEngine = waitNotifyEngine;
     this.planExecutionService = planExecutionService;
+    this.logStreamingStepClientFactory = logStreamingStepClientFactory;
   }
 
   @Override
@@ -205,6 +206,8 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
     HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
+    Ambiance ambiance = instance.getAmbiance();
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
     if (instance.hasExpired()) {
       throw new InvalidRequestException("Harness approval instance has already expired");
     }
@@ -217,6 +220,15 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
           (newCount >= instance.getApprovers().getMinimumCount()) ? ApprovalStatus.APPROVED : ApprovalStatus.WAITING);
     }
     instance.addApprovalActivity(user, request);
+    logCallback.saveExecutionLog(String.format(
+        "Request to %s this approval received by %s with comments:{%s} and inputs:%s", request.getAction(),
+        StringUtils.isBlank(user.getName()) ? user.getName() : user.getEmail(), request.getComments(),
+        isEmpty(request.getApproverInputs())
+            ? "[]"
+            : request.getApproverInputs()
+                  .stream()
+                  .map(input -> String.format("( %s : %s)", input.getName(), input.getValue()))
+                  .collect(Collectors.toList())));
     return approvalInstanceRepository.save(instance);
   }
 
@@ -247,6 +259,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   private <T> T doTransaction(TransactionCallback<T> callback) {
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(callback));
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(callback));
   }
 }

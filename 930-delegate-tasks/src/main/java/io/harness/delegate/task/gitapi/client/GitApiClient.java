@@ -9,8 +9,14 @@ package io.harness.delegate.task.gitapi.client;
 
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
+import io.harness.gitpolling.github.GitPollingWebhookData;
+
+import java.util.List;
 
 public interface GitApiClient {
   DelegateResponseData findPullRequest(GitApiTaskParams gitApiTaskParams);
   DelegateResponseData mergePR(GitApiTaskParams gitApiTaskParams);
+  List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest);
+  DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams);
 }

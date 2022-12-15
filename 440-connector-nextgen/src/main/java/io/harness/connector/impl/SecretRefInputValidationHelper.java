@@ -40,9 +40,10 @@ public class SecretRefInputValidationHelper {
     if (secretRefData == null) {
       return;
     }
+    validateTheScopeOfTheSecret(secretRefData, ngAccess);
     IdentifierRef secretIdentifiers = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-    validateTheScopeOfTheSecret(secretRefData, secretIdentifiers);
+
     validateTheSecretIsPresent(secretRefData, secretIdentifiers);
   }
 

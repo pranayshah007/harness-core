@@ -24,4 +24,5 @@ public class TriggerStatus {
   PollingSubscriptionStatus pollingSubscriptionStatus;
   ValidationStatus validationStatus;
   WebhookAutoRegistrationStatus webhookAutoRegistrationStatus;
+  WebhookInfo webhookInfo;
 }

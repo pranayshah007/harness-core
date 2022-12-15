@@ -10,6 +10,7 @@ package software.wings.beans.trigger;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -17,6 +18,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.WorkflowType;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.beans.ExecutionArgs;
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Entity;
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
 @Data
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "triggerExecutions")
 @HarnessEntity(exportable = false)
 public class TriggerExecution extends Base {

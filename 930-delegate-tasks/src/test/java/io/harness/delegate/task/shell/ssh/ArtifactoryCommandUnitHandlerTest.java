@@ -10,6 +10,7 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifact.ArtifactConstants.ARTIFACT_REPO_BASE_DIR;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactConstants;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
@@ -65,6 +67,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
@@ -81,6 +84,7 @@ public class ArtifactoryCommandUnitHandlerTest extends CategoryTest {
 
   @Inject
   @InjectMocks
+  @Spy
   ArtifactoryCommandUnitHandler handler =
       new ArtifactoryCommandUnitHandler(secretDecryptionService, artifactoryRequestMapper, artifactoryNgService);
 
@@ -93,8 +97,11 @@ public class ArtifactoryCommandUnitHandlerTest extends CategoryTest {
   @After
   public void cleanup() {
     File cacheDir = new File(ARTIFACT_REPO_BASE_DIR);
-    if (cacheDir != null && cacheDir.listFiles().length > 0) {
-      cacheDir.delete();
+    if (cacheDir != null) {
+      File[] files = cacheDir.listFiles();
+      if (files != null && files.length > 0) {
+        cacheDir.delete();
+      }
     }
   }
 
@@ -141,6 +148,33 @@ public class ArtifactoryCommandUnitHandlerTest extends CategoryTest {
         .downloadArtifacts(configRequestCaptor.capture(), eq("test"), eq(context.getArtifactMetadata()),
             eq(ArtifactMetadataKeys.artifactPath), eq(ArtifactMetadataKeys.artifactName));
     assertArtifactoryConfigRequest(configRequestCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testDownloadArtifactLocalExceedsLimit() throws IOException, ExecutionException {
+    SshExecutorFactoryContext context = getContext();
+    context.getArtifactMetadata().put(ArtifactMetadataKeys.artifactName, "artifact-file.jar");
+    context.getArtifactMetadata().put(
+        ArtifactMetadataKeys.artifactFileSize, String.valueOf(ArtifactConstants.ARTIFACT_FILE_SIZE_LIMIT + 1L));
+
+    doReturn(is).when(artifactoryNgService).downloadArtifacts(any(), any(), any(), any(), any());
+
+    assertThatThrownBy(() -> handler.downloadToLocal(context, logCallback)).isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testDownloadArtifactLocalNullArtifact() throws IOException, ExecutionException {
+    SshExecutorFactoryContext context = getContext();
+    context.getArtifactMetadata().put(ArtifactMetadataKeys.artifactName, "artifact-file.jar");
+
+    doReturn(is).when(artifactoryNgService).downloadArtifacts(any(), any(), any(), any(), any());
+    doReturn(null).when(handler).downloadFromRemoteRepo(any(), any());
+
+    assertThatThrownBy(() -> handler.downloadToLocal(context, logCallback)).isInstanceOf(HintException.class);
   }
 
   @Test

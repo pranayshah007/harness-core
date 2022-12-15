@@ -16,6 +16,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OpaClientModule extends AbstractModule {
@@ -30,6 +31,7 @@ public class OpaClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private OpaClientFactory opaClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new OpaClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

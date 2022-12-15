@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.accountsetting.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -34,10 +34,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @FieldNameConstants(innerTypeName = "AccountSettingsKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "accountSettings", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("accountSettings")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 public class AccountSettings implements PersistentEntity, NGAccountAccess {
   @Builder

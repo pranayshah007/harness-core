@@ -9,7 +9,7 @@ package io.harness.ng.core.user.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
@@ -42,10 +42,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "UserMembershipKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "userMembershipsV2", noClassnameStored = true)
 @Document("userMembershipsV2")
 @TypeAlias("userMembershipsV2")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserMembership implements PersistentRegularIterable, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

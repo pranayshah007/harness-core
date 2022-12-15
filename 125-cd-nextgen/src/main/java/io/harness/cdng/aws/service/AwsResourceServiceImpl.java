@@ -25,8 +25,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
@@ -37,6 +43,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.AwsCFException;
+import io.harness.exception.AwsECSException;
 import io.harness.exception.AwsIAMRolesException;
 import io.harness.exception.AwsInstanceException;
 import io.harness.exception.AwsLoadBalancerException;
@@ -122,7 +129,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
 
   @Override
   public Map<String, String> getRolesARNs(
-      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier) {
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     BaseNGAccess access =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -131,6 +138,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
                                .awsTaskType(AwsTaskType.LIST_IAM_ROLES)
                                .awsConnector(awsConnector)
                                .encryptionDetails(encryptedData)
+                               .region(region)
                                .build();
     AwsIAMRolesResponse response = executeSyncTask(params, access);
     return response.getRoles();
@@ -303,6 +311,89 @@ public class AwsResourceServiceImpl implements AwsResourceService {
     return getASGNamesTaskExecutionResponse(responseData);
   }
 
+  @Override
+  public List<String> getClusterNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_ECS_CLUSTERS)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getECSClusterNamesTaskExecutionResponse(responseData);
+  }
+
+  @Override
+  public List<String> getElasticLoadBalancerNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCERS)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getListElbTaskResponse(responseData);
+  }
+
+  @Override
+  public Map<String, String> getElasticLoadBalancerListenersArn(IdentifierRef awsConnectorRef, String orgIdentifier,
+      String projectIdentifier, String region, String elasticLoadBalancer) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsListElbListenersTaskParamsRequest.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCER_LISTENERS)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .elasticLoadBalancer(elasticLoadBalancer)
+                                      .build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getListElbListenersTaskResponse(responseData);
+  }
+
+  @Override
+  public List<String> getElasticLoadBalancerListenerRules(IdentifierRef awsConnectorRef, String orgIdentifier,
+      String projectIdentifier, String region, String elasticLoadBalancer, String listenerArn) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsListElbListenerRulesTaskParamsRequest.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCER_LISTENER_RULE)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .elasticLoadBalancer(elasticLoadBalancer)
+                                      .listenerArn(listenerArn)
+                                      .build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getListElbListenerRulesTaskResponse(responseData);
+  }
+
   private AwsIAMRolesResponse executeSyncTask(AwsTaskParams awsTaskParams, BaseNGAccess baseNGAccess) {
     DelegateResponseData responseData =
         serviceHelper.getResponseData(baseNGAccess, awsTaskParams, TaskType.NG_AWS_TASK.name());
@@ -405,5 +496,57 @@ public class AwsResourceServiceImpl implements AwsResourceService {
       throw new AwsAutoScaleException("Failed to get aws autoscaling groups");
     }
     return response.getNames();
+  }
+
+  private List<String> getECSClusterNamesTaskExecutionResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsECSException("Failed to get aws ecs clusters"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListClustersTaskResponse response = (AwsListClustersTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsECSException("Failed to get aws ecs clusters");
+    }
+    return response.getClusters();
+  }
+
+  private List<String> getListElbTaskResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsLoadBalancerException("Failed to get aws elastic load balancers"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListElbTaskResponse response = (AwsListElbTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsLoadBalancerException("Failed to get elastic load balancers");
+    }
+    return response.getLoadBalancerNames();
+  }
+
+  private Map<String, String> getListElbListenersTaskResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsLoadBalancerException("Failed to get aws elastic load balancer listeners"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListElbListenersTaskResponse response = (AwsListElbListenersTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsLoadBalancerException("Failed to get aws elastic load balancer listeners");
+    }
+    return response.getListenerArnMap();
+  }
+
+  private List<String> getListElbListenerRulesTaskResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsLoadBalancerException("Failed to get aws elastic load balancer listener rules"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListElbListenerRulesTaskResponse response = (AwsListElbListenerRulesTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsLoadBalancerException("Failed to get aws elastic load balancer listener rules");
+    }
+    return response.getListenerRulesArn();
   }
 }

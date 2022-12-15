@@ -14,17 +14,23 @@ import static software.wings.security.PermissionAttribute.ResourceType.WHITE_LIS
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.eraro.ResponseMessage;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 
+import software.wings.beans.User;
 import software.wings.beans.security.access.Whitelist;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.WhitelistService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import javax.ws.rs.BeanParam;
@@ -38,6 +44,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 /**
@@ -51,8 +58,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces(MediaType.APPLICATION_JSON)
 @Scope(WHITE_LIST)
 @AuthRule(permissionType = MANAGE_IP_WHITELIST)
+@Slf4j
 public class WhitelistResource {
   private WhitelistService whitelistService;
+  private HarnessUserGroupService harnessUserGroupService;
 
   /**
    * Instantiates a new Access resource.
@@ -60,8 +69,9 @@ public class WhitelistResource {
    * @param whitelistService    the whitelist service
    */
   @Inject
-  public WhitelistResource(WhitelistService whitelistService) {
+  public WhitelistResource(WhitelistService whitelistService, HarnessUserGroupService harnessUserGroupService) {
     this.whitelistService = whitelistService;
+    this.harnessUserGroupService = harnessUserGroupService;
   }
 
   /**
@@ -187,5 +197,26 @@ public class WhitelistResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(whitelistService.deleteAll(accountId));
     }
+  }
+
+  @GET
+  @Path("evict-cache")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> evictIpWhitelistCache(@QueryParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+    if (!harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
+          .build();
+    }
+
+    whitelistService.evictWhitelistConfigCache(accountId);
+    log.info("Reset cache successful for account id {}", accountId);
+    return new RestResponse<>(Boolean.TRUE);
   }
 }

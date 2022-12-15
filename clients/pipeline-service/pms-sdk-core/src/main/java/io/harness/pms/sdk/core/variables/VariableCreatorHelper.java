@@ -140,7 +140,10 @@ public class VariableCreatorHelper {
       if (stepField != null) {
         stepFields.add(stepField);
       } else if (stepGroupField != null) {
-        stepFields.add(stepGroupField);
+        List<YamlField> childYamlFields = getStepYamlFields(stepGroupField);
+        if (EmptyPredicate.isNotEmpty(childYamlFields)) {
+          stepFields.addAll(childYamlFields);
+        }
       } else if (parallelStepField != null) {
         List<YamlField> childYamlFields = Optional.of(parallelStepField.getNode().asArray())
                                               .orElse(Collections.emptyList())
@@ -452,8 +455,8 @@ public class VariableCreatorHelper {
 
   private String getUniqueKeyInListField(Object fieldObject) {
     Map<String, Object> fieldValues = ReflectionUtils.getFieldValues(fieldObject,
-        new HashSet<>(
-            Arrays.asList(YamlNode.IDENTIFIER_FIELD_NAME, YamlNode.KEY_FIELD_NAME, YamlNode.NAME_FIELD_NAME)));
+        new HashSet<>(Arrays.asList(YamlNode.IDENTIFIER_FIELD_NAME, YamlNode.KEY_FIELD_NAME, YamlNode.NAME_FIELD_NAME)),
+        false);
     if (fieldValues.get(YamlNode.IDENTIFIER_FIELD_NAME) != null) {
       return (String) fieldValues.get(YamlNode.IDENTIFIER_FIELD_NAME);
     } else if (fieldValues.get(YamlNode.KEY_FIELD_NAME) != null) {

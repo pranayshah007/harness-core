@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -116,7 +115,6 @@ public class DockerArtifactStreamYamlHandlerTest extends YamlHandlerTestBase {
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(settingsService.getByName(ACCOUNT_ID, APP_ID, "test server")).thenReturn(settingAttribute);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     Application application = Application.Builder.anApplication().name("a1").uuid(APP_ID).accountId(ACCOUNT_ID).build();
     when(appService.getAppByName(ACCOUNT_ID, "a1")).thenReturn(application);
@@ -153,7 +151,6 @@ public class DockerArtifactStreamYamlHandlerTest extends YamlHandlerTestBase {
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withAccountId(ACCOUNT_ID).build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(settingsService.getByName(ACCOUNT_ID, APP_ID, "test server")).thenReturn(settingAttribute);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
     DockerArtifactStream.Yaml baseYaml = DockerArtifactStream.Yaml.builder()
                                              .imageName("hello-world")
                                              .harnessApiVersion("1.0")

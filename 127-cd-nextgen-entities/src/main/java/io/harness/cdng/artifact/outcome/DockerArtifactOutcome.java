@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.DockerArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -46,6 +47,12 @@ public class DockerArtifactOutcome implements ArtifactOutcome {
   String image;
   /** imagePullSecret for docker credentials base encoded.*/
   String imagePullSecret;
+  /** tag label.*/
+  Map<String, String> label;
+  /** display Name*/
+  String displayName;
+  /** Custom Artifact metadata */
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

@@ -18,7 +18,10 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -31,6 +34,7 @@ import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
@@ -47,12 +51,15 @@ import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInst
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientV2;
@@ -65,9 +72,17 @@ import io.harness.serverless.model.AwsLambdaFunctionDetails;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
 import io.harness.shell.SshSessionConfig;
 
+import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegateNG;
 
+import com.amazonaws.services.s3.model.S3Object;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -76,6 +91,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,6 +114,8 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @Mock private ServerlessInfraConfigHelper serverlessInfraConfigHelper;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @Mock private AwsLambdaHelperServiceDelegateNG awsLambdaHelperServiceDelegateNG;
+  @Mock private AwsApiHelperService awsApiHelperService;
+  @Mock private DecryptionHelper decryptionHelper;
   @InjectMocks @Spy private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
   private static final String ARTIFACT_DIRECTORY = "./repository/serverless/";
@@ -128,7 +149,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
       ServerlessDelegateTaskParams.builder().workingDirectory("/dir/").serverlessClientPath("/scPath").build();
   private GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url("url").build();
   @Mock LogCallback logCallback;
-  @Mock ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Mock GitFetchTaskHelper serverlessGitFetchTaskHelper;
   @Mock ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock GitDecryptionHelper gitDecryptionHelper;
   @Mock NGGitServiceImpl ngGitService;
@@ -156,7 +177,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -193,7 +214,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -228,7 +249,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                                                                      .build();
 
     doNothing().when(serverlessGitFetchTaskHelper).decryptGitStoreConfig(gitStoreDelegateConfig);
-    doNothing().when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
+    doReturn(null).when(scmFetchFilesHelper).downloadFilesUsingScm("/dir/", gitStoreDelegateConfig, logCallback);
     doReturn("fileLog")
         .when(serverlessTaskHelperBase)
         .getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory());
@@ -383,5 +404,136 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
     assertThat(serverInstanceInfo.getFunctionName()).isEqualTo("fun");
     assertThat(serverInstanceInfo.getRegion()).isEqualTo("us-east-1");
     assertThat(serverInstanceInfo.getInfraStructureKey()).isEqualTo("infraKey");
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void downloadFilesFromS3Test() throws IOException {
+    AwsCredentialDTO awsCredentialDTO =
+        AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    S3StoreDelegateConfig s3StoreDelegateConfig = S3StoreDelegateConfig.builder()
+                                                      .awsConnector(awsConnectorDTO)
+                                                      .region("region")
+                                                      .bucketName("bucketName")
+                                                      .path("zipFilePath")
+                                                      .build();
+    S3Object s3Object = new S3Object();
+    s3Object.setObjectContent(new ByteArrayInputStream("content".getBytes()));
+    doReturn(s3Object)
+        .when(awsApiHelperService)
+        .getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+    String workingDir = "serverless/worDir";
+    serverlessTaskHelperBase.downloadFilesFromS3(s3StoreDelegateConfig, logCallback, workingDir);
+
+    verify(awsApiHelperService).getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+  }
+
+  @Test(expected = HintException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void downloadFilesFromS3ExceptionTest() throws IOException {
+    AwsCredentialDTO awsCredentialDTO =
+        AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    S3StoreDelegateConfig s3StoreDelegateConfig = S3StoreDelegateConfig.builder()
+                                                      .awsConnector(awsConnectorDTO)
+                                                      .region("region")
+                                                      .bucketName("bucketName")
+                                                      .path("zipFilePath")
+                                                      .build();
+    S3Object s3Object = new S3Object();
+    s3Object.setObjectContent(new ByteArrayInputStream("content".getBytes()));
+    Exception e = new InvalidRequestException("error");
+    doThrow(e).when(awsApiHelperService).getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+    String workingDir = "serverless/worDir";
+    serverlessTaskHelperBase.downloadFilesFromS3(s3StoreDelegateConfig, logCallback, workingDir);
+
+    verify(awsApiHelperService).getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void testZipAndUnzipOperations() throws IOException {
+    final String destDirPath = "./repository/serverless/dest/testDir";
+    final String sourceDirPath = "./repository/serverless/source/manifests";
+    final File zipDir = new File("./repository/serverless/zip/testDir");
+    final File zipFile = new File(format("%s/destZipFile.zip", zipDir.getPath()));
+
+    FileIo.createDirectoryIfDoesNotExist(destDirPath);
+    FileIo.createDirectoryIfDoesNotExist(sourceDirPath);
+    Files.createFile(Paths.get(sourceDirPath, "test1.yaml"));
+    Files.createFile(Paths.get(sourceDirPath, "test2.yaml"));
+    FileIo.createDirectoryIfDoesNotExist(zipDir.getPath());
+    Files.write(Paths.get(sourceDirPath, "test1.yaml"), "test script 1".getBytes());
+    Files.write(Paths.get(sourceDirPath, "test2.yaml"), "test script 2".getBytes());
+
+    zipManifestDirectory(sourceDirPath, zipFile.getPath());
+    File[] resultZippedFiles = zipDir.listFiles(file -> !file.isHidden());
+    assertThat(resultZippedFiles).isNotNull();
+    assertThat(resultZippedFiles).hasSize(1);
+    assertThat(resultZippedFiles[0]).hasName("destZipFile.zip");
+    assertThat(FileUtils.openInputStream(new File(resultZippedFiles[0].getPath()))).isNotNull();
+
+    InputStream targetStream = FileUtils.openInputStream(new File(zipFile.getPath()));
+    ZipInputStream zipTargetStream = new ZipInputStream(targetStream);
+
+    // test unzip directory operation
+    serverlessTaskHelperBase.unzipManifestFiles(destDirPath, zipTargetStream);
+
+    File resultDir = new File(destDirPath);
+    File[] resultTestFiles = resultDir.listFiles(file -> !file.isHidden());
+    assertThat(resultDir.list()).contains("test1.yaml", "test2.yaml");
+
+    List<String> filesContent = new ArrayList<>();
+    filesContent.add(readFileToString(resultTestFiles[0], "UTF-8"));
+    filesContent.add(readFileToString(resultTestFiles[1], "UTF-8"));
+    assertThat(filesContent).containsExactlyInAnyOrder("test script 1", "test script 2");
+
+    // clean up
+    FileIo.deleteDirectoryAndItsContentIfExists(destDirPath);
+    FileIo.deleteDirectoryAndItsContentIfExists(sourceDirPath);
+    FileIo.deleteDirectoryAndItsContentIfExists(zipDir.getPath());
+  }
+
+  public void zipManifestDirectory(String sourceFile, String destManifestFilesDirectoryPath) throws IOException {
+    FileOutputStream fos = new FileOutputStream(destManifestFilesDirectoryPath);
+    ZipOutputStream zipOut = new ZipOutputStream(fos);
+    File fileToZip = new File(sourceFile);
+
+    zipFile(fileToZip, fileToZip.getName(), zipOut);
+    zipOut.close();
+    fos.close();
+  }
+
+  private void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
+    if (fileToZip.isHidden()) {
+      return;
+    }
+    if (fileToZip.isDirectory()) {
+      if (fileName.endsWith("/")) {
+        zipOut.putNextEntry(new ZipEntry(fileName));
+        zipOut.closeEntry();
+      } else {
+        zipOut.putNextEntry(new ZipEntry(fileName + "/"));
+        zipOut.closeEntry();
+      }
+      File[] children = fileToZip.listFiles();
+      for (File childFile : children) {
+        zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);
+      }
+      return;
+    }
+    FileInputStream fis = new FileInputStream(fileToZip);
+    ZipEntry zipEntry = new ZipEntry(fileName);
+    zipOut.putNextEntry(zipEntry);
+    byte[] bytes = new byte[1024];
+    int length;
+    while ((length = fis.read(bytes)) >= 0) {
+      zipOut.write(bytes, 0, length);
+    }
+    fis.close();
   }
 }

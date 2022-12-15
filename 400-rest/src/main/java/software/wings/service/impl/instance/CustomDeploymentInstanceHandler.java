@@ -32,7 +32,6 @@ import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionDat
 import software.wings.beans.CustomInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
@@ -41,14 +40,15 @@ import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.deployment.CustomDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.CustomDeploymentInstanceSyncPTCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.sm.PhaseStepExecutionSummary;
 import software.wings.sm.StepExecutionSummary;
-import software.wings.sm.states.customdeployment.InstanceMapperUtils;
-import software.wings.sm.states.customdeployment.InstanceMapperUtils.HostProperties;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils.HostProperties;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;

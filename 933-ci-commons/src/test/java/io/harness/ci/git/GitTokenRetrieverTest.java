@@ -7,6 +7,7 @@
 
 package io.harness.ci.git;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +33,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
@@ -59,6 +61,7 @@ public class GitTokenRetrieverTest extends CategoryTest {
   private final String INSTALL_ID = "123";
   private final String PRIVATE_KEY = "123";
   private final String TOKEN = "token";
+  private final String OAuth = "oauth";
   private final String USERNAME = "user";
 
   @Before
@@ -111,6 +114,26 @@ public class GitTokenRetrieverTest extends CategoryTest {
     when(secretDecryptor.decrypt(any(), any())).thenReturn(decryptedTokenSpec);
     String actual = gitTokenRetriever.retrieveAuthToken(GitSCMType.GITHUB, connectorDetails);
     assertThat(actual).isEqualTo(TOKEN);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRetrieveGithubOAuthToken() {
+    GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                .url("https://github.com")
+                                                .apiAccess(GithubApiAccessDTO.builder()
+                                                               .type(GithubApiAccessType.OAUTH)
+                                                               .spec(GithubOauthDTO.builder().build())
+                                                               .build())
+                                                .build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorConfig(githubConnectorDTO).build();
+    GithubOauthDTO decryptedOAuthSpec =
+        GithubOauthDTO.builder().tokenRef(SecretRefData.builder().decryptedValue(OAuth.toCharArray()).build()).build();
+
+    when(secretDecryptor.decrypt(any(), any())).thenReturn(decryptedOAuthSpec);
+    String actual = gitTokenRetriever.retrieveAuthToken(GitSCMType.GITHUB, connectorDetails);
+    assertThat(actual).isEqualTo(OAuth);
   }
 
   @Test

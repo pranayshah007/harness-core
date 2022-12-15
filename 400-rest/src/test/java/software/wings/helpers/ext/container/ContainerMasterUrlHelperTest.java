@@ -8,7 +8,6 @@
 package software.wings.helpers.ext.container;
 
 import static software.wings.beans.AzureKubernetesInfrastructureMapping.Builder.anAzureKubernetesInfrastructureMapping;
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.COMPUTE_PROVIDER_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
@@ -39,8 +38,8 @@ import software.wings.beans.GcpKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.MasterUrlFetchTaskParameter;
@@ -243,6 +242,6 @@ public class ContainerMasterUrlHelperTest extends WingsBaseTest {
   }
 
   private SettingAttribute buildSettingAttribute(SettingValue value) {
-    return aSettingAttribute().withValue(value).build();
+    return SettingAttribute.builder().value(value).build();
   }
 }

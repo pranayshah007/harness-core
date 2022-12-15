@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.secrets.SecretPermissions.SECRET_ACCESS_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -20,7 +22,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -70,6 +74,7 @@ public class ConnectorRbacHelper {
           throw new UnexpectedException("Error processing the data");
         }
         if (secretRefData != null && !secretRefData.isNull()) {
+          validateTheScopeOfTheSecret(secretRefData, ngAccess);
           IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
               ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
           accessControlClient.checkForAccessOrThrow(
@@ -77,6 +82,24 @@ public class ConnectorRbacHelper {
                   identifierRef.getProjectIdentifier()),
               Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION);
         }
+      }
+    }
+  }
+
+  private void validateTheScopeOfTheSecret(SecretRefData secretRefData, NGAccess ngAccess) {
+    if (isNotBlank(ngAccess.getProjectIdentifier())) {
+      // It is a project level entity
+      return;
+    } else if (isNotBlank(ngAccess.getOrgIdentifier())) {
+      // It is a org level entity
+      if (secretRefData.getScope() == Scope.PROJECT) {
+        throw new InvalidRequestException("The project level secret cannot be used at a org level");
+      }
+    } else {
+      // It is a account level entity
+      if (secretRefData.getScope() == Scope.PROJECT || secretRefData.getScope() == Scope.ORG) {
+        throw new InvalidRequestException(String.format(
+            "The %s level secret cannot be used at account level", secretRefData.getScope().getYamlRepresentation()));
       }
     }
   }

@@ -25,7 +25,22 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.OpenshiftTemplate) OPEN_SHIFT_TEMPLATE(ManifestType.OpenshiftTemplate),
   @JsonProperty(ManifestType.VALUES) VALUES(ManifestType.VALUES),
   @JsonProperty(ManifestType.ServerlessAwsLambda) SERVERLESS_AWS_LAMBDA(ManifestType.ServerlessAwsLambda),
-  @JsonProperty(ManifestType.ReleaseRepo) RELEASE_REPO(ManifestType.ReleaseRepo);
+  @JsonProperty(ManifestType.ReleaseRepo) RELEASE_REPO(ManifestType.ReleaseRepo),
+  @JsonProperty(ManifestType.DeploymentRepo) DEPLOYMENT_REPO(ManifestType.DeploymentRepo),
+  @JsonProperty(ManifestType.EcsTaskDefinition) ECS_TASK_DEFINITION(ManifestType.EcsTaskDefinition),
+  @JsonProperty(ManifestType.EcsServiceDefinition) ECS_SERVICE_DEFINITION(ManifestType.EcsServiceDefinition),
+  @JsonProperty(ManifestType.EcsScalableTargetDefinition)
+  ECS_SCALABLE_TARGET_DEFINITION(ManifestType.EcsScalableTargetDefinition),
+  @JsonProperty(ManifestType.EcsScalingPolicyDefinition)
+  ECS_SCALING_POLICY_DEFINITION(ManifestType.EcsScalingPolicyDefinition),
+  @JsonProperty(ManifestType.TAS_MANIFEST) TAS_MANIFEST(ManifestType.TAS_MANIFEST),
+  @JsonProperty(ManifestType.TAS_VARS) TAS_VARS(ManifestType.TAS_VARS),
+  @JsonProperty(ManifestType.TAS_AUTOSCALER) TAS_AUTOSCALER(ManifestType.TAS_AUTOSCALER),
+  @JsonProperty(ManifestType.AsgLaunchTemplate) ASG_LAUNCH_TEMPLATE(ManifestType.AsgLaunchTemplate),
+  @JsonProperty(ManifestType.AsgConfiguration) ASG_CONFIGURATION(ManifestType.AsgConfiguration),
+  @JsonProperty(ManifestType.AsgScalingPolicy) ASG_SCALING_POLICY(ManifestType.AsgScalingPolicy),
+  @JsonProperty(ManifestType.AsgScheduledUpdateGroupAction)
+  ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction);
   private final String displayName;
 
   ManifestConfigType(String displayName) {

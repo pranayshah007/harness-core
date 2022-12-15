@@ -20,7 +20,6 @@ import io.harness.app.GraphQLModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -47,6 +46,7 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
@@ -63,6 +63,8 @@ import io.harness.version.VersionModule;
 
 import software.wings.DataStorageMode;
 import software.wings.app.AuthModule;
+import software.wings.app.ExecutorConfig;
+import software.wings.app.ExecutorsConfig;
 import software.wings.app.GcpMarketplaceIntegrationModule;
 import software.wings.app.IndexMigratorModule;
 import software.wings.app.MainConfiguration;
@@ -147,6 +149,9 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     configuration.getBackgroundSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
     configuration.getServiceSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
 
+    configuration.setExecutorsConfig(
+        ExecutorsConfig.builder().dataReconciliationExecutorConfig(ExecutorConfig.builder().build()).build());
+
     configuration.setGrpcDelegateServiceClientConfig(
         GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());
     configuration.setGrpcClientConfig(
@@ -215,6 +220,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
+    modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -301,7 +307,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
 
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(new AbstractRemoteObserverModule() {
       @Override
       public boolean noOpProducer() {

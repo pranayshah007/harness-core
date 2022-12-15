@@ -12,17 +12,18 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
-import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.mongo.iterator.provider.MorphiaPersistenceRequiredProvider;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 
 import software.wings.audit.AuditRecord;
@@ -32,29 +33,39 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuditService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.List;
 
 @OwnedBy(PL)
-public class EntityAuditRecordHandler implements Handler<AuditRecord> {
+public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements Handler<AuditRecord> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AuditService auditService;
-  @Inject private MorphiaPersistenceProvider<AuditRecord> persistenceProvider;
+  @Inject private MorphiaPersistenceRequiredProvider<AuditRecord> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder().name("EntityAuditRecordProcessor").poolSize(2).interval(ofSeconds(30)).build(),
-        EntityAuditRecordHandler.class,
-        MongoPersistenceIterator.<AuditRecord, MorphiaFilterExpander<AuditRecord>>builder()
-            .clazz(AuditRecord.class)
-            .fieldName(AuditRecordKeys.nextIteration)
-            .targetInterval(ofMinutes(30))
-            .acceptableNoAlertDelay(ofSeconds(45))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<AuditRecord, MorphiaFilterExpander<AuditRecord>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       EntityAuditRecordHandler.class,
+                       MongoPersistenceIterator.<AuditRecord, MorphiaFilterExpander<AuditRecord>>builder()
+                           .clazz(AuditRecord.class)
+                           .fieldName(AuditRecordKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofSeconds(45))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "EntityAuditRecordProcessor";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

@@ -51,7 +51,6 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EnvironmentType;
-import io.harness.capability.service.CapabilityService;
 import io.harness.category.element.UnitTests;
 import io.harness.common.NGTaskType;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
@@ -127,7 +126,7 @@ import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
 import software.wings.core.managerConfiguration.ConfigurationController;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sInstanceSyncTaskParameters;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
@@ -140,7 +139,6 @@ import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
-import software.wings.service.impl.DelegateTaskStatusObserver;
 import software.wings.service.impl.EventEmitter;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
@@ -224,7 +222,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
   @Mock private ConfigurationController configurationController;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private DelegateGrpcConfig delegateGrpcConfig;
-  @Mock private CapabilityService capabilityService;
   @Mock private DelegateSyncService delegateSyncService;
   @Mock private DelegateSelectionLogsService delegateSelectionLogsService;
   @Mock private Producer eventProducer;
@@ -254,7 +251,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
 
   @Mock private Subject<DelegateProfileObserver> delegateProfileSubject;
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
-  @Mock private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Mock private Subject<DelegateObserver> subject;
   @Mock private EnvironmentService environmentService;
 
@@ -311,8 +307,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     FieldUtils.writeField(delegateService, "delegateProfileSubject", delegateProfileSubject, true);
     FieldUtils.writeField(delegateService, "subject", subject, true);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
-    FieldUtils.writeField(
-        delegateTaskService, "delegateTaskStatusObserverSubject", delegateTaskStatusObserverSubject, true);
     when(accountDelegatesCache.get(anyString())).thenReturn(Collections.emptyList());
     when(logStreamingAccountTokenCache.get(anyString())).thenReturn("");
   }
@@ -500,7 +494,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     TerraformProvisionParameters parameters = TerraformProvisionParameters.builder()
                                                   .sourceRepo(GitConfig.builder()
                                                                   .repoUrl("https://github.com/testtp")
-                                                                  .sshSettingAttribute(sshSettingAttribute)
+                                                                  .sshSettingAttribute(sshSettingAttribute.toDTO())
                                                                   .build())
                                                   .secretManagerConfig(null)
                                                   .isGitHostConnectivityCheck(true)
@@ -922,7 +916,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
                                                     .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
                                                     .limitPcfThreads(false)
-                                                    .ignorePcfConnectionContextCache(false)
                                                     .timeoutIntervalInMin(2)
                                                     .build(),
                           null})
@@ -1131,7 +1124,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .pcfConfig(CfConfigToInternalMapper.toCfInternalConfig(pcfConfig))
                                                     .pcfCommandType(CfCommandRequest.PcfCommandType.VALIDATE)
                                                     .limitPcfThreads(false)
-                                                    .ignorePcfConnectionContextCache(false)
                                                     .timeoutIntervalInMin(2)
                                                     .build(),
                           null})

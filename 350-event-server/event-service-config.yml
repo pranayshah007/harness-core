@@ -1,3 +1,32 @@
+server:
+  rootPath: /ccmevent
+  applicationConnectors:
+    - type: http
+      port: 7280
+    - type: https
+      port: 7281
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+  adminConnectors:
+    - type: http
+      port: 8191
+
+logging:
+  level: INFO
+  loggers:
+    org.glassfish.jersey: INFO
+    allbegray.slack: WARN
+    org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
+
 connectors:
   - port: 9890
     secure: true
@@ -8,17 +37,21 @@ harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 secretsConfiguration:
   secretResolutionEnabled: false
@@ -26,4 +59,4 @@ secretsConfiguration:
 
 eventDataBatchQueryConfig:
   queryBatchSize: 4000
-  enableBatchWrite: true
+  enableBatchWrite: false

@@ -19,4 +19,5 @@ public class DestroyVmRequest {
   @JsonProperty("correlation_id") String correlationID;
   @JsonProperty("pool_id") String poolID;
   @JsonProperty("id") String id;
+  @JsonProperty("infra_type") String infraType;
 }

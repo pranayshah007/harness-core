@@ -161,7 +161,7 @@ public class PrometheusState extends AbstractMetricAnalysisState {
             .serviceId(getPhaseServiceId(context))
             .startTime(dataCollectionStartTimeStamp)
             .dataCollectionMinute(0)
-            .awsRestCall(true)
+            .awsRestCall(isAwsPrometheus)
             .prometheusInfo(awsPrometheusInfo)
             .metricEndpoints(metricEndpoints)
             .accountId(accountId)

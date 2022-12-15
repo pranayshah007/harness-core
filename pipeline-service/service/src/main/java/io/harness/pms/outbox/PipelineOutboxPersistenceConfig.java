@@ -54,6 +54,7 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration 
                                                 .retryWrites(true)
                                                 .connectTimeout(mongoConfig.getConnectTimeout())
                                                 .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
+                                                .socketTimeout(mongoConfig.getSocketTimeout())
                                                 .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
                                                 .connectionsPerHost(mongoConfig.getConnectionsPerHost())
                                                 .readPreference(ReadPreference.secondary())
@@ -71,8 +72,7 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration 
   public MongoTemplate mongoTemplate() throws Exception {
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    MongoTemplate mongoTemplate =
-        new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
+    MongoTemplate mongoTemplate = new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
     mongoTemplate.setReadPreference(ReadPreference.secondary());
     return mongoTemplate;
   }

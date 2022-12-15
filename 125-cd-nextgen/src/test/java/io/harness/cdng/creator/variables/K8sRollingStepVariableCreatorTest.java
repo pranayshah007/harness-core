@@ -56,6 +56,7 @@ public class K8sRollingStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.name",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.spec.skipDryRun");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.spec.skipDryRun",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Rolling_Step.spec.pruningEnabled");
   }
 }

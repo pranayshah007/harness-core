@@ -9,9 +9,6 @@ package io.harness.perpetualtask.internal;
 
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.VUK;
-import static io.harness.rule.OwnerRule.XIN;
-
-import static software.wings.beans.Account.Builder.anAccount;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyLong;
@@ -33,17 +30,13 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceClientRegistry;
-import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.k8s.watch.K8sWatchPerpetualTaskServiceClient;
 import io.harness.rule.Owner;
 
-import software.wings.beans.Account;
 import software.wings.service.intfc.DelegateService;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
@@ -134,28 +127,5 @@ public class PerpetualTaskRecordHandlerTest extends CategoryTest {
     when(delegateService.executeTask(isA(DelegateTask.class))).thenReturn(response);
     perpetualTaskRecordHandler.assign(record);
     verify(perpetualTaskService, times(0)).appointDelegate(eq(accountId), anyString(), eq(delegateId), anyLong());
-  }
-
-  @Test
-  @Owner(developers = XIN)
-  @Category(UnitTests.class)
-  public void testReassignToSameConnectedDelegate() {
-    Account account = anAccount().withUuid("uuid").build();
-
-    record = PerpetualTaskRecord.builder()
-                 .accountId(accountId)
-                 .delegateId(delegateId)
-                 .uuid(taskId)
-                 .state(PerpetualTaskState.TASK_TO_REBALANCE)
-                 .perpetualTaskType(PerpetualTaskType.K8S_WATCH)
-                 .clientContext(PerpetualTaskClientContext.builder().build())
-                 .build();
-    List<PerpetualTaskRecord> perpetualTaskRecordList = new ArrayList<>();
-    perpetualTaskRecordList.add(record);
-    when(perpetualTaskRecordDao.listBatchOfPerpetualTasksToRebalanceForAccount(anyString()))
-        .thenReturn(perpetualTaskRecordList);
-    when(delegateService.checkDelegateConnected(accountId, delegateId)).thenReturn(true);
-    perpetualTaskRecordHandler.rebalance(account);
-    verify(perpetualTaskService).appointDelegate(eq(accountId), eq(taskId), eq(delegateId), anyLong());
   }
 }

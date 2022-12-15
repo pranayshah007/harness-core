@@ -62,7 +62,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.model.K8sPod;
@@ -70,6 +69,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomManifestSource.CustomManifestSourceBuilder;
 import io.harness.manifest.CustomSourceConfig;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -81,6 +81,7 @@ import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
@@ -103,7 +104,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -125,6 +125,7 @@ import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
 import software.wings.helpers.ext.kustomize.KustomizeHelper;
 import software.wings.helpers.ext.openshift.OpenShiftManagerService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.GitFileConfigHelperService;
@@ -609,6 +610,21 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
                                    .name("k8s")
                                    .output(kryoSerializer.asDeflatedBytes(k8sElement))
                                    .build());
+  }
+
+  public void saveK8sCanaryDeployRun(ExecutionContext context) {
+    sweepingOutputService.save(
+        context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
+            .name(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME)
+            .value(K8sCanaryDeleteServiceElement.builder().previousDeployedK8sCanary(true).build())
+            .build());
+  }
+
+  public K8sCanaryDeleteServiceElement fetchK8sCanaryDeleteServiceElement(ExecutionContext context) {
+    SweepingOutputInquiry sweepingOutputInquiry =
+        context.prepareSweepingOutputInquiryBuilder().name(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME).build();
+
+    return (K8sCanaryDeleteServiceElement) sweepingOutputService.findSweepingOutput(sweepingOutputInquiry);
   }
 
   public ExecutionResponse queueK8sDelegateTask(ExecutionContext context, K8sTaskParameters k8sTaskParameters,

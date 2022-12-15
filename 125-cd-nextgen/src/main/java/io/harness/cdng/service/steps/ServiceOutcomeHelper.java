@@ -32,7 +32,8 @@ public class ServiceOutcomeHelper {
       Ambiance ambiance, OutcomeService outcomeService, ExecutionSweepingOutputService executionSweepingOutputService) {
     return ServiceSectionStepOutcome.builder()
         .serviceResult(getServiceOutcome(ambiance, outcomeService))
-        .variablesResult(getVariablesSweepingOutput(ambiance, executionSweepingOutputService))
+        .variablesResult(getVariablesSweepingOutput(
+            ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES))
         .artifactResults(getArtifactsOutcome(ambiance, outcomeService))
         .manifestResults(getManifestsOutcome(ambiance, outcomeService))
         .configFileResults(getConfigFilesOutcome(ambiance, outcomeService))
@@ -43,17 +44,18 @@ public class ServiceOutcomeHelper {
       Ambiance ambiance, OutcomeService outcomeService, ExecutionSweepingOutputService executionSweepingOutputService) {
     return ServiceConfigStepOutcome.builder()
         .serviceResult(getServiceOutcome(ambiance, outcomeService))
-        .variablesResult(getVariablesSweepingOutput(ambiance, executionSweepingOutputService))
+        .variablesResult(getVariablesSweepingOutput(
+            ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES))
         .artifactResults(getArtifactsOutcome(ambiance, outcomeService))
         .manifestResults(getManifestsOutcome(ambiance, outcomeService))
         .configFileResults(getConfigFilesOutcome(ambiance, outcomeService))
         .build();
   }
 
-  private VariablesSweepingOutput getVariablesSweepingOutput(
-      Ambiance ambiance, ExecutionSweepingOutputService executionSweepingOutputService) {
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES));
+  public VariablesSweepingOutput getVariablesSweepingOutput(
+      Ambiance ambiance, ExecutionSweepingOutputService executionSweepingOutputService, String variableField) {
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(variableField));
     if (!optionalSweepingOutput.isFound()) {
       return null;
     }

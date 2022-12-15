@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.cfg.CoercionAction;
+import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -36,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
@@ -43,6 +46,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class YamlUtils {
+  public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
 
   private final ObjectMapper mapper;
@@ -56,6 +61,9 @@ public class YamlUtils {
     mapper.registerModule(new GuavaModule());
     mapper.registerModule(new JavaTimeModule());
     mapper.registerModule(new NGHarnessJacksonModule());
+
+    // map empty string to null instead of failing with Mapping Exception
+    mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -211,6 +219,19 @@ public class YamlUtils {
     return false;
   }
 
+  // TODO (prashant) : Re-evaluate can we do better
+  public String injectUuidWithType(String content, String name) throws IOException {
+    JsonNode rootJsonNode = mapper.readTree(content);
+    if (rootJsonNode == null) {
+      return null;
+    }
+    injectUuid(rootJsonNode);
+    ((ObjectNode) rootJsonNode).put("type", name);
+    YamlNode rootYamlNode = new YamlNode(rootJsonNode);
+    YamlField rootField = new YamlField(name, rootYamlNode);
+    return rootField.getNode().toString();
+  }
+
   public String injectUuid(String content) throws IOException {
     YamlField yamlField = injectUuidInYamlField(content);
     return yamlField.getNode().toString();
@@ -241,7 +262,11 @@ public class YamlUtils {
    * @return
    */
   public String getFullyQualifiedName(YamlNode yamlNode) {
-    return String.join(".", getQualifiedNameList(yamlNode, "pipeline"));
+    return getFullyQualifiedName(yamlNode, false);
+  }
+
+  public String getFullyQualifiedName(YamlNode yamlNode, boolean shouldAppendStrategyExpression) {
+    return String.join(".", getQualifiedNameList(yamlNode, "pipeline", shouldAppendStrategyExpression));
   }
 
   /**
@@ -250,7 +275,7 @@ public class YamlUtils {
    * @return
    */
   public String getFullyQualifiedNameTillRoot(YamlNode yamlNode) {
-    return String.join(".", getQualifiedNameList(yamlNode, "root"));
+    return String.join(".", getQualifiedNameList(yamlNode, "root", false));
   }
 
   /**
@@ -262,7 +287,7 @@ public class YamlUtils {
    * @return
    */
   public String getQualifiedNameTillGivenField(YamlNode yamlNode, String fieldName) {
-    return String.join(".", getQualifiedNameList(yamlNode, fieldName));
+    return String.join(".", getQualifiedNameList(yamlNode, fieldName, false));
   }
 
   /**
@@ -273,7 +298,7 @@ public class YamlUtils {
    * @return
    */
   public String getQNBetweenTwoFields(YamlNode yamlNode, String from, String to) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline");
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
     StringBuilder response = new StringBuilder();
     for (String qualifiedName : qualifiedNames) {
       if (qualifiedName.equals(from)) {
@@ -287,18 +312,19 @@ public class YamlUtils {
     return response.toString();
   }
 
-  private List<String> getQualifiedNameList(YamlNode yamlNode, String fieldName) {
+  private List<String> getQualifiedNameList(
+      YamlNode yamlNode, String fieldName, boolean shouldAppendStrategyExpression) {
     if (yamlNode.getParentNode() == null) {
       List<String> qualifiedNameList = new ArrayList<>();
-      String qnForNode = getQNForNode(yamlNode, null);
+      String qnForNode = getQNForNode(yamlNode, null, shouldAppendStrategyExpression);
       if (EmptyPredicate.isNotEmpty(qnForNode)) {
         qualifiedNameList.add(qnForNode);
       }
       return qualifiedNameList;
     }
-    String qualifiedName = getQNForNode(yamlNode, yamlNode.getParentNode());
+    String qualifiedName = getQNForNode(yamlNode, yamlNode.getParentNode(), shouldAppendStrategyExpression);
     if (isEmpty(qualifiedName)) {
-      return getQualifiedNameList(yamlNode.getParentNode(), fieldName);
+      return getQualifiedNameList(yamlNode.getParentNode(), fieldName, shouldAppendStrategyExpression);
     }
     if (qualifiedName.equals(fieldName)) {
       List<String> qualifiedNameList = new ArrayList<>();
@@ -312,13 +338,14 @@ public class YamlUtils {
       qualifiedNameList.add(qualifiedName);
       return qualifiedNameList;
     }
-    List<String> qualifiedNameList = getQualifiedNameList(yamlNode.getParentNode(), fieldName);
+    List<String> qualifiedNameList =
+        getQualifiedNameList(yamlNode.getParentNode(), fieldName, shouldAppendStrategyExpression);
     qualifiedNameList.add(qualifiedName);
     return qualifiedNameList;
   }
 
   public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline");
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }
@@ -326,17 +353,17 @@ public class YamlUtils {
     return qualifiedNames.get(0) + "." + qualifiedNames.get(1) + "." + qualifiedNames.get(2);
   }
 
-  private String getQNForNode(YamlNode yamlNode, YamlNode parentNode) {
+  private String getQNForNode(YamlNode yamlNode, YamlNode parentNode, boolean shouldAppendStrategyExpression) {
     if (parentNode == null) {
       return "";
     }
     if (parentNode.getParentNode() != null && parentNode.getParentNode().isArray()) {
       if (yamlNode.getIdentifier() != null) {
-        return yamlNode.getIdentifier();
+        return getAppendedName(yamlNode.getIdentifier(), yamlNode, shouldAppendStrategyExpression);
       } else if (parentNode.getName() != null) {
-        return parentNode.getName();
+        return getAppendedName(parentNode.getName(), parentNode, shouldAppendStrategyExpression);
       } else if (parentNode.getKey() != null) {
-        return parentNode.getKey();
+        return getAppendedName(parentNode.getKey(), parentNode, shouldAppendStrategyExpression);
       } else {
         return "";
       }
@@ -353,7 +380,15 @@ public class YamlUtils {
       return "";
     }
 
-    return field.getName();
+    return getAppendedName(field.getName(), field.getNode(), shouldAppendStrategyExpression);
+  }
+
+  public String getAppendedName(String name, YamlNode node, boolean shouldAppendStrategyExpression) {
+    YamlField strategyField = node.getField(YAMLFieldNameConstants.STRATEGY);
+    if (shouldAppendStrategyExpression && strategyField != null) {
+      return name + STRATEGY_IDENTIFIER_POSTFIX;
+    }
+    return name;
   }
 
   public boolean shouldNotIncludeInQualifiedName(String fieldName) {

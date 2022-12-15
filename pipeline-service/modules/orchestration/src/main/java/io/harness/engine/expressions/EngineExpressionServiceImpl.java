@@ -10,7 +10,9 @@ package io.harness.engine.expressions;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.plan.ExpressionModeMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
@@ -25,6 +27,12 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
   @Override
   public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck) {
     return pmsEngineExpressionService.renderExpression(ambiance, expression, skipUnresolvedExpressionsCheck);
+  }
+
+  @Override
+  public String renderExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    return pmsEngineExpressionService.renderExpression(
+        ambiance, expression, ExpressionModeMapper.fromExpressionModeProto(mode));
   }
 
   @Override

@@ -25,7 +25,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HelmVersion;
@@ -33,7 +32,6 @@ import io.harness.pcf.model.CfCliVersion;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AllowedValueYaml;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Application;
 import software.wings.beans.EntityType;
 import software.wings.beans.NameValuePair;
@@ -44,6 +42,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableBuilder;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
+import software.wings.persistence.AppContainer;
 import software.wings.service.impl.yaml.handler.ArtifactVariableYamlHelper;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.ServiceVariableYamlHelper;
@@ -429,14 +428,7 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
           break;
 
         case ARTIFACT:
-          if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-            List<String> allowedList = artifactVariableYamlHelper.computeAllowedList(
-                accountId, configVar.getAllowedList(), configVar.getName());
-            serviceVariable.setAllowedList(allowedList);
-          } else {
-            log.warn("Yaml doesn't support {} type service variables", configVar.getValueType());
-            continue;
-          }
+          log.warn("Yaml doesn't support {} type service variables", configVar.getValueType());
           break;
 
         default:
@@ -471,14 +463,7 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
       serviceVariableBuilder.value(
           cv.getValue() != null ? yamlHelper.extractEncryptedRecordId(cv.getValue(), accountId).toCharArray() : null);
     } else if ("ARTIFACT".equals(cv.getValueType())) {
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        serviceVariableBuilder.type(ServiceVariableType.ARTIFACT);
-        List<String> allowedList =
-            artifactVariableYamlHelper.computeAllowedList(accountId, cv.getAllowedList(), cv.getName());
-        serviceVariableBuilder.allowedList(allowedList);
-      } else {
-        log.warn("Yaml doesn't support {} type service variables", cv.getValueType());
-      }
+      log.warn("Yaml doesn't support {} type service variables", cv.getValueType());
     } else {
       log.warn("Yaml doesn't support {} type service variables", cv.getValueType());
       serviceVariableBuilder.value(cv.getValue() != null ? cv.getValue().toCharArray() : null);

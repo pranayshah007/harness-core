@@ -27,6 +27,8 @@ import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -43,6 +45,7 @@ import io.harness.delegate.task.scm.ScmPushTaskResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -52,6 +55,7 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
@@ -96,6 +100,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   String defaultBranch = "default";
   String sourceBranch = "sourceBranch";
   String targetBranch = "targetBranch";
+  String content = "content";
   String title = "title";
   int prNumber = 0;
   GithubConnectorDTO githubConnector;
@@ -316,6 +321,32 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
+  public void testGetLatestCommitOnFile() {
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        GetLatestCommitOnFileResponse.newBuilder().setCommitId(commitId).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder()
+                        .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
+                        .build());
+    GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO =
+        GetLatestCommitOnFileRequestDTO.builder()
+            .branchName(branch)
+            .filePath(filePath)
+            .scmConnector((ScmConnector) connectorInfo.getConnectorConfig())
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build();
+    getLatestCommitOnFileResponse =
+        scmDelegateFacilitatorService.getLatestCommitOnFile(getLatestCommitOnFileRequestDTO);
+    assertThat(getLatestCommitOnFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
   public void testCreatePullRequest() {
     CreatePRResponse mockedCreatePRResponse = CreatePRResponse.newBuilder().setStatus(200).setNumber(prNumber).build();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
@@ -324,6 +355,30 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         getDefaultScope(), connectorRef, repoName, sourceBranch, targetBranch, title);
     assertThat(createPRResponse.getStatus()).isEqualTo(200);
     assertThat(createPRResponse.getNumber()).isEqualTo(prNumber);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFile() {
+    GitFileTaskResponseData gitFileTaskResponseData = GitFileTaskResponseData.builder()
+                                                          .gitFileResponse(GitFileResponse.builder()
+                                                                               .statusCode(200)
+                                                                               .branch(branch)
+                                                                               .commitId(commitId)
+                                                                               .content(content)
+                                                                               .filepath(filePath)
+                                                                               .build())
+                                                          .build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(gitFileTaskResponseData);
+    GitFileRequest gitFileRequest = GitFileRequest.builder().filepath(filePath).branch(branch).build();
+    GitFileResponse gitFileResponse =
+        scmDelegateFacilitatorService.getFile(scope, (ScmConnector) connectorInfo.getConnectorConfig(), gitFileRequest);
+    assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
+    assertThat(gitFileResponse.getCommitId()).isEqualTo(commitId);
+    assertThat(gitFileResponse.getFilepath()).isEqualTo(filePath);
+    assertThat(gitFileResponse.getContent()).isEqualTo(content);
+    assertThat(gitFileResponse.getError()).isEqualTo(null);
   }
 
   private Scope getDefaultScope() {

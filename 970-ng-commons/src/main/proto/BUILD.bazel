@@ -1,14 +1,9 @@
-load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
-load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-harness_grpc_library(
-    name = "970_ng_commons_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//970-ng-commons/src/main/proto/io/harness:970_ng_commons_proto",
-        "//970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity:970_ng_commons_proto",
-    ],
-)
+load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
 
 harness_grpc_library(
     name = "970_ng_java_contract_proto",

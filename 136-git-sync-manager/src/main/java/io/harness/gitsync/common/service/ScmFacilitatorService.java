@@ -16,9 +16,13 @@ import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
+import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.ng.beans.PageRequest;
@@ -41,7 +45,9 @@ public interface ScmFacilitatorService {
 
   ScmGetFileResponseDTO getFileByBranch(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
 
-  List<UserRepoResponse> listAllReposByRefConnector(
+  ScmGetFileResponseDTO getFileByBranchV2(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
+
+  List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
   ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO);
@@ -53,4 +59,9 @@ public interface ScmFacilitatorService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
 
   String getRepoUrl(Scope scope, String connectorRef, String repoName);
+
+  ScmGetBranchHeadCommitResponseDTO getBranchHeadCommitDetails(
+      ScmGetBranchHeadCommitRequestDTO scmGetBranchHeadCommitRequestDTO);
+
+  ScmListFilesResponseDTO listFiles(ScmListFilesRequestDTO scmListFilesRequestDTO);
 }

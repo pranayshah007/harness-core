@@ -19,12 +19,12 @@ import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.security.encryption.EncryptedRecord;
 
 import software.wings.beans.BaseVaultConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
 import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import java.util.List;
 
@@ -49,6 +49,11 @@ public interface SecretManagementDelegateService {
   @DelegateTaskType(TaskType.VAULT_RENEW_TOKEN) boolean renewVaultToken(BaseVaultConfig vaultConfig);
 
   /**
+   * Lookup the Hashicorp vault token.
+   */
+  @DelegateTaskType(TaskType.VAULT_TOKEN_LOOKUP) VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig);
+
+  /**
    * List vault secret engines
    */
   @DelegateTaskType(TaskType.VAULT_LIST_ENGINES)
@@ -59,11 +64,6 @@ public interface SecretManagementDelegateService {
   @DelegateTaskType(TaskType.VAULT_APPROLE_LOGIN) VaultAppRoleLoginResult appRoleLogin(BaseVaultConfig vaultConfig);
 
   @DelegateTaskType(TaskType.SSH_SECRET_ENGINE_AUTH) SSHVaultAuthResult validateSSHVault(SSHVaultConfig vaultConfig);
-
-  /**
-   * Validate the CyberArk configuration, including the connectivity to CyberArk service, client certificate etc.
-   */
-  @DelegateTaskType(TaskType.CYBERARK_VALIDATE_CONFIG) boolean validateCyberArkConfig(CyberArkConfig cyberArkConfig);
 
   @DelegateTaskType(TaskType.VAULT_SIGN_PUBLIC_KEY_SSH)
   void signPublicKey(HostConnectionAttributes hostConnectionAttributes, SSHVaultConfig sshVaultConfig);

@@ -259,7 +259,6 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     when(rbacFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
     when(rbacFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
     when(ccmSettingService.isCloudCostEnabled(eq(accountId))).thenReturn(false);
-    when(featureFlagService.isEnabled(FeatureName.CG_RBAC_EXCLUSION, accountId)).thenReturn(true);
     persistence.save(user);
   }
 
@@ -1128,7 +1127,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("222");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)
@@ -1166,7 +1165,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("444");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)
@@ -1201,7 +1200,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("111");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)

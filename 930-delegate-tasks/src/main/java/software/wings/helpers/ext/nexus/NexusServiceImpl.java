@@ -84,6 +84,7 @@ public class NexusServiceImpl implements NexusService {
       } else {
         if (repositoryFormat != null) {
           switch (repositoryFormat) {
+            case "raw":
             case "nuget":
             case "npm":
               return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
@@ -195,6 +196,24 @@ public class NexusServiceImpl implements NexusService {
       log.error(
           format("Error occurred while retrieving artifact names from Nexus server %s for Repository %s under path %s",
               nexusConfig.getNexusUrl(), repoId, path),
+          e);
+      handleException(e);
+    }
+    return new ArrayList<>();
+  }
+
+  @Override
+  public List<BuildDetails> getPackageNames(
+      NexusRequest nexusConfig, String repoId, String packageName, String repositoryFormat) {
+    try {
+      if (repositoryFormat.equals(RepositoryFormat.raw.name())) {
+        return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoId, packageName);
+      }
+    } catch (final IOException e) {
+      log.error(
+          format(
+              "Error occurred while retrieving package names from Nexus server %s for Repository %s and package name %s",
+              nexusConfig.getNexusUrl(), repoId, packageName),
           e);
       handleException(e);
     }

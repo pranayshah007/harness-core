@@ -18,12 +18,13 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -47,6 +48,8 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
   @Inject private AwsListVpcDelegateTaskHelper awsListVpcDelegateTaskHelper;
   @Inject private AwsListTagsDelegateTaskHelper awsListTagsDelegateTaskHelper;
   @Inject private AwsListLoadBalancersDelegateTaskHelper awsListLoadBalancersDelegateTaskHelper;
+  @Inject private AwsECSDelegateTaskHelper awsECSDelegateTaskHelper;
+  @Inject private AwsElasticLoadBalancersDelegateTaskHelper awsElasticLoadBalancersDelegateTaskHelper;
 
   public AwsDelegateTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -100,6 +103,16 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
         return awsListTagsDelegateTaskHelper.getTagList((AwsListTagsTaskParamsRequest) awsTaskParams);
       case LIST_LOAD_BALANCERS:
         return awsListLoadBalancersDelegateTaskHelper.getLoadBalancerList(awsTaskParams);
+      case LIST_ECS_CLUSTERS:
+        return awsECSDelegateTaskHelper.getEcsClustersList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCERS:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCER_LISTENERS:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerList(awsTaskParams);
+      case LIST_ELASTIC_LOAD_BALANCER_LISTENER_RULE:
+        return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerRulesList(awsTaskParams);
+      case PUT_AUDIT_BATCH_TO_BUCKET:
+        return awsS3DelegateTaskHelper.putAuditBatchToBucket((AwsPutAuditBatchToBucketTaskParamsRequest) awsTaskParams);
       default:
         throw new InvalidRequestException("Task type not identified");
     }

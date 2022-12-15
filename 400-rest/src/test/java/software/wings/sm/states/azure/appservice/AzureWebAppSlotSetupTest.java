@@ -59,12 +59,12 @@ import software.wings.beans.AzureWebAppInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.StateExecutionService;
@@ -323,7 +323,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
 
     ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder().build();
     artifactStreamAttributes.setArtifactStreamType(ArtifactStreamType.ARTIFACTORY.name());
-    artifactStreamAttributes.setServerSetting(serverSetting);
+    artifactStreamAttributes.setServerSetting(serverSetting.toDTO());
     Map<String, String> metadata = new HashMap<>();
     metadata.put("buildNo", "artifact-builder-number");
     metadata.put("url", "artifact-job-name/random-guid/artifact-name");
@@ -350,7 +350,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
   }
 
   private String getConnStringJSON() {
-    return "[\n  {\n    \"name\": \"CONN_STRING_WITH_SECRET\",\n    \"value\": \"${secrets.getValue(\\\"var_name\\\")}\",\n    \"type\": \"Custom\",\n    \"slotSetting\": false\n  },\n  {\n    \"name\": \"MY_SQL_CONN_STRING\",\n    \"value\": \"jdbc:mysql://localhost/test\",\n    \"type\": \"MySql\",\n    \"slotSetting\": true\n  },\n  {\n    \"name\": \"SQL_SERVER_CONN_STRING\",\n    \"value\": \"jdbc:sqlserver://INNOWAVE-99\\\\SQLEXPRESS01;databaseName=EDS\",\n    \"type\": \"SQLServer\",\n    \"slotSetting\": true\n  }\n]";
+    return "[\n  {\n    \"name\": \"CONN_STRING_WITH_SECRET\",\n    \"value\": \"${secrets.getValue(\\\"var_name\\\")}\",\n    \"type\": \"Custom\",\n    \"slotSetting\": false\n  },\n  {\n    \"name\": \"MY_SQL_CONN_STRING\",\n    \"value\": \"jdbc:mysql://localhost/test\",\n    \"type\": \"MySQL\",\n    \"slotSetting\": true\n  },\n  {\n    \"name\": \"SQL_SERVER_CONN_STRING\",\n    \"value\": \"jdbc:sqlserver://INNOWAVE-99\\\\SQLEXPRESS01;databaseName=EDS\",\n    \"type\": \"SQLServer\",\n    \"slotSetting\": true\n  }\n]";
   }
 
   private AzureWebAppInfrastructureMapping getAzureWebAppInfraMapping() {

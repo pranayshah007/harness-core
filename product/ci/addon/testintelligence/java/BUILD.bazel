@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -7,12 +12,14 @@ go_library(
         "gradle.go",
         "helper.go",
         "maven.go",
+        "sbt.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/java",
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/exec",
         "//commons/go/lib/filesystem",
+        "//commons/go/lib/utils",
         "//product/ci/common/external",
         "//product/ci/ti-service/types",
         "@com_github_mattn_go_zglob//:go-zglob",
@@ -27,6 +34,7 @@ go_test(
         "gradle_test.go",
         "helper_test.go",
         "maven_test.go",
+        "sbt_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":java"],

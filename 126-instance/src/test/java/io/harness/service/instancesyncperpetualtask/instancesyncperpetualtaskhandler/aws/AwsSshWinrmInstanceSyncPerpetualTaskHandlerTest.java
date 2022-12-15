@@ -21,7 +21,6 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.ssh.SshEntityHelper;
@@ -44,6 +43,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
@@ -95,12 +95,12 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
                                                             .envIdentifier("random")
                                                             .serviceIdentifier(SSH_SERVICE)
                                                             .build();
-    SshWinRmAwsInfrastructureOutcome outcome =
-        SshWinRmAwsInfrastructureOutcome.builder()
-            .infrastructureKey(INFRASTRUCTURE_KEY)
-            .credentialsRef(CRED_REF)
-            .awsInstanceFilter(AwsInstanceFilter.builder().tags(new HashMap<>()).build())
-            .build();
+    SshWinRmAwsInfrastructureOutcome outcome = SshWinRmAwsInfrastructureOutcome.builder()
+                                                   .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                   .credentialsRef(CRED_REF)
+                                                   .hostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
+                                                   .tags(new HashMap<>())
+                                                   .build();
     SecretSpec secretSpec = Mockito.mock(SecretSpec.class);
     doReturn(SSHKeySpecDTO.builder().port(PORT).build()).when(secretSpec).toDTO();
     doReturn(Optional.of(Secret.builder().secretSpec(secretSpec).build()))
@@ -120,6 +120,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
                                                          .setServiceType(SSH_SERVICE)
                                                          .setInfrastructureKey(INFRASTRUCTURE_KEY)
                                                          .setInfraDelegateConfig(ByteString.copyFrom(bytes))
+                                                         .setHostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
                                                          .build();
 
     List<ExecutionCapability> expectedExecutionCapabilityList =

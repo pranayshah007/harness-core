@@ -8,9 +8,15 @@
 package io.harness.event.reconciliation.deployment;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.event.reconciliation.DetectionStatus;
+import io.harness.event.reconciliation.ReconcilationAction;
+import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -31,6 +37,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "DeploymentReconRecordKeys")
 @ToString
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deploymentReconciliation", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class DeploymentReconRecord implements PersistentEntity, UuidAware, AccountAccess {
@@ -41,16 +48,24 @@ public class DeploymentReconRecord implements PersistentEntity, UuidAware, Accou
                  .field(DeploymentReconRecordKeys.accountId)
                  .field(DeploymentReconRecordKeys.durationEndTs)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_entityClass_durationEndTs_sorted")
+                 .field(DeploymentReconRecordKeys.accountId)
+                 .field(DeploymentReconRecordKeys.entityClass)
+                 .descSortField(DeploymentReconRecordKeys.durationEndTs)
+                 .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_reconciliationStatus")
+                 .name("accountId_reconciliationStatus_entityClass")
                  .field(DeploymentReconRecordKeys.accountId)
                  .field(DeploymentReconRecordKeys.reconciliationStatus)
+                 .field(DeploymentReconRecordKeys.entityClass)
                  .build())
         .build();
   }
 
   @Id private String uuid;
   private String accountId;
+  private String entityClass;
   private long durationStartTs;
   private long durationEndTs;
   private DetectionStatus detectionStatus;

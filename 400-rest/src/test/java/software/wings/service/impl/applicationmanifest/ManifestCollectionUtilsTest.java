@@ -201,7 +201,6 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
         MANIFEST_ID, APP_ID, HelmChartCollectionParams.HelmChartCollectionType.SPECIFIC_VERSION, "1");
     HelmChartCollectionParams helmChartCollectionParams = (HelmChartCollectionParams) collectionParams;
     assertThat(helmChartCollectionParams.getHelmChartConfigParams()).isNotNull();
-    assertThat(helmChartCollectionParams.isUseRepoFlags()).isFalse();
 
     HelmChartConfigParams helmChartConfigParams = helmChartCollectionParams.getHelmChartConfigParams();
     assertThat(helmChartConfigParams.getHelmVersion()).isEqualTo(HelmVersion.V2);

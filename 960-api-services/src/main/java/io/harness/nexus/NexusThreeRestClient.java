@@ -117,6 +117,17 @@ public interface NexusThreeRestClient {
 
   @Headers("Accept: application/json")
   @GET("service/rest/v1/search")
+  Call<Nexus3ComponentResponse> getGroupVersions(@Header("Authorization") String authorization,
+      @Query("repository") String repository, @Query("group") String group,
+      @Query("continuationToken") String continuationToken);
+
+  @Headers("Accept: application/json")
+  @GET("service/rest/v1/search")
+  Call<Nexus3ComponentResponse> getGroupVersions(@Query("repository") String repository, @Query("group") String group,
+      @Query("continuationToken") String continuationToken);
+
+  @Headers("Accept: application/json")
+  @GET("service/rest/v1/search")
   Call<Nexus3ComponentResponse> getPackageVersions(@Query("repository") String repository,
       @Query("name") String packageName, @Query("continuationToken") String continuationToken);
 

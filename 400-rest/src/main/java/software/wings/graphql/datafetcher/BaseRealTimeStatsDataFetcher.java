@@ -35,9 +35,11 @@ import software.wings.graphql.utils.nameservice.NameService;
 import software.wings.service.impl.instance.FlatEntitySummaryStats;
 
 import com.google.common.collect.Lists;
+import com.mongodb.AggregationOptions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -67,7 +69,10 @@ public interface BaseRealTimeStatsDataFetcher<F> extends BaseStatsDataFetcher {
                 grouping("$first", projection("id", secondLevelEntityIdColumn),
                     projection("name", secondLevelEntityIdColumn))))
         .sort(ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn), descending("count"))
-        .aggregate(TwoLevelAggregatedData.class)
+        .aggregate(TwoLevelAggregatedData.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(entityClass), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(aggregatedDataList::add);
 
     return getStackedData(nameService, aggregatedDataList, firstLevelAggregation, secondLevelAggregation);
@@ -97,7 +102,10 @@ public interface BaseRealTimeStatsDataFetcher<F> extends BaseStatsDataFetcher {
         .group(Group.id(getFirstLevelGrouping(entityIdColumn)), grouping("count", new Accumulator("$sum", 1)))
         .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
             projection("entityName", "_id." + entityIdColumn), projection("count"))
-        .aggregate(FlatEntitySummaryStats.class)
+        .aggregate(FlatEntitySummaryStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(entityClass), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(summaryStats::add);
 
     return getQlAggregatedData(nameService, firstLevelAggregation, dataPoints, summaryStats);

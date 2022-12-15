@@ -10,13 +10,19 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.file.GcsHarnessFileMetadata;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,16 +51,28 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gcsFileMetadata", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "GcsFileMetadataKeys")
 public class GcsFileMetadata extends Base implements AccountAccess, GcsHarnessFileMetadata {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(SortCompoundMongoIndex.builder()
+                 .name("entityId_fileBucket_createdAt")
+                 .field(GcsFileMetadataKeys.entityId)
+                 .field(GcsFileMetadataKeys.fileBucket)
+                 .descSortField(GcsFileMetadataKeys.createdAt)
+                 .build())
+        .build();
+  }
+
   @NotEmpty @FdIndex private String accountId;
   @NotEmpty @FdIndex private String fileId; // Mongo GridFs fileId.
   @NotEmpty @FdIndex private String gcsFileId;
   @NotEmpty private String fileName;
   @NotEmpty private FileBucket fileBucket;
-  @FdIndex private String entityId;
+  private String entityId;
   private int version;
   private long fileLength;
   private String mimeType;

@@ -58,6 +58,7 @@ public class NotificationPersistenceConfig extends AbstractMongoConfiguration {
             .retryWrites(true)
             .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
             .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
+            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
@@ -91,6 +92,6 @@ public class NotificationPersistenceConfig extends AbstractMongoConfiguration {
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration.getTraceMode());
+    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration);
   }
 }

@@ -22,6 +22,7 @@ import static software.wings.beans.Log.Builder.aLog;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -35,6 +36,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.GoogleDataStoreAware;
@@ -71,6 +73,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
 @FieldNameConstants(innerTypeName = "LogKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "commandLogs", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(CDC)

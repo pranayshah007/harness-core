@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static java.lang.Boolean.TRUE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.licensing.NGLicensingEntityConstants;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,6 +61,7 @@ public class SignupResource {
   /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
+   *
    * @param dto
    * @return
    */
@@ -73,6 +75,7 @@ public class SignupResource {
   /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
+   *
    * @param dto
    * @return
    */
@@ -86,8 +89,9 @@ public class SignupResource {
   @PUT
   @Path("/complete/{token}")
   @PublicApi
-  public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token) {
-    return new RestResponse<>(signupService.completeSignupInvite(token));
+  public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
+      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId) {
+    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId));
   }
 
   /**

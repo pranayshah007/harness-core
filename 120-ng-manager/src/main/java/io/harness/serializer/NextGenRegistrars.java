@@ -10,6 +10,7 @@ package io.harness.serializer;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.morphia.MorphiaRegistrar;
@@ -17,6 +18,7 @@ import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.serializer.kryo.NGCacheDataKryoRegistrar;
 import io.harness.serializer.morphia.FeedbackMorphiaRegistrars;
 import io.harness.serializer.morphia.InvitesMorphiaRegistrar;
 import io.harness.serializer.morphia.MockRoleAssignmentMorphiaRegistrar;
@@ -48,6 +50,7 @@ public class NextGenRegistrars {
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .add(NGCacheDataKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -75,7 +78,6 @@ public class NextGenRegistrars {
           .add(FeedbackMorphiaRegistrars.class)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
-          .addAll(SubscriptionRegistrars.morphiaRegistrars)
           .addAll(NGVariableRegistrars.morphiaRegistrars)
           .addAll(NGSettingRegistrar.morphiaRegistrars)
           .build();
@@ -85,6 +87,7 @@ public class NextGenRegistrars {
           .addAll(ConnectorNextGenRegistrars.yamlSchemaRegistrars)
           .addAll(GitOpsRegistrars.yamlSchemaRegistrars)
           .addAll(CDNGRegistrars.yamlSchemaRegistrars)
+          .addAll(FreezeRegistrars.yamlSchemaRegistrars)
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SECRETS)
                    .availableAtProjectLevel(true)
@@ -126,6 +129,13 @@ public class NextGenRegistrars {
                    .availableAtAccountLevel(true)
                    .availableAtOrgLevel(true)
                    .clazz(InfrastructureConfig.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ARTIFACT_SOURCE_TEMPLATE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(true)
+                   .availableAtAccountLevel(true)
+                   .clazz(ArtifactSourceConfig.class)
                    .build())
           .build();
 

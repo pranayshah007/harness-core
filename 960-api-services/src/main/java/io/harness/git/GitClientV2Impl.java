@@ -8,6 +8,7 @@
 package io.harness.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNREACHABLE_HOST;
@@ -65,6 +66,8 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.git.model.PushResultGit;
 
+import software.wings.misc.CustomUserGitConfigSystemReader;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -87,9 +90,12 @@ import java.nio.file.StandardCopyOption;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -132,6 +138,7 @@ import org.eclipse.jgit.transport.TransportHttp;
 import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.util.SystemReader;
 
 @Singleton
 @Slf4j
@@ -171,11 +178,11 @@ public class GitClientV2Impl implements GitClientV2 {
     boolean executionFailed = false;
     if (repoDir.exists()) {
       // Check URL change (ssh, https) and update in .git/config
-      updateRemoteOriginInConfig(request.getRepoUrl(), repoDir);
-
-      try (Git git = Git.open(repoDir)) {
+      updateRemoteOriginInConfig(request.getRepoUrl(), repoDir, request.getDisableUserGitConfig());
+      try (Git git = openGit(repoDir, request.getDisableUserGitConfig())) {
         log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType())
             + "Repo exist. do hard sync with remote branch");
+        printCommitId(request, git);
 
         ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request))).setTagOpt(TagOpt.FETCH_TAGS).call();
         checkout(request);
@@ -186,6 +193,7 @@ public class GitClientV2Impl implements GitClientV2 {
         }
         log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Hard reset done for branch "
             + request.getBranch());
+        printCommitId(request, git);
         // TODO:: log failed commits queued and being ignored.
         return;
       } catch (Exception ex) {
@@ -230,6 +238,15 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  private void printCommitId(GitBaseRequest request, Git git) {
+    try {
+      log.info("{}Commit id: {}", gitClientHelper.getGitLogMessagePrefix(request.getRepoType()), getHeadCommit(git));
+    } catch (Exception e) {
+      log.warn("{}Failed to get last commit: {}", gitClientHelper.getGitLogMessagePrefix(request.getRepoType()),
+          e.getMessage());
+    }
+  }
+
   @VisibleForTesting
   synchronized void clone(GitBaseRequest request, String gitRepoDirectory, boolean noCheckout) {
     try {
@@ -257,7 +274,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private synchronized void checkout(GitBaseRequest request) throws IOException, GitAPIException {
-    Git git = Git.open(new File(gitClientHelper.getRepoDirectory(request)));
+    Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig());
     try {
       if (isNotEmpty(request.getBranch())) {
         git.checkout()
@@ -280,8 +297,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @VisibleForTesting
-  void updateRemoteOriginInConfig(String repoUrl, File gitRepoDirectory) {
-    try (Git git = Git.open(gitRepoDirectory)) {
+  void updateRemoteOriginInConfig(String repoUrl, File gitRepoDirectory, Boolean clearUserGitConfig) {
+    try (Git git = openGit(gitRepoDirectory, clearUserGitConfig)) {
       StoredConfig config = git.getRepository().getConfig();
       // Update local remote url if its changed
       if (!repoUrl.equals(config.getString("remote", "origin", "url"))) {
@@ -398,7 +415,7 @@ public class GitClientV2Impl implements GitClientV2 {
                                 .repoName(request.getRepoUrl())
                                 .accountId(request.getAccountId())
                                 .build();
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(request)))) {
+    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
       git.checkout().setName(request.getBranch()).call();
       performGitPull(request, git);
       Repository repository = git.getRepository();
@@ -557,7 +574,8 @@ public class GitClientV2Impl implements GitClientV2 {
 
     ensureRepoLocallyClonedAndUpdated(commitRequest);
 
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(commitRequest)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getRepoDirectory(commitRequest)), commitRequest.getDisableUserGitConfig())) {
       applyChangeSetOnFileSystem(gitClientHelper.getRepoDirectory(commitRequest), commitRequest, filesToAdd, git);
 
       // Removal of files should happen before addition of files.
@@ -620,7 +638,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private List<GitFileChange> getFilesCommited(String gitCommitId, CommitAndPushRequest commitAndPushRequest) {
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(commitAndPushRequest)))) {
+    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(commitAndPushRequest)),
+             commitAndPushRequest.getDisableUserGitConfig())) {
       ObjectId commitId = ObjectId.fromString(gitCommitId);
       RevCommit currentCommitObject = null;
       try (RevWalk revWalk = new RevWalk(git.getRepository())) {
@@ -818,7 +837,8 @@ public class GitClientV2Impl implements GitClientV2 {
     log.info(gitClientHelper.getGitLogMessagePrefix(commitAndPushRequest.getRepoType())
         + "Performing git PUSH, forcePush is: " + forcePush);
 
-    try (Git git = Git.open(new File(gitClientHelper.getRepoDirectory(commitAndPushRequest)))) {
+    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(commitAndPushRequest)),
+             commitAndPushRequest.getDisableUserGitConfig())) {
       Iterable<PushResult> pushResults = ((PushCommand) (getAuthConfiguredCommand(git.push(), commitAndPushRequest)))
                                              .setRemote("origin")
                                              .setForce(forcePush)
@@ -839,11 +859,15 @@ public class GitClientV2Impl implements GitClientV2 {
       if (remoteRefUpdate.getStatus() == OK || remoteRefUpdate.getStatus() == UP_TO_DATE) {
         return pushResultBuilder().refUpdate(refUpdate).build();
       } else {
-        String errorMsg = format("Unable to push changes to git repository [%s]. "
-                + "Status reported by Remote is: %s and message is: %s. "
-                + "Other info: Force push: %s. Fast forward: %s",
-            commitAndPushRequest.getRepoUrl(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage(),
-            remoteRefUpdate.isForceUpdate(), remoteRefUpdate.isFastForward());
+        String errorMsg = format("Unable to push changes to git repository [%s] and branch [%s]. "
+                + "Status reported by Remote is: %s and message is: %s. \n \n"
+                + "Files which were staged: [%s]",
+            commitAndPushRequest.getRepoUrl(), commitAndPushRequest.getBranch(), remoteRefUpdate.getStatus(),
+            remoteRefUpdate.getMessage(),
+            emptyIfNull(commitAndPushRequest.getGitFileChanges())
+                .stream()
+                .map(GitFileChange::getFilePath)
+                .collect(Collectors.toList()));
         log.error(gitClientHelper.getGitLogMessagePrefix(commitAndPushRequest.getRepoType()) + errorMsg);
         throw new YamlException(errorMsg, ADMIN_SRE);
       }
@@ -872,7 +896,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private void checkoutGivenCommitForAllPaths(FetchFilesBwCommitsRequest request) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(request)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Checking out commitId: " + request.getNewCommitId());
       CheckoutCommand checkoutCommand =
           git.checkout().setStartPoint(request.getNewCommitId()).setCreateBranch(false).setAllPaths(true);
@@ -945,7 +970,8 @@ public class GitClientV2Impl implements GitClientV2 {
         checkoutGivenCommitForAllPaths(request);
         List<GitFile> gitFilesFromDiff;
 
-        try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(request)))) {
+        try (Git git = openGit(
+                 new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
           Repository repository = git.getRepository();
 
           ObjectId newCommitHead = repository.resolve(request.getNewCommitId() + "^{tree}");
@@ -1078,7 +1104,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void downloadFiles(DownloadFilesRequest request) throws IOException {
+  public String downloadFiles(DownloadFilesRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
 
@@ -1119,7 +1145,53 @@ public class GitClientV2Impl implements GitClientV2 {
           }
         }
 
+        String commitReference = null;
+        if (request.isTrackCommitReference()) {
+          commitReference = getLatestCommitReference(repoPath);
+        }
+
         resetWorkingDir(request);
+        return commitReference;
+      } catch (WingsException e) {
+        tryResetWorkingDir(request);
+        throw e;
+      } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
+        tryResetWorkingDir(request);
+        throw new YamlException(new StringBuilder()
+                                    .append("Failed while fetching files ")
+                                    .append(request.useBranch() ? "for Branch: " : "for CommitId: ")
+                                    .append(request.useBranch() ? request.getBranch() : request.getCommitId())
+                                    .append(", FilePaths: ")
+                                    .append(request.getFilePaths())
+                                    .append(". Reason: ")
+                                    .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
+                                    .toString(),
+            e, USER);
+      }
+    }
+  }
+
+  @Override
+  @Nullable
+  public String cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
+    final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock ignored = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
+        ensureRepoLocallyClonedAndUpdated(request);
+        String repoPath = gitClientHelper.getRepoDirectory(request);
+        File src = new File(repoPath);
+        File dest = new File(request.getDestinationDirectory());
+        deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+        FileUtils.copyDirectory(src, dest);
+        FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+
+        return getLatestCommitReference(repoPath);
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;
@@ -1151,7 +1223,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private void resetWorkingDir(GitBaseRequest request) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(request)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Resetting repo");
       ResetCommand resetCommand = new ResetCommand(git.getRepository()).setMode(ResetCommand.ResetType.HARD);
       resetCommand.call();
@@ -1194,7 +1267,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private void checkoutGivenCommitForPath(FetchFilesByPathRequest request) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(request)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Checking out commitId: " + request.getCommitId());
       CheckoutCommand checkoutCommand = git.checkout().setStartPoint(request.getCommitId()).setCreateBranch(false);
 
@@ -1212,7 +1286,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   private void checkoutBranchForPath(FetchFilesByPathRequest request) {
-    try (Git git = Git.open(new File(gitClientHelper.getFileDownloadRepoDirectory(request)))) {
+    try (Git git = openGit(
+             new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Checking out Branch: " + request.getBranch());
       CheckoutCommand checkoutCommand = git.checkout()
                                             .setCreateBranch(true)
@@ -1267,9 +1342,9 @@ public class GitClientV2Impl implements GitClientV2 {
     // If repo already exists, update references
     if (repoDir.exists()) {
       // Check URL change (ssh, https) and update in .git/config
-      updateRemoteOriginInConfig(request.getRepoUrl(), repoDir);
+      updateRemoteOriginInConfig(request.getRepoUrl(), repoDir, request.getDisableUserGitConfig());
 
-      try (Git git = Git.open(repoDir)) {
+      try (Git git = openGit(repoDir, request.getDisableUserGitConfig())) {
         // update ref with latest commits on remote
         FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request)))
                                       .setRemoveDeletedRefs(true)
@@ -1347,5 +1422,29 @@ public class GitClientV2Impl implements GitClientV2 {
       });
     }
     return gitCommand;
+  }
+
+  private Git openGit(File repoDir, Boolean disableUserConfig) throws IOException {
+    if (disableUserConfig != null && disableUserConfig) {
+      SystemReader.setInstance(new CustomUserGitConfigSystemReader(null));
+    } else {
+      SystemReader.setInstance(null);
+    }
+    return Git.open(repoDir);
+  }
+
+  private String getLatestCommitReference(String repoDir) {
+    try (Git git = Git.open(new File(repoDir))) {
+      Iterator<RevCommit> commits = git.log().call().iterator();
+      if (commits.hasNext()) {
+        RevCommit firstCommit = commits.next();
+
+        return firstCommit.toString().split(" ")[1];
+      }
+    } catch (IOException | GitAPIException e) {
+      log.error("Failed to extract the commit id from the cloned repo.", e);
+    }
+
+    return null;
   }
 }

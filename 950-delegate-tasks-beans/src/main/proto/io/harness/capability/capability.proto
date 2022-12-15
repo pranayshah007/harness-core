@@ -53,7 +53,9 @@ message AwsRegionParameters {
 }
 
 // Whether chart museum is enabled or not
-message ChartMuseumParameters {}
+message ChartMuseumParameters {
+  bool use_latest_chart_museum_version = 1;
+}
 
 // Whether or not git command line is installed on a delegate or not, regardless
 // of the specific java connector used for git.

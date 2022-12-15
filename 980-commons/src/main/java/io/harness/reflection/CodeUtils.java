@@ -21,6 +21,30 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CodeUtils {
+  /**
+   * This function will provide the top level module path.
+   */
+  public static String topModuleLocation(Class clazz) {
+    String location = location(clazz);
+    if (location == null) {
+      return null;
+    }
+
+    String matchWord = "bin/";
+    int matchIndex = location.indexOf(matchWord) + matchWord.length();
+
+    String binPath = location.substring(0, matchIndex);
+    String topLevelModule = location.substring(matchIndex);
+    String topLevelModuleName = "";
+    if (topLevelModule.indexOf('/') != -1) {
+      topLevelModuleName = topLevelModule.substring(0, topLevelModule.indexOf('/'));
+    } else {
+      topLevelModuleName = topLevelModule;
+    }
+
+    return binPath + topLevelModuleName;
+  }
+
   public static String location(Class clazz) {
     final ProtectionDomain protectionDomain = clazz.getProtectionDomain();
     if (protectionDomain == null) {
@@ -87,10 +111,9 @@ public class CodeUtils {
     if (!CodeUtils.isHarnessClass(clazz)) {
       return true;
     }
-    final String clazzLocation = Preconditions.checkNotNull(CodeUtils.location(clazz));
-    if (clazzLocation.equals(location)) {
-      return true;
-    }
-    return false;
+    final String clazzLocation = Preconditions.checkNotNull(CodeUtils.topModuleLocation(clazz));
+
+    // Return true if clazz is located in any folder inside the parent module.
+    return clazzLocation.startsWith(location);
   }
 }

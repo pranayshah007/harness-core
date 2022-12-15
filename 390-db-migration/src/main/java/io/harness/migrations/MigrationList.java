@@ -37,9 +37,12 @@ import io.harness.migrations.all.AddDuplicateFieldToCVFeedbacks;
 import io.harness.migrations.all.AddEnableIteratorsToTriggers;
 import io.harness.migrations.all.AddHarnessCommandLibraryToAccount;
 import io.harness.migrations.all.AddHarnessGroupAccessFlagToAccount;
+import io.harness.migrations.all.AddImmutableDelegateEnabledFieldToAccountCollection;
 import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
+import io.harness.migrations.all.AddIsProductLedToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
 import io.harness.migrations.all.AddLoginSettingsToAccountMigration;
+import io.harness.migrations.all.AddNGFieldToDelegateMigration;
 import io.harness.migrations.all.AddNgFieldToDelegateGroupMigration;
 import io.harness.migrations.all.AddReplCtrlNameToKubeSetupProperties;
 import io.harness.migrations.all.AddRestrictionsToSecretManagerConfig;
@@ -166,6 +169,7 @@ import io.harness.migrations.all.ServiceNameMigrationIfEmpty;
 import io.harness.migrations.all.SetIsDeletedFlagForInstances;
 import io.harness.migrations.all.SetNamespaceInContainerInstanceInfo;
 import io.harness.migrations.all.SetNamespaceToKubernetesInstanceInfo;
+import io.harness.migrations.all.SetPropertiesToCloudformationRollbackStackSteps;
 import io.harness.migrations.all.SetRollbackFlagToWorkflows;
 import io.harness.migrations.all.SettingAttributesCategoryMigration;
 import io.harness.migrations.all.SshAndWinRmAccountPermissionMigration;
@@ -451,7 +455,14 @@ public class MigrationList {
         .add(Pair.of(370, ManageAccountDefaultsPermissionMigration.class))
         .add(Pair.of(371, BaseMigration.class))
         .add(Pair.of(372, BaseMigration.class))
-        .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
+        .add(Pair.of(373, BaseMigration.class))
+        .add(Pair.of(374, AddIsProductLedToAccount.class))
+        .add(Pair.of(376, UpdateRebalanceStateToTaskUnAssigned.class))
+        .add(Pair.of(377, BaseMigration.class))
+        .add(Pair.of(378, SetPropertiesToCloudformationRollbackStackSteps.class))
+        .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
+        .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
+        .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
         .build();
   }
 }

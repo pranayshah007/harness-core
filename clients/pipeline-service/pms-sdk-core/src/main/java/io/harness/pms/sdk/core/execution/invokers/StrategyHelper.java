@@ -59,7 +59,6 @@ public class StrategyHelper {
     if (taskFailureData != null && taskFailureData.getCommandUnitsProgress() != null) {
       stepResponseBuilder.unitProgressList(taskFailureData.getCommandUnitsProgress().getUnitProgresses());
     }
-
     return stepResponseBuilder.failureInfo(failureInfo).build();
   }
 }

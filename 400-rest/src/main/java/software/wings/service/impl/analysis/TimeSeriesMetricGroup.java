@@ -8,11 +8,13 @@
 package software.wings.service.impl.analysis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeSeriesMetricGroup", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "TimeSeriesMetricGroupKeys")

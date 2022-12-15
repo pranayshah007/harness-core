@@ -18,6 +18,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
@@ -28,6 +29,7 @@ import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
@@ -97,7 +99,7 @@ public class InputSetValidationHelper {
   operation is to a new branch or not. If it is to a new branch, then it creates a guard to fetch the pipeline from the
   base branch. If not, no guard is needed.
   */
-  PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
+  public PipelineEntity getPipelineEntity(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> optionalPipelineEntity;
     if (GitContextHelper.isUpdateToNewBranch()) {
@@ -105,14 +107,14 @@ public class InputSetValidationHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity =
-            pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
-      optionalPipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
@@ -147,8 +149,9 @@ public class InputSetValidationHelper {
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 
-  String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
+  public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String pipelineBranch,
+      String pipelineRepoID) {
     if (EmptyPredicate.isEmpty(pipelineBranch) || EmptyPredicate.isEmpty(pipelineRepoID)) {
       return getPipelineYamlForOldGitSyncFlowInternal(
           pmsPipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
@@ -166,8 +169,8 @@ public class InputSetValidationHelper {
 
   String getPipelineYamlForOldGitSyncFlowInternal(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (pipelineEntity.isPresent()) {
       return pipelineEntity.get().getYaml();
     } else {
@@ -200,6 +203,8 @@ public class InputSetValidationHelper {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    EntityGitDetails entityGitDetails = PMSInputSetElementMapper.getEntityGitDetails(inputSetEntity);
+
     boolean isOldGitSyncFlow = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
     String pipelineYaml;
     if (isOldGitSyncFlow) {
@@ -210,13 +215,18 @@ public class InputSetValidationHelper {
           getPipelineEntity(pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       pipelineYaml = pipelineEntity.getYaml();
     }
+
+    InputSetYamlDiffDTO yamlDiffDTO;
     if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-      return getYAMLDiffForInputSet(
-          validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID, pipelineYaml);
+      yamlDiffDTO =
+          getYAMLDiffForInputSet(validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID, pipelineYaml);
     } else {
-      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+      yamlDiffDTO = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
           gitSyncSdkService, inputSetService, inputSetEntity, pipelineYaml);
     }
+
+    yamlDiffDTO.setGitDetails(entityGitDetails);
+    return yamlDiffDTO;
   }
 
   InputSetYamlDiffDTO getYAMLDiffForInputSet(ValidateAndMergeHelper validateAndMergeHelper,

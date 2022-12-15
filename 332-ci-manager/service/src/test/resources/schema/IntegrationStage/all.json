@@ -24,9 +24,15 @@
     "description": {
       "type": "string"
     },
+    "failureStrategies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FailureStrategyConfig"
+      }
+    },
     "identifier": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+      "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
     },
     "name": {
       "type": "string",
@@ -178,6 +184,9 @@
                 }
               ]
             },
+            "subscriptionId": {
+              "type": "string"
+            },
             "tags": {
               "oneOf": [
                 {
@@ -215,6 +224,788 @@
               "enum": [
                 "Abort"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ActionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AquaTrivyStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsEcrStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BackgroundStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "entrypoint": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "portBindings": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "reports": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/UnitTestReport"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Sh",
+                    "Bash",
+                    "Powershell",
+                    "Pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BanditStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BitriseStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BlackDuckStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlBlackduckToolData"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BrakemanStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
@@ -278,9 +1069,6 @@
         "type"
       ],
       "properties": {
-        "spec": {
-          "$ref": "#/definitions/BuildSpec"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -290,7 +1078,57 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PRBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "branch"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tag"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TagBuildSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "BuildJobEnvInfo": {
       "type": "object",
@@ -300,7 +1138,8 @@
           "type": "string",
           "enum": [
             "K8",
-            "VM"
+            "VM",
+            "DOCKER"
           ]
         }
       },
@@ -308,6 +1147,121 @@
     },
     "BuildSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BurpStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CIExecutionArgs": {
@@ -402,6 +1356,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Caching": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "paths": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Capabilities": {
       "type": "object",
       "properties": {
@@ -436,6 +1423,240 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CheckmarxStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlCheckmarxToolData"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ClairStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CleanupStepInfo": {
@@ -605,7 +1826,8 @@
             "PLUGIN",
             "SERVICE",
             "LITE_ENGINE",
-            "TEST_INTELLIGENCE"
+            "TEST_INTELLIGENCE",
+            "BACKGROUND"
           ]
         },
         "envVars": {
@@ -726,6 +1948,118 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DataTheoremStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DependencyElement": {
       "type": "object",
       "required": [
@@ -757,6 +2091,189 @@
     "DependencySpecType": {
       "type": "object",
       "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerContentTrustStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerInfraSpec": {
+      "type": "object",
+      "required": [
+        "platform"
+      ],
+      "properties": {
+        "platform": {
+          "$ref": "#/definitions/ParameterFieldPlatform"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerInfraYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/DockerInfraSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "UseFromStage",
+                "VM",
+                "KubernetesHosted"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerRuntime": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Runtime"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/DockerRuntimeSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Docker"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerRuntimeSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -1056,18 +2573,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "exclude": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ExecutionElementConfig": {
       "type": "object",
       "required": [
@@ -1121,6 +2626,118 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ExternalStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "FailureStrategyActionConfig": {
       "type": "object",
       "required": [
@@ -1137,7 +2754,9 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
-            "ManualIntervention"
+            "PipelineRollback",
+            "ManualIntervention",
+            "ProceedWithDefaultValues"
           ]
         }
       },
@@ -1153,6 +2772,128 @@
           "$ref": "#/definitions/OnFailureConfig"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "FortifyOnDemandStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlFODToolData"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GCRStepInfo": {
@@ -1265,6 +3006,201 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GitCloneStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "build",
+            "connectorRef"
+          ],
+          "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "build": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/Build"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "cloneDirectory": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "depth": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "projectName": {
+              "type": "string"
+            },
+            "repoName": {
+              "type": "string"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "sslVerify": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GrypeStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessForConfig": {
       "type": "object",
       "properties": {
@@ -1277,7 +3213,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1292,7 +3228,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1306,7 +3242,21 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "partitionSize": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1320,7 +3270,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1334,7 +3284,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1628,6 +3578,9 @@
     "IntegrationStageConfig": {
       "type": "object",
       "properties": {
+        "caching": {
+          "$ref": "#/definitions/Caching"
+        },
         "cloneCodebase": {
           "$ref": "#/definitions/ParameterFieldBoolean"
         },
@@ -1655,6 +3608,13 @@
     "IntegrationStageConfigImpl": {
       "type": "object",
       "properties": {
+        "caching": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Caching"
+            }
+          ]
+        },
         "cloneCodebase": {
           "oneOf": [
             {
@@ -1672,6 +3632,9 @@
         },
         "infrastructure": {
           "oneOf": [
+            {
+              "$ref": "#/definitions/DockerInfraYaml"
+            },
             {
               "$ref": "#/definitions/HostedVmInfraYaml"
             },
@@ -1705,6 +3668,9 @@
           "oneOf": [
             {
               "$ref": "#/definitions/CloudRuntime"
+            },
+            {
+              "$ref": "#/definitions/DockerRuntime"
             }
           ]
         },
@@ -1765,9 +3731,15 @@
         "description": {
           "type": "string"
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         },
         "name": {
           "type": "string",
@@ -1848,6 +3820,118 @@
                   "type": "string"
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JfrogXrayStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
@@ -1982,7 +4066,9 @@
           ]
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2147483647
         },
         "nodeSelector": {
           "oneOf": [
@@ -2216,21 +4302,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "MatrixConfig": {
+    "MatrixConfigInterface": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MendStepInfo": {
       "allOf": [
         {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "$ref": "#/definitions/StepSpecType"
         },
         {
           "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
           "properties": {
-            "exclude": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
               "oneOf": [
                 {
-                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
-                },
-                {
-                  "type": "array"
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
                 },
                 {
                   "type": "string",
@@ -2239,28 +4348,186 @@
                 }
               ]
             },
-            "maxConcurrency": {
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
               "oneOf": [
                 {
-                  "type": "integer",
-                  "format": "int32",
-                  "minimum": 0
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "MatrixConfigInterface": {
-      "type": "object",
-      "discriminator": "type",
+    "MetasploitStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NGVariable": {
@@ -2290,6 +4557,454 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NessusStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusIQStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NiktoStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NmapStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NumberNGVariable": {
       "allOf": [
         {
@@ -2307,7 +5022,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -2323,7 +5038,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
+                  "pattern": "((^[+-]?[0-9]*\\.?[0-9]+$)|(<\\+.+>.*))"
                 }
               ]
             }
@@ -2354,6 +5069,12 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/RetryFailureActionConfig"
             },
             {
@@ -2377,7 +5098,9 @@
               "Authorization",
               "Verification",
               "DelegateProvisioning",
-              "PolicyEvaluationFailure"
+              "PolicyEvaluationFailure",
+              "InputTimeoutError",
+              "ApprovalRejection"
             ]
           }
         }
@@ -2400,6 +5123,12 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
               "$ref": "#/definitions/RetryFailureActionConfig"
@@ -2433,6 +5162,12 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/RetryFailureActionConfig"
             },
             {
@@ -2446,6 +5181,118 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OpenvasStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "OutputNGVariable": {
       "type": "object",
       "properties": {
@@ -2454,9 +5301,121 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OwaspStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PRBuildSpec": {
@@ -2700,45 +5659,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldListExcludeConfig": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExcludeConfig"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldListString": {
       "type": "object",
       "properties": {
@@ -2812,6 +5732,45 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMapStringString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
         }
       },
@@ -2897,6 +5856,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Platform": {
       "type": "object",
       "properties": {
@@ -2905,7 +5886,8 @@
             {
               "type": "string",
               "enum": [
-                "Amd64"
+                "Amd64",
+                "Arm64"
               ]
             },
             {
@@ -2942,13 +5924,22 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef",
-            "image"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
+            },
+            "entrypoint": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "image": {
               "type": "string"
@@ -3009,6 +6000,94 @@
               ]
             },
             "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PluginStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
               "oneOf": [
                 {
                   "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
@@ -3119,6 +6198,483 @@
           }
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PrismaCloudStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProceedWithDefaultValuesFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ProceedWithDefaultValues"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProwlerStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "QualysStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ReapsawStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Repository": {
@@ -3527,7 +7083,8 @@
                     "Bazel",
                     "Gradle",
                     "Dotnet",
-                    "Nunitconsole"
+                    "Nunitconsole",
+                    "SBT"
                   ]
                 },
                 {
@@ -3539,6 +7096,9 @@
             },
             "connectorRef": {
               "type": "string"
+            },
+            "enableTestSplitting": {
+              "type": "boolean"
             },
             "envVariables": {
               "oneOf": [
@@ -3595,6 +7155,8 @@
                   "type": "string",
                   "enum": [
                     "Java",
+                    "Kotlin",
+                    "Scala",
                     "Csharp"
                   ]
                 },
@@ -3700,6 +7262,25 @@
             },
             "testAnnotations": {
               "type": "string"
+            },
+            "testGlobs": {
+              "type": "string"
+            },
+            "testSplitStrategy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ClassTiming",
+                    "TestCount"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -3713,7 +7294,808 @@
         "type": {
           "type": "string",
           "enum": [
+            "Docker",
             "Cloud"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlAdvancedSettings": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/STOYamlArgs"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "failOnSeverity": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "includeRaw": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "log": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/STOYamlLog"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "ssl": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlArgs": {
+      "type": "object",
+      "properties": {
+        "cli": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "passthrough": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlAuth": {
+      "type": "object",
+      "required": [
+        "accessToken"
+      ],
+      "properties": {
+        "accessId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "accessToken": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "domain": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "type": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "repository",
+                "container",
+                "instance",
+                "configuration"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "version": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlBlackduckToolData": {
+      "type": "object",
+      "properties": {
+        "projectName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "projectVersion": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlCheckmarxToolData": {
+      "type": "object",
+      "properties": {
+        "projectName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "teamName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlFODToolData": {
+      "type": "object",
+      "properties": {
+        "appName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "auditType": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "dataCenter": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "entitlement": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "loookupType": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "ownerId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "releaseName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "scanSettings": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "scanType": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "targetLanguage": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "targetLanguageVersion": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlImage": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "accessId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "accessToken": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "domain": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "name": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "region": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "tag": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "type": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "aws_ecr",
+                "docker_v2",
+                "jfrog_artifactory",
+                "local_image"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlIngestion": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlInstance": {
+      "type": "object",
+      "properties": {
+        "accessId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "accessToken": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "domain": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "path": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "port": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "protocol": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlJavaParameters": {
+      "type": "object",
+      "properties": {
+        "binaries": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "libraries": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlLog": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "serializer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlSonarqubeToolData": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "include": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "java": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/STOYamlJavaParameters"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlTarget": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "variant"
+      ],
+      "properties": {
+        "name": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "ssl": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "type": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "variant": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "workspace": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlVeracodeToolData": {
+      "type": "object",
+      "properties": {
+        "appId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "projectName": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlZapToolData": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "port": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
           ]
         }
       },
@@ -3903,6 +8285,117 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScriptStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "run"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "run": {
+              "type": "string"
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sh",
+                    "bash",
+                    "powershell",
+                    "pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -3919,7 +8412,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -4103,6 +8596,468 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ShiftLeftStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SniperStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SnykStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SonarqubeStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlSonarqubeToolData"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StageRollbackFailureActionConfig": {
       "allOf": [
         {
@@ -4164,7 +9119,7 @@
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         },
         "name": {
           "type": "string",
@@ -4190,6 +9145,54 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AWSECR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsEcrStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Action"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ActionStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AquaTrivy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AquaTrivyStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ArtifactoryUpload"
               }
             }
@@ -4198,6 +9201,86 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/UploadToArtifactoryStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Background"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BackgroundStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bandit"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BanditStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bitrise"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BitriseStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BlackDuck"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BlackDuckStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Brakeman"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BrakemanStepInfo"
               }
             }
           }
@@ -4270,6 +9353,118 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Burp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BurpStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Checkmarx"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CheckmarxStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Clair"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ClairStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DataTheorem"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DataTheoremStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DockerContentTrust"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DockerContentTrustStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "External"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ExternalStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "FortifyOnDemand"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/FortifyOnDemandStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "GCSUpload"
               }
             }
@@ -4286,6 +9481,182 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GitClone"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitCloneStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Grype"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GrypeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "JfrogXray"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JfrogXrayStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Mend"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/MendStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Metasploit"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/MetasploitStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nessus"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NessusStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "NexusIQ"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusIQStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nikto"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NiktoStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nmap"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NmapStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Openvas"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OpenvasStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Owasp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OwaspStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Plugin"
               }
             }
@@ -4294,6 +9665,70 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PluginStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PrismaCloud"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PrismaCloudStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Prowler"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ProwlerStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Qualys"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/QualysStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Reapsaw"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ReapsawStepInfo"
               }
             }
           }
@@ -4425,6 +9860,166 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ShiftLeft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ShiftLeftStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Sniper"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SniperStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Snyk"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SnykStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Sonarqube"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SonarqubeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Sysdig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SysdigStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Tenable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TenableStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Veracode"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/VeracodeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Zap"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ZapStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "plugin"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PluginStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "script"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ScriptStepInfo"
+              }
+            }
+          }
         }
       ]
     },
@@ -4459,7 +10054,7 @@
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         },
         "name": {
           "type": "string",
@@ -4533,11 +10128,7 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/MatrixConfig"
-            }
-          ]
+          "$ref": "#/definitions/MatrixConfigInterface"
         },
         "parallelism": {
           "oneOf": [
@@ -4548,7 +10139,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4606,7 +10197,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
             },
             "type": {
               "type": "string",
@@ -4616,6 +10207,118 @@
             },
             "value": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SysdigStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
@@ -4635,6 +10338,118 @@
           "properties": {
             "tag": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TenableStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
             }
           }
         }
@@ -4864,6 +10679,125 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "VeracodeStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth",
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlVeracodeToolData"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "VmBuildJobInfo": {
       "allOf": [
         {
@@ -4988,6 +10922,9 @@
         "identifier": {
           "type": "string"
         },
+        "initTimeout": {
+          "type": "string"
+        },
         "os": {
           "oneOf": [
             {
@@ -5036,6 +10973,9 @@
           "type": "string"
         },
         "link": {
+          "type": "string"
+        },
+        "mergeSha": {
           "type": "string"
         },
         "message": {
@@ -5108,6 +11048,124 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ZapStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "config",
+            "mode",
+            "target"
+          ],
+          "properties": {
+            "advanced": {
+              "$ref": "#/definitions/STOYamlAdvancedSettings"
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "config": {
+              "type": "string",
+              "enum": [
+                "default"
+              ]
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "ingestion": {
+              "$ref": "#/definitions/STOYamlIngestion"
+            },
+            "instance": {
+              "$ref": "#/definitions/STOYamlInstance"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ingestion",
+                "orchestration",
+                "extraction"
+              ]
+            },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlZapToolData"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   }

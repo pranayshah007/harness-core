@@ -11,22 +11,31 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.jira.JiraClient;
-import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldTypeNG;
+import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueTypeNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
+import io.harness.jira.JiraProjectNG;
 import io.harness.jira.JiraStatusNG;
+import io.harness.jira.JiraUserData;
 
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -75,19 +84,9 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse getIssueCreateMetadata(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(params.getProjectKey(),
-        params.getIssueType(), params.getExpand(), params.isFetchStatus(), params.isIgnoreComment());
-
-    // TECHDEBIT: we need to remove user type fields only from calls NG until we add support. After that we need to
-    // remove this block of code.
-    Set<JiraFieldNG> jiraUserFields = new HashSet<>();
-    createMetadata.getProjects().values().forEach(proj
-        -> proj.getIssueTypes().values().forEach(issueType -> issueType.getFields().values().stream().forEach(field -> {
-      if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
-        jiraUserFields.add(field);
-      }
-    })));
-    jiraUserFields.forEach(field -> createMetadata.removeField(field.getName()));
+    JiraIssueCreateMetadataNG createMetadata =
+        jiraClient.getIssueCreateMetadata(params.getProjectKey(), params.getIssueType(), params.getExpand(),
+            params.isFetchStatus(), params.isIgnoreComment(), params.isNewMetadata(), false);
 
     return JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build();
   }
@@ -100,15 +99,91 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse createIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueNG issue = jiraClient.createIssue(params.getProjectKey(), params.getIssueType(), params.getFields(), true);
+    Set<String> userTypeFields = new HashSet<>();
+    if (EmptyPredicate.isNotEmpty(params.getFields())) {
+      JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(
+          params.getProjectKey(), params.getIssueType(), null, false, false, params.isNewMetadata(), false);
+      JiraProjectNG project = createMetadata.getProjects().get(params.getProjectKey());
+      if (project != null) {
+        JiraIssueTypeNG issueType = project.getIssueTypes().get(params.getIssueType());
+        if (issueType != null) {
+          issueType.getFields().entrySet().forEach(e -> {
+            if (e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER)) {
+              userTypeFields.add(e.getKey());
+            }
+          });
+          setUserTypeCustomFieldsIfPresent(jiraClient, userTypeFields, params);
+        }
+      }
+    }
+    JiraIssueNG issue = jiraClient.createIssue(
+        params.getProjectKey(), params.getIssueType(), params.getFields(), true, params.isNewMetadata(), false);
     return JiraTaskNGResponse.builder().issue(issue).build();
   }
 
   public JiraTaskNGResponse updateIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
+
+    if (EmptyPredicate.isNotEmpty(params.getFields())) {
+      JiraIssueUpdateMetadataNG updateMetadata = jiraClient.getIssueUpdateMetadata(params.getIssueKey());
+      if (updateMetadata != null) {
+        Set<String> userTypeFields = updateMetadata.getFields()
+                                         .entrySet()
+                                         .stream()
+                                         .filter(e -> e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER))
+                                         .map(Map.Entry::getKey)
+                                         .collect(Collectors.toSet());
+        setUserTypeCustomFieldsIfPresent(jiraClient, userTypeFields, params);
+      }
+    }
     JiraIssueNG issue = jiraClient.updateIssue(
         params.getIssueKey(), params.getTransitionToStatus(), params.getTransitionName(), params.getFields());
     return JiraTaskNGResponse.builder().issue(issue).build();
+  }
+
+  public JiraTaskNGResponse searchUser(JiraTaskNGParameters params) {
+    JiraClient jiraClient = getJiraClient(params);
+    List<JiraUserData> jiraUserDataList = jiraClient.getUsers(
+        params.getJiraSearchUserParams().getUserQuery(), null, params.getJiraSearchUserParams().getStartAt());
+    return JiraTaskNGResponse.builder()
+        .jiraSearchUserData(JiraSearchUserData.builder().jiraUserDataList(jiraUserDataList).build())
+        .build();
+  }
+
+  private void setUserTypeCustomFieldsIfPresent(
+      JiraClient jiraClient, Set<String> userTypeFields, JiraTaskNGParameters params) {
+    params.getFields().forEach((key, value) -> {
+      List<JiraUserData> userDataList = new ArrayList<>();
+
+      if (userTypeFields.contains(key)) {
+        if (value != null && !value.equals("")) {
+          if (value.startsWith("JIRAUSER")) {
+            JiraUserData userData = jiraClient.getUser(value);
+            params.getFields().put(key, userData.getName());
+            return;
+          }
+
+          JiraInstanceData jiraInstanceData = jiraClient.getInstanceData();
+          if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
+            userDataList = jiraClient.getUsers(null, value, null);
+            if (userDataList.isEmpty()) {
+              userDataList = jiraClient.getUsers(value, null, null);
+            }
+          } else {
+            userDataList = jiraClient.getUsers(value, null, null);
+          }
+          if (userDataList.size() != 1) {
+            throw new InvalidRequestException(
+                "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
+          }
+          if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+            params.getFields().put(key, userDataList.get(0).getName());
+          } else {
+            params.getFields().put(key, userDataList.get(0).getAccountId());
+          }
+        }
+      }
+    });
   }
 
   private JiraClient getJiraClient(JiraTaskNGParameters parameters) {

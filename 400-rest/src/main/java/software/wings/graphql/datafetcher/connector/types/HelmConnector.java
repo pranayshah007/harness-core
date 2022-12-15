@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.utils.RequestField;
@@ -56,6 +55,7 @@ public class HelmConnector extends Connector {
     QLAmazonS3PlatformInput amazonS3PlatformInput = getAmazonS3PlatformInput(helmConnectorInput);
     QLGCSPlatformInput gcsPlatformInput = getGCSPlatformInput(helmConnectorInput);
     QLHttpServerPlatformInput httpServerPlatformInput = getHttpServerPlatformInput(helmConnectorInput);
+    QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
 
     if (amazonS3PlatformInput != null) {
       AmazonS3HelmRepoConfig amazonS3HelmRepoConfig = new AmazonS3HelmRepoConfig();
@@ -76,11 +76,7 @@ public class HelmConnector extends Connector {
       setUrl(httpServerPlatformInput, httpHelmRepoConfig);
       settingAttribute = getSettingAttribute(httpHelmRepoConfig, accountId);
 
-    } else if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, accountId)) {
-      QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
-      if (ociPlatformInput == null) {
-        throw new InvalidRequestException("Hosting platform details are not specified");
-      }
+    } else if (ociPlatformInput != null) {
       OciHelmRepoConfig ociHelmRepoConfig = new OciHelmRepoConfig();
       ociHelmRepoConfig.setAccountId(accountId);
       setUsernameAndPassword(ociPlatformInput, ociHelmRepoConfig);
@@ -105,6 +101,7 @@ public class HelmConnector extends Connector {
     QLAmazonS3PlatformInput amazonS3PlatformInput = getAmazonS3PlatformInput(helmConnectorInput);
     QLGCSPlatformInput gcsPlatformInput = getGCSPlatformInput(helmConnectorInput);
     QLHttpServerPlatformInput httpServerPlatformInput = getHttpServerPlatformInput(helmConnectorInput);
+    QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
 
     if (amazonS3PlatformInput != null) {
       AmazonS3HelmRepoConfig amazonS3HelmRepoConfig = (AmazonS3HelmRepoConfig) settingAttribute.getValue();
@@ -122,15 +119,11 @@ public class HelmConnector extends Connector {
       setUrl(httpServerPlatformInput, httpHelmRepoConfig);
       settingAttribute.setValue(httpHelmRepoConfig);
 
-    } else if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId())) {
-      QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
-
-      if (ociPlatformInput != null) {
-        OciHelmRepoConfig ociHelmRepoConfig = (OciHelmRepoConfig) settingAttribute.getValue();
-        setUsernameAndPassword(ociPlatformInput, ociHelmRepoConfig);
-        setUrl(ociPlatformInput, ociHelmRepoConfig);
-        settingAttribute.setValue(ociHelmRepoConfig);
-      }
+    } else if (ociPlatformInput != null) {
+      OciHelmRepoConfig ociHelmRepoConfig = (OciHelmRepoConfig) settingAttribute.getValue();
+      setUsernameAndPassword(ociPlatformInput, ociHelmRepoConfig);
+      setUrl(ociPlatformInput, ociHelmRepoConfig);
+      settingAttribute.setValue(ociHelmRepoConfig);
     }
 
     if (helmConnectorInput.getName().isPresent()) {
@@ -152,14 +145,14 @@ public class HelmConnector extends Connector {
 
       httpServerPlatformInput.getPasswordSecretId().getValue().ifPresent(
           secretId -> checkSecretExists(secretManager, accountId, secretId));
-    } else if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, accountId)) {
-      QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
-      if (ociPlatformInput != null) {
-        checkUserNameExists(ociPlatformInput);
+    }
 
-        ociPlatformInput.getPasswordSecretId().getValue().ifPresent(
-            secretId -> checkSecretExists(secretManager, accountId, secretId));
-      }
+    QLOCIPlatformInput ociPlatformInput = getOCIPlatformInput(helmConnectorInput);
+    if (ociPlatformInput != null) {
+      checkUserNameExists(ociPlatformInput);
+
+      ociPlatformInput.getPasswordSecretId().getValue().ifPresent(
+          secretId -> checkSecretExists(secretManager, accountId, secretId));
     }
   }
 

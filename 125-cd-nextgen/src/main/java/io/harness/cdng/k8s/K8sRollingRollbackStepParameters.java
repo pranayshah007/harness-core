@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -31,28 +33,24 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackStepParameters")
 public class K8sRollingRollbackStepParameters extends K8sRollingRollbackBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sRollingRollbackStepParameters(ParameterField<Boolean> skipDryRun,
+  public K8sRollingRollbackStepParameters(ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn) {
-    super(skipDryRun, delegateSelectors, rollingStepFqn);
+    super(pruningEnabled, delegateSelectors, rollingStepFqn);
   }
 
   @Nonnull
   @Override
   @JsonIgnore
   public List<String> getCommandUnits() {
-    return Arrays.asList(
-        K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Rollback, K8sCommandUnitConstants.WaitForSteadyState);
-  }
-
-  @Nonnull
-  @Override
-  @JsonIgnore
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    boolean isPruningEnabled =
+        CDStepHelper.getParameterFieldBooleanValue(pruningEnabled, K8sRollingRollbackBaseStepInfoKeys.pruningEnabled,
+            String.format("%s step", ExecutionNodeType.K8S_ROLLBACK_ROLLING.getYamlType()));
     if (isPruningEnabled) {
       return Arrays.asList(K8sCommandUnitConstants.Init, K8sCommandUnitConstants.RecreatePrunedResource,
           K8sCommandUnitConstants.DeleteFailedReleaseResources, K8sCommandUnitConstants.Rollback,
           K8sCommandUnitConstants.WaitForSteadyState);
     }
-    return getCommandUnits();
+    return Arrays.asList(
+        K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Rollback, K8sCommandUnitConstants.WaitForSteadyState);
   }
 }

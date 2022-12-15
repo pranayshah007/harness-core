@@ -17,6 +17,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class BusinessMappingDao {
     setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.sharedCosts, businessMapping.getSharedCosts());
     setUnsetUpdateOperations(
         updateOperations, BusinessMappingKeys.unallocatedCost, businessMapping.getUnallocatedCost());
+    setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.dataSources, businessMapping.getDataSources());
 
     return updateOperations;
   }
@@ -80,6 +82,13 @@ public class BusinessMappingDao {
         .filter(BusinessMappingKeys.uuid, uuid)
         .filter(BusinessMappingKeys.accountId, accountId)
         .get();
+  }
+
+  public boolean isNamePresent(String name, String accountId) {
+    return Lists.isNullOrEmpty(hPersistence.createQuery(BusinessMapping.class, excludeValidate)
+                                   .filter(BusinessMappingKeys.name, name)
+                                   .filter(BusinessMappingKeys.accountId, accountId)
+                                   .asList());
   }
 
   public BusinessMapping get(String uuid) {

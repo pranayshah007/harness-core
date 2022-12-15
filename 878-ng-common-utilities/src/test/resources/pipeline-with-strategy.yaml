@@ -85,6 +85,25 @@ pipeline:
                         headers: []
                         outputVariables: []
                       timeout: 10s
+              - step:
+                  strategy:
+                    matrix:
+                      config:
+                        - image: linux
+                          tag: stable
+                        - image: window
+                          tag: latest
+                  type: Http
+                  name: google again
+                  identifier: google_again
+                  spec:
+                    image: <+matrix.config.image>
+                    tag: <+matrix.config.tag>
+                    url: https://www.google.com
+                    method: GET
+                    headers: []
+                    outputVariables: []
+                  timeout: 10s
           serviceDependencies: []
         tags: {}
     - stage:
@@ -174,8 +193,8 @@ pipeline:
                   steps:
                     - step:
                         type: Http
-                        name: <+strategy.iterations>
-                        identifier: <+strategy.iteration>
+                        name: <+step.iterations>
+                        identifier: <+step.iteration>
                         strategy:
                           repeat:
                             times: 10
@@ -187,8 +206,8 @@ pipeline:
                         timeout: 1m
                     - step:
                         type: Http
-                        name: bing
-                        identifier: bing
+                        name: <+step.iterations>
+                        identifier: <+step.iteration>
                         spec:
                           url: https://www.bing.com
                           method: GET

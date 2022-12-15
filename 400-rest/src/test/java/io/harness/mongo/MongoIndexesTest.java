@@ -11,8 +11,11 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.Store;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -41,14 +44,15 @@ public class MongoIndexesTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
     morphia.getMapper().getOptions().setMapSubPackages(true);
     morphia.map(classes);
 
-    List<IndexCreator> indexCreators =
-        IndexManagerSession.allIndexes(persistence.getDatastore(Account.class), morphia, null, null);
+    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
+        persistence.getDatastore(Account.class), morphia, Store.builder().name(DbAliases.HARNESS).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator
@@ -60,6 +64,9 @@ public class MongoIndexesTest extends WingsBaseTest {
     List<String> expectedIndexes;
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
       expectedIndexes = IOUtils.readLines(in, "UTF-8");
+    }
+    for (int i = 0; i < expectedIndexes.size(); i++) {
+      assertThat(expectedIndexes.get(i)).isEqualTo(indexes.get(i));
     }
 
     assertThat(indexes).isEqualTo(expectedIndexes);

@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -33,11 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 public class CIFeatureFlagServiceImpl implements CIFeatureFlagService {
   @Inject private AccountClient accountClient;
 
-  private static final int CACHE_EVICTION_TIME_HOUR = 1;
+  private static final int CACHE_EVICTION_TIME_MINUTES = 10;
 
   private final LoadingCache<String, Set<String>> featureFlagCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(CACHE_EVICTION_TIME_HOUR, TimeUnit.HOURS)
+          .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
           .build(new CacheLoader<String, Set<String>>() {
             @Override
             public Set<String> load(@org.jetbrains.annotations.NotNull final String accountId) {
@@ -56,7 +56,7 @@ public class CIFeatureFlagServiceImpl implements CIFeatureFlagService {
 
   private Set<String> listAllEnabledFeatureFlagsForAccount(String accountId) {
     log.info("Getting all FFs for account: {}", accountId);
-    return RestClientUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
+    return CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
         .stream()
         .filter(FeatureFlag::isEnabled)
         .map(FeatureFlag::getName)

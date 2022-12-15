@@ -13,6 +13,7 @@ import "io/harness/pms/contracts/plan/variables.proto";
 
 service VariablesService {
   rpc getVariables(VariablesServiceRequest) returns (VariableMergeResponseProto);
+  rpc getVariablesV2(VariablesServiceRequestV2) returns (VariableMergeResponseProto);
 }
 
 message VariableMergeResponseProto {
@@ -25,6 +26,13 @@ message VariableMergeResponseProto {
 
 message VariablesServiceRequest {
   string yaml = 1;  // yaml construct that pms understands
+}
+
+message VariablesServiceRequestV2 {
+  string accountId = 1;
+  string orgId = 2;
+  string projectId = 3;
+  string yaml = 4;  // yaml construct that pms understands
 }
 
 message VariableResponseMapValueProto {

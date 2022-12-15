@@ -7,6 +7,8 @@
 
 package io.harness.ci.tiserviceclient;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -39,8 +41,8 @@ public class TIServiceUtils {
 
   @NotNull
   public String getTIServiceToken(String accountID) {
-    log.info("Initiating token request to TI service: {}", this.tiServiceConfig.getBaseUrl());
-    Call<String> tokenCall = tiServiceClient.generateToken(accountID, this.tiServiceConfig.getGlobalToken());
+    log.info("Initiating token request to TI service: {}", getInternalUrl());
+    Call<String> tokenCall = tiServiceClient.generateToken(accountID, tiServiceConfig.getGlobalToken());
     Response<String> response = null;
     try {
       response = tokenCall.execute();
@@ -62,5 +64,12 @@ public class TIServiceUtils {
           response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
     }
     return response.body();
+  }
+
+  private String getInternalUrl() {
+    if (!isEmpty(tiServiceConfig.getInternalUrl())) {
+      return tiServiceConfig.getInternalUrl();
+    }
+    return tiServiceConfig.getBaseUrl();
   }
 }

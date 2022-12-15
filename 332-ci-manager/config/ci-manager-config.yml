@@ -1,3 +1,7 @@
+# Copyright 2021 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 server:
   applicationConnectors:
     - type: https
@@ -47,16 +51,37 @@ accessControlClient:
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
+distributedLockImplementation: MONGO
+
+
 harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
+  aliasDBName: harness
 cimanager-mongo:
   uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -65,9 +90,11 @@ pmsMongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: pms-harness
 
 enableAuth: false
 
@@ -75,10 +102,12 @@ scmConnectionConfig:
   url: localhost:8091
 
 logServiceConfig:
+  internalUrl: ""
   baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: ""
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
@@ -103,40 +132,61 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 ciExecutionServiceConfig:
+  queueServiceClient:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
+  executionLimits:
+    free:
+      defaultTotalExecutionCount: 20
+      defaultMacExecutionCount: 5
+    team:
+      defaultTotalExecutionCount: 50
+      defaultMacExecutionCount: 10
+    enterprise:
+      defaultTotalExecutionCount: 100
+      defaultMacExecutionCount: 10
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.11
-  liteEngineImage: harness/ci-lite-engine:1.14.11
+  addonImage: harness/ci-addon:1.16.0
+  liteEngineImage: harness/ci-lite-engine:1.16.0
   isLocal: false
+  cacheIntelligenceConfig:
+    bucket: "gcp_bucket"
+    serviceKey: "gcp_service_key"
+  hostedVmConfig:
+    splitLinuxAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.2-rootless
+      image: harness/drone-git:1.2.7-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.1
+      image: plugins/kaniko:1.6.6
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.1
+      image: plugins/kaniko-ecr:1.6.6
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.1
+      image: plugins/kaniko-gcr:1.6.6
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.4-linux-amd64
+      image: plugins/kaniko-acr:1.6.7
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -164,20 +214,20 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.2
+      image: plugins/cache:1.4.3
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.2
+      image: plugins/cache:1.4.3
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.0
+      gitClone: harness/drone-git:1.2.7
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
@@ -186,8 +236,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.1.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.2
-      cacheS3: plugins/cache:1.4.2
+      cacheGCS: plugins/cache:1.4.3
+      cacheS3: plugins/cache:1.4.3
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -218,14 +268,14 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harness"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
@@ -265,6 +315,7 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
@@ -274,3 +325,5 @@ pmsPlanCreatorServicePoolConfig:
   maxPoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE:-3}
   idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+enableOpentelemetry: false

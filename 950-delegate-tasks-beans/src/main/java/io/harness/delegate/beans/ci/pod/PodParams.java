@@ -10,7 +10,7 @@ package io.harness.delegate.beans.ci.pod;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +37,7 @@ public abstract class PodParams<T extends ContainerParams> implements NestedAnno
   private List<PodVolume> volumes;
   private String runtime;
   private String priorityClassName;
+  private Long activeDeadLineSeconds;
 
   public abstract PodParams.Type getType();
 

@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -11,8 +16,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//890-sm-core:module",
+        "//420-delegate-agent/src/main/java/io/harness/delegate/service:module",
+        "//420-delegate-agent/src/main/java/io/harness/grpc/util:module",
+        "//420-delegate-agent/src/main/java/io/harness/managerclient:module",
+        "//890-sm-delegate:module",
         "//910-delegate-task-grpc-service:module",
+        "//920-delegate-agent-beans:module",
+        "//930-delegate-tasks:module",
         "//950-log-client:module",
         "//960-expression-service:module",
         "//999-annotations:module",

@@ -14,6 +14,7 @@ import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
@@ -35,6 +36,7 @@ public class GitFetchRequest implements ActivityAccess, TaskParameters, Executio
   private String accountId;
   @Builder.Default private boolean shouldOpenLogStream = true;
   private boolean closeLogStream;
+  private CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

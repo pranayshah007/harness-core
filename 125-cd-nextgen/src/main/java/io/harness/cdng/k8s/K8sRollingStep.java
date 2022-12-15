@@ -97,6 +97,8 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
     K8sRollingStepParameters k8sRollingStepParameters = (K8sRollingStepParameters) stepElementParameters.getSpec();
     boolean skipDryRun = CDStepHelper.getParameterFieldBooleanValue(
         k8sRollingStepParameters.getSkipDryRun(), K8sRollingBaseStepInfoKeys.skipDryRun, stepElementParameters);
+    boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(
+        k8sRollingStepParameters.getPruningEnabled(), K8sRollingBaseStepInfoKeys.pruningEnabled, stepElementParameters);
     List<String> manifestFilesContents =
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
@@ -135,7 +137,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
-            .pruningEnabled(cdStepHelper.isPruningEnabled(accountId))
+            .pruningEnabled(pruningEnabled)
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -198,11 +200,14 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     K8sRollingDeployResponse k8sTaskResponse =
         (K8sRollingDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
-    K8sRollingOutcome k8sRollingOutcome =
-        k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())
-            .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
-                AmbianceUtils.getAccountId(ambiance), k8sTaskResponse.getPrunedResourceIds()))
-            .build();
+    K8sRollingStepParameters k8sRollingStepParameters = (K8sRollingStepParameters) stepElementParameters.getSpec();
+
+    boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(
+        k8sRollingStepParameters.getPruningEnabled(), K8sRollingBaseStepInfoKeys.pruningEnabled, stepElementParameters);
+    K8sRollingOutcome k8sRollingOutcome = k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())
+                                              .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
+                                                  pruningEnabled, k8sTaskResponse.getPrunedResourceIds()))
+                                              .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_ROLL_OUT, k8sRollingOutcome, StepOutcomeGroup.STEP.name());
 

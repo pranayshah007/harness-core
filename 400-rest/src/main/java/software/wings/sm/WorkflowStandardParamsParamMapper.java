@@ -24,8 +24,8 @@ import software.wings.api.InfraMappingElement;
 import software.wings.api.ServiceElement;
 import software.wings.beans.Application;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -130,16 +130,14 @@ public class WorkflowStandardParamsParamMapper implements ContextElementParamMap
     } else {
       String accountId = app.getAccountId();
       String serviceId = serviceElement.getUuid();
-      if (!this.featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        Artifact artifact = this.workflowStandardParamsExtensionService.getArtifactForService(this.element, serviceId);
-        ExecutionContextImpl.addArtifactToContext(
-            this.artifactStreamService, accountId, map, artifact, this.buildSourceService, false);
+      Artifact artifact = this.workflowStandardParamsExtensionService.getArtifactForService(this.element, serviceId);
+      ExecutionContextImpl.addArtifactToContext(
+          this.artifactStreamService, accountId, map, artifact, this.buildSourceService, false);
 
-        Artifact rollbackArtifact =
-            this.workflowStandardParamsExtensionService.getRollbackArtifactForService(this.element, serviceId);
-        ExecutionContextImpl.addArtifactToContext(
-            this.artifactStreamService, app.getAccountId(), map, rollbackArtifact, this.buildSourceService, true);
-      }
+      Artifact rollbackArtifact =
+          this.workflowStandardParamsExtensionService.getRollbackArtifactForService(this.element, serviceId);
+      ExecutionContextImpl.addArtifactToContext(
+          this.artifactStreamService, app.getAccountId(), map, rollbackArtifact, this.buildSourceService, true);
       if (this.featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, accountId)) {
         HelmChart helmChart =
             this.workflowStandardParamsExtensionService.getHelmChartForService(this.element, serviceId);

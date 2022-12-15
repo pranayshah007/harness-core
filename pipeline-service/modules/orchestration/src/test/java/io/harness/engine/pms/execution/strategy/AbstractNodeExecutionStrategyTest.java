@@ -21,17 +21,14 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
-import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.HandleStepResponseRequestProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
@@ -51,8 +48,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AbstractNodeExecutionStrategyTest {
   @Mock ExecutorService executorService;
-  @Mock WaitForExecutionInputHelper waitForExecutionInputHelper;
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   HandleStepResponseRequestProcessor handleStepResponseRequestProcessor;
   @Mock SdkResponseProcessorFactory sdkResponseProcessorFactory;
   AbstractNodeExecutionStrategy abstractNodeExecutionStrategy;
@@ -70,7 +65,6 @@ public class AbstractNodeExecutionStrategyTest {
     node = Plan.builder().build();
     nodeExecutionMetadata = new NodeExecutionMetadata();
     handleStepResponseRequestProcessor = mock(HandleStepResponseRequestProcessor.class);
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT);
     doReturn(handleStepResponseRequestProcessor)
         .when(sdkResponseProcessorFactory)
         .getHandler(SdkResponseEventType.HANDLE_STEP_RESPONSE);
@@ -80,9 +74,6 @@ public class AbstractNodeExecutionStrategyTest {
         .thenReturn(NodeExecution.builder().uuid(accountId).build());
     FieldUtils.writeField(
         abstractNodeExecutionStrategy, "sdkResponseProcessorFactory", sdkResponseProcessorFactory, true);
-    FieldUtils.writeField(abstractNodeExecutionStrategy, "pmsFeatureFlagService", pmsFeatureFlagService, true);
-    FieldUtils.writeField(
-        abstractNodeExecutionStrategy, "waitForExecutionInputHelper", waitForExecutionInputHelper, true);
     FieldUtils.writeField(abstractNodeExecutionStrategy, "orchestrationEngine", orchestrationEngine, true);
     FieldUtils.writeField(abstractNodeExecutionStrategy, "executorService", executorService, true);
   }
@@ -128,14 +119,13 @@ public class AbstractNodeExecutionStrategyTest {
   @Category(UnitTests.class)
   public void testCreateAndRunNodeExecution() {
     abstractNodeExecutionStrategy.createAndRunNodeExecution(ambiance, planNode, nodeExecutionMetadata, "", "", "");
-    verify(waitForExecutionInputHelper, times(1)).waitForExecutionInput(ambiance, accountId, "setup");
+    verify(executorService, times(1)).submit(any(Runnable.class));
   }
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testCreateAndRunNodeExecutionWithEmptyExecutionInputTemplate() {
-    planNode = PlanNode.builder().build();
     abstractNodeExecutionStrategy.createAndRunNodeExecution(ambiance, planNode, nodeExecutionMetadata, "", "", "");
     verify(executorService, times(1)).submit(any(Runnable.class));
   }

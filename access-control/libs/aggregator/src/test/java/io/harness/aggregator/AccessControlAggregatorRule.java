@@ -26,6 +26,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.InjectorRuleMixin;
@@ -42,18 +43,22 @@ import io.harness.version.VersionModule;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -103,6 +108,13 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
         validatorByPrincipalType.addBinding(USER_GROUP).toInstance(principalValidator);
         validatorByPrincipalType.addBinding(SERVICE_ACCOUNT).toInstance(principalValidator);
 
+        MapBinder<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope = MapBinder.newMapBinder(
+            binder(), new TypeLiteral<Pair<ScopeLevel, Boolean>>() {}, new TypeLiteral<Set<String>>() {});
+        implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, true))
+            .toInstance(Sets.newHashSet("test_permission_1", "test_permission_2"));
+        implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
+            .toInstance(Collections.singleton("test_permission_1"));
+
         bind(ChangeConsumerService.class).to(ChangeConsumerServiceImpl.class);
       }
     });
@@ -124,6 +136,12 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

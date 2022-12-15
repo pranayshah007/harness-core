@@ -24,7 +24,10 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("ErrorTracking") ERROR_TRACKING,
   @JsonProperty("CustomHealthMetric") CUSTOM_HEALTH_METRIC,
   @JsonProperty("CustomHealthLog") CUSTOM_HEALTH_LOG,
-  @JsonProperty("SplunkMetric") SPLUNK_METRIC;
+  @JsonProperty("SplunkMetric") SPLUNK_METRIC,
+  @JsonProperty("ElasticSearch") ELASTICSEARCH,
+  @JsonProperty("CloudWatchMetrics") CLOUDWATCH_METRICS,
+  @JsonProperty("AwsPrometheus") AWS_PROMETHEUS;
 
   public static Map<DataSourceType, MonitoredServiceDataSourceType> dataSourceTypeMonitoredServiceDataSourceTypeMap =
       new HashMap<DataSourceType, MonitoredServiceDataSourceType>() {
@@ -42,6 +45,9 @@ public enum MonitoredServiceDataSourceType {
           put(DataSourceType.CUSTOM_HEALTH_LOG, CUSTOM_HEALTH_LOG);
           put(DataSourceType.ERROR_TRACKING, ERROR_TRACKING);
           put(DataSourceType.SPLUNK_METRIC, SPLUNK_METRIC);
+          put(DataSourceType.ELASTICSEARCH, ELASTICSEARCH);
+          put(DataSourceType.CLOUDWATCH_METRICS, CLOUDWATCH_METRICS);
+          put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
         }
       };
 }

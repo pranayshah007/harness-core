@@ -9,14 +9,15 @@ package software.wings.delegatetasks.buildsource;
 
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.VGLIJIN;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STABLE;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STOPPED;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.UNSTABLE;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_NAME;
@@ -46,10 +47,10 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -88,6 +89,7 @@ public class BuildSourceCallbackTest extends WingsBaseTest {
                                                      .build();
   private final ArtifactStream ARTIFACT_STREAM_UNSTABLE = DockerArtifactStream.builder()
                                                               .uuid(ARTIFACT_STREAM_ID_2)
+                                                              .accountId(ACCOUNT_ID)
                                                               .sourceName(ARTIFACT_STREAM_NAME)
                                                               .appId(APP_ID)
                                                               .settingId(SETTING_ID)
@@ -307,6 +309,22 @@ public class BuildSourceCallbackTest extends WingsBaseTest {
     verify(artifactStreamService, times(1)).get(any());
     verify(artifactStreamService, times(1)).updateFailedCronAttemptsAndLastIteration(any(), any(), anyInt(), eq(false));
     verify(artifactStreamService, times(1)).updateCollectionStatus(ACCOUNT_ID, ARTIFACT_STREAM_ID_1, STOPPED.name());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldTriggerExecutionIfFirstCollectionFailed() {
+    buildSourceCallback.setArtifactStreamId(ARTIFACT_STREAM_ID_2);
+    ARTIFACT_STREAM_UNSTABLE.setFailedCronAttempts(1);
+    buildSourceCallback.handleResponseForSuccessInternal(
+        prepareBuildSourceExecutionResponse(true), ARTIFACT_STREAM_UNSTABLE);
+
+    verify(artifactStreamService).updateCollectionStatus(ACCOUNT_ID, ARTIFACT_STREAM_ID_2, STABLE.name());
+    verify(triggerService)
+        .triggerExecutionPostArtifactCollectionAsync(
+            ACCOUNT_ID, APP_ID, ARTIFACT_STREAM_ID_2, asList(ARTIFACT_1, ARTIFACT_2));
+    verify(artifactStreamService).updateFailedCronAttemptsAndLastIteration(ACCOUNT_ID, ARTIFACT_STREAM_ID_2, 0, false);
   }
 
   private BuildSourceExecutionResponse prepareBuildSourceExecutionResponse(boolean stable) {

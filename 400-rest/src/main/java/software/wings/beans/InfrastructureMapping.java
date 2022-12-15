@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -21,6 +22,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 import io.harness.validation.Update;
@@ -56,6 +58,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonTypeInfo(use = Id.NAME, property = "infraMappingType")
 @NoArgsConstructor
 @RequiredArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "infrastructureMapping")
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -101,6 +104,13 @@ public abstract class InfrastructureMapping
                  .name("appId_createdAt")
                  .field(InfrastructureMappingKeys.appId)
                  .descSortField(InfrastructureMappingKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_envId_serviceId_infrastructureDefinitionId")
+                 .field(InfrastructureMappingKeys.appId)
+                 .field(InfrastructureMappingKeys.envId)
+                 .field(InfrastructureMappingKeys.serviceId)
+                 .field(InfrastructureMappingKeys.infrastructureDefinitionId)
                  .build())
         .build();
   }
@@ -468,5 +478,6 @@ public abstract class InfrastructureMapping
     public static final String appId = "appId";
     public static final String createdAt = "createdAt";
     public static final String uuid = "uuid";
+    public static final String lastUpdatedAt = "lastUpdatedAt";
   }
 }

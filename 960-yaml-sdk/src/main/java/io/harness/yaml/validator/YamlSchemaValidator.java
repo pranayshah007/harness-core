@@ -82,6 +82,19 @@ public class YamlSchemaValidator {
     return validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.toSet());
   }
 
+  public Set<ValidationMessage> validateWithDetailedMessage(String yaml, JsonSchema schema) throws IOException {
+    JsonNode jsonNode = mapper.readTree(yaml);
+    return schema.validate(jsonNode);
+  }
+
+  public Set<ValidationMessage> validateWithDetailedMessage(String yaml, EntityType entityType) throws IOException {
+    if (!schemas.containsKey(entityType)) {
+      throw new InvalidRequestException("No schema found for entityType.");
+    }
+    JsonSchema schema = schemas.get(entityType);
+    return validateWithDetailedMessage(yaml, schema);
+  }
+
   public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
       int allowedParallelStages, String pathToJsonNode) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
@@ -90,6 +103,11 @@ public class YamlSchemaValidator {
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
     Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
+    return processAndHandleValidationMessage(jsonNode, validateMsg, yaml);
+  }
+
+  public Set<String> processAndHandleValidationMessage(
+      JsonNode jsonNode, Set<ValidationMessage> validateMsg, String yaml) {
     if (!validateMsg.isEmpty()) {
       log.error(validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\n")));
     }
@@ -108,7 +126,7 @@ public class YamlSchemaValidator {
         combinedValidationMessage.append(validationMessage.getMessage());
       }
       YamlSchemaErrorWrapperDTO errorWrapperDTO = YamlSchemaErrorWrapperDTO.builder().schemaErrors(errorDTOS).build();
-      throw new InvalidYamlException(combinedValidationMessage.toString(), errorWrapperDTO);
+      throw new InvalidYamlException(combinedValidationMessage.toString(), errorWrapperDTO, yaml);
     }
     return Collections.emptySet();
   }

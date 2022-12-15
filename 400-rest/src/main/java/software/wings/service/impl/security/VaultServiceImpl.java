@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
@@ -47,6 +48,7 @@ import software.wings.beans.BaseVaultConfig.BaseVaultConfigKeys;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.AlertType;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.service.intfc.security.VaultService;
@@ -120,10 +122,13 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     savedVaultConfig.setTemplatizedFields(vaultConfig.getTemplatizedFields());
     savedVaultConfig.setUsageRestrictions(vaultConfig.getUsageRestrictions());
     savedVaultConfig.setScopedToAccount(vaultConfig.isScopedToAccount());
+    savedVaultConfig.setRenewAppRoleToken(vaultConfig.getRenewAppRoleToken());
     savedVaultConfig.setDelegateSelectors(vaultConfig.getDelegateSelectors());
     // Handle vault Agent Properties
     updateVaultAgentConfiguration(vaultConfig, savedVaultConfig);
     updateNameSpace(accountId, vaultConfig, savedVaultConfig);
+    // Handle vault k8s Auth Properties
+    updateK8sAuthConfig(vaultConfig, savedVaultConfig);
     // PL-3237: Audit secret manager config changes.
     if (auditChanges) {
       generateAuditForSecretManager(accountId, oldConfigForAudit, savedVaultConfig);
@@ -151,10 +156,30 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     }
   }
 
+  private void updateK8sAuthConfig(VaultConfig vaultConfig, VaultConfig savedVaultConfig) {
+    if (vaultConfig.isUseK8sAuth()) {
+      Preconditions.checkNotNull(vaultConfig.getVaultK8sAuthRole());
+      Preconditions.checkNotNull(vaultConfig.getServiceAccountTokenPath());
+      Preconditions.checkNotNull(vaultConfig.getDelegateSelectors());
+      // set all set credentials to null
+      savedVaultConfig.setAppRoleId(null);
+      savedVaultConfig.setAuthToken(null);
+      savedVaultConfig.setSecretId(null);
+      savedVaultConfig.setUseK8sAuth(vaultConfig.isUseK8sAuth());
+      savedVaultConfig.setVaultK8sAuthRole(vaultConfig.getVaultK8sAuthRole());
+      savedVaultConfig.setServiceAccountTokenPath(vaultConfig.getServiceAccountTokenPath());
+      savedVaultConfig.setK8sAuthEndpoint(vaultConfig.getK8sAuthEndpoint());
+    } else {
+      savedVaultConfig.setUseK8sAuth(false);
+      savedVaultConfig.setVaultK8sAuthRole(null);
+      savedVaultConfig.setServiceAccountTokenPath(null);
+      savedVaultConfig.setK8sAuthEndpoint(null);
+    }
+  }
+
   private boolean isCredentialChanged(VaultConfig vaultConfig, VaultConfig savedVaultConfigWithCredentials) {
     return !Objects.equals(savedVaultConfigWithCredentials.getAuthToken(), vaultConfig.getAuthToken())
         || !Objects.equals(savedVaultConfigWithCredentials.getSecretId(), vaultConfig.getSecretId())
-        || !Objects.equals(savedVaultConfigWithCredentials.isUseVaultAgent(), vaultConfig.isUseVaultAgent())
         || !Objects.equals(savedVaultConfigWithCredentials.isUseVaultAgent(), vaultConfig.isUseVaultAgent())
         || !Objects.equals(savedVaultConfigWithCredentials.getDelegateSelectors(), vaultConfig.getDelegateSelectors())
         || !Objects.equals(savedVaultConfigWithCredentials.getSinkPath(), vaultConfig.getSinkPath());
@@ -164,7 +189,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     // get encrypted secrets associated with this VaultConfig
     long count = getEncryptedSecretCount(accountId, savedVaultConfig.getUuid());
     boolean nameSpaceUpdated = !Objects.equals(savedVaultConfig.getNamespace(), vaultConfig.getNamespace());
-    log.info("User wants to update namespace for Hashicorp vault:{0} From:{1} To:{2} ", savedVaultConfig.getUuid(),
+    log.info("User wants to update namespace for Hashicorp vault:{} From:{} To:{} ", savedVaultConfig.getUuid(),
         savedVaultConfig.getNamespace(), vaultConfig.getNamespace());
     if (count > 0 && nameSpaceUpdated) {
       String message = "Cannot update vault config namespace since there are secrets encrypted with it. "
@@ -221,12 +246,11 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     vaultConfig.setBasePath(basePath);
     vaultConfig.setAccountId(accountId);
 
-    if (vaultConfig.isReadOnly() && vaultConfig.isDefault()) {
-      throw new SecretManagementException(
-          SECRET_MANAGEMENT_ERROR, "A read only vault cannot be the default secret manager", USER);
-    }
-
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
+
+    // App Role Token renew FF
+    vaultConfig.setRenewAppRoleToken(
+        !accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId));
 
     return isBlank(vaultConfig.getUuid()) ? saveVaultConfig(accountId, vaultConfig, validateBySavingTestSecret)
                                           : updateVaultConfig(accountId, vaultConfig, true, validateBySavingTestSecret);
@@ -363,6 +387,30 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     }
   }
 
+  private void validateRenewalIntervalBasedOnTokenLookup(VaultConfig vaultConfig) {
+    if (!isTaskSupportedByDelegate(vaultConfig.getAccountId(), "VAULT_TOKEN_LOOKUP")) {
+      log.info("Delegates do not support VAULT_TOKEN_LOOKUP task for this account {}", vaultConfig.getAccountId());
+      return;
+    }
+    // we have to call the token self-lookup api and then figure out this is renewable or not
+    VaultTokenLookupResult tokenLookupResult = tokenLookup(vaultConfig);
+    if (tokenLookupResult.getExpiryTime() == null) {
+      // this means this is root token
+      throw new SecretManagementException(
+          "The token used is a root token. Please set renewal interval as zero if you are using root token.");
+    }
+    if (!tokenLookupResult.isRenewable()) {
+      // this means the token is not renewable
+      throw new SecretManagementException(
+          "The token used is a non-renewable token. Please set renewal interval as zero or use a renewable token.");
+    }
+  }
+
+  private boolean isTokenBased(VaultConfig vaultConfig) {
+    return !vaultConfig.isUseK8sAuth() && !vaultConfig.isUseVaultAgent() && !vaultConfig.isUseAwsIam()
+        && vaultConfig.getAccessType() != APP_ROLE;
+  }
+
   public void validateVaultConfig(String accountId, VaultConfig vaultConfig) {
     validateVaultConfig(accountId, vaultConfig, true);
   }
@@ -373,6 +421,11 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     if (!vaultConfig.isReadOnly() && validateBySavingDummySecret) {
       vaultEncryptorsRegistry.getVaultEncryptor(EncryptionType.VAULT)
           .createSecret(accountId, VaultConfig.VAULT_VAILDATION_URL, Boolean.TRUE.toString(), vaultConfig);
+    }
+    // if config is token based and the renewalInterval is not set to zero, lets check if that is root token and modify
+    // the interval based on that
+    if (isTokenBased(vaultConfig) && (vaultConfig.getRenewalInterval() != 0)) {
+      validateRenewalIntervalBasedOnTokenLookup(vaultConfig);
     }
   }
 

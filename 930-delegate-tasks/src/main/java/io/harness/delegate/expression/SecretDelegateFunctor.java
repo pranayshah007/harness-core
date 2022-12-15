@@ -8,14 +8,16 @@
 package io.harness.delegate.expression;
 
 import io.harness.exception.FunctorException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 @Value
 @Builder
+@Slf4j
 public class SecretDelegateFunctor implements ExpressionFunctor {
   private Map<String, char[]> secrets;
   private int expressionFunctorToken;
@@ -27,6 +29,7 @@ public class SecretDelegateFunctor implements ExpressionFunctor {
     if (secrets.containsKey(secretDetailsUuid)) {
       return new String(secrets.get(secretDetailsUuid));
     }
+    log.error("Unable to find secret details for {} ", secretDetailsUuid);
     throw new FunctorException("Secret details not found");
   }
 }

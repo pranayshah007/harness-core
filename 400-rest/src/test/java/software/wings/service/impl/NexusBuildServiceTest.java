@@ -11,12 +11,14 @@ import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.utils.RepositoryFormat.docker;
 import static software.wings.utils.RepositoryFormat.maven;
 import static software.wings.utils.RepositoryFormat.npm;
 import static software.wings.utils.RepositoryFormat.nuget;
+import static software.wings.utils.RepositoryFormat.raw;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_GROUP_ID;
@@ -316,6 +318,21 @@ public class NexusBuildServiceTest extends WingsBaseTest {
     nexusBuildService.getBuilds(APP_ID, attributes, nexusConfig, Collections.emptyList());
     verify(nexusService)
         .getVersions(eq(npm.name()), eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), any());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldCollectRawBuilds() {
+    ArtifactStreamAttributes attributes = ArtifactStreamAttributes.builder()
+                                              .jobName("someJobName")
+                                              .nexusPackageName("someNexusPackageName")
+                                              .repositoryFormat(raw.name())
+                                              .artifactStreamType(ArtifactStreamType.NEXUS.name())
+                                              .build();
+    nexusBuildService.getBuilds(APP_ID, attributes, nexusConfig, Collections.emptyList());
+    verify(nexusService)
+        .getPackageNames(eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), eq(raw.name()));
   }
 
   @Test

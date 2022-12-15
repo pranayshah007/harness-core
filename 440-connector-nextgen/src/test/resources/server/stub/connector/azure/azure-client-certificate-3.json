@@ -1,0 +1,48 @@
+{
+  "connector" : {
+    "name" : "example_connector",
+    "identifier" : "example_connector",
+    "description" : "example_connector",
+    "orgIdentifier" : "default",
+    "projectIdentifier" : "example_project",
+    "tags" : {
+      "property1" : "example_connector"
+    },
+    "type" : "Azure",
+    "spec" : {
+      "credential" : {
+        "type" : "ManualConfig",
+        "spec" : {
+          "applicationId" : "1234567890",
+          "tenantId" : "1234567890",
+          "auth" : {
+            "type" : "Certificate",
+            "spec" : {
+              "certificateRef" : "account.azure-client-certificate"
+            }
+          }
+        }
+      },
+      "delegateSelectors" : [ "pl1" ],
+      "azureEnvironmentType" : "AZURE",
+      "executeOnDelegate" : true
+    }
+  },
+  "createdAt" : 1234567890,
+  "lastModifiedAt" : 1234567890,
+  "harnessManaged" : false,
+  "status" : {
+    "status" : "FAILURE",
+    "errorSummary" : "Error Encountered (Check your credentials)",
+    "errors" : [
+      {
+        "reason" : "Unexpected Error",
+        "message" : "Check your credentials",
+        "code" : 450
+      }
+    ],
+    "testedAt" : 1234567890,
+    "lastTestedAt" : 0,
+    "lastConnectedAt" : 1234567890
+  }
+}

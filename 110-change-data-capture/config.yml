@@ -32,30 +32,39 @@ harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 86400000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: MANUAL
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
+  socketTimeout: 360000
+  aliasDBName: events
 
 cdc-mongo:
   uri: mongodb://localhost:27017/change-data-capture
+  socketTimeout: 360000
+  aliasDBName: change-data-capture
 
 pms-harness:
   uri: mongodb://localhost:27017/pms-harness
+  aliasDBName: pms-harness
 
 ng-harness:
   uri: mongodb://localhost:27017/ng-harness
+  aliasDBName: ng-harness
 
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
-  timescaledbUsername: "harnessappdev"
-  timescaledbPassword: "harnessappdev"
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
   loggerLevel: OFF
+  isConnectionValidationNeeded: true
 
 debeziumEnabled: false
 

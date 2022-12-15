@@ -14,6 +14,7 @@ import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static software.wings.beans.TaskType.NG_VAULT_FETCHING_TASK;
+import static software.wings.beans.TaskType.NG_VAULT_TOKEN_LOOKUP;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -36,18 +37,27 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
+import io.harness.connector.mappers.secretmanagermapper.VaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.VaultEntityToDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
+import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.delegatetasks.NGVaultFetchEngineTaskResponse;
 import io.harness.delegatetasks.NGVaultRenewalAppRoleTaskResponse;
 import io.harness.delegatetasks.NGVaultRenewalTaskParameters;
+import io.harness.delegatetasks.NGVaultRenewalTaskResponse;
+import io.harness.delegatetasks.NGVaultTokenLookupTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.SecretManagementException;
+import io.harness.git.model.ChangeType;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.repositories.ConnectorRepository;
@@ -65,13 +75,16 @@ import io.harness.security.encryption.AccessType;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.BaseVaultConfig;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.impl.security.NGEncryptorService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
@@ -81,6 +94,8 @@ import retrofit2.Response;
 @OwnedBy(PL)
 public class NGVaultServiceImplTest extends CategoryTest {
   @InjectMocks VaultEntityToDTO vaultEntityToDTO;
+  @InjectMocks VaultDTOToEntity vaultDTOToEntity;
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   DelegateGrpcClientWrapper delegateService;
   NGConnectorSecretManagerService ngConnectorSecretManagerService;
@@ -172,6 +187,194 @@ public class NGVaultServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processTokenLookup_withTaskNotFoundInDelegate_shouldNotCallTokenLookup() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(
+        VaultConnector.builder().accessType(AccessType.TOKEN).renewalIntervalMinutes(10L).build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(false);
+
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    verify(delegateService, times(0)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processTokenLookup_nonVaultTypeConnector_doesNotExecuteAnyDelegateTask() throws IOException {
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .connectorType(ConnectorType.AWS)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    verify(delegateService, times(0)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processTokenLookup_vaultConnectorWithoutTokenBasedAuth_doesNotExecuteAnyDelegateTask()
+      throws IOException {
+    VaultConnectorDTO vaultConnectorDTO =
+        vaultEntityToDTO.createConnectorDTO(VaultConnector.builder().accessType(AccessType.APP_ROLE).build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    verify(delegateService, times(0)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processTokenLookup_vaultConnectorWithTokenBasedAuth_doesExecuteDelegateTask() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(
+        VaultConnector.builder().accessType(AccessType.TOKEN).renewalIntervalMinutes(10L).build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(NGVaultTokenLookupTaskResponse.builder()
+                        .vaultTokenLookupResult(VaultTokenLookupResult.builder()
+                                                    .expiryTime(randomAlphabetic(10))
+                                                    .name(randomAlphabetic(10))
+                                                    .renewable(true)
+                                                    .build())
+                        .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())
+                        .build());
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(true);
+
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateService, times(1)).executeSyncTask(argumentCaptor.capture());
+    DelegateTaskRequest delegateTaskRequest = argumentCaptor.getValue();
+    assertEquals(NG_VAULT_TOKEN_LOOKUP.toString(), delegateTaskRequest.getTaskType());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processTokenLookup_vaultConnectorWithTokenBasedAuth_doesThrowExceptionInCaseOfRootToken()
+      throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(
+        VaultConnector.builder().accessType(AccessType.TOKEN).renewalIntervalMinutes(10L).build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(NGVaultTokenLookupTaskResponse.builder()
+                        .vaultTokenLookupResult(VaultTokenLookupResult.builder()
+                                                    .expiryTime(null)
+                                                    .name(randomAlphabetic(10))
+                                                    .renewable(true)
+                                                    .build())
+                        .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())
+                        .build());
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a root token. Please set renewal interval as zero if you are using root token.");
+
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    verify(delegateService, times(1)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void
+  processTokenLookup_vaultConnectorWithTokenBasedAuth_doesThrowExceptionInCaseOfNonRootToken_whichIsNonRenewable()
+      throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(
+        VaultConnector.builder().accessType(AccessType.TOKEN).renewalIntervalMinutes(10L).build());
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(NGVaultTokenLookupTaskResponse.builder()
+                        .vaultTokenLookupResult(VaultTokenLookupResult.builder()
+                                                    .expiryTime(randomAlphabetic(10))
+                                                    .name(randomAlphabetic(10))
+                                                    .renewable(false)
+                                                    .build())
+                        .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())
+                        .build());
+    when(delegateService.isTaskTypeSupported(any(), any())).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a non-renewable token. Please set renewal interval as zero or use a renewable token.");
+    // Act.
+    ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
+
+    // Assert.
+    verify(delegateService, times(1)).executeSyncTask(any());
+  }
+
+  @Test
   @Owner(developers = OwnerRule.GAURAV_NANDA)
   @Category(UnitTests.class)
   public void processAppRole_nonVaultTypeConnector_doesNotExecuteAnyDelegateTask() throws IOException {
@@ -254,6 +457,63 @@ public class NGVaultServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processAppRole_shouldCreateAuthTokenRef_whenDoNotRenewAppRoleTokenFF_disabled() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(
+            NGVaultRenewalAppRoleTaskResponse.builder()
+                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
+                .build());
+    ArgumentCaptor<SecretDTOV2> argumentCaptor = ArgumentCaptor.forClass(SecretDTOV2.class);
+    when(secretCrudService.create(any(), argumentCaptor.capture())).thenReturn(SecretResponseWrapper.builder().build());
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
+    verify(secretCrudService, times(1)).create(any(), any());
+    SecretDTOV2 secretDTOV2 = argumentCaptor.getValue();
+    assertNotNull(secretDTOV2);
+    assertThat(secretDTOV2.getIdentifier()).isEqualTo(CONNECTOR_ID + "_" + VaultConnectorKeys.authTokenRef);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void processAppRole_shouldNotCreateAuthTokenRef_whenDoNotRenewAppRoleTokenFF_enabled() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(false);
+    ConnectorDTO inputConnector = ConnectorDTO.builder()
+                                      .connectorInfo(ConnectorInfoDTO.builder()
+                                                         .name(CONNECTOR_NAME)
+                                                         .identifier(CONNECTOR_ID)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .connectorType(ConnectorType.VAULT)
+                                                         .connectorConfig(vaultConnectorDTO)
+                                                         .build())
+                                      .build();
+    setUpCommonMocks();
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(
+            NGVaultRenewalAppRoleTaskResponse.builder()
+                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
+                .build());
+    ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, true);
+    verify(secretCrudService, times(0)).create(any(), any());
+  }
+
+  @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testProcessAppRole_VaultConfigHasRequiredLoginParams() throws IOException {
@@ -285,6 +545,62 @@ public class NGVaultServiceImplTest extends CategoryTest {
         .isEqualTo(String.valueOf(vaultConnectorDTO.getSecretId().getDecryptedValue()));
   }
 
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewAppRoleClientToken_willUpdateCorrespondingPPT() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
+    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAppRoleAuth();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(
+            NGVaultRenewalAppRoleTaskResponse.builder()
+                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
+                .build());
+    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
+    when(connectorRepository.save(vaultConnector, ChangeType.NONE)).thenReturn(vaultConnector);
+    ngVaultService.renewAppRoleClientToken(vaultConnector);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(ngConnectorSecretManagerService, times(1)).getPerpetualTaskId(any(), any(), any(), argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue()).isEqualTo(vaultConnector.getIdentifier());
+    verify(ngConnectorSecretManagerService, times(1)).resetHeartBeatTask(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewVaultToken_willUpdateCorrespondingPPT() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildTokenBasedConnector());
+    vaultConnectorDTO.setRenewAppRoleToken(true);
+    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
+    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAuthToken();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    when(delegateService.executeSyncTask(any()))
+        .thenReturn(NGVaultRenewalTaskResponse.builder()
+                        .isSuccessful(true)
+                        .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())
+                        .build());
+    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
+    when(connectorRepository.save(vaultConnector, ChangeType.NONE)).thenReturn(vaultConnector);
+    ngVaultService.renewToken(vaultConnector);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(ngConnectorSecretManagerService, times(1)).getPerpetualTaskId(any(), any(), any(), argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue()).isEqualTo(vaultConnector.getIdentifier());
+    verify(ngConnectorSecretManagerService, times(1)).resetHeartBeatTask(any(), any());
+  }
+
   private VaultConnector buildAppRoleVaultConnector() {
     return VaultConnector.builder()
         .accessType(AccessType.APP_ROLE)
@@ -295,12 +611,22 @@ public class NGVaultServiceImplTest extends CategoryTest {
         .build();
   }
 
+  private VaultConnector buildTokenBasedConnector() {
+    return VaultConnector.builder()
+        .accessType(AccessType.TOKEN)
+        .vaultUrl(HTTP_VAULT_URL)
+        .authTokenRef("tokenRef")
+        .namespace(randomAlphabetic(10))
+        .build();
+  }
+
   private SecretManagerConfigDTO getVaultConfigDTOWithAuthToken() {
     String authToken = "authToken";
     String secretEngineName = "secretEngine";
     VaultConfigDTO vaultConfigDTO = VaultConfigDTO.builder().build();
     vaultConfigDTO.setIdentifier(KMS_IDENTIFIER);
     vaultConfigDTO.setVaultUrl(HTTP_VAULT_URL);
+    vaultConfigDTO.setName(CONNECTOR_NAME);
     vaultConfigDTO.setAuthToken(authToken);
     vaultConfigDTO.setSecretEngineName(secretEngineName);
     vaultConfigDTO.setUseVaultAgent(false);
@@ -309,8 +635,23 @@ public class NGVaultServiceImplTest extends CategoryTest {
     return vaultConfigDTO;
   }
 
+  private SecretManagerConfigDTO getVaultConfigDTOWithAppRoleAuth() {
+    String secretEngineName = "secretEngine";
+    VaultConfigDTO vaultConfigDTO = VaultConfigDTO.builder().build();
+    vaultConfigDTO.setIdentifier(KMS_IDENTIFIER);
+    vaultConfigDTO.setName(CONNECTOR_NAME);
+    vaultConfigDTO.setVaultUrl(HTTP_VAULT_URL);
+    vaultConfigDTO.setAppRoleId("test-role-id");
+    vaultConfigDTO.setSecretEngineName(secretEngineName);
+    vaultConfigDTO.setUseVaultAgent(false);
+    vaultConfigDTO.setUseK8sAuth(false);
+    vaultConfigDTO.setUseAwsIam(false);
+    return vaultConfigDTO;
+  }
+
   private void setUpCommonMocks() throws IOException {
-    when(ngEncryptedDataService.get(any(), any(), any(), any())).thenReturn(NGEncryptedData.builder().build());
+    when(ngEncryptedDataService.get(any(), any(), any(), any()))
+        .thenReturn(NGEncryptedData.builder().secretManagerIdentifier(randomAlphabetic(10)).build());
     when(ngEncryptorService.fetchSecretValue(any(), any(), any())).thenReturn(randomAlphabetic(10).toCharArray());
 
     Call<RestResponse<Boolean>> request = mock(Call.class);

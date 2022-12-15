@@ -53,7 +53,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -89,6 +89,7 @@ public class GitBuildStatusUtility {
   private static final String AZURE_REPO_SUCCESS = "succeeded";
   private static final String DASH = "-";
   private static final int IDENTIFIER_LENGTH = 30;
+  private static final int IDENTIFIER_LENGTH_BB_SAAS = 19;
   private static final List<ConnectorType> validConnectors = Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO);
 
   @Inject private ConnectorUtils connectorUtils;
@@ -241,7 +242,7 @@ public class GitBuildStatusUtility {
         .owner(ownerName)
         .repo(finalRepo)
         .identifier(generateIdentifier(
-            ambiance.getMetadata().getPipelineIdentifier(), buildStatusUpdateParameter.getIdentifier()))
+            url, ambiance.getMetadata().getPipelineIdentifier(), buildStatusUpdateParameter.getIdentifier()))
         .state(retrieveBuildStatusState(gitSCMType, status))
         .build();
   }
@@ -251,7 +252,13 @@ public class GitBuildStatusUtility {
         "Execution status of Pipeline - %s (%s) Stage - %s was %s", pipeline, executionId, stage, status);
   }
 
-  private String generateIdentifier(String pipelineIdentifer, String stageIdentifer) {
+  private String generateIdentifier(String url, String pipelineIdentifer, String stageIdentifer) {
+    // Since bitbucket saas only allows max 40 characters in the key, https://harness.atlassian.net/browse/CI-5411
+    if (GitClientHelper.isBitBucketSAAS(url)) {
+      return String.join(DASH, StringUtils.abbreviate(pipelineIdentifer, IDENTIFIER_LENGTH_BB_SAAS),
+          StringUtils.abbreviate(stageIdentifer, IDENTIFIER_LENGTH_BB_SAAS));
+    }
+
     return String.join(DASH, StringUtils.abbreviate(pipelineIdentifer, IDENTIFIER_LENGTH),
         StringUtils.abbreviate(stageIdentifer, IDENTIFIER_LENGTH));
   }
@@ -399,7 +406,7 @@ public class GitBuildStatusUtility {
   }
 
   private String getVanityUrl(String accountID) {
-    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountID));
+    return CGRestUtils.getResponse(accountClient.getVanityUrl(accountID));
   }
 
   private String getNgBaseUrl(String vanityUrl, String defaultBaseUrl) {

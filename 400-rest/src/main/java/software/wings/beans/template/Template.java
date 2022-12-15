@@ -7,15 +7,19 @@
 
 package software.wings.beans.template;
 
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
+
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.NameAccess;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -24,6 +28,7 @@ import software.wings.beans.Base;
 import software.wings.beans.Variable;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.template.dto.ImportedTemplateDetails;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -47,6 +52,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "TemplateKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "templates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class Template extends Base implements KeywordsAware, NameAccess, NGMigrationEntity {
@@ -151,5 +157,17 @@ public class Template extends Base implements KeywordsAware, NameAccess, NGMigra
   @Override
   public String getMigrationEntityName() {
     return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(TEMPLATE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 }

@@ -8,10 +8,16 @@
 package io.harness.gitsync.common.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.authorization.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ManagerExecutable;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
+import io.harness.manage.GlobalContextManager;
+import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,5 +42,25 @@ public class GitSyncUtils {
       log.error("Could not process the yaml {}", yaml, e);
       throw new InvalidRequestException("Unable to parse yaml", e);
     }
+  }
+
+  public void setGitSyncServicePrincipal() {
+    GlobalContextManager.upsertGlobalContextRecord(
+        PrincipalContextData.builder().principal(new ServicePrincipal(GIT_SYNC_SERVICE.getServiceId())).build());
+  }
+
+  public void setCurrentPrincipalContext(PrincipalContextData principal) {
+    if (principal != null) {
+      GlobalContextManager.upsertGlobalContextRecord(principal);
+    }
+  }
+
+  public boolean isExecuteOnDelegate(ScmConnector scmConnector) {
+    Boolean executeOnDelegate = Boolean.TRUE;
+
+    if (scmConnector instanceof ManagerExecutable) {
+      executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+    }
+    return executeOnDelegate;
   }
 }

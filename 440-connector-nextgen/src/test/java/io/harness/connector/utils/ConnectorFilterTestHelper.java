@@ -9,6 +9,7 @@ package io.harness.connector.utils;
 
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorCategory;
+import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.entities.ConnectorFilterProperties;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -28,6 +29,7 @@ public class ConnectorFilterTestHelper {
         .description("Connector description 1")
         .inheritingCredentialsFromDelegate(true)
         .types(Collections.singletonList(ConnectorType.KUBERNETES_CLUSTER))
+        .connectorConnectivityModes(Collections.singletonList(ConnectorConnectivityMode.DELEGATE))
         .build();
   }
 
@@ -40,6 +42,7 @@ public class ConnectorFilterTestHelper {
         .description("Connector description 1")
         .inheritingCredentialsFromDelegate(true)
         .types(Collections.singletonList(ConnectorType.KUBERNETES_CLUSTER))
+        .connectorConnectivityModes(Collections.singletonList(ConnectorConnectivityMode.DELEGATE))
         .build();
   }
 }

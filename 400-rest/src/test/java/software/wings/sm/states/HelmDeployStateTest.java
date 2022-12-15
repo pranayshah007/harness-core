@@ -32,13 +32,12 @@ import static software.wings.beans.appmanifest.AppManifestKind.HELM_CHART_OVERRI
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.appmanifest.StoreType.CUSTOM;
 import static software.wings.beans.appmanifest.StoreType.HelmChartRepo;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.ServiceOverride;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateType.HELM_DEPLOY;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_NAME;
@@ -408,7 +407,8 @@ public class HelmDeployStateTest extends CategoryTest {
                                                .delegateSelectors(new HashSet<>(singletonList("delegateSelectors")))
                                                .useKubernetesDelegate(true)
                                                .build())
-                                .build())
+                                .build()
+                                .toDTO())
           .build();
   private ExecutionContextImpl context;
 
@@ -457,11 +457,10 @@ public class HelmDeployStateTest extends CategoryTest {
     when(variableProcessor.getVariables(any(), any())).thenReturn(emptyMap());
     when(evaluator.substitute(anyString(), anyMap(), any(VariableResolverTracker.class), anyString()))
         .thenAnswer(i -> i.getArguments()[0]);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
 
     on(helmDeployState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(helmRollbackState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
@@ -483,7 +482,6 @@ public class HelmDeployStateTest extends CategoryTest {
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
   }
 
@@ -1756,10 +1754,12 @@ public class HelmDeployStateTest extends CategoryTest {
   private void testGetPreviousReleaseVersionInvalidResponse(
       HelmVersion version, GitConfig gitConfig, SettingValue settingValue, String expectedMessage) throws Exception {
     ContainerServiceParams params =
-        ContainerServiceParams.builder().settingAttribute(aSettingAttribute().withValue(settingValue).build()).build();
+        ContainerServiceParams.builder()
+            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(settingValue).build().toDTO())
+            .build();
     assertThatThrownBy(()
                            -> helmDeployState.getPreviousReleaseVersion(context, app, RELEASE_NAME, params, gitConfig,
-                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null))
+                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null, null))
         .hasMessageContaining(expectedMessage);
   }
 

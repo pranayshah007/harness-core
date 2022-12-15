@@ -32,6 +32,7 @@ public class PlanJsonLogOutputStream extends LogOutputStream {
   private OutputStream planJsonOutputStream;
   private boolean saveLocal;
   private boolean closed;
+  private CommandExecutionStatus tfPlanShowJsonStatus;
 
   public PlanJsonLogOutputStream() {}
 
@@ -106,5 +107,13 @@ public class PlanJsonLogOutputStream extends LogOutputStream {
     }
 
     return planJsonOutputStream;
+  }
+
+  public CommandExecutionStatus getTfPlanShowJsonStatus() {
+    return tfPlanShowJsonStatus;
+  }
+
+  public void setTfPlanShowJsonStatus(CommandExecutionStatus tfPlanShowJsonStatus) {
+    this.tfPlanShowJsonStatus = tfPlanShowJsonStatus;
   }
 }

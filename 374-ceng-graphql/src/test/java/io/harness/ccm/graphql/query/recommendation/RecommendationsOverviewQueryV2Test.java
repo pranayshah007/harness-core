@@ -23,9 +23,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
@@ -47,6 +49,8 @@ import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewRule;
+import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -71,6 +75,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   private static final String NAME = "name";
   private static final String CLUSTER_NAME = "clusterName";
+  private static final String WORKLOAD_NAME = "workloadName";
   private static final Double MONTHLY_COST = 100D;
   private static final Double MONTHLY_SAVING = 40D;
   private static final String NAMESPACE = "namespace";
@@ -87,13 +92,17 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Mock private RecommendationService recommendationService;
   @Mock private RecommendationsDetailsQuery detailsQuery;
   @Mock private CEViewService viewService;
+  @Mock private ViewsQueryHelper viewsQueryHelper;
+  @Mock private ViewsQueryBuilder viewsQueryBuilder;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private BigQueryHelper bigQueryHelper;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
 
   @Before
   public void setUp() throws Exception {
     when(graphQLUtils.getAccountIdentifier(any())).thenReturn(ACCOUNT_ID);
     when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
-             any(OffsetDateTime.class), any(ResolutionEnvironment.class)))
+             any(OffsetDateTime.class), any(Long.class), any(ResolutionEnvironment.class)))
         .thenReturn(null);
 
     conditionCaptor = ArgumentCaptor.forClass(Condition.class);
@@ -207,7 +216,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(NAME, ViewIdOperator.NOT_IN));
+    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(CLUSTER_NAME, ViewIdOperator.NOT_IN));
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
 
@@ -217,7 +226,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     final Condition condition = conditionCaptor.getValue();
 
-    final String expectedCondition = "\"public\".\"ce_recommendations\".\"name\" not in ('name')";
+    final String expectedCondition = "\"public\".\"ce_recommendations\".\"clustername\" not in ('name')";
 
     assertThat(condition).isNotNull();
     assertThat(condition.toString()).contains(expectedCondition);
@@ -232,7 +241,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(NAME, ViewIdOperator.NOT_NULL));
+    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(WORKLOAD_NAME, ViewIdOperator.NOT_NULL));
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
 
@@ -242,18 +251,22 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     final Condition condition = conditionCaptor.getValue();
 
-    final String expectedConditon = "  and (\n"
+    final String expectedCondition = "and (\n"
         + "    (\n"
         + "      \"public\".\"ce_recommendations\".\"clustername\" in ('clusterName')\n"
         + "      and \"public\".\"ce_recommendations\".\"namespace\" in ('namespace')\n"
         + "      and \"public\".\"ce_recommendations\".\"name\" not in ('name')\n"
+        + "      and \"public\".\"ce_recommendations\".\"resourcetype\" in ('WORKLOAD')\n"
         + "    )\n"
-        + "    or \"public\".\"ce_recommendations\".\"name\" is not null\n"
+        + "    or (\n"
+        + "      \"public\".\"ce_recommendations\".\"name\" is not null\n"
+        + "      and \"public\".\"ce_recommendations\".\"resourcetype\" in ('WORKLOAD')\n"
+        + "    )\n"
         + "  )\n"
         + "  and \"public\".\"ce_recommendations\".\"clustername\" in ('clusterName')";
 
     assertThat(condition).isNotNull();
-    assertThat(condition.toString()).contains(expectedConditon);
+    assertThat(condition.toString()).contains(expectedCondition);
   }
 
   @Test
@@ -275,8 +288,8 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   public void testIfRecommendationDetailsExistsInListQueryResponse() {
     when(recommendationService.listAll(eq(ACCOUNT_ID), any(Condition.class), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
-    when(detailsQuery.recommendationDetails(
-             any(RecommendationItemDTO.class), any(OffsetDateTime.class), any(OffsetDateTime.class), eq(null)))
+    when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
+             any(OffsetDateTime.class), any(Long.class), eq(null)))
         .thenReturn(createRecommendationDetails());
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(defaultFilter, null);
@@ -284,22 +297,6 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     assertRecommendationOverviewListResponse(recommendationsDTO);
     recommendationsDTO.getItems().forEach(
         item -> assertThat(item.getRecommendationDetails()).isEqualTo(createRecommendationDetails()));
-  }
-
-  @Test
-  @Owner(developers = UTSAV)
-  @Category(UnitTests.class)
-  public void testGetRecommendationsOverviewListQueryWithPerspectiveFiltersThrowsError() {
-    final QLCEViewFilter viewFilter = createViewFilter("randomField", QLCEViewFilterOperator.IN, NAME);
-
-    final K8sRecommendationFilterDTO filter = createPerspectiveViewFilter(viewFilter);
-
-    when(recommendationService.listAll(any(), any(), any(), any()))
-        .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
-
-    assertThatThrownBy(() -> overviewQuery.recommendations(filter, null))
-        .isExactlyInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("doesnt exist");
   }
 
   private static K8sRecommendationFilterDTO createPerspectiveViewFilter(QLCEViewFilter viewFilter) {

@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cf.pipeline.FeatureFlagStageNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.plancreator.pipeline.PipelineConfig;
@@ -42,12 +41,16 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepNode;
 import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.jira.create.JiraCreateStepNode;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
+import io.harness.steps.pipelinestage.PipelineStageNode;
+import io.harness.steps.plugin.ContainerStepNode;
 import io.harness.steps.policy.PolicyStepNode;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepNode;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetStepNode;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepNode;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -80,6 +83,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(NGCoreClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
+          .addAll(ContainerRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -93,6 +97,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
@@ -130,6 +135,18 @@ public class OrchestrationStepsModuleRegistrars {
                    .clazz(ApprovalStageNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.APPROVAL)
+                                           .modulesSupported(ImmutableList.of(ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.PIPELINE_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(PipelineStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PIPELINE)
                                            .modulesSupported(ImmutableList.of(ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())
@@ -188,13 +205,11 @@ public class OrchestrationStepsModuleRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(QueueStepNode.class)
-                   .yamlSchemaMetadata(
-                       YamlSchemaMetadata.builder()
-                           .namespace(SchemaNamespaceConstants.PMS)
-                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
-                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                           .featureFlags(Collections.singletonList(FeatureName.PIPELINE_QUEUE_STEP.name()))
-                           .build())
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SHELL_SCRIPT_STEP)
@@ -253,7 +268,7 @@ public class OrchestrationStepsModuleRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.PMS)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CE,
-                                               ModuleType.CF, ModuleType.CI))
+                                               ModuleType.CF, ModuleType.CI, ModuleType.STO))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -342,6 +357,18 @@ public class OrchestrationStepsModuleRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVICENOW_IMPORT_SET_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServiceNowImportSetStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.FLAG_CONFIGURATION)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -353,20 +380,21 @@ public class OrchestrationStepsModuleRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
-          .add(YamlSchemaRootClass.builder()
-                   .entityType(EntityType.POLICY_STEP)
-                   .availableAtProjectLevel(true)
-                   .availableAtOrgLevel(false)
-                   .availableAtAccountLevel(false)
-                   .clazz(PolicyStepNode.class)
-                   .yamlSchemaMetadata(
-                       YamlSchemaMetadata.builder()
-                           .namespace(SchemaNamespaceConstants.PMS)
-                           .modulesSupported(Arrays.asList(ModuleType.values()))
-                           .featureFlags(Collections.singletonList(FeatureName.CUSTOM_POLICY_STEP.name()))
-                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                           .build())
-                   .build())
+          .add(
+              YamlSchemaRootClass.builder()
+                  .entityType(EntityType.POLICY_STEP)
+                  .availableAtProjectLevel(true)
+                  .availableAtOrgLevel(false)
+                  .availableAtAccountLevel(false)
+                  .clazz(PolicyStepNode.class)
+                  .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                          .namespace(SchemaNamespaceConstants.PMS)
+                                          .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.CI, ModuleType.CF,
+                                              ModuleType.CE, ModuleType.PMS, ModuleType.STO, ModuleType.TEMPLATESERVICE,
+                                              ModuleType.CV, ModuleType.CHAOS, ModuleType.GOVERNANCE))
+                                          .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                          .build())
+                  .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.STRATEGY_NODE)
                    .availableAtProjectLevel(true)
@@ -375,6 +403,31 @@ public class OrchestrationStepsModuleRegistrars {
                    .clazz(StrategyConfig.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STRATEGY.name()).build())
+                                           .build())
+                   .build())
+          .add(
+              YamlSchemaRootClass.builder()
+                  .entityType(EntityType.WAIT_STEP)
+                  .availableAtProjectLevel(true)
+                  .availableAtOrgLevel(false)
+                  .availableAtAccountLevel(false)
+                  .clazz(WaitStepNode.class)
+                  .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                          .namespace(SchemaNamespaceConstants.PMS)
+                                          .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CI))
+                                          .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                          .build())
+                  .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CONTAINER_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ContainerStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
           .build();

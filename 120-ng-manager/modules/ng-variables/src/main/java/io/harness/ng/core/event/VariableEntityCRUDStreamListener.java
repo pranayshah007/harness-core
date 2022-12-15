@@ -8,6 +8,7 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -18,6 +19,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTOR
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -50,11 +52,32 @@ public class VariableEntityCRUDStreamListener implements MessageListener {
             return processOrganizationChangeEvent(message);
           case PROJECT_ENTITY:
             return processProjectChangeEvent(message);
+          case ACCOUNT_ENTITY:
+            return processAccountChangeEvent(message);
           default:
         }
       }
     }
     return true;
+  }
+
+  private boolean processAccountChangeEvent(Message message) {
+    if (!(message.getMessage().getMetadataMap().containsKey(ACTION)
+            && DELETE_ACTION.equals(message.getMessage().getMetadataMap().get(ACTION)))) {
+      return true;
+    }
+    AccountEntityChangeDTO accountEntityChangeDTO;
+    try {
+      accountEntityChangeDTO = AccountEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    return processAccountDeleteEvent(accountEntityChangeDTO);
+  }
+
+  private boolean processAccountDeleteEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    return variableEntityCRUDEventHandler.deleteAssociatedVariables(accountEntityChangeDTO.getAccountId(), null, null);
   }
 
   private boolean processOrganizationChangeEvent(Message message) {

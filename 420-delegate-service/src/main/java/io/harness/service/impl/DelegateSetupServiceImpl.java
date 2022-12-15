@@ -9,13 +9,14 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.filter.FilterType.DELEGATEPROFILE;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_CONNECTED;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_DISCONNECTED;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_PARTIALLY_CONNECTED;
 
-import static java.time.Duration.ofMinutes;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -23,6 +24,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
@@ -40,7 +42,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -54,12 +56,13 @@ import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
 import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -84,15 +87,16 @@ import org.mongodb.morphia.query.UpdateOperations;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateSetupServiceImpl implements DelegateSetupService {
+public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
-  private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
+
+  private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
   @Override
   public long getDelegateGroupCount(
@@ -393,7 +397,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   private DelegateGroupDetails buildDelegateGroupDetails(
       String accountId, DelegateGroup delegateGroup, List<Delegate> groupDelegates, String delegateGroupId) {
     if (groupDelegates == null) {
-      log.info("There are no delegates related to this delegate group.");
+      log.debug("There are no delegates related to this delegate group.");
       groupDelegates = emptyList();
     }
 
@@ -408,7 +412,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
     long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
-    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).max().orElse(0);
+    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).min().orElse(0);
+    long delegateCreationTime = groupDelegates.stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
     boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
 
     // pick any connected delegateId to check whether grpc is active or not
@@ -417,11 +422,12 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     long lastHeartBeat = groupDelegates.stream().mapToLong(Delegate::getLastHeartBeat).max().orElse(0);
     AtomicInteger countOfDelegatesConnected = new AtomicInteger();
     AtomicBoolean isDelegateTokenActiveAtGroupLevel = new AtomicBoolean(true);
+    List<Delegate> connectedDelegates = new ArrayList<>();
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
               boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
+                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
               countOfDelegatesConnected.addAndGet(isDelegateConnected ? 1 : 0);
 
               String delegateTokenName = delegate.getDelegateTokenName();
@@ -435,6 +441,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
               isDelegateTokenActiveAtGroupLevel.compareAndSet(!isTokenActive, false);
               if (isDelegateConnected) {
                 delegateId.set(delegate.getUuid());
+                connectedDelegates.add(delegate);
               }
               return DelegateGroupListing.DelegateInner.builder()
                   .uuid(delegate.getUuid())
@@ -455,12 +462,18 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       connectivityStatus = GROUP_STATUS_CONNECTED;
     }
 
+    String groupVersion = connectedDelegates.stream()
+                              .min(Comparator.comparing(Delegate::getVersion))
+                              .map(Delegate::getVersion)
+                              .orElse(null);
+
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated))
+        .autoUpgrade(
+            setAutoUpgrade(upgraderLastUpdated, immutableDelegate, delegateCreationTime, groupVersion, delegateType))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -474,11 +487,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .immutable(immutableDelegate)
+        .groupVersion(groupVersion)
         .build();
-  }
-
-  private boolean setAutoUpgrader(long upgraderLastUpdated) {
-    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {
@@ -547,12 +557,13 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
     if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
       return delegateList.stream()
-          .filter(
-              delegate -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+          .filter(delegate
+              -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
           .collect(toList());
     }
     return delegateList.stream()
-        .filter(delegate -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+        .filter(delegate
+            -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
         .collect(toList());
   }
 
@@ -634,11 +645,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-    outboxService.save(DelegateGroupUpsertEvent.builder()
+    outboxService.save(DelegateUpsertEvent.builder()
                            .accountIdentifier(accountId)
                            .orgIdentifier(orgId)
                            .projectIdentifier(projectId)
-                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                            .delegateSetupDetails(DelegateSetupDetails.builder()
                                                      .identifier(updatedDelegateGroup.getIdentifier())
                                                      .tags(updatedDelegateGroup.getTags())
@@ -700,11 +711,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       DelegateGroup updatedDelegateGroup =
           persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-      outboxService.save(DelegateGroupUpsertEvent.builder()
+      outboxService.save(DelegateUpsertEvent.builder()
                              .accountIdentifier(accountIdentifier)
                              .orgIdentifier(orgIdentifier)
                              .projectIdentifier(projectIdentifier)
-                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                              .delegateSetupDetails(DelegateSetupDetails.builder()
                                                        .identifier(updatedDelegateGroup.getIdentifier())
                                                        .tags(updatedDelegateGroup.getTags())
@@ -792,6 +803,44 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     return delegateImplicitSelectors;
   }
 
+  @Override
+  public AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime,
+      String version, String delegateType) {
+    if (DOCKER.equals(delegateType)) {
+      return AutoUpgrade.OFF;
+    }
+
+    // version can be empty in case of delegateGroup with no delegates.
+    if (isNotEmpty(version)) {
+      try {
+        String[] split = version.split("\\.");
+        if (Integer.parseInt(split[2]) < 76300) {
+          return AutoUpgrade.OFF;
+        }
+      } catch (NumberFormatException ex) {
+        log.error("Unable to parse delegate version ", ex);
+      } catch (IndexOutOfBoundsException ex) {
+        // This exception comes in local development because version is set to build.version.
+        // Not adding exception because that will pollute logs.
+        log.warn("Version is not set properly");
+      }
+    }
+
+    // Auto Upgrade is on for legacy delegates.
+    if (!immutableDelegate) {
+      return AutoUpgrade.ON;
+    }
+
+    if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated)
+        <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
+      return AutoUpgrade.ON;
+    } else if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - delegateCreationTime)
+        <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
+      return AutoUpgrade.SYNCHRONIZING;
+    }
+    return AutoUpgrade.OFF;
+  }
+
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {
     Set<String> delegateGroupTags = listDelegateGroupImplicitTags(delegateGroup);
     if (isNotEmpty(delegateGroup.getTags())) {
@@ -846,5 +895,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       }
     }
     return implicitTags;
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    persistence.delete(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.accountId, accountId));
   }
 }

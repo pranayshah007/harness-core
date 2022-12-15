@@ -48,9 +48,11 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
@@ -79,17 +81,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
+@Slf4j
 @OwnedBy(CDP)
 public class AzureHelperService {
   @Inject @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
-  @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private FileStoreService fileStoreService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
   public AzureConnectorDTO getConnector(IdentifierRef azureConnectorRef) {
@@ -175,8 +180,11 @@ public class AzureHelperService {
             .taskSelectors(taskSelectors)
             .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
             .build();
-
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    try {
+      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   public DelegateResponseData getTaskExecutionResponse(DelegateResponseData responseData, String ifFailedMessage) {

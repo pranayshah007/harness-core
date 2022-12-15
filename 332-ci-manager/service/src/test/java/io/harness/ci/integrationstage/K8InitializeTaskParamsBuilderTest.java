@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
@@ -33,6 +34,7 @@ import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 
@@ -79,6 +81,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     InitializeStepInfo initializeStepInfo = K8InitializeTaskUtilsHelper.getDirectK8Step();
     K8PodDetails k8PodDetails = K8PodDetails.builder().accountId(accountId).stageID(STAGE_ID).build();
 
+    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
     when(executionSweepingOutputResolver.resolve(any(), any())).thenReturn(k8PodDetails);
     when(k8InitializeTaskUtils.generatePodName(STAGE_ID)).thenReturn(podName);
     when(k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails)).thenReturn(new HashMap<>());
@@ -88,7 +92,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(k8InitializeTaskUtils.getLogServiceEnvVariables(any(), any())).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getTIServiceEnvVariables(any())).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getSTOServiceEnvVariables(any())).thenReturn(new HashMap<>());
-    when(codebaseUtils.getGitEnvVariables(any(), any())).thenReturn(new HashMap<>());
+    when(codebaseUtils.getGitEnvVariables(any(), any(), eq(false))).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any(), any(), any()))
         .thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getWorkDir()).thenReturn("/harness");
@@ -100,7 +104,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
         .thenReturn(getLiteEngineContainer());
     when(k8InitializeStepUtils.getStageRequest(any(), any())).thenReturn(Pair.of(1024, 1024));
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());
-    when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), anyInt()))
+    when(
+        k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any(), anyInt()))
         .thenReturn(Arrays.asList(K8InitializeTaskUtilsHelper.getRunStepContainer(0)));
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
@@ -109,6 +114,6 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
         k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, "");
     assertThat(response.getCik8PodParams().getName()).isEqualTo(podName);
     verify(k8InitializeStepUtils, times(1))
-        .createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), anyInt());
+        .createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any(), anyInt());
   }
 }

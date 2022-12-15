@@ -14,13 +14,13 @@ import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisSerialConsumer;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.redis.RedisPersistentLocker;
-import io.harness.redis.RedisConfig;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 
 @Slf4j
 public class MessageConsumer implements Runnable {
@@ -31,24 +31,18 @@ public class MessageConsumer implements Runnable {
   private final AbstractConsumer client;
   private RedisPersistentLocker redisLocker;
 
-  public MessageConsumer(
-      String readVia, RedisConfig redisConfig, String channel, String groupName, Integer processingTime, String color) {
+  public MessageConsumer(String readVia, RedissonClient redissonClient, String channel, String groupName,
+      Integer processingTime, String color, String envNamespace) {
     this.readVia = readVia;
     this.color = color;
     if (readVia.equals("serialConsumerGroups")) {
-      this.client =
-          RedisSerialConsumer.of(channel, groupName, "hardcodedconsumer", redisConfig, Duration.ofSeconds(10));
+      this.client = RedisSerialConsumer.of(
+          channel, groupName, "hardcodedconsumer", redissonClient, Duration.ofSeconds(10), envNamespace);
     } else {
-      this.client = RedisConsumer.of(channel, groupName, redisConfig, Duration.ofSeconds(10), 5);
+      this.client = RedisConsumer.of(channel, groupName, redissonClient, Duration.ofSeconds(10), 5, envNamespace);
     }
     this.groupName = groupName;
     this.processingTime = processingTime;
-  }
-
-  public MessageConsumer(RedisPersistentLocker redisLocker, RedisConfig redisConfig, String readVia, String channel,
-      String groupName, Integer processingTime, String color) {
-    this(readVia, redisConfig, channel, groupName, processingTime, color);
-    this.redisLocker = redisLocker;
   }
 
   @SneakyThrows

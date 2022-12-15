@@ -10,7 +10,7 @@ package io.harness.steps.resourcerestraint.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.iterator.PersistentRegularIterable;
@@ -45,10 +45,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceRestraintInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "resourceRestraintInstances")
 @Document("resourceRestraintInstances")
 @TypeAlias("resourceRestraintInstance")
-@StoreIn(DbAliases.PMS)
 public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, PersistentRegularIterable {
   public static final long TTL = 6;
 
@@ -109,6 +109,22 @@ public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, 
                  .name("releaseEntityType_releaseEntityId_idx")
                  .field(ResourceRestraintInstanceKeys.releaseEntityType)
                  .field(ResourceRestraintInstanceKeys.releaseEntityId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("resourceRestraintId_resourceUnit_state_idx")
+                 .field(ResourceRestraintInstanceKeys.resourceRestraintId)
+                 .field(ResourceRestraintInstanceKeys.resourceUnit)
+                 .field(ResourceRestraintInstanceKeys.state)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("releaseEntityId_state_idx")
+                 .field(ResourceRestraintInstanceKeys.releaseEntityId)
+                 .field(ResourceRestraintInstanceKeys.state)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("resourceRestraintId_state_idx")
+                 .field(ResourceRestraintInstanceKeys.resourceRestraintId)
+                 .field(ResourceRestraintInstanceKeys.state)
                  .build())
         .build();
   }

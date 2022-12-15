@@ -10,14 +10,9 @@ package io.harness.delegate.task.shell;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
-import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorCapabilityHelper;
+import io.harness.delegate.beans.connector.pdcconnector.WinrmCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
-import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
 
@@ -34,6 +29,7 @@ public class WinrmTaskParameters extends CommandTaskParameters {
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean disableWinRMCommandEncodingFFSet;
+  boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
 
   @Override
@@ -43,31 +39,13 @@ public class WinrmTaskParameters extends CommandTaskParameters {
       return;
     }
 
-    if (winRmInfraDelegateConfig instanceof PdcWinRmInfraDelegateConfig) {
-      PdcWinRmInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) winRmInfraDelegateConfig;
-      if (pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO() != null) {
-        capabilities.addAll(PhysicalDataCenterConnectorCapabilityHelper.fetchRequiredExecutionCapabilities(
-            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
-    } else if (winRmInfraDelegateConfig instanceof AzureWinrmInfraDelegateConfig) {
-      AzureWinrmInfraDelegateConfig azureWinrmInfraDelegateConfig =
-          (AzureWinrmInfraDelegateConfig) winRmInfraDelegateConfig;
-      if (azureWinrmInfraDelegateConfig.getAzureConnectorDTO() != null) {
-        capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
-            azureWinrmInfraDelegateConfig.getAzureConnectorDTO(), maskingEvaluator));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          azureWinrmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
-    } else if (winRmInfraDelegateConfig instanceof AwsWinrmInfraDelegateConfig) {
-      AwsWinrmInfraDelegateConfig awsWinrmInfraDelegateConfig = (AwsWinrmInfraDelegateConfig) winRmInfraDelegateConfig;
-      if (awsWinrmInfraDelegateConfig.getAwsConnectorDTO() != null) {
-        capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
-            awsWinrmInfraDelegateConfig.getAwsConnectorDTO(), maskingEvaluator));
-      }
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          awsWinrmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
+    if (winRmInfraDelegateConfig.getWinRmCredentials() != null
+        && winRmInfraDelegateConfig.getWinRmCredentials().getAuth() != null) {
+      capabilities.addAll(WinrmCapabilityHelper.fetchRequiredExecutionCapabilities(
+          winRmInfraDelegateConfig, useWinRMKerberosUniqueCacheFile, host));
     }
+
+    capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+        winRmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
   }
 }

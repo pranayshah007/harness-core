@@ -11,7 +11,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.settings.SettingVariableTypes.AWS_SECRETS_MANAGER;
 import static software.wings.settings.SettingVariableTypes.AZURE_VAULT;
-import static software.wings.settings.SettingVariableTypes.CYBERARK;
 import static software.wings.settings.SettingVariableTypes.GCP_SECRETS_MANAGER;
 import static software.wings.settings.SettingVariableTypes.KMS;
 import static software.wings.settings.SettingVariableTypes.VAULT;
@@ -60,7 +59,7 @@ public class MigrationSMCredentialsFromLocalToGlobalKMS implements Migration {
       int failed_ctr = 0;
       AbstractSecretServiceImpl secretServiceImpl = getSecretServiceImpl();
       List<SettingVariableTypes> listOfTypes =
-          Arrays.asList(KMS, GCP_SECRETS_MANAGER, VAULT_SSH, VAULT, AZURE_VAULT, AWS_SECRETS_MANAGER, CYBERARK);
+          Arrays.asList(KMS, GCP_SECRETS_MANAGER, VAULT_SSH, VAULT, AZURE_VAULT, AWS_SECRETS_MANAGER);
 
       Query<EncryptedData> encryptedDataQuery = wingsPersistence.createQuery(EncryptedData.class)
                                                     .filter(EncryptedDataKeys.encryptionType, EncryptionType.LOCAL)

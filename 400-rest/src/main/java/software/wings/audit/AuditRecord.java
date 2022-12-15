@@ -10,11 +10,13 @@ package software.wings.audit;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(PL)
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "entityAuditRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "AuditRecordKeys")
@@ -52,9 +55,9 @@ public class AuditRecord
   @Id @NotNull private String uuid;
   @NotEmpty String auditHeaderId;
   @NotNull EntityAuditRecord entityAuditRecord;
-  private long createdAt;
+  @FdIndex private long createdAt;
   @Setter @FdIndex private Long nextIteration;
-  private String accountId;
+  @FdIndex private String accountId;
 
   @Override
   public Long obtainNextIteration(String fieldName) {

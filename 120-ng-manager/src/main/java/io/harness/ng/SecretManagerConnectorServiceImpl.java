@@ -33,7 +33,9 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -141,6 +143,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
 
     ngVaultService.processAppRole(connector, null, accountIdentifier, true);
 
+    // Check which type of token is provided
+    ngVaultService.processTokenLookup(connector, accountIdentifier);
+
     if (isDefaultSecretManager(connector.getConnectorInfo())) {
       clearDefaultFlagOfSecretManagers(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
           connector.getConnectorInfo().getProjectIdentifier());
@@ -163,6 +168,10 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
         return ((AwsSecretManagerDTO) connector.getConnectorConfig()).isDefault();
       case LOCAL:
         return ((LocalConnectorDTO) connector.getConnectorConfig()).isDefault();
+      case CUSTOM_SECRET_MANAGER:
+        return ((CustomSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
+      case GCP_SECRET_MANAGER:
+        return ((GcpSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
       default:
         throw new SecretManagementException(ErrorCode.SECRET_MANAGEMENT_ERROR,
             String.format("Unsupported Secret Manager type [%s]", connector.getConnectorType()), WingsException.USER);
@@ -208,6 +217,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
     if (existingConnectorDTO.isPresent()) {
       ConnectorConfigDTO existingConnectorConfigDTO = existingConnectorDTO.get().getConnector().getConnectorConfig();
       ngVaultService.processAppRole(connector, existingConnectorConfigDTO, accountIdentifier, false);
+
+      // Check which type of token is provided
+      ngVaultService.processTokenLookup(connector, accountIdentifier);
       alreadyDefaultSM = isDefaultSecretManager(existingConnectorDTO.get().getConnector());
     } else {
       throw new InvalidRequestException(
@@ -242,17 +254,17 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE, forceDelete);
   }
 
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType, forceDelete);
   }
 
   @Override
@@ -317,6 +329,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public void resetHeartbeatForReferringConnectors(List<Pair<String, String>> connectorPerpetualTaskInfoList) {
     defaultConnectorService.resetHeartbeatForReferringConnectors(connectorPerpetualTaskInfoList);
+  }
+
+  @Override
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    defaultConnectorService.resetHeartBeatTask(accountId, taskId);
   }
 
   @Override

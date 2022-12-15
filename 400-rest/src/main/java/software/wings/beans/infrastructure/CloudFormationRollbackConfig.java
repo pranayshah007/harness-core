@@ -10,10 +10,12 @@ package software.wings.beans.infrastructure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder(toBuilder = true)
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "cloudFormationRollbackConfig")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "CloudFormationRollbackConfigKeys")
@@ -43,7 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @FdIndex private String accountId;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -54,6 +57,23 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
                  .field(CloudFormationRollbackConfigKeys.awsConfigId)
                  .field(CloudFormationRollbackConfigKeys.createdAt)
                  .name("byAppAndEntityAndAwsConfig")
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(CloudFormationRollbackConfigKeys.appId)
+                 .field(CloudFormationRollbackConfigKeys.entityId)
+                 .field(CloudFormationRollbackConfigKeys.awsConfigId)
+                 .field(CloudFormationRollbackConfigKeys.customStackName)
+                 .field(CloudFormationRollbackConfigKeys.region)
+                 .field(CloudFormationRollbackConfigKeys.createdAt)
+                 .name("byAppAndEntityAndAwsConfigAndCustomStackNameAndRegion")
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(CloudFormationRollbackConfigKeys.appId)
+                 .field(CloudFormationRollbackConfigKeys.entityId)
+                 .field(CloudFormationRollbackConfigKeys.customStackName)
+                 .field(CloudFormationRollbackConfigKeys.region)
+                 .field(CloudFormationRollbackConfigKeys.createdAt)
+                 .name("byAppAndEntityAndCustomStackNameAndRegion")
                  .build())
         .build();
   }
@@ -70,6 +90,8 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
   private String cloudFormationRoleArn;
   private boolean skipBasedOnStackStatus;
   private List<String> stackStatusesToMarkAsSuccess;
+  private List<String> capabilities;
+  private String tags;
 
   @FdIndex private String entityId;
 }

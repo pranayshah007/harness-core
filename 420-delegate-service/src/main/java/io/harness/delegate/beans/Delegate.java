@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateEntityOwner.DelegateEntityOwnerKeys;
@@ -18,6 +19,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -45,6 +47,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DelegateKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
@@ -66,7 +69,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @SchemaIgnore @FdIndex private long createdAt;
   // Will be used by ECS delegate, when hostName is mentioned in TaskSpec.
-  @NotEmpty @FdIndex private String accountId;
+  @NotEmpty private String accountId;
 
   // Will be used for NG to hold delegate size details
   private DelegateSizeDetails sizeDetails;
@@ -84,7 +87,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
-  private long lastHeartBeat;
+  @FdIndex private long lastHeartBeat;
   private String version;
   private transient String sequenceNum;
   private String delegateType;
@@ -106,11 +109,13 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private List<DelegateScope> includeScopes;
   private List<DelegateScope> excludeScopes;
+  // these are tags added from UI/APIs
   private List<String> tags;
+  // these are tags added from delegate.yaml
+  private List<String> tagsFromYaml;
   private String profileResult;
   private boolean profileError;
   private long profileExecutedAt;
-  private boolean sampleDelegate;
   private long expirationTime;
 
   @FdIndex Long capabilitiesCheckNextIteration;
@@ -119,7 +124,9 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @SchemaIgnore private List<String> keywords;
 
-  @FdIndex Long taskExpiryCheckNextIteration;
+  @FdIndex @Deprecated Long taskExpiryCheckNextIteration;
+
+  @FdIndex Long delegateDisconnectDetectorNextIteration;
 
   Long lastExpiredEventHeartbeatTime;
 
@@ -129,19 +136,22 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private boolean immutable;
 
+  private boolean mtls;
+
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
-      this.taskExpiryCheckNextIteration = nextIteration;
+    if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
+      this.delegateDisconnectDetectorNextIteration = nextIteration;
       return;
     }
+
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
-      return this.taskExpiryCheckNextIteration;
+    if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
+      return this.delegateDisconnectDetectorNextIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -150,5 +160,36 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   public static final class DelegateKeys {
     public static final String owner_identifier = owner + "." + DelegateEntityOwnerKeys.identifier;
     public static final String searchTermFilter = "searchTermFilter";
+  }
+
+  public static Delegate getDelegateFromParams(DelegateParams delegateParams, boolean connectedUsingMtls) {
+    return Delegate.builder()
+        .uuid(delegateParams.getDelegateId())
+        .accountId(delegateParams.getAccountId())
+        .description(delegateParams.getDescription())
+        .ip(delegateParams.getIp())
+        .hostName(delegateParams.getHostName())
+        .delegateGroupName(delegateParams.getDelegateGroupName())
+        .delegateGroupId(delegateParams.getDelegateGroupId())
+        .delegateName(delegateParams.getDelegateName())
+        .delegateProfileId(delegateParams.getDelegateProfileId())
+        .lastHeartBeat(delegateParams.getLastHeartBeat())
+        .version(delegateParams.getVersion())
+        .sequenceNum(delegateParams.getSequenceNum())
+        .delegateType(delegateParams.getDelegateType())
+        .delegateRandomToken(delegateParams.getDelegateRandomToken())
+        .keepAlivePacket(delegateParams.isKeepAlivePacket())
+        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
+        .ng(delegateParams.isNg())
+        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
+        .location(delegateParams.getLocation())
+        .mtls(connectedUsingMtls)
+        .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+        .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
+        .proxy(delegateParams.isProxy())
+        .ceEnabled(delegateParams.isCeEnabled())
+        .immutable(delegateParams.isImmutable())
+        .tags(delegateParams.getTags())
+        .build();
   }
 }

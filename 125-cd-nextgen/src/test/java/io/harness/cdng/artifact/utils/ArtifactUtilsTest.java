@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.utils;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,21 +20,30 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -310,5 +320,542 @@ public class ArtifactUtilsTest extends CategoryTest {
             .build();
     List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
     assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGar() {
+    GoogleArtifactRegistryConfig primaryArtifact =
+        GoogleArtifactRegistryConfig.builder()
+            .region(ParameterField.<String>builder().value("us").build())
+            .repositoryName(ParameterField.<String>builder().value("vivek").build())
+            .pkg(ParameterField.<String>builder().value("alphine").build())
+            .project(ParameterField.<String>builder().value("cd-play").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .googleArtifactRegistryType(ParameterField.<String>builder().value("docker").build())
+            .connectorRef(ParameterField.<String>builder().value("account.gcp").build())
+            .isPrimaryArtifact(true)
+            .identifier("ARTIFACT1")
+            .build();
+    GoogleArtifactRegistryConfig sidecarArtifact =
+        GoogleArtifactRegistryConfig.builder().isPrimaryArtifact(false).identifier("ARTIFACT12").build();
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+    assertThat(log).isEqualTo("\ntype: GoogleArtifactRegistry \n"
+        + "region: us \n"
+        + "project: cd-play \n"
+        + "repositoryName: vivek \n"
+        + "package: alphine \n"
+        + "version/versionRegex: version \n"
+        + "connectorRef: account.gcp \n"
+        + "registryType: docker\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testJenkinsLog() {
+    // Jenkins Primary Artifact
+    JenkinsArtifactConfig primaryArtifact =
+        JenkinsArtifactConfig.builder()
+            .artifactPath(ParameterField.<String>builder().value("artifactPath").build())
+            .build(ParameterField.<String>builder().value("build").build())
+            .jobName(ParameterField.<String>builder().value("jobName").build())
+            .connectorRef(ParameterField.<String>builder().value("jenkins").build())
+            .build();
+
+    // Jenkins side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: Jenkins \n"
+        + "JobName: jobName \n"
+        + "ArtifactPath: artifactPath \n"
+        + "Build: build \n"
+        + "ConnectorRef: jenkins\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testArtifactUtilsAmazonS3() {
+    // AmazonS3 Primary Artifact
+    AmazonS3ArtifactConfig primaryArtifact =
+        AmazonS3ArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("Amazons3").build())
+            .bucketName(ParameterField.<String>builder().value("bucketName").build())
+            .filePathRegex(ParameterField.<String>builder().value("filePathRegex").build())
+            .filePath(ParameterField.<String>builder().value("filePath").build())
+            .build();
+
+    // Amazons3 side car Artifact
+    AmazonS3ArtifactConfig sidecarArtifact =
+        AmazonS3ArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: AmazonS3 \n"
+        + "bucketName: bucketName \n"
+        + "filePath: filePath \n"
+        + "filePathRegex: filePathRegex \n"
+        + "connectorRef: Amazons3\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGCR() {
+    // Gcr Primary Artifact
+    GcrArtifactConfig primaryArtifact =
+        GcrArtifactConfig.builder()
+            .imagePath(ParameterField.<String>builder().value("imagePath").build())
+            .registryHostname(ParameterField.<String>builder().value("registryHostname").build())
+            .connectorRef(ParameterField.<String>builder().value("GCR").build())
+            .tag(ParameterField.<String>builder().value("TAG").build())
+            .build();
+
+    // Gcr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(" type: Gcr, image: imagePath, tag/tagRegex: TAG, connectorRef: GCR\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testEcrLog() {
+    // Jenkins Primary Artifact
+    EcrArtifactConfig primaryArtifact = EcrArtifactConfig.builder()
+                                            .imagePath(ParameterField.<String>builder().value("imagePath").build())
+                                            .connectorRef(ParameterField.<String>builder().value("ECR").build())
+                                            .tag(ParameterField.<String>builder().value("TAG").build())
+                                            .build();
+
+    // Ecr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(" type: Ecr, image: imagePath, tag/tagRegex: TAG, connectorRef: ECR\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testNexus3Log() {
+    // Jenkins Primary Artifact
+    NexusRegistryArtifactConfig primaryArtifact =
+        NexusRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("Nexus3").build())
+            .artifactPath(ParameterField.<String>builder().value("ArtifactPath").build())
+            .repository(ParameterField.<String>builder().value("Repository").build())
+            .tag(ParameterField.<String>builder().value("TAG").build())
+            .build();
+
+    // Ecr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(" type: Nexus3Registry, image: Repository, tag/tagRegex: TAG, connectorRef: Nexus3\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testNexus2Log() {
+    // Jenkins Primary Artifact
+    Nexus2RegistryArtifactConfig primaryArtifact =
+        Nexus2RegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("Nexus2").build())
+            .repository(ParameterField.<String>builder().value("Repository").build())
+            .tag(ParameterField.<String>builder().value("TAG").build())
+            .build();
+
+    // Ecr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(" type: Nexus2Registry, image: Repository, tag/tagRegex: TAG, connectorRef: Nexus2\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testArtifactoryLogDocker() {
+    // Artifactory Primary Artifact
+    ArtifactoryRegistryArtifactConfig primaryArtifact =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("Artifactory").build())
+            .repository(ParameterField.<String>builder().value("Repository").build())
+            .artifactPath(ParameterField.<String>builder().value("ArtifactPath").build())
+            .tag(ParameterField.<String>builder().value("TAG").build())
+            .repositoryFormat(ParameterField.<String>builder().value("Docker").build())
+            .build();
+
+    // Ecr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(
+        " type: ArtifactoryRegistry, image: ArtifactPath, tag/tagRegex: TAG, connectorRef: Artifactory\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testArtifactoryLogGeneric() {
+    // Artifactory Primary Artifact
+    ArtifactoryRegistryArtifactConfig primaryArtifact =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("Artifactory").build())
+            .repository(ParameterField.<String>builder().value("Repository").build())
+            .artifactPath(ParameterField.<String>builder().value("ArtifactPath").build())
+            .tag(ParameterField.<String>builder().value("TAG").build())
+            .artifactDirectory(ParameterField.<String>builder().value("artifactDirectory").build())
+            .repositoryFormat(ParameterField.<String>builder().value("generic").build())
+            .build();
+
+    // Ecr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(
+        "type: ArtifactoryRegistry, artifactDirectory: artifactDirectory, artifactPath/artifactPathFilter: ArtifactPath, connectorRef: Artifactory\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testACR() {
+    // Artifactory Primary Artifact
+    AcrArtifactConfig primaryArtifact = AcrArtifactConfig.builder()
+                                            .connectorRef(ParameterField.<String>builder().value("Acr").build())
+                                            .repository(ParameterField.<String>builder().value("Repository").build())
+                                            .tag(ParameterField.<String>builder().value("TAG").build())
+                                            .build();
+
+    // Acr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo(" type: Acr, image: Repository, tag/tagRegex: TAG, connectorRef: Acr\n");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGithubPackages() {
+    // Artifactory Primary Artifact
+    GithubPackagesArtifactConfig primaryArtifact =
+        GithubPackagesArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("githubpackages").build())
+            .packageType(ParameterField.<String>builder().value("Maven").build())
+            .packageName(ParameterField.<String>builder().value("packageName").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .versionRegex(ParameterField.<String>builder().value("versionRegex").build())
+            .org(ParameterField.<String>builder().value("org").build())
+            .build();
+
+    // Acr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: GithubPackageRegistry \n"
+        + "connectorRef: githubpackages \n"
+        + "org: org \n"
+        + "packageName: packageName \n"
+        + "packageType: Maven \n"
+        + "version: version \n"
+        + "versionRegex: versionRegex\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testAzureArtifacts() {
+    // Azure Artifacts Primary Artifact
+    AzureArtifactsConfig primaryArtifact =
+        AzureArtifactsConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("azure").build())
+            .packageType(ParameterField.<String>builder().value("Maven").build())
+            .packageName(ParameterField.<String>builder().value("packageName").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .versionRegex(ParameterField.<String>builder().value("versionRegex").build())
+            .feed(ParameterField.<String>builder().value("feed").build())
+            .scope(ParameterField.<String>builder().value("project").build())
+            .project(ParameterField.<String>builder().value("project").build())
+            .build();
+
+    // Acr side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: AzureArtifacts \n"
+        + "scope: project \n"
+        + "project: project \n"
+        + "feed: feed \n"
+        + "packageType: Maven \n"
+        + "packageName: packageName \n"
+        + "version: version \n"
+        + "versionRegex: versionRegex \n"
+        + "connectorRef: azure\n");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testAMI() {
+    // Azure Artifacts Primary Artifact
+    AMIArtifactConfig primaryArtifact =
+        AMIArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("AMI").build())
+            .version(ParameterField.<String>builder().value("version").build())
+            .versionRegex(ParameterField.<String>builder().value("versionRegex").build())
+            .build();
+
+    // AMI side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: AmazonMachineImage \n"
+        + "version: version \n"
+        + "versionRegex: versionRegex \n"
+        + "connectorRef: AMI\n");
   }
 }

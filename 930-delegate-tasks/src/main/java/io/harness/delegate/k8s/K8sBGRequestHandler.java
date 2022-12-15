@@ -65,9 +65,9 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -99,7 +99,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
   private ReleaseHistory releaseHistory;
-  private Release currentRelease;
+  private K8sLegacyRelease currentRelease;
   private KubernetesResource managedWorkload;
   private List<KubernetesResource> resources;
   private KubernetesResource primaryService;
@@ -177,7 +177,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     currentRelease.setManagedWorkloadRevision(
         k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
-    releaseHistory.setReleaseStatus(Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
         kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
 
@@ -213,7 +213,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (shouldSaveReleaseHistory) {
       K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) request;
-      releaseHistory.setReleaseStatus(Status.Failed);
+      releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
           kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
     }

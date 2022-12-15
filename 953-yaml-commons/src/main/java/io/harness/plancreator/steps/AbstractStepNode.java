@@ -13,7 +13,6 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.plancreator.strategy.StrategyConfig;
@@ -23,7 +22,6 @@ import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -54,10 +52,6 @@ public abstract class AbstractStepNode {
   @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
   String description;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
-  @VariableExpression(skipInnerObjectTraversal = true)
-  ParameterField<Timeout> timeout;
 
   StepWhenCondition when;
 

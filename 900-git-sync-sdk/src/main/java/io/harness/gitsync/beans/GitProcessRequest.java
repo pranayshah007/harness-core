@@ -9,7 +9,7 @@ package io.harness.gitsync.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.beans.FileStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -33,10 +33,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "GitProcessingRequestKeys")
-@Document("gitProcessRequestSdk")
 @TypeAlias("io.harness.gitsync.beans.GitProcessRequest")
-@Entity(value = "gitProcessRequestSdk", noClassnameStored = true)
 @StoreIn(DbAliases.ALL)
+@Document("gitProcessRequestSdk")
+@Entity(value = "gitProcessRequestSdk", noClassnameStored = true)
 @OwnedBy(DX)
 public class GitProcessRequest {
   public static List<MongoIndex> mongoIndexes() {

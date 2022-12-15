@@ -7,10 +7,10 @@
 
 package io.harness.ng.core.outbox;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
@@ -185,12 +185,14 @@ public class OrganizationEventHandler implements OutboxEventHandler {
 
   private boolean publishOrganizationChangeEventToRedis(String accountIdentifier, String identifier, String action) {
     try {
-      eventProducer.send(Message.newBuilder()
-                             .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
-                                 EventsFrameworkMetadataConstants.ENTITY_TYPE, ORGANIZATION_ENTITY,
-                                 EventsFrameworkMetadataConstants.ACTION, action))
-                             .setData(getOrganizationPayload(accountIdentifier, identifier))
-                             .build());
+      String eventId = eventProducer.send(Message.newBuilder()
+                                              .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
+                                                  EventsFrameworkMetadataConstants.ENTITY_TYPE, ORGANIZATION_ENTITY,
+                                                  EventsFrameworkMetadataConstants.ACTION, action))
+                                              .setData(getOrganizationPayload(accountIdentifier, identifier))
+                                              .build());
+      log.info("Produced event id:[{}] for orgId:[{}], accountId: [{}], action:[{}]", eventId, identifier,
+          accountIdentifier, action);
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework orgIdentifier: " + identifier, e);
       return false;

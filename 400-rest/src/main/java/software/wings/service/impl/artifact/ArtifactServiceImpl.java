@@ -25,24 +25,24 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Base.CREATED_AT_KEY;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DELETED;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DOWNLOADED;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DOWNLOADING;
-import static software.wings.beans.artifact.Artifact.ContentStatus.METADATA_ONLY;
-import static software.wings.beans.artifact.Artifact.ContentStatus.NOT_DOWNLOADED;
-import static software.wings.beans.artifact.Artifact.Status.APPROVED;
-import static software.wings.beans.artifact.Artifact.Status.ERROR;
-import static software.wings.beans.artifact.Artifact.Status.FAILED;
-import static software.wings.beans.artifact.Artifact.Status.QUEUED;
-import static software.wings.beans.artifact.Artifact.Status.READY;
-import static software.wings.beans.artifact.Artifact.Status.REJECTED;
-import static software.wings.beans.artifact.Artifact.Status.RUNNING;
-import static software.wings.beans.artifact.Artifact.Status.WAITING;
 import static software.wings.beans.artifact.ArtifactStreamType.AMI;
 import static software.wings.beans.artifact.ArtifactStreamType.ARTIFACTORY;
 import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static software.wings.beans.artifact.ArtifactStreamType.NEXUS;
 import static software.wings.collect.CollectEvent.Builder.aCollectEvent;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DELETED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DOWNLOADED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DOWNLOADING;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.METADATA_ONLY;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.NOT_DOWNLOADED;
+import static software.wings.persistence.artifact.Artifact.Status.APPROVED;
+import static software.wings.persistence.artifact.Artifact.Status.ERROR;
+import static software.wings.persistence.artifact.Artifact.Status.FAILED;
+import static software.wings.persistence.artifact.Artifact.Status.QUEUED;
+import static software.wings.persistence.artifact.Artifact.Status.READY;
+import static software.wings.persistence.artifact.Artifact.Status.REJECTED;
+import static software.wings.persistence.artifact.Artifact.Status.RUNNING;
+import static software.wings.persistence.artifact.Artifact.Status.WAITING;
 import static software.wings.service.impl.artifact.ArtifactCollectionUtils.getArtifactKeyFn;
 import static software.wings.utils.ArtifactType.DOCKER;
 
@@ -65,11 +65,6 @@ import io.harness.queue.QueuePublisher;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
-import software.wings.beans.artifact.Artifact.ContentStatus;
-import software.wings.beans.artifact.Artifact.Status;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -79,6 +74,11 @@ import software.wings.beans.artifact.ArtifactoryArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.collect.CollectEvent;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
+import software.wings.persistence.artifact.Artifact.ContentStatus;
+import software.wings.persistence.artifact.Artifact.Status;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -258,15 +258,11 @@ public class ArtifactServiceImpl implements ArtifactService {
     artifact.setArtifactSourceName(artifactStream.getSourceName());
     setAccountId(artifact);
     setArtifactStatus(artifact, artifactStream);
-    boolean isMultiArtifact =
-        featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifact.getAccountId());
-    if (!isMultiArtifact) {
-      artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
-    }
+    artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
 
     if (!skipDuplicateCheck) {
       ArtifactStreamAttributes artifactStreamAttributes =
-          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, isMultiArtifact);
+          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
       Artifact savedArtifact = getArtifactByUniqueKey(artifactStream, artifactStreamAttributes, artifact);
       if (savedArtifact != null) {
         log.info(
@@ -431,8 +427,12 @@ public class ArtifactServiceImpl implements ArtifactService {
                                 .filter(ID_KEY, artifactId)
                                 .filter(ArtifactKeys.accountId, accountId);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
-    ops.set(ArtifactKeys.metadata, newMetadata);
-    ops.set(ArtifactKeys.revision, revision);
+    if (newMetadata != null) {
+      ops.set(ArtifactKeys.metadata, newMetadata);
+    }
+    if (revision != null) {
+      ops.set(ArtifactKeys.revision, revision);
+    }
     wingsPersistence.update(query, ops);
   }
 
@@ -486,6 +486,16 @@ public class ArtifactServiceImpl implements ArtifactService {
     Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
     ops.set("artifactSourceName", artifactStream.getSourceName());
+    wingsPersistence.update(query, ops);
+  }
+
+  @Override
+  public void updateLastUpdatedAt(String artifactId, String accountId) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.lastUpdatedAt, System.currentTimeMillis());
     wingsPersistence.update(query, ops);
   }
 
@@ -1013,9 +1023,9 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
-  public List<Artifact> listArtifactsByArtifactStreamId(String appId, String artifactStreamId) {
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId) {
     return wingsPersistence.createQuery(Artifact.class)
-        .filter(ArtifactKeys.appId, appId)
+        .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .order(Sort.descending(CREATED_AT_KEY))
         .asList();

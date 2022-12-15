@@ -35,7 +35,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 
 import com.google.common.collect.ImmutableMap;

@@ -11,28 +11,28 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.beans.SecretManagerConfig;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
-import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
+import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
-import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.SecretType;
-import io.harness.secretmanagerclient.ValueType;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.JsonUtils;
@@ -48,11 +48,14 @@ import software.wings.ngmigration.NGMigrationStatus;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import retrofit2.Response;
 
 @Slf4j
@@ -60,11 +63,15 @@ import retrofit2.Response;
 public class SecretMigrationService extends NgMigrationService {
   @Inject private SecretService secretService;
   @Inject private SecretNGManagerClient secretNGManagerClient;
+  @Inject private SecretFactory secretFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
-    SecretDTOV2 secretYaml = ((SecretRequestWrapper) yamlFile.getYaml()).getSecret();
+    if (basicInfo == null) {
+      return null;
+    }
+    SecretDTOV2 secretYaml = ((CustomSecretRequestWrapper) yamlFile.getYaml()).getSecret();
     return MigratedEntityMapping.builder()
         .appId(basicInfo.getAppId())
         .accountId(basicInfo.getAccountId())
@@ -110,62 +117,102 @@ public class SecretMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    SecretRequestWrapper secretRequestWrapper = (SecretRequestWrapper) yamlFile.getYaml();
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      log.info("Skipping creation of secret as it already exists");
+      return MigrationImportSummaryDTO.builder()
+          .errors(Collections.singletonList(ImportError.builder()
+                                                .message("Secret was not migrated as it was already imported before")
+                                                .entity(yamlFile.getCgBasicInfo())
+                                                .build()))
+          .build();
+    }
+    CustomSecretRequestWrapper secretRequestWrapper = (CustomSecretRequestWrapper) yamlFile.getYaml();
+    // If we have input stream that means it is secret file & we have the actual secret
+    if (secretRequestWrapper.getFileContent() != null) {
+      return migrateSecretFile(auth, ngClient, inputDTO, yamlFile);
+    }
+    // If the secret type is SecretFile then we use the YAML API to create.
+    if (secretRequestWrapper.getSecret().getType().equals(SecretType.SecretFile)) {
+      Response<ResponseDTO<SecretResponseWrapper>> resp =
+          ngClient
+              .createSecretUsingYaml(auth, inputDTO.getAccountIdentifier(),
+                  secretRequestWrapper.getSecret().getOrgIdentifier(),
+                  secretRequestWrapper.getSecret().getProjectIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
+              .execute();
+      log.info("Secret creation using YAML Response details {} {}", resp.code(), resp.message());
+      return handleResp(yamlFile, resp);
+    }
+    // By default, we use the standard API to create the secret. Note this API fails if it is called for SecretFile
     Response<ResponseDTO<SecretResponseWrapper>> resp =
         ngClient
             .createSecret(auth, inputDTO.getAccountIdentifier(), secretRequestWrapper.getSecret().getOrgIdentifier(),
                 secretRequestWrapper.getSecret().getProjectIdentifier(), JsonUtils.asTree(yamlFile.getYaml()))
             .execute();
     log.info("Secret creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
+  }
+
+  private MigrationImportSummaryDTO migrateSecretFile(
+      String auth, NGClient ngClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    CustomSecretRequestWrapper secretRequestWrapper = (CustomSecretRequestWrapper) yamlFile.getYaml();
+    RequestBody spec = RequestBody.create(MediaType.parse("text/plain"), JsonUtils.asJson(secretRequestWrapper));
+    RequestBody content =
+        RequestBody.create(MediaType.parse("application/octet-stream"), secretRequestWrapper.getFileContent());
+    Response<ResponseDTO<SecretResponseWrapper>> resp =
+        ngClient
+            .createSecretFile(auth, inputDTO.getAccountIdentifier(),
+                secretRequestWrapper.getSecret().getOrgIdentifier(),
+                secretRequestWrapper.getSecret().getProjectIdentifier(), content, spec)
+            .execute();
+    log.info("Secret file creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     EncryptedData encryptedData = (EncryptedData) entities.get(entityId).getEntity();
-    SecretManagerConfig secretManagerConfig =
-        (SecretManagerConfig) entities
-            .get(CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build())
-            .getEntity();
     List<NGYamlFile> files = new ArrayList<>();
-    String identifier = MigratorUtility.generateIdentifier(encryptedData.getName());
-    files.add(NGYamlFile.builder()
-                  .type(NGMigrationEntityType.SECRET)
-                  .filename("secret/" + encryptedData.getName() + ".yaml")
-                  .yaml(SecretRequestWrapper.builder()
-                            .secret(SecretDTOV2.builder()
-                                        .type(SecretType.SecretText)
-                                        .name(encryptedData.getName())
-                                        .identifier(identifier)
-                                        .description(null)
-                                        .orgIdentifier(inputDTO.getOrgIdentifier())
-                                        .projectIdentifier(inputDTO.getProjectIdentifier())
-                                        .spec(SecretTextSpecDTO.builder()
-                                                  .valueType(ValueType.Inline)
-                                                  .value("__ACTUAL_SECRET__")
-                                                  // TODO: Use actual secret manager identifier
-                                                  .secretManagerIdentifier("harnessSecretManager")
-                                                  .build())
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, encryptedData.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
+    SecretDTOV2Builder secretDTOV2Builder = secretFactory.getSecret(encryptedData, entities, migratedEntities);
+    if (secretDTOV2Builder == null) {
+      return files;
+    }
+    SecretDTOV2 secretDTOV2 = secretDTOV2Builder.projectIdentifier(projectIdentifier)
+                                  .orgIdentifier(orgIdentifier)
+                                  .identifier(identifier)
+                                  .name(name)
+                                  .build();
+    NGYamlFile yamlFile = NGYamlFile.builder()
+                              .type(NGMigrationEntityType.SECRET)
+                              .filename("secret/" + name + ".yaml")
+                              .yaml(CustomSecretRequestWrapper.builder()
+                                        .fileContent(secretFactory.getSecretFileContent(encryptedData, entities))
+                                        .secret(secretDTOV2)
                                         .build())
-                            .build())
-                  .cgBasicInfo(CgBasicInfo.builder()
-                                   .id(encryptedData.getUuid())
-                                   .accountId(encryptedData.getAccountId())
-                                   .appId(null)
-                                   .type(NGMigrationEntityType.SECRET)
-                                   .build())
-                  .build());
+                              .ngEntityDetail(NgEntityDetail.builder()
+                                                  .identifier(identifier)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .build())
+                              .cgBasicInfo(CgBasicInfo.builder()
+                                               .id(encryptedData.getUuid())
+                                               .accountId(encryptedData.getAccountId())
+                                               .appId(null)
+                                               .name(encryptedData.getName())
+                                               .type(NGMigrationEntityType.SECRET)
+                                               .build())
+                              .build();
+    files.add(yamlFile);
 
     // TODO: make it more obvious that migratedEntities needs to be updated by having compile-time check
-    migratedEntities.putIfAbsent(entityId,
-        NgEntityDetail.builder()
-            .identifier(identifier)
-            .orgIdentifier(inputDTO.getOrgIdentifier())
-            .projectIdentifier(inputDTO.getProjectIdentifier())
-            .build());
+    migratedEntities.putIfAbsent(entityId, yamlFile);
 
     return files;
   }
@@ -176,7 +223,7 @@ public class SecretMigrationService extends NgMigrationService {
       SecretResponseWrapper response =
           NGRestUtils.getResponse(secretNGManagerClient.getSecret(ngEntityDetail.getIdentifier(), accountIdentifier,
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
-      return response == null ? null : SecretRequestWrapper.builder().secret(response.getSecret()).build();
+      return response == null ? null : CustomSecretRequestWrapper.builder().secret(response.getSecret()).build();
     } catch (InvalidRequestException ex) {
       log.error("Error when getting connector - ", ex);
       return null;
@@ -188,18 +235,5 @@ public class SecretMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    EncryptedData secretManagerConfig = (EncryptedData) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(
-            BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(secretManagerConfig.getName())))
-        .name(BaseInputDefinition.buildName(secretManagerConfig.getName()))
-        .spec(null)
-        .build();
   }
 }

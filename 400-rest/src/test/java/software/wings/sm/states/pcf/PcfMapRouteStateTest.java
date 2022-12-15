@@ -20,9 +20,9 @@ import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.INFRA_ROUTE_PCF;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.MASKED;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
@@ -103,7 +103,6 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
@@ -114,6 +113,7 @@ import software.wings.common.InfrastructureConstants;
 import software.wings.common.VariableProcessor;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ServiceHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
@@ -358,8 +358,8 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
                  .build()))
         .thenReturn(setupSweepingOutputPcf);
 
-    workflowStandardParamsExtensionService = spy(
-        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService, null, null));
+    workflowStandardParamsExtensionService = spy(new WorkflowStandardParamsExtensionService(
+        appService, null, artifactService, environmentService, null, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     FieldUtils.writeField(

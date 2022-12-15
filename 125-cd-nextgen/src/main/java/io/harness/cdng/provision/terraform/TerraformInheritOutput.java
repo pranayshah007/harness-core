@@ -34,6 +34,7 @@ public class TerraformInheritOutput implements ExecutionSweepingOutput {
   GitStoreConfig configFiles;
   FileStorageStoreConfig fileStoreConfig;
   List<TerraformVarFileConfig> varFileConfigs;
+  TerraformBackendConfigFileConfig backendConfigurationFileConfig;
   String backendConfig;
   List<String> targets;
   Map<String, String> environmentVariables;

@@ -7,37 +7,23 @@
 
 package software.wings.beans;
 
-import io.harness.annotation.HarnessEntity;
 import io.harness.beans.EmbeddedUser;
 import io.harness.delegate.beans.ChecksumType;
-import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.MongoIndex;
 
 import software.wings.utils.ContainerFamily;
 import software.wings.utils.FileType;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableList;
-import java.util.List;
 import java.util.Objects;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Application bean class.
  */
 
-@Entity(value = "appContainers", noClassnameStored = true)
-@HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "AppContainerKeys")
 public class AppContainer extends BaseFile {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("unique_yaml").unique(true).field("accountId").field("name").build())
-        .build();
-  }
-
   @FormDataParam("standard") private boolean standard;
   @FormDataParam("description") private String description;
   private boolean standardUpload;

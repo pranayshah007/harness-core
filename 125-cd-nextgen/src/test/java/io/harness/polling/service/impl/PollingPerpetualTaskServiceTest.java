@@ -8,8 +8,10 @@
 package io.harness.polling.service.impl;
 
 import static io.harness.perpetualtask.PerpetualTaskType.ARTIFACT_COLLECTION_NG;
+import static io.harness.perpetualtask.PerpetualTaskType.GITPOLLING_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.MANIFEST_COLLECTION_NG;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -23,15 +25,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.gitpolling.utils.GitPollingStepHelper;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
+import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -42,13 +48,16 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
+import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.perpetualtask.polling.ManifestCollectionTaskParamsNg;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingType;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
+import io.harness.polling.bean.gitpolling.GitHubPollingInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.service.impl.artifact.ArtifactPerpetualTaskHelperNg;
+import io.harness.polling.service.impl.gitpolling.GitPollingPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.manifest.ManifestPerpetualTaskHelperNg;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -74,12 +83,15 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
 
   private ManifestPerpetualTaskHelperNg spyManifestPerpetualTaskHelperNg;
   private ArtifactPerpetualTaskHelperNg spyArtifactPerpetualTaskHelperNg;
+
+  private GitPollingPerpetualTaskHelperNg spyGitPollingPerpetualTaskHelperNg;
   private PollingPerpetualTaskServiceImpl pollingPerpetualTaskService;
   @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Mock PollingServiceImpl pollingService;
   @Mock K8sStepHelper k8sStepHelper;
   @Inject KryoSerializer kryoSerializer;
   @Mock ArtifactStepHelper artifactStepHelper;
+  @Mock GitPollingStepHelper gitPollingStepHelper;
 
   @Before
   public void setup() {
@@ -91,8 +103,13 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
         new ArtifactPerpetualTaskHelperNg(kryoSerializer, artifactStepHelper);
     spyArtifactPerpetualTaskHelperNg = Mockito.spy(artifactPerpetualTaskHelperNg);
 
-    pollingPerpetualTaskService = new PollingPerpetualTaskServiceImpl(
-        spyManifestPerpetualTaskHelperNg, spyArtifactPerpetualTaskHelperNg, delegateServiceGrpcClient, pollingService);
+    GitPollingPerpetualTaskHelperNg gitPollingPerpetualTaskHelperNg =
+        new GitPollingPerpetualTaskHelperNg(kryoSerializer, gitPollingStepHelper);
+    spyGitPollingPerpetualTaskHelperNg = Mockito.spy(gitPollingPerpetualTaskHelperNg);
+
+    pollingPerpetualTaskService =
+        new PollingPerpetualTaskServiceImpl(spyManifestPerpetualTaskHelperNg, spyArtifactPerpetualTaskHelperNg,
+            spyGitPollingPerpetualTaskHelperNg, delegateServiceGrpcClient, pollingService);
   }
 
   @Test
@@ -216,6 +233,62 @@ public class PollingPerpetualTaskServiceTest extends CDNGTestBase {
         (ArtifactTaskParameters) kryoSerializer.asObject(params.getArtifactCollectionParams().toByteArray());
     assertThat(taskParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(taskParameters.getAttributes()).isEqualTo(delegateRequest);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testCreateGitpollingPerpetualTask() {
+    GitHubPollingInfo gitHubPollingInfo =
+        GitHubPollingInfo.builder().pollInterval(1).connectorRef(CONNECTOR_REF).build();
+    PollingDocument pollingDocument = PollingDocument.builder()
+                                          .uuid(UUID)
+                                          .accountId(ACCOUNT_ID)
+                                          .pollingType(PollingType.WEBHOOK_POLLING)
+                                          .signatures(Collections.singletonList(SIGNATURE_1))
+                                          .pollingInfo(gitHubPollingInfo)
+                                          .build();
+
+    GitHubPollingDelegateRequest delegateRequest =
+        GitHubPollingDelegateRequest.builder()
+            .connectorRef(CONNECTOR_REF)
+            .githubConnectorDTO(GithubConnectorDTO.builder().url("url").build())
+            .build();
+    when(pollingService.attachPerpetualTask(anyString(), anyString(), anyString())).thenReturn(true);
+    when(gitPollingStepHelper.toSourceDelegateRequest(any(), any())).thenReturn(delegateRequest);
+    when(delegateServiceGrpcClient.createPerpetualTask(any(AccountId.class), eq(GITPOLLING_NG), any(), any(), eq(false),
+             eq("WEBHOOK_POLLING Collection Task"), eq(UUID)))
+        .thenReturn(PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build());
+
+    pollingPerpetualTaskService.createPerpetualTask(pollingDocument);
+
+    ArgumentCaptor<PerpetualTaskSchedule> scheduleCaptor = ArgumentCaptor.forClass(PerpetualTaskSchedule.class);
+    ArgumentCaptor<PerpetualTaskClientContextDetails> taskContextCaptor =
+        ArgumentCaptor.forClass(PerpetualTaskClientContextDetails.class);
+
+    verify(spyGitPollingPerpetualTaskHelperNg).createPerpetualTaskExecutionBundle(pollingDocument);
+    verify(pollingService).attachPerpetualTask(anyString(), anyString(), anyString());
+    verify(delegateServiceGrpcClient)
+        .createPerpetualTask(any(AccountId.class), eq(GITPOLLING_NG), scheduleCaptor.capture(),
+            taskContextCaptor.capture(), eq(false), eq("WEBHOOK_POLLING Collection Task"), eq(UUID));
+
+    PerpetualTaskSchedule schedule = scheduleCaptor.getValue();
+    PerpetualTaskClientContextDetails taskContext = taskContextCaptor.getValue();
+
+    assertThat(schedule).isNotNull();
+    assertThat(schedule.getInterval()).isEqualTo(Durations.fromMinutes(1));
+    assertThat(schedule.getTimeout()).isEqualTo(Durations.fromMinutes(2));
+
+    assertThat(taskContext).isNotNull();
+    assertThat(taskContext.getExecutionBundle()).isNotNull();
+    PerpetualTaskExecutionBundle executionBundle = taskContext.getExecutionBundle();
+    Any perpetualTaskParams = executionBundle.getTaskParams();
+    GitPollingTaskParamsNg params = AnyUtils.unpack(perpetualTaskParams, GitPollingTaskParamsNg.class);
+    assertThat(params.getPollingDocId()).isEqualTo(UUID);
+
+    GitPollingTaskParameters taskParameters =
+        (GitPollingTaskParameters) kryoSerializer.asObject(params.getGitpollingWebhookParams().toByteArray());
+    assertThat(taskParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
   }
 
   @Test

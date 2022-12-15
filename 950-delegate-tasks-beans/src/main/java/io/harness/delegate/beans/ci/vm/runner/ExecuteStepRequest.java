@@ -24,6 +24,7 @@ public class ExecuteStepRequest {
   @JsonProperty("pool_id") String poolId;
   @JsonProperty("stage_runtime_id") String stageRuntimeID;
   @JsonProperty("start_step_request") Config config;
+  @JsonProperty("infra_type") String infraType;
 
   @Data
   @Builder
@@ -107,5 +108,8 @@ public class ExecuteStepRequest {
     @JsonProperty("test_annotations") String testAnnotations;
     @JsonProperty("build_environment") String buildEnvironment;
     @JsonProperty("framework_version") String frameworkVersion;
+    @JsonProperty("test_split_strategy") String testSplitStrategy;
+    @JsonProperty("parallelize_tests") boolean parallelizeTests;
+    @JsonProperty("test_globs") String testGlobs;
   }
 }

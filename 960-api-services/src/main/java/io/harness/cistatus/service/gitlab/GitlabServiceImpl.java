@@ -37,10 +37,10 @@ public class GitlabServiceImpl implements GitlabService {
   private static final String SEPARATOR = "/";
 
   @Override
-  public JSONObject mergePR(String apiUrl, String slug, String token, String prNumber) {
+  public JSONObject mergePR(String apiUrl, String slug, String token, String prNumber, Boolean deleteSourceBranch) {
     try {
       Response<Object> response = getGitlabRestClient(GitlabConfig.builder().gitlabUrl(apiUrl).build())
-                                      .mergePR(token, slug, prNumber)
+                                      .mergePR(token, slug, prNumber, deleteSourceBranch)
                                       .execute();
       JSONObject json = new JSONObject();
       if (response.isSuccessful()) {
@@ -48,11 +48,11 @@ public class GitlabServiceImpl implements GitlabService {
         return json;
       } else {
         log.error(
-            "Failed to merge PR for github url {} and prNum {}. Response {} ", apiUrl, prNumber, response.errorBody());
+            "Failed to merge PR for gitlab url {} and prNum {}. Response {} ", apiUrl, prNumber, response.errorBody());
         return json;
       }
     } catch (Exception e) {
-      log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
+      log.error("Failed to merge PR for gitlab url {} and prNum {} ", apiUrl, prNumber, e);
       return new JSONObject();
     }
   }
@@ -71,11 +71,16 @@ public class GitlabServiceImpl implements GitlabService {
                   (String) bodyObjectMap.get(TARGET_URL))
               .execute();
 
+      if (!statusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for gitlab url {} and sha {} error {}, message {}",
+            gitlabConfig.getGitlabUrl(), sha, statusCreationResponseResponse.errorBody().string(),
+            statusCreationResponseResponse.message());
+      }
+
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
-      log.error("Failed to post commit status request to Gitlab with url {} and sha {} ", gitlabConfig.getGitlabUrl(),
-          sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for Gitlab url %s and sha %s ", gitlabConfig.getGitlabUrl(), sha), e);
     }
   }
 

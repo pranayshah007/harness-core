@@ -64,7 +64,7 @@ public class SQLOperationHelper {
           insertSQLBuilder.append(String.format("'%s',", getArrayString((List) entry.getValue())));
 
         } else {
-          insertSQLBuilder.append(String.format("'%s',", entry.getValue()));
+          insertSQLBuilder.append(String.format("'%s',", escapeSql(entry.getValue().toString())));
         }
       }
     }
@@ -133,7 +133,8 @@ public class SQLOperationHelper {
           updateQueryBuilder.append(
               String.format("%s=%s,", entry.getKey(), String.format("'%s'", getArrayString((List) entry.getValue()))));
         } else {
-          updateQueryBuilder.append(String.format("%s=%s,", entry.getKey(), String.format("'%s'", entry.getValue())));
+          updateQueryBuilder.append(
+              String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue().toString()))));
         }
       }
     }
@@ -168,7 +169,8 @@ public class SQLOperationHelper {
 
     if (!columnValueMappingForCondition.isEmpty()) {
       for (Map.Entry<String, Object> entry : columnValueMappingForCondition.entrySet()) {
-        deleteSQLBuilder.append(String.format("%s=%s AND ", entry.getKey(), String.format("'%s'", entry.getValue())));
+        deleteSQLBuilder.append(
+            String.format("%s=%s AND ", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue().toString()))));
       }
     }
 
@@ -183,11 +185,18 @@ public class SQLOperationHelper {
     StringBuilder arrayValues = new StringBuilder("{");
     if (!array.isEmpty()) {
       for (Object item : array) {
-        arrayValues.append(String.format("\"%s\",", item));
+        arrayValues.append(String.format("\"%s\",", escapeSql(item.toString())));
       }
       arrayValues = new StringBuilder(arrayValues.subSequence(0, arrayValues.length() - 1));
     }
     arrayValues.append('}');
     return arrayValues.toString();
+  }
+
+  private static String escapeSql(String str) {
+    if (str == null) {
+      return null;
+    }
+    return str.replace("'", "''");
   }
 }

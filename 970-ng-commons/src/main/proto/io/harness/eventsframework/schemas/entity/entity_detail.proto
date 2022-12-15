@@ -14,6 +14,7 @@ import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/identifier_ref.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/input_set_ref.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/template_reference.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/infra_definition_ref.proto";
 
 message EntityDetailProtoDTO {
   EntityTypeProtoEnum type = 1;
@@ -21,6 +22,7 @@ message EntityDetailProtoDTO {
     IdentifierRefProtoDTO identifierRef = 2;
     InputSetReferenceProtoDTO inputSetRef = 3;
     TemplateReferenceProtoDTO templateRef = 5;
+    InfraDefinitionReferenceProtoDTO infraDefRef = 6;
   }
   string name = 4;
 }

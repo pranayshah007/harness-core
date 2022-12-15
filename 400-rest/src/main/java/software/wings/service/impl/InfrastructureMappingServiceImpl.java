@@ -194,14 +194,14 @@ import software.wings.utils.Utils;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ecs.model.LaunchType;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import com.mongodb.DuplicateKeyException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -223,6 +223,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Sort;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -699,6 +700,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       }
 
       keyValuePairs.put("usePublicDns", azureInfrastructureMapping.isUsePublicDns());
+      keyValuePairs.put("usePrivateIp", azureInfrastructureMapping.isUsePrivateIp());
 
       if (DeploymentType.SSH.name().equals(infrastructureMapping.getDeploymentType())) {
         keyValuePairs.put("hostConnectionAttrs", azureInfrastructureMapping.getHostConnectionAttrs());
@@ -1115,7 +1117,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .namespace(infraMapping.getNamespace())
@@ -1141,6 +1143,11 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
 
     if (isEmpty(infraMapping.getInfraMappingType())) {
       throw new InvalidRequestException("Infra mapping type must not be empty for Azure Infra mapping.", USER);
+    }
+
+    if (infraMapping.isUsePublicDns() && infraMapping.isUsePrivateIp()) {
+      throw new InvalidRequestException(
+          "Use public DNS and Use private IP selected. It could be selected only one option.", USER);
     }
   }
 
@@ -1170,7 +1177,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
 
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .subscriptionId(infraMapping.getSubscriptionId())
@@ -1208,7 +1215,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
 
     SyncTaskContext syncTaskContext = getSyncTaskContext(infraMapping);
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .encryptionDetails(encryptionDetails)
                                                         .namespace(namespace)
                                                         .build();
@@ -2180,7 +2187,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       ((HostConnectionAttributes) hostConnectionSetting.getValue()).setSshVaultConfig(sshVaultConfig);
     }
     return delegateProxyFactory.get(HostValidationService.class, syncTaskContext)
-        .validateHost(validationRequest.getHostNames(), hostConnectionSetting, encryptionDetails,
+        .validateHost(validationRequest.getHostNames(), hostConnectionSetting.toDTO(), encryptionDetails,
             validationRequest.getExecutionCredential(), sshVaultConfig);
   }
 
@@ -2410,7 +2417,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
             .build();
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .containerServiceName(containerServiceName)
                                                         .encryptionDetails(encryptionDetails)
                                                         .clusterName(clusterName)
@@ -2659,6 +2666,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
           .filter(InfrastructureMappingKeys.appId, appId)
           .filter(InfrastructureMappingKeys.serviceId, serviceId)
           .filter(InfrastructureMappingKeys.infrastructureDefinitionId, infraDefinitionId)
+          .order(Sort.descending(InfrastructureMappingKeys.lastUpdatedAt))
           .project(InfrastructureMappingKeys.uuid, true)
           .project(InfrastructureMappingKeys.deploymentType, true)
           .get();

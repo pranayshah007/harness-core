@@ -94,8 +94,8 @@ public class ECSRecommendationServiceTest extends CategoryTest {
 
     verify(ecsRecommendationDAO, times(0)).fetchPartialRecommendationHistograms(any(), any(), any(), any(), any());
 
-    final ECSRecommendationDTO ecsRecommendationDTO =
-        ecsRecommendationService.getECSRecommendationById(ACCOUNT_ID, ID, OffsetDateTime.now(), OffsetDateTime.now());
+    final ECSRecommendationDTO ecsRecommendationDTO = ecsRecommendationService.getECSRecommendationById(
+        ACCOUNT_ID, ID, OffsetDateTime.now(), OffsetDateTime.now(), 0L);
 
     assertThat(ecsRecommendationDTO).isNotNull();
     assertThat(ecsRecommendationDTO.getLastDayCost()).isNull();
@@ -122,8 +122,8 @@ public class ECSRecommendationServiceTest extends CategoryTest {
     when(ecsRecommendationDAO.fetchPartialRecommendationHistograms(eq(ACCOUNT_ID), any(), any(), any(), any()))
         .thenReturn(histograms);
 
-    final ECSRecommendationDTO ecsRecommendationDTO =
-        ecsRecommendationService.getECSRecommendationById(ACCOUNT_ID, ID, OffsetDateTime.now(), OffsetDateTime.now());
+    final ECSRecommendationDTO ecsRecommendationDTO = ecsRecommendationService.getECSRecommendationById(
+        ACCOUNT_ID, ID, OffsetDateTime.now(), OffsetDateTime.now(), 0L);
 
     verify(ecsRecommendationDAO, times(1))
         .fetchPartialRecommendationHistograms(eq(ACCOUNT_ID), any(), any(), any(), any());

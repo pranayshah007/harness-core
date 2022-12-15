@@ -11,15 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.opa.OpaEvaluationContext;
 import io.harness.ng.opa.OpaService;
 import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
-import io.harness.remote.client.RestClientUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,15 +40,6 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
 
   public GovernanceMetadata evaluatePoliciesWithEntity(String accountId, ConnectorDTO connectorDTO,
       String orgIdentifier, String projectIdentifier, String action, String identifier) {
-    if (!RestClientUtils.getResponse(
-            accountClient.isFeatureFlagEnabled(FeatureName.OPA_CONNECTOR_GOVERNANCE.name(), accountId))) {
-      return GovernanceMetadata.newBuilder()
-          .setDeny(false)
-          .setMessage(
-              String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_CONNECTOR_GOVERNANCE, accountId))
-          .build();
-    }
-
     OpaEvaluationContext context;
 
     try {
@@ -84,10 +72,6 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
 
   public void evaluatePoliciesWithJson(String accountId, String expandedJson, String orgIdentifier,
       String projectIdentifier, String action, String identifier) {
-    if (!RestClientUtils.getResponse(
-            accountClient.isFeatureFlagEnabled(FeatureName.OPA_CONNECTOR_GOVERNANCE.name(), accountId))) {
-      throw new InvalidRequestException("This feature is not allowed for this account");
-    }
     OpaEvaluationContext context;
     try {
       context = createEvaluationContext(expandedJson, OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);

@@ -13,12 +13,10 @@ package io.harness.debezium;
 
 import static io.harness.debezium.DebeziumConstants.DEBEZIUM_LOCK_PREFIX;
 
-import io.harness.beans.FeatureName;
-import io.harness.cf.client.api.CfClient;
-import io.harness.cf.client.dto.Target;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
@@ -36,7 +34,6 @@ import org.redisson.api.RLock;
 @Singleton
 @Slf4j
 public class DebeziumController<T extends MongoCollectionChangeConsumer> implements Runnable {
-  private final CfClient cfClient;
   private final T changeConsumer;
   private final Properties props;
   private final ExecutorService executorService;
@@ -44,13 +41,12 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   private final AtomicBoolean shouldStop;
 
   public DebeziumController(
-      Properties props, T changeConsumer, PersistentLocker locker, ExecutorService executorService, CfClient cfClient) {
+      Properties props, T changeConsumer, PersistentLocker locker, ExecutorService executorService) {
     this.props = props;
     this.changeConsumer = changeConsumer;
     this.executorService = executorService;
     this.locker = locker;
     this.shouldStop = new AtomicBoolean(false);
-    this.cfClient = cfClient;
   }
 
   @Override
@@ -63,27 +59,12 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
           continue;
         }
         RLock rLock = (RLock) aggregatorLock.getLock();
-        boolean debeziumEnabled =
-            cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
-        while (!debeziumEnabled) {
-          log.info("FF {} is false", FeatureName.DEBEZIUM_ENABLED.toString());
-          debeziumEnabled =
-              cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
-          TimeUnit.SECONDS.sleep(10);
-        }
         debeziumEngine = getEngine(props);
         Future<?> future = executorService.submit(debeziumEngine);
         log.info("Starting Debezium Engine for Collection {} ...", changeConsumer.getCollection());
         while (!future.isDone() && rLock.isHeldByCurrentThread()) {
           log.info("primary lock remaining ttl {}, isHeldByCurrentThread {}, holdCount {}, name {}",
               rLock.remainTimeToLive(), rLock.isHeldByCurrentThread(), rLock.getHoldCount(), rLock.getName());
-          debeziumEnabled =
-              cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
-          if (!debeziumEnabled) {
-            log.info("FF {} is false.. Closing the Engine.", FeatureName.DEBEZIUM_ENABLED.toString());
-            debeziumEngine.close();
-            break;
-          }
           TimeUnit.SECONDS.sleep(30);
         }
       } catch (InterruptedException e) {
@@ -112,7 +93,8 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
     return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }
 
-  private AcquiredLock<?> acquireLock(boolean retryIndefinitely) throws InterruptedException {
+  @VisibleForTesting
+  AcquiredLock<?> acquireLock(boolean retryIndefinitely) throws InterruptedException {
     AcquiredLock<?> aggregatorLock = null;
     String lockIdentifier = getLockName();
     do {

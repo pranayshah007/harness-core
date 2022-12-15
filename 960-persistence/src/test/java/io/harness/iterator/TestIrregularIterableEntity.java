@@ -11,6 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +23,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testIrregularIterable")
 @FieldNameConstants(innerTypeName = "TestIrregularIterableEntityKeys")
 public class TestIrregularIterableEntity implements PersistentIrregularIterable {

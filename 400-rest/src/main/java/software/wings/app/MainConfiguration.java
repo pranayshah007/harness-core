@@ -89,6 +89,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -128,10 +129,12 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
   @JsonProperty("disableResourceValidation") private boolean disableResourceValidation;
-  @JsonProperty(defaultValue = "true") private boolean enableIterators = true;
+  @JsonProperty("enableIterators") private boolean enableIterators;
+  @JsonProperty("iteratorConfigPath") private String iteratorConfigPath;
   @JsonProperty(defaultValue = "true") private boolean enableAuth = true;
   @JsonProperty(defaultValue = "50") private int jenkinsBuildQuerySize = 50;
   @JsonProperty("iteratorsConfig") private IteratorsConfig iteratorsConfig;
+  @JsonProperty("executorsConfig") private ExecutorsConfig executorsConfig;
   @JsonProperty private io.harness.delegate.beans.FileUploadLimit fileUploadLimits = new FileUploadLimit();
   @JsonProperty("backgroundScheduler") private SchedulerConfig backgroundSchedulerConfig = new SchedulerConfig();
   @JsonProperty("serviceScheduler") private SchedulerConfig serviceSchedulerConfig = new SchedulerConfig();
@@ -228,6 +231,15 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("eventListenersCountConfig") private EventListenersCountConfig eventListenersCountConfig;
   @JsonProperty(value = "useGlobalKMSAsBaseAlgo", defaultValue = "false") private boolean useGlobalKMSAsBaseAlgo;
   @JsonProperty("totp") private TotpConfig totpConfig;
+  @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
+
+  // If this flag is enabled event framework is utilized for wait engine notification mechanism
+  @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
+
+  // If flag is enabled, only one thread does Notify response cleanup.
+  @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
 
   private int applicationPort;
   private boolean sslEnabled;
@@ -342,5 +354,16 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonIgnore
   public boolean useCdnForDelegateStorage() {
     return !DeployMode.isOnPrem(getDeployMode().name());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    if (eventsMongo != null) {
+      dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

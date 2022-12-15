@@ -7,29 +7,27 @@
 
 package io.harness.aggregator.consumers;
 
-import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepository;
-import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.mongo.DelayLogContext;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,6 +72,7 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
   @Override
   public void consumeUpdateEvent(String id, UserGroupDBO updatedUserGroup) {
+    long startTime = System.currentTimeMillis();
     if (updatedUserGroup.getUsers() == null) {
       return;
     }
@@ -121,8 +120,13 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
     userGroupCRUDEventHandler.handleUserGroupUpdate(userGroup.get());
 
-    log.info("Number of ACLs created: {}", numberOfACLsCreated);
-    log.info("Number of ACLs deleted: {}", numberOfACLsDeleted);
+    long permissionsChangeTime = System.currentTimeMillis() - startTime;
+    try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
+      log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
+          numberOfACLsCreated, id, permissionsChangeTime);
+      log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
+          numberOfACLsDeleted, id, permissionsChangeTime);
+    }
   }
 
   @Override
@@ -162,24 +166,14 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
       long numberOfACLsDeleted =
           aclRepository.deleteByRoleAssignmentIdAndPrincipals(roleAssignmentDBO.getId(), principalRemovedFromUserGroup);
 
-      Set<ResourceSelector> existingResourceSelectors =
-          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
-      Set<String> existingPermissions =
-          Sets.newHashSet(aclRepository.getDistinctPermissionsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-
       long numberOfACLsCreated = 0;
-      List<ACL> aclsToCreate = new ArrayList<>();
+      List<ACL> aclsToCreate =
+          changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO, principalsAddedToUserGroup);
 
-      if (existingResourceSelectors.isEmpty() || existingPermissions.isEmpty()) {
-        aclsToCreate.addAll(changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO));
-      } else {
-        existingPermissions.forEach(permissionIdentifier
-            -> principalsAddedToUserGroup.forEach(principalIdentifier
-                -> existingResourceSelectors.forEach(resourceSelector
-                    -> aclsToCreate.add(buildACL(permissionIdentifier, Principal.of(USER, principalIdentifier),
-                        roleAssignmentDBO, resourceSelector)))));
-      }
       numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+      numberOfACLsCreated +=
+          aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
+              roleAssignmentDBO, principalsAddedToUserGroup, new HashSet<>()));
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);
     }

@@ -9,8 +9,10 @@ package io.harness.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.text.StringReplacer;
+import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.text.resolver.ExpressionResolver;
+import io.harness.text.resolver.StringReplacer;
 
 import lombok.experimental.UtilityClass;
 import org.apache.commons.jexl3.JexlBuilder;
@@ -23,16 +25,22 @@ import org.apache.commons.logging.impl.NoOpLog;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class EngineExpressionSecretUtils {
+  @Deprecated
   public Object revertSecrets(Object o) {
-    return ExpressionEvaluatorUtils.updateExpressions(o, new SecretRevertResolveFunctor());
+    return ExpressionEvaluatorUtils.updateExpressions(
+        o, new SecretRevertResolveFunctor(ExpressionMode.RETURN_NULL_IF_UNRESOLVED));
+  }
+
+  public Object revertSecrets(Object o, ExpressionMode expressionMode) {
+    return ExpressionEvaluatorUtils.updateExpressions(o, new SecretRevertResolveFunctor(expressionMode));
   }
 
   private static class SecretRevertResolveFunctor implements ExpressionResolveFunctor {
     private final StringReplacer replacer;
 
-    private SecretRevertResolveFunctor() {
+    private SecretRevertResolveFunctor(ExpressionMode expressionMode) {
       JexlEngine engine = new JexlBuilder().logger(new NoOpLog()).create();
-      this.replacer = new StringReplacer(new SecretRevertResolver(engine), "${", "}");
+      this.replacer = new StringReplacer(new SecretRevertResolver(engine, expressionMode), "${", "}");
     }
 
     @Override
@@ -49,11 +57,13 @@ public class EngineExpressionSecretUtils {
   private static class SecretRevertResolver implements ExpressionResolver {
     private final JexlEngine engine;
     private final JexlContext ctx;
+    private final ExpressionMode expressionMode;
 
-    private SecretRevertResolver(JexlEngine engine) {
+    private SecretRevertResolver(JexlEngine engine, ExpressionMode expressionMode) {
       this.engine = engine;
       this.ctx = new MapContext();
       this.ctx.set("ngSecretManager", new SecretRevertFunctor());
+      this.expressionMode = expressionMode;
     }
 
     @Override
@@ -61,6 +71,9 @@ public class EngineExpressionSecretUtils {
       try {
         JexlExpression jexlExpression = engine.createExpression(expression);
         Object value = jexlExpression.evaluate(ctx);
+        if (value == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+          return ExpressionConstants.EXPR_START + expression + ExpressionConstants.EXPR_END;
+        }
         return String.valueOf(value);
       } catch (Exception ex) {
         return createExpression(expression);

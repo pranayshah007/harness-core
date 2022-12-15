@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -25,6 +25,8 @@ import lombok.experimental.UtilityClass;
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
+  public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -42,16 +44,19 @@ public class EntityYamlRootNames {
   public static final String DELEGATE_CONFIGURATION = "delegateConfigurations";
   public static final String CV_VERIFICATION_JOB = "cvVerificationJob";
   public static final String INTEGRATION_STAGE = "integrationStage";
+
   public static final String INTEGRATION_STEP = "integrationSteps";
   public static final String CV_KUBERNETES_ACTIVITY_SOURCE = "cvKubernetesActivitySource";
   public static final String DEPLOYMENT_STEP = "deploymentSteps";
   public static final String DEPLOYMENT_STAGE = "deploymentStage";
   public static final String FEATURE_FLAG_STAGE = "featureFlagStage";
   public static final String APPROVAL_STAGE = "approvalStage";
+  public static final String PIPELINE_STAGE = "pipelineStage";
   public static final String CUSTOM_STAGE = "customStage";
   public static final String TRIGGERS = "trigger";
   public static final String MONITORED_SERVICE = "monitoredService";
   public static final String TEMPLATE = "template";
+  public static final String FETCH_INSTANCE_SCRIPT = "fetchInstanceScript";
   public static final String GIT_REPOSITORY = "gitRepository";
   public static final String FEATURE_FLAGS = "featureFlags";
   public static final String HTTP = "Http";
@@ -75,6 +80,7 @@ public class EntityYamlRootNames {
   public static final String HELM_ROLLBACK = "HelmRollback";
   public static final String SERVICENOW_CREATE = "ServiceNowCreate";
   public static final String SERVICENOW_UPDATE = "ServiceNowUpdate";
+  public static final String SERVICENOW_IMPORT_SET = "ServiceNowImportSet";
   public static final String SERVICENOW_APPROVAL = "ServiceNowApproval";
   public static final String JIRA_APPROVAL = "JiraApproval";
   public static final String HARNESS_APPROVAL = "HarnessApproval";
@@ -84,11 +90,49 @@ public class EntityYamlRootNames {
   public static final String OPAPOLICY = "governancePolicy";
   public static final String POLICY_STEP = "Policy";
   public static final String RUN_STEP = "Run";
+  public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
+
+  public static final String AQUA_TRIVY = "AquaTrivy";
+  public static final String AWS_ECR = "AWSECR";
+  public static final String BANDIT = "Bandit";
+  public static final String BLACKDUCK = "BlackDuck";
+  public static final String BRAKEMAN = "Brakeman";
+  public static final String BURP = "Burp";
+  public static final String CHECKMARX = "Checkmarx";
+  public static final String CLAIR = "Clair";
+  public static final String DATA_THEOREM = "DataTheorem";
+  public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
+  public static final String EXTERNAL = "External";
+  public static final String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  public static final String GRYPE = "Grype";
+  public static final String JFROG_XRAY = "JfrogXray";
+  public static final String MEND = "Mend";
+  public static final String METASPLOIT = "Metasploit";
+  public static final String NESSUS = "Nessus";
+  public static final String NEXUS_IQ = "NexusIQ";
+  public static final String NIKTO = "Nikto";
+  public static final String NMAP = "Nmap";
+  public static final String OPENVAS = "Openvas";
+  public static final String OWASP = "Owasp";
+  public static final String PRISMA_CLOUD = "PrismaCloud";
+  public static final String PROWLER = "Prowler";
+  public static final String QUALYS = "Qualys";
+  public static final String REAPSAW = "Reapsaw";
+  public static final String SHIFT_LEFT = "ShiftLeft";
+  public static final String SNIPER = "Sniper";
+  public static final String SNYK = "Snyk";
+  public static final String SONARQUBE = "Sonarqube";
+  public static final String SYSDIG = "Sysdig";
+  public static final String TENABLE = "Tenable";
+  public static final String VERACODE = "Veracode";
+  public static final String ZAP = "Zap";
+
   public static final String SECURITY_STAGE = "securityStage";
   public static final String SECURITY_STEP = "securitySteps";
+  public static final String GIT_CLONE = "GitClone";
   public static final String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   public static final String RESTORE_CACHE_S3 = "RestoreCacheS3";
   public static final String SAVE_CACHE_GCS = "SaveCacheGCS";
@@ -100,6 +144,10 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
+  public static final String ACTION_STEP = "Action";
+  public static final String BITRISE_STEP = "Bitrise";
+  public static final String CONTAINER_STEP = "Container";
+
   public static final String NG_FILE = "NgFile";
   public static final String QUEUE = "Lock";
   public static final String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
@@ -116,4 +164,32 @@ public class EntityYamlRootNames {
   public static final String AZURE_SWAP_SLOT_STEP = "AzureSwapSlot";
   public static final String AZURE_WEBAPP_ROLLBACK_STEP = "AzureWebAppRollback";
   public static final String EMAIL = "EMAIL";
+  public static final String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  public static final String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  public static final String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  public static final String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
+  public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
+  public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  public static final String ECS_RUN_TASK = "EcsRunTask";
+  public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  public static final String WAIT_STEP = "Wait";
+  public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
+  public static final String FREEZE = "freeze";
+  public static final String CHAOS_STEP = "Chaos";
+  public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
+  public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  public static final String IACM_STAGE = "IACMStage";
+  public static final String IACM_STEP = "IACMStep";
+  public static final String IACM = "IACM";
+  public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  public static final String TERRAGRUNT_PLAN = "TerragruntPlan";
+  public static final String TERRAGRUNT_APPLY = "TerragruntApply";
+  public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

@@ -14,6 +14,8 @@ import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.utils.PageTestUtils.getPage;
@@ -42,12 +44,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
@@ -68,7 +73,6 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.lang.reflect.Field;
@@ -81,12 +85,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.bson.Document;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -114,15 +121,17 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Mock private YamlGitConfigService yamlGitConfigService;
   @InjectMocks ProjectInstrumentationHelper instrumentationHelper;
   private ProjectServiceImpl projectService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DefaultUserGroupService defaultUserGroupService;
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService));
+        yamlGitConfigService, featureFlagService, defaultUserGroupService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -153,6 +162,8 @@ public class ProjectServiceImplTest extends CategoryTest {
     projectService.create(accountIdentifier, orgIdentifier, projectDTO);
     try {
       verify(transactionTemplate, times(1)).execute(any());
+      Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier());
+      verify(defaultUserGroupService, times(1)).create(scope, emptyList());
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -181,6 +192,31 @@ public class ProjectServiceImplTest extends CategoryTest {
     setContextData(accountIdentifier);
 
     projectService.create(accountIdentifier, orgIdentifier + randomAlphabetic(1), projectDTO);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCreateProject_Duplicate() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
+    Project project = toProject(projectDTO);
+    project.setAccountIdentifier(accountIdentifier);
+    project.setOrgIdentifier(orgIdentifier);
+    setContextData(accountIdentifier);
+    exceptionRule.expect(DuplicateFieldException.class);
+    exceptionRule.expectMessage(
+        String.format("A project with identifier [%s] and orgIdentifier [%s] is already present",
+            project.getIdentifier(), orgIdentifier));
+    when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(projectRepository.save(any())).thenThrow(new DuplicateKeyException("Key already exists"));
+
+    projectService.create(accountIdentifier, orgIdentifier, projectDTO);
   }
 
   @Test
@@ -378,37 +414,6 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testDelete() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    Long version = 0L;
-    Project project = Project.builder()
-                          .name("name")
-                          .accountIdentifier(accountIdentifier)
-                          .orgIdentifier(orgIdentifier)
-                          .identifier(projectIdentifier)
-                          .build();
-    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-
-    when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
-    when(transactionTemplate.execute(any()))
-        .thenAnswer(invocationOnMock
-            -> invocationOnMock.getArgument(0, TransactionCallback.class)
-                   .doInTransaction(new SimpleTransactionStatus()));
-
-    projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
-    verify(projectRepository, times(1)).delete(any(), any(), argumentCaptor.capture(), any());
-    assertEquals(projectIdentifier, argumentCaptor.getValue());
-    verify(transactionTemplate, times(1)).execute(any());
-    verify(outboxService, times(1)).save(any());
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
   public void testHardDelete() {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
@@ -422,22 +427,36 @@ public class ProjectServiceImplTest extends CategoryTest {
                           .build();
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
-    when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(true);
+    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(project);
 
     projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
     verify(projectRepository, times(1)).hardDelete(any(), any(), argumentCaptor.capture(), any());
     assertEquals(projectIdentifier, argumentCaptor.getValue());
-    verify(projectRepository, times(1)).delete(any(), any(), argumentCaptor.capture(), any());
-    assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test(expected = EntityNotFoundException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testHardDeleteInvalidIdentifier() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    Long version = 0L;
+
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(null);
+
+    projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
   }
 
   @Test

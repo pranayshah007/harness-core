@@ -34,7 +34,7 @@ import java.util.Collection;
 @Singleton
 public class AccountSetupService {
   private static final Collection<FeatureName> DEFAULT_ENABLED_FEATURES =
-      ImmutableList.of(FeatureName.GIT_ACCOUNT_SUPPORT, FeatureName.HELM_CHART_AS_ARTIFACT, FeatureName.EXPORT_TF_PLAN,
+      ImmutableList.of(FeatureName.HELM_CHART_AS_ARTIFACT, FeatureName.EXPORT_TF_PLAN,
           FeatureName.HELM_STEADY_STATE_CHECK_1_16, FeatureName.CUSTOM_MANIFEST);
 
   @Inject OwnerManager ownerManager;

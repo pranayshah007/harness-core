@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -29,6 +29,6 @@ public interface StageExecutionModifier {
    * @param stageConfig StageElementConfig object that holds info
    * @return modified execution
    */
-  ExecutionElementConfig modifyExecutionPlan(ExecutionElementConfig execution, StageElementConfig stageConfig,
+  ExecutionElementConfig modifyExecutionPlan(ExecutionElementConfig execution, IntegrationStageNode stageNode,
       PlanCreationContext context, CodeBase ciCodeBase, Infrastructure infrastructure, ExecutionSource executionSource);
 }

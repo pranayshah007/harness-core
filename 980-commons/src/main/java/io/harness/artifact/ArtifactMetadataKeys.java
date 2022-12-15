@@ -18,4 +18,13 @@ public interface ArtifactMetadataKeys {
   String artifactPath = "artifactPath";
   String artifactName = "artifactName";
   String artifactFileSize = "artifactFileSize";
+  String artifactPackage = "artifactPackage";
+  String artifactProject = "artifactProject";
+  String artifactRepositoryName = "artifactRepositoryName";
+  String artifactRegion = "artifactRegion";
+
+  String FILE_NAME = "fileName";
+  String IMAGE_PATH = "imagePath";
+  String SHA = "SHA";
+  String url = "url";
 }

@@ -10,17 +10,17 @@ package io.harness.gitsync;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.EntityType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.HarnessCacheManager;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.gitsync.common.GitSyncEntityOrderComparatorInMsvc;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
@@ -28,6 +28,7 @@ import io.harness.gitsync.persistance.GitAwareRepository;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,9 +50,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
-import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import org.redisson.api.RedissonClient;
 
 @OwnedBy(DX)
 public abstract class AbstractGitSyncSdkModule extends AbstractModule {
@@ -60,19 +60,20 @@ public abstract class AbstractGitSyncSdkModule extends AbstractModule {
   protected void configure() {
     install(new SCMGrpcClientModule(getScmConnectionConfig()));
     install(GitSyncSdkModule.getInstance());
-    if (getGitSyncSdkConfiguration().getEventsRedisConfig().getRedisUrl().equals("dummyRedisUrl")) {
+    EventsFrameworkConfiguration eventsFrameworkConfiguration =
+        getGitSyncSdkConfiguration().getEventsFrameworkConfiguration();
+    RedisConfig redisConfig = eventsFrameworkConfiguration.getRedisConfig();
+    if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_CONFIG_STREAM + GIT_SYNC_SDK))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
-      RedisConfig redisConfig = getGitSyncSdkConfiguration().getEventsRedisConfig();
-      RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.GIT_CONFIG_STREAM + GIT_SYNC_SDK))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.GIT_CONFIG_STREAM,
-              getGitSyncSdkConfiguration().getServiceHeader().getServiceId() + GIT_SYNC_SDK, redissonClient,
-              EventsFrameworkConstants.GIT_CONFIG_STREAM_PROCESSING_TIME,
+              getGitSyncSdkConfiguration().getServiceHeader().getServiceId() + GIT_SYNC_SDK,
+              RedissonClientFactory.getClient(redisConfig), EventsFrameworkConstants.GIT_CONFIG_STREAM_PROCESSING_TIME,
               EventsFrameworkConstants.GIT_CONFIG_STREAM_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
     final Set<GitSyncEntitiesConfiguration> gitSyncEntitiesConfiguration =
@@ -168,6 +169,6 @@ public abstract class AbstractGitSyncSdkModule extends AbstractModule {
   public Cache<String, Boolean> gitEnabledCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("gitEnabledCacheSdk", String.class, Boolean.class,
-        AccessedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

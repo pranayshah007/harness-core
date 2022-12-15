@@ -7,15 +7,15 @@
 
 package io.harness.ng.core.environment.services.impl;
 
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -33,18 +33,26 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadata;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
+import io.harness.ng.core.environment.beans.ServiceOverridesMetadata;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -52,7 +60,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -62,7 +69,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,6 +86,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -94,33 +101,33 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final EntitySetupUsageService entitySetupUsageService;
   private final Producer eventProducer;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Environment [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Environment [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Environment [%s] in Account [%s] already exists";
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntityService serviceEntityService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, InfrastructureEntityService infrastructureEntityService,
-      ClusterService clusterService, ServiceOverrideService serviceOverrideService) {
+      InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
+      ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceEntityService = serviceEntityService;
   }
 
   @Override
@@ -193,6 +200,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                    .orgIdentifier(requestEnvironment.getOrgIdentifier())
                                    .projectIdentifier(requestEnvironment.getProjectIdentifier())
                                    .newEnvironment(requestEnvironment)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.ENVIRONMENT)
+                                   .status(EnvironmentUpdatedEvent.Status.UPDATED)
                                    .oldEnvironment(environmentOptional.get())
                                    .build());
             return tempResult;
@@ -248,7 +257,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");
 
-    final boolean hardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
     Environment environment = Environment.builder()
                                   .accountId(accountId)
                                   .orgIdentifier(orgIdentifier)
@@ -262,8 +270,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isPresent()) {
       Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        final boolean deleted =
-            hardDelete ? environmentRepository.delete(criteria) : environmentRepository.softDelete(criteria);
+        final boolean deleted = environmentRepository.delete(criteria);
         if (!deleted) {
           throw new InvalidRequestException(
               String.format("Environment [%s] under Project[%s], Organization [%s] couldn't be deleted.",
@@ -304,18 +311,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
-    if (!shouldHardDelete) {
-      return false;
-    }
-
     checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
 
     Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      UpdateResult updateResult = environmentRepository.deleteMany(criteria);
-      if (!updateResult.wasAcknowledged()) {
+      boolean deleted = environmentRepository.delete(criteria);
+      if (!deleted) {
         throw new InvalidRequestException(
             String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
                 orgIdentifier));
@@ -361,12 +363,40 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(criteria);
   }
 
+  public String getScopedErrorMessageForInvalidEnvironments(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    String errorMessage;
+    if (isNotEmpty(projectIdentifier) && isNotEmpty(orgIdentifier) && isNotEmpty(accountId)) {
+      errorMessage =
+          String.format("Environment with identifier [%s] in project [%s], org [%s], account [%s] scope not found",
+              envIdentifier, projectIdentifier, orgIdentifier, accountId);
+    } else if (isNotEmpty(orgIdentifier) && isNotEmpty(accountId) && isEmpty(projectIdentifier)) {
+      errorMessage = String.format("Environment with identifier [%s] in org [%s], account [%s] scope not found",
+          envIdentifier, orgIdentifier, accountId);
+    } else if (isNotEmpty(accountId) && isEmpty(projectIdentifier) && isEmpty(orgIdentifier)) {
+      errorMessage =
+          String.format("Environment with identifier [%s] in account [%s] scope not found", envIdentifier, accountId);
+    } else {
+      errorMessage = String.format("Environment with identifier [%s] not found", envIdentifier);
+    }
+    return errorMessage;
+  }
+
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
-    Map<String, Object> yamlInputs =
-        createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
-
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Map<String, Object> yamlInputs;
+    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
+    if (environment.isPresent()) {
+      if (EmptyPredicate.isEmpty(environment.get().fetchNonEmptyYaml())) {
+        throw new InvalidRequestException("Environment yaml cannot be empty");
+      }
+      yamlInputs = createEnvironmentInputsYamlInternal(environment.get().fetchNonEmptyYaml());
+    } else {
+      String errorMessage =
+          getScopedErrorMessageForInvalidEnvironments(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+      throw new NotFoundException(errorMessage);
+    }
     if (isEmpty(yamlInputs)) {
       return null;
     }
@@ -393,29 +423,19 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return attributes;
   }
 
-  public Map<String, Object> createEnvironmentInputsYamlInternal(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+  public Map<String, Object> createEnvironmentInputsYamlInternal(String environmentYaml) {
     Map<String, Object> yamlInputs = new HashMap<>();
-    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
-    if (environment.isPresent()) {
-      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
-        throw new InvalidRequestException("Environment yaml cannot be empty");
+    try {
+      String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environmentYaml, true);
+      if (isEmpty(environmentInputsYaml)) {
+        return null;
       }
-      try {
-        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
-        if (isEmpty(environmentInputsYaml)) {
-          return null;
-        }
-        YamlField environmentYamlField =
-            YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-        ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
-        yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
-      } catch (IOException e) {
-        throw new InvalidRequestException("Error occurred while creating environment inputs", e);
-      }
-    } else {
-      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
-          envIdentifier, projectIdentifier, orgIdentifier));
+      YamlField environmentYamlField =
+          YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
+      ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
+      yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating environment inputs", e);
     }
     return yamlInputs;
   }
@@ -441,9 +461,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
           "Error while deleting the Environment as was not able to check entity reference records.");
     }
     if (isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(String.format(
-          "Could not delete the Environment %s as it is referenced by other entities - " + referredByEntities,
-          environment.getIdentifier()));
+      throw new ReferencedEntityException(String.format(
+          "The environment %s cannot be deleted because it is being referenced in %d %s. To delete your environment, please remove the environment references from these entities.",
+          environment.getIdentifier(), referredByEntities.size(),
+          referredByEntities.size() > 1 ? "entities" : "entity"));
     }
   }
 
@@ -517,5 +538,74 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       // ignore this
     }
     return false;
+  }
+
+  public EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
+      List<String> serviceIdentifiers) {
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
+        new ArrayList<>();
+    for (String env : envIdentifiers) {
+      Optional<Environment> environment =
+          environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              accountId, orgIdentifier, projectIdentifier, env);
+      if (environment.isPresent()) {
+        String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
+        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+        for (String serviceId : serviceIdentifiers) {
+          Optional<ServiceEntity> serviceEntity =
+              serviceEntityService.getService(accountId, orgIdentifier, projectIdentifier, serviceId);
+          if (serviceEntity.isPresent()) {
+            String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
+                accountId, orgIdentifier, projectIdentifier, env, serviceId);
+            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
+                                                 .serviceRef(serviceId)
+                                                 .serviceOverridesYaml(serviceOverrides)
+                                                 .serviceYaml(serviceEntity.get().getYaml())
+                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
+                                                     serviceEntity.get().getYaml(), serviceId))
+                                                 .build());
+          }
+        }
+        environmentInputSetYamlAndServiceOverridesMetadataList.add(
+            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                .envRef(env)
+                .envRuntimeInputYaml(inputYaml)
+                .servicesOverrides(serviceOverridesMetadataList)
+                .envYaml(environment.get().getYaml())
+                .build());
+      }
+    }
+    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
+        .build();
+  }
+
+  @Override
+  public EnvironmentInputsMergedResponseDto mergeEnvironmentInputs(
+      String accountId, String orgId, String projectId, String envId, String oldEnvironmentInputsYaml) {
+    Optional<Environment> envEntity = get(accountId, orgId, projectId, envId, false);
+    if (envEntity.isEmpty()) {
+      throw new NotFoundException(
+          format("Environment with identifier [%s] in project [%s], org [%s] not found", envId, projectId, orgId));
+    }
+
+    String environmentYaml = envEntity.get().getYaml();
+    if (isEmpty(environmentYaml)) {
+      return EnvironmentInputsMergedResponseDto.builder().mergedEnvironmentInputsYaml("").environmentYaml("").build();
+    }
+    try {
+      Map<String, Object> yamlInputs = createEnvironmentInputsYamlInternal(environmentYaml);
+
+      String newEnvironmentInputsYaml =
+          isEmpty(yamlInputs) ? StringUtils.EMPTY : YamlPipelineUtils.writeYamlString(yamlInputs);
+      return EnvironmentInputsMergedResponseDto.builder()
+          .mergedEnvironmentInputsYaml(
+              InputSetMergeUtility.mergeInputs(oldEnvironmentInputsYaml, newEnvironmentInputsYaml))
+          .environmentYaml(environmentYaml)
+          .build();
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Error occurred while merging old and new environment inputs", ex);
+    }
   }
 }

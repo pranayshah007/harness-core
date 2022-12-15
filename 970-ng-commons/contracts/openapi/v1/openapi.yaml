@@ -1,0 +1,215 @@
+openapi: 3.1.0
+x-stoplight:
+  id: oc91t4vrfnjyi
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1'
+  description: |
+    This is the Open Api Spec 3 for Harness. This is under active development. Beware of the breaking change with respect to the generated code stub.
+    
+    # Introduction
+    This API is documented in **OpenAPI format**
+  contact:
+    name: API Support
+    email: contact@harness.io
+    url: 'https://harness.io/'
+  x-logo:
+    url: 'https://mma.prnewswire.com/media/779232/Harnes_logo_horizontal.jpg?p=facebook'
+    altText: Harness
+  termsOfService: 'https://harness.io/terms-of-use/'
+servers:
+  - url: 'http://api.harness.io'
+    description: Harness host url
+tags:
+  - name: Governance Status
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/GovernanceStatus" />
+  - name: Policy
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/Policy" />
+  - name: Policy Set
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/PolicySet" />
+  - name: Governance Metadata
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/GovernanceMetadata" />
+  - name: Test Error Metadata
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/TestErrorMetadata" />
+  - name: Error Metadata
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/ErrorMetadata" />
+  - name: Field Error
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/FieldError" />
+  - name: Error Response
+    description: |
+      <SchemaDefinition schemaRef="#/components/schemas/ErrorResponse" />
+components:
+  schemas:
+    GovernanceStatus:
+      type: string
+      title: GovernanceStatus
+      x-stoplight:
+        id: kh0hxoiqon3so
+      enum:
+        - WARNING
+        - ERROR
+        - PASS
+      description: Governance Status
+    Policy:
+      title: Policy
+      x-stoplight:
+        id: 96ka3iug8rbc4
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: Policy Identifier
+        name:
+          type: string
+          description: Policy Name
+        org:
+          type: string
+          description: Organization identifier where the Policy is defined
+        project:
+          type: string
+          description: Project Identifier where the Policy is defined
+        evaluation_error:
+          type: string
+          description: Error message in Policy Evaluation
+        deny_messages:
+          type: array
+          description: Deny messages
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/GovernanceStatus'
+          description: Governance Status
+      description: Contains Details about Policy
+    PolicySet:
+      title: PolicySet
+      x-stoplight:
+        id: lxrtpc1yji0pm
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: Identifer of the Policy Set
+        name:
+          type: string
+          description: Name of the Policy Set
+        org:
+          type: string
+          description: Organization Identifier where the Policy Set is defined
+        project:
+          type: string
+          description: Project Identifier where the Policy Set is defined
+        deny_messages:
+          type: array
+          description: Deny messages
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/GovernanceStatus'
+        policies:
+          type: array
+          description: List of policies defined inside Policy Set
+          items:
+            $ref: '#/components/schemas/Policy'
+      description: Contains Policy Set Detail
+    GovernanceMetadata:
+      title: GovernanceMetadata
+      x-stoplight:
+        id: 05qhnkvljwzzm
+      description: Governace Error Details
+      allOf:
+        - type: object
+          properties:
+            deny:
+              type: boolean
+              description: Indicate whether the action is denied or not based on Governance rules
+            message:
+              type: string
+              description: Governance Message
+            status:
+              $ref: '#/components/schemas/GovernanceStatus'
+              description: Governace Status
+            policy_sets:
+              type: array
+              items:
+                $ref: '#/components/schemas/PolicySet'
+            type:
+              type: string
+          required:
+            - type
+        - $ref: '#/components/schemas/ErrorMetadata'
+    TestErrorMetadata:
+      title: TestErrorMetadata
+      x-stoplight:
+        id: mgogkf26yt2ka
+      description: Test Error Metadata
+      allOf:
+        - type: object
+          properties:
+            type:
+              type: string
+            test:
+              type: string
+          required:
+            - type
+        - $ref: '#/components/schemas/ErrorMetadata'
+    ErrorMetadata:
+      title: ErrorMetadata
+      x-stoplight:
+        id: 344dmnhe1c5kt
+      discriminator:
+        propertyName: type
+        mapping:
+          governance: '#/components/schemas/GovernanceMetadata'
+          test: '#/components/schemas/TestErrorMetadata'
+      description: Contains more details about the error
+      x-internal: false
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+    FieldError:
+      title: FieldError
+      x-stoplight:
+        id: ahdrlp251yecr
+      type: object
+      properties:
+        field_name:
+          type: string
+          description: Name of the field
+        message:
+          type: string
+          description: Error message
+      description: Contains Field-wise error detail
+    ErrorResponse:
+      title: ErrorResponse
+      x-stoplight:
+        id: vn5jzgz2umbw0
+      type: object
+      description: Contains information about the error
+      properties:
+        message:
+          type: string
+          description: Error Message
+        code:
+          type: string
+          enum:
+            - RESOURCE_NOT_FOUND
+            - INVALID_ARGUMENT
+          description: Error code
+        errors:
+          type: array
+          description: Contains field-wise error detail
+          items:
+            $ref: '#/components/schemas/FieldError'
+        error_metadata:
+          $ref: '#/components/schemas/ErrorMetadata'
+          description: Contains more details about the error

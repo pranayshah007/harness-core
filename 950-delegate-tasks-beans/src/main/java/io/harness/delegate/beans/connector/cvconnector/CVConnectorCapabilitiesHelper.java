@@ -14,12 +14,16 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorTaskParams;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsCapabilityHelper;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthCapabilityHelper;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.datadogconnector.DatadogCapabilityHelper;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.delegate.beans.connector.dynatraceconnector.DynatraceCapabilityHelper;
+import io.harness.delegate.beans.connector.elkconnector.ELKCapabilityHelper;
+import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
 import io.harness.delegate.beans.connector.errortracking.ErrorTrackingConnectorDTO;
 import io.harness.delegate.beans.connector.errortrackingconnector.ErrorTrackingCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
@@ -76,6 +80,10 @@ public class CVConnectorCapabilitiesHelper extends ConnectorTaskParams {
       return CustomHealthCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
     } else if (connectorDTO instanceof ErrorTrackingConnectorDTO) {
       return ErrorTrackingCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
+    } else if (connectorDTO instanceof ELKConnectorDTO) {
+      return ELKCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
+    } else if (connectorDTO instanceof AwsConnectorDTO) {
+      return AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
     } else {
       throw new InvalidRequestException("Connector capability not found for " + connectorDTO);
     }

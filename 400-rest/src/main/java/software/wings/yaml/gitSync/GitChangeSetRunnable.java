@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
@@ -23,10 +24,10 @@ import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.first;
 import static org.mongodb.morphia.aggregation.Group.grouping;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.ProcessTimeLogContext;
 
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -41,6 +42,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.mongodb.AggregationOptions;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -83,6 +85,7 @@ public class GitChangeSetRunnable implements Runnable {
         if (shouldPrintStatusLogs()) {
           lastTimestampForStatusLogPrint.set(System.currentTimeMillis());
           log.info("Not continuing with GitChangeSetRunnable job");
+          TimeUnit.SECONDS.sleep(1);
         }
         return;
       }
@@ -117,12 +120,12 @@ public class GitChangeSetRunnable implements Runnable {
     return YamlProcessingLogContext.builder()
         .changeSetQueueKey(yamlChangeSet.getQueueKey())
         .changeSetId(yamlChangeSet.getUuid())
-        .build(OVERRIDE_ERROR);
+        .build(OVERRIDE_NESTS);
   }
 
   private void processChangeSet(YamlChangeSet yamlChangeSet) {
     final String accountId = yamlChangeSet.getAccountId();
-    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
          AutoLogContext ignore2 = createLogContextForChangeSet(yamlChangeSet)) {
       log.info(GIT_YAML_LOG_PREFIX + "Processing changeSetId: [{}]", yamlChangeSet.getUuid());
 
@@ -174,8 +177,8 @@ public class GitChangeSetRunnable implements Runnable {
 
   private YamlChangeSet getQueuedChangeSetForWaitingQueueKey(String accountId, String queueKey) {
     try (
-        AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-        AutoLogContext ignore2 = YamlProcessingLogContext.builder().changeSetQueueKey(queueKey).build(OVERRIDE_ERROR)) {
+        AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
+        AutoLogContext ignore2 = YamlProcessingLogContext.builder().changeSetQueueKey(queueKey).build(OVERRIDE_NESTS)) {
       return yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(
           accountId, queueKey, getMaxRunningChangesetsForAccount());
     } catch (Exception ex) {
@@ -292,7 +295,10 @@ public class GitChangeSetRunnable implements Runnable {
                 grouping(YamlChangeSetKeys.accountId, first(YamlChangeSetKeys.accountId)),
                 grouping(YamlChangeSetKeys.queueKey, first(YamlChangeSetKeys.queueKey)),
                 grouping("count", accumulator("$sum", 1)))
-            .aggregate(ChangeSetGroupingKey.class);
+            .aggregate(ChangeSetGroupingKey.class,
+                AggregationOptions.builder()
+                    .maxTime(wingsPersistence.getMaxTimeMs(YamlChangeSet.class), TimeUnit.MILLISECONDS)
+                    .build());
 
     final Set<ChangeSetGroupingKey> keys = new HashSet<>();
     groupingKeyIterator.forEachRemaining(keys::add);

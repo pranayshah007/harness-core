@@ -60,10 +60,6 @@ public class ManifestDelegateConfigHelper {
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        if (!ociHelmStoreConfig.isHelmOciEnabled()) {
-          throw new UnsupportedOperationException(
-              String.format("Unsupported Manifest type: [%s]", manifestDelegateConfig.getManifestType().name()));
-        }
         for (DecryptableEntity entity : ociHelmStoreConfig.getOciHelmConnector().getDecryptableEntities()) {
           decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
           ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());

@@ -14,6 +14,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 public class CeLicenseClientModule extends AbstractModule {
   private final ServiceHttpClientConfig managerClientConfig;
@@ -36,6 +37,7 @@ public class CeLicenseClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CeLicenseClientFactory ngLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CeLicenseClientFactory(
         this.managerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

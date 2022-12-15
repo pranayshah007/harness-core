@@ -49,6 +49,7 @@ import org.mongodb.morphia.mapping.Mapper;
 public class PageRequest<T> {
   public static final String UNLIMITED = "UNLIMITED";
   public static final int DEFAULT_UNLIMITED = 1000;
+  public static final String LIMIT_2K_PAGE_SIZE = "2000";
   public static final int DEFAULT_PAGE_SIZE = 50;
 
   private static Pattern searchField = Pattern.compile("search\\[[0-9]+]\\[field]");
@@ -264,6 +265,10 @@ public class PageRequest<T> {
           isOr = true;
         }
       } else if (!(key.startsWith("search") || key.startsWith("sort") || mappedClass.getMappedField(key) == null)) {
+        Operator op = Operator.IN;
+        if (map.get(key).size() == 1) {
+          op = Operator.EQ;
+        }
         if (mappedClass.getMappedField(key).isReference()) {
           try {
             Class type;
@@ -277,16 +282,16 @@ public class PageRequest<T> {
             }
             Object referenceObject = constructor.getDeclaringClass().newInstance();
             String collection = mapper.getCollectionName(referenceObject);
-            addFilter(key, Operator.IN,
-                map.get(key).stream().map(s -> new Key(referenceObject.getClass(), collection, s)).toArray());
+            addFilter(
+                key, op, map.get(key).stream().map(s -> new Key(referenceObject.getClass(), collection, s)).toArray());
           } catch (IllegalAccessException | InstantiationException | NoSuchMethodException e) {
-            addFilter(key, Operator.IN, map.get(key).toArray());
+            addFilter(key, op, map.get(key).toArray());
           }
         } else {
           if (asList(Boolean.TYPE).contains(mappedClass.getMappedField(key).getType())) {
-            addFilter(key, Operator.IN, map.get(key).stream().map(Boolean::parseBoolean).toArray());
+            addFilter(key, op, map.get(key).stream().map(Boolean::parseBoolean).toArray());
           } else {
-            addFilter(key, Operator.IN, map.get(key).toArray());
+            addFilter(key, op, map.get(key).toArray());
           }
         }
       }
@@ -427,6 +432,34 @@ public class PageRequest<T> {
     clone.requestContext = this.requestContext;
     clone.isOr = this.isOr;
     clone.options = this.options;
+    return clone;
+  }
+
+  public PageRequest<T> deepCopy() {
+    List<SearchFilter> filtersCopy = new ArrayList<>();
+    filtersCopy.addAll(this.filters);
+    List<String> fieldsExcludedsCopy = new ArrayList<>();
+    fieldsExcludedsCopy.addAll(this.fieldsExcluded);
+    List<String> fieldsIncludedCopy = new ArrayList<>();
+    fieldsIncludedCopy.addAll(this.fieldsIncluded);
+    List<SortOrder> ordersCopy = new ArrayList<>();
+    ordersCopy.addAll(this.orders);
+    List<PageRequest.Option> optionsCopy = new ArrayList<>();
+    ordersCopy.addAll(this.orders);
+
+    PageRequest<T> clone = new PageRequest<>();
+    clone.persistentClass = this.persistentClass;
+    clone.offset = this.offset;
+    clone.start = this.start;
+    clone.limit = this.limit;
+    clone.filters = filtersCopy;
+    clone.orders = orders;
+    clone.fieldsExcluded = fieldsExcludedsCopy;
+    clone.fieldsIncluded = fieldsIncludedCopy;
+    clone.uriInfo = this.uriInfo;
+    clone.requestContext = this.requestContext;
+    clone.isOr = this.isOr;
+    clone.options = optionsCopy;
     return clone;
   }
 

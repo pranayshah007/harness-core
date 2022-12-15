@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.batch;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ccm.HarnessServiceInfoNG;
 import io.harness.ccm.commons.beans.Container;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
@@ -42,10 +42,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "instanceData", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "InstanceDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 public final class InstanceData implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -97,6 +97,19 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.usageStartTime)
                  .field(InstanceDataKeys.instanceType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_instanceId")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.instanceId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_clusterId_activeInstanceIterator_instanceType_usageStartTime")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.clusterId)
+                 .field(InstanceDataKeys.activeInstanceIterator)
+                 .field(InstanceDataKeys.instanceType)
+                 .field(InstanceDataKeys.usageStartTime)
+                 .build())
         .build();
   }
 
@@ -119,6 +132,8 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
   Map<String, String> labels;
   Map<String, String> namespaceLabels;
   Map<String, String> metaData;
+  Map<String, String> topOwnerLabels;
+  Map<String, String> metadataAnnotations;
   Instant usageStartTime;
   Instant usageStopTime;
   Instant activeInstanceIterator;

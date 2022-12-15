@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.exception.AccessDeniedException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,11 @@ public class ACLExpressionEvaluator extends EngineExpressionEvaluator {
   }
 
   public Boolean evaluateExpression(String jexlExpression) {
-    Object result = super.evaluateExpression(jexlExpression);
+    return evaluateExpression(jexlExpression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+  }
+
+  public Boolean evaluateExpression(String jexlExpression, ExpressionMode expressionMode) {
+    Object result = super.evaluateExpression(jexlExpression, expressionMode);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;
     }

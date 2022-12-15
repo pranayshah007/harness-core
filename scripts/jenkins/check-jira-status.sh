@@ -6,6 +6,9 @@
 
 set +e
 
+export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
+echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
+
 function check_file_present(){
      local_file=$1
      if [ ! -f "$local_file" ]; then
@@ -13,6 +16,44 @@ function check_file_present(){
         exit 1
      fi
 }
+
+# function to check all field for Bug ticket
+function check_bug_ticket(){
+  if [ -z "$1" ]; then
+    echo "ERROR: JIRA FIELD: bug resolution is empty" >> /tmp/error_fields
+  fi
+  if [ "$2" = "null" ]; then
+    echo "ERROR: JIRA FIELD: jira_resolved_as is not selected" >> /tmp/error_fields
+  fi
+  if [ "$3" = "null" ]; then
+    echo "ERROR: JIRA FIELD: phase_injected is not selected" >> /tmp/error_fields
+  fi
+  if [ "$4" = "null" ]; then
+    echo "ERROR: JIRA FIELD: what_changed is not updated" >> /tmp/error_fields
+  fi
+
+  if [ -f /tmp/error_fields ]; then
+    cat /tmp/error_fields
+    exit 1
+  fi
+}
+
+# function to check field for Story ticket
+function check_story_ticket(){
+  if [ $1 = "null" ]; then
+    echo "ERROR: JIRA FIELD: FF added is not updated, Please update FF added to proceed" >> /tmp/error_fields
+  fi
+  if [ $2 = "null" ]; then
+    echo "ERROR: JIRA FIELD: what_changed is not updated" >>/tmp/error_fields
+  fi
+
+  if [ -f /tmp/error_fields ]; then
+    cat /tmp/error_fields
+    exit 1
+  fi
+}
+
+
 
 SHDIR=$(dirname "$0")
 PROJFILE="$SHDIR/jira-projects.txt"
@@ -28,14 +69,16 @@ KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+]:" | grep -o
 
 echo "JIRA Key is : $KEY "
 
-jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785 --user $JIRA_USERNAME:$JIRA_PASSWORD`
-
+jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority --user $JIRA_USERNAME:$JIRA_PASSWORD`
 issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
+prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
+
 # No longer require what changed or phase injected in fields
 # BT-950
 what_changed="n/a"
 phase_injected="n/a"
 ## End Change for BT-950
+PRIORITY_LIST=("P2","P3","P4")
 
 if [[ $KEY == BT-* || $KEY == SPG-* ]]
 then
@@ -52,44 +95,31 @@ else
   phase_injected=`echo "${jira_response}" | jq ".fields.customfield_10748" | tr -d '"'`
 fi
 
+
+
+if [[ "${BRANCH_PREFIX}" = "release/"  && ( ${PRIORITY_LIST[*]} =~ "${prioritytype}" ) ]]
+then
+  echo "ERROR: Hotfix merge to target branch: release/* is blocked unless it is P0 or P1."
+
+  # check ticket fields
+  if [ $issuetype = "Story" ]; then
+    check_story_ticket $ff_added $what_changed
+  elif [ $issuetype = "Bug" ]; then
+    check_bug_ticket $bug_resolution $jira_resolved_as $phase_injected $what_changed
+  fi
+  exit 1
+fi
+
+
+
 echo "issueType is ${issuetype}"
 echo "INFO: Checking JIRA STATUS OF issueType ${issuetype}"
 
-if [[ "${issuetype}" = "Bug" && ( "${bug_resolution}" = "" || "${jira_resolved_as}" = "null" || "${phase_injected}" = "null" || "${what_changed}" = "null" ) ]]
-then
-      if [[ -z ${bug_resolution} ]]
-      then
-        echo "ERROR: JIRA FIELD: bug resolution is empty"
-      fi
-
-      if [[ "${jira_resolved_as}" = "null" ]]
-      then
-        echo "ERROR: JIRA FIELD: jira_resolved_as is not selected"
-      fi
-
-      if [[ "${phase_injected}" = "null" ]]
-      then
-        echo "ERROR: JIRA FIELD: phase_injected is not selected"
-      fi
-
-      if [[ "${what_changed}" = "null" ]]
-      then
-        echo "ERROR: JIRA FIELD: what_changed is not updated"
-      fi
-      exit 1
+if [ $issuetype = "Bug" ]; then
+  check_bug_ticket $bug_resolution $jira_resolved_as $phase_injected $what_changed
+elif [ $issuetype = "Story" ]; then
+  check_story_ticket $ff_added $what_changed
 fi
 
-if [[ "${issuetype}" = "Story" && ( "${ff_added}" = "null" || "${what_changed}" = "null" ) ]]
-then
-      if [[ "${ff_added}" = "null" ]]
-      then
-        echo "ERROR: JIRA FIELD: FF added is not updated, Please update FF added to proceed"
-      fi
-      if [[ "${what_changed}" = "null" ]]
-      then
-        echo "ERROR: JIRA FIELD: what_changed is not updated"
-      fi
-      exit 1
-fi
 
 echo "JIRA Key is : $KEY is having all the mandatory details"

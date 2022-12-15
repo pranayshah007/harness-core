@@ -10,6 +10,7 @@ package io.harness.repositories.environment.custom;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
@@ -22,8 +23,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -52,7 +51,7 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   public Environment upsert(Criteria criteria, Environment environment) {
     Query query = new Query(criteria);
     Update updateOperations = EnvironmentFilterHelper.getUpdateOperations(environment);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+    RetryPolicy<Object> retryPolicy = getRetryPolicyWithDuplicateKeyException(
         "[Retrying]: Failed upserting Environment; attempt: {}", "[Failed]: Failed upserting Environment; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(()
@@ -89,17 +88,7 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
     DeleteResult deleteResult = Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Environment.class));
-    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
-  }
-
-  @Override
-  public UpdateResult deleteMany(Criteria criteria) {
-    Query query = new Query(criteria);
-    Update updateOperationsForDelete = EnvironmentFilterHelper.getUpdateOperationsForDelete();
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
-        "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(() -> mongoTemplate.updateMulti(query, updateOperationsForDelete, Environment.class));
+    return deleteResult.wasAcknowledged();
   }
 
   @Override
@@ -125,12 +114,17 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return new RetryPolicy<>()
-        .handle(OptimisticLockingFailureException.class)
-        .handle(DuplicateKeyException.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  private RetryPolicy<Object> getRetryPolicyWithDuplicateKeyException(
+      String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicyWithDuplicateKeyException(failedAttemptMessage, failureMessage);
+  }
+
+  @Override
+  public List<Environment> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, Environment.class);
   }
 }

@@ -35,12 +35,16 @@ import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
+import io.harness.perpetualtask.PerpetualTaskFailureRequest;
+import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
 
-import software.wings.beans.ConfigFileDto;
+import software.wings.beans.configfile.ConfigFileDto;
 
 import java.util.List;
 import javax.ws.rs.Consumes;
@@ -111,7 +115,13 @@ public interface DelegateAgentManagerClient {
 
   @GET("agent/delegates/delegateScripts")
   Call<RestResponse<DelegateScripts>> getDelegateScripts(@Query("accountId") String accountId,
-      @Query("delegateVersion") String delegateVersion, @Query("delegateName") String delegateName);
+      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion,
+      @Query("delegateName") String delegateName);
+
+  @GET("agent/delegates/delegateScriptsNg")
+  Call<RestResponse<DelegateScripts>> getDelegateScriptsNg(@Query("accountId") String accountId,
+      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion,
+      @Query("delegateType") String delegateType);
 
   @GET("agent/infra-download/delegate-auth/delegate/logging-token")
   Call<RestResponse<AccessTokenBean>> getLoggingToken(@Query("accountId") String accountId);
@@ -123,6 +133,15 @@ public interface DelegateAgentManagerClient {
   @POST("instancesync/instance-sync/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
+
+  @POST("instancesync/instance-sync-v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> publishInstanceSyncV2Result(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
+
+  @GET("instancesync/instance-sync-v2/task-details/{perpetualTaskId}")
+  @Consumes({"application/x-protobuf"})
+  Call<InstanceSyncTrackedDeploymentDetails> fetchTrackedReleaseDetails(
+      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
 
   @POST("instancesync/instance-sync-ng/{perpetualTaskId}")
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
@@ -195,6 +214,11 @@ public interface DelegateAgentManagerClient {
   Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
 
   @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/perpetual-task/failure")
+  Call<PerpetualTaskFailureResponse> recordPerpetualTaskFailure(
+      @Query("accountId") String accountId, @Body PerpetualTaskFailureRequest perpetualTaskFailureRequest);
+
+  @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/progress-update")
   Call<SendTaskProgressResponse> sendTaskProgressUpdate(
       @Body SendTaskProgressRequest sendTaskProgressRequest, @Query("accountId") String accountId);
@@ -207,5 +231,15 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/status")
   Call<SendTaskStatusResponse> sendTaskStatus(
+      @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress-update/v2")
+  Call<SendTaskProgressResponse> sendTaskProgressUpdateV2(
+      @Body SendTaskProgressRequest sendTaskProgressRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/status/v2")
+  Call<SendTaskStatusResponse> sendTaskStatusV2(
       @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
 }

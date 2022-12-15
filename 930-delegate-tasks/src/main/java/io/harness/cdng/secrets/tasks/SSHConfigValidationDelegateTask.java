@@ -8,8 +8,6 @@
 package io.harness.cdng.secrets.tasks;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.shell.AuthenticationScheme.KERBEROS;
-import static io.harness.shell.AuthenticationScheme.SSH_KEY;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -19,22 +17,14 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.SSHTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
-import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
-import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO;
-import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
-import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.shell.AccessType;
-import io.harness.shell.KerberosConfig;
-import io.harness.shell.KerberosConfig.KerberosConfigBuilder;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
 
@@ -65,88 +55,18 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     switch (authDTO.getAuthScheme()) {
       case SSH:
         SSHConfigDTO sshConfigDTO = (SSHConfigDTO) authDTO.getSpec();
-        generateSSHBuilder(sshConfigDTO, builder, encryptionDetails);
+        SshSessionConfigHelper.generateSSHBuilder(sshConfigDTO, builder, encryptionDetails, secretDecryptionService);
         break;
       case Kerberos:
         KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) authDTO.getSpec();
-        generateKerberosBuilder(kerberosConfigDTO, builder, encryptionDetails);
+        SshSessionConfigHelper.generateKerberosBuilder(
+            kerberosConfigDTO, builder, encryptionDetails, secretDecryptionService);
         break;
       default:
         break;
     }
     builder.withSshConnectionTimeout(30000);
     return builder.build();
-  }
-
-  private void generateSSHBuilder(
-      SSHConfigDTO sshConfigDTO, SshSessionConfig.Builder builder, List<EncryptedDataDetail> encryptionDetails) {
-    switch (sshConfigDTO.getCredentialType()) {
-      case Password:
-        SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
-        SSHPasswordCredentialDTO passwordCredentialDTO =
-            (SSHPasswordCredentialDTO) secretDecryptionService.decrypt(sshPasswordCredentialDTO, encryptionDetails);
-        builder.withAccessType(AccessType.USER_PASSWORD)
-            .withUserName(passwordCredentialDTO.getUserName())
-            .withSshPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
-        break;
-      case KeyReference:
-        SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
-            (SSHKeyReferenceCredentialDTO) sshConfigDTO.getSpec();
-        // since files are base 64 encoded, we decode it before using it
-        SSHKeyReferenceCredentialDTO keyReferenceCredentialDTO =
-            (SSHKeyReferenceCredentialDTO) secretDecryptionService.decrypt(
-                sshKeyReferenceCredentialDTO, encryptionDetails);
-        char[] fileData = keyReferenceCredentialDTO.getKey().getDecryptedValue();
-        keyReferenceCredentialDTO.getKey().setDecryptedValue(new String(fileData).toCharArray());
-        builder.withAccessType(AccessType.KEY)
-            .withKeyName("Key")
-            .withKey(keyReferenceCredentialDTO.getKey().getDecryptedValue())
-            .withUserName(keyReferenceCredentialDTO.getUserName());
-        if (null != keyReferenceCredentialDTO.getEncryptedPassphrase()) {
-          builder.withKeyPassphrase(keyReferenceCredentialDTO.getEncryptedPassphrase().getDecryptedValue());
-        }
-        break;
-      case KeyPath:
-        SSHKeyPathCredentialDTO sshKeyPathCredentialDTO = (SSHKeyPathCredentialDTO) sshConfigDTO.getSpec();
-        SSHKeyPathCredentialDTO keyPathCredentialDTO =
-            (SSHKeyPathCredentialDTO) secretDecryptionService.decrypt(sshKeyPathCredentialDTO, encryptionDetails);
-        builder.withKeyPath(keyPathCredentialDTO.getKeyPath())
-            .withUserName(keyPathCredentialDTO.getUserName())
-            .withAccessType(AccessType.KEY)
-            .withKeyLess(true)
-            .build();
-        break;
-      default:
-        break;
-    }
-    builder.withAuthenticationScheme(SSH_KEY);
-  }
-
-  private void generateKerberosBuilder(KerberosConfigDTO kerberosConfigDTO, SshSessionConfig.Builder builder,
-      List<EncryptedDataDetail> encryptionDetails) {
-    KerberosConfigBuilder kerberosConfig = KerberosConfig.builder()
-                                               .principal(kerberosConfigDTO.getPrincipal())
-                                               .realm(kerberosConfigDTO.getRealm())
-                                               .generateTGT(kerberosConfigDTO.getTgtGenerationMethod() != null);
-    switch (kerberosConfigDTO.getTgtGenerationMethod()) {
-      case Password:
-        TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
-        TGTPasswordSpecDTO passwordSpecDTO =
-            (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
-        builder.withPassword(passwordSpecDTO.getPassword().getDecryptedValue());
-        break;
-      case KeyTabFilePath:
-        TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
-        TGTKeyTabFilePathSpecDTO keyTabFilePathSpecDTO =
-            (TGTKeyTabFilePathSpecDTO) secretDecryptionService.decrypt(tgtKeyTabFilePathSpecDTO, encryptionDetails);
-        kerberosConfig.keyTabFilePath(keyTabFilePathSpecDTO.getKeyPath());
-        break;
-      default:
-        break;
-    }
-    builder.withAuthenticationScheme(KERBEROS)
-        .withAccessType(AccessType.KERBEROS)
-        .withKerberosConfig(kerberosConfig.build());
   }
 
   @Override

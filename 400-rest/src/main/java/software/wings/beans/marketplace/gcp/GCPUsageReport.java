@@ -10,9 +10,11 @@ package software.wings.beans.marketplace.gcp;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAccess;
 import io.harness.persistence.PersistentEntity;
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(PL)
 @Value
 @FieldNameConstants(innerTypeName = "GCPUsageReportKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gcpUsageReport", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class GCPUsageReport implements PersistentEntity, UuidAccess, CreatedAtAccess, UpdatedAtAccess, AccountAccess {

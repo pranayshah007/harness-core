@@ -7,7 +7,6 @@
 
 package software.wings.graphql.datafetcher.connector;
 
-import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -32,7 +31,6 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -106,7 +104,6 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
   @Before
   public void setup() throws SQLException {
     MockitoAnnotations.initMocks(this);
-    doReturn(true).when(featureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
   }
 
   @Test
@@ -154,6 +151,8 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                                                                      .build()))
                     .passwordSecretId(RequestField.ofNullable(PASSWORD))
                     .delegateSelectors(RequestField.ofNull())
+                    .disableUserGitConfig(RequestField.ofNull())
+                    .providerType(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());
@@ -202,6 +201,8 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                     .sshSettingId(RequestField.ofNullable(SSH))
                     .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
                     .delegateSelectors(RequestField.ofNull())
+                    .disableUserGitConfig(RequestField.ofNull())
+                    .providerType(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());

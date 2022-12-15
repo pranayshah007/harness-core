@@ -11,11 +11,15 @@ import static software.wings.common.VerificationConstants.CV_24x7_STATE_EXECUTIO
 import static software.wings.common.VerificationConstants.MAX_NUM_ALERT_OCCURRENCES;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.FeatureName;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
+import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
 import software.wings.beans.Base;
@@ -43,9 +47,10 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "CVConfigurationKeys")
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "verificationServiceConfigurations")
 @HarnessEntity(exportable = true)
-public class CVConfiguration extends Base implements NameAccess {
+public class CVConfiguration extends Base implements NameAccess, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -82,6 +87,9 @@ public class CVConfiguration extends Base implements NameAccess {
   @Transient @SchemaIgnore private String appName;
 
   @JsonIgnore @SchemaIgnore @FdTtlIndex private Date validUntil;
+
+  @FdIndex private Long serviceGuardDataCollectionIteration;
+  @FdIndex private Long serviceGuardDataAnalysisIteration;
 
   public AnalysisComparisonStrategy getComparisonStrategy() {
     return comparisonStrategy == null ? AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS : comparisonStrategy;
@@ -159,5 +167,31 @@ public class CVConfiguration extends Base implements NameAccess {
   @JsonIgnore
   public List<ServiceGuardThroughputToErrorsMap> getThroughputToErrors() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (CVConfigurationKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
+      return this.serviceGuardDataCollectionIteration;
+    }
+
+    else if (CVConfigurationKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
+      return this.serviceGuardDataAnalysisIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (CVConfigurationKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
+      this.serviceGuardDataCollectionIteration = nextIteration;
+      return;
+    }
+
+    else if (CVConfigurationKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
+      this.serviceGuardDataAnalysisIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 }

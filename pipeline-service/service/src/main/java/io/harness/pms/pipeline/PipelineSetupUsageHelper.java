@@ -8,15 +8,16 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPELINES;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
 
 import io.harness.EntityType;
 import io.harness.PipelineSetupUsageUtils;
@@ -44,6 +45,7 @@ import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -71,7 +73,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   private static final int SIZE = 100;
 
   final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
-      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES);
+      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES);
 
   /**
    * Performs the following:
@@ -91,10 +93,10 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   public List<EntityDetail> getReferencesOfPipeline(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineId, String pipelineYaml, EntityType entityType) {
     List<EntitySetupUsageDTO> allReferredUsages =
-        getResponseWithRetry(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
-                                 FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
-                                     accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
-                                 entityType, null),
+        NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
+                                    FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+                                        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
+                                    entityType, null),
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, allReferredUsages);
@@ -221,6 +223,13 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   }
 
   private EntityReferredByPipelineDetailProtoDTO getSetupDetailProtoDTO(String fqn, String pipelineIdentifier) {
+    if (isEmpty(fqn)) {
+      return EntityReferredByPipelineDetailProtoDTO.newBuilder()
+          .setIdentifier(pipelineIdentifier)
+          .setType(PipelineDetailType.PIPELINE_IDENTIFIER)
+          .build();
+    }
+
     String stageIdentifier = YamlUtils.getStageIdentifierFromFqn(fqn);
     if (stageIdentifier != null) {
       return EntityReferredByPipelineDetailProtoDTO.newBuilder()

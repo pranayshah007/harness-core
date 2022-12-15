@@ -24,7 +24,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.services.OrganizationService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -60,6 +60,8 @@ public class AccountSetupListener implements MessageListener {
                 String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
           }
           String action = metadataMap.get(ACTION);
+          log.info("[AccountSetupListener]: Received Account Entity Change message for account- {} for action- {}",
+              accountEntityChangeDTO.getAccountId(), action);
           if (action != null) {
             return processAccountEntityChangeEvent(accountEntityChangeDTO, action);
           }
@@ -83,15 +85,19 @@ public class AccountSetupListener implements MessageListener {
   }
 
   private boolean processAccountUpdateEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
-    AccountDTO account =
-        RestClientUtils.getResponse(accountClient.getAccountDTO(accountEntityChangeDTO.getAccountId()));
+    log.info(String.format(
+        "[AccountSetupListener]: Received account update event for account %s", accountEntityChangeDTO.getAccountId()));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountEntityChangeDTO.getAccountId()));
     if (account.isNextGenEnabled()) {
+      log.info("Starting to setup account- {} for NG", accountEntityChangeDTO.getAccountId());
       ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     }
     return true;
   }
 
   private boolean processAccountDeleteEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    log.info(String.format(
+        "[AccountSetupListener]: Received account delete event for account %s", accountEntityChangeDTO.getAccountId()));
     String accountIdentifier = accountEntityChangeDTO.getAccountId();
     Criteria criteria = Criteria.where(OrganizationKeys.accountIdentifier)
                             .is(accountIdentifier)
@@ -114,6 +120,8 @@ public class AccountSetupListener implements MessageListener {
   }
 
   private boolean processAccountRestoreEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    log.info(String.format("[AccountSetupListener]: Received account restore event for account %s",
+        accountEntityChangeDTO.getAccountId()));
     String accountIdentifier = accountEntityChangeDTO.getAccountId();
     Criteria criteria = Criteria.where(OrganizationKeys.accountIdentifier)
                             .is(accountIdentifier)

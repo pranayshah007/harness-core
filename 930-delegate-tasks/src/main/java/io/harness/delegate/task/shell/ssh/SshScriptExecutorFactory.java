@@ -58,7 +58,7 @@ public class SshScriptExecutorFactory {
   private ScriptProcessExecutor getScriptProcessExecutor(SshExecutorFactoryContext context) {
     ShellExecutorConfig config = getShellExecutorConfig(context);
     return shellExecutorFactory.getExecutor(
-        config, context.getILogStreamingTaskClient(), context.getCommandUnitsProgress());
+        config, context.getILogStreamingTaskClient(), context.getCommandUnitsProgress(), true);
   }
 
   private FileBasedProcessScriptExecutorNG getFileBasedScriptProcessExecutor(SshExecutorFactoryContext context) {

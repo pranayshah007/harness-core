@@ -16,6 +16,8 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDeleg
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 
+import java.util.Collections;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +35,21 @@ public class AzureWebAppFetchPreDeploymentDataRequest extends AbstractSlotDataRe
       Integer timeoutIntervalInMin) {
     super(accountId, commandUnitsProgress, infraDelegateConfig, startupCommand, applicationSettings, connectionStrings,
         artifact, timeoutIntervalInMin);
+  }
+
+  @Override
+  public Set<String> getPrevExecUserAddedAppSettingNames() {
+    return Collections.emptySet();
+  }
+
+  @Override
+  public Set<String> getPrevExecUserAddedConnStringNames() {
+    return Collections.emptySet();
+  }
+
+  @Override
+  public boolean isPrevExecUserChangedStartupCommand() {
+    return false;
   }
 
   @Override

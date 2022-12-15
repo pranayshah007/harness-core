@@ -47,6 +47,7 @@ public class PrivilegedRoleAssignmentsPersistenceConfig extends AbstractMongoCon
             .retryWrites(true)
             .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
             .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
+            .socketTimeout(mongoBackendConfiguration.getSocketTimeout())
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
@@ -68,7 +69,7 @@ public class PrivilegedRoleAssignmentsPersistenceConfig extends AbstractMongoCon
 
   @Bean
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), mongoBackendConfiguration);
   }
 
   @Override

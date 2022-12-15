@@ -44,6 +44,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -319,9 +320,20 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
   }
 
+  public static String generateConnectivityUrl(String url, DockerRegistryProviderType providerType) {
+    if (DockerRegistryProviderType.HARBOR.equals(providerType)) {
+      return url.concat(url.endsWith("/") ? "api/v2.0/ping" : "/api/v2.0/ping");
+    } else if (!(url.endsWith("/v2") || url.endsWith("/v2/"))) {
+      return url.endsWith("/") ? url.concat("v2") : url.concat("/v2");
+    }
+    return url;
+  }
+
   @Override
   public boolean validateCredentials(DockerInternalConfig dockerConfig) {
-    if (!connectableHttpUrl(dockerConfig.getDockerRegistryUrl())) {
+    String connectableHttpUrl =
+        generateConnectivityUrl(dockerConfig.getDockerRegistryUrl(), dockerConfig.getProviderType());
+    if (!connectableHttpUrl(connectableHttpUrl)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Docker Registry URL is correct & reachable from your delegate(s)",
           "The given Docker Registry URL may be incorrect or not reachable from your delegate(s)",
@@ -400,7 +412,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
   }
 
-  private boolean handleValidateCredentialsEndingWithSlash(
+  @VisibleForTesting
+  boolean handleValidateCredentialsEndingWithSlash(
       DockerRegistryRestClient registryRestClient, DockerInternalConfig dockerConfig) {
     try {
       // This is special case for repositories that require "/v2/" path for getting API version . Eg. Harbor docker
@@ -427,7 +440,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     } catch (IOException ioException) {
       Exception exception = new Exception(ioException);
       throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
-          "Check if the provided credentials are correct",
+          "Check if the provided credentials, provider type are correct",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(exception), USER));
     }
   }

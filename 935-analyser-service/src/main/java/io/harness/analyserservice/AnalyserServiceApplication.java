@@ -33,6 +33,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -90,6 +91,13 @@ public class AnalyserServiceApplication extends Application<AnalyserServiceConfi
       @Singleton
       AnalyserServiceConfiguration configuration() {
         return configuration;
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
     modules.add(AnalyserServiceModule.getInstance(configuration));

@@ -18,7 +18,8 @@ import (
 )
 
 var (
-	bazelCmd = "bazel"
+	bazelCmd         = "bazel"
+	bazelRuleSepList = []string{".", "/"}
 )
 
 type bazelRunner struct {
@@ -39,41 +40,85 @@ func (b *bazelRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	if ignoreInstr {
-		b.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return fmt.Sprintf("%s %s //...", bazelCmd, userArgs), nil
-	}
+func (b *bazelRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
 
+	// bazel query 'kind(java.*, tests(//...))'
+	c := fmt.Sprintf("%s query 'kind(java.*, tests(//...))'", bazelCmd)
+	cmdArgs := []string{"-c", c}
+	resp, err := b.cmdContextFactory.CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Output()
+	if err != nil {
+		b.log.Errorw("Got an error while querying bazel", err)
+		return tests, err
+	}
+	// Convert rules to RunnableTest list
+	var test types.RunnableTest
+	for _, r := range strings.Split(string(resp), "\n") {
+		if r == "" {
+			continue
+		}
+		if !strings.Contains(r, ":") || len(strings.Split(r, ":")) < 2 {
+			b.log.Errorw(fmt.Sprintf("Rule does not follow the default format: %s", r))
+			continue
+		}
+		fullPkg := strings.Split(r, ":")[1]
+		for _, s := range bazelRuleSepList {
+			fullPkg = strings.Replace(fullPkg, s, ".", -1)
+		}
+		pkgList := strings.Split(fullPkg, ".")
+		if len(pkgList) < 2 {
+			b.log.Errorw(fmt.Sprintf("Rule does not follow the default format: %s", r))
+			continue
+		}
+		cls := pkgList[len(pkgList)-1]
+		pkg := strings.TrimSuffix(fullPkg, "."+cls)
+		test = types.RunnableTest{Pkg: pkg, Class: cls}
+		test.Autodetect.Rule = r
+		tests = append(tests, test)
+	}
+	return tests, nil
+}
+
+func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
 	instrArg := fmt.Sprintf("--define=HARNESS_ARGS=%s", agentArg)
-	defaultCmd := fmt.Sprintf("%s %s %s //...", bazelCmd, userArgs, instrArg) // run all the tests
 
+	// Run all the tests
 	if runAll {
-		// Run all the tests
-		return defaultCmd, nil
+		if ignoreInstr {
+			return fmt.Sprintf("%s %s //...", bazelCmd, userArgs), nil
+		}
+		return fmt.Sprintf("%s %s %s //...", bazelCmd, userArgs, instrArg), nil
 	}
 	if len(tests) == 0 {
 		return fmt.Sprintf("echo \"Skipping test run, received no tests to execute\""), nil
 	}
+
 	// Use only unique classes
 	pkgs := []string{}
 	clss := []string{}
-	set := make(map[string]interface{})
 	ut := []string{}
+	rls := []string{}
 	for _, t := range tests {
-		if _, ok := set[t.Class]; ok {
-			// The class has already been added
-			continue
-		}
-		set[t.Class] = struct{}{}
 		ut = append(ut, t.Class)
 		pkgs = append(pkgs, t.Pkg)
 		clss = append(clss, t.Class)
+		rls = append(rls, t.Autodetect.Rule)
 	}
 	rulesM := make(map[string]struct{})
 	rules := []string{} // List of unique bazel rules to be executed
+	set := make(map[string]interface{})
 	for i := 0; i < len(pkgs); i++ {
+		// If the rule is present in the test, use it and skip querying bazel to get the rule
+		if rls[i] != "" {
+			rules = append(rules, rls[i])
+			continue
+		}
+		if _, ok := set[clss[i]]; ok {
+			// The class has already been queried
+			continue
+		}
+		set[clss[i]] = struct{}{}
 		c := fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, pkgs[i], clss[i])
 		cmdArgs := []string{"-c", c}
 		resp, err := b.cmdContextFactory.CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Output()
@@ -125,11 +170,13 @@ func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 				rulesM[r] = struct{}{}
 			}
 		}
-
 	}
 	if len(rules) == 0 {
 		return fmt.Sprintf("echo \"Could not find any relevant test rules. Skipping the run\""), nil
 	}
 	testList := strings.Join(rules, " ")
+	if ignoreInstr {
+		return fmt.Sprintf("%s %s %s", bazelCmd, userArgs, testList), nil
+	}
 	return fmt.Sprintf("%s %s %s %s", bazelCmd, userArgs, instrArg, testList), nil
 }

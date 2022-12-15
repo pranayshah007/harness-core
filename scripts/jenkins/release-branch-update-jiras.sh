@@ -72,13 +72,21 @@ else
 fi
 for KEY in ${KEYS}
 do
+    EXCLUDE_PROJECTS=",PIE,"
     echo $KEY
-    curl \
-       -X PUT \
-       --data "{ \"fields\" : { \"${FIELD_ID}\" : \"${VERSION}00\" }}" \
-       -H "Content-Type: application/json" \
-       https://harness.atlassian.net/rest/api/2/issue/${KEY} \
-       --user $JIRA_USERNAME:$JIRA_PASSWORD
+    IFS="-" read -ra PROJNUM <<< "$KEY"
+    PROJ="${PROJNUM[0]}"
+    # If it is in the exclude projects list, then do not attempt to set the version
+    if [[ $EXCLUDE_PROJECTS == *",$PROJ,"* ]]; then
+      echo "Skipping $KEY - project is archived or not relevant to versions."
+    else
+      curl \
+         -X PUT \
+         --data "{ \"fields\" : { \"${FIELD_ID}\" : \"${VERSION}00\" }}" \
+         -H "Content-Type: application/json" \
+         https://harness.atlassian.net/rest/api/2/issue/${KEY} \
+         --user $JIRA_USERNAME:$JIRA_PASSWORD
+    fi
 done
 # Note - $EXECUTE_NEW_VERSION_CODE should be added to the appropriate ci Jobs for this to work
 # Also, once this is rolled out for good, then this code needs to be integrated into the loop above instead
@@ -100,7 +108,7 @@ if [ "${EXECUTE_NEW_VERSION_CODE}" == "true" ]; then
   # Version doesn't have trailing 00 - so adding it here
   NEXT_VERSION="$NEXT_VERSION""00"
   echo "Setting Fix Version to $NEXT_VERSION on issues in this release"
-  EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,"
+  EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,PIE,"
   for KEY in ${KEYS}
   do
     echo "$KEY"

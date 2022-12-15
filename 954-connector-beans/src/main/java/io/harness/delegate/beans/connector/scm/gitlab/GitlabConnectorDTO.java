@@ -15,10 +15,12 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 
@@ -125,5 +127,18 @@ public class GitlabConnectorDTO
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return GitlabConnectorOutcomeDTO.builder()
+        .type(this.connectionType)
+        .url(this.url)
+        .validationRepo(this.validationRepo)
+        .authentication(this.authentication.toOutcome())
+        .apiAccess(this.apiAccess)
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

@@ -18,10 +18,10 @@ import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
 import static software.wings.beans.infrastructure.instance.InstanceType.ECS_CONTAINER_INSTANCE;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
@@ -69,7 +69,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
@@ -104,7 +103,6 @@ import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
@@ -122,6 +120,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.instance.sync.ContainerSync;
 import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
@@ -193,8 +192,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .get(any(), any(), anyBoolean());
 
     doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
-
-    doReturn(false).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
   }
 
   private InfrastructureMapping getInframapping(String inframappingType) {
@@ -1781,9 +1778,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
+    EcsContainerInfo containerInfo = Builder.anEcsContainerInfo().build();
     ContainerSyncResponse responseData;
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
     ContainerInfrastructureMapping infrastructureMapping;
@@ -1824,9 +1822,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
+    EcsContainerInfo containerInfo = Builder.anEcsContainerInfo().build();
     ContainerSyncResponse responseData;
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .controllerName("controllerName:0")
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
@@ -1840,7 +1839,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     verify(instanceService, never()).delete(Sets.newHashSet(INSTANCE_2_ID));
 
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .controllerName("controllerName:1")
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
@@ -2102,8 +2101,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             createKubernetesContainerInstance("instance4", "releaseY", "namespaceX", null),
             createKubernetesContainerInstance("instance5", "releaseY", "namespaceY", null));
 
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
-
     // Ref: ContainerInstanceSyncPerpetualTaskClient#getPerpetualTaskData at 207, controllerName will be always empty
     // string when the actual value is null
     ContainerSyncResponse instanceSyncResponse =
@@ -2327,7 +2324,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         createK8sPodInstance("instance2", "releaseX", "namespaceX"));
 
     K8sInstanceSyncResponse instanceSyncResponse = creteK8sPodSyncResponseWith("releaseX", "namespaceX");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
     assertThatThrownBy(()
                            -> assertSavedAndDeletedInstances(
                                instancesInDb, instanceSyncResponse, emptyList(), asList("instance1", "instance2")))
@@ -2339,7 +2335,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionNOInstancesExistsInDb() {
     K8sInstanceSyncResponse instanceSyncResponse = creteK8sPodSyncResponseWith("releaseX", "namespaceX");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(
         () -> assertSavedAndDeletedInstances(emptyList(), instanceSyncResponse, emptyList(), emptyList()))
@@ -2358,7 +2353,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                              .isEcs(false)
                                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                              .build();
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(() -> assertSavedAndDeletedInstances(instancesInDb, syncResponse, emptyList(), emptyList()))
         .isInstanceOf(NoInstancesException.class);
@@ -2369,7 +2363,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionForKubernetesContainerDeploymentNoInstancesInDb() {
     ContainerSyncResponse syncResponse = createContainerSyncResponseWith("release-name", "default", "controller");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(() -> assertSavedAndDeletedInstances(emptyList(), syncResponse, emptyList(), emptyList()))
         .isInstanceOf(NoInstancesException.class);
@@ -2381,7 +2374,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void shouldAddInstancesFromContainerSyncEvenNoInstancesInDb() {
     ContainerSyncResponse syncResponse =
         createContainerSyncResponseWith("release-name", "default", "controller", "instance-1", "instance-2");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertSavedAndDeletedInstances(emptyList(), syncResponse, asList("instance-1", "instance-2"), emptyList());
   }

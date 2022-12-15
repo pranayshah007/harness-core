@@ -10,12 +10,14 @@ package software.wings.beans.infrastructure.instance.stats;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -48,6 +50,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serverless-instance-stats", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "ServerlessInstanceStatsKeys")
@@ -95,10 +98,10 @@ public class ServerlessInstanceStats implements PersistentEntity, UuidAware, Cre
   @Value
   @Builder
   public static class AggregateInvocationCount {
-    private EntityType entityType;
-    private String name;
-    private String id;
-    @NonFinal private long invocationCount;
-    private InvocationCountKey invocationCountKey;
+    EntityType entityType;
+    String name;
+    String id;
+    @NonFinal long invocationCount;
+    InvocationCountKey invocationCountKey;
   }
 }

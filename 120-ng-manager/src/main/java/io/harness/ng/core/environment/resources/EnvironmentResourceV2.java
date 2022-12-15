@@ -11,6 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
@@ -38,6 +42,9 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -51,6 +58,9 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
+import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadataInput;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
@@ -66,13 +76,18 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -108,6 +123,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -148,6 +164,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class EnvironmentResourceV2 {
   private final EnvironmentService environmentService;
   private final AccessControlClient accessControlClient;
@@ -156,6 +173,12 @@ public class EnvironmentResourceV2 {
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
+  private final EnvironmentGroupService environmentGroupService;
+  private final CDOverviewDashboardService cdOverviewDashboardService;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
+
+  public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "Lists of Environment Identifiers and service identifiers for the entities";
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -186,7 +209,7 @@ public class EnvironmentResourceV2 {
     if (environment.isPresent()) {
       version = environment.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment.get());
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
         environment.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     } else {
@@ -210,6 +233,8 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be created")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
+    validateEnvironmentScope(environmentRequestDTO, accountId);
+
     if (environmentRequestDTO.getType() == null) {
       throw new InvalidRequestException(
           "Type for an environment cannot be empty. Possible values: " + Arrays.toString(EnvironmentType.values()));
@@ -225,6 +250,10 @@ public class EnvironmentResourceV2 {
     Environment createdEnvironment = environmentService.create(environmentEntity);
     return ResponseDTO.newResponse(
         createdEnvironment.getVersion().toString(), EnvironmentMapper.toResponseWrapper(createdEnvironment));
+  }
+
+  private boolean checkFeatureFlagForEnvOrgAccountLevel(String accountId) {
+    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
   }
 
   @DELETE
@@ -266,6 +295,8 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be updated")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
+    validateEnvironmentScope(environmentRequestDTO, accountId);
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
@@ -293,6 +324,8 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be updated")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
+    validateEnvironmentScope(environmentRequestDTO, accountId);
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
@@ -349,11 +382,34 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
     return ResponseDTO.newResponse(getNGPageResponse(environmentEntities.map(EnvironmentMapper::toResponseWrapper)));
+  }
+
+  @GET
+  @Path("/getActiveServiceInstancesForEnvironment")
+  @ApiOperation(value = "Get list of instances grouped by service for particular environment",
+      nickname = "getActiveServiceInstancesForEnvironment")
+  @Hidden
+  public ResponseDTO<InstanceGroupedByServiceList>
+  getActiveServiceInstancesForEnvironment(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) String serviceIdentifier,
+      @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
+    /*
+    if (tag != null && serviceIdentifier == null) {
+
+    }
+
+     */
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByServiceList(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier, buildId));
   }
 
   @POST
@@ -404,7 +460,7 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
@@ -434,12 +490,19 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers,
+      @Parameter(description = "Environment group identifier") @QueryParam(
+          "envGroupIdentifier") String envGroupIdentifier,
       @Parameter(
           description =
               "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list environments");
+    if (isEmpty(envIdentifiers) && isNotEmpty(envGroupIdentifier)) {
+      Optional<EnvironmentGroupEntity> environmentGroupEntity =
+          environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
+      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+    }
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
 
     if (isNotEmpty(envIdentifiers)) {
@@ -469,17 +532,39 @@ public class EnvironmentResourceV2 {
   }
 
   @POST
+  @Path("/mergeEnvironmentInputs/{environmentIdentifier}")
+  @ApiOperation(value = "This api merges old and new environment inputs YAML", nickname = "mergeEnvironmentInputs")
+  @Hidden
+  public ResponseDTO<EnvironmentInputsMergedResponseDto> mergeEnvironmentInputs(
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @PathParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      String oldEnvironmentInputsYaml) {
+    return ResponseDTO.newResponse(environmentService.mergeEnvironmentInputs(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, oldEnvironmentInputsYaml));
+  }
+
+  @POST
   @Path("/serviceOverrides")
-  @ApiOperation(value = "upsert a Service Override", nickname = "upsertServiceOverride")
-  @Operation(operationId = "upsertServiceOverride", summary = "Upsert",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Upserts a Service Override") },
-      hidden = true)
+  @ApiOperation(value = "upsert a Service Override for an Environment", nickname = "upsertServiceOverride")
+  @Operation(operationId = "upsertServiceOverride", summary = "upsert a Service Override for an Environment",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Upsert ( Create/Update )  a Service Override in an Environment.")
+      })
   public ResponseDTO<io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO>
   upsertServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Service Override to be upserted")
       @Valid io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
     throwExceptionForNoRequestDTO(serviceOverrideRequestDTO);
+    validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
 
     NGServiceOverridesEntity serviceOverridesEntity =
         ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
@@ -494,9 +579,65 @@ public class EnvironmentResourceV2 {
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
+    validateServiceOverrides(serviceOverridesEntity);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
+  }
+
+  @POST
+  @Path("/environmentInputYamlAndServiceOverridesMetadata")
+  @ApiOperation(value = "This api returns environments runtime input YAML and serviceOverrides Yaml",
+      nickname = "getEnvironmentsInputYamlAndServiceOverrides")
+  @Hidden
+  public ResponseDTO<EnvironmentInputSetYamlAndServiceOverridesMetadataDTO>
+  getEnvironmentsInputYamlAndServiceOverrides(
+      @Parameter(description = ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+      @NotNull EnvironmentInputsetYamlAndServiceOverridesMetadataInput environmentYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    List<String> envIdentifiers = new ArrayList<>();
+    if (isNotEmpty(environmentYamlMetadata.getEnvIdentifiers())) {
+      envIdentifiers.addAll(environmentYamlMetadata.getEnvIdentifiers());
+    }
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())) {
+      Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
+          accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
+      environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+    }
+    EnvironmentInputSetYamlAndServiceOverridesMetadataDTO environmentInputsetYamlandServiceOverridesMetadataDTO =
+        environmentService.getEnvironmentsInputYamlAndServiceOverridesMetadata(accountId, orgIdentifier,
+            projectIdentifier, envIdentifiers, environmentYamlMetadata.getServiceIdentifiers());
+
+    return ResponseDTO.newResponse(environmentInputsetYamlandServiceOverridesMetadataDTO);
+  }
+
+  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {
+    final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
+    if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
+      final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+          serviceOverrideConfig.getServiceOverrideInfoConfig();
+
+      if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
+          && isEmpty(serviceOverrideInfoConfig.getVariables())
+          && serviceOverrideInfoConfig.getApplicationSettings() == null
+          && serviceOverrideInfoConfig.getConnectionStrings() == null) {
+        final Optional<NGServiceOverridesEntity> optionalNGServiceOverrides =
+            serviceOverrideService.get(serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
+                serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
+                serviceOverridesEntity.getServiceRef());
+        if (optionalNGServiceOverrides.isEmpty()) {
+          throw new InvalidRequestException("No overrides found in request");
+        }
+      }
+
+      checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
+    }
   }
 
   @DELETE
@@ -507,8 +648,7 @@ public class EnvironmentResourceV2 {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Service Override is deleted")
-      },
-      hidden = true)
+      })
   public ResponseDTO<Boolean>
   deleteServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -532,14 +672,12 @@ public class EnvironmentResourceV2 {
   }
 
   @GET
-  @Path("/dummy-serviceoverride-api")
-  @ApiOperation(
-      value = "This is dummy api to expose NGServiceOverrideConfig", nickname = "dummyNGServiceOverrideConfig")
+  @Path("/dummy-api-for-exposing-objects")
+  @ApiOperation(value = "This is dummy api to expose objects to swagger", nickname = "dummyNGServiceOverrideConfig")
   @Hidden
   // do not delete this.
-  public ResponseDTO<NGServiceOverrideConfig>
-  getServiceOverrideConfig() {
-    return ResponseDTO.newResponse(NGServiceOverrideConfig.builder().build());
+  public ResponseDTO<EnvSwaggerObjectWrapper> exposeSwaggerObjects() {
+    return ResponseDTO.newResponse(EnvSwaggerObjectWrapper.builder().build());
   }
 
   @GET
@@ -549,9 +687,9 @@ public class EnvironmentResourceV2 {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns the list of Service Overrides for an Environment and optionally Service")
-      },
-      hidden = true)
+        ApiResponse(description = "Returns the list of Service Overrides for an Environment."
+                + "serviceIdentifier, if passed, can be used to get the overrides for that particular Service in the Environment")
+      })
   public ResponseDTO<PageResponse<ServiceOverrideResponseDTO>>
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
@@ -596,6 +734,7 @@ public class EnvironmentResourceV2 {
     return ResponseDTO.newResponse(
         getNGPageResponse(serviceOverridesEntities.map(ServiceOverridesMapper::toResponseWrapper)));
   }
+
   @GET
   @Path("/runtimeInputs")
   @ApiOperation(value = "This api returns Environment inputs YAML", nickname = "getEnvironmentInputs")
@@ -610,7 +749,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
-        accountId, projectIdentifier, orgIdentifier, environmentIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
 
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(environmentInputsYaml).build());
@@ -632,7 +771,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {
     String serviceOverrideInputsYaml = serviceOverrideService.createServiceOverrideInputsYaml(
-        accountId, projectIdentifier, orgIdentifier, environmentIdentifier, serviceIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceOverrideInputsYaml).build());
   }
@@ -653,7 +792,7 @@ public class EnvironmentResourceV2 {
 
   private void checkForServiceOverrideUpdateAccess(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    final List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
     permissionCheckDTOList.add(PermissionCheckDTO.builder()
                                    .permission(ENVIRONMENT_UPDATE_PERMISSION)
                                    .resourceIdentifier(environmentRef)
@@ -667,18 +806,19 @@ public class EnvironmentResourceV2 {
                                    .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
                                    .build());
 
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
-    AccessControlDTO accessControlDTO = accessCheckResponse.getAccessControlList().get(0);
-    if (!accessControlDTO.isPermitted()) {
-      String errorMessage;
-      errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
-          accessControlDTO.getResourceType().toLowerCase());
-      if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
-        errorMessage =
-            errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+    final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
+    accessCheckResponse.getAccessControlList().forEach(accessControlDTO -> {
+      if (!accessControlDTO.isPermitted()) {
+        String errorMessage;
+        errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
+            accessControlDTO.getResourceType().toLowerCase());
+        if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
+          errorMessage =
+              errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+        }
+        throw new InvalidRequestException(errorMessage, WingsException.USER);
       }
-      throw new InvalidRequestException(errorMessage, WingsException.USER);
-    }
+    });
   }
 
   private List<EnvironmentResponse> filterEnvironmentResponseByPermissionAndId(
@@ -705,6 +845,42 @@ public class EnvironmentResourceV2 {
   private void throwExceptionForNoRequestDTO(ServiceOverrideRequestDTO dto) {
     if (dto == null) {
       throw new InvalidRequestException("No request body for Service overrides sent in the API");
+    }
+  }
+
+  private void validateEnvironmentScope(EnvironmentRequestDTO requestDTO, String accountId) {
+    try {
+      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
+        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
+          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+              "org identifier must be specified when project identifier is specified. Environments can be created at Project/Org/Account scope");
+        }
+      } else {
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+            "org identifier must be specified. Environments only be created at Project scope");
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+            "project identifier must be specified. Environments can only be created at Project scope");
+      }
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
+  }
+
+  private void validateServiceOverrideScope(ServiceOverrideRequestDTO requestDTO, String accountId) {
+    try {
+      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
+        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
+          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+              "org identifier must be specified when project identifier is specified. Service Overrides can be created at Project/Org/Account scope");
+        }
+      } else {
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+            "org identifier must be specified. Service overrides can only be created at Project scope");
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+            "project identifier must be specified. Service overrides can only be created at Project scope");
+      }
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
     }
   }
 }

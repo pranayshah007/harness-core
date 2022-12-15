@@ -16,6 +16,10 @@ import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.app.DelegateGrpcServiceModule;
+import io.harness.delegate.app.modules.common.DelegateHealthModule;
+import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
+import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
+import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
 import io.harness.delegate.task.k8s.apiclient.KubernetesApiClientFactoryModule;
@@ -24,7 +28,7 @@ import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
 import io.harness.logstreaming.LogStreamingModule;
-import io.harness.managerclient.DelegateManagerClientModule;
+import io.harness.managerclient.VerificationServiceClientModule;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
 import io.harness.serializer.KryoModule;
@@ -41,7 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class DelegateAgentModule extends AbstractModule {
   private final DelegateConfiguration configuration;
-  private final boolean isImmutableDelegate;
 
   @Override
   protected void configure() {
@@ -52,13 +55,15 @@ public class DelegateAgentModule extends AbstractModule {
       log.info("Delegate is running with mTLS enabled.");
     }
 
+    install(new DelegateTokensModule(configuration));
+    install(new DelegateServiceTokenModule(configuration));
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
-    install(new DelegateManagerClientModule(configuration.getManagerUrl(), configuration.getVerificationServiceUrl(),
-        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken(),
+    install(new DelegateManagerClientModule());
+    install(new VerificationServiceClientModule(configuration.getCvNextGenUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
         configuration.isTrustAllCertificates()));
 
@@ -80,16 +85,14 @@ public class DelegateAgentModule extends AbstractModule {
       install(
           new DelegateGrpcServiceModule(configuration.getGrpcServiceConnectorPort(), configuration.getDelegateToken()));
     }
-
-    install(new DelegateTokensModule(configuration));
   }
 
   private void configureCcmEventPublishing() {
     final String deployMode = System.getenv(DEPLOY_MODE);
-    if (!isOnPrem(deployMode) && isImmutableDelegate) {
+    if (!isOnPrem(deployMode)) {
       final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
       if (isNotBlank(managerHostAndPort)) {
-        log.info("Running immutable delegate, starting CCM event tailer");
+        log.info("Running delegate, starting CCM event tailer");
         final DelegateTailerModule.Config tailerConfig =
             DelegateTailerModule.Config.builder()
                 .queueFilePath(configuration.getQueueFilePath())
@@ -109,5 +112,6 @@ public class DelegateAgentModule extends AbstractModule {
     }
     final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
     install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
+    install(new EventPublisherModule());
   }
 }

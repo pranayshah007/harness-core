@@ -7,16 +7,21 @@
 
 package io.harness.common;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.yaml.ParameterField;
 
+import com.google.common.base.Splitter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -41,7 +46,7 @@ public class ParameterFieldHelper {
     if (value instanceof String) {
       String valueString = (String) value;
       if (!valueString.equalsIgnoreCase("true") && !valueString.equalsIgnoreCase("false")) {
-        throw new IllegalArgumentException(String.format("Expected 'true' or 'false' value, got %s", valueString));
+        throw new IllegalArgumentException(format("Expected 'true' or 'false' value, got %s", valueString));
       }
 
       return Boolean.valueOf((String) value);
@@ -102,5 +107,42 @@ public class ParameterFieldHelper {
         : parameterFieldListValue.stream()
               .filter(listItem -> !NGExpressionUtils.matchesGenericExpressionPattern(listItem))
               .collect(Collectors.toList());
+  }
+
+  public List<String> getParameterFieldListValueBySeparator(
+      ParameterField<?> parameterField, final String separatorPattern) {
+    if (parameterField == null || parameterField.getValue() == null) {
+      return Collections.emptyList();
+    } else if (parameterField.getValue() instanceof String) {
+      String strValue = (String) parameterField.getValue();
+      return isEmpty(strValue)
+          ? Collections.emptyList()
+          : Splitter.onPattern(separatorPattern).omitEmptyStrings().trimResults().splitToList(strValue);
+    } else if (parameterField.getValue() instanceof List) {
+      return (List<String>) parameterField.getValue();
+    } else {
+      throw new InvalidArgumentsException(
+          format("Unable for parse parameter field value, finalValue: %s", parameterField.fetchFinalValue()));
+    }
+  }
+
+  public Map<String, String> getParameterFieldMapValueBySeparator(
+      ParameterField<?> parameterField, final String separatorPattern, String keyValueSeparator) {
+    if (parameterField == null || parameterField.getValue() == null) {
+      return Collections.emptyMap();
+    } else if (parameterField.getValue() instanceof String) {
+      String strValue = (String) parameterField.getValue();
+      return isEmpty(strValue) ? Collections.emptyMap()
+                               : Splitter.onPattern(separatorPattern)
+                                     .omitEmptyStrings()
+                                     .trimResults()
+                                     .withKeyValueSeparator(keyValueSeparator)
+                                     .split(strValue);
+    } else if (parameterField.getValue() instanceof Map) {
+      return (Map<String, String>) parameterField.getValue();
+    } else {
+      throw new InvalidArgumentsException(
+          format("Unable for parse parameter field value, finalValue: %s", parameterField.fetchFinalValue()));
+    }
   }
 }

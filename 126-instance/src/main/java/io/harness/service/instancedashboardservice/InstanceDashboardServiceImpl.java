@@ -16,6 +16,7 @@ import io.harness.entities.Instance;
 import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDTOsByBuildId;
@@ -140,15 +141,83 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
+      final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
       final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
       final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final String envName = activeServiceInstanceInfo.getEnvName();
       final String buildId = activeServiceInstanceInfo.getTag();
+      final String displayName = activeServiceInstanceInfo.getDisplayName();
       final Integer count = activeServiceInstanceInfo.getCount();
-      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName,
-          lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, count));
+      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName, clusterIdentifier,
+          agentIdentifier, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId,
+          displayName, count));
+    });
+
+    return activeServiceInstanceInfoList;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String buildIdentifier,
+      boolean isGitOps) {
+    AggregationResults<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoAggregationResults;
+    if (!isGitOps) {
+      activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+    } else {
+      activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceGitOpsInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+    }
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList = new ArrayList<>();
+
+    activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
+      final String serviceId = activeServiceInstanceInfo.getServiceIdentifier();
+      final String serviceName = activeServiceInstanceInfo.getServiceName();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+      final String envName = activeServiceInstanceInfo.getEnvName();
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
+      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final String displayName = activeServiceInstanceInfo.getDisplayName();
+      final Integer count = activeServiceInstanceInfo.getCount();
+      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfoV2(serviceId, serviceName, envId, envName,
+          infraIdentifier, infraName, clusterIdentifier, agentIdentifier, lastPipelineExecutionId,
+          lastPipelineExecutionName, lastDeployedAt, buildId, displayName, count));
+    });
+
+    return activeServiceInstanceInfoList;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
+        instanceService.getActiveServiceGitOpsInstanceInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList = new ArrayList<>();
+
+    activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
+      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
+      final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+      final String envName = activeServiceInstanceInfo.getEnvName();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final String displayName = activeServiceInstanceInfo.getDisplayName();
+      final Integer count = activeServiceInstanceInfo.getCount();
+      activeServiceInstanceInfoList.add(
+          new ActiveServiceInstanceInfo(null, null, clusterIdentifier, agentIdentifier, lastPipelineExecutionId,
+              lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, displayName, count));
     });
 
     return activeServiceInstanceInfoList;
@@ -163,15 +232,20 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
    * @param envId
    * @param buildIds
    * @param timestampInMs
+   * @param infraId
+   * @param clusterId
+   * @param pipelineExecutionId
+   * @param lastDeployedAt
    * @return List of buildId and instances
    */
   @Override
   public List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs) {
+      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt) {
     AggregationResults<InstancesByBuildId> buildIdAndInstancesAggregationResults =
         instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
-            projectIdentifier, serviceId, envId, buildIds, timestampInMs, InstanceSyncConstants.INSTANCE_LIMIT);
+            projectIdentifier, serviceId, envId, buildIds, timestampInMs, InstanceSyncConstants.INSTANCE_LIMIT, infraId,
+            clusterId, pipelineExecutionId, lastDeployedAt);
     List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
 
     buildIdAndInstancesAggregationResults.getMappedResults().forEach(buildIdAndInstances -> {
@@ -182,6 +256,20 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     });
 
     return buildIdAndInstancesList;
+  }
+
+  @Override
+  public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId) {
+    List<Instance> instancesByBuildId =
+        instanceService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId,
+            infraId, clusterIdentifier, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
+
+    return InstanceDetailsByBuildId.builder()
+        .buildId(buildId)
+        .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId)))
+        .build();
   }
 
   /*

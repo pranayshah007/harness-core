@@ -7,10 +7,12 @@
 
 package io.harness.connector.entities.embedded.githubconnector;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.ng.DbAliases;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "GithubConnectorKeys")
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.githubconnector.GithubConnector")
 @Persistent

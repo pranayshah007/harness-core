@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.HintException;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -361,7 +362,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     Map<String, Object> m =
         new HashMap<>(ImmutableMap.of("a", "<+a>", "b", "<+b>", "c", "<+a> < <+b> == <+<+a> < <+b>>", "d",
             new HashMap<>(ImmutableMap.of("a", "<+a> + <+<+a> + <+e>>", "b", "<+a> + <+<+b> + <+e>>"))));
-    EngineExpressionEvaluator.PartialEvaluateResult result = evaluator.partialResolve(m);
+    EngineExpressionEvaluator.PartialEvaluateResult result =
+        evaluator.partialResolve(m, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     assertThat(result).isNotNull();
     assertThat(result.isPartial()).isFalse();
 

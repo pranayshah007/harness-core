@@ -12,7 +12,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
@@ -26,12 +25,12 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
+import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
-import io.harness.cdng.pipeline.PipelineInfrastructure.PipelineInfrastructureKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -48,6 +47,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
@@ -64,7 +64,6 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -88,9 +87,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -112,7 +109,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     // Adds the strategy field as dependency if present
-    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stepElement.getUuid(),
+        stepElement.getIdentifier(), stepElement.getName(), dependenciesNodeMap, metadataMap,
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
     // We are swapping the uuid with strategy node if present.
     PlanNode stepPlanNode =
         PlanNode.builder()
@@ -137,6 +136,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                     .parameters(
                         AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
                     .build())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
     // Add a dependency of strategy if present
@@ -381,6 +381,19 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
+        case PROCEED_WITH_DEFAULT_VALUES:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                      ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                  .build());
+          break;
+        case PIPELINE_ROLLBACK:
+          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .build());
+          break;
         default:
           Switch.unhandled(actionType);
       }
@@ -424,6 +437,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
         RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
     return rollbackStrategyStringMap;
   }
 
@@ -443,61 +458,18 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     return stepFqn;
   }
 
-  protected List<YamlNode> findStepsBeforeCurrentStep(YamlField currentStep, Predicate<YamlNode> filter) {
-    YamlNode stages = YamlUtils.findParentNode(currentStep.getNode(), YAMLFieldNameConstants.STAGES);
-    YamlNode currentStage = YamlUtils.findParentNode(currentStep.getNode(), STAGE);
-    if (stages == null || currentStage == null) {
-      return Collections.emptyList();
-    }
-
-    List<YamlNode> steps = new ArrayList<>();
-    String currentStageIdentifier = currentStage.getIdentifier();
-
-    if (isEmpty(stages.asArray())) {
-      return Collections.emptyList();
-    }
-
-    if (stages.asArray().get(0).getField(PARALLEL) != null) {
-      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
-      for (YamlNode stageNode : parallelStages.asArray()) {
-        YamlNode stage = stageNode.getField(STAGE).getNode();
-        if (stage == null) {
-          continue;
-        }
-
-        steps.addAll(findExecutionStepsFromStage(stage, filter));
-        steps.addAll(findProvisionerStepsFromStage(stage, filter));
-
-        if (currentStageIdentifier.equals(stage.getIdentifier())) {
-          break;
-        }
-      }
-    } else {
-      for (YamlNode stageNode : stages.asArray()) {
-        YamlNode stage = stageNode.getField(STAGE).getNode();
-        if (stage == null) {
-          continue;
-        }
-
-        steps.addAll(findExecutionStepsFromStage(stage, filter));
-        steps.addAll(findProvisionerStepsFromStage(stage, filter));
-
-        if (currentStageIdentifier.equals(stage.getIdentifier())) {
-          break;
-        }
-      }
-    }
-
-    return steps;
-  }
-
   private String getStepFqnFromStepGroup(YamlNode stepGroup, String stepNodeType) {
     String stepFqn = null;
     List<YamlNode> stepsInsideStepGroup = stepGroup.getField(STEPS).getNode().asArray();
     for (YamlNode stepsNodeInsideStepGroup : stepsInsideStepGroup) {
       YamlNode parallelStepNode = getParallelStep(stepsNodeInsideStepGroup);
-      stepFqn = parallelStepNode != null ? getStepFqnFromParallelNode(parallelStepNode, stepNodeType)
-                                         : getFqnFromStepNode(stepsNodeInsideStepGroup, stepNodeType);
+      if (parallelStepNode != null) {
+        stepFqn = getStepFqnFromParallelNode(parallelStepNode, stepNodeType);
+      } else {
+        YamlNode stepGroupInsideStepGroup = getStepGroup(stepsNodeInsideStepGroup);
+        stepFqn = stepGroupInsideStepGroup != null ? getStepFqnFromStepGroup(stepGroupInsideStepGroup, stepNodeType)
+                                                   : getFqnFromStepNode(stepsNodeInsideStepGroup, stepNodeType);
+      }
       if (stepFqn != null) {
         return stepFqn;
       }
@@ -516,7 +488,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     String stepFqn = null;
     List<YamlNode> stepsInParallelNode = parallelStepNode.asArray();
     for (YamlNode stepInParallelNode : stepsInParallelNode) {
-      stepFqn = getFqnFromStepNode(stepInParallelNode, stepNodeType);
+      YamlNode stepGroupInsideParallelNode = getStepGroup(stepInParallelNode);
+      stepFqn = stepGroupInsideParallelNode != null ? getStepFqnFromStepGroup(stepGroupInsideParallelNode, stepNodeType)
+                                                    : getFqnFromStepNode(stepInParallelNode, stepNodeType);
       if (stepFqn != null) {
         return stepFqn;
       }
@@ -528,7 +502,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   private String getFqnFromStepNode(YamlNode stepsNode, String stepNodeType) {
     YamlNode stepNode = stepsNode.getField(STEP).getNode();
     if (stepNodeType.equals(stepNode.getType())) {
-      return YamlUtils.getFullyQualifiedName(stepNode);
+      return YamlUtils.getFullyQualifiedName(stepNode, true);
     }
 
     return null;
@@ -547,81 +521,6 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       return stepsNode.getField(PARALLEL).getNode();
     } catch (Exception ex) {
       return null;
-    }
-  }
-
-  private List<YamlNode> findExecutionStepsFromStage(YamlNode stageNode, Predicate<YamlNode> filter) {
-    Optional<YamlField> stepsField = Optional.ofNullable(stageNode.getField(SPEC))
-                                         .map(specField -> specField.getNode().getField(EXECUTION))
-                                         .map(executionField -> executionField.getNode().getField(STEPS));
-
-    return stepsField.map(yamlField -> findStepNodesFromStepsField(yamlField, filter)).orElse(Collections.emptyList());
-  }
-
-  private List<YamlNode> findProvisionerStepsFromStage(YamlNode stageNode, Predicate<YamlNode> filter) {
-    Optional<YamlField> stepsField =
-        Optional.ofNullable(stageNode.getField(SPEC))
-            .map(specField -> specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE))
-            .map(YamlField::getNode)
-            .flatMap(infraNode -> {
-              if (infraNode.getField(PipelineInfrastructureKeys.useFromStage) != null) {
-                return Optional.empty();
-              }
-
-              return Optional.ofNullable(infraNode.getField(PipelineInfrastructureKeys.infrastructureDefinition));
-            })
-            .map(infraDefField -> infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER))
-            .map(provisionerField -> provisionerField.getNode().getField(STEPS));
-
-    return stepsField.map(yamlField -> findStepNodesFromStepsField(yamlField, filter)).orElse(Collections.emptyList());
-  }
-
-  private List<YamlNode> findStepNodesFromStepsField(YamlField stepsField, Predicate<YamlNode> filter) {
-    List<YamlNode> steps = new ArrayList<>();
-    for (YamlNode stepNode : stepsField.getNode().asArray()) {
-      YamlNode stepGroupNode = getStepGroup(stepNode);
-      if (stepGroupNode != null) {
-        addStepsFromStepGroup(stepGroupNode, filter, steps);
-      } else {
-        addStepsFromParallelOrInlineStepNode(stepNode, filter, steps);
-      }
-    }
-
-    return steps;
-  }
-
-  private void addStepsFromStepGroup(YamlNode stepGroupNode, Predicate<YamlNode> filter, List<YamlNode> result) {
-    YamlField groupStepsField = stepGroupNode.getField(STEPS);
-    if (groupStepsField == null) {
-      return;
-    }
-
-    for (YamlNode stepNode : groupStepsField.getNode().asArray()) {
-      addStepsFromParallelOrInlineStepNode(stepNode, filter, result);
-    }
-  }
-
-  private void addStepsFromParallelOrInlineStepNode(
-      YamlNode stepNode, Predicate<YamlNode> filter, List<YamlNode> result) {
-    YamlNode parallelStepNode = getParallelStep(stepNode);
-    if (parallelStepNode != null) {
-      for (YamlNode stepInParallelNode : parallelStepNode.asArray()) {
-        addStepsFromStepNode(stepInParallelNode, filter, result);
-      }
-      return;
-    }
-
-    addStepsFromStepNode(stepNode, filter, result);
-  }
-
-  private void addStepsFromStepNode(YamlNode stepNode, Predicate<YamlNode> filter, List<YamlNode> result) {
-    YamlField stepNodeField = stepNode.getField(STEP);
-    if (stepNodeField == null) {
-      return;
-    }
-
-    if (filter.test(stepNodeField.getNode())) {
-      result.add(stepNodeField.getNode());
     }
   }
 }

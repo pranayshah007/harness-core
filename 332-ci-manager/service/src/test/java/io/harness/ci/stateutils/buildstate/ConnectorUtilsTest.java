@@ -9,6 +9,7 @@ package io.harness.ci.stateutils.buildstate;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
@@ -38,6 +39,7 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsSpecDTO;
@@ -89,6 +91,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   private ConnectorDTO azureRepoConnectorDto;
   private ConnectorDTO gitHubConnectorDto;
   private ConnectorDTO dockerConnectorDto;
+  private ConnectorDTO azureConnectorDto;
   private ConnectorDTO k8sConnectorDto;
   private ConnectorDTO k8sConnectorFromDelegate;
   private ConnectorDTO awsCodeCommitConnectorDto;
@@ -122,6 +125,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     k8sConnectorDto = ciExecutionPlanTestHelper.getK8sConnectorDTO();
     k8sConnectorFromDelegate = ciExecutionPlanTestHelper.getK8sConnectorFromDelegateDTO();
     awsCodeCommitConnectorDto = ciExecutionPlanTestHelper.getAwsCodeCommitConnectorDTO();
+    azureConnectorDto = ciExecutionPlanTestHelper.getAzureConnectorDTO();
     azureRepoConnectorDto = ciExecutionPlanTestHelper.getAzureRepoConnectorDTO();
   }
 
@@ -175,6 +179,31 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     verify(connectorResourceClient, times(1)).get(eq(connectorId02), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
     verify(secretManagerClientService, times(1))
         .getEncryptionDetails(eq(ngAccess), any(DockerAuthCredentialsDTO.class));
+  }
+
+  @Test
+  @Owner(developers = AMAN)
+  @Category(UnitTests.class)
+  public void testAzureConnector() throws IOException {
+    Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
+    ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(azureConnectorDto));
+    when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
+
+    when(connectorResourceClient.get(eq(connectorId02), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID)))
+        .thenReturn(getConnectorResourceCall);
+    when(secretManagerClientService.getEncryptionDetails(eq(ngAccess), any()))
+        .thenReturn(Collections.singletonList(EncryptedDataDetail.builder().build()));
+
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorId02);
+    assertThat(connectorDetails.getConnectorConfig())
+        .isEqualTo(azureConnectorDto.getConnectorInfo().getConnectorConfig());
+    assertThat(connectorDetails.getConnectorType()).isEqualTo(azureConnectorDto.getConnectorInfo().getConnectorType());
+    assertThat(connectorDetails.getIdentifier()).isEqualTo(azureConnectorDto.getConnectorInfo().getIdentifier());
+    assertThat(connectorDetails.getOrgIdentifier()).isEqualTo(azureConnectorDto.getConnectorInfo().getOrgIdentifier());
+    assertThat(connectorDetails.getProjectIdentifier())
+        .isEqualTo(azureConnectorDto.getConnectorInfo().getProjectIdentifier());
+    verify(connectorResourceClient, times(1)).get(eq(connectorId02), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
+    verify(secretManagerClientService, times(1)).getEncryptionDetails(eq(ngAccess), any(AzureAuthCredentialDTO.class));
   }
 
   @Test

@@ -397,3 +397,123 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: AZURE_CREATE_ARM_RESOURCE
+    description: The restriction on Azure ARM Resource creation step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_CREATE_BP_RESOURCE
+    description: The restriction on Azure BP Resource creation step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_ROLLBACK_ARM_RESOURCE
+    description: The restriction on Azure Rollback ARM Resources
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: SHELL_SCRIPT_PROVISION
+    description: The restriction Shell Script Provision step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_PLAN
+    description: The restriction on terragrunt plan step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_APPLY
+    description: The restriction on terragrunt apply step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_DESTROY
+    description: The restriction on terragrunt destroy step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_ROLLBACK
+    description: The restriction on terragrunt rollback step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true

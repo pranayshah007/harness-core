@@ -8,10 +8,12 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +24,7 @@ import software.wings.beans.WinRmCommandParameter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Bytes;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -35,6 +38,11 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class WinRmExecutorHelper {
   private static final int SPLITLISTOFCOMMANDSBY = 20;
+  public static final int PARTITION_SIZE_IN_BYTES = 6 * 1024; // 6 KB
+
+  private static final String HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX = "\\harness-encoded-";
+  private static final String HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX = "\\harness-executable-";
+  private static final String WINDOWS_TEMPFILE_LOCATION = "%TEMP%";
 
   /**
    * To construct the powershell script for running on target windows host.
@@ -77,6 +85,43 @@ public class WinRmExecutorHelper {
       commandList.add(format(appendPSInvokeCommandtoCommandString, psScriptFile, commandString + "`r`n"));
     }
     return Lists.partition(commandList, SPLITLISTOFCOMMANDSBY);
+  }
+
+  public static List<String> splitCommandForCopyingToRemoteFile(
+      String command, String encodedScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
+    command = "$ErrorActionPreference='Stop'\n" + command;
+    String base64Command = encodeBase64(command.getBytes(StandardCharsets.UTF_8));
+    // write commands to a file and then execute the file
+    String commandParametersString = buildCommandParameters(commandParameters);
+
+    List<List<Byte>> partitions =
+        Lists.partition(Bytes.asList(base64Command.getBytes(StandardCharsets.UTF_8)), PARTITION_SIZE_IN_BYTES);
+    List<String> commandList = new ArrayList<>();
+    for (List<Byte> partition : partitions) {
+      String appendTextToFileCommand = powershell + " Invoke-Command " + commandParametersString
+          + " -command {[IO.File]::AppendAllText(\\\"" + encodedScriptFile + "\\\", \\\""
+          + new String(Bytes.toArray(partition)) + "\\\" ) }";
+
+      commandList.add(appendTextToFileCommand);
+    }
+    return commandList;
+  }
+
+  public static String prepareCommandForCopyingToRemoteFile(String encodedScriptFile, String psExecutableFile,
+      String powershell, List<WinRmCommandParameter> commandParameters, String scriptExecutionFile) {
+    // write commands to a file and then execute the file
+    String commandParametersString = buildCommandParameters(commandParameters);
+
+    return powershell + " Invoke-Command " + commandParametersString + " -command {[IO.File]::AppendAllText(\\\""
+        + psExecutableFile + "\\\", \\\""
+        + "`$encodedScriptFile = [Environment]::ExpandEnvironmentVariables(`\\\"" + encodedScriptFile + "`\\\");`n"
+        + "`$scriptExecutionFile = [Environment]::ExpandEnvironmentVariables(`\\\"" + scriptExecutionFile + "`\\\");`n"
+        + "`$encoded = get-content `$encodedScriptFile`n"
+        + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
+        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}"
+        + "\\\" ) }";
   }
 
   private static String buildCommandParameters(List<WinRmCommandParameter> commandParameters) {
@@ -182,5 +227,17 @@ public class WinRmExecutorHelper {
     } catch (Exception e) {
       log.error("Exception while trying to remove file {} {}", file, e);
     }
+  }
+
+  public static String getEncodedScriptFile(String workingDir, String suffix) {
+    return isEmpty(workingDir)
+        ? WINDOWS_TEMPFILE_LOCATION + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10)
+        : workingDir + HARNESS_ENCODED_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10);
+  }
+
+  public static String executablePSFilePath(String workingDir, String suffix) {
+    return isEmpty(workingDir)
+        ? WINDOWS_TEMPFILE_LOCATION + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + randomAlphanumeric(10) + ".ps1"
+        : workingDir + HARNESS_EXECUTABLE_SCRIPT_FILENAME_PREFIX + suffix + "-" + randomAlphanumeric(10) + ".ps1";
   }
 }

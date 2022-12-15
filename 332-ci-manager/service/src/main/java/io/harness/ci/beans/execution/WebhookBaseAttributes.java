@@ -31,4 +31,5 @@ public class WebhookBaseAttributes {
   private String authorAvatar;
   private String sender;
   private String action;
+  private String mergeSha;
 }

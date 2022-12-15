@@ -9,9 +9,10 @@ package io.harness.perpetualtask.internal;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_ASSIGNED;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_INVALID;
+import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
-import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 
 import io.harness.delegate.task.DelegateLogContext;
@@ -38,7 +39,7 @@ import org.mongodb.morphia.query.UpdateResults;
 @Slf4j
 public class PerpetualTaskRecordDao {
   private final HPersistence persistence;
-  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 8;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
   private static final int BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE = 20;
 
   @Inject
@@ -64,11 +65,10 @@ public class PerpetualTaskRecordDao {
   }
 
   public void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount) {
-    Query<PerpetualTaskRecord> query =
-        persistence.createQuery(PerpetualTaskRecord.class)
-            .filter(PerpetualTaskRecordKeys.uuid, taskId)
-            .field(PerpetualTaskRecordKeys.state)
-            .in(asList(PerpetualTaskState.TASK_UNASSIGNED, PerpetualTaskState.TASK_TO_REBALANCE));
+    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
+                                           .filter(PerpetualTaskRecordKeys.uuid, taskId)
+                                           .field(PerpetualTaskRecordKeys.state)
+                                           .in(asList(PerpetualTaskState.TASK_UNASSIGNED, TASK_NON_ASSIGNABLE));
     UpdateOperations<PerpetualTaskRecord> updateOperations =
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.unassignedReason, reason)
@@ -79,6 +79,41 @@ public class PerpetualTaskRecordDao {
                 System.currentTimeMillis()
                     + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(
                         Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))));
+    persistence.update(query, updateOperations);
+  }
+
+  public void updateTaskStateNonAssignableReason(
+      String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount, PerpetualTaskState perpetualTaskState) {
+    Query<PerpetualTaskRecord> query =
+        persistence.createQuery(PerpetualTaskRecord.class)
+            .filter(PerpetualTaskRecordKeys.uuid, taskId)
+            .field(PerpetualTaskRecordKeys.state)
+            .in(asList(PerpetualTaskState.TASK_UNASSIGNED, TASK_NON_ASSIGNABLE, TASK_ASSIGNED));
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.unassignedReason, reason)
+            .set(PerpetualTaskRecordKeys.state, perpetualTaskState)
+            .set(PerpetualTaskRecordKeys.assignTryCount,
+                Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))
+            .set(PerpetualTaskRecordKeys.assignAfterMs,
+                System.currentTimeMillis()
+                    + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(
+                        Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))));
+    persistence.update(query, updateOperations);
+  }
+
+  public void updateTaskNonAssignableToAssignable(String accountId) {
+    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
+                                           .field(PerpetualTaskRecordKeys.accountId)
+                                           .equal(accountId)
+                                           .field(PerpetualTaskRecordKeys.state)
+                                           .equal(TASK_NON_ASSIGNABLE);
+
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED)
+            .unset(PerpetualTaskRecordKeys.unassignedReason)
+            .unset(PerpetualTaskRecordKeys.assignTryCount);
     persistence.update(query, updateOperations);
   }
 
@@ -104,7 +139,8 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.delegateId, "")
             .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
-            .unset(PerpetualTaskRecordKeys.unassignedReason);
+            .unset(PerpetualTaskRecordKeys.unassignedReason)
+            .unset(PerpetualTaskRecordKeys.assignTryCount);
 
     if (taskExecutionBundle != null) {
       updateOperations.set(PerpetualTaskRecordKeys.task_parameters, taskExecutionBundle.toByteArray());
@@ -169,6 +205,8 @@ public class PerpetualTaskRecordDao {
 
   public List<PerpetualTaskRecord> listAssignedTasks(String delegateId, String accountId) {
     return persistence.createQuery(PerpetualTaskRecord.class)
+        .field(PerpetualTaskRecordKeys.state)
+        .equal(TASK_ASSIGNED)
         .field(PerpetualTaskRecordKeys.accountId)
         .equal(accountId)
         .field(PerpetualTaskRecordKeys.delegateId)
@@ -255,6 +293,17 @@ public class PerpetualTaskRecordDao {
     return update.getUpdatedCount() > 0;
   }
 
+  public void saveTaskFailureExceptionAndCount(String taskId, String exceptionMsg, long failedExecutionCount) {
+    Query<PerpetualTaskRecord> query =
+        persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
+
+    UpdateOperations<PerpetualTaskRecord> taskUpdateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.exception, exceptionMsg)
+            .set(PerpetualTaskRecordKeys.failedExecutionCount, failedExecutionCount);
+    persistence.update(query, taskUpdateOperations);
+  }
+
   public void markAllTasksOnDelegateForReassignment(String accountId, String delegateId) {
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)
@@ -262,9 +311,19 @@ public class PerpetualTaskRecordDao {
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
-            .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE)
-            .set(PerpetualTaskRecordKeys.rebalanceIteration, currentTimeMillis());
+            .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED);
+    persistence.update(query, updateOperations);
+  }
 
+  public void updateInvalidStateWithExceptions(
+      PerpetualTaskRecord perpetualTaskRecord, PerpetualTaskUnassignedReason reason, String exception) {
+    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
+                                           .filter(PerpetualTaskRecordKeys.uuid, perpetualTaskRecord.getUuid());
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.unassignedReason, reason)
+            .set(PerpetualTaskRecordKeys.state, TASK_INVALID)
+            .set(PerpetualTaskRecordKeys.exception, exception);
     persistence.update(query, updateOperations);
   }
 }

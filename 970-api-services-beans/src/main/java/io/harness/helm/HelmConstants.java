@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 @OwnedBy(CDP)
 public final class HelmConstants {
   public static final String HELM_PATH_PLACEHOLDER = "${HELM_PATH}";
-
   public static final String HELM_NAMESPACE_PLACEHOLDER_REGEX = "\\$\\{NAMESPACE}";
   public static final String HELM_NAMESPACE_PLACEHOLDER = "${NAMESPACE}";
   public static final String HELM_DOCKER_IMAGE_NAME_PLACEHOLDER = "${DOCKER_IMAGE_NAME}";
@@ -34,7 +33,9 @@ public final class HelmConstants {
   public static final String USERNAME = "${USERNAME}";
   public static final String PASSWORD = "${PASSWORD}";
   public static final String HELM_HOME_PATH_FLAG = "${HELM_HOME_PATH_FLAG}";
-  public static final String WORKING_DIR_BASE = "./repository/helm-values/";
+  public static final String HELM_FETCH_OLD_WORKING_DIR_BASE = "./repository/helm-values/" + REPO_NAME;
+  public static final String WORKING_DIR_BASE = "./repository/helm/source/" + REPO_NAME;
+  public static final String HELM_GCP_CREDS_PATH = "./repository/helm/gcpKeyFiles/${ACTIVITY_ID}";
   public static final String VALUES_YAML = "values.yaml";
   public static final String CHARTS_YAML_KEY = "Chart.yaml";
   public static final String CHART_VERSION = "${CHART_VERSION}";
@@ -87,6 +88,7 @@ public final class HelmConstants {
   public static final class V3Commands {
     public static final String HELM_LIST_RELEASE_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} list ${COMMAND_FLAGS} --filter ^${RELEASE_NAME}$";
+
     public static final String HELM_ROLLBACK_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} rollback  ${RELEASE} ${REVISION} ${COMMAND_FLAGS}";
     public static final String HELM_INSTALL_COMMAND_TEMPLATE =
@@ -96,7 +98,7 @@ public final class HelmConstants {
     public static final String HELM_RELEASE_HIST_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} hist ${RELEASE_NAME} ${COMMAND_FLAGS}  ${FLAGS}";
     public static final String HELM_ADD_REPO_COMMAND_TEMPLATE = "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL}";
-    public static final String HELM_REPO_UPDATE_COMMAND_TEMPLATE = "${HELM_PATH} repo update";
+    public static final String HELM_REPO_UPDATE_COMMAND_TEMPLATE = "${HELM_PATH} repo update ${COMMAND_FLAGS}";
     public static final String HELM_REPO_LIST_COMMAND_TEMPLATE = "${HELM_PATH} repo list";
     public static final String HELM_DELETE_RELEASE_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} uninstall ${RELEASE_NAME} ${COMMAND_FLAGS}";
@@ -104,9 +106,9 @@ public final class HelmConstants {
         "${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_SEARCH_COMMAND_TEMPLATE = "${HELM_PATH} search repo ${CHART_INFO}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM =
-        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL}";
+        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${COMMAND_FLAGS}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_HTTP =
-        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${USERNAME} ${PASSWORD}";
+        "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${USERNAME} ${PASSWORD} ${COMMAND_FLAGS}";
     public static final String HELM_FETCH_COMMAND =
         "${HELM_PATH} pull ${REPO_NAME}/${CHART_NAME} ${COMMAND_FLAGS} --untar ${CHART_VERSION}";
     public static final String HELM_REPO_REMOVE_COMMAND = "${HELM_PATH} repo remove ${REPO_NAME}";
@@ -129,7 +131,7 @@ public final class HelmConstants {
     }
   }
 
-  public static final long DEFAULT_HELM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
+  public static final long DEFAULT_HELM_COMMAND_TIMEOUT = TimeUnit.MINUTES.toMillis(120);
   public static final long DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(60);
   public static final String HELM_RELEASE_LABEL = "release";
   public static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";

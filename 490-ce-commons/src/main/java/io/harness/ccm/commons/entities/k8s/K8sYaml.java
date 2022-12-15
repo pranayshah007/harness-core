@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdUniqueIndex;

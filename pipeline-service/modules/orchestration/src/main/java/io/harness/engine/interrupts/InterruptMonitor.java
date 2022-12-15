@@ -41,10 +41,13 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.mapping.model.MappingInstantiationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.util.CloseableIterator;
 
 /**
  * This monitor runs and try to clean up any stuck executions there are many edge cases which are not handled right now
@@ -110,30 +114,35 @@ public class InterruptMonitor implements Handler<Interrupt> {
       // The null check is for really old plans which are cleared by mongo
       PlanExecution planExecution = null;
       try {
-        planExecution = planExecutionService.get(interrupt.getPlanExecutionId());
+        planExecution = planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId());
       } catch (Exception ex) {
         // Just ignoring this exception this happens again for old executions where the plan execution have been removed
         // from database
       }
-      if (planExecution == null || StatusUtils.isFinalStatus(planExecution.getStatus())) {
+      if (planExecution == null) {
         log.info("Interrupt active but plan finished, Closing the interrupt");
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, true);
         return;
       }
 
-      List<NodeExecution> nodeExecutions =
-          nodeExecutionService.findAllNodeExecutionsTrimmed(interrupt.getPlanExecutionId());
+      List<NodeExecution> nodeExecutions = new LinkedList<>();
+      try (
+          CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+              interrupt.getPlanExecutionId(), NodeProjectionUtils.fieldsForDiscontinuingNodes)) {
+        while (iterator.hasNext()) {
+          nodeExecutions.add(iterator.next());
+        }
+      }
       Set<NodeExecution> leaves = findAllLeaves(nodeExecutions);
 
       // There are no leaves in the execution then something weird happened
       // Happen in dev environments when you abruptly stop the services
       // Will rarely happen in prod env, but can happen
       // TODO: Revisit this by introducing the level count in node execution
-      if (isEmpty(leaves)) {
+      if (isEmpty(leaves) && !StatusUtils.isFinalStatus(planExecution.getStatus())) {
         log.error("No Leaves found something really wrong happened here. Lets check this execution {}",
             interrupt.getPlanExecutionId());
-        forceTerminate(
-            interrupt, nodeExecutions, nodeExecutions.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
+        discontinueAllRunningNodeExecutionsAndPlanExecution(interrupt, nodeExecutions);
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY, true);
         return;
       }
@@ -165,6 +174,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
       log.info("Interrupt processing stuck. Taking forceful action");
       forceTerminate(
           interrupt, nodeExecutions, leaves.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
+      interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, true);
     }
   }
 
@@ -172,7 +182,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
     Set<NodeExecution> parents = findParentsForChildren(nodeExecutions, children);
     if (EmptyPredicate.isEmpty(parents)) {
       // If running parents are empty that means we have reached to the top and we did not find any running returning
-      // This means all the nodes are in correct stuses except the plan Execution
+      // This means all the nodes are in correct statuses except the plan Execution
       Status status = planExecutionService.calculateStatus(interrupt.getPlanExecutionId());
       PlanExecution planExecution =
           planExecutionService.updateStatusForceful(interrupt.getPlanExecutionId(), status, null, true);
@@ -195,15 +205,35 @@ public class InterruptMonitor implements Handler<Interrupt> {
     }
 
     // Terminate parents here
-    for (NodeExecution parent : runningParents) {
-      NodeExecution discontinuingParent = markDiscontinuingIfRequired(interrupt, parent);
-      if (discontinuingParent == null) {
+    discontinueNodeExecutions(interrupt, runningParents);
+  }
+
+  private void discontinueAllRunningNodeExecutionsAndPlanExecution(
+      Interrupt interrupt, List<NodeExecution> nodeExecutions) {
+    Set<NodeExecution> runningNodeExecutions = nodeExecutions.stream()
+                                                   .filter(ne -> !StatusUtils.finalStatuses().contains(ne.getStatus()))
+                                                   .collect(Collectors.toSet());
+    discontinueNodeExecutions(interrupt, runningNodeExecutions);
+    Status status = planExecutionService.calculateStatus(interrupt.getPlanExecutionId());
+    PlanExecution planExecution =
+        planExecutionService.updateStatusForceful(interrupt.getPlanExecutionId(), status, null, true);
+    if (planExecution == null) {
+      log.error("Failed to update PlanExecution {} with Status {}", interrupt.getPlanExecutionId(), status);
+    } else {
+      log.info("Only plan Status was not correct. Updated plan status to {}", planExecution.getStatus());
+    }
+  }
+
+  private void discontinueNodeExecutions(Interrupt interrupt, Collection<NodeExecution> nodeExecutions) {
+    for (NodeExecution runningNodeExecution : nodeExecutions) {
+      NodeExecution discontinuingNode = markDiscontinuingIfRequired(runningNodeExecution);
+      if (discontinuingNode == null) {
         // TODO: Think more cases can this happen if yes what we can do to improve
         log.error("Unable to unblock stuck execution InterruptId :{} NodeExecutionId: {}", interrupt.getUuid(),
-            parent.getUuid());
+            runningNodeExecution.getUuid());
         return;
       }
-      terminateParent(interrupt, discontinuingParent);
+      terminateParent(interrupt, discontinuingNode);
     }
   }
 
@@ -221,7 +251,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
   }
 
   @Nullable
-  private NodeExecution markDiscontinuingIfRequired(Interrupt interrupt, NodeExecution parent) {
+  private NodeExecution markDiscontinuingIfRequired(NodeExecution parent) {
     NodeExecution discontinuingParent = parent;
     if (parent.getStatus() != Status.DISCONTINUING) {
       discontinuingParent = nodeExecutionService.updateStatusWithOps(

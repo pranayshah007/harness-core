@@ -21,16 +21,23 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
+import retrofit2.http.Header;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -39,13 +46,21 @@ public interface TemplateResourceClient {
   String TEMPLATE_REFRESH_ENDPOINT = "refresh-template/";
 
   // list templates
+  @GET(TEMPLATE_ENDPOINT + "{templateIdentifier}")
+  Call<ResponseDTO<TemplateResponseDTO>> get(@Path("templateIdentifier") String templateIdentifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Query(NGCommonEntityConstants.DELETED_KEY) boolean deleted);
+
   @POST(TEMPLATE_ENDPOINT + "list")
   Call<ResponseDTO<PageResponse<TemplateSummaryResponseDTO>>> listTemplates(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = "templateListType") TemplateListType templateListType,
-      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
+      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGCommonEntityConstants.SIZE) int size,
       @Body TemplateFilterPropertiesDTO filterProperties);
 
   @POST(TEMPLATE_ENDPOINT + "applyTemplates")
@@ -56,7 +71,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
-      @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
 
   @POST(TEMPLATE_ENDPOINT + "v2/applyTemplates")
   Call<ResponseDTO<TemplateMergeResponseDTO>> applyTemplatesOnGivenYamlV2(
@@ -66,8 +81,12 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
-      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_URL) String parentRepoUrl,
-      @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
+      @Header(value = "Load-From-Cache") String loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
 
   @POST(TEMPLATE_ENDPOINT + "templateReferences")
   Call<ResponseDTO<List<EntityDetailProtoDTO>>> getTemplateReferenceForGivenYaml(
@@ -88,6 +107,11 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "validate-template-inputs/internal")
@@ -98,6 +122,11 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "refresh-all/internal")
@@ -108,5 +137,18 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
       @Body RefreshRequestDTO refreshRequest);
+
+  @Headers({"Content-Type: application/json", "Accept: application/json"})
+  @POST("templates")
+  Call<ResponseDTO<YamlFullRefreshResponseDTO>> create(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body @NotNull RequestBody templateYaml,
+      @Query(value = "setDefaultTemplate") boolean setDefaultTemplate, @Query(value = "comments") String comments);
 }

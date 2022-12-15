@@ -36,11 +36,17 @@ public class AwsCredentialDTO {
   @Valid
   AwsCredentialSpecDTO config;
 
+  @JsonProperty("region") String testRegion;
+
+  // this is only for connection validation. This testRegion should not be used in other places. If we have some use
+  // case of region, We have to take it separately but not use this one.
+
   @Builder
-  public AwsCredentialDTO(
-      AwsCredentialType awsCredentialType, AwsCredentialSpecDTO config, CrossAccountAccessDTO crossAccountAccess) {
+  public AwsCredentialDTO(AwsCredentialType awsCredentialType, AwsCredentialSpecDTO config,
+      CrossAccountAccessDTO crossAccountAccess, String testRegion) {
     this.awsCredentialType = awsCredentialType;
     this.config = config;
     this.crossAccountAccess = crossAccountAccess;
+    this.testRegion = testRegion;
   }
 }

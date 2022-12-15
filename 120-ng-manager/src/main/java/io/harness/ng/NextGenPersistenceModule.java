@@ -9,24 +9,35 @@ package io.harness.ng;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.persistance.GitSyncablePersistenceConfig;
+import io.harness.mongo.MongoConfig;
 import io.harness.ng.accesscontrol.migrations.AccessControlMigrationPersistenceConfig;
 import io.harness.notification.NotificationChannelPersistenceConfig;
+import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceConfig;
 import io.harness.springdata.SpringPersistenceModule;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import java.util.List;
+import org.springframework.data.mongodb.MongoTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.PL)
 public class NextGenPersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    List<Class<?>> resultClasses =
-        Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class, NotificationChannelPersistenceConfig.class,
-            AccessControlMigrationPersistenceConfig.class, GitSyncablePersistenceConfig.class));
+    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class,
+        NotificationChannelPersistenceConfig.class, AccessControlMigrationPersistenceConfig.class));
     Class<?>[] resultClassesArray = new Class<?>[ resultClasses.size() ];
     return resultClasses.toArray(resultClassesArray);
+  }
+
+  @Provides
+  @Singleton
+  protected TransactionTemplate getTransactionTemplate(
+      MongoTransactionManager mongoTransactionManager, MongoConfig mongoConfig) {
+    return new HTransactionTemplate(mongoTransactionManager, mongoConfig.isTransactionsEnabled());
   }
 }
