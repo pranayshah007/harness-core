@@ -42,6 +42,7 @@ import io.harness.migrations.timescaledb.AddSystemCostBillingData;
 import io.harness.migrations.timescaledb.AddingToCVDeploymentMetrics;
 import io.harness.migrations.timescaledb.AlterCEUtilizationDataTables;
 import io.harness.migrations.timescaledb.BaseTimeScaleDBMigration;
+import io.harness.migrations.timescaledb.CeRecommendationTableAddJiraColumn;
 import io.harness.migrations.timescaledb.ChangeChunkSizeForDeploymentsTable;
 import io.harness.migrations.timescaledb.ChangeToTimeStampTZ;
 import io.harness.migrations.timescaledb.CreateAccountTables;
@@ -173,6 +174,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(75, ChangeChunkSizeForDeploymentsTable.class))
         .add(Pair.of(76, BaseTimeScaleDBMigration.class))
         .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
+        .add(Pair.of(78, CeRecommendationTableAddJiraColumn.class))
         .build();
   }
 }
