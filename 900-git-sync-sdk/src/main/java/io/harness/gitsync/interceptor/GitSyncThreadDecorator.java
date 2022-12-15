@@ -14,6 +14,8 @@ import static javax.ws.rs.Priorities.HEADER_DECORATOR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.manage.GlobalContextManager;
@@ -23,6 +25,7 @@ import com.google.common.base.Charsets;
 import com.google.inject.Singleton;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.IllegalCharsetNameException;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -110,7 +113,12 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
     try {
       // browser converts the query param like 'testing/abc' to 'testing%20abc',
       // we use decode to convert the string back to 'testing/abc'
-      return URLDecoder.decode(getRequestParamFromContextWithoutDecoding(key, queryParameters), Charsets.UTF_8.name());
+      String requestParamFromContextWithoutDecoding = getRequestParamFromContextWithoutDecoding(key, queryParameters);
+      if (GitSyncApiConstants.FILE_PATH_KEY.equals(key) && EmptyPredicate.isNotEmpty(requestParamFromContextWithoutDecoding)
+          && requestParamFromContextWithoutDecoding.contains("%")) {
+        throw new InvalidRequestException("Unsupported char '%' present in the filepath: " + requestParamFromContextWithoutDecoding);
+      }
+      return URLDecoder.decode(requestParamFromContextWithoutDecoding, Charsets.UTF_8.name());
     } catch (UnsupportedEncodingException e) {
       log.error("Error in setting request param for {}", key);
     }

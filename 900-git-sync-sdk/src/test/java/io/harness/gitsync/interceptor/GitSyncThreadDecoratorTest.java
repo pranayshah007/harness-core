@@ -9,12 +9,16 @@ package io.harness.gitsync.interceptor;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -25,6 +29,8 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(DX)
 public class GitSyncThreadDecoratorTest extends CategoryTest {
   GitSyncThreadDecorator gitSyncThreadDecorator = new GitSyncThreadDecorator();
+
+  public static final String ERROR_MESSAGE = "Unsupported char '%' present in the filepath: abc%def.yaml";
 
   @Test
   @Owner(developers = ABHINAV)
@@ -45,5 +51,19 @@ public class GitSyncThreadDecoratorTest extends CategoryTest {
     final String new_field =
         gitSyncThreadDecorator.getRequestParamFromContextWithoutDecoding("newField", queryParameters_1);
     assertThat(new_field).isEqualTo("ERR@#$%&!@#$%&()_+GHJ");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testDecorateSpecialChar() {
+    MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
+    queryParameters.add("filePath", "abc%def.yaml");
+
+    Exception exception = assertThrows(InvalidRequestException.class,
+        () -> { gitSyncThreadDecorator.getRequestParamFromContext("filePath", null, queryParameters); });
+    assertEquals(ERROR_MESSAGE, exception.getMessage());
+
+
   }
 }
