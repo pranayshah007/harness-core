@@ -158,5 +158,5 @@ echo "STEP4: INFO: Update jira issues"
 #if [[ "$EXECUTE_NEW_VERSION_CODE" == "true" ]]; then
 #  scripts/jenkins/release-branch-create-versions.sh
 #fi
-scripts/jenkins/release-branch-update-jiras-v2.sh
-scripts/jenkins/release-branch-update-jira_status-v2.sh
+. scripts/jenkins/release-branch-update-jiras-v2.sh
+. scripts/jenkins/release-branch-update-jira_status-v2.sh
