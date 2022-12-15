@@ -29,7 +29,7 @@ public class ScmErrorExplanations {
       + "1. A Pull Request already exists between given branches."
       + "2. The source branch<BRANCH> is up-to-date with the target branch<TARGET_BRANCH>.";
   public static final String FILE_NOT_FOUND =
-      "The requested file path<FILEPATH> doesn't exist in git. Possible reasons can be:\n"
+      "The requested file path<FILEPATH> doesn't exist in BitBucket. Possible reasons can be:\n"
       + "1. The requested file path<FILEPATH> doesn't exist for given branch<BRANCH> and repo<REPO>\n"
       + "2. The given branch<BRANCH> or repo<REPO> is invalid";
   public static final String WRONG_REPO_OR_BRANCH = "The provided branch<BRANCH> or the repo<REPO> are invalid.";
