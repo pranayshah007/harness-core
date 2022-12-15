@@ -74,6 +74,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.RegexFunctor;
 import io.harness.k8s.model.KubernetesAzureConfig;
+import io.harness.k8s.model.KubernetesAzureConfig.KubernetesAzureConfigBuilder;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
@@ -714,7 +715,7 @@ public class AzureAsyncTaskHelper {
   private KubernetesConfig getKubernetesConfig(AzureKubeConfig azureKubeConfig, String namespace,
       AzureAuthenticationType azureAuthenticationType, boolean shouldUseAuthProvider) {
     if (isNotEmpty(azureKubeConfig.getAadToken())) {
-      KubernetesAzureConfig.KubernetesAzureConfigBuilder kubernetesAzureConfigBuilder =
+      KubernetesAzureConfigBuilder kubernetesAzureConfigBuilder =
           KubernetesAzureConfig.builder()
               .clusterName(azureKubeConfig.getClusters().get(0).getName())
               .clusterUser(azureKubeConfig.getUsers().get(0).getName())
