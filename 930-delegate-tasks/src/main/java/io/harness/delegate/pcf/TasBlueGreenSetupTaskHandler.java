@@ -534,7 +534,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       CfBlueGreenSetupRequestNG blueGreenSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       TasApplicationInfo activeApplicationInfo, TasApplicationInfo inActiveApplicationInfo)
       throws PivotalClientApiException {
-    if (isEmpty(inActiveApplicationInfo.getApplicationGuid()) || previousReleases.size() == 1) {
+    if (inActiveApplicationInfo == null || isEmpty(inActiveApplicationInfo.getApplicationGuid()) || previousReleases.size() == 1) {
       return;
     }
     ApplicationSummary inActiveApplication =
