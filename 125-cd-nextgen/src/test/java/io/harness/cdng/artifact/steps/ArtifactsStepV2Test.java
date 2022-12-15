@@ -50,6 +50,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSourc
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
@@ -975,14 +976,14 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                 .projectIdentifier("projectId")
                                 .build();
 
-    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(4);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNotNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId/projectId");
 
     ngAccess = BaseNGAccess.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier("orgId").build();
 
-    abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(3);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId");

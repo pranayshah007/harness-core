@@ -18,7 +18,7 @@ import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.mappers.NexusResourceMapper;
-import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -59,6 +59,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -229,17 +230,14 @@ public class NexusResourceServiceImpl implements NexusResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.NEXUS_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
-            .taskSetupAbstraction(
-                SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(abstractions)
             .taskSelectors(delegateRequest.getNexusConnectorDTO().getDelegateSelectors())
             .build();
     try {
