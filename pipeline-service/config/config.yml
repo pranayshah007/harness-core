@@ -475,8 +475,8 @@ orchestrationRestrictionConfiguration:
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
   planExecutionRestriction:
      free: ${PLAN_EXECUTION_RESTRICTION_FREE:-2}
-     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-1000}
-     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-2000}
+     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-200}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-500}
   #remove below restriction
   pipelineCreationRestriction:
     free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}

@@ -275,34 +275,21 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public long countRunningExecutionsForGivenPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier) {
+    // Uses - accountId_status_idx
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .in(StatusUtils.activeStatuses());
     return mongoTemplate.count(new Query(criteria), PlanExecution.class);
   }
 
   @Override
-  public PlanExecution findNextExecutionToRun(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public PlanExecution findNextExecutionToRunInAccount(String accountId) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
                             .is(accountId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                            .is(orgId)
-                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                            .is(pipelineIdentifier)
                             .and(PlanExecutionKeys.status)
                             .is(Status.QUEUED);
     return mongoTemplate.findOne(

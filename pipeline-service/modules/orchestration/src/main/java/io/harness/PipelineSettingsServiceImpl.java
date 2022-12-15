@@ -38,7 +38,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
 
   private final LoadingCache<String, List<ModuleLicenseDTO>> moduleLicensesCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(1, TimeUnit.DAYS)
+          .expireAfterWrite(30, TimeUnit.MINUTES)
           .build(new CacheLoader<String, List<ModuleLicenseDTO>>() {
             @Override
             public List<ModuleLicenseDTO> load(@NotNull final String accountId) {
@@ -66,26 +66,25 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
   }
 
   @Override
-  public PlanExecutionSettingResponse shouldQueuePlanExecution(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
+  public PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier) {
     try {
       Edition edition = getEdition(accountId);
       switch (edition) {
         case FREE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
-            return shouldQueueInternal(accountId, orgId, projectId, pipelineIdentifier,
+            return shouldQueueInternal(accountId, pipelineIdentifier,
                 orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getFree());
           }
           break;
         case ENTERPRISE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
-            return shouldQueueInternal(accountId, orgId, projectId, pipelineIdentifier,
+            return shouldQueueInternal(accountId, pipelineIdentifier,
                 orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getEnterprise());
           }
           break;
         case TEAM:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
-            return shouldQueueInternal(accountId, orgId, projectId, pipelineIdentifier,
+            return shouldQueueInternal(accountId, pipelineIdentifier,
                 orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getTeam());
           }
           break;
@@ -171,10 +170,9 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     }
   }
 
-  private PlanExecutionSettingResponse shouldQueueInternal(
-      String accountId, String orgId, String projectId, String pipelineIdentifier, long maxCount) {
+  private PlanExecutionSettingResponse shouldQueueInternal(String accountId, String pipelineIdentifier, long maxCount) {
     long runningExecutionsForGivenPipeline =
-        planExecutionService.countRunningExecutionsForGivenPipeline(accountId, orgId, projectId, pipelineIdentifier);
+        planExecutionService.countRunningExecutionsForGivenPipelineInAccount(accountId, pipelineIdentifier);
     if (runningExecutionsForGivenPipeline >= maxCount) {
       return PlanExecutionSettingResponse.builder().shouldQueue(true).useNewFlow(true).build();
     }

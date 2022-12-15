@@ -127,7 +127,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
         .evaluateGovernancePolicies(any(), any(), any(), any(), any(), any());
     doReturn(PlanExecutionSettingResponse.builder().useNewFlow(false).shouldQueue(true).build())
         .when(pipelineSettingsService)
-        .shouldQueuePlanExecution(any(), any(), any(), any());
+        .shouldQueuePlanExecution(any(), any());
     PlanExecution planExecution = executionStrategy.runNode(
         ambiance.build(), plan, PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build());
     assertThat(planExecution.getUuid()).isEqualTo(planExecutionId);
@@ -140,7 +140,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     planExecutionId = generateUuid();
     doReturn(PlanExecutionSettingResponse.builder().useNewFlow(false).shouldQueue(false).build())
         .when(pipelineSettingsService)
-        .shouldQueuePlanExecution(any(), any(), any(), any());
+        .shouldQueuePlanExecution(any(), any());
     planExecution = executionStrategy.runNode(ambiance.setPlanExecutionId(planExecutionId).build(), plan,
         PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build());
     // shouldQueue is false. So executorService will be called to start the execution..
@@ -153,7 +153,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     planExecutionId = generateUuid();
     doReturn(PlanExecutionSettingResponse.builder().useNewFlow(true).shouldQueue(false).build())
         .when(pipelineSettingsService)
-        .shouldQueuePlanExecution(any(), any(), any(), any());
+        .shouldQueuePlanExecution(any(), any());
     planExecution = executionStrategy.runNode(ambiance.setPlanExecutionId(planExecutionId).build(), plan,
         PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build());
     verify(executorService, times(2)).submit(any(Callable.class));
