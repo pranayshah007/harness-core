@@ -7,8 +7,9 @@
 
 package io.harness.cdng.tas;
 
-import static java.util.Objects.isNull;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,11 +26,12 @@ import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
+import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
-import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
-import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -63,13 +65,11 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -111,6 +111,22 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .build();
     }
 
+    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(
+            tasRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+    List<CfServiceData> instanceData = new ArrayList<>();
+    if (tasAppResizeDataOptional.isFound()) {
+      TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
+      if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
+        tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
+          int temp = cfServiceData.getDesiredCount();
+          cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
+          cfServiceData.setPreviousCount(temp);
+          instanceData.add(cfServiceData);
+        });
+      }
+    }
+
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
@@ -128,6 +144,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
+            .instanceData(instanceData)
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -183,7 +200,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     }
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
-            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
@@ -192,8 +209,8 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollbackCommandResponseNG response, Ambiance ambiance) {
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
-            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
-                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     CfRollbackCommandResult cfRollbackCommandResult = response.getCfRollbackCommandResult();
     if (cfRollbackCommandResult == null) {
       log.error("Could not generate server instance info for app resize step");
@@ -202,22 +219,22 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
     if (!isNull(instances)) {
       return instances.stream()
-              .map(instance -> getServerInstance(instance, infrastructureOutcome))
-              .collect(Collectors.toList());
+          .map(instance -> getServerInstance(instance, infrastructureOutcome))
+          .collect(Collectors.toList());
     }
     return new ArrayList<>();
   }
 
   private ServerInstanceInfo getServerInstance(
-          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+      CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
     return TasServerInstanceInfo.builder()
-            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
-            .instanceIndex(instance.getInstanceIndex())
-            .tasApplicationName(instance.getDisplayName())
-            .tasApplicationGuid(instance.getApplicationId())
-            .organization(infrastructureOutcome.getOrganization())
-            .space(infrastructureOutcome.getSpace())
-            .build();
+        .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+        .instanceIndex(instance.getInstanceIndex())
+        .tasApplicationName(instance.getDisplayName())
+        .tasApplicationGuid(instance.getApplicationId())
+        .organization(infrastructureOutcome.getOrganization())
+        .space(infrastructureOutcome.getSpace())
+        .build();
   }
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

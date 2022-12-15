@@ -131,6 +131,18 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .build();
       }
       TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
+      TasBasicAppSetupStepParameters tasBasicAppSetupStepParameters =
+          (TasBasicAppSetupStepParameters) stepParameters.getSpec();
+      Integer desiredCount = 0;
+      if (tasBasicAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
+        if (isNull(response.getCurrentProdInfo())) {
+          desiredCount = 0;
+        } else {
+          desiredCount = response.getCurrentProdInfo().getRunningCount();
+        }
+      } else {
+        desiredCount = tasStepHelper.fetchMaxCountFromManifest(tasExecutionPassThroughData.getPcfManifestsPackage());
+      }
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
           TasSetupDataOutcome.builder()
@@ -138,14 +150,15 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
               .resizeStrategy(ResizeStrategy.DOWNSIZE_OLD_FIRST)
-              .maxCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
+              .maxCount(desiredCount)
               .useAppAutoScalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
-              .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
+              .desiredActualFinalCount(desiredCount)
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .activeApplicationDetails(
-                  isNull(response.getCurrentProdInfo()) ? null : response.getCurrentProdInfo())
+              .activeApplicationDetails(isNull(response.getCurrentProdInfo()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
+              .pcfManifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
+              .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());
       return StepResponse.builder()
@@ -177,10 +190,6 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    Integer maxCount = null;
-    if (tasBasicAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
-      maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
-    }
     List<String> routeMaps =
         tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
             getParameterFieldValue(tasBasicAppSetupStepParameters.getAdditionalRoutes()));
@@ -202,7 +211,6 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
-            .maxCount(maxCount)
             .routeMaps(routeMaps)
             .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
             .build();
@@ -224,7 +232,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)
-        .passThroughData(executionPassThroughData.toBuilder().maxCount(maxCount).build())
+        .passThroughData(executionPassThroughData)
         .build();
   }
 }

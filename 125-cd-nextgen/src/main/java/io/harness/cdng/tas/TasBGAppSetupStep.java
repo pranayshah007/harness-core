@@ -134,6 +134,16 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
       }
       TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
       TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
+      Integer desiredCount = 0;
+      if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
+        if (isNull(response.getActiveApplicationInfo())) {
+          desiredCount = 0;
+        } else {
+          desiredCount = response.getActiveApplicationInfo().getRunningCount();
+        }
+      } else {
+        desiredCount = tasStepHelper.fetchMaxCountFromManifest(tasExecutionPassThroughData.getPcfManifestsPackage());
+      }
 
       List<String> routeMaps = applyVarsYmlSubstitutionIfApplicable(
           tasStepHelper.getRouteMaps(tasExecutionPassThroughData.getPcfManifestsPackage().getManifestYml(),
@@ -146,10 +156,11 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
               .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
               .resizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST)
-              .maxCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
+              .maxCount(desiredCount)
               .useAppAutoScalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
-              .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
+              .desiredActualFinalCount(desiredCount)
+              .pcfManifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
               .newApplicationDetails(response.getNewApplicationInfo())
               .activeApplicationDetails(response.getActiveApplicationInfo())
@@ -226,7 +237,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)
-        .passThroughData(executionPassThroughData.toBuilder().maxCount(maxCount).build())
+        .passThroughData(executionPassThroughData)
         .build();
   }
 

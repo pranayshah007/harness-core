@@ -190,9 +190,10 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           cfRequestConfig, upsizeList, cfInstanceElements);
       // Enable autoscalar for older app, if it was disabled during deploy
 
-      // todo: change autoscaler data
-      cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
-          cfRollbackCommandRequestNG.getNewApplicationDetails(), autoscalarRequestData, executionLogCallback);
+      if (cfRollbackCommandRequestNG.isUseAppAutoScalar()) {
+        cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
+            cfRollbackCommandRequestNG.getActiveApplicationDetails(), autoscalarRequestData, executionLogCallback);
+      }
 
       executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
 
