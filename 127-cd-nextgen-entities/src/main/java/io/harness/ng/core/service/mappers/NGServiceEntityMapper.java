@@ -39,6 +39,7 @@ public class NGServiceEntityMapper {
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
         final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
+        validateIdentifier(config.getNgServiceV2InfoConfig().getIdentifier(), serviceEntity.getIdentifier());
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
         gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();
       } catch (IOException e) {
@@ -55,5 +56,12 @@ public class NGServiceEntityMapper {
                                    .gitOpsEnabled(gitOpsEnabled)
                                    .build())
         .build();
+  }
+
+  private void validateIdentifier(String fromYaml, String fromEntity) {
+    if (isNotEmpty(fromYaml) && isNotEmpty(fromEntity) && !fromEntity.equals(fromYaml)) {
+      throw new InvalidRequestException(String.format(
+          "Identifier : %s in service request doesn't match with identifier : %s given in yaml", fromEntity, fromYaml));
+    }
   }
 }

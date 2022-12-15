@@ -23,4 +23,10 @@ public class JiraStatusCategory {
     this.key = jsonObject.getString(JiraStatusCategoryKeys.key);
     this.name = jsonObject.getString(JiraStatusCategoryKeys.name);
   }
+
+  public JiraStatusCategory(JiraStatusCategoryNG jiraStatusCategoryNG) {
+    this.id = jiraStatusCategoryNG.getId().toString();
+    this.key = jiraStatusCategoryNG.getKey();
+    this.name = jiraStatusCategoryNG.getName();
+  }
 }

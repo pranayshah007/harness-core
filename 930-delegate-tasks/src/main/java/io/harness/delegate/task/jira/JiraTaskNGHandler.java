@@ -18,6 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.jira.JiraClient;
 import io.harness.jira.JiraFieldTypeNG;
+import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraIssueTypeNG;
@@ -35,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 
 @OwnedBy(CDC)
 @Singleton
@@ -83,8 +84,9 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse getIssueCreateMetadata(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(params.getProjectKey(),
-        params.getIssueType(), params.getExpand(), params.isFetchStatus(), params.isIgnoreComment());
+    JiraIssueCreateMetadataNG createMetadata =
+        jiraClient.getIssueCreateMetadata(params.getProjectKey(), params.getIssueType(), params.getExpand(),
+            params.isFetchStatus(), params.isIgnoreComment(), params.isNewMetadata(), false);
 
     return JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build();
   }
@@ -97,11 +99,10 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse createIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-
     Set<String> userTypeFields = new HashSet<>();
     if (EmptyPredicate.isNotEmpty(params.getFields())) {
-      JiraIssueCreateMetadataNG createMetadata =
-          jiraClient.getIssueCreateMetadata(params.getProjectKey(), params.getIssueType(), null, false, false);
+      JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(
+          params.getProjectKey(), params.getIssueType(), null, false, false, params.isNewMetadata(), false);
       JiraProjectNG project = createMetadata.getProjects().get(params.getProjectKey());
       if (project != null) {
         JiraIssueTypeNG issueType = project.getIssueTypes().get(params.getIssueType());
@@ -115,7 +116,8 @@ public class JiraTaskNGHandler {
         }
       }
     }
-    JiraIssueNG issue = jiraClient.createIssue(params.getProjectKey(), params.getIssueType(), params.getFields(), true);
+    JiraIssueNG issue = jiraClient.createIssue(
+        params.getProjectKey(), params.getIssueType(), params.getFields(), true, params.isNewMetadata(), false);
     return JiraTaskNGResponse.builder().issue(issue).build();
   }
 
@@ -161,8 +163,12 @@ public class JiraTaskNGHandler {
             return;
           }
 
-          if (ObjectId.isValid(value)) {
+          JiraInstanceData jiraInstanceData = jiraClient.getInstanceData();
+          if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
             userDataList = jiraClient.getUsers(null, value, null);
+            if (userDataList.isEmpty()) {
+              userDataList = jiraClient.getUsers(value, null, null);
+            }
           } else {
             userDataList = jiraClient.getUsers(value, null, null);
           }
@@ -170,7 +176,11 @@ public class JiraTaskNGHandler {
             throw new InvalidRequestException(
                 "Found " + userDataList.size() + " jira users with this query. Should be exactly 1.");
           }
-          params.getFields().put(key, userDataList.get(0).getAccountId());
+          if (userDataList.get(0).getAccountId().startsWith("JIRAUSER")) {
+            params.getFields().put(key, userDataList.get(0).getName());
+          } else {
+            params.getFields().put(key, userDataList.get(0).getAccountId());
+          }
         }
       }
     });

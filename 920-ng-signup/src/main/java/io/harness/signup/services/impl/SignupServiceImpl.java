@@ -21,9 +21,11 @@ import static org.mindrot.jbcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
 import io.harness.TelemetryConstants;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authenticationservice.recaptcha.ReCaptchaVerifier;
@@ -46,6 +48,7 @@ import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.ng.core.user.UtmInfo;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.repositories.SignupVerificationTokenRepository;
+import io.harness.signup.SignupModule;
 import io.harness.signup.dto.OAuthSignupDTO;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
@@ -85,9 +88,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.mindrot.jbcrypt.BCrypt;
@@ -112,6 +115,8 @@ public class SignupServiceImpl implements SignupService {
   private final VersionInfoManager versionInfoManager;
   private final FeatureFlagService featureFlagService;
 
+  private final ScheduledExecutorService scheduledExecutor;
+
   public static final String FAILED_EVENT_NAME = "SIGNUP_ATTEMPT_FAILED";
   public static final String SUCCEED_EVENT_NAME = "NEW_SIGNUP";
   public static final String SUCCEED_SIGNUP_INVITE_NAME = "SIGNUP_VERIFY";
@@ -131,7 +136,8 @@ public class SignupServiceImpl implements SignupService {
       SignupNotificationHelper signupNotificationHelper, SignupVerificationTokenRepository verificationTokenRepository,
       @Named("NGSignupNotification") ExecutorService executorService,
       @Named("PRIVILEGED") AccessControlClient accessControlClient, LicenseService licenseService,
-      VersionInfoManager versionInfoManager, FeatureFlagService featureFlagService) {
+      VersionInfoManager versionInfoManager, FeatureFlagService featureFlagService,
+      @Named(SignupModule.NG_SIGNUP_EXECUTOR_SERVICE) ScheduledExecutorService scheduledExecutorService) {
     this.accountService = accountService;
     this.userClient = userClient;
     this.signupValidator = signupValidator;
@@ -144,6 +150,7 @@ public class SignupServiceImpl implements SignupService {
     this.licenseService = licenseService;
     this.versionInfoManager = versionInfoManager;
     this.featureFlagService = featureFlagService;
+    this.scheduledExecutor = scheduledExecutorService;
   }
 
   /**
@@ -159,7 +166,7 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(dto);
     UserInfo user = createUser(dto, account);
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), user,
-        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer);
+        SignupType.SIGNUP_FORM_FLOW, account.getName(), referer, null);
     executorService.submit(() -> {
       SignupVerificationToken verificationToken = generateNewToken(user.getEmail());
       try {
@@ -275,7 +282,7 @@ public class SignupServiceImpl implements SignupService {
    * Complete Signup in email verification blocking flow
    */
   @Override
-  public UserInfo completeSignupInvite(String token, String referer) {
+  public UserInfo completeSignupInvite(String token, String referer, String gaClientId) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to complete a signup invite with community edition");
     }
@@ -298,10 +305,10 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail(), null));
+      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail()));
       verificationTokenRepository.delete(verificationToken);
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
-          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer);
+          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId);
 
       UserInfo finalUserInfo = userInfo;
       executorService.submit(() -> {
@@ -314,6 +321,7 @@ public class SignupServiceImpl implements SignupService {
         }
       });
 
+      log.info("Waiting on RBAC setup for the account with id {}", userInfo.getDefaultAccountId());
       waitForRbacSetup(userInfo.getDefaultAccountId(), userInfo.getUuid(), userInfo.getEmail());
 
       if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
@@ -321,7 +329,7 @@ public class SignupServiceImpl implements SignupService {
             !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
             userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
             userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
-            userInfo.getDefaultAccountId(), referer);
+            userInfo.getDefaultAccountId(), referer, gaClientId);
       }
 
       log.info("Completed NG signup for {}", userInfo.getEmail());
@@ -335,10 +343,12 @@ public class SignupServiceImpl implements SignupService {
 
   private void waitForRbacSetup(String accountId, String userId, String email) {
     try {
-      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(accountId, userId, 100, 200);
+      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(accountId, userId, 100, 1000);
       if (FALSE.equals(rbacSetupSuccessful)) {
         log.error("User [{}] couldn't be assigned account admin role in stipulated time", email);
         throw new SignupException("Role assignment executes longer than usual, please try logging-in in few minutes");
+      } else {
+        log.info("Polling for RBAC setup is successful for the account [{}]", accountId);
       }
     } catch (Exception e) {
       log.error(String.format("Failed to check rbac setup for account [%s]", accountId), e);
@@ -359,12 +369,17 @@ public class SignupServiceImpl implements SignupService {
     Retry.EventPublisher publisher = retry.getEventPublisher();
     publisher.onRetry(
         event -> log.info("Retrying check for rbac setup for account {} {}", accountId, event.toString()));
-    return Retry
-        .decorateSupplier(retry,
-            ()
-                -> accessControlClient.hasAccess(
-                    ResourceScope.of(accountId, null, null), Resource.of("USER", userId), "core_organization_create"))
-        .get();
+    Supplier<Boolean> hasAccess = Retry.decorateSupplier(retry,
+        ()
+            -> accessControlClient.hasAccess(
+                Principal.builder().principalType(PrincipalType.USER).principalIdentifier(userId).build(),
+                ResourceScope.of(accountId, null, null), Resource.of("LICENSE", null), "core_license_view"));
+
+    if (FALSE.equals(hasAccess.get())) {
+      log.error("Could not finish setting up RBAC");
+      return false;
+    }
+    return true;
   }
 
   private AccountDTO createAccount(SignupDTO dto) {
@@ -429,7 +444,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   @Override
-  public UserInfo oAuthSignup(OAuthSignupDTO dto, String referer) {
+  public UserInfo oAuthSignup(OAuthSignupDTO dto) {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("You are not allowed to oauth signup with community edition");
     }
@@ -456,7 +471,7 @@ public class SignupServiceImpl implements SignupService {
     }
 
     sendSucceedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser,
-        SignupType.OAUTH_FLOW, account.getName(), referer);
+        SignupType.OAUTH_FLOW, account.getName(), dto.getReferer(), dto.getGaClientId());
 
     executorService.submit(() -> {
       try {
@@ -469,21 +484,22 @@ public class SignupServiceImpl implements SignupService {
     });
 
     if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
-      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(), referer);
+      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(),
+          dto.getReferer(), dto.getGaClientId());
     }
     waitForRbacSetup(oAuthUser.getDefaultAccountId(), oAuthUser.getUuid(), oAuthUser.getEmail());
     return oAuthUser;
   }
 
-  private void enableModuleLicense(
-      ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier, String referer) {
+  private void enableModuleLicense(ModuleType intent, Edition edition, SignupAction signupAction,
+      String accountIdentifier, String referer, String gaClientId) {
     if (intent != null) {
       if (signupAction != null && edition != null && signupAction.equals(SignupAction.TRIAL)) {
         StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
         licenseService.startTrialLicense(accountIdentifier, startTrialDTO, referer);
         return;
       }
-      licenseService.startFreeLicense(accountIdentifier, intent, referer);
+      licenseService.startFreeLicense(accountIdentifier, intent, referer, gaClientId);
     }
   }
 
@@ -594,7 +610,7 @@ public class SignupServiceImpl implements SignupService {
   }
 
   private void sendSucceedTelemetryEvent(String email, UtmInfo utmInfo, String accountId, UserInfo userInfo,
-      String source, String accountName, String referer) {
+      String source, String accountName, String referer, String gaClientId) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
@@ -637,8 +653,6 @@ public class SignupServiceImpl implements SignupService {
     // flush all events so that event queue is empty
     telemetryReporter.flush();
 
-    // Wait 20 seconds, to ensure identify is sent before track
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
     HashMap<String, Object> trackProperties = properties;
 
     if (userInfo.getIntent() != null && !userInfo.getIntent().equals("")) {
@@ -653,7 +667,12 @@ public class SignupServiceImpl implements SignupService {
     if (referer != null) {
       trackProperties.put("refererURL", referer);
     }
-    tempExecutor.schedule(
+    if (gaClientId != null) {
+      trackProperties.put("ga_client_id", gaClientId);
+    }
+
+    // Wait 20 seconds, to ensure identify is sent before track
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, trackProperties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
@@ -722,8 +741,7 @@ public class SignupServiceImpl implements SignupService {
         email, properties, ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
     telemetryReporter.flush();
 
-    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
-    tempExecutor.schedule(
+    scheduledExecutor.schedule(
         ()
             -> telemetryReporter.sendTrackEvent(SUCCEED_SIGNUP_INVITE_NAME, email, UNDEFINED_ACCOUNT_ID, properties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),

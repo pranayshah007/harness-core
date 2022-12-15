@@ -40,12 +40,12 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.spec.server.ng.model.Connector;
-import io.harness.spec.server.ng.model.ConnectorRequest;
-import io.harness.spec.server.ng.model.ConnectorResponse;
-import io.harness.spec.server.ng.model.ConnectorSpec;
-import io.harness.spec.server.ng.model.ConnectorTestConnectionResponse;
-import io.harness.spec.server.ng.model.GitHttpConnectorSpec;
+import io.harness.spec.server.connector.v1.model.Connector;
+import io.harness.spec.server.connector.v1.model.ConnectorRequest;
+import io.harness.spec.server.connector.v1.model.ConnectorResponse;
+import io.harness.spec.server.connector.v1.model.ConnectorSpec;
+import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
+import io.harness.spec.server.connector.v1.model.GitHttpConnectorSpec;
 
 import java.util.Collections;
 import java.util.List;
@@ -384,11 +384,11 @@ public class ProjectConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteProjectScopedConnector() {
     doReturn(Optional.of(connectorResponseDTO)).when(connectorService).get(any(), any(), any(), any());
-    doReturn(true).when(connectorService).delete(any(), any(), any(), any());
+    doReturn(true).when(connectorService).delete(any(), any(), any(), any(), eq(false));
 
     Response response = projectConnectorApi.deleteProjectScopedConnector(org, project, slug, account);
 
-    verify(connectorService, times(1)).delete(eq(account), eq(org), eq(project), eq(slug));
+    verify(connectorService, times(1)).delete(eq(account), eq(org), eq(project), eq(slug), eq(false));
 
     assertThat(response.getStatus()).isEqualTo(200);
 
@@ -436,7 +436,7 @@ public class ProjectConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteProjectScopedConnectorNotDeleted() {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
-    when(connectorService.delete(any(), any(), any(), any())).thenReturn(false);
+    when(connectorService.delete(any(), any(), any(), any(), eq(false))).thenReturn(false);
 
     Throwable thrown =
         catchThrowableOfType(()

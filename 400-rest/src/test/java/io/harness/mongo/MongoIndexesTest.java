@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
@@ -43,6 +44,7 @@ public class MongoIndexesTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testConfirmAllIndexesInManager() throws IOException {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setObjectFactory(objectFactory);
@@ -60,13 +62,13 @@ public class MongoIndexesTest extends WingsBaseTest {
                                .collect(Collectors.toList());
 
     List<String> expectedIndexes;
-
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
       expectedIndexes = IOUtils.readLines(in, "UTF-8");
     }
     for (int i = 0; i < expectedIndexes.size(); i++) {
       assertThat(expectedIndexes.get(i)).isEqualTo(indexes.get(i));
     }
+
     assertThat(indexes).isEqualTo(expectedIndexes);
   }
 }

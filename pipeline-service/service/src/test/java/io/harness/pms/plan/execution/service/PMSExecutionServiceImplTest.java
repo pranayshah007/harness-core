@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
@@ -19,6 +20,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.ModuleType;
 import io.harness.PipelineServiceTestBase;
@@ -28,21 +30,26 @@ import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
-import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
+import com.mongodb.BasicDBList;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,18 +61,20 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
-  @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private UpdateResult updateResult;
   @InjectMocks private PMSExecutionServiceImpl pmsExecutionService;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private ValidateAndMergeHelper validateAndMergeHelper;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
+  @Mock private GitSyncSdkService gitSyncSdkService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "basichttpFail";
   private final String PLAN_EXECUTION_ID = "planId";
+  private final List<String> PIPELINE_IDENTIFIER_LIST = Arrays.asList(PIPELINE_IDENTIFIER);
   private final String INVALID_PLAN_EXECUTION_ID = "InvalidPlanId";
   private final Boolean PIPELINE_DELETED = Boolean.FALSE;
   private String inputSetYaml;
@@ -120,8 +129,9 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testFormCriteria() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
     Criteria form = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, null, null, null, null, false, !PIPELINE_DELETED, null, true);
+        null, null, null, null, null, false, !PIPELINE_DELETED, true);
 
     assertThat(form.getCriteriaObject().get("accountId").toString().contentEquals(ACCOUNT_ID)).isEqualTo(true);
     assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
@@ -136,22 +146,42 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testFormCriteriaOROperatorOnModules() {
+    Criteria form = pmsExecutionService.formCriteriaOROperatorOnModules(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null);
+    BasicDBList orList = (BasicDBList) form.getCriteriaObject().get("$or");
+    Document scopeCriteria = (Document) orList.get(0);
+    Document pipelineIdentifierCriteria = (Document) scopeCriteria.get("pipelineIdentifier");
+    List<String> pipelineList = (List<String>) pipelineIdentifierCriteria.get("$in");
+
+    assertThat(form.getCriteriaObject().get("accountId").toString().contentEquals(ACCOUNT_ID)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().get("projectIdentifier").toString().contentEquals(PROJ_IDENTIFIER))
+        .isEqualTo(true);
+    assertThat(pipelineList.equals(PIPELINE_IDENTIFIER_LIST)).isEqualTo(true);
+    assertThat(form.getCriteriaObject().containsKey("pipelineIdentifier")).isEqualTo(false);
+    assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
+    assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
+    assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
+  }
+
+  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testFormCriteriaWithModuleName() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
     Criteria form =
-        pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, null, true);
+        pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, true);
     Criteria criteria = new Criteria();
 
-    Criteria moduleCriteria = new Criteria();
     Criteria searchCriteria = new Criteria();
-    moduleCriteria.orOperator(
-        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
-        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)
-            .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+    searchCriteria.orOperator(Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)
+                                  .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
         Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).in("cd"));
 
-    criteria.andOperator(searchCriteria, moduleCriteria, searchCriteria, searchCriteria);
+    criteria.andOperator(searchCriteria);
 
     assertThat(form.getCriteriaObject().get("$and")).isEqualTo(criteria.getCriteriaObject().get("$and"));
   }

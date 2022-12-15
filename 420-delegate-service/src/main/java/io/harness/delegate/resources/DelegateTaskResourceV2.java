@@ -15,7 +15,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponseV2;
 import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;
@@ -73,6 +73,7 @@ public class DelegateTaskResourceV2 {
     SerializedResponseData serializedResponseData = SerializedResponseData.builder()
                                                         .data(serializedData)
                                                         .taskType(taskType)
+                                                        .taskTypeAsString(taskType.toString())
                                                         .serializationFormat(SerializationFormat.JSON)
                                                         .build();
 

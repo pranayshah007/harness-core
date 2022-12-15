@@ -54,6 +54,8 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
 
   // Fields sent while creating/updating issue.
   Map<String, String> fields;
+  // For new jira server versions old metadata endpoint is deprecated
+  boolean newMetadata;
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {

@@ -19,6 +19,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -28,6 +29,7 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig.ServerlessAwsLambdaManifestConfigBuilder;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.exception.InvalidRequestException;
@@ -99,12 +101,21 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
           (ServerlessAwsLambdaManifestOutcome) manifestOutcome;
       Pair<String, String> manifestFilePathContent =
           (Pair<String, String>) manifestParams.get("manifestFilePathContent");
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) serverlessAwsLambdaManifestOutcome.getStore();
-      return ServerlessAwsLambdaManifestConfig.builder()
-          .manifestPath(manifestFilePathContent.getKey())
+
+      StoreConfig storeConfig = serverlessAwsLambdaManifestOutcome.getStore();
+      ServerlessAwsLambdaManifestConfigBuilder serverlessAwsLambdaManifestConfigBuilder =
+          ServerlessAwsLambdaManifestConfig.builder();
+      if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
+        GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
+        serverlessAwsLambdaManifestConfigBuilder.gitStoreDelegateConfig(
+            serverlessStepUtils.getGitStoreDelegateConfig(ambiance, gitStoreConfig, manifestOutcome));
+      } else {
+        S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+        serverlessAwsLambdaManifestConfigBuilder.s3StoreDelegateConfig(
+            serverlessStepUtils.getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome));
+      }
+      return serverlessAwsLambdaManifestConfigBuilder.manifestPath(manifestFilePathContent.getKey())
           .configOverridePath(getConfigOverridePath(manifestOutcome))
-          .gitStoreDelegateConfig(
-              serverlessStepUtils.getGitStoreDelegateConfig(ambiance, gitStoreConfig, manifestOutcome))
           .build();
     }
     throw new UnsupportedOperationException(

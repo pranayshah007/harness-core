@@ -8,9 +8,11 @@
 package io.harness.cdng.environment.yaml;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChild;
@@ -37,7 +39,11 @@ public class EnvironmentsYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private String uuid;
+  String uuid;
+
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<List<FilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.ENVIRONMENT_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
@@ -49,7 +55,7 @@ public class EnvironmentsYaml implements Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();
-    if (!values.isExpression()) {
+    if (ParameterField.isNotNull(values) && !values.isExpression()) {
       for (EnvironmentYamlV2 environmentYamlV2 : values.getValue()) {
         children.add(VisitableChild.builder().value(environmentYamlV2).fieldName("values").build());
       }

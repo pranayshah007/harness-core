@@ -10,6 +10,7 @@ package io.harness.pms.contracts.service;
 option java_multiple_files = true;
 
 import "io/harness/pms/contracts/ambiance/ambiance.proto";
+import "io/harness/pms/contracts/plan/plan_node_proto.proto";
 
 service EngineExpressionProtoService {
   rpc renderExpression(ExpressionRenderBlobRequest) returns (ExpressionRenderBlobResponse);
@@ -20,6 +21,7 @@ message ExpressionRenderBlobRequest {
   io.harness.pms.contracts.ambiance.Ambiance ambiance = 1;
   string expression = 2;
   bool skipUnresolvedExpressionsCheck = 3;
+  io.harness.pms.contracts.plan.ExpressionMode expressionMode = 4;
 }
 
 message ExpressionRenderBlobResponse {

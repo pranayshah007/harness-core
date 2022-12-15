@@ -17,10 +17,10 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import java.io.IOException;

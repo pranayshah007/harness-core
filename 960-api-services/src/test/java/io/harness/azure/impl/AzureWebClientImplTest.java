@@ -8,69 +8,76 @@
 package io.harness.azure.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.azure.AzureClient;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.network.Http;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
-import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.DeploymentSlots;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.appservice.WebApps;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.http.HttpClient;
+import com.azure.core.http.HttpHeaders;
+import com.azure.core.http.HttpRequest;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
+import com.azure.resourcemanager.appservice.fluent.WebSiteManagementClient;
+import com.azure.resourcemanager.appservice.implementation.WebSiteManagementClientImpl;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.DeploymentSlots;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.appservice.models.WebAppBasic;
+import com.azure.resourcemanager.appservice.models.WebApps;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import rx.Completable;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class AzureWebClientImplTest extends CategoryTest {
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  private AzureResourceManager.Configurable configurable;
+  private AzureResourceManager.Authenticated authenticated;
+  private AzureResourceManager azure;
 
   @InjectMocks AzureWebClientImpl azureWebClientImpl;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = mock(ApplicationTokenCredentials.class);
-    PowerMockito.whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(Matchers.any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(Matchers.any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+    MockitoAnnotations.initMocks(this);
+
+    azure = mock(AzureResourceManager.class);
+    configurable = mock(AzureResourceManager.Configurable.class);
+    authenticated = mock(AzureResourceManager.Authenticated.class);
+
+    MockedStatic<AzureResourceManager> azureMockStatic = mockStatic(AzureResourceManager.class);
+    azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
+    when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
+    when(configurable.authenticate(any(), any())).thenReturn(authenticated);
     when(authenticated.withSubscription(anyString())).thenReturn(azure);
     when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
@@ -80,13 +87,16 @@ public class AzureWebClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListWebAppsByResourceGroupName() {
     AzureClientContext azureClientContext = buildAzureClientContext();
-    WebApps mockWebApps = mockWebApps();
-    mockWebAppsListByResourceGroup(mockWebApps);
 
-    List<WebApp> response = azureWebClientImpl.listWebAppsByResourceGroupName(azureClientContext);
+    WebAppBasic webAppBasicMock = mockWebAppBasic("webAppName", "resourceGroupName");
+    WebApps webAppsMock = mockWebApps(null, Arrays.asList(webAppBasicMock));
+    doReturn(webAppsMock).when(azure).webApps();
+
+    List<WebAppBasic> response = azureWebClientImpl.listWebAppsByResourceGroupName(azureClientContext);
 
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(0).name()).isEqualTo("webAppName");
   }
 
   @Test
@@ -94,13 +104,18 @@ public class AzureWebClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListDeploymentSlotsByWebAppName() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
-    WebApps mockWebApps = mockWebApps();
-    mockDeploymentSlotsList(mockWebApps);
+    WebDeploymentSlotBasic webDeploymentSlotBasicMock1 = mockWebDeploymentSlotBasic();
+    WebDeploymentSlotBasic webDeploymentSlotBasicMock2 = mockWebDeploymentSlotBasic();
+    DeploymentSlots deploymentSlotsMock =
+        mockDeploymentSlots(null, Arrays.asList(webDeploymentSlotBasicMock1, webDeploymentSlotBasicMock2));
+    WebApp webAppMock = mockWebApp(null, deploymentSlotsMock);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
 
-    List<DeploymentSlot> response = azureWebClientImpl.listDeploymentSlotsByWebAppName(azureWebClientContext);
+    List<WebDeploymentSlotBasic> response = azureWebClientImpl.listDeploymentSlotsByWebAppName(azureWebClientContext);
 
     assertThat(response).isNotNull();
-    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.size()).isEqualTo(2);
   }
 
   @Test
@@ -108,8 +123,9 @@ public class AzureWebClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetWebAppByName() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
-    WebApps mockWebApps = mockWebApps();
-    mockWebAppsGetByResourceGroup(mockWebApps);
+    WebApp webAppMock = mockWebApp("webAppName", null);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
 
     Optional<WebApp> response = azureWebClientImpl.getWebAppByName(azureWebClientContext);
 
@@ -123,15 +139,17 @@ public class AzureWebClientImplTest extends CategoryTest {
   public void testGetDeploymentSlotByName() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
+    DeploymentSlot deploymentSlotMock = mockDeploymentSlot("deploymentSlot");
+    DeploymentSlots deploymentSlotsMock = mockDeploymentSlots(deploymentSlotMock, null);
+    WebApp webAppMock = mockWebApp(null, deploymentSlotsMock);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
 
     Optional<DeploymentSlot> response = azureWebClientImpl.getDeploymentSlotByName(azureWebClientContext, slotName);
 
     assertThat(response.isPresent()).isTrue();
     assertThat(response.get()).isNotNull();
+    assertThat(response.get().name()).isEqualTo("deploymentSlot");
   }
 
   @Test
@@ -140,15 +158,17 @@ public class AzureWebClientImplTest extends CategoryTest {
   public void testStartDeploymentSlot() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
-    doNothing().when(mockDeploymentSlot).start();
+    DeploymentSlot deploymentSlotMock = mockDeploymentSlot(slotName);
+    DeploymentSlots deploymentSlotsMock = mockDeploymentSlots(deploymentSlotMock, null);
+    WebApp webAppMock = mockWebApp(null, deploymentSlotsMock);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
+
+    doNothing().when(deploymentSlotMock).start();
 
     azureWebClientImpl.startDeploymentSlot(azureWebClientContext, slotName);
 
-    verify(mockDeploymentSlot, times(1)).start();
+    verify(deploymentSlotMock, times(1)).start();
   }
 
   @Test
@@ -157,24 +177,49 @@ public class AzureWebClientImplTest extends CategoryTest {
   public void testStartDeploymentSlotAsync() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
-    Completable mockCompletable = mock(Completable.class);
-    doReturn(mockCompletable).when(mockDeploymentSlot).startAsync();
 
-    Completable completable = azureWebClientImpl.startDeploymentSlotAsync(azureWebClientContext, slotName);
+    WebSiteManagementClientImpl webSiteManagementClient = mock(WebSiteManagementClientImpl.class);
+    AzureWebClientImpl azureWebClient = mock(AzureWebClientImpl.class);
+    WebAppsClient webAppsClientMock = mockWebAppsClient(webSiteManagementClient);
+    doCallRealMethod().when(azureWebClient).startDeploymentSlotAsync(any(), any(), any());
 
-    verify(mockDeploymentSlot, times(1)).startAsync();
-    assertThat(completable).isNotNull();
+    Mono<Response<Void>> responseMono = Mono.just(new Response<Void>() {
+      @Override
+      public int getStatusCode() {
+        return 200;
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public HttpRequest getRequest() {
+        return null;
+      }
+
+      @Override
+      public Void getValue() {
+        return null;
+      }
+    });
+
+    doReturn(responseMono).when(webAppsClientMock).startSlotWithResponseAsync(anyString(), anyString(), anyString());
+
+    Mono<Response<Void>> response =
+        azureWebClientImpl.startDeploymentSlotAsync(azureWebClientContext, slotName, webAppsClientMock);
+
+    verify(webAppsClientMock, times(1)).startSlotWithResponseAsync(anyString(), anyString(), anyString());
+    assertThat(response).isNotNull();
+    assertThat(response.block().getStatusCode()).isGreaterThanOrEqualTo(200).isLessThan(300);
   }
 
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
   public void testStartDeploymentSlotWithDeploymentSlot() {
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
+    DeploymentSlot mockDeploymentSlot = mockDeploymentSlot("slotName");
     doNothing().when(mockDeploymentSlot).start();
 
     azureWebClientImpl.startDeploymentSlot(mockDeploymentSlot);
@@ -185,12 +230,12 @@ public class AzureWebClientImplTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
-  public void testStartDeploymentSlotAsyncWithDeploymentSlot() {
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
-    Completable mockCompletable = mock(Completable.class);
-    doReturn(mockCompletable).when(mockDeploymentSlot).startAsync();
+  public void testStartDeploymentSlotAsyncWithDeploymentSlot() throws InstantiationException, IllegalAccessException {
+    DeploymentSlot mockDeploymentSlot = mockDeploymentSlot("slotName");
+    Mono<Void> voidMono = Mono.empty();
+    doReturn(voidMono).when(mockDeploymentSlot).startAsync();
 
-    Completable completable = azureWebClientImpl.startDeploymentSlotAsync(mockDeploymentSlot);
+    azureWebClientImpl.startDeploymentSlotAsync(mockDeploymentSlot);
 
     verify(mockDeploymentSlot, times(1)).startAsync();
   }
@@ -201,15 +246,18 @@ public class AzureWebClientImplTest extends CategoryTest {
   public void testStopDeploymentSlot() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
-    doNothing().when(mockDeploymentSlot).stop();
+
+    DeploymentSlot deploymentSlotMock = mockDeploymentSlot(slotName);
+    DeploymentSlots deploymentSlotsMock = mockDeploymentSlots(deploymentSlotMock, null);
+    WebApp webAppMock = mockWebApp(null, deploymentSlotsMock);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
+
+    doNothing().when(deploymentSlotMock).stop();
 
     azureWebClientImpl.stopDeploymentSlot(azureWebClientContext, slotName);
 
-    verify(mockDeploymentSlot, times(1)).stop();
+    verify(deploymentSlotMock, times(1)).stop();
   }
 
   @Test
@@ -218,43 +266,67 @@ public class AzureWebClientImplTest extends CategoryTest {
   public void testStopDeploymentSlotAsync() {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
-    Completable mockCompletable = mock(Completable.class);
-    doReturn(mockCompletable).when(mockDeploymentSlot).stopAsync();
 
-    Completable completable = azureWebClientImpl.stopDeploymentSlotAsync(azureWebClientContext, slotName);
+    WebSiteManagementClientImpl webSiteManagementClient = mock(WebSiteManagementClientImpl.class);
+    AzureWebClientImpl azureWebClient = mock(AzureWebClientImpl.class);
+    WebAppsClient webAppsClientMock = mockWebAppsClient(webSiteManagementClient);
+    doCallRealMethod().when(azureWebClient).stopDeploymentSlotAsync(any(), any(), any());
 
-    verify(mockDeploymentSlot, times(1)).stopAsync();
-    assertThat(completable).isNotNull();
+    Mono<Response<Void>> responseMono = Mono.just(new Response<Void>() {
+      @Override
+      public int getStatusCode() {
+        return 200;
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public HttpRequest getRequest() {
+        return null;
+      }
+
+      @Override
+      public Void getValue() {
+        return null;
+      }
+    });
+
+    doReturn(responseMono).when(webAppsClientMock).stopSlotWithResponseAsync(anyString(), anyString(), anyString());
+
+    Mono<Response<Void>> response =
+        azureWebClientImpl.stopDeploymentSlotAsync(azureWebClientContext, slotName, webAppsClientMock);
+
+    verify(webAppsClientMock, times(1)).stopSlotWithResponseAsync(anyString(), anyString(), anyString());
+    assertThat(response).isNotNull();
+    assertThat(response.block().getStatusCode()).isGreaterThanOrEqualTo(200).isLessThan(300);
   }
 
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
   public void testStopDeploymentSlotWithDeploymentSlot() {
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
-    doNothing().when(mockDeploymentSlot).start();
+    DeploymentSlot mockDeploymentSlot = mockDeploymentSlot("slotName");
+    doNothing().when(mockDeploymentSlot).stop();
 
-    azureWebClientImpl.startDeploymentSlot(mockDeploymentSlot);
+    azureWebClientImpl.stopDeploymentSlot(mockDeploymentSlot);
 
-    verify(mockDeploymentSlot, times(1)).start();
+    verify(mockDeploymentSlot, times(1)).stop();
   }
 
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
-  public void testStopDeploymentSlotAsyncWithDeploymentSlot() {
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
-    Completable mockCompletable = mock(Completable.class);
-    doReturn(mockCompletable).when(mockDeploymentSlot).stopAsync();
+  public void testStopDeploymentSlotAsyncWithDeploymentSlot() throws InstantiationException, IllegalAccessException {
+    DeploymentSlot mockDeploymentSlot = mockDeploymentSlot("slotName");
+    Mono<Void> voidMono = Mono.empty();
+    doReturn(voidMono).when(mockDeploymentSlot).stopAsync();
 
-    Completable completable = azureWebClientImpl.stopDeploymentSlotAsync(mockDeploymentSlot);
+    azureWebClientImpl.stopDeploymentSlotAsync(mockDeploymentSlot);
 
     verify(mockDeploymentSlot, times(1)).stopAsync();
-    assertThat(completable).isNotNull();
   }
 
   @Test
@@ -264,58 +336,18 @@ public class AzureWebClientImplTest extends CategoryTest {
     AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
     String slotName = "slotName";
     String runningSlotState = "Running";
-    WebApps mockWebApps = mockWebApps();
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mockDeploymentSlotsGetByName(mockDeploymentSlots, slotName);
-    doReturn(runningSlotState).when(mockDeploymentSlot).state();
+
+    DeploymentSlot deploymentSlotMock = mockDeploymentSlot(slotName);
+    DeploymentSlots deploymentSlotsMock = mockDeploymentSlots(deploymentSlotMock, null);
+    WebApp webAppMock = mockWebApp(null, deploymentSlotsMock);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
+    doReturn(runningSlotState).when(deploymentSlotMock).state();
 
     String slotState = azureWebClientImpl.getSlotState(azureWebClientContext, slotName);
 
     assertThat(slotState).isNotNull();
     assertThat(slotState).isEqualTo(runningSlotState);
-  }
-
-  public DeploymentSlot mockDeploymentSlotsGetByName(DeploymentSlots mockDeploymentSlots, String slotName) {
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
-    when(mockDeploymentSlots.getByName(slotName)).thenReturn(mockDeploymentSlot);
-    return mockDeploymentSlot;
-  }
-
-  public DeploymentSlots mockWebAppsDeploymentSlots(WebApp mockWebApp) {
-    DeploymentSlots mockDeploymentSlots = mock(DeploymentSlots.class);
-    when(mockWebApp.deploymentSlots()).thenReturn(mockDeploymentSlots);
-    return mockDeploymentSlots;
-  }
-
-  public void mockDeploymentSlotsList(WebApps mockWebApps) {
-    WebApp mockWebApp = mockWebAppsGetByResourceGroup(mockWebApps);
-    DeploymentSlots mockDeploymentSlots = mockWebAppsDeploymentSlots(mockWebApp);
-    DeploymentSlot mockDeploymentSlot = mock(DeploymentSlot.class);
-
-    PagedList<DeploymentSlot> pageList = getPageList();
-    pageList.add(mockDeploymentSlot);
-    when(mockDeploymentSlots.list()).thenReturn(pageList);
-  }
-
-  public void mockWebAppsListByResourceGroup(WebApps mockWebApps) {
-    WebApp mockWebApp = mock(WebApp.class);
-    PagedList<WebApp> pageList = getPageList();
-    pageList.add(mockWebApp);
-
-    when(mockWebApps.listByResourceGroup("resourceGroupName")).thenReturn(pageList);
-  }
-
-  public WebApps mockWebApps() {
-    WebApps mockWebApps = mock(WebApps.class);
-    when(azure.webApps()).thenReturn(mockWebApps);
-    return mockWebApps;
-  }
-
-  public WebApp mockWebAppsGetByResourceGroup(WebApps mockWebApps) {
-    WebApp mockWebApp = mock(WebApp.class);
-    when(mockWebApps.getByResourceGroup("resourceGroupName", "webAppName")).thenReturn(mockWebApp);
-    return mockWebApp;
   }
 
   public AzureWebClientContext buildAzureWebClientContext() {
@@ -336,21 +368,88 @@ public class AzureWebClientImplTest extends CategoryTest {
   }
 
   @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
-      @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
+  }
+
+  private WebAppsClient mockWebAppsClient(WebSiteManagementClient webSiteManagementClientMock) {
+    WebAppsClient webAppsClientMock = mock(WebAppsClient.class);
+    when(webSiteManagementClientMock.getWebApps()).thenReturn(webAppsClientMock);
+    return webAppsClientMock;
+  }
+
+  private WebApp mockWebApp(String name, DeploymentSlots deploymentSlots) {
+    WebApp webAppMock = mock(WebApp.class);
+
+    if (deploymentSlots != null) {
+      doReturn(deploymentSlots).when(webAppMock).deploymentSlots();
+    }
+
+    if (name != null) {
+      doReturn(name).when(webAppMock).name();
+    }
+
+    return webAppMock;
+  }
+
+  private WebDeploymentSlotBasic mockWebDeploymentSlotBasic() {
+    WebDeploymentSlotBasic webDeploymentSlotBasicMock = mock(WebDeploymentSlotBasic.class);
+
+    return webDeploymentSlotBasicMock;
+  }
+
+  private DeploymentSlot mockDeploymentSlot(String name) {
+    DeploymentSlot deploymentSlotMock = mock(DeploymentSlot.class);
+
+    if (name != null) {
+      doReturn(name).when(deploymentSlotMock).name();
+    }
+
+    return deploymentSlotMock;
+  }
+
+  private DeploymentSlots mockDeploymentSlots(
+      DeploymentSlot deploymentSlot, List<WebDeploymentSlotBasic> webDeploymentSlotBasics) {
+    DeploymentSlots deploymentSlotsMock = mock(DeploymentSlots.class);
+
+    if (deploymentSlot != null) {
+      doReturn(deploymentSlot).when(deploymentSlotsMock).getByName(any());
+    }
+
+    if (webDeploymentSlotBasics != null) {
+      Response list = new SimpleResponse(null, 200, null, webDeploymentSlotBasics);
+      doReturn(getPagedIterable(list)).when(deploymentSlotsMock).list();
+    }
+
+    return deploymentSlotsMock;
+  }
+
+  private WebApps mockWebApps(WebApp webApp, List<WebAppBasic> webAppBasics) {
+    WebApps webAppsMock = mock(WebApps.class);
+
+    if (webApp != null) {
+      doReturn(webApp).when(webAppsMock).getByResourceGroup(any(), any());
+    }
+
+    if (webAppBasics != null) {
+      Response resp = new SimpleResponse(null, 200, null, webAppBasics);
+      doReturn(getPagedIterable(resp)).when(webAppsMock).listByResourceGroup(any());
+    }
+
+    return webAppsMock;
+  }
+
+  private WebAppBasic mockWebAppBasic(String name, String resourceGroup) {
+    WebAppBasic webAppBasicMock = mock(WebAppBasic.class);
+
+    if (name != null) {
+      doReturn(name).when(webAppBasicMock).name();
+    }
+
+    if (resourceGroup != null) {
+      doReturn(resourceGroup).when(webAppBasicMock).resourceGroupName();
+    }
+
+    return webAppBasicMock;
   }
 }

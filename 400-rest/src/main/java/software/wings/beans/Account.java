@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurat
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
+import static software.wings.ngmigration.NGMigrationEntityType.ACCOUNT;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -37,6 +38,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -134,6 +136,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter boolean isProductLed;
 
+  @Getter @Setter private boolean smpAccount;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -153,11 +157,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private AccountPreferences accountPreferences;
 
-  @FdIndex private Long serviceGuardDataCollectionIteration;
-  @FdIndex private Long serviceGuardDataAnalysisIteration;
+  private Long serviceGuardDataCollectionIteration;
+  private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
-  @FdIndex private Long licenseExpiryCheckIteration;
+  private Long licenseExpiryCheckIteration;
   @FdIndex private Long accountBackgroundJobCheckIteration;
   @FdIndex private Long accountDeletionIteration;
   @FdIndex private Long gitSyncExpiryCheckIteration;
@@ -180,6 +184,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
 
   @FdIndex @Getter @Setter boolean globalDelegateAccount;
+
+  @Getter @Setter private boolean immutableDelegateEnabled = true;
 
   private transient Map<String, String> defaults = new HashMap<>();
   /**
@@ -225,6 +231,18 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Override
   public String getMigrationEntityName() {
     return getCompanyName() + " " + getAccountName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getAccountName())
+        .type(ACCOUNT)
+        .appId(getAppId())
+        .accountId(getUuid())
+        .build();
   }
 
   public boolean isNextGenEnabled() {
@@ -433,17 +451,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      this.serviceGuardDataCollectionIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      this.serviceGuardDataAnalysisIteration = nextIteration;
-      return;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       this.workflowDataCollectionIteration = nextIteration;
       return;
     }
@@ -503,15 +511,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (AccountKeys.serviceGuardDataCollectionIteration.equals(fieldName)) {
-      return this.serviceGuardDataCollectionIteration;
-    }
-
-    else if (AccountKeys.serviceGuardDataAnalysisIteration.equals(fieldName)) {
-      return this.serviceGuardDataAnalysisIteration;
-    }
-
-    else if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
+    if (AccountKeys.workflowDataCollectionIteration.equals(fieldName)) {
       return this.workflowDataCollectionIteration;
     }
 
@@ -590,6 +590,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private String ringName;
     private boolean backgroundJobsDisabled;
     private boolean isHarnessSupportAccessAllowed = true;
+
+    private boolean immutableDelegateEnabled = true;
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;

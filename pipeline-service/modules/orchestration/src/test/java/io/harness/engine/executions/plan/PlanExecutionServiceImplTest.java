@@ -27,6 +27,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.interrupts.statusupdate.PausedStepStatusUpdate;
@@ -37,6 +38,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
@@ -44,7 +46,7 @@ import io.harness.testlib.RealMongo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import java.util.EnumSet;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
@@ -71,23 +74,6 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     PlanExecution savedExecution = planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());
     assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
-  }
-
-  @Test
-  @RealMongo
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestUpdate() {
-    String planExecutionId = generateUuid();
-    long millis = System.currentTimeMillis();
-    PlanExecution savedExecution = planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());
-    assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
-
-    planExecutionService.update(planExecutionId, ops -> ops.set(PlanExecutionKeys.endTs, millis));
-
-    PlanExecution updated = planExecutionService.get(planExecutionId);
-    assertThat(updated.getUuid()).isEqualTo(planExecutionId);
-    assertThat(updated.getEndTs()).isEqualTo(millis);
   }
 
   @Test
@@ -118,10 +104,15 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
         planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(Status.PAUSED).build());
     assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
 
-    when(nodeExecutionService.fetchWithoutRetriesAndStatusIn(eq(planExecutionId), eq(EnumSet.noneOf(Status.class))))
-        .thenReturn(
-            ImmutableList.of(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
-                NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build()));
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
+            NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build());
+
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             eq(planExecutionId), eq(NodeProjectionUtils.withStatus)))
+        .thenReturn(iterator);
 
     Status status = planExecutionService.calculateStatusExcluding(planExecutionId, excludedNodeExecutionId);
     assertThat(status).isEqualTo(Status.RUNNING);
@@ -278,7 +269,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     assertEquals(Status.ABORTED, status);
   }
@@ -291,7 +282,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.PAUSED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     planExecutionService.save(PlanExecution.builder().status(Status.QUEUED).uuid(planExecutionId).build());
     PlanExecution planExecution = planExecutionService.updateCalculatedStatus(planExecutionId);

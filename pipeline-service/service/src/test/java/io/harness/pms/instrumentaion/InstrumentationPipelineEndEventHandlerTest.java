@@ -19,6 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestHelper;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -65,6 +66,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
@@ -130,7 +132,10 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
             .build();
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(NodeExecution.builder().ambiance(ambiance).planNode(planNode).build());
-    doReturn(nodeExecutionList).when(nodeExecutionService).fetchNodeExecutions(any());
+
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    doReturn(iterator).when(nodeExecutionService).fetchAllStepNodeExecutions(any(), any());
     doReturn(new HashSet() {
       { add("Http"); }
     })

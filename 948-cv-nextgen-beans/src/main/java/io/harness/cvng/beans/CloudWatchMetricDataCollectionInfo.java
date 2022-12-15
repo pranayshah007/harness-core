@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.collections4.CollectionUtils;
 
 @Data
 @Builder
@@ -35,14 +36,14 @@ public class CloudWatchMetricDataCollectionInfo extends TimeSeriesDataCollection
   @Override
   public Map<String, Object> getDslEnvVariables(AwsConnectorDTO awsConnectorDTO) {
     if (isCollectHostData()) {
-      metricInfos.forEach(metric -> {
+      getMetricInfos().forEach(metric -> {
         String finalExpression = String.format("%s%s%s", metric.getExpression(), GROUPING_CLAUSE,
             metric.getResponseMapping().getServiceInstanceJsonPath());
         metric.setFinalExpression(finalExpression);
       });
     }
     return CloudWatchUtils.getDslEnvVariables(
-        region, groupName, SERVICE, awsConnectorDTO, metricInfos, isCollectHostData());
+        region, groupName, SERVICE, awsConnectorDTO, getMetricInfos(), isCollectHostData());
   }
 
   @Override
@@ -58,6 +59,13 @@ public class CloudWatchMetricDataCollectionInfo extends TimeSeriesDataCollection
   @Override
   public Map<String, String> collectionParams(AwsConnectorDTO connectorConfigDTO) {
     return Collections.emptyMap();
+  }
+
+  public List<CloudWatchMetricInfoDTO> getMetricInfos() {
+    if (CollectionUtils.isEmpty(metricInfos)) {
+      metricInfos = Collections.emptyList();
+    }
+    return metricInfos;
   }
 
   @Data

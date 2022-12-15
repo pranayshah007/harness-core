@@ -7,8 +7,8 @@
 
 package io.harness.steps.shellscript;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 
 import static java.util.Collections.emptyList;
 
@@ -29,7 +29,6 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -46,6 +45,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -229,9 +229,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .useWinRMKerberosUniqueCacheFile(pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableCommandEncoding(pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
+            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG));
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())

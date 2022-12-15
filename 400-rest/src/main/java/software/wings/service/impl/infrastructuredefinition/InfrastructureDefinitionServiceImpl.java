@@ -92,13 +92,13 @@ import io.harness.exception.ReflectionException;
 import io.harness.exception.WingsException;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.queue.QueuePublisher;
+import io.harness.reflection.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
@@ -217,6 +217,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import com.mongodb.DuplicateKeyException;
 import io.fabric8.utils.CountingMap;
 import java.lang.reflect.Field;
@@ -234,6 +235,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -1787,7 +1789,10 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
         .match(query)
         .group(Group.id(grouping("envId")), grouping("count", accumulator("$sum", 1)))
         .project(projection("envId", "_id.envId"), projection("count"))
-        .aggregate(EnvInfraDefStats.class)
+        .aggregate(EnvInfraDefStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(InfrastructureDefinition.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(envInfraDefStat -> envIdInfraDefCountMap.put(envInfraDefStat.envId, envInfraDefStat.count));
 
     return envIdInfraDefCountMap;

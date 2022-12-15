@@ -27,10 +27,12 @@ import io.harness.mongo.MongoConfig;
 import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
+import io.harness.pms.event.overviewLandingPage.DebeziumConsumerConfig;
 import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -96,6 +98,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pipelineExecutionPoolConfig") private ThreadPoolConfig pipelineExecutionPoolConfig;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
+  @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
   @JsonProperty("orchestrationPoolConfig") private ThreadPoolConfig orchestrationPoolConfig;
   @JsonProperty("grpcServerConfig") private GrpcServerConfig grpcServerConfig;
   @JsonProperty("grpcClientConfigs") private Map<String, GrpcClientConfig> grpcClientConfigs;
@@ -139,6 +142,10 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("jsonExpansionPoolConfig") private ThreadPoolConfig jsonExpansionPoolConfig;
   @JsonProperty("jsonExpansionRequestBatchSize") private Integer jsonExpansionBatchSize;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty(value = "orchestrationRestrictionConfiguration")
+  OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
+  @JsonProperty("yamlSchemaExecutorServiceConfig") private ThreadPoolConfig yamlSchemaExecutorServiceConfig;
+  @JsonProperty(value = "containerStepConfig") ContainerExecutionConfig containerExecutionConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

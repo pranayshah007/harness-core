@@ -40,6 +40,10 @@ if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
   export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.events-mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 fi
@@ -54,6 +58,14 @@ fi
 
 if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$S3_SYNC_CONFIG_BUCKET_NAME" ]]; then
@@ -268,3 +280,5 @@ replace_key_value awsCurBilling "$AWS_CUR_BILLING"
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
+
+replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"

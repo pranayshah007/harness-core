@@ -48,6 +48,7 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -88,6 +89,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -542,6 +544,38 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
   }
 
+  @Override
+  public ServiceInputsMergedResponseDto mergeServiceInputs(
+      String accountId, String orgId, String projectId, String serviceId, String oldServiceInputsYaml) {
+    Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceId, false);
+    if (!serviceEntity.isPresent()) {
+      throw new NotFoundException(
+          format("Service with identifier [%s] in project [%s], org [%s] not found", serviceId, projectId, orgId));
+    }
+
+    String serviceYaml = serviceEntity.get().getYaml();
+    if (isEmpty(serviceYaml)) {
+      return ServiceInputsMergedResponseDto.builder().mergedServiceInputsYaml("").serviceYaml("").build();
+    }
+    try {
+      YamlNode primaryArtifactRefNode = null;
+      if (isNotEmpty(oldServiceInputsYaml)) {
+        YamlNode oldServiceInputsNode = YamlUtils.readTree(oldServiceInputsYaml).getNode();
+        primaryArtifactRefNode = YamlNodeUtils.goToPathUsingFqn(
+            oldServiceInputsNode, "serviceInputs.serviceDefinition.spec.artifacts.primary.primaryArtifactRef");
+      }
+
+      String newServiceInputsYaml = createServiceInputsYamlGivenPrimaryArtifactRef(
+          serviceYaml, serviceId, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
+      return ServiceInputsMergedResponseDto.builder()
+          .mergedServiceInputsYaml(InputSetMergeUtility.mergeInputs(oldServiceInputsYaml, newServiceInputsYaml))
+          .serviceYaml(serviceYaml)
+          .build();
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Error occurred while merging old and new service inputs", ex);
+    }
+  }
+
   private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
       YamlField serviceYamlField, String serviceIdentifier, String primaryArtifactRef) {
     YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
@@ -570,7 +604,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
     if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
-      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)) {
+      if (EmptyPredicate.isNotEmpty(primaryArtifactRef)
+          && !NGExpressionUtils.matchesInputSetPattern(primaryArtifactRef)) {
         primaryArtifactRefValue = primaryArtifactRef;
       } else {
         primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
@@ -763,5 +798,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       // ignore this
       return false;
     }
+  }
+
+  public Optional<ServiceEntity> getService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
   }
 }

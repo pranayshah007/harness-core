@@ -66,6 +66,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class SecretSpecBuilderTest extends CategoryTest {
@@ -115,10 +116,48 @@ public class SecretSpecBuilderTest extends CategoryTest {
              secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
         .thenReturn(secretVariableDetails.getSecretVariableDTO());
     Map<String, SecretParams> decryptedSecrets =
-        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails));
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), new HashMap<>());
     assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
     assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
     assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldConvertCustomSecretVariablesOnlyOnce() {
+    SecretVariableDetails secretVariableDetails =
+        SecretVariableDetails.builder()
+            .secretVariableDTO(SecretVariableDTO.builder()
+                                   .name("abc")
+                                   .type(SecretVariableDTO.Type.TEXT)
+                                   .secret(SecretRefData.builder()
+                                               .decryptedValue("pass".toCharArray())
+                                               .identifier("secret_id")
+                                               .scope(Scope.ACCOUNT)
+                                               .build())
+                                   .build())
+            .encryptedDataDetailList(singletonList(
+                EncryptedDataDetail.builder()
+                    .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.KMS).build())
+                    .build()))
+            .build();
+    when(secretDecryptor.decrypt(
+             secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
+        .thenReturn(secretVariableDetails.getSecretVariableDTO());
+    Map<String, SecretVariableDTO> cache = new HashMap<>();
+    Map<String, SecretParams> decryptedSecrets =
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
+    assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+
+    decryptedSecrets = secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
+    assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
+    Mockito.verify(secretDecryptor, Mockito.times(1))
+        .decrypt(secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList());
   }
 
   @Test
@@ -145,7 +184,7 @@ public class SecretSpecBuilderTest extends CategoryTest {
              secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
         .thenReturn(secretVariableDetails.getSecretVariableDTO());
     Map<String, SecretParams> decryptedSecrets =
-        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails));
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), new HashMap<>());
     assertThat(decryptedSecrets.get("abc").getValue()).isEqualTo(encodeBase64("pass"));
     assertThat(decryptedSecrets.get("abc").getSecretKey()).isEqualTo(SECRET_KEY + "abc");
     assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(SecretParams.Type.FILE);

@@ -30,11 +30,15 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 @OwnedBy(GTM)
 public class SignupModule extends AbstractModule {
+  public static final String NG_SIGNUP_EXECUTOR_SERVICE = "ngSignupExecutorService";
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String managerServiceSecret;
   private final String clientId;
@@ -56,7 +60,7 @@ public class SignupModule extends AbstractModule {
   protected void configure() {
     install(FeatureFlagModule.getInstance());
     install(UserClientModule.getInstance(serviceHttpClientConfig, managerServiceSecret, clientId));
-    install(AccessControlClientModule.getInstance(accessControlClientConfiguration, managerServiceSecret));
+    install(AccessControlClientModule.getInstance(accessControlClientConfiguration, clientId));
     install(GoogleCloudFileModule.getInstance());
     bind(SignupService.class).to(SignupServiceImpl.class);
     String deployMode = System.getenv().get(DEPLOY_MODE);
@@ -67,6 +71,14 @@ public class SignupModule extends AbstractModule {
       bind(SignupNotificationHelper.class).to(SaasSignupNotificationHelper.class);
       bind(SignupNotificationTemplateLoader.class);
     }
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named(NG_SIGNUP_EXECUTOR_SERVICE))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("ng-signup-executor-thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
   }
 
   @Provides

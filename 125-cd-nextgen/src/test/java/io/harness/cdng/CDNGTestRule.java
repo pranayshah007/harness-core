@@ -7,7 +7,7 @@
 
 package io.harness.cdng;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -72,6 +72,7 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -222,6 +223,12 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       @Singleton
       public TimeScaleDBConfig getTimeScaleDBConfig() {
         return TimeScaleDBConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
       }
     });
     modules.add(new AbstractModule() {

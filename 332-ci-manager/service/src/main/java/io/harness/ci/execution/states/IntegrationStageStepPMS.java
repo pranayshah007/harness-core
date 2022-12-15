@@ -8,6 +8,7 @@
 package io.harness.ci.states;
 
 import static io.harness.beans.steps.outcome.CIOutcomeNames.INTEGRATION_STAGE_OUTCOME;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
@@ -20,6 +21,7 @@ import io.harness.beans.steps.outcome.IntegrationStageOutcome.IntegrationStageOu
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StageElementParameters;
@@ -30,6 +32,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -109,6 +112,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
       Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     long currentTime = System.currentTimeMillis();
+    saveStageExecutionSweepingOutput(ambiance, currentTime - startTime);
     StepResponseNotifyData stepResponseNotifyData = filterStepResponse(responseDataMap);
 
     Status stageStatus = stepResponseNotifyData.getStatus();
@@ -164,5 +168,20 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
         .findFirst()
         .map(obj -> (StepResponseNotifyData) obj.getValue())
         .orElse(null);
+  }
+
+  private void saveStageExecutionSweepingOutput(Ambiance ambiance, long buildTime) {
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STAGE_EXECUTION));
+    if (!optionalSweepingOutput.isFound()) {
+      try {
+        StageExecutionSweepingOutput stageExecutionSweepingOutput =
+            StageExecutionSweepingOutput.builder().stageExecutionTime(buildTime).build();
+        executionSweepingOutputResolver.consume(
+            ambiance, STAGE_EXECUTION, stageExecutionSweepingOutput, StepOutcomeGroup.STAGE.name());
+      } catch (Exception e) {
+        log.error("Error while consuming stage execution sweeping output", e);
+      }
+    }
   }
 }

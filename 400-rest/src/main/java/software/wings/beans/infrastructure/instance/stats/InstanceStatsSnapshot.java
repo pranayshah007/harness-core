@@ -52,6 +52,13 @@ public class InstanceStatsSnapshot extends Base implements AccountAccess {
                  .field(InstanceStatsSnapshotKeys.accountId)
                  .field(InstanceStatsSnapshotKeys.timestamp)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_timestamp_total")
+                 .unique(true)
+                 .field(InstanceStatsSnapshotKeys.accountId)
+                 .field(InstanceStatsSnapshotKeys.timestamp)
+                 .field(InstanceStatsSnapshotKeys.total)
+                 .build())
         .build();
   }
 

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
-import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -22,21 +21,17 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import javax.validation.executable.ValidateOnExecution;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
   private final DelegateVersionService delegateVersionService;
   private final HPersistence persistence;
-
-  @Inject
-  public DelegateUpgraderServiceImpl(DelegateVersionService delegateVersionService, HPersistence persistence) {
-    this.delegateVersionService = delegateVersionService;
-    this.persistence = persistence;
-  }
 
   @Override
   public UpgradeCheckResult getDelegateImageTag(
@@ -74,7 +69,7 @@ public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
 
   @Override
   public UpgradeCheckResult getUpgraderImageTag(String accountId, String currentUpgraderImageTag) {
-    String newUpgraderImageTag = delegateVersionService.getUpgraderImageTag(accountId, DelegateType.KUBERNETES);
+    String newUpgraderImageTag = delegateVersionService.getUpgraderImageTag(accountId, true);
     final boolean shouldUpgrade = !currentUpgraderImageTag.equals(newUpgraderImageTag);
     return new UpgradeCheckResult(shouldUpgrade ? newUpgraderImageTag : currentUpgraderImageTag, shouldUpgrade);
   }

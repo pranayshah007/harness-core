@@ -1,0 +1,184 @@
+server:
+  applicationConnectors:
+    - type: https
+      port: 6060
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
+      certAlias: localhost
+      validateCerts: false
+    - type: http
+      port: 6457
+      maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: https
+      port: 6061
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
+      certAlias: localhost
+      validateCerts: false
+  requestLog:
+    appenders: []
+
+logging:
+  level: INFO
+  loggers:
+    com.novemberain.quartz.mongodb: WARN
+    org.quartz.plugins: WARN
+    org.glassfish.jersey: WARN
+    allbegray.slack: WARN
+    # the following is to suppress "Error retrieving job for trigger XYZ, setting trigger state to ERROR."
+    # TODO: remove this suppression when the mentioned issue is resolved
+    com.novemberain.quartz.mongodb.TriggerRunner: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
+
+mongo:
+  uri: mongodb://localhost:27017/cvng
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: cvng
+
+managerClientConfig:
+  baseUrl: http://localhost:3457
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enforcementClientConfiguration:
+  enforcementCheckEnabled: true
+
+templateServiceClientConfig:
+  baseUrl: http://localhost:15001/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false
+
+templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+nextGen:
+  managerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  ngManagerUrl: http://localhost:7457
+
+managerAuthConfig:
+  jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
+  jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notification
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    socketTimeout: 360000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+shouldConfigureWithNotification: false
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+pmsSdkGrpcServerConfig:
+  connectors:
+    - port: 12401
+      secure: true
+      keyFilePath: key.pem
+      certFilePath: cert.pem
+    - port: 12402
+
+pmsGrpcClientConfig:
+  target: localhost:12011
+  authority: localhost
+
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+
+portalUrl: https://localhost:8181/
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+cacheConfig:
+  cacheBackend: REDIS
+  cacheNamespace: ""
+  disabledCaches: [ ]
+  enterpriseCacheEnabled: true
+
+
+accessControlClientConfig:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: http://localhost:9191/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
+
+hostname: ${HOSTNAME:-localhost}
+
+basePathPrefix: ${BASE_PATH_PREFIX:-""}
+
+enableOpentelemetry: false

@@ -24,10 +24,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SyncTaskContext;
@@ -57,6 +58,7 @@ import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.ldap.LdapDelegateService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.utils.CompletableFutures;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -71,8 +73,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -90,6 +99,7 @@ public class LdapGroupSyncJobHelper {
   public static final long MIN_LDAP_SYNC_TIMEOUT = 60 * 1000L; // 1 minute
   public static final long MAX_LDAP_SYNC_TIMEOUT = 3 * 60 * 1000L; // 3 minute
 
+  @Inject private LdapSyncJobConfig ldapSyncJobConfig;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private SSOSettingService ssoSettingService;
   @Inject private SSOService ssoService;
@@ -104,8 +114,7 @@ public class LdapGroupSyncJobHelper {
   @Inject @Named(LdapFeature.FEATURE_NAME) private PremiumFeature ldapFeature;
 
   public void syncJob(SSOSettings ssoSettings) {
-    if (featureFlagService.isEnabled(FeatureName.LDAP_GROUP_SYNC_JOB_ITERATOR, ssoSettings.getAccountId())
-        && ssoSettings instanceof LdapSettings) {
+    if (ssoSettings instanceof LdapSettings) {
       LdapSettings ldapSettings = (LdapSettings) ssoSettings;
       String accountId = ldapSettings.getAccountId();
       if (isEmpty(accountId) || !ldapFeature.isAvailableForAccount(accountId)) {
@@ -115,6 +124,7 @@ public class LdapGroupSyncJobHelper {
       String ssoId = ldapSettings.getUuid();
       try (AutoLogContext ignore = new LdapGroupSyncJobLogContext(accountId, ssoId, OVERRIDE_ERROR)) {
         log.info("LDAPIterator: Executing ldap group sync job for ssoId: {} and accountId: {}", ssoId, accountId);
+        long startTime = System.nanoTime();
         LdapTestResponse ldapTestResponse = ssoService.validateLdapConnectionSettings(ldapSettings, accountId);
         if (ldapTestResponse.getStatus() == Status.FAILURE) {
           if (ssoSettingService.isDefault(accountId, ssoId)) {
@@ -127,9 +137,18 @@ public class LdapGroupSyncJobHelper {
         }
 
         List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(accountId, ssoId);
-        syncUserGroups(accountId, ldapSettings, userGroupsToSync, ssoId);
-
-        log.info("LDAPIterator: Ldap group sync job done for ssoId {} accountId {}", ssoId, accountId);
+        if (isEmpty(userGroupsToSync)) {
+          log.info("LDAPIterator: No linked user groups to process for ssoId {} accountId {}", ssoId, accountId);
+        } else if (featureFlagService.isEnabled(FeatureName.PL_LDAP_PARALLEL_GROUP_SYNC, ssoSettings.getAccountId())) {
+          log.info("ParallelLDAPIterator: Executing Parallel ldap group sync job for ssoId: {} and accountId: {}",
+              ssoId, accountId);
+          syncUserGroupsParallel(accountId, ldapSettings, userGroupsToSync, ssoId);
+        } else {
+          syncUserGroups(accountId, ldapSettings, userGroupsToSync, ssoId);
+        }
+        long endTime = System.nanoTime();
+        log.info("LDAPIterator: Ldap group sync job done for ssoId {} accountId {} in time(ns): {}", ssoId, accountId,
+            endTime - startTime);
       } catch (WingsException exception) {
         if (exception.getCode() == ErrorCode.USER_GROUP_SYNC_FAILURE) {
           ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, exception.getMessage());
@@ -260,7 +279,7 @@ public class LdapGroupSyncJobHelper {
           if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
             log.info("LDAPIterator: user {} already assigned to account {}", user.getEmail(), accountId);
             userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
-            log.info("LDAPIterator: adding user {} to groups {}  in accountId {}", user.getUuid(),
+            log.info("LDAPIterator: adding existing user {} to groups {}  in accountId {}", user.getUuid(),
                 Lists.newArrayList(userGroups), accountId);
           } else {
             UserInvite userInvite = anUserInvite()
@@ -274,6 +293,9 @@ public class LdapGroupSyncJobHelper {
                 "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",
                 accountId, userInvite.getEmail(), Lists.newArrayList(userGroups), ldapUserResponse.getUserId());
             userService.inviteUser(userInvite, false, true);
+            userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
+            log.info("LDAPIterator: adding new user {} to groups {}  in accountId {}", user.getUuid(),
+                Lists.newArrayList(userGroups), accountId);
           }
         } catch (Exception e) {
           if (ldapUserResponse != null && isNotEmpty(ldapUserResponse.getEmail())) {
@@ -391,6 +413,138 @@ public class LdapGroupSyncJobHelper {
     // already triggered another cron job and it will handle it.
     if (validateUserGroupStates(userGroups)) {
       syncUserGroupMembers(accountId, removedGroupMembers, addedGroupMembers);
+    }
+  }
+  @VisibleForTesting
+  void syncUserGroupsParallel(String accountId, LdapSettings ldapSettings, List<UserGroup> userGroups, String ssoId) {
+    Map<UserGroup, Set<User>> removedGroupMembers = new ConcurrentHashMap<>();
+    Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new ConcurrentHashMap<>();
+    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+    Set<UserGroup> userGroupsFailedToSync = ConcurrentHashMap.newKeySet();
+    Map<UserGroup, LdapGroupResponse> userGroupLdapGroupResponseMap = new ConcurrentHashMap<>();
+    List<Pair<UserGroup, LdapGroupResponse>> userGroupLdapGroupResponsePairList = new ArrayList<>();
+
+    userGroupLdapGroupResponsePairList =
+        asynchGetUserGroupLdapGroupResponsePairList(ssoId, accountId, ldapSettings, userGroups, encryptedDataDetail,
+            userGroupsFailedToSync, userGroupLdapGroupResponseMap, userGroupLdapGroupResponsePairList);
+
+    processUserGroupLdapGroupResponseList(
+        accountId, removedGroupMembers, addedGroupMembers, userGroupsFailedToSync, userGroupLdapGroupResponsePairList);
+
+    if (userGroupsFailedToSync.isEmpty()) {
+      ssoSettingService.closeSyncFailureAlertIfOpen(accountId, ssoId);
+      log.info("ParallelLDAPIterator: closeSyncFailureAlertIfOpen ssoId {} accountId {}", ssoId, accountId);
+    } else {
+      String userGroupsFailed =
+          userGroupsFailedToSync.stream().map(UserGroup::getName).collect(Collectors.joining(", ", "[", "]"));
+      ssoSettingService.raiseSyncFailureAlert(
+          accountId, ssoId, String.format("ParallelLDAPIterator: Ldap Sync failed for groups: %s", userGroupsFailed));
+    }
+    // Sync the groups only if the state is still the same as we started. Else any change in the groups would have
+    // already triggered another cron job and it will handle it.
+    if (validateUserGroupStates(userGroups)) {
+      syncUserGroupMembers(accountId, removedGroupMembers, addedGroupMembers);
+    }
+  }
+
+  private void processUserGroupLdapGroupResponseList(String accountId, Map<UserGroup, Set<User>> removedGroupMembers,
+      Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers, Set<UserGroup> userGroupsFailedToSync,
+      List<Pair<UserGroup, LdapGroupResponse>> userGroupLdapGroupResponsePairList) {
+    for (Pair<UserGroup, LdapGroupResponse> userGroupLdapGroupResponseEntry : userGroupLdapGroupResponsePairList) {
+      if (null == userGroupLdapGroupResponseEntry || null == userGroupLdapGroupResponseEntry.getKey()
+          || null == userGroupLdapGroupResponseEntry.getValue()) {
+        log.info("ParallelLDAPIterator:Null value: " + userGroupLdapGroupResponseEntry);
+      } else {
+        calculateUserGroupDataModification(accountId, removedGroupMembers, addedGroupMembers, userGroupsFailedToSync,
+            userGroupLdapGroupResponseEntry.getKey(), userGroupLdapGroupResponseEntry.getValue());
+      }
+    }
+  }
+
+  private List<Pair<UserGroup, LdapGroupResponse>> asynchGetUserGroupLdapGroupResponsePairList(String ssoId,
+      String accountId, LdapSettings ldapSettings, List<UserGroup> userGroups, EncryptedDataDetail encryptedDataDetail,
+      Set<UserGroup> userGroupsFailedToSync, Map<UserGroup, LdapGroupResponse> userGroupLdapGroupResponseMap,
+      List<Pair<UserGroup, LdapGroupResponse>> userGroupLdapGroupResponsePairList) {
+    int poolSize = 4;
+    if (null != ldapSyncJobConfig && ldapSyncJobConfig.getPoolSize() > 0) {
+      poolSize = Math.max(20, ldapSyncJobConfig.getPoolSize());
+    }
+
+    log.info(
+        "ParallelLDAPIterator: Starting UserGroup Sync with number of threads {} for userGroups {} ssoId {} accountId {}",
+        poolSize, userGroups, ssoId, accountId);
+    ExecutorService managedDelegateTaskExecutor = new ManagedExecutorService(Executors.newFixedThreadPool(poolSize));
+    CompletableFutures<Pair<UserGroup, LdapGroupResponse>> ldapDelegateTasks =
+        new CompletableFutures<>(managedDelegateTaskExecutor);
+    for (UserGroup userGroup : userGroups) {
+      ldapDelegateTasks.supplyAsync(()
+                                        -> fetchDataFromDelegate(ldapSettings, encryptedDataDetail,
+                                            userGroupLdapGroupResponseMap, userGroup, userGroupsFailedToSync));
+    }
+    try {
+      userGroupLdapGroupResponsePairList = executeParallelTasks(ldapDelegateTasks);
+      log.info("ParallelLDAPIterator: All LDAP sync Delegate task completed for userGroups {} ssoId {} accountId {}",
+          userGroups, ssoId, accountId);
+    } catch (Exception ex) {
+      log.error("ParallelLDAPIterator: CompletableFutures of LDAP sync failed for userGroups {}", userGroups, ex);
+      userGroupsFailedToSync.addAll(userGroups);
+    } finally {
+      managedDelegateTaskExecutor.shutdown();
+    }
+    return userGroupLdapGroupResponsePairList;
+  }
+
+  private Pair<UserGroup, LdapGroupResponse> fetchDataFromDelegate(LdapSettings ldapSettings,
+      EncryptedDataDetail encryptedDataDetail, Map<UserGroup, LdapGroupResponse> userGroupLdapGroupResponseMap,
+      UserGroup userGroup, Set<UserGroup> userGroupsFailedToSync) {
+    Pair<UserGroup, LdapGroupResponse> userGroupLdapGroupResponsePair = null;
+    try {
+      return new Pair<>(userGroup, fetchGroupDetails(ldapSettings, encryptedDataDetail, userGroup));
+    } catch (Exception ex) {
+      log.error("ParallelLDAPIterator: Delegate task for LDAP sync failed for userGroup {}", userGroup.getName(), ex);
+      userGroupsFailedToSync.add(userGroup);
+      return new Pair<>(userGroup, null);
+    }
+  }
+
+  private void calculateUserGroupDataModification(String accountId, Map<UserGroup, Set<User>> removedGroupMembers,
+      Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers, Set<UserGroup> userGroupsFailedToSync,
+      UserGroup userGroup, LdapGroupResponse groupResponse) {
+    try {
+      if (!groupResponse.isSelectable()) {
+        String message =
+            String.format(LdapConstants.USER_GROUP_SYNC_NOT_ELIGIBLE, userGroup.getName(), groupResponse.getMessage());
+        throw new UnsupportedOperationException(message);
+      }
+      log.info("ParallelLDAPIterator: Fetched  LdapGroupResponse {} of group {} accountId {}", groupResponse,
+          userGroup.getUuid(), accountId);
+      syncUserGroupMetadata(userGroup, groupResponse);
+      if (featureFlagService.isEnabled(FeatureName.LDAP_USER_ID_SYNC, accountId)) {
+        updateUserIdsGroupMembers(groupResponse.getUsers());
+      }
+      updateRemovedGroupMembers(userGroup, groupResponse.getUsers(), removedGroupMembers);
+      updateAddedGroupMembers(userGroup, groupResponse.getUsers(), addedGroupMembers);
+      log.info("ParallelLDAPIterator: Updated members of group {} accountId {}", userGroup.getUuid(), accountId);
+    } catch (Exception e) {
+      log.error("ParallelLDAPIterator: LDAP sync failed for userGroup {}", userGroup.getName(), e);
+      userGroupsFailedToSync.add(userGroup);
+    }
+  }
+
+  private List<Pair<UserGroup, LdapGroupResponse>> executeParallelTasks(
+      @NotNull CompletableFutures<Pair<UserGroup, LdapGroupResponse>> ldapTasks)
+      throws InterruptedException, ExecutionException {
+    CompletableFuture<List<Pair<UserGroup, LdapGroupResponse>>> ldapResults = ldapTasks.allOf();
+    try {
+      return new ArrayList<>(ldapResults.get());
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw ex;
+    } catch (ExecutionException ex) {
+      if (ex.getCause() instanceof WingsException) {
+        throw(WingsException) ex.getCause();
+      }
+      throw ex;
     }
   }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.expressions;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluatorUtils;
 
 import com.google.inject.Singleton;
@@ -16,13 +17,13 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class MigratorExpressionUtils {
-  public void render(Object object) {
-    Map<String, Object> context = prepareContextMap();
-    ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
+  public static Object render(Object object, Map<String, String> customExpressions) {
+    Map<String, Object> context = prepareContextMap(customExpressions);
+    return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
   }
 
   @NotNull
-  Map<String, Object> prepareContextMap() {
+  static Map<String, Object> prepareContextMap(Map<String, String> customExpressions) {
     Map<String, Object> context = new HashMap<>();
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");
@@ -33,9 +34,18 @@ public class MigratorExpressionUtils {
     context.put("env.description", "<+env.description>");
     context.put("env.environmentType", "<+env.type>");
 
+    // Service Expressions
+    context.put("service.name", "<+service.name>");
+    context.put("service.description", "<+service.description>");
+
     // Artifact Expressions
     context.put("artifact.metadata.image", "<+artifact.image>");
+    context.put("artifact.metadata.tag", "<+artifact.tag>");
     context.put("artifact.source.dockerconfig", "<+artifact.imagePullSecret>");
+
+    // Application Expressions
+    context.put("app.name", "<+project.name>");
+    context.put("app.description", "<+project.description>");
 
     // Variables
     context.put("workflow.variables", new WorkflowVariablesMigratorFunctor());
@@ -44,6 +54,19 @@ public class MigratorExpressionUtils {
 
     // Secrets
     context.put("secrets", new SecretMigratorFunctor());
+
+    // App
+    context.put("app.defaults", new AppVariablesMigratorFunctor());
+
+    // Http Step
+    context.put("httpResponseCode", "<+httpResponseCode>");
+    context.put("httpResponseBody", "<+httpResponseBody>");
+    context.put("httpMethod", "<+httpMethod>");
+    context.put("httpUrl", "<+httpUrl>");
+
+    if (EmptyPredicate.isNotEmpty(customExpressions)) {
+      context.putAll(customExpressions);
+    }
 
     return context;
   }

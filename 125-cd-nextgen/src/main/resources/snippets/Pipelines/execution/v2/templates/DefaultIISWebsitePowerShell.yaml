@@ -1,0 +1,179 @@
+template:
+  name: Default IIS Website PowerShell
+  identifier: Default_IIS_Website_PowerShell
+  description: Default Templated Step provided by Harness for Install IIS Website Artifact using PowerShell script
+  versionLabel: v1
+  type: Step
+  tags:
+    script: powershell
+    command: install
+    artifactType: "IIS Website"
+    author: Harness
+  spec:
+    type: Command
+    timeout: 10m
+    spec:
+      onDelegate: false
+      environmentVariables:
+        - name: ReleaseNo
+          type: String
+          value: <+input>
+        - name: AppPoolName
+          type: String
+          value: <+input>
+        - name: AppPoolDotNetVersion
+          type: String
+          value: <+input>
+        - name: DownloadDirectory
+          type: String
+          value: <+input>
+        - name: AppPhysicalDirectory
+          type: String
+          value: <+input>
+        - name: SiteProtocol
+          type: String
+          value: <+input>
+        - name: SitePort
+          type: String
+          value: <+input>
+        - name: SiteHostName
+          type: String
+          value: <+input>
+        - name: DestinationDirectory
+          type: String
+          value: <+input>
+      outputVariables: []
+      commandUnits:
+        - identifier: Setup_Runtime_Paths
+          name: Setup Runtime Paths
+          type: Script
+          spec:
+            shell: PowerShell
+            source:
+              type: Inline
+              spec:
+                script: |-
+                  # Creates destination directory if it doesn't exist
+                        $DirectoryName = "%USERPROFILE%\<+service.name>\<+env.name>"
+                        If (!(Test-Path $DirectoryName)) {
+                          Write-Host "Creating directory" $DirectoryName
+                          New-Item $DirectoryName -ItemType Directory
+                        }
+        - identifier: Download_Artifact
+          name: Download Artifact
+          type: DownloadArtifact
+          spec:
+            destinationPath: $env:DestinationDirectory
+        - identifier: Expand_Artifact
+          name: Expand Artifact
+          type: Script
+          spec:
+            shell: PowerShell
+            source:
+              type: Inline
+              spec:
+                script: |-
+                  $serviceName="<+service.name>"
+                  $releaseId="$env:ReleaseNo"
+                  $artifactJustFileName = Split-Path "<+artifact.artifactPath>" -leaf
+                  $artifactFilename = "$HOME\<+service.name>\<+env.name>" + "\" + $artifactJustFileName
+                  $appPhysicalDirectory="$env:AppPhysicalDirectory" + "\Artifacts\" + $serviceName + "\release-" + $releaseId
+                  
+                    # Check if artifact is File or Folder structure
+                  $isFile = Test-Path -Path $artifactFilename -PathType Leaf
+                  $isFolder = Test-Path -Path $artifactFilename -PathType Container
+                  if ($isFile -and ([IO.Path]::GetExtension($artifactFilename) -eq ".zip" ))
+                  {
+                  Write-Host "Extracting package from" $artifactFilename "to" $appPhysicalDirectory
+                  Expand-Archive -Path $artifactFilename -DestinationPath $appPhysicalDirectory -Force
+                  }
+                  else
+                  {
+                  Write-Host "Artifact type is not a zip file. Skipping extract."
+                  }
+                  if ($isFolder)
+                  {
+                  Write-Host "Copying folder from" $artifactFilename "to" $appPhysicalDirectory
+                  Copy-Item -Path $artifactFilename -Filter "*.*" -Recurse -Destination $appPhysicalDirectory -Container
+                  }
+                  Write-Host "Done."
+        - identifier: Copy_Config
+          name: Copy Config
+          type: Copy
+          spec:
+            sourceType: Config
+            destinationPath: $env:DestinationDirectory
+        - identifier: Create_AppPool
+          name: Create AppPool
+          type: Script
+          spec:
+            shell: PowerShell
+            source:
+              type: Inline
+              spec:
+                script: |-
+                  $releaseId="$env:ReleaseNo"
+                  $serviceName="<+service.name>"
+                  $appPhysicalDirectory="$env:AppPhysicalDirectory" + "\Artifacts\" + $serviceName + "\release-" + $releaseId
+                  
+                    # Copy configs to application directory
+                  $userProfile = "$env:userprofile"
+                  if (!(Test-Path "$userProfile\\<+service.name>\\<+env.name>\\runtime"))
+                  {
+                    Write-Host "Creating directory " $userProfile\\<+service.name>\\<+env.name>\\runtime
+                    New-Item "$userProfile\\<+service.name>\\<+env.name>\\runtime"
+                  }
+                  Copy-Item -Path "$userProfile\\<+service.name>\\<+env.name>\\runtime\\*.config" -Destination $appPhysicalDirectory -Force
+
+                  Import-Module WebAdministration
+
+                  $AppPoolName = "$env:AppPoolName"
+                  $AppPoolDotNetVersion = "$env:AppPoolDotNetVersion"
+
+                  if (!(Test-Path IIS:\AppPools\$AppPoolName -pathType container))
+                  {
+                  Write-Host "Creating AppPool:" $AppPoolName
+                  $appPool = New-Item IIS:\AppPools\$AppPoolName
+                  }
+                  else
+                  {
+                  Write-Host "Updating AppPool:" $AppPoolName
+                  $appPool = Get-Item IIS:\AppPools\$AppPoolName
+                  }
+
+                  $appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value $AppPoolDotNetVersion
+
+                  Get-Item IIS:\AppPools\$AppPoolName | ft
+                  Write-Host "Done."
+        - identifier: Create_Website
+          name: Create Website
+          type: Script
+          spec:
+            shell: PowerShell
+            source:
+              type: Inline
+              spec:
+                script: |-
+                  Import-Module WebAdministration
+
+                  $releaseId = "$env:ReleaseNo"
+                  $SiteName = "<+service.name>"
+                  $SitePhysicalDirectory = "$env:AppPhysicalDirectory" + "\Artifacts\" + $SiteName + "\release-" + $releaseId
+                  $AppPoolName = "$env:AppPoolName"
+
+                  if (!(Test-Path IIS:\Sites\$SiteName -pathType container))
+                  {
+                  $site = New-Item IIS:\Sites\$SiteName -physicalPath $sitePhysicalDirectory -bindings @{protocol="$env:SiteProtocol";bindingInformation=":"+ "$env:SitePort" +":"+ "$env:SiteHostName"} -ApplicationPool $AppPoolName -AutoStart $true
+                  Write-Host "Created Website:" $SiteName
+                  }
+                  else
+                  {
+                  $site = Get-Item IIS:\Sites\$SiteName
+                  $Site | Set-ItemProperty -Name "physicalPath" -Value $sitePhysicalDirectory
+                  $Site | Set-ItemProperty -Name "bindings" -Value @{protocol="$env:SiteProtocol";bindingInformation=":"+ "$env:SitePort" +":"+ "$env:SiteHostName"}
+                  Write-Host "Updated Website:" $SiteName
+                  }
+                  Write-Host "Starting Website..."
+                  Start-WebSite $SiteName
+                  Get-Item IIS:\Sites\$SiteName
+                  Write-Host "Done."

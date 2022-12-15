@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -39,6 +40,8 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfi
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
@@ -77,6 +80,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
+import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -107,12 +111,16 @@ import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
+import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -121,7 +129,9 @@ import io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
 import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
+import io.harness.cdng.manifest.yaml.kinds.TasManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kinds.VarsManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
@@ -131,6 +141,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.CustomDeploymentServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec;
+import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -143,6 +154,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.SshServiceSpec;
 import io.harness.cdng.service.beans.StageOverridesConfig;
+import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
 import io.harness.cdng.service.beans.WinRmServiceSpec;
 import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.variables.beans.NGVariableOverrideSets;
@@ -275,6 +287,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GithubPackagesArtifactOutcome.class, 130029);
     kryo.register(AzureArtifactsConfig.class, 14700);
     kryo.register(AzureArtifactsOutcome.class, 14701);
+    kryo.register(AMIArtifactConfig.class, 14704);
+    kryo.register(AMIArtifactOutcome.class, 14705);
     kryo.register(EcsServiceDefinitionManifest.class, 140001);
     kryo.register(EcsTaskDefinitionManifest.class, 140002);
     kryo.register(EcsTaskDefinitionManifestOutcome.class, 140003);
@@ -308,6 +322,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomDeploymentNumberNGVariable.class, 130034);
     kryo.register(CustomDeploymentSecretNGVariable.class, 130035);
     kryo.register(CustomDeploymentNGVariableType.class, 130036);
+    kryo.register(GitOpsDeploymentRepoManifest.class, 130037);
 
     kryo.register(K8SDirectInfrastructure.class, 8028);
     kryo.register(K8sGcpInfrastructure.class, 8301);
@@ -317,5 +332,14 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsInfrastructure.class, 12612);
     kryo.register(CustomDeploymentInfrastructure.class, 12613);
     kryo.register(ServerlessAwsLambdaInfrastructure.class, 12579);
+    kryo.register(NexusRegistryRawConfig.class, 1400171);
+    kryo.register(ElastigroupServiceSpec.class, 140011);
+    kryo.register(TanzuApplicationServiceSpec.class, 140050);
+    kryo.register(TasManifest.class, 140051);
+    kryo.register(AutoScalerManifest.class, 140052);
+    kryo.register(VarsManifest.class, 140053);
+    kryo.register(TasManifestOutcome.class, 140054);
+    kryo.register(AutoScalerManifestOutcome.class, 140055);
+    kryo.register(VarsManifestOutcome.class, 140056);
   }
 }

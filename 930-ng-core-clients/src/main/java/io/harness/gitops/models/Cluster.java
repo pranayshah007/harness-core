@@ -9,6 +9,7 @@ package io.harness.gitops.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -19,6 +20,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Cluster {
   String identifier;
+  String agentIdentifier;
+  Map<String, String> tags;
+
   @JsonProperty("cluster") ClusterInternal clusterInternal;
 
   public Cluster(String identifier, String name) {

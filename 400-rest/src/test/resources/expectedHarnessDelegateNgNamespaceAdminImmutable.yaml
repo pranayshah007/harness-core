@@ -82,7 +82,6 @@ spec:
           runAsUser: 0
         resources:
           limits:
-            cpu: "0.5"
             memory: "2048Mi"
           requests:
             cpu: "0.5"
@@ -207,7 +206,7 @@ data:
 
 ---
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:

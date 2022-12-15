@@ -41,7 +41,8 @@ import org.zeroturnaround.exec.ProcessExecutor;
 @Slf4j
 public class STOManagerExecutor {
   public static final String MODULE = "315-sto-manager";
-  public static final String CONFIG_YML = "sto-manager-config.yml";
+  public static final String MODULE_APP = "315-sto-manager/app";
+  public static final String CONFIG_YML = "/config/sto-manager-config.yml";
   private static boolean failedAlready;
   private static final Duration waiting = ofMinutes(3);
 
@@ -83,7 +84,7 @@ public class STOManagerExecutor {
 
     log.info("Execute the manager from {}", directory);
 
-    final Path jar = getJar(MODULE);
+    final Path jar = getJar(MODULE_APP);
     final Path config = getConfig(directory.getAbsolutePath(), MODULE, CONFIG_YML);
 
     for (int i = 0; i < 10; i++) {

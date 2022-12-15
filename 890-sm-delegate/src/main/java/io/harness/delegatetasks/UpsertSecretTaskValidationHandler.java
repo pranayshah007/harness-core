@@ -51,6 +51,10 @@ public class UpsertSecretTaskValidationHandler implements ConnectorValidationHan
     try {
       UpsertSecretTaskParameters upsertSecretTaskParameters =
           getTaskParams(connectorValidationParams, accountIdentifier);
+      if ((upsertSecretTaskParameters.getEncryptionConfig() instanceof VaultConfig)
+          && (((VaultConfig) upsertSecretTaskParameters.getEncryptionConfig()).isReadOnly())) {
+        return ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).testedAt(currentTime).build();
+      }
       upsertSecretTaskResponse = UpsertSecretTask.run(upsertSecretTaskParameters, vaultEncryptorsRegistry);
     } catch (Exception exception) {
       String errorMessage = exception.getMessage();

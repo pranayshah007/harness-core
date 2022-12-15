@@ -12,7 +12,6 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
 import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
-import static io.harness.beans.FeatureName.HELM_CHART_VERSION_STRICT_MATCH;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
 import static io.harness.beans.FeatureName.USE_LATEST_CHARTMUSEUM_VERSION;
@@ -116,7 +115,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.command.HelmDummyCommandUnit;
@@ -142,6 +140,7 @@ import software.wings.helpers.ext.helm.response.HelmValuesFetchTaskResponse;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.GitFileConfigHelperService;
@@ -1064,8 +1063,7 @@ public class HelmDeployState extends State {
             helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
                 && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
 
-            helmChartConfigTaskParams.setCheckIncorrectChartVersion(
-                featureFlagService.isEnabled(HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
+            helmChartConfigTaskParams.setCheckIncorrectChartVersion(true);
 
             manifestConfig = K8sDelegateManifestConfig.builder()
                                  .helmChartConfigParams(helmChartConfigTaskParams)

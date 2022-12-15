@@ -136,6 +136,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
   export MAX_CONNECTION_IDLE_TIME; yq -i '.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
@@ -152,12 +156,32 @@ if [[ "" != "$ANALYTIC_MONGO_TAG_NAME" ]]; then
  export ANALYTIC_MONGO_TAG_NAME; yq -i '.mongo.analyticNodeConfig.mongoTagKey=env(ANALYTIC_MONGO_TAG_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ANALYTIC_MONGO_TAG_VALUE" ]]; then
  export ANALYTIC_MONGO_TAG_VALUE; yq -i '.mongo.analyticNodeConfig.mongoTagValue=env(ANALYTIC_MONGO_TAG_VALUE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
   export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_CORE_SIZE" ]]; then
+  export $DATA_RECONCILIATION_CORE_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.corePoolSize=env($DATA_RECONCILIATION_CORE_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_MAX_SIZE" ]]; then
+  export $DATA_RECONCILIATION_MAX_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.maxPoolSize=env($DATA_RECONCILIATION_MAX_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME; yq -i '.executorsConfig.dataReconciliationExecutorConfig.idleTime=env($DATA_RECONCILIATION_IDLE_TIME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
@@ -511,9 +535,12 @@ if [[ "" != "$BACKGROUND_SCHEDULER_CLUSTERED" ]]; then
 fi
 
 if [[ "" != "$ENABLE_CRONS" ]]; then
-  export ENABLE_CRONS; yq -i '.enableIterators=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.backgroundScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
   export ENABLE_CRONS; yq -i '.serviceScheduler.enabled=env(ENABLE_CRONS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ENABLE_ITERATORS" ]]; then
+  export ENABLE_ITERATORS; yq -i '.enableIterators=env(ENABLE_ITERATORS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_TRIAL_REGISTRATION" ]]; then
@@ -658,6 +685,14 @@ if [[ "$TIMESCALEDB_HEALTH_CHECK_NEEDED" == "true" ]]; then
   export TIMESCALEDB_HEALTH_CHECK_NEEDED; yq -i '.timescaledb.isHealthCheckNeeded=env(TIMESCALEDB_HEALTH_CHECK_NEEDED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "$SEARCH_ENABLED" == "true" ]]; then
   yq -i '.searchEnabled=true' $CONFIG_FILE
 fi
@@ -713,6 +748,10 @@ if [[ "" != "$REDIS_URL" ]]; then
   export REDIS_URL; yq -i '.singleServerConfig.address=env(REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$ATMOSPHERE_REDIS_URL" ]]; then
+  export ATMOSPHERE_REDIS_URL; yq -i '.redisAtmosphereConfig.redisUrl=env(ATMOSPHERE_REDIS_URL)' $CONFIG_FILE
+fi
+
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.redisLockConfig.sentinel=true' $CONFIG_FILE
   yq -i '.redisAtmosphereConfig.sentinel=true' $CONFIG_FILE
@@ -745,18 +784,14 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.redisLockConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.redisAtmosphereConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+
+  export REDIS_NETTY_THREADS; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisLockConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisAtmosphereConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$REDIS_CONNECTION_MINIMUM_IDLE_SIZE" ]]; then
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisLockConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisAtmosphereConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
@@ -941,6 +976,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
   export LOG_STREAMING_SERVICE_BASEURL; yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_STREAMING_SERVICE_EXTERNAL_URL" ]]; then
+  export LOG_STREAMING_SERVICE_EXTERNAL_URL; yq -i '.logStreamingServiceConfig.externalUrl=env(LOG_STREAMING_SERVICE_EXTERNAL_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi
@@ -1056,8 +1095,5 @@ if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
   export AGENT_MTLS_SUBDOMAIN; yq -i '.agentMtlsSubdomain=env(AGENT_MTLS_SUBDOMAIN)' $CONFIG_FILE
 fi
 
-if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
-  export CD_TSDB_RETENTION_PERIOD_MONTHS; yq -i '.cdTsDbRetentionPeriodMonths=env(CD_TSDB_RETENTION_PERIOD_MONTHS)' $CD_TSDB_RETENTION_PERIOD_MONTHS
-fi
-
+replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

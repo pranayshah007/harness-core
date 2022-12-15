@@ -80,10 +80,40 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
     }
   }
 
+  // Required in a migration . May be removed in the future.
   @Override
-  public PipelineExecutionSummaryEntity findFirst(Criteria criteria) {
+  public List<PipelineExecutionSummaryEntity> findAllWithRequiredProjection(
+      Criteria criteria, Pageable pageable, List<String> projections) {
+    try {
+      Query query = new Query(criteria).with(pageable);
+      addRequiredFieldsForProjectionOfPipelineExecutionSummaryEntity(query);
+      for (String key : projections) {
+        query.fields().include(key);
+      }
+      return pmsExecutionSummaryReadHelper.find(query);
+    } catch (IllegalArgumentException ex) {
+      log.error(ex.getMessage(), ex);
+      throw new InvalidRequestException("Execution Status not found", ex);
+    }
+  }
+
+  private void addRequiredFieldsForProjectionOfPipelineExecutionSummaryEntity(Query query) {
+    query.fields().include(PlanExecutionSummaryKeys.uuid);
+    query.fields().include(PlanExecutionSummaryKeys.runSequence);
+    query.fields().include(PlanExecutionSummaryKeys.accountId);
+    query.fields().include(PlanExecutionSummaryKeys.projectIdentifier);
+    query.fields().include(PlanExecutionSummaryKeys.orgIdentifier);
+    query.fields().include(PlanExecutionSummaryKeys.pipelineIdentifier);
+    query.fields().include(PlanExecutionSummaryKeys.name);
+    query.fields().include(PlanExecutionSummaryKeys.planExecutionId);
+    query.fields().include(PlanExecutionSummaryKeys.createdAt);
+    query.fields().include(PlanExecutionSummaryKeys.lastUpdatedAt);
+  }
+
+  @Override
+  public long getCountOfExecutionSummary(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findOne(query, PipelineExecutionSummaryEntity.class);
+    return pmsExecutionSummaryReadHelper.findCount(query);
   }
 
   private void queryFieldsForPipelineExecutionSummaryEntity(Query query) {
@@ -107,9 +137,11 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
     queryFieldsForPipelineExecutionSummaryEntity(query);
 
-    return mongoTemplate.findOne(query, PipelineExecutionSummaryEntity.class)
-        .getRetryExecutionMetadata()
-        .getRootExecutionId();
+    PipelineExecutionSummaryEntity entity = mongoTemplate.findOne(query, PipelineExecutionSummaryEntity.class);
+    if (entity == null) {
+      return null;
+    }
+    return entity.getRetryExecutionMetadata().getRootExecutionId();
   }
 
   @Override
@@ -125,6 +157,18 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
     query.with(by(Sort.Direction.DESC, PlanExecutionSummaryKeys.createdAt));
     return mongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
+  }
+
+  @Override
+  public List<String> findListOfUniqueBranches(Criteria criteria) {
+    Query query = new Query(criteria);
+    return pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+  }
+
+  @Override
+  public List<String> findListOfUniqueRepositories(Criteria criteria) {
+    Query query = new Query(criteria);
+    return pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

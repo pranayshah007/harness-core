@@ -17,10 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WinrmConnectivityCapabilityGenerator {
   public static WinrmConnectivityExecutionCapability buildWinrmConnectivityExecutionCapability(
-      WinRmInfraDelegateConfig winRmInfraDelegateConfig, boolean useWinRMKerberosUniqueCacheFile) {
+      WinRmInfraDelegateConfig winRmInfraDelegateConfig, boolean useWinRMKerberosUniqueCacheFile, String host) {
     return WinrmConnectivityExecutionCapability.builder()
         .useWinRMKerberosUniqueCacheFile(useWinRMKerberosUniqueCacheFile)
         .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
+        .host(host)
         .build();
   }
 }

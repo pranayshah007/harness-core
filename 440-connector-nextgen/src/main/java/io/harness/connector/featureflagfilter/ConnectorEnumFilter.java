@@ -9,7 +9,7 @@ package io.harness.connector.featureflagfilter;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.AZURE_ARTIFACTS_NG;
-import static io.harness.beans.FeatureName.JENKINS_ARTIFACT;
+import static io.harness.beans.FeatureName.CDS_TAS_NG;
 import static io.harness.beans.FeatureName.SSH_NG;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 
@@ -30,8 +30,8 @@ public class ConnectorEnumFilter extends EnumFeatureFlagFilter {
 
   public ConnectorEnumFilter() {
     put(SSH_NG, Sets.newHashSet(ConnectorType.PDC));
-    put(JENKINS_ARTIFACT, Sets.newHashSet(ConnectorType.JENKINS));
     put(AZURE_ARTIFACTS_NG, Sets.newHashSet(ConnectorType.AZURE_ARTIFACTS));
+    put(CDS_TAS_NG, Sets.newHashSet(ConnectorType.TAS));
   }
 
   @Override

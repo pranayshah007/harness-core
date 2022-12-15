@@ -9,6 +9,7 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BOJANA;
@@ -242,6 +243,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     settingAttribute.setValue(new AwsConfig());
     doReturn(true).when(featureFlagService).isEnabled(eq(TERRAFORM_AWS_CP_AUTHENTICATION), any());
     doReturn(true).when(featureFlagService).isEnabled(eq(ACTIVITY_ID_BASED_TF_BASE_DIR), any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR), any());
 
     doReturn(settingAttribute).when(settingsService).get(any());
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
@@ -259,6 +261,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     assertThat(parameters.getAwsRegion()).isEqualTo("region");
 
     assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
+    assertThat(parameters.isSyncGitCloneAndCopyToDestDir()).isTrue();
   }
 
   private void setUp(String sourceRepoBranch, boolean setVarsAndBackendConfigs, String workflowExecutionId) {

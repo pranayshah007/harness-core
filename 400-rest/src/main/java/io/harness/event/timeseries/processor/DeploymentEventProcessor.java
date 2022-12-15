@@ -18,6 +18,7 @@ import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.utils.FFUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Lists;
@@ -61,18 +62,18 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
   private static final String query_statement = "SELECT * FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String delete_statement = "DELETE FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String insert_statement =
-      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS, PARENT_PIPELINE_ID, CREATED_BY_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, ON_DEMAND_ROLLBACK, ORIGINAL_EXECUTION_ID, MANUALLY_ROLLED_BACK, INSTANCES_DEPLOYED, TAGS, PARENT_PIPELINE_ID, CREATED_BY_TYPE, INFRA_DEFINITIONS, INFRA_MAPPINGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
   private static final String delete_statement_migration_parent_table =
       "DELETE FROM DEPLOYMENT_PARENT WHERE EXECUTIONID=?";
   private static final String delete_statement_migration_stage_table =
       "DELETE FROM DEPLOYMENT_STAGE WHERE EXECUTIONID=?";
   private static final String insert_statement_migration_parent_table =
-      "INSERT INTO DEPLOYMENT_PARENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS,PARENT_PIPELINE_ID,CREATED_BY_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT_PARENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, ON_DEMAND_ROLLBACK, ORIGINAL_EXECUTION_ID, MANUALLY_ROLLED_BACK, INSTANCES_DEPLOYED, TAGS,PARENT_PIPELINE_ID,CREATED_BY_TYPE,INFRA_DEFINITIONS, INFRA_MAPPINGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
   private static final String insert_statement_migration_stage_table =
-      "INSERT INTO DEPLOYMENT_STAGE (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS,PARENT_PIPELINE_ID,CREATED_BY_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT_STAGE (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, ON_DEMAND_ROLLBACK, ORIGINAL_EXECUTION_ID, MANUALLY_ROLLED_BACK, INSTANCES_DEPLOYED, TAGS,PARENT_PIPELINE_ID,CREATED_BY_TYPE,INFRA_DEFINITIONS, INFRA_MAPPINGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
   private static final String fetch_account_executions_deployment_in_interval =
-      "SELECT EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,STAGENAME,ROLLBACK_DURATION,INSTANCES_DEPLOYED,TAGS FROM DEPLOYMENT WHERE ACCOUNTID = ? AND STARTTIME >= ? AND STARTTIME <= ? ORDER BY STARTTIME DESC OFFSET ? LIMIT ?";
+      "SELECT EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION,ON_DEMAND_ROLLBACK, ORIGINAL_EXECUTION_ID, MANUALLY_ROLLED_BACK, INSTANCES_DEPLOYED,TAGS, PARENT_PIPELINE_ID,CREATED_BY_TYPE,INFRA_DEFINITIONS, INFRA_MAPPINGS FROM DEPLOYMENT WHERE ACCOUNTID = ? AND STARTTIME >= ? AND STARTTIME <= ? ORDER BY STARTTIME DESC OFFSET ? LIMIT ?";
   private static final String fetch_oldest_parent_execution_migration_completed =
       "SELECT * FROM DEPLOYMENT_PARENT WHERE ACCOUNTID = ? ORDER BY STARTTIME LIMIT 1";
   private static final String fetch_oldest_stage_execution_migration_completed =
@@ -349,16 +350,34 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.SERVICE_LIST));
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.WORKFLOW_LIST));
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.CLOUD_PROVIDER_LIST));
-      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.SERVICE_LIST));
+      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.ENV_LIST));
       insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.PIPELINE));
       insertStatement.setLong(++index, (Long) eventInfo.get(EventProcessor.DURATION));
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.ARTIFACT_LIST));
       insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.ENVTYPES));
       insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.PARENT_EXECUTION));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.FAILURE_DETAILS));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.FAILED_STEP_NAMES));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.FAILED_STEP_TYPES));
       insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.STAGENAME));
       insertStatement.setLong(++index, (Long) eventInfo.get(EventProcessor.ROLLBACK_DURATION));
+      Boolean onDemandRollback = (Boolean) eventInfo.get(EventProcessor.ON_DEMAND_ROLLBACK);
+      if (onDemandRollback == null) {
+        onDemandRollback = false;
+      }
+      insertStatement.setBoolean(++index, onDemandRollback);
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.ORIGINAL_EXECUTION_ID));
+      Boolean manuallyRolledBack = (Boolean) eventInfo.get(EventProcessor.MANUALLY_ROLLED_BACK);
+      if (manuallyRolledBack == null) {
+        manuallyRolledBack = false;
+      }
+      insertStatement.setBoolean(++index, manuallyRolledBack);
       insertStatement.setInt(++index, (Integer) eventInfo.get(EventProcessor.INSTANCES_DEPLOYED));
       insertStatement.setObject(++index, eventInfo.get(EventProcessor.TAGS));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.PARENT_PIPELINE_ID));
+      insertStatement.setString(++index, (String) eventInfo.get(EventProcessor.CREATED_BY_TYPE));
+      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.INFRA_DEFINITIONS));
+      insertStatement.setArray(++index, (Array) eventInfo.get(EventProcessor.INFRA_MAPPINGS));
 
       try {
         insertStatement.execute();
@@ -374,7 +393,8 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
     }
   }
 
-  private List<Map<String, Object>> parseFetchResults(ResultSet resultSet) throws SQLException {
+  @VisibleForTesting
+  List<Map<String, Object>> parseFetchResults(ResultSet resultSet) throws SQLException {
     List<Map<String, Object>> eventInfoList = new ArrayList<>();
 
     while (resultSet.next()) {
@@ -402,8 +422,15 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       eventInfo.put(EventProcessor.FAILED_STEP_TYPES, resultSet.getString(index++));
       eventInfo.put(EventProcessor.STAGENAME, resultSet.getString(index++));
       eventInfo.put(EventProcessor.ROLLBACK_DURATION, resultSet.getLong(index++));
+      eventInfo.put(EventProcessor.ON_DEMAND_ROLLBACK, resultSet.getBoolean(index++));
+      eventInfo.put(EventProcessor.ORIGINAL_EXECUTION_ID, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.MANUALLY_ROLLED_BACK, resultSet.getBoolean(index++));
       eventInfo.put(EventProcessor.INSTANCES_DEPLOYED, resultSet.getInt(index++));
       eventInfo.put(EventProcessor.TAGS, resultSet.getObject(index++));
+      eventInfo.put(EventProcessor.PARENT_PIPELINE_ID, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.CREATED_BY_TYPE, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.INFRA_DEFINITIONS, resultSet.getArray(index++));
+      eventInfo.put(EventProcessor.INFRA_MAPPINGS, resultSet.getArray(index++));
 
       eventInfoList.add(eventInfo);
     }
@@ -504,6 +531,11 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
 
     Long rollbackDuration = getRollbackDuration(eventInfo);
     insertStatement.setLong(++index, rollbackDuration);
+    boolean onDemandRollback = getOnDemandRollback(eventInfo);
+    insertStatement.setBoolean(++index, onDemandRollback);
+    insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.ORIGINAL_EXECUTION_ID));
+    boolean manuallyRolledBack = getManuallyRolledBack(eventInfo);
+    insertStatement.setBoolean(++index, manuallyRolledBack);
 
     Integer instancesDeployed = getInstancesDeployed(eventInfo);
     insertStatement.setInt(++index, instancesDeployed);
@@ -511,6 +543,8 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
 
     insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.PARENT_PIPELINE_ID));
     insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.CREATED_BY_TYPE));
+    insertArrayData(dbConnection, insertStatement, getListData(eventInfo, EventProcessor.INFRA_DEFINITIONS), ++index);
+    insertArrayData(dbConnection, insertStatement, getListData(eventInfo, EventProcessor.INFRA_MAPPINGS), ++index);
 
     insertStatement.execute();
   }
@@ -529,6 +563,22 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       rollbackDuration = 0L;
     }
     return rollbackDuration;
+  }
+
+  private boolean getOnDemandRollback(TimeSeriesEventInfo eventInfo) {
+    Boolean onDemandRollback = eventInfo.getBooleanData().get(EventProcessor.ON_DEMAND_ROLLBACK);
+    if (onDemandRollback == null) {
+      onDemandRollback = false;
+    }
+    return onDemandRollback;
+  }
+
+  private boolean getManuallyRolledBack(TimeSeriesEventInfo eventInfo) {
+    Boolean manuallyRolledBack = eventInfo.getBooleanData().get(EventProcessor.MANUALLY_ROLLED_BACK);
+    if (manuallyRolledBack == null) {
+      manuallyRolledBack = false;
+    }
+    return manuallyRolledBack;
   }
 
   private Integer getInstancesDeployed(TimeSeriesEventInfo eventInfo) {

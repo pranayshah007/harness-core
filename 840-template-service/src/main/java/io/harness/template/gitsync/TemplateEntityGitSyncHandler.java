@@ -157,7 +157,7 @@ public class TemplateEntityGitSyncHandler extends AbstractGitSdkEntityHandler<Te
     NGTemplateInfoConfig templateInfoConfig = yamlDTO.getTemplateInfoConfig();
     Optional<TemplateEntity> templateEntity = templateService.get(accountIdentifier,
         templateInfoConfig.getOrgIdentifier(), templateInfoConfig.getProjectIdentifier(),
-        templateInfoConfig.getIdentifier(), templateInfoConfig.getVersionLabel(), false);
+        templateInfoConfig.getIdentifier(), templateInfoConfig.getVersionLabel(), false, false);
     return templateEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
   }
 
@@ -169,7 +169,7 @@ public class TemplateEntityGitSyncHandler extends AbstractGitSdkEntityHandler<Te
             StringValueUtils.getStringFromStringValue(templateRef.getOrgIdentifier()),
             StringValueUtils.getStringFromStringValue(templateRef.getProjectIdentifier()),
             StringValueUtils.getStringFromStringValue(templateRef.getIdentifier()),
-            StringValueUtils.getStringFromStringValue(templateRef.getVersionLabel()), false);
+            StringValueUtils.getStringFromStringValue(templateRef.getVersionLabel()), false, false);
     if (!templateEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Template for this identifier %s and versionLabel %s doesn't exist - ",

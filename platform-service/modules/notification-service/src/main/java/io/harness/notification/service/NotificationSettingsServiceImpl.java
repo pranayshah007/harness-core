@@ -10,8 +10,8 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
@@ -20,6 +20,7 @@ import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
@@ -64,8 +65,9 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   private static final Pattern VALID_EXPRESSION_PATTERN =
       Pattern.compile("\\<\\+secrets.getValue\\((\\\"|\\')\\w*[\\.]?\\w*(\\\"|\\')\\)>");
   private static final String INVALID_EXPRESSION_EXCEPTION = "Expression provided is not valid";
-  private static final Pattern SECRET_EXPRESSION =
-      Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
+  private static final Pattern SECRET_EXPRESSION = Pattern.compile(
+      "\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}|\\$\\{sweepingOutputSecrets\\.obtain\\(\"[\\S|.]+?\",\"[\\S|.]+?\"\\)}");
+
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
@@ -157,7 +159,9 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
         for (NotificationSettingConfigDTO notificationSettingConfigDTO : userGroupDTO.getNotificationConfigs()) {
           if (notificationSettingConfigDTO.getType().equals(notificationChannelType)) {
             if (NotificationChannelType.EMAIL.equals(notificationChannelType)) {
-              notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+              if (((EmailConfigDTO) notificationSettingConfigDTO).getSendEmailToAllUsers()) {
+                notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+              }
             }
             if (notificationSettingConfigDTO.getSetting().isPresent()) {
               notificationSettings.add(notificationSettingConfigDTO.getSetting().get());

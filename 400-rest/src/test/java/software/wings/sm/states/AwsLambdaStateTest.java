@@ -15,9 +15,9 @@ import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCESS_KEY;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -70,7 +70,6 @@ import software.wings.beans.Environment;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -78,6 +77,7 @@ import software.wings.beans.artifact.DockerArtifactStream;
 import software.wings.beans.command.AwsLambdaCommandUnit;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.ServiceCommand;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
@@ -213,7 +213,7 @@ public class AwsLambdaStateTest extends CategoryTest {
                                                             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
                                                             .metadataOnly(true)
                                                             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-                                                            .serverSetting(awsSetting)
+                                                            .serverSetting(awsSetting.toDTO())
                                                             .artifactServerEncryptedDataDetails(Collections.emptyList())
                                                             .build();
 

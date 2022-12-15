@@ -42,6 +42,8 @@ public class PipelineCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(8, AddInfrastructureIdentifierInServiceInfraInfoTable.class))
         .add(Pair.of(9, AddGitOpsEnabledInServiceInfraInfoTable.class))
         .add(Pair.of(10, AddInfrastructureNameInServiceInfraInfoTable.class))
+        .add(Pair.of(11, CreateTimeScalePipelineExecutionSummary.class))
+        .add(Pair.of(12, AddEnvGroupInServiceInfraInfoTable.class))
         .build();
   }
 }

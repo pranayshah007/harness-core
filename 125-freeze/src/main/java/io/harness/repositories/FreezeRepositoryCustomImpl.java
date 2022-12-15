@@ -7,10 +7,10 @@
 
 package io.harness.repositories;
 
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
-import io.harness.freeze.helpers.FreezeFilterHelper;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
@@ -26,11 +26,9 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
@@ -50,30 +48,6 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
   }
 
   @Override
-  public FreezeConfigEntity upsert(Criteria criteria, FreezeConfigEntity freezeConfigEntity) {
-    Query query = new Query(criteria);
-    Update update = FreezeFilterHelper.getUpdateOperations(freezeConfigEntity);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed upserting Freeze Config; attempt: {}",
-        "[Failed]: Failed upserting Freeze Config; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(()
-                 -> mongoTemplate.findAndModify(
-                     query, update, new FindAndModifyOptions().returnNew(true).upsert(true), FreezeConfigEntity.class));
-  }
-
-  @Override
-  public FreezeConfigEntity update(Criteria criteria, FreezeConfigEntity freezeConfigEntity) {
-    Query query = new Query(criteria);
-    Update update = FreezeFilterHelper.getUpdateOperations(freezeConfigEntity);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed updating Freeze Config; attempt: {}",
-        "[Failed]: Failed updating Freeze Config; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(()
-                 -> mongoTemplate.findAndModify(
-                     query, update, new FindAndModifyOptions().returnNew(true), FreezeConfigEntity.class));
-  }
-
-  @Override
   public boolean delete(Criteria criteria) {
     Query query = new Query(criteria);
     RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting Freeze Config; attempt: {}",
@@ -81,14 +55,6 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
     DeleteResult deleteResult =
         Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, FreezeConfigEntity.class));
     return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() == 1;
-  }
-
-  @Override
-  public DeleteResult deleteMany(Criteria criteria) {
-    Query query = new Query(criteria);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting Freeze Configs; attempt: {}",
-        "[Failed]: Failed deleting Freeze Configs; attempt: {}");
-    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, FreezeConfigEntity.class));
   }
 
   @Override
@@ -108,7 +74,7 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
 
   @Override
   public Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
-      String accountId, String orgIdentifier, String projectIdentifier) {
+      String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus) {
     final Criteria criteria = Criteria.where(FreezeConfigEntityKeys.projectIdentifier)
                                   .is(projectIdentifier)
                                   .and(FreezeConfigEntityKeys.orgIdentifier)
@@ -117,6 +83,9 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
                                   .is(accountId)
                                   .and(FreezeConfigEntityKeys.type)
                                   .is(FreezeType.GLOBAL);
+    if (freezeStatus != null) {
+      criteria.and(FreezeConfigEntityKeys.status).is(freezeStatus);
+    }
     FreezeConfigEntity eg = mongoTemplate.findOne(new Query(criteria), FreezeConfigEntity.class);
     return Optional.ofNullable(eg);
   }

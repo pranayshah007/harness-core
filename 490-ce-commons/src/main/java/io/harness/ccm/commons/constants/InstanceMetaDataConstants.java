@@ -45,6 +45,7 @@ public interface InstanceMetaDataConstants {
   String PV_TYPE = "pv_type";
   String GCE_STORAGE_CLASS = "type";
   String POD_CAPACITY = "pod_capacity";
+  String VIRTUAL_NODE = "virtual_node";
   String SLOW_ACCOUNT = "SFByhonVQvGJX0SbY82rjA";
   String AZURE_SUBSCRIPTION_ID = "vm_subscription_id";
   String AZURE_RESOURCEGROUP_NAME = "vm_resource_group_name";
@@ -56,4 +57,6 @@ public interface InstanceMetaDataConstants {
   String SUBSCRIPTION_INDEX_VALUE = "subscriptions";
   int RESOURCE_GROUP_INDEX = 5;
   String RESOURCE_GROUP_INDEX_VALUE = "resourceGroups";
+  String TYPE_LABEL = "type";
+  String AKS_VIRTUAL_NODE_ACI_INSTANCE_NAME = "virtual-node-aci";
 }

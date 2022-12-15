@@ -11,7 +11,6 @@ import static io.harness.delegate.beans.artifact.ArtifactFileMetadata.builder;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.GARVIT;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -45,6 +44,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.config.NexusConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
@@ -101,7 +101,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
               BAMBOO_FILE_NAME, ArtifactMetadataKeys.artifactPath, BAMBOO_FILE_PATH))
           .artifactFileMetadata(
               Arrays.asList(ArtifactFileMetadata.builder().fileName(BAMBOO_FILE_NAME).url(BAMBOO_FILE_PATH).build()))
-          .serverSetting(aSettingAttribute().withValue(BambooConfig.builder().build()).build())
+          .serverSetting(SettingAttribute.builder().value(BambooConfig.builder().build()).build())
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .build();
@@ -118,7 +118,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
               NEXUS2_FILE_NAME, ArtifactMetadataKeys.artifactPath, NEXUS2_FILE_PATH,
               ArtifactMetadataKeys.artifactFileSize, "1233"))
           .artifactFileMetadata(asList(builder().fileName("todolist-7.0.war").url(NEXUS2_FILE_PATH).build()))
-          .serverSetting(aSettingAttribute().withValue(NexusConfig.builder().build()).build())
+          .serverSetting(SettingAttribute.builder().value(NexusConfig.builder().build()).build())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")
@@ -140,7 +140,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
     Pair<String, InputStream> pair = artifactCollectionTaskHelper.downloadArtifactAtRuntime(
         ArtifactStreamAttributes.builder()
             .artifactStreamType(ArtifactStreamType.AZURE_ARTIFACTS.name())
-            .serverSetting(aSettingAttribute().withValue(AzureArtifactsPATConfig.builder().build()).build())
+            .serverSetting(SettingAttribute.builder().value(AzureArtifactsPATConfig.builder().build()).build())
             .feed(FEED)
             .packageId(PACKAGE_ID)
             .protocolType(MAVEN)
@@ -222,7 +222,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
             .metadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1", ArtifactMetadataKeys.artifactFileName,
                 fileName, ArtifactMetadataKeys.artifactPath, fileUrl))
             .artifactFileMetadata(asList(builder().fileName(fileName).url(fileUrl).build()))
-            .serverSetting(aSettingAttribute().withValue(JenkinsConfig.builder().build()).build())
+            .serverSetting(SettingAttribute.builder().value(JenkinsConfig.builder().build()).build())
             .artifactStreamId(ARTIFACT_STREAM_ID)
             .jobName("scheduler")
             .artifactPaths(asList("file.war"))
@@ -250,7 +250,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
             .metadataOnly(true)
             .metadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1", ArtifactMetadataKeys.artifactFileName,
                 fileName, ArtifactMetadataKeys.artifactPath, "https://www.somejenkins/artifact/file.war"))
-            .serverSetting(aSettingAttribute().withValue(JenkinsConfig.builder().build()).build())
+            .serverSetting(SettingAttribute.builder().value(JenkinsConfig.builder().build()).build())
             .artifactStreamId(ARTIFACT_STREAM_ID)
             .jobName("scheduler")
             .artifactPaths(asList("file.war"))
@@ -324,7 +324,7 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
     return artifactCollectionTaskHelper.getArtifactFileSize(
         ArtifactStreamAttributes.builder()
             .artifactStreamType(ArtifactStreamType.AZURE_ARTIFACTS.name())
-            .serverSetting(aSettingAttribute().withValue(AzureArtifactsPATConfig.builder().build()).build())
+            .serverSetting(SettingAttribute.builder().value(AzureArtifactsPATConfig.builder().build()).build())
             .feed(FEED)
             .packageId(PACKAGE_ID)
             .protocolType(MAVEN)

@@ -13,7 +13,6 @@ import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Arrays.asList;
 
@@ -25,10 +24,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
-import io.harness.cdng.execution.ExecutionInfoKey;
-import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
-import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
@@ -77,7 +73,6 @@ public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<A
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
-  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -144,29 +139,9 @@ public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<A
 
   private AzureArtifactConfig getPreviousArtifactConfig(
       Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
-    ExecutionInfoKey executionInfoKey = azureWebAppStepHelper.getExecutionInfoKey(ambiance, infraDelegateConfig);
-
-    List<StageExecutionInfo> stageExecutionInfoList = stageExecutionInfoService.listLatestSuccessfulStageExecutionInfo(
-        executionInfoKey, ambiance.getStageExecutionId(), 2);
-    AzureWebAppsStageExecutionDetails executionDetails = null;
-    AzureArtifactConfig artifactConfig;
-
-    if (isNotEmpty(stageExecutionInfoList)) {
-      executionDetails = (AzureWebAppsStageExecutionDetails) stageExecutionInfoList.get(0).getExecutionDetails();
-      log.info("Last successful deployment's artifact found with pipeline executionId: {}",
-          executionDetails.getPipelineExecutionId());
-      if (isNotEmpty(executionDetails.getTargetSlot())) {
-        if (stageExecutionInfoList.size() == 2) {
-          executionDetails = (AzureWebAppsStageExecutionDetails) stageExecutionInfoList.get(1).getExecutionDetails();
-          log.info("Pre last successful deployment's artifact found with pipeline executionId: {}",
-              executionDetails.getPipelineExecutionId());
-        } else {
-          executionDetails = null;
-        }
-      }
-    }
-    artifactConfig = executionDetails != null ? executionDetails.getArtifactConfig() : null;
-    return artifactConfig;
+    AzureWebAppsStageExecutionDetails executionDetails =
+        azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+    return executionDetails != null ? executionDetails.getArtifactConfig() : null;
   }
 
   private String getTargetSlotFromSweepingOutput(OptionalSweepingOutput swapSlotsSweepingOutput) {

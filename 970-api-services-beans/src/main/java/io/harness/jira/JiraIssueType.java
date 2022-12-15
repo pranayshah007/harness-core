@@ -60,4 +60,13 @@ public class JiraIssueType {
       this.jiraFields.put(kk, new JiraField(fieldData, kk));
     });
   }
+
+  public JiraIssueType(JiraIssueTypeNG jiraIssueTypeNG) {
+    this.id = jiraIssueTypeNG.getId();
+    this.name = jiraIssueTypeNG.getName();
+    this.description = jiraIssueTypeNG.getDescription();
+    this.isSubTask = jiraIssueTypeNG.isSubTask();
+    jiraIssueTypeNG.getStatuses().forEach(status -> this.jiraStatusList.add(new JiraStatus(status)));
+    jiraIssueTypeNG.getFields().forEach((key, val) -> this.jiraFields.put(val.getKey(), new JiraField(val)));
+  }
 }

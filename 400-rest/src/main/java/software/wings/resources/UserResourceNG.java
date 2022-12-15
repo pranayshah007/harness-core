@@ -261,7 +261,7 @@ public class UserResourceNG {
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
-    User user = userService.getUserByEmail(emailId);
+    User user = userService.getUserByEmail(emailId, false);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }
 
@@ -274,9 +274,10 @@ public class UserResourceNG {
 
   @PUT
   @Path("invites/create-user")
-  public RestResponse<Boolean> createUserForInvite(
-      @Body @NotNull UserInviteDTO userInvite, @QueryParam("isScimInvite") boolean isScimInvite) {
-    userService.completeNGInvite(userInvite, isScimInvite);
+  public RestResponse<Boolean> createUserForInvite(@Body @NotNull UserInviteDTO userInvite,
+      @QueryParam("isScimInvite") boolean isScimInvite,
+      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
+    userService.completeNGInvite(userInvite, isScimInvite, shouldSendTwoFactorAuthResetEmail);
     return new RestResponse<>(true);
   }
 
@@ -342,8 +343,8 @@ public class UserResourceNG {
       if (user != null && user.getAccounts() != null) {
         isUserInAccount = user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
       }
-      if (!isUserInAccount && user != null && user.getSupportAccounts() != null) {
-        isUserInAccount = user.getSupportAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
+      if (!isUserInAccount && user != null) {
+        isUserInAccount = userService.ifUserHasAccessToSupportAccount(userId, accountId);
       }
       if (!isUserInAccount) {
         log.error(String.format("User %s does not belong to account %s", userId, accountId));

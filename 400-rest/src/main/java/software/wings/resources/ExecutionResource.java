@@ -19,6 +19,7 @@ import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
 import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -57,7 +58,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.approval.ApproveAndRejectPreviousDeploymentsBody;
 import software.wings.beans.approval.PreviousApprovalDetails;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
@@ -65,12 +65,14 @@ import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.PermissionAttribute.Action;
-import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.impl.WorkflowExecutionOptimizationHelper;
 import software.wings.service.impl.WorkflowExecutionTimeFilterHelper;
 import software.wings.service.impl.pipeline.resume.PipelineResumeUtils;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
@@ -120,6 +122,7 @@ public class ExecutionResource {
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named(DeploymentHistoryFeature.FEATURE_NAME) private RestrictedFeature deploymentHistoryFeature;
   @Inject private WorkflowExecutionTimeFilterHelper workflowExecutionTimeFilterHelper;
+  @Inject private WorkflowExecutionOptimizationHelper workflowExecutionOptimizationHelper;
   private static final String EXECUTION_DOES_NOT_EXIST = "No workflow execution exists for id: ";
 
   /**
@@ -146,7 +149,9 @@ public class ExecutionResource {
       @DefaultValue("false") @QueryParam("includeIndirectExecutions") boolean includeIndirectExecutions,
       @QueryParam("tagFilter") String tagFilter, @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
     // NOTE: Any new filters added here should also be added in ExportExecutionsResource.
+    workflowExecutionOptimizationHelper.enforceAppIdFromChildrenEntities(pageRequest, accountId);
     workflowExecutionTimeFilterHelper.updatePageRequestForTimeFilter(pageRequest, accountId);
+
     List<String> authorizedAppIds;
     if (isNotEmpty(appIds)) {
       authorizedAppIds = appIds;
@@ -193,7 +198,7 @@ public class ExecutionResource {
     pageRequest.setLimit(Integer.toString(Integer.parseInt(pageRequest.getLimit()) + 1));
 
     PageResponse<WorkflowExecution> workflowExecutions =
-        workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true);
+        workflowExecutionService.listExecutions(pageRequest, includeGraph, true, true, false, true, true);
 
     int offset = Integer.parseInt(pageRequest.getOffset());
     int limit = Integer.parseInt(pageRequest.getLimit()) - 1;
@@ -219,7 +224,7 @@ public class ExecutionResource {
   @Path("{workflowExecutionId}")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<WorkflowExecution> getExecutionDetails(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("workflowExecutionId") String workflowExecutionId) {
     final WorkflowExecution workflowExecution =
@@ -351,7 +356,7 @@ public class ExecutionResource {
     notNullCheck("No Workflow Execution exist for Id: " + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorizeRollback(appId, workflowExecution);
     WorkflowExecution rollbackWorkflowExecution =
-        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution);
+        workflowExecutionService.triggerRollbackExecutionWorkflow(appId, workflowExecution, false);
     rollbackWorkflowExecution.setStateMachine(null);
     return new RestResponse<>(rollbackWorkflowExecution);
   }
@@ -384,15 +389,22 @@ public class ExecutionResource {
   @Path("{workflowExecutionId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE, skipAuth = true)
   public RestResponse<ExecutionInterrupt> triggerWorkflowExecutionInterrupt(@QueryParam("appId") String appId,
       @PathParam("workflowExecutionId") String workflowExecutionId, ExecutionInterrupt executionInterrupt) {
     executionInterrupt.setAppId(appId);
     executionInterrupt.setExecutionUuid(workflowExecutionId);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getExecutionDetailsWithoutGraph(appId, workflowExecutionId);
     if (ExecutionInterruptType.ROLLBACK.equals(executionInterrupt.getExecutionInterruptType())
         || ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES.equals(
             executionInterrupt.getExecutionInterruptType())) {
       deploymentAuthHandler.authorizeRollback(appId, workflowExecutionId);
+    } else if ((ExecutionInterruptType.ABORT_ALL.equals(executionInterrupt.getExecutionInterruptType())
+                   || ExecutionInterruptType.ABORT.equals(executionInterrupt.getExecutionInterruptType()))
+        && workflowExecution.getWorkflowType().equals(WorkflowType.ORCHESTRATION)) {
+      deploymentAuthHandler.authorizeAbortWorkflow(appId, workflowExecution);
     } else {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }
@@ -483,7 +495,7 @@ public class ExecutionResource {
   @Path("workflow-variables")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<WorkflowVariablesMetadata> getWorkflowVariables(@QueryParam("appId") String appId,
       @QueryParam("workflowExecutionId") String workflowExecutionId,
       @QueryParam("pipelineStageElementId") String pipelineStageElementId, ExecutionArgs executionArgs) {
@@ -495,7 +507,7 @@ public class ExecutionResource {
   @Path("deployment-metadata")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<DeploymentMetadata> getDeploymentMetadata(@QueryParam("appId") String appId,
       @QueryParam("withDefaultArtifact") boolean withDefaultArtifact,
       @QueryParam("workflowExecutionId") String workflowExecutionId,

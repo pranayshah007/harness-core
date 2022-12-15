@@ -31,7 +31,9 @@ public enum HelmSubCommandType {
   FETCH(ImmutableSet.of(HelmCliCommandType.FETCH.name()), ImmutableSet.of(V2)),
   TEMPLATE(
       ImmutableSet.of(HelmCliCommandType.RENDER_CHART.name(), HelmCliCommandType.RENDER_SPECIFIC_CHART_FILE.name()),
-      ImmutableSet.of(V2, V3, V380));
+      ImmutableSet.of(V2, V3, V380)),
+  REPO_ADD(ImmutableSet.of(HelmCliCommandType.REPO_ADD.name()), ImmutableSet.of(V3, V380)),
+  REPO_UPDATE(ImmutableSet.of(HelmCliCommandType.REPO_UPDATE.name()), ImmutableSet.of(V3, V380));
 
   private final Set<String> commandTypes;
   private final Set<HelmVersion> helmVersions;

@@ -9,6 +9,7 @@ package software.wings.service.impl.template;
 
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
@@ -48,7 +49,7 @@ import software.wings.beans.template.command.SshCommandTemplate;
 import software.wings.common.TemplateConstants;
 import software.wings.utils.WingsTestConstants;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -151,6 +152,23 @@ public class TemplateFolderServiceTest extends TemplateBaseTestHelper {
     assertThat(myTemplateFolder.getPathId().split("/")[0]).isEqualTo(parentFolder.getUuid());
 
     assertThat(templateFolderService.delete(myTemplateFolder.getUuid())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldDeleteTemplateFolderByAccountId() {
+    TemplateGallery templateGallery =
+        templateGalleryService.getByAccount(GLOBAL_ACCOUNT_ID, templateGalleryService.getAccountGalleryKey());
+    TemplateFolder parentFolder =
+        templateFolderService.getByFolderPath(GLOBAL_ACCOUNT_ID, HARNESS_GALLERY, templateGallery.getUuid());
+    TemplateFolder myTemplateFolder =
+        templateFolderService.save(constructTemplateBuilder(parentFolder.getUuid()), templateGallery.getUuid());
+    TemplateFolder templateFolder = templateFolderService.get(myTemplateFolder.getUuid());
+    assertThat(templateFolder.getAccountId()).isEqualTo(GLOBAL_ACCOUNT_ID);
+    templateFolderServiceImpl.deleteByAccountId(GLOBAL_ACCOUNT_ID);
+    TemplateFolder templateFolder1 = templateFolderService.get(myTemplateFolder.getUuid());
+    assertThat(templateFolder1).isNull();
   }
 
   @Test

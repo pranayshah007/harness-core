@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("//:tools/bazel/harness.bzl", "java_binary", "java_library")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
@@ -40,7 +45,8 @@ java_binary(
         "//clients/audit:module",
         "//clients/resource-group:module",
         "//platform-service/modules/audit-service/contracts:module",
-        "//platform-service/modules/resource-group-service/contracts:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto:module",
         "@maven//:ch_qos_logback_logback_access",
         "@maven//:ch_qos_logback_logback_classic",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
@@ -64,7 +70,6 @@ java_binary(
         "@maven//:io_dropwizard_metrics_metrics_annotation",
         "@maven//:io_dropwizard_metrics_metrics_core",
         "@maven//:io_dropwizard_metrics_metrics_healthchecks",
-        "@maven//:io_harness_access_control_server_spec",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_core_v3_swagger_core",
         "@maven//:io_swagger_core_v3_swagger_integration",
@@ -122,13 +127,14 @@ java_library(
         "//clients/audit:module",
         "//clients/resource-group:module",
         "//platform-service/modules/audit-service/contracts:module",
-        "//platform-service/modules/resource-group-service/contracts:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto:module",
         "@maven//:com_fasterxml_jackson_core_jackson_core",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
-        "@maven//:io_harness_access_control_server_spec",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_mockito_mockito_core",

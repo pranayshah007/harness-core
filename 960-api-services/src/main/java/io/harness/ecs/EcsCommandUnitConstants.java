@@ -43,5 +43,11 @@ public enum EcsCommandUnitConstants {
     public String toString() {
       return "Swap Target Group";
     }
+  },
+  runTask {
+    @Override
+    public String toString() {
+      return "Run Task";
+    }
   }
 }

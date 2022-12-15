@@ -18,8 +18,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.dto.UserGroupRequestV2DTO;
 import io.harness.ng.core.dto.UserGroupResponse;
+import io.harness.ng.core.dto.UserGroupResponseV2DTO;
+import io.harness.ng.core.dto.UserInfo;
 import io.harness.ng.core.entities.EmailConfig;
 import io.harness.ng.core.entities.MicrosoftTeamsConfig;
 import io.harness.ng.core.entities.NotificationSettingConfig;
@@ -34,6 +38,8 @@ import io.harness.ng.core.user.entities.UserGroup;
 
 import software.wings.beans.sso.SSOType;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -74,6 +80,72 @@ public class UserGroupMapper {
     return groupDTO;
   }
 
+  public static UserGroupRequestV2DTO fromV1(UserGroupDTO userGroup, List<String> emails) {
+    return UserGroupRequestV2DTO.builder()
+        .accountIdentifier(userGroup.getAccountIdentifier())
+        .orgIdentifier(userGroup.getOrgIdentifier())
+        .projectIdentifier(userGroup.getProjectIdentifier())
+        .identifier(userGroup.getIdentifier())
+        .description(userGroup.getDescription())
+        .tags(userGroup.getTags())
+        .name(userGroup.getName())
+        .ssoGroupId(userGroup.getSsoGroupId())
+        .ssoGroupName(userGroup.getSsoGroupName())
+        .externallyManaged(userGroup.isExternallyManaged())
+        .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
+        .linkedSsoId(userGroup.getLinkedSsoId())
+        .isSsoLinked(userGroup.isSsoLinked())
+        .linkedSsoType(userGroup.getLinkedSsoType())
+        .harnessManaged(userGroup.isHarnessManaged())
+        .notificationConfigs(userGroup.getNotificationConfigs())
+        .users(emails)
+        .build();
+  }
+
+  public static UserGroupResponseV2DTO toV2Response(UserGroupDTO userGroup, List<UserInfo> users) {
+    return UserGroupResponseV2DTO.builder()
+        .accountIdentifier(userGroup.getAccountIdentifier())
+        .orgIdentifier(userGroup.getOrgIdentifier())
+        .projectIdentifier(userGroup.getProjectIdentifier())
+        .identifier(userGroup.getIdentifier())
+        .description(userGroup.getDescription())
+        .tags(userGroup.getTags())
+        .name(userGroup.getName())
+        .ssoGroupId(userGroup.getSsoGroupId())
+        .ssoGroupName(userGroup.getSsoGroupName())
+        .externallyManaged(userGroup.isExternallyManaged())
+        .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
+        .linkedSsoId(userGroup.getLinkedSsoId())
+        .isSsoLinked(userGroup.isSsoLinked())
+        .linkedSsoType(userGroup.getLinkedSsoType())
+        .harnessManaged(userGroup.isHarnessManaged())
+        .notificationConfigs(userGroup.getNotificationConfigs())
+        .users(users)
+        .build();
+  }
+
+  public static UserGroupDTO toV1(UserGroupRequestV2DTO userGroup, List<String> uuids) {
+    return UserGroupDTO.builder()
+        .accountIdentifier(userGroup.getAccountIdentifier())
+        .orgIdentifier(userGroup.getOrgIdentifier())
+        .projectIdentifier(userGroup.getProjectIdentifier())
+        .identifier(userGroup.getIdentifier())
+        .description(userGroup.getDescription())
+        .tags(userGroup.getTags())
+        .name(userGroup.getName())
+        .ssoGroupId(userGroup.getSsoGroupId())
+        .ssoGroupName(userGroup.getSsoGroupName())
+        .externallyManaged(userGroup.isExternallyManaged())
+        .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
+        .linkedSsoId(userGroup.getLinkedSsoId())
+        .isSsoLinked(userGroup.isSsoLinked())
+        .linkedSsoType(userGroup.getLinkedSsoType())
+        .harnessManaged(userGroup.isHarnessManaged())
+        .notificationConfigs(userGroup.getNotificationConfigs())
+        .users(uuids)
+        .build();
+  }
+
   public static UserGroup toEntity(UserGroupDTO userGroupDTO) {
     if (null == userGroupDTO) {
       return null;
@@ -103,7 +175,14 @@ public class UserGroupMapper {
             .build();
 
     if (isNotEmpty(userGroupDTO.getLinkedSsoType())) {
-      group.setLinkedSsoType(SSOType.valueOf(userGroupDTO.getLinkedSsoType()));
+      SSOType ssoType;
+      try {
+        ssoType = SSOType.valueOf(userGroupDTO.getLinkedSsoType());
+      } catch (IllegalArgumentException ex) {
+        throw new InvalidRequestException(String.format("Invalid LinkedSsoType passed: [%s]. Valid SSO Types: %s",
+            userGroupDTO.getLinkedSsoType(), Arrays.toString(SSOType.values())));
+      }
+      group.setLinkedSsoType(ssoType);
     }
 
     return group;
@@ -123,7 +202,10 @@ public class UserGroupMapper {
             .microsoftTeamsWebhookUrl(((MicrosoftTeamsConfigDTO) dto).getMicrosoftTeamsWebhookUrl())
             .build();
       case EMAIL:
-        return EmailConfig.builder().groupEmail(((EmailConfigDTO) dto).getGroupEmail()).build();
+        return EmailConfig.builder()
+            .groupEmail(((EmailConfigDTO) dto).getGroupEmail())
+            .sendEmailToAllUsers(((EmailConfigDTO) dto).getSendEmailToAllUsers())
+            .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + dto.getType());
     }
@@ -143,7 +225,10 @@ public class UserGroupMapper {
             .microsoftTeamsWebhookUrl(((MicrosoftTeamsConfig) entity).getMicrosoftTeamsWebhookUrl())
             .build();
       case EMAIL:
-        return EmailConfigDTO.builder().groupEmail(((EmailConfig) entity).getGroupEmail()).build();
+        return EmailConfigDTO.builder()
+            .groupEmail(((EmailConfig) entity).getGroupEmail())
+            .sendEmailToAllUsers(((EmailConfig) entity).getSendEmailToAllUsers())
+            .build();
       default:
         throw new IllegalArgumentException("This is not a valid Notification Setting Type: " + entity.getType());
     }

@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Application.ApplicationKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -28,7 +29,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateApplicationsToTimeScaleDB {
+public class MigrateApplicationsToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -38,9 +39,11 @@ public class MigrateApplicationsToTimeScaleDB {
   private static final String upsert_statement =
       "INSERT INTO CG_APPLICATIONS (ID,NAME,ACCOUNT_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
 
+  private static final String TABLE_NAME = "CG_APPLICATIONS";
+
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_APPLICATIONS");
       return false;
     }
     int count = 0;
@@ -49,26 +52,26 @@ public class MigrateApplicationsToTimeScaleDB {
       findOptions_applications.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Application> iterator =
-               new HIterator<>(wingsPersistence.createQuery(Application.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Application.class, excludeAuthority)
                                    .field(ApplicationKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_applications))) {
         while (iterator.hasNext()) {
           Application application = iterator.next();
-          prepareTimeScaleQueries(application);
+          saveToTimeScale(application);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_APPLICATIONS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_APPLICATIONS", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(Application application) {
+  public void saveToTimeScale(Application application) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -111,5 +114,13 @@ public class MigrateApplicationsToTimeScaleDB {
         7, application.getLastUpdatedBy() != null ? application.getLastUpdatedBy().getName() : null);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

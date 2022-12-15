@@ -7,9 +7,6 @@
 
 package io.harness.delegate.service;
 
-import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
-import static io.harness.delegate.beans.DelegateType.DOCKER;
-import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
 import static io.harness.delegate.beans.VersionOverrideType.UPGRADER_IMAGE_TAG;
@@ -67,8 +64,7 @@ public class DelegateVersionServiceTest {
 
   @Before
   public void setUp() {
-    underTest = spy(new DelegateVersionService(
-        delegateRingService, infraDownloadService, featureFlagService, managerConfig, persistence));
+    underTest = spy(new DelegateVersionService(delegateRingService, infraDownloadService, managerConfig, persistence));
   }
 
   @Test
@@ -78,7 +74,7 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockDelegateOverrides(override, true, true, true);
-    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, true);
   }
 
   @Test
@@ -88,7 +84,7 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockDelegateOverrides(override, false, false, false);
-    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
@@ -98,42 +94,42 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(EMPTY).build();
 
     mockDelegateOverrides(override, false, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenDelegateImageTagRingOverrideThenUseIt() {
     mockDelegateOverrides(null, true, false, true);
-    assertOverrides(HARNESS_DELEGATE_RING_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(HARNESS_DELEGATE_RING_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, true);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenDelegateImageTagRingOverrideButNotImmutableThenUseDefault() {
     mockDelegateOverrides(null, true, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
-  public void whenDelegateImageTagRingOverrideAndImmutableButNotK8SThenUseDefault() {
+  public void whenDelegateImageTagRingOverrideAndImmutableButNotK8SThenUseRingImage() {
     mockDelegateOverrides(null, true, false, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, DOCKER);
+    assertOverrides(HARNESS_DELEGATE_RING_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, true);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenDelegateImageTagConfigOverrideThenUseIt() {
     mockDelegateOverrides(null, false, true, false);
-    assertOverrides(HARNESS_DELEGATE_PORTAL_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(HARNESS_DELEGATE_PORTAL_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenNoDelegateOverrideUseDefault() {
     mockDelegateOverrides(null, false, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
@@ -143,7 +139,7 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(UPGRADER_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockUpgraderOverrides(override, true, true, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_OVERRIDE_TAG, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_OVERRIDE_TAG, emptyList(), null, true);
   }
 
   @Test
@@ -153,7 +149,7 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(UPGRADER_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockUpgraderOverrides(override, true, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_OVERRIDE_TAG, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_OVERRIDE_TAG, emptyList(), null, false);
   }
 
   @Test
@@ -163,42 +159,35 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(UPGRADER_IMAGE_TAG).version(EMPTY).build();
 
     mockUpgraderOverrides(override, true, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenUpgraderImageTagRingOverrideThenUseIt() {
     mockUpgraderOverrides(null, true, false, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_RING_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_RING_IMAGE, emptyList(), null, true);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenUpgraderImageTagRingOverrideButNotImmutableThenUseDefault() {
     mockUpgraderOverrides(null, true, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
-  public void whenUpgraderImageTagRingOverrideAndImmutableButNotK8SThenUseDefault() {
+  public void whenUpgraderImageTagRingOverrideAndImmutableButNotK8SThenUseRingImage() {
     mockUpgraderOverrides(null, true, false, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, DOCKER);
-  }
-
-  @Test
-  @Category(UnitTests.class)
-  public void whenUpgraderImageTagConfigOverrideThenUseIt() {
-    mockUpgraderOverrides(null, false, true, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_PORTAL_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_RING_IMAGE, emptyList(), null, true);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenNoUpgraderOverrideUseDefault() {
     mockUpgraderOverrides(null, false, false, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
@@ -208,8 +197,8 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_JAR).version(ACCOUNT_DELEGATE_JAR).build();
 
     mockDelegateJarOverrides(override, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR),
-        null, KUBERNETES);
+    assertOverrides(
+        DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR), null, false);
   }
 
   @Test
@@ -219,22 +208,22 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_JAR).version(ACCOUNT_DELEGATE_JAR).build();
 
     mockDelegateJarOverrides(override, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR),
-        null, KUBERNETES);
+    assertOverrides(
+        DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, Collections.singletonList(ACCOUNT_DELEGATE_JAR), null, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenRingDelegateJarOverrideThenUseIt() {
     mockDelegateJarOverrides(null, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, DELEGATE_JAR_RING, null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, DELEGATE_JAR_RING, null, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenNoDelegateJarOverrideThenUseEmpty() {
     mockDelegateJarOverrides(null, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test
@@ -244,7 +233,7 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(WATCHER_JAR).version(ACCOUNT_WATCHER_JAR).build();
 
     mockWatcherJarOverrides(override, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), ACCOUNT_WATCHER_JAR, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), ACCOUNT_WATCHER_JAR, false);
   }
 
   @Test
@@ -254,14 +243,14 @@ public class DelegateVersionServiceTest {
         VersionOverride.builder(ACCOUNT_ID).overrideType(WATCHER_JAR).version(ACCOUNT_WATCHER_JAR).build();
 
     mockWatcherJarOverrides(override, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), ACCOUNT_WATCHER_JAR, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), ACCOUNT_WATCHER_JAR, false);
   }
 
   @Test
   @Category(UnitTests.class)
   public void whenRingWatcherJarOverrideThenUseIt() {
     mockWatcherJarOverrides(null, true);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), WATCHER_JAR_RING, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), WATCHER_JAR_RING, false);
   }
 
   @Test
@@ -269,21 +258,19 @@ public class DelegateVersionServiceTest {
   public void whenNoWatcherJarOverrideThenUseEmpty() {
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
     mockWatcherJarOverrides(null, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   private void mockDelegateOverrides(final VersionOverride override, final boolean isRingDelegateOverride,
       final boolean isPortalDelegateOverride, final boolean isImmutableDelegate) {
     mockVersionOverride(override, null, null, null);
 
-    when(featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, ACCOUNT_ID)).thenReturn(isImmutableDelegate);
     if (isRingDelegateOverride) {
       when(delegateRingService.getDelegateImageTag(ACCOUNT_ID)).thenReturn(HARNESS_DELEGATE_RING_IMAGE);
     }
 
     when(managerConfig.getPortal().getDelegateDockerImage())
         .thenReturn(isPortalDelegateOverride ? HARNESS_DELEGATE_PORTAL_IMAGE : null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
@@ -291,40 +278,31 @@ public class DelegateVersionServiceTest {
       final boolean isPortalUpgraderOverride, final boolean isImmutableDelegate) {
     mockVersionOverride(null, override, null, null);
 
-    when(featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, ACCOUNT_ID)).thenReturn(isImmutableDelegate);
     if (isRingUpgraderOverride) {
       when(delegateRingService.getUpgraderImageTag(ACCOUNT_ID)).thenReturn(HARNESS_UPGRADER_RING_IMAGE);
     }
 
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage())
-        .thenReturn(isPortalUpgraderOverride ? HARNESS_UPGRADER_PORTAL_IMAGE : null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
   private void mockDelegateJarOverrides(final VersionOverride override, final boolean isRingOverride) {
     mockVersionOverride(null, null, override, null);
 
-    when(featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, ACCOUNT_ID)).thenReturn(false);
-
     if (isRingOverride) {
       when(delegateRingService.getDelegateVersions(ACCOUNT_ID)).thenReturn(DELEGATE_JAR_RING);
     }
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
   private void mockWatcherJarOverrides(final VersionOverride override, final boolean isRingOverride) {
     mockVersionOverride(null, null, null, override);
 
-    when(featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, ACCOUNT_ID)).thenReturn(false);
-
     if (isRingOverride) {
       when(delegateRingService.getWatcherVersions(ACCOUNT_ID)).thenReturn(WATCHER_JAR_RING);
     }
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
   }
 
   private void mockVersionOverride(final VersionOverride delegateImageOverride, final VersionOverride upgraderOverride,
@@ -353,9 +331,9 @@ public class DelegateVersionServiceTest {
   }
 
   private void assertOverrides(final String expectedDelegateTag, final String expectedUpgraderTag,
-      final List<String> delegateJars, final String watcherJars, final String delegateType) {
-    final String actualDelegate = underTest.getDelegateImageTag(ACCOUNT_ID, delegateType);
-    final String actualUpgrader = underTest.getUpgraderImageTag(ACCOUNT_ID, delegateType);
+      final List<String> delegateJars, final String watcherJars, boolean immutable) {
+    final String actualDelegate = underTest.getDelegateImageTag(ACCOUNT_ID, immutable);
+    final String actualUpgrader = underTest.getUpgraderImageTag(ACCOUNT_ID, immutable);
     final List<String> actualDelegateJar = underTest.getDelegateJarVersions(ACCOUNT_ID);
     final String actualWatcherJar = underTest.getWatcherJarVersions(ACCOUNT_ID);
 

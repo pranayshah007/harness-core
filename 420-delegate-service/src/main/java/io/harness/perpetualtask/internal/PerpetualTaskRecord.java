@@ -69,9 +69,10 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.rebalanceIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("assignIterator_1")
+                 .name("state_assignIteration_assignAfterMs")
                  .field(PerpetualTaskRecordKeys.state)
                  .field(PerpetualTaskRecordKeys.assignIteration)
+                 .field(PerpetualTaskRecordKeys.assignAfterMs)
                  .build())
         .build();
   }
@@ -86,7 +87,7 @@ public class PerpetualTaskRecord
   String taskDescription;
   PerpetualTaskState state;
   PerpetualTaskUnassignedReason unassignedReason;
-  long lastHeartbeat;
+  @Deprecated long lastHeartbeat;
 
   @Deprecated List<Long> assignerIterations;
   long assignIteration;
@@ -98,6 +99,8 @@ public class PerpetualTaskRecord
   long lastUpdatedAt;
   long createdAt;
   long failedExecutionCount;
+
+  String exception;
 
   @Override
   public Long obtainNextIteration(String fieldName) {

@@ -10,10 +10,9 @@ package software.wings.delegatetasks.buildsource;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.HARSH;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.UNSTABLE;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACTORY_URL;
@@ -46,10 +45,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -61,7 +58,9 @@ import software.wings.beans.artifact.GcrArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.config.ArtifactoryConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -185,13 +184,13 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
                                                           .settingId(SETTING_ID)
                                                           .build();
 
-  private SettingAttribute artifactorySetting = aSettingAttribute()
-                                                    .withUuid(SETTING_ID)
-                                                    .withValue(ArtifactoryConfig.builder()
-                                                                   .artifactoryUrl(ARTIFACTORY_URL)
-                                                                   .username("admin")
-                                                                   .password("dummy123!".toCharArray())
-                                                                   .build())
+  private SettingAttribute artifactorySetting = SettingAttribute.builder()
+                                                    .uuid(SETTING_ID)
+                                                    .value(ArtifactoryConfig.builder()
+                                                               .artifactoryUrl(ARTIFACTORY_URL)
+                                                               .username("admin")
+                                                               .password("dummy123!".toCharArray())
+                                                               .build())
                                                     .build();
 
   ArtifactStreamAttributes artifactStreamAttributesForArtifactory =

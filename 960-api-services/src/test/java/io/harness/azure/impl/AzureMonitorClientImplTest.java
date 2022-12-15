@@ -9,14 +9,17 @@ package io.harness.azure.impl;
 
 import static io.harness.rule.OwnerRule.IVAN;
 
+import static com.azure.resourcemanager.monitor.models.ActivityLogs.ActivityLogsQueryDefinitionStages.WithActivityLogsQueryExecute;
+import static com.azure.resourcemanager.monitor.models.ActivityLogs.ActivityLogsQueryDefinitionStages.WithActivityLogsSelectFilter;
+import static com.azure.resourcemanager.monitor.models.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataEndFilter;
+import static com.azure.resourcemanager.monitor.models.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataFieldFilter;
+import static com.azure.resourcemanager.monitor.models.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataStartTimeFilter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
@@ -25,53 +28,72 @@ import io.harness.category.element.UnitTests;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
 
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.ClientSecretCredential;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.monitor.models.ActivityLogs;
+import com.azure.resourcemanager.monitor.models.EventData;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import com.azure.resourcemanager.resources.models.Subscription;
+import com.azure.resourcemanager.resources.models.Subscriptions;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.monitor.ActivityLogs;
-import com.microsoft.azure.management.monitor.ActivityLogs.ActivityLogsQueryDefinitionStages.WithActivityLogsQueryExecute;
-import com.microsoft.azure.management.monitor.ActivityLogs.ActivityLogsQueryDefinitionStages.WithActivityLogsSelectFilter;
-import com.microsoft.azure.management.monitor.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataEndFilter;
-import com.microsoft.azure.management.monitor.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataFieldFilter;
-import com.microsoft.azure.management.monitor.ActivityLogs.ActivityLogsQueryDefinitionStages.WithEventDataStartTimeFilter;
-import com.microsoft.azure.management.monitor.EventData;
-import com.microsoft.rest.LogLevel;
+import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@PrepareForTest({AzureResourceManager.class, AzureClient.class, Http.class, TimeLimiter.class})
 public class AzureMonitorClientImplTest extends CategoryTest {
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  @Mock private AzureResourceManager.Configurable configurable;
+  @Mock private AzureResourceManager.Authenticated authenticated;
+  @Mock private AzureResourceManager azure;
 
   @InjectMocks AzureMonitorClientImpl azureMonitorClient;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = mock(ApplicationTokenCredentials.class);
-    whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    MockitoAnnotations.openMocks(this);
+
+    ClientSecretCredential clientSecretCredential = Mockito.mock(ClientSecretCredential.class);
+    PowerMockito.whenNew(ClientSecretCredential.class).withAnyArguments().thenReturn(clientSecretCredential);
+
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    PowerMockito.whenNew(AccessToken.class).withAnyArguments().thenReturn(accessToken);
+
+    Mockito.when(clientSecretCredential.getToken(any())).thenReturn(Mono.just(accessToken));
+
+    MockedStatic<AzureResourceManager> azureResourceManagerMockedStatic = mockStatic(AzureResourceManager.class);
+
+    azureResourceManagerMockedStatic.when(() -> AzureResourceManager.configure()).thenReturn(configurable);
+
+    Mockito.when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    Mockito.when(configurable.withHttpClient(any())).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
+    Mockito.when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(configurable.authenticate(any(ClientSecretCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(authenticated.subscriptions()).thenReturn(getSubscriptions());
+    Mockito.when(authenticated.withSubscription(any())).thenReturn(azure);
+    Mockito.when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
 
   @Test
@@ -91,8 +113,9 @@ public class AzureMonitorClientImplTest extends CategoryTest {
     WithActivityLogsSelectFilter queryWithStartAndEndDateAndProperties = mock(WithActivityLogsSelectFilter.class);
     WithActivityLogsQueryExecute queryExecute = mock(WithActivityLogsQueryExecute.class);
     EventData eventData = mock(EventData.class);
-    PagedList<EventData> eventDataList = getPageList();
-    eventDataList.add(eventData);
+    List<EventData> responseList = new ArrayList<>();
+    responseList.add(eventData);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     when(azure.activityLogs()).thenReturn(activityLogs);
     when(activityLogs.defineQuery()).thenReturn(query);
@@ -100,7 +123,7 @@ public class AzureMonitorClientImplTest extends CategoryTest {
     when(queryWithStartDate.endsBefore(any())).thenReturn(queryWithStartAndEndDate);
     when(queryWithStartAndEndDate.withAllPropertiesInResponse()).thenReturn(queryWithStartAndEndDateAndProperties);
     when(queryWithStartAndEndDateAndProperties.filterByResource(resourceId)).thenReturn(queryExecute);
-    when(queryExecute.execute()).thenReturn(eventDataList);
+    when(queryExecute.execute()).thenReturn(getPagedIterable(simpleResponse));
 
     List<EventData> response = azureMonitorClient.listEventDataWithAllPropertiesByResourceId(
         azureConfig, subscriptionId, startDate, endDate, resourceId);
@@ -125,22 +148,37 @@ public class AzureMonitorClientImplTest extends CategoryTest {
         .isInstanceOf(IllegalArgumentException.class);
   }
 
-  @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
+  private Subscriptions getSubscriptions() {
+    Subscription subscription = PowerMockito.mock(Subscription.class);
+    List<Subscription> responseList = new ArrayList<>();
+    responseList.add(subscription);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
+
+    return new Subscriptions() {
       @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
+      public Subscription getById(String s) {
+        return null;
+      }
+
+      @Override
+      public Mono<Subscription> getByIdAsync(String s) {
+        return null;
+      }
+
+      @Override
+      public PagedIterable<Subscription> list() {
+        return getPagedIterable(simpleResponse);
+      }
+
+      @Override
+      public PagedFlux<Subscription> listAsync() {
+        return null;
       }
     };
+  }
+
+  @NotNull
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 }

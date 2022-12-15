@@ -20,6 +20,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
@@ -114,6 +115,11 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
             CollectionUtils.emptyIfNull(delegateSelectors != null ? delegateSelectors.getValue() : null)))
         .url(getUrl())
         .build();
+  }
+
+  @Override
+  public ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
   }
 
   @Override

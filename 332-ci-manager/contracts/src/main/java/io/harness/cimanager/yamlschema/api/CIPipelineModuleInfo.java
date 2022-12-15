@@ -36,4 +36,5 @@ public class CIPipelineModuleInfo implements PipelineModuleInfo {
   private List<CIInfraDetails> infraDetailsList;
   private List<CIImageDetails> imageDetailsList;
   private List<TIBuildDetails> tiBuildDetailsList;
+  private CIPipelineStageModuleInfo ciPipelineStageModuleInfo;
 }

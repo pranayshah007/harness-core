@@ -12,6 +12,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
+import io.harness.mongo.QueryFactory;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HQuery.QueryChecks;
 
@@ -157,6 +158,24 @@ public interface HPersistence extends HealthMonitor {
    * @return the query
    */
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
+
+  /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls);
+
+  /**
+   * Creates the query for analytics.
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @return the query
+   */
+  <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls, Set<QueryChecks> queryChecks);
 
   /**
    * Creates the query.
@@ -401,6 +420,17 @@ public interface HPersistence extends HealthMonitor {
   <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req);
 
   /**
+   * Query. Read preference is set to analytics mongo
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @param req the req
+   * @return the page response
+   */
+
+  <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req);
+
+  /**
    * Query page response.
    *
    * @param <T>          the type parameter
@@ -439,5 +469,14 @@ public interface HPersistence extends HealthMonitor {
   default FindOptions analyticNodePreferenceOptions() {
     return new FindOptions().readPreference(
         ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))));
+  }
+
+  default int getMaxTimeMs(Class cls) {
+    AdvancedDatastore datastore = getDatastore(cls);
+    if (datastore.getQueryFactory() instanceof QueryFactory) {
+      QueryFactory queryFactory = (QueryFactory) datastore.getQueryFactory();
+      return queryFactory.getMaxOperationTimeInMillis();
+    }
+    return 0;
   }
 }

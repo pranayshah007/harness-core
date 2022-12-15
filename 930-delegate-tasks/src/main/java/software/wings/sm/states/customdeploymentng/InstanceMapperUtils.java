@@ -55,6 +55,25 @@ public class InstanceMapperUtils {
     return Collections.emptyList();
   }
 
+  @NotNull
+  public static <T> List<T> mapJsonToInstanceElements(String uniqueKey, Map<String, String> hostAttributes,
+      String hostObjectArrayPath, String output, Function<HostProperties, T> jsonMapper) {
+    final List<Map<String, Object>> instanceList = JsonUtils.jsonPath(output, hostObjectArrayPath);
+    final String hostNameKey = hostAttributes.get(uniqueKey);
+
+    Function<Map<String, Object>, HostProperties> hostJsonPropertyMapper =
+        getMapHostPropertiesFunctionNG(hostAttributes, hostNameKey);
+
+    if (isNotEmpty(instanceList)) {
+      return instanceList.stream()
+          .map(hostJsonPropertyMapper)
+          .filter(hostProperties -> StringUtils.isNotBlank(hostProperties.getHostName()))
+          .map(jsonMapper)
+          .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+
   private Function<Map<String, Object>, HostProperties> getMapHostPropertiesFunction(
       Map<String, String> hostAttributes, String hostNameKey) {
     return instance -> {
@@ -65,6 +84,21 @@ public class InstanceMapperUtils {
 
       return HostProperties.builder()
           .hostName(JsonUtils.jsonPath(JsonUtils.asJson(instance, mapper), hostNameKey))
+          .otherPropeties(otherHostProperties)
+          .build();
+    };
+  }
+
+  private Function<Map<String, Object>, HostProperties> getMapHostPropertiesFunctionNG(
+      Map<String, String> hostAttributes, String hostNameKey) {
+    return instance -> {
+      ObjectMapper mapper = createObjectMapper();
+      final String hostJson = JsonUtils.asJson(instance, mapper);
+      Map<String, Object> otherHostProperties = hostAttributes.keySet().stream().collect(
+          HashMap::new, (m, v) -> m.put(v, JsonUtils.jsonPath(hostJson, hostAttributes.get(v))), HashMap::putAll);
+
+      return HostProperties.builder()
+          .hostName(JsonUtils.jsonPath(JsonUtils.asJson(instance, mapper), hostNameKey).toString())
           .otherPropeties(otherHostProperties)
           .build();
     };
@@ -87,6 +121,10 @@ public class InstanceMapperUtils {
 
   public static String getHostnameFieldName(Map<String, String> attributes) {
     return attributes.get(hostname);
+  }
+
+  public static String getHostnameFieldName(String uniqueKey, Map<String, String> attributes) {
+    return attributes.get(uniqueKey);
   }
 
   @Data

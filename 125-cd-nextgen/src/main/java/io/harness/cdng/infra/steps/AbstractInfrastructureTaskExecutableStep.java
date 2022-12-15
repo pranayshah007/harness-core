@@ -31,9 +31,13 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
@@ -41,10 +45,14 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
@@ -63,6 +71,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ssh.AwsInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
@@ -102,9 +111,6 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.steps.shellscript.HostsOutput;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import software.wings.beans.TaskType;
 
@@ -160,11 +166,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
-  protected TaskRequestData obtainTaskInternal(
-      Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
+  protected TaskRequestData obtainTaskInternal(Ambiance ambiance, Infrastructure infrastructure,
+      NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
-    validateConnector(infrastructure, ambiance);
+    validateConnector(infrastructure, ambiance, logCallback);
     validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");
@@ -179,8 +185,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
@@ -479,6 +483,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AZURE_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {azureTaskParamsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList =
@@ -523,6 +528,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .taskType(TaskType.NG_AWS_TASK.name())
             .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
             .parameters(new Object[] {awsTaskParams})
+            .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList = awsInfraDelegateConfig.getAwsConnectorDTO()
@@ -587,9 +593,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   @VisibleForTesting
-  void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
-
+  void validateConnector(Infrastructure infrastructure, Ambiance ambiance, NGLogCallback logCallback) {
     if (infrastructure == null) {
       return;
     }
@@ -639,27 +643,45 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.AZURE.name()));
     }
 
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.SPOT.name()));
+    }
+
+    if (InfrastructureKind.ASG.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AWS.name()));
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
-  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance) {
+  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance, NGLogCallback logCallback) {
     String k8sNamespaceLogLine = "Kubernetes Namespace: %s";
-
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
 
     if (infrastructure == null) {
       throw new InvalidRequestException("Infrastructure definition can't be null or empty");
     }
+    if (infrastructure instanceof InfrastructureDetailsAbstract) {
+      saveExecutionLog(logCallback,
+          "Infrastructure Name: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraName()
+              + " , Identifier: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraIdentifier());
+    }
+
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
-        K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
+        K8SDirectInfrastructure k8sDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
-            k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
+            k8sDirectInfrastructure.getConnectorRef(), k8sDirectInfrastructure.getNamespace());
 
-        if (k8SDirectInfrastructure.getNamespace() != null
-            && isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
+        if (k8sDirectInfrastructure.getNamespace() != null
+            && isNotEmpty(k8sDirectInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(logCallback,
-              color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
+              color(format(k8sNamespaceLogLine, k8sDirectInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
 
@@ -686,6 +708,16 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             (ServerlessAwsLambdaInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(serverlessAwsLambdaInfrastructure.getConnectorRef(),
             serverlessAwsLambdaInfrastructure.getRegion(), serverlessAwsLambdaInfrastructure.getStage());
+        break;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
+        break;
+
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
         break;
 
       case InfrastructureKind.KUBERNETES_AZURE:
@@ -724,6 +756,18 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        break;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
+        break;
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tasInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

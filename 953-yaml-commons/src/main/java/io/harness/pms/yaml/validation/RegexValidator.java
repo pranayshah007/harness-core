@@ -10,7 +10,7 @@ package io.harness.pms.yaml.validation;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 
 import java.util.regex.Pattern;
 

@@ -14,11 +14,15 @@ import io.harness.batch.processing.pricing.InstancePricingStrategy;
 import io.harness.batch.processing.pricing.InstancePricingStrategyFactory;
 import io.harness.batch.processing.pricing.PricingData;
 import io.harness.batch.processing.pricing.PricingSource;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
+import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.ccm.commons.beans.CostAttribution;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.StorageResource;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -29,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,12 +42,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BillingCalculationService {
   private final InstancePricingStrategyFactory instancePricingStrategyFactory;
-
   private final AtomicInteger atomicTripper = new AtomicInteger(0);
+  private final CurrencyPreferenceHelper currencyPreferenceHelper;
 
   @Autowired
-  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory) {
+  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory,
+      CurrencyPreferenceHelper currencyPreferenceHelper) {
     this.instancePricingStrategyFactory = instancePricingStrategyFactory;
+    this.currencyPreferenceHelper = currencyPreferenceHelper;
   }
 
   public String getInstanceClusterIdKey(String instanceId, String clusterId) {
@@ -80,14 +87,49 @@ public class BillingCalculationService {
       }
     }
 
-    io.harness.batch.processing.pricing.PricingData pricingData =
+    PricingData pricingData =
         getPricingData(instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
+
+    pricingData = getUpdatedPricingData(instanceData, pricingData);
 
     return getBillingAmount(instanceData, utilizationData, pricingData, instanceActiveSeconds);
   }
 
-  private io.harness.batch.processing.pricing.PricingData getPricingData(InstanceData instanceData, Instant startTime,
-      Instant endTime, double instanceActiveSeconds, double parentInstanceActiveSecond) {
+  private PricingData getUpdatedPricingData(InstanceData instanceData, PricingData pricingData) {
+    if (ImmutableList.of(PricingSource.PUBLIC_API, PricingSource.HARDCODED).contains(pricingData.getPricingSource())) {
+      Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+          instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD);
+      pricingData = updatePricingData(pricingData, conversionFactor);
+    }
+    return pricingData;
+  }
+
+  @NotNull
+  private CloudServiceProvider getCloudServiceProvider(InstanceData instanceData) {
+    CloudServiceProvider cloudServiceProvider;
+    try {
+      cloudServiceProvider = CloudServiceProvider.valueOf(instanceData.getMetaData().get("cloud_provider"));
+    } catch (Exception exception) {
+      cloudServiceProvider = CloudServiceProvider.AWS;
+    }
+    return cloudServiceProvider;
+  }
+
+  private PricingData updatePricingData(PricingData pricingData, Double conversionFactor) {
+    return PricingData.builder()
+        .networkCost(pricingData.getNetworkCost() * conversionFactor)
+        .pricePerHour(pricingData.getPricePerHour() * conversionFactor)
+        .cpuPricePerHour(pricingData.getCpuPricePerHour() * conversionFactor)
+        .memoryPricePerHour(pricingData.getMemoryPricePerHour() * conversionFactor)
+        .cpuUnit(pricingData.getCpuUnit())
+        .memoryMb(pricingData.getMemoryMb())
+        .storageMb(pricingData.getStorageMb())
+        .pricingSource(pricingData.getPricingSource())
+        .build();
+  }
+
+  private PricingData getPricingData(InstanceData instanceData, Instant startTime, Instant endTime,
+      double instanceActiveSeconds, double parentInstanceActiveSecond) {
     InstancePricingStrategy instancePricingStrategy =
         instancePricingStrategyFactory.getInstancePricingStrategy(instanceData.getInstanceType());
 
@@ -95,8 +137,8 @@ public class BillingCalculationService {
         instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
   }
 
-  BillingData getBillingAmount(InstanceData instanceData, UtilizationData utilizationData,
-      io.harness.batch.processing.pricing.PricingData pricingData, double instanceActiveSeconds) {
+  BillingData getBillingAmount(InstanceData instanceData, UtilizationData utilizationData, PricingData pricingData,
+      double instanceActiveSeconds) {
     Double cpuUnit = 0D;
     Double memoryMb = 0D;
     Double storageMb = 0D;
@@ -121,9 +163,9 @@ public class BillingCalculationService {
     }
 
     double pricePerHour = pricingData.getPricePerHour();
-    BigDecimal billingAmount = BigDecimal.valueOf((pricePerHour * instanceActiveSeconds) / 3600);
-    log.debug("Billing amount {} {} {}", billingAmount, pricePerHour, instanceActiveSeconds);
+    BillingAmountBreakup billingAmountBreakup = createBillingAmount(instanceActiveSeconds, pricingData, instanceData);
 
+    log.debug("Billing amount {} {} {}", billingAmountBreakup, pricePerHour, instanceActiveSeconds);
     PricingSource pricingSource =
         null != pricingData.getPricingSource() ? pricingData.getPricingSource() : PricingSource.PUBLIC_API;
     double networkCost = 0;
@@ -133,7 +175,7 @@ public class BillingCalculationService {
     }
 
     BillingAmountBreakup billingAmountForResource = getBillingAmountBreakupForResource(
-        instanceData, billingAmount, cpuUnit, memoryMb, storageMb, instanceActiveSeconds, pricingData);
+        instanceData, billingAmountBreakup, cpuUnit, memoryMb, storageMb, instanceActiveSeconds, pricingData);
     IdleCostData idleCostData = getIdleCostForResource(billingAmountForResource, utilizationData, instanceData);
     SystemCostData systemCostData = getSystemCostForResource(billingAmountForResource, instanceData);
 
@@ -142,15 +184,39 @@ public class BillingCalculationService {
         networkCost, pricingSource);
   }
 
-  BillingAmountBreakup getBillingAmountBreakupForResource(InstanceData instanceData, BigDecimal billingAmount,
-      double instanceCpu, double instanceMemory, double instanceStorage, double instanceActiveSeconds,
-      PricingData pricingData) {
+  private BillingAmountBreakup createBillingAmount(
+      double instanceActiveSeconds, PricingData pricingData, InstanceData instanceData) {
+    double pricePerHour = pricingData.getPricePerHour();
+    BigDecimal billingAmount = BigDecimal.valueOf((pricePerHour * instanceActiveSeconds) / 3600);
+
+    BigDecimal cpuBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
+    BigDecimal memoryBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
+    String cloudProvider = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
+        InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+
+    if ((pricingData.getCpuPricePerHour() > 0.0 && pricingData.getMemoryPricePerHour() > 0.0)
+        || ("GCP".equalsIgnoreCase(cloudProvider) && pricingData.getPricingSource() != null
+            && pricingData.getPricingSource().equals(PricingSource.CUR_REPORT))) {
+      cpuBillingAmount = BigDecimal.valueOf((pricingData.getCpuPricePerHour() * instanceActiveSeconds) / 3600);
+      memoryBillingAmount = BigDecimal.valueOf((pricingData.getMemoryPricePerHour() * instanceActiveSeconds) / 3600);
+    }
+
+    return BillingAmountBreakup.builder()
+        .billingAmount(billingAmount)
+        .cpuBillingAmount(cpuBillingAmount)
+        .memoryBillingAmount(memoryBillingAmount)
+        .build();
+  }
+
+  BillingAmountBreakup getBillingAmountBreakupForResource(InstanceData instanceData,
+      BillingAmountBreakup billingAmountBreakup, double instanceCpu, double instanceMemory, double instanceStorage,
+      double instanceActiveSeconds, PricingData pricingData) {
     if (InstanceType.K8S_PV.equals(instanceData.getInstanceType())) {
       return BillingAmountBreakup.builder()
-          .billingAmount(billingAmount)
+          .billingAmount(billingAmountBreakup.getBillingAmount())
           .cpuBillingAmount(BigDecimal.ZERO)
           .memoryBillingAmount(BigDecimal.ZERO)
-          .storageBillingAmount(billingAmount)
+          .storageBillingAmount(billingAmountBreakup.getBillingAmount())
           .build();
     } else if (instanceData.getInstanceType().getCostAttribution() == CostAttribution.PARTIAL) {
       Map<String, String> instanceMetaData = instanceData.getMetaData();
@@ -160,25 +226,28 @@ public class BillingCalculationService {
 
       double cpuFraction = parentInstanceCpu == 0 ? 0 : (instanceCpu / parentInstanceCpu);
       double memoryFraction = parentInstanceMemory == 0 ? 0 : (instanceMemory / parentInstanceMemory);
+      BigDecimal cpuFractionAmount =
+          billingAmountBreakup.getCpuBillingAmount().multiply(BigDecimal.valueOf(cpuFraction));
+      BigDecimal memoryFractionAmount =
+          billingAmountBreakup.getMemoryBillingAmount().multiply(BigDecimal.valueOf(memoryFraction));
 
-      BigDecimal instanceUsage = BigDecimal.valueOf((cpuFraction + memoryFraction) * 0.5);
       return BillingAmountBreakup.builder()
-          .billingAmount(instanceUsage.multiply(billingAmount))
-          .cpuBillingAmount(billingAmount.multiply(BigDecimal.valueOf(cpuFraction * 0.5)))
-          .memoryBillingAmount(billingAmount.multiply(BigDecimal.valueOf(memoryFraction * 0.5)))
+          .billingAmount(cpuFractionAmount.add(memoryFractionAmount))
+          .cpuBillingAmount(cpuFractionAmount)
+          .memoryBillingAmount(memoryFractionAmount)
           .storageBillingAmount(BigDecimal.ZERO)
           .build();
     }
 
-    BigDecimal cpuBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
-    BigDecimal memoryBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
+    BigDecimal cpuBillingAmount = billingAmountBreakup.getCpuBillingAmount();
+    BigDecimal memoryBillingAmount = billingAmountBreakup.getMemoryBillingAmount();
     if (pricingData.getCpuPricePerHour() > 0.0 && pricingData.getMemoryPricePerHour() > 0.0) {
       cpuBillingAmount = BigDecimal.valueOf((pricingData.getCpuPricePerHour() * instanceActiveSeconds) / 3600);
       memoryBillingAmount = BigDecimal.valueOf((pricingData.getMemoryPricePerHour() * instanceActiveSeconds) / 3600);
     }
 
     return BillingAmountBreakup.builder()
-        .billingAmount(billingAmount)
+        .billingAmount(billingAmountBreakup.getBillingAmount())
         .cpuBillingAmount(cpuBillingAmount)
         .memoryBillingAmount(memoryBillingAmount)
         .storageBillingAmount(BigDecimal.ZERO)

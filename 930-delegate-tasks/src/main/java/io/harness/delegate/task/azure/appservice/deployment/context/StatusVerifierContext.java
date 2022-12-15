@@ -9,14 +9,15 @@ package io.harness.delegate.task.azure.appservice.deployment.context;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.logging.LogCallback;
 
+import com.azure.core.http.rest.Response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
+import reactor.core.publisher.Mono;
 
 @Data
 @AllArgsConstructor
@@ -26,5 +27,5 @@ public class StatusVerifierContext {
   @NonNull private String slotName;
   @NonNull private AzureWebClient azureWebClient;
   @NonNull private AzureWebClientContext azureWebClientContext;
-  private AzureServiceCallBack restCallBack;
+  private Mono<Response<Void>> responseMono;
 }

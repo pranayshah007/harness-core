@@ -63,7 +63,7 @@ public class ECRStepTest extends CIExecutionTestBase {
                       .dockerArtifact(
                           DockerArtifactDescriptor.builder()
                               .imageName("harness/ci-automation:latest")
-                              .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70")
+                              .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71")
                               .build())
                       .build())
             .build();
@@ -76,12 +76,14 @@ public class ECRStepTest extends CIExecutionTestBase {
                 .tag("1.0")
                 .url(
                     "https://console.aws.amazon.com/ecr/repositories/private/854707204582/harness/ci-automation/image/sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70/details/?region=us-east-1")
+                .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70")
                 .build(),
             PublishedImageArtifact.builder()
                 .imageName("harness/ci-automation")
                 .tag("latest")
                 .url(
-                    "https://console.aws.amazon.com/ecr/repositories/private/854707204582/harness/ci-automation/image/sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70/details/?region=us-east-1")
+                    "https://console.aws.amazon.com/ecr/repositories/private/854707204582/harness/ci-automation/image/sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71/details/?region=us-east-1")
+                .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71")
                 .build());
   }
 }

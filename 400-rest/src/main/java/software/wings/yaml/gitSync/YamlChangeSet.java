@@ -10,7 +10,6 @@ package software.wings.yaml.gitSync;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -67,6 +66,12 @@ public class YamlChangeSet extends Base {
                  .field(YamlChangeSetKeys.status)
                  .descSortField(Base.CREATED_AT_KEY)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("status_accountId_queuekey_index")
+                 .field(YamlChangeSetKeys.status)
+                 .field(YamlChangeSetKeys.accountId)
+                 .field(YamlChangeSetKeys.queueKey)
+                 .build())
         .build();
   }
 
@@ -75,7 +80,7 @@ public class YamlChangeSet extends Base {
 
   @NotEmpty private String accountId;
   @NotNull private List<GitFileChange> gitFileChanges = new ArrayList<>();
-  @FdIndex @NotNull private Status status;
+  @NotNull private Status status;
   private boolean gitToHarness;
   private boolean forcePush;
   private long queuedOn = System.currentTimeMillis();

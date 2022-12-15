@@ -59,6 +59,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
+import io.harness.beans.PageRequest.Option;
 import io.harness.beans.PageResponse;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidArgumentsException;
@@ -215,13 +216,14 @@ public class PipelineServiceImpl implements PipelineService {
         PageRequest<WorkflowExecution> innerPageRequest =
             aPageRequest()
                 .withLimit(previousExecutionsCount.toString())
-                .addFilter(WorkflowExecutionKeys.appId, EQ, pipeline.getAppId())
+                .addFilter(WorkflowExecutionKeys.accountId, EQ, pipeline.getAccountId())
                 .addFilter(WorkflowExecutionKeys.workflowId, EQ, pipeline.getUuid())
                 .addFilter(WorkflowExecutionKeys.cdPageCandidate, EQ, Boolean.TRUE)
                 .build();
+        innerPageRequest.setOptions(Collections.singletonList(Option.SKIPCOUNT));
         try {
           List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false)
+              workflowExecutionService.listExecutions(innerPageRequest, false, false, false, false, false, true)
                   .getResponse();
           pipeline.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {
@@ -269,6 +271,7 @@ public class PipelineServiceImpl implements PipelineService {
     setUnset(ops, "pipelineStages", pipeline.getPipelineStages());
     setUnset(ops, "failureStrategies", pipeline.getFailureStrategies());
     setUnset(ops, "keywords", trimmedLowercaseSet(keywords));
+    setUnset(ops, "rollbackPreviousStages", pipeline.rollbackPreviousStages);
 
     wingsPersistence.update(wingsPersistence.createQuery(Pipeline.class)
                                 .filter("appId", pipeline.getAppId())

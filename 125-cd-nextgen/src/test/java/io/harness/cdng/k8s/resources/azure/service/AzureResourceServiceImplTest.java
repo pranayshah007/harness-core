@@ -9,7 +9,9 @@ package io.harness.cdng.k8s.resources.azure.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -24,16 +26,25 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.azure.AzureHelperService;
+import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureImageGalleriesDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureLocationsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureManagementGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
+import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
+import io.harness.delegate.beans.azure.response.AzureImageGalleriesResponse;
+import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
@@ -51,6 +62,9 @@ import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
+import software.wings.beans.AzureImageGallery;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -258,6 +272,135 @@ public class AzureResourceServiceImplTest extends CategoryTest {
     assertThat(azureClustersDTO.getClusters().get(0).getCluster()).isEqualTo("aks1");
     assertThat(azureClustersDTO.getClusters().get(1).getCluster()).isEqualTo("aks2");
     assertThat(azureClustersDTO.getClusters().get(2).getCluster()).isEqualTo("aks3");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetImageGallery() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    AzureImageGallery azureImageGallery = new AzureImageGallery();
+    azureImageGallery.setName("name");
+    azureImageGallery.setRegionName("region");
+    azureImageGallery.setResourceGroupName("resourceGroupName");
+    azureImageGallery.setSubscriptionId("subscriptionId");
+    List<AzureImageGallery> imageGalleryList = new ArrayList<>();
+    imageGalleryList.add(azureImageGallery);
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureImageGalleriesResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .azureImageGalleries(imageGalleryList)
+                        .build());
+
+    AzureImageGalleriesDTO azureImageGalleriesDTO = azureResourceService.getImageGallery(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID, "resourceGroupName");
+    assertThat(azureImageGalleriesDTO).isNotNull();
+    assertThat(azureImageGalleriesDTO.getAzureImageGalleries().size()).isEqualTo(1);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(azureImageGalleriesDTO.getAzureImageGalleries()).isEqualTo(imageGalleryList);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetTags() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureTagsResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .tags(Arrays.asList("tag1", "tag2"))
+                        .build());
+
+    AzureTagsDTO result =
+        azureResourceService.getTags(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getTags().size()).isEqualTo(2);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(result.getTags().get(0).getTag()).isEqualTo("tag1");
+    assertThat(result.getTags().get(1).getTag()).isEqualTo("tag2");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetAzureManagementGroups() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureMngGroupsResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .managementGroups(Arrays.asList(ManagementGroupData.builder().name("name").build()))
+                        .build());
+
+    AzureManagementGroupsDTO result =
+        azureResourceService.getAzureManagementGroups(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getManagementGroups().size()).isEqualTo(1);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(result.getManagementGroups().get(0).getName()).isEqualTo("name");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetLocations() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureLocationsResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .locations(Arrays.asList("loc1"))
+                        .build());
+
+    AzureLocationsDTO result =
+        azureResourceService.getLocations(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID);
+
+    assertThat(result.getLocations().size()).isEqualTo(1);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(result.getLocations().get(0)).isEqualTo("loc1");
   }
 
   private AzureConnectorDTO getSPConnector(AzureSecretType azureSecretType) {

@@ -112,7 +112,7 @@ public class TemplateReferenceHelper {
       String accountId, String orgId, String projectId, String yaml, boolean shouldModifyFqn) {
     List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
     YamlConfig yamlConfig = new YamlConfig(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<FQN, Object> fqnToValueMap = yamlConfig.getFqnToValueMap();
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
     Map<String, Object> fqnStringToValueMap = new HashMap<>();
@@ -127,7 +127,7 @@ public class TemplateReferenceHelper {
                 || CUSTOM_DEPLOYMENT_TEMPLATE.equals(secondLastNode.getKey()))) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
           IdentifierRef templateIdentifierRef =
-              IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
+              IdentifierRefHelper.getIdentifierRefOrThrowException(identifier, accountId, orgId, projectId, "template");
 
           // remove templateRef from FQN and add versionLabel to FQN to fetch corresponding template version.
           fqnList.remove(fqnList.size() - 1);

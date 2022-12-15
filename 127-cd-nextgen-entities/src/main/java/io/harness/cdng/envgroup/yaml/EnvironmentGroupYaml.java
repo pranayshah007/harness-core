@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.envgroup.helper.EnvironmentGroupYamlVisitorHelper;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -45,14 +46,20 @@ public class EnvironmentGroupYaml implements Visitable {
   @YamlSchemaTypes(runtime)
   ParameterField<List<EnvironmentYamlV2>> environments;
 
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<List<FilterYaml>> filters;
+
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<Boolean> deployToAll;
 
+  @JsonProperty("metadata") EnvironmentGroupMetadata environmentGroupMetadata;
+
   @Override
   public VisitableChildren getChildrenToWalk() {
     VisitableChildren children = VisitableChildren.builder().build();
-    if (environments != null && !environments.isExpression()) {
+    if (ParameterField.isNotNull(environments) && !environments.isExpression()) {
       environments.getValue().forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
     }
     return children;

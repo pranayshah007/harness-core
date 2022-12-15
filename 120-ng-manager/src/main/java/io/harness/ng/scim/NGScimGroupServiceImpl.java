@@ -69,6 +69,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
   @Override
   public ScimListResponse<ScimGroup> searchGroup(String filter, String accountId, Integer count, Integer startIndex) {
     startIndex = startIndex == null ? 0 : startIndex;
+    Integer tempStartIndex = startIndex == 0 ? 0 : startIndex - 1;
     count = count == null ? MAX_RESULT_COUNT : count;
     ScimListResponse<ScimGroup> searchGroupResponse = new ScimListResponse<>();
     log.info("NGSCIM: Searching groups in account {} with filter: {}", accountId, filter);
@@ -88,7 +89,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     List<ScimGroup> groupList = new ArrayList<>();
 
     try {
-      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, startIndex);
+      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, tempStartIndex);
       groupList.forEach(searchGroupResponse::resource);
     } catch (WingsException ex) {
       log.info("NGSCIM: Search in account {} for group , query: {}", accountId, searchQuery, ex);
@@ -228,15 +229,17 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     } catch (Exception ex) {
       log.error("NGSCIM: Failed to process the REPLACE_OKTA operation: {}, for accountId: {}, for GroupId {}",
           patchOperation.toString(), accountId, groupId, ex);
+      throw new InvalidRequestException("Failed to update group name");
     }
-    throw new InvalidRequestException("Failed to update group name");
+    return null;
   }
 
   @Override
   public Response updateGroup(String groupId, String accountId, PatchRequest patchRequest) {
     String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
     String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
-    log.info("NGSCIM: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
+    log.info(
+        "NGSCIM: Updating Group: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
         operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), accountId);
     List<UserGroup> existingUserGroupList = userGroupService.list(Criteria.where(UserGroupKeys.identifier)
                                                                       .is(groupId)
@@ -328,14 +331,14 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
         userIds.add(operand.substring(1, operand.length() - 2));
         return userIds;
       } catch (Exception ex) {
-        log.error("SCIM: Not able to decode path. Received it in path: {}, for accountId: {}, for GroupId {}",
+        log.error("NGSCIM: Not able to decode path. Received it in path: {}, for accountId: {}, for GroupId {}",
             patchOperation.getPath(), accountId, groupId, ex);
       }
     }
 
     if (!"members".equals(patchOperation.getPath())) {
-      log.error(
-          "SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
+      log.warn(
+          "NGSCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
           patchOperation.getPath(), accountId, groupId);
       return Collections.emptySet();
     }

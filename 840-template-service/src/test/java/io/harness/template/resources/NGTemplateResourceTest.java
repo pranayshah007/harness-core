@@ -8,11 +8,13 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static java.lang.Boolean.TRUE;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -30,11 +32,19 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
@@ -45,7 +55,9 @@ import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
-import io.harness.template.beans.TemplateResponseDTO;
+import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateImportSaveResponse;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -204,9 +216,10 @@ public class NGTemplateResourceTest extends CategoryTest {
   public void testGetTemplate() {
     doReturn(Optional.of(entityWithMongoVersion))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
-    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false,
+            false);
+    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, false);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
@@ -222,10 +235,11 @@ public class NGTemplateResourceTest extends CategoryTest {
     String incorrectPipelineIdentifier = "notTheIdentifierWeNeed";
     doReturn(Optional.empty())
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false,
+            false, false);
     assertThatThrownBy(()
                            -> templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null))
+                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, null, false))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -378,12 +392,89 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false);
 
-    ResponseDTO<TemplateMergeResponseDTO> responseDTO = templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER,
-        PROJ_IDENTIFIER, null, TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build());
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "false");
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testImportPipelineFromGit() {
+    GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().branch("br").isForceImport(false).build();
+    TemplateImportRequestDTO templateImportRequestDTO = TemplateImportRequestDTO.builder().build();
+    doReturn(TemplateEntity.builder().identifier(TEMPLATE_IDENTIFIER).build())
+        .when(templateService)
+        .importTemplateFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+            templateImportRequestDTO, gitImportInfoDTO.getIsForceImport());
+    ResponseDTO<TemplateImportSaveResponse> importTemplateFromGit = templateResource.importTemplateFromGit(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, gitImportInfoDTO, templateImportRequestDTO);
+    assertThat(importTemplateFromGit.getData().getTemplateIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetListRepos() {
+    List<String> repos = new ArrayList<>();
+    repos.add("testRepo1");
+    repos.add("testRepo2");
+
+    TemplateListRepoResponse templateListRepoResponse = TemplateListRepoResponse.builder().repositories(repos).build();
+
+    doReturn(templateListRepoResponse)
+        .when(templateService)
+        .getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+
+    ResponseDTO<TemplateListRepoResponse> uniqueListRepos =
+        templateResource.listRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertEquals(uniqueListRepos.getData().getRepositories(), repos);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetTemplateWithCaching() {
+    CacheResponse cacheResponse =
+        CacheResponse.builder().cacheState(CacheState.VALID_CACHE).lastUpdatedAt(987654L).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+    entityWithMongoVersion = entityWithMongoVersion.withStoreType(StoreType.REMOTE);
+    doReturn(Optional.of(entityWithMongoVersion))
+        .when(templateService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, true,
+            false);
+    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, "true", false);
+    assertThat(responseDTO.getData()).isNotNull();
+    assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
+    assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesV2WithCaching() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder()
+            .mergedPipelineYaml(yaml)
+            .cacheResponseMetadata(CacheResponseMetadataDTO.builder().cacheState(CacheState.VALID_CACHE).build())
+            .build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true);
+
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "true");
+    assertThat(responseDTO.getData()).isNotNull();
+    assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
+    assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());
   }
 }

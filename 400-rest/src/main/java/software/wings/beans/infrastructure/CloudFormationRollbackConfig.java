@@ -46,7 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @FdIndex private String accountId;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -57,6 +57,23 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
                  .field(CloudFormationRollbackConfigKeys.awsConfigId)
                  .field(CloudFormationRollbackConfigKeys.createdAt)
                  .name("byAppAndEntityAndAwsConfig")
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(CloudFormationRollbackConfigKeys.appId)
+                 .field(CloudFormationRollbackConfigKeys.entityId)
+                 .field(CloudFormationRollbackConfigKeys.awsConfigId)
+                 .field(CloudFormationRollbackConfigKeys.customStackName)
+                 .field(CloudFormationRollbackConfigKeys.region)
+                 .field(CloudFormationRollbackConfigKeys.createdAt)
+                 .name("byAppAndEntityAndAwsConfigAndCustomStackNameAndRegion")
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(CloudFormationRollbackConfigKeys.appId)
+                 .field(CloudFormationRollbackConfigKeys.entityId)
+                 .field(CloudFormationRollbackConfigKeys.customStackName)
+                 .field(CloudFormationRollbackConfigKeys.region)
+                 .field(CloudFormationRollbackConfigKeys.createdAt)
+                 .name("byAppAndEntityAndCustomStackNameAndRegion")
                  .build())
         .build();
   }
@@ -73,6 +90,8 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
   private String cloudFormationRoleArn;
   private boolean skipBasedOnStackStatus;
   private List<String> stackStatusesToMarkAsSuccess;
+  private List<String> capabilities;
+  private String tags;
 
   @FdIndex private String entityId;
 }

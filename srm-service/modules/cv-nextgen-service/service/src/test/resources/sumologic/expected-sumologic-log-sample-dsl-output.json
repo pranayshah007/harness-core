@@ -1,0 +1,2086 @@
+{
+  "fields": [
+    {
+      "name": "_blockid",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_collector",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_collectorid",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_format",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_messagecount",
+      "fieldType": "int",
+      "keyField": false
+    },
+    {
+      "name": "_messageid",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_messagetime",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_raw",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_receipttime",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_size",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_source",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_sourcecategory",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_sourcehost",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_sourceid",
+      "fieldType": "long",
+      "keyField": false
+    },
+    {
+      "name": "_sourcename",
+      "fieldType": "string",
+      "keyField": false
+    },
+    {
+      "name": "_view",
+      "fieldType": "string",
+      "keyField": false
+    }
+  ],
+  "messages": [
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697295",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"137898\";\n\tAvgDiskBytesPerWrite = \"137898\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"1653986\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 11;\n\tDiskWriteBytesPersec = \"1653986\";\n\tDiskWritesPersec = 11;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58796",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557648",
+        "_sourcename": "PhysicalDisk",
+        "_size": "667",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697295",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"137898\";\n\tAvgDiskBytesPerWrite = \"137898\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"1653986\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 11;\n\tDiskWriteBytesPersec = \"1653986\";\n\tDiskWritesPersec = 11;\n\tName = \"1 C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58795",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557647",
+        "_sourcename": "PhysicalDisk",
+        "_size": "665",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697294",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"0 F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58794",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557646",
+        "_sourcename": "PhysicalDisk",
+        "_size": "641",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697035",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 185951;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58793",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557645",
+        "_sourcename": "LogicalDisk",
+        "_size": "691",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697035",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 284;\n\tName = \"HarddiskVolume7\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 35;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58792",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557644",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697035",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 65;\n\tName = \"HarddiskVolume2\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 67;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58791",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557643",
+        "_sourcename": "LogicalDisk",
+        "_size": "696",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697034",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 109;\n\tName = \"HarddiskVolume1\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 20;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58790",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557642",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697034",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 74998;\n\tName = \"F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58789",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557641",
+        "_sourcename": "LogicalDisk",
+        "_size": "686",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137697034",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 110495;\n\tName = \"C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 23;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58788",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557640",
+        "_sourcename": "LogicalDisk",
+        "_size": "687",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696774",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"18669\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 45;\n\tDPCsQueuedPersec = 3344;\n\tInterruptsPersec = 20299;\n\tName = \"_Total\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"1\";\n\tPercentPrivilegedTime = \"4\";\n\tPercentProcessorTime = \"5\";\n\tPercentUserTime = \"1\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58787",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557639",
+        "_sourcename": "Processor",
+        "_size": "458",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696773",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"295\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 11;\n\tInterruptsPersec = 331;\n\tName = \"9\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"99\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58786",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557638",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696773",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1874\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 51;\n\tInterruptsPersec = 1954;\n\tName = \"8\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58785",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557637",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696773",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"891\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 23;\n\tInterruptsPersec = 963;\n\tName = \"7\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58784",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557636",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2981\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 79;\n\tInterruptsPersec = 3192;\n\tName = \"6\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"92\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"92\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"12\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58783",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557635",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1090\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 55;\n\tInterruptsPersec = 1146;\n\tName = \"5\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58782",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557634",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1218\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 1314;\n\tName = \"4\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58781",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557633",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"383\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 7;\n\tInterruptsPersec = 411;\n\tName = \"3\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58780",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557632",
+        "_sourcename": "Processor",
+        "_size": "445",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1878\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 87;\n\tInterruptsPersec = 2001;\n\tName = \"2\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"93\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"93\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"12\";\n\tPercentProcessorTime = \"12\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58779",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557631",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696772",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1558\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 1634;\n\tName = \"11\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58778",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557630",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696771",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2785\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 2;\n\tDPCsQueuedPersec = 107;\n\tInterruptsPersec = 2917;\n\tName = \"10\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58777",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557629",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696771",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1202\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 15;\n\tDPCsQueuedPersec = 659;\n\tInterruptsPersec = 1310;\n\tName = \"1\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58776",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557628",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696771",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2509\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 26;\n\tDPCsQueuedPersec = 2193;\n\tInterruptsPersec = 3120;\n\tName = \"0\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"89\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"89\";\n\tPercentInterruptTime = \"18\";\n\tPercentPrivilegedTime = \"18\";\n\tPercentProcessorTime = \"18\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58775",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557627",
+        "_sourcename": "Processor",
+        "_size": "454",
+        "_view": "",
+        "_receipttime": "1668137699049",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696511",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"2755\";\n\tBytesSentPersec = \"14513\";\n\tBytesTotalPersec = \"17268\";\n\tCurrentBandwidth = \"144400000\";\n\tName = \"TP-Link Wireless USB Adapter\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"47\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"27\";\n\tPacketsReceivedUnicastPersec = \"27\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"19\";\n\tPacketsSentUnicastPersec = \"19\";\n\tTCPActiveRSCConnections = \"13\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"147865\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58774",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557626",
+        "_sourcename": "NetworkInterface",
+        "_size": "806",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696510",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"0\";\n\tName = \"Intel[R] I211 Gigabit Network Connection\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"0\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58773",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557625",
+        "_sourcename": "NetworkInterface",
+        "_size": "788",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137696248",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Memory\n{\n\tAvailableBytes = \"25626628096\";\n\tAvailableKBytes = \"25026004\";\n\tAvailableMBytes = \"24439\";\n\tCacheBytes = \"188153856\";\n\tCacheBytesPeak = \"281583616\";\n\tCacheFaultsPersec = 15;\n\tCommitLimit = \"39385882624\";\n\tCommittedBytes = \"11960922112\";\n\tDemandZeroFaultsPersec = 769;\n\tFreeAndZeroPageListBytes = \"20615020544\";\n\tFreeSystemPageTableEntries = 12454862;\n\tLongTermAverageStandbyCacheLifetimes = 14400;\n\tModifiedPageListBytes = \"582180864\";\n\tPageFaultsPersec = 1681;\n\tPageReadsPersec = 3;\n\tPagesInputPersec = 31;\n\tPagesOutputPersec = 0;\n\tPagesPersec = 31;\n\tPageWritesPersec = 0;\n\tPercentCommittedBytesInUse = 30;\n\tPoolNonpagedAllocs = 0;\n\tPoolNonpagedBytes = \"348106752\";\n\tPoolPagedAllocs = 0;\n\tPoolPagedBytes = \"409862144\";\n\tPoolPagedResidentBytes = \"329093120\";\n\tStandbyCacheCoreBytes = \"167972864\";\n\tStandbyCacheNormalPriorityBytes = \"1541877760\";\n\tStandbyCacheReserveBytes = \"3301756928\";\n\tSystemCacheResidentBytes = \"188153856\";\n\tSystemCodeResidentBytes = \"0\";\n\tSystemCodeTotalBytes = \"0\";\n\tSystemDriverResidentBytes = \"16596992\";\n\tSystemDriverTotalBytes = \"72593408\";\n\tTransitionFaultsPersec = 976;\n\tTransitionPagesRePurposedPersec = 0;\n\tWriteCopiesPersec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58772",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557624",
+        "_sourcename": "Memory",
+        "_size": "1217",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695987",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"4096\";\n\tAvgDiskBytesPerWrite = \"4096\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"16340\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 3;\n\tDiskWriteBytesPersec = \"16340\";\n\tDiskWritesPersec = 3;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"1\";\n\tPercentDiskWriteTime = \"1\";\n\tPercentIdleTime = \"98\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58771",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557623",
+        "_sourcename": "PhysicalDisk",
+        "_size": "657",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695987",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"4096\";\n\tAvgDiskBytesPerWrite = \"4096\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"16340\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 3;\n\tDiskWriteBytesPersec = \"16340\";\n\tDiskWritesPersec = 3;\n\tName = \"1 C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"2\";\n\tPercentDiskWriteTime = \"2\";\n\tPercentIdleTime = \"97\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58770",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557622",
+        "_sourcename": "PhysicalDisk",
+        "_size": "655",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695986",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"0 F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58769",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557621",
+        "_sourcename": "PhysicalDisk",
+        "_size": "641",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695727",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 185951;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58768",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557620",
+        "_sourcename": "LogicalDisk",
+        "_size": "691",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695726",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 284;\n\tName = \"HarddiskVolume7\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 35;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58767",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557619",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695726",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 65;\n\tName = \"HarddiskVolume2\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 67;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58766",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557618",
+        "_sourcename": "LogicalDisk",
+        "_size": "696",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695725",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 109;\n\tName = \"HarddiskVolume1\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 20;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58765",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557617",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695725",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 74998;\n\tName = \"F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58764",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557616",
+        "_sourcename": "LogicalDisk",
+        "_size": "686",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695725",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 110495;\n\tName = \"C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 23;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58763",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557615",
+        "_sourcename": "LogicalDisk",
+        "_size": "687",
+        "_view": "",
+        "_receipttime": "1668137698048",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695465",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"547\";\n\tC2TransitionsPersec = \"19391\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 55;\n\tDPCsQueuedPersec = 3414;\n\tInterruptsPersec = 22322;\n\tName = \"_Total\";\n\tPercentC1Time = \"1\";\n\tPercentC2Time = \"91\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"93\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"2\";\n\tPercentProcessorTime = \"5\";\n\tPercentUserTime = \"3\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58762",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557614",
+        "_sourcename": "Processor",
+        "_size": "460",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695465",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"630\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 11;\n\tInterruptsPersec = 666;\n\tName = \"9\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58761",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557613",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695465",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2356\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 2;\n\tDPCsQueuedPersec = 91;\n\tInterruptsPersec = 2587;\n\tName = \"8\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"94\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"94\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58760",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557612",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695465",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1265\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 1405;\n\tName = \"7\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58759",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557611",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695464",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"547\";\n\tC2TransitionsPersec = \"1693\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 67;\n\tInterruptsPersec = 2791;\n\tName = \"6\";\n\tPercentC1Time = \"18\";\n\tPercentC2Time = \"51\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"69\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"31\";\n\tPercentUserTime = \"24\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58758",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557610",
+        "_sourcename": "Processor",
+        "_size": "453",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695464",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1325\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 27;\n\tInterruptsPersec = 1397;\n\tName = \"5\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58757",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557609",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695464",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1489\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 3;\n\tDPCsQueuedPersec = 63;\n\tInterruptsPersec = 1621;\n\tName = \"4\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"95\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"95\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58756",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557608",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695464",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"750\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 3;\n\tDPCsQueuedPersec = 39;\n\tInterruptsPersec = 790;\n\tName = \"3\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58755",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557607",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695463",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2236\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 107;\n\tInterruptsPersec = 2427;\n\tName = \"2\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"92\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"92\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58754",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557606",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695463",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"571\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 7;\n\tInterruptsPersec = 622;\n\tName = \"11\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58753",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557605",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695463",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2915\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 5;\n\tDPCsQueuedPersec = 131;\n\tInterruptsPersec = 3074;\n\tName = \"10\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"95\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"95\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58752",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557604",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695462",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1301\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 7;\n\tDPCsQueuedPersec = 579;\n\tInterruptsPersec = 1413;\n\tName = \"1\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"6\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58751",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557603",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695462",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2855\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 34;\n\tDPCsQueuedPersec = 2252;\n\tInterruptsPersec = 3522;\n\tName = \"0\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"88\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"88\";\n\tPercentInterruptTime = \"6\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"12\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58750",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557602",
+        "_sourcename": "Processor",
+        "_size": "452",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695202",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"144400000\";\n\tName = \"TP-Link Wireless USB Adapter\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"13\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58749",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557601",
+        "_sourcename": "NetworkInterface",
+        "_size": "785",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137695202",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"0\";\n\tName = \"Intel[R] I211 Gigabit Network Connection\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"0\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58748",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557600",
+        "_sourcename": "NetworkInterface",
+        "_size": "788",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694939",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Memory\n{\n\tAvailableBytes = \"25628418048\";\n\tAvailableKBytes = \"25027752\";\n\tAvailableMBytes = \"24441\";\n\tCacheBytes = \"188133376\";\n\tCacheBytesPeak = \"281583616\";\n\tCacheFaultsPersec = 0;\n\tCommitLimit = \"39385882624\";\n\tCommittedBytes = \"11956867072\";\n\tDemandZeroFaultsPersec = 2992;\n\tFreeAndZeroPageListBytes = \"20616822784\";\n\tFreeSystemPageTableEntries = 12454847;\n\tLongTermAverageStandbyCacheLifetimes = 14400;\n\tModifiedPageListBytes = \"581996544\";\n\tPageFaultsPersec = 4815;\n\tPageReadsPersec = 0;\n\tPagesInputPersec = 0;\n\tPagesOutputPersec = 0;\n\tPagesPersec = 0;\n\tPageWritesPersec = 0;\n\tPercentCommittedBytesInUse = 30;\n\tPoolNonpagedAllocs = 0;\n\tPoolNonpagedBytes = \"348094464\";\n\tPoolPagedAllocs = 0;\n\tPoolPagedBytes = \"409853952\";\n\tPoolPagedResidentBytes = \"329080832\";\n\tStandbyCacheCoreBytes = \"167972864\";\n\tStandbyCacheNormalPriorityBytes = \"1541853184\";\n\tStandbyCacheReserveBytes = \"3301769216\";\n\tSystemCacheResidentBytes = \"188133376\";\n\tSystemCodeResidentBytes = \"0\";\n\tSystemCodeTotalBytes = \"0\";\n\tSystemDriverResidentBytes = \"16596992\";\n\tSystemDriverTotalBytes = \"72593408\";\n\tTransitionFaultsPersec = 1978;\n\tTransitionPagesRePurposedPersec = 0;\n\tWriteCopiesPersec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58747",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557599",
+        "_sourcename": "Memory",
+        "_size": "1216",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694679",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58746",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557598",
+        "_sourcename": "PhysicalDisk",
+        "_size": "644",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694679",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"1 C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58745",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557597",
+        "_sourcename": "PhysicalDisk",
+        "_size": "642",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694678",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"0 F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58744",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557596",
+        "_sourcename": "PhysicalDisk",
+        "_size": "642",
+        "_view": "",
+        "_receipttime": "1668137697047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694420",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"32768\";\n\tAvgDiskBytesPerTransfer = \"8777\";\n\tAvgDiskBytesPerWrite = \"6931\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"490547\";\n\tDiskReadBytesPersec = \"130812\";\n\tDiskReadsPersec = 3;\n\tDiskTransfersPersec = 55;\n\tDiskWriteBytesPersec = \"359734\";\n\tDiskWritesPersec = 51;\n\tFreeMegabytes = 185951;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58743",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557595",
+        "_sourcename": "LogicalDisk",
+        "_size": "718",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694420",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 284;\n\tName = \"HarddiskVolume7\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 35;\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58742",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557594",
+        "_sourcename": "LogicalDisk",
+        "_size": "698",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694419",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 65;\n\tName = \"HarddiskVolume2\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 67;\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58741",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557593",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694419",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 109;\n\tName = \"HarddiskVolume1\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 20;\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58740",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557592",
+        "_sourcename": "LogicalDisk",
+        "_size": "698",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694419",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 74998;\n\tName = \"F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"100\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58739",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557591",
+        "_sourcename": "LogicalDisk",
+        "_size": "687",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694418",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"32768\";\n\tAvgDiskBytesPerTransfer = \"8777\";\n\tAvgDiskBytesPerWrite = \"6931\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"490547\";\n\tDiskReadBytesPersec = \"130812\";\n\tDiskReadsPersec = 3;\n\tDiskTransfersPersec = 55;\n\tDiskWriteBytesPersec = \"359734\";\n\tDiskWritesPersec = 51;\n\tFreeMegabytes = 110495;\n\tName = \"C:\";\n\tPercentDiskReadTime = \"2\";\n\tPercentDiskTime = \"2\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 23;\n\tPercentIdleTime = \"97\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58738",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557590",
+        "_sourcename": "LogicalDisk",
+        "_size": "714",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694158",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"18381\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 22;\n\tDPCsQueuedPersec = 2134;\n\tInterruptsPersec = 19637;\n\tName = \"_Total\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"95\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"95\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"1\";\n\tPercentUserTime = \"1\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58737",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557589",
+        "_sourcename": "Processor",
+        "_size": "458",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694158",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"415\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 7;\n\tInterruptsPersec = 423;\n\tName = \"9\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"99\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58736",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557588",
+        "_sourcename": "Processor",
+        "_size": "445",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694158",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1499\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 7;\n\tInterruptsPersec = 1543;\n\tName = \"8\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58735",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557587",
+        "_sourcename": "Processor",
+        "_size": "447",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694158",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"771\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 79;\n\tInterruptsPersec = 847;\n\tName = \"7\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58734",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557586",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694157",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"3418\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 79;\n\tInterruptsPersec = 3853;\n\tName = \"6\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"86\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"86\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58733",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557585",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694157",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"887\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 911;\n\tName = \"5\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58732",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557584",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694157",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1715\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 1767;\n\tName = \"4\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58731",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557583",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694156",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"599\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 19;\n\tInterruptsPersec = 611;\n\tName = \"3\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58730",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557582",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694156",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1994\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 67;\n\tInterruptsPersec = 2126;\n\tName = \"2\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"91\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"91\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58729",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557581",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694156",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"795\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 3;\n\tInterruptsPersec = 831;\n\tName = \"11\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58728",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557580",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694156",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1123\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 0;\n\tInterruptsPersec = 1127;\n\tName = \"10\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58727",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557579",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694155",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1235\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 3;\n\tDPCsQueuedPersec = 227;\n\tInterruptsPersec = 1323;\n\tName = \"1\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"6\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58726",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557578",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137694155",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"3925\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 17;\n\tDPCsQueuedPersec = 1575;\n\tInterruptsPersec = 4269;\n\tName = \"0\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"90\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"90\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58725",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557577",
+        "_sourcename": "Processor",
+        "_size": "451",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693896",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"144400000\";\n\tName = \"TP-Link Wireless USB Adapter\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"13\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58724",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557576",
+        "_sourcename": "NetworkInterface",
+        "_size": "785",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693895",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"0\";\n\tName = \"Intel[R] I211 Gigabit Network Connection\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"0\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58723",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557575",
+        "_sourcename": "NetworkInterface",
+        "_size": "788",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693633",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Memory\n{\n\tAvailableBytes = \"25644621824\";\n\tAvailableKBytes = \"25043576\";\n\tAvailableMBytes = \"24456\";\n\tCacheBytes = \"188104704\";\n\tCacheBytesPeak = \"281583616\";\n\tCacheFaultsPersec = 0;\n\tCommitLimit = \"39385882624\";\n\tCommittedBytes = \"11866583040\";\n\tDemandZeroFaultsPersec = 286;\n\tFreeAndZeroPageListBytes = \"20633079808\";\n\tFreeSystemPageTableEntries = 12454830;\n\tLongTermAverageStandbyCacheLifetimes = 14400;\n\tModifiedPageListBytes = \"581857280\";\n\tPageFaultsPersec = 2782;\n\tPageReadsPersec = 0;\n\tPagesInputPersec = 0;\n\tPagesOutputPersec = 0;\n\tPagesPersec = 0;\n\tPageWritesPersec = 0;\n\tPercentCommittedBytesInUse = 30;\n\tPoolNonpagedAllocs = 0;\n\tPoolNonpagedBytes = \"348082176\";\n\tPoolPagedAllocs = 0;\n\tPoolPagedBytes = \"409751552\";\n\tPoolPagedResidentBytes = \"329056256\";\n\tStandbyCacheCoreBytes = \"167972864\";\n\tStandbyCacheNormalPriorityBytes = \"1541795840\";\n\tStandbyCacheReserveBytes = \"3301773312\";\n\tSystemCacheResidentBytes = \"188104704\";\n\tSystemCodeResidentBytes = \"0\";\n\tSystemCodeTotalBytes = \"0\";\n\tSystemDriverResidentBytes = \"16596992\";\n\tSystemDriverTotalBytes = \"72593408\";\n\tTransitionFaultsPersec = 2495;\n\tTransitionPagesRePurposedPersec = 0;\n\tWriteCopiesPersec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58722",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557574",
+        "_sourcename": "Memory",
+        "_size": "1215",
+        "_view": "",
+        "_receipttime": "1668137696047",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693373",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58721",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557573",
+        "_sourcename": "PhysicalDisk",
+        "_size": "643",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693373",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"1 C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58720",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557572",
+        "_sourcename": "PhysicalDisk",
+        "_size": "641",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693373",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_PhysicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tName = \"0 F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58719",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557571",
+        "_sourcename": "PhysicalDisk",
+        "_size": "641",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693113",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 185951;\n\tName = \"_Total\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58718",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557570",
+        "_sourcename": "LogicalDisk",
+        "_size": "691",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693112",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 284;\n\tName = \"HarddiskVolume7\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 35;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58717",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557569",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693112",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 65;\n\tName = \"HarddiskVolume2\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 67;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58716",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557568",
+        "_sourcename": "LogicalDisk",
+        "_size": "696",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693111",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 109;\n\tName = \"HarddiskVolume1\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 20;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58715",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557567",
+        "_sourcename": "LogicalDisk",
+        "_size": "697",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693111",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 74998;\n\tName = \"F:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 22;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58714",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557566",
+        "_sourcename": "LogicalDisk",
+        "_size": "686",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137693111",
+        "_raw": "instance of Win32_PerfFormattedData_PerfDisk_LogicalDisk\n{\n\tAvgDiskBytesPerRead = \"0\";\n\tAvgDiskBytesPerTransfer = \"0\";\n\tAvgDiskBytesPerWrite = \"0\";\n\tAvgDiskQueueLength = \"0\";\n\tAvgDiskReadQueueLength = \"0\";\n\tAvgDisksecPerRead = 0;\n\tAvgDisksecPerTransfer = 0;\n\tAvgDisksecPerWrite = 0;\n\tAvgDiskWriteQueueLength = \"0\";\n\tCurrentDiskQueueLength = 0;\n\tDiskBytesPersec = \"0\";\n\tDiskReadBytesPersec = \"0\";\n\tDiskReadsPersec = 0;\n\tDiskTransfersPersec = 0;\n\tDiskWriteBytesPersec = \"0\";\n\tDiskWritesPersec = 0;\n\tFreeMegabytes = 110495;\n\tName = \"C:\";\n\tPercentDiskReadTime = \"0\";\n\tPercentDiskTime = \"0\";\n\tPercentDiskWriteTime = \"0\";\n\tPercentFreeSpace = 23;\n\tPercentIdleTime = \"99\";\n\tSplitIOPerSec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58713",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557565",
+        "_sourcename": "LogicalDisk",
+        "_size": "687",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692850",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"30489\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 45;\n\tDPCsQueuedPersec = 4029;\n\tInterruptsPersec = 34203;\n\tName = \"_Total\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"91\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"1\";\n\tPercentIdleTime = \"91\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"4\";\n\tPercentProcessorTime = \"8\";\n\tPercentUserTime = \"4\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58712",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557564",
+        "_sourcename": "Processor",
+        "_size": "458",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692850",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"665\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 27;\n\tInterruptsPersec = 717;\n\tName = \"9\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"98\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"98\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58711",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557563",
+        "_sourcename": "Processor",
+        "_size": "446",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692850",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"3993\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 43;\n\tInterruptsPersec = 4232;\n\tName = \"8\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"93\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"93\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58710",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557562",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692850",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1267\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 27;\n\tInterruptsPersec = 1394;\n\tName = \"7\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58709",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557561",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692849",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"5436\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 1;\n\tDPCsQueuedPersec = 75;\n\tInterruptsPersec = 6468;\n\tName = \"6\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"73\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"73\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"18\";\n\tPercentProcessorTime = \"37\";\n\tPercentUserTime = \"18\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58708",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557560",
+        "_sourcename": "Processor",
+        "_size": "451",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692849",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"3686\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 2;\n\tDPCsQueuedPersec = 91;\n\tInterruptsPersec = 3810;\n\tName = \"5\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"93\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"93\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58707",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557559",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692849",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2530\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 27;\n\tInterruptsPersec = 2753;\n\tName = \"4\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"91\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"91\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"12\";\n\tPercentUserTime = \"6\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58706",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557558",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692849",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"1207\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 31;\n\tInterruptsPersec = 1371;\n\tName = \"3\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"97\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"97\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58705",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557557",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692848",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2953\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 63;\n\tInterruptsPersec = 3387;\n\tName = \"2\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"84\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"84\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"25\";\n\tPercentUserTime = \"18\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58704",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557556",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692848",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"984\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 27;\n\tInterruptsPersec = 1123;\n\tName = \"11\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"96\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"96\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58703",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557555",
+        "_sourcename": "Processor",
+        "_size": "448",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692848",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2116\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 0;\n\tDPCsQueuedPersec = 75;\n\tInterruptsPersec = 2235;\n\tName = \"10\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"95\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"0\";\n\tPercentIdleTime = \"95\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"0\";\n\tPercentProcessorTime = \"0\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58702",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557554",
+        "_sourcename": "Processor",
+        "_size": "449",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692847",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2726\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 19;\n\tDPCsQueuedPersec = 721;\n\tInterruptsPersec = 3021;\n\tName = \"1\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"90\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"6\";\n\tPercentIdleTime = \"90\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58701",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557553",
+        "_sourcename": "Processor",
+        "_size": "450",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692847",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Processor\n{\n\tC1TransitionsPersec = \"0\";\n\tC2TransitionsPersec = \"2921\";\n\tC3TransitionsPersec = \"0\";\n\tDPCRate = 23;\n\tDPCsQueuedPersec = 2813;\n\tInterruptsPersec = 3686;\n\tName = \"0\";\n\tPercentC1Time = \"0\";\n\tPercentC2Time = \"89\";\n\tPercentC3Time = \"0\";\n\tPercentDPCTime = \"6\";\n\tPercentIdleTime = \"89\";\n\tPercentInterruptTime = \"0\";\n\tPercentPrivilegedTime = \"6\";\n\tPercentProcessorTime = \"6\";\n\tPercentUserTime = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58700",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557552",
+        "_sourcename": "Processor",
+        "_size": "451",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692587",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"262\";\n\tBytesSentPersec = \"10367\";\n\tBytesTotalPersec = \"10630\";\n\tCurrentBandwidth = \"144400000\";\n\tName = \"TP-Link Wireless USB Adapter\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"15\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"3\";\n\tPacketsReceivedUnicastPersec = \"3\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"11\";\n\tPacketsSentUnicastPersec = \"11\";\n\tTCPActiveRSCConnections = \"13\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58699",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557551",
+        "_sourcename": "NetworkInterface",
+        "_size": "798",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692587",
+        "_raw": "instance of Win32_PerfFormattedData_Tcpip_NetworkInterface\n{\n\tBytesReceivedPersec = \"0\";\n\tBytesSentPersec = \"0\";\n\tBytesTotalPersec = \"0\";\n\tCurrentBandwidth = \"0\";\n\tName = \"Intel[R] I211 Gigabit Network Connection\";\n\tOffloadedConnections = \"0\";\n\tOutputQueueLength = \"0\";\n\tPacketsOutboundDiscarded = \"0\";\n\tPacketsOutboundErrors = \"0\";\n\tPacketsPersec = \"0\";\n\tPacketsReceivedDiscarded = \"0\";\n\tPacketsReceivedErrors = \"0\";\n\tPacketsReceivedNonUnicastPersec = \"0\";\n\tPacketsReceivedPersec = \"0\";\n\tPacketsReceivedUnicastPersec = \"0\";\n\tPacketsReceivedUnknown = \"0\";\n\tPacketsSentNonUnicastPersec = \"0\";\n\tPacketsSentPersec = \"0\";\n\tPacketsSentUnicastPersec = \"0\";\n\tTCPActiveRSCConnections = \"0\";\n\tTCPRSCAveragePacketSize = \"5250\";\n\tTCPRSCCoalescedPacketsPersec = \"0\";\n\tTCPRSCExceptionsPersec = \"0\";\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58698",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557550",
+        "_sourcename": "NetworkInterface",
+        "_size": "788",
+        "_view": "",
+        "_receipttime": "1668137695045",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    },
+    {
+      "map": {
+        "_blockid": "2762668218524111872",
+        "_messagetime": "1668137692325",
+        "_raw": "instance of Win32_PerfFormattedData_PerfOS_Memory\n{\n\tAvailableBytes = \"25648971776\";\n\tAvailableKBytes = \"25047824\";\n\tAvailableMBytes = \"24460\";\n\tCacheBytes = \"188743680\";\n\tCacheBytesPeak = \"281583616\";\n\tCacheFaultsPersec = 0;\n\tCommitLimit = \"39385882624\";\n\tCommittedBytes = \"11768614912\";\n\tDemandZeroFaultsPersec = 491;\n\tFreeAndZeroPageListBytes = \"20638076928\";\n\tFreeSystemPageTableEntries = 12454803;\n\tLongTermAverageStandbyCacheLifetimes = 14400;\n\tModifiedPageListBytes = \"581824512\";\n\tPageFaultsPersec = 559;\n\tPageReadsPersec = 0;\n\tPagesInputPersec = 0;\n\tPagesOutputPersec = 0;\n\tPagesPersec = 0;\n\tPageWritesPersec = 0;\n\tPercentCommittedBytesInUse = 29;\n\tPoolNonpagedAllocs = 0;\n\tPoolNonpagedBytes = \"348082176\";\n\tPoolPagedAllocs = 0;\n\tPoolPagedBytes = \"409759744\";\n\tPoolPagedResidentBytes = \"329039872\";\n\tStandbyCacheCoreBytes = \"167968768\";\n\tStandbyCacheNormalPriorityBytes = \"1541152768\";\n\tStandbyCacheReserveBytes = \"3301773312\";\n\tSystemCacheResidentBytes = \"188743680\";\n\tSystemCodeResidentBytes = \"0\";\n\tSystemCodeTotalBytes = \"0\";\n\tSystemDriverResidentBytes = \"16596992\";\n\tSystemDriverTotalBytes = \"72593408\";\n\tTransitionFaultsPersec = 67;\n\tTransitionPagesRePurposedPersec = 0;\n\tWriteCopiesPersec = 0;\n};",
+        "_collectorid": "101193959",
+        "_sourceid": "107421202",
+        "_collector": "DESKTOP-BS3Q623",
+        "_messagecount": "58697",
+        "_sourcehost": "DESKTOP-BS3Q623",
+        "_messageid": "2762668218490557549",
+        "_sourcename": "Memory",
+        "_size": "1212",
+        "_view": "",
+        "_receipttime": "1668137694044",
+        "_sourcecategory": "windows/performance",
+        "_format": "plain",
+        "_source": "Windows Performance"
+      }
+    }
+  ]
+}

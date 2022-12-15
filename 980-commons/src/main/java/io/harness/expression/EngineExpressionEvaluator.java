@@ -20,9 +20,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExceptionHandler;
+import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.DateTimeFunctor;
-import io.harness.text.StringReplacer;
 import io.harness.text.resolver.ExpressionResolver;
+import io.harness.text.resolver.StringReplacer;
 import io.harness.text.resolver.TrackingExpressionResolver;
 
 import com.google.common.collect.ImmutableList;
@@ -51,10 +53,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class EngineExpressionEvaluator {
-  public static final String EXPR_START = "<+";
-  public static final String EXPR_END = ">";
-  public static final String EXPR_START_ESC = "<\\+";
-  public static final String EXPR_END_ESC = ">";
   public static final String HARNESS_INTERNAL_VARIABLE_PREFIX = "__HVAR_";
 
   private static final Pattern VALID_VARIABLE_FIELD_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
@@ -295,7 +293,8 @@ public class EngineExpressionEvaluator {
 
     List<String> variables = findVariables(finalExpression);
     boolean hasNonInternalVariables = variables != null
-        && variables.stream().anyMatch(v -> !v.startsWith(EXPR_START + HARNESS_INTERNAL_VARIABLE_PREFIX));
+        && variables.stream().anyMatch(
+            v -> !v.startsWith(ExpressionConstants.EXPR_START + HARNESS_INTERNAL_VARIABLE_PREFIX));
     if (hasNonInternalVariables) {
       finalExpression =
           runStringReplacer(finalExpression, new HarnessInternalRenderExpressionResolver(partialCtx, expressionMode));
@@ -337,7 +336,8 @@ public class EngineExpressionEvaluator {
 
     List<String> variables = findVariables(finalExpression);
     boolean hasNonInternalVariables = variables != null
-        && variables.stream().anyMatch(v -> !v.startsWith(EXPR_START + HARNESS_INTERNAL_VARIABLE_PREFIX));
+        && variables.stream().anyMatch(
+            v -> !v.startsWith(ExpressionConstants.EXPR_START + HARNESS_INTERNAL_VARIABLE_PREFIX));
     if (hasNonInternalVariables) {
       if (!isSingleExpression(finalExpression)) {
         finalExpression = createExpression(finalExpression);
@@ -458,7 +458,7 @@ public class EngineExpressionEvaluator {
       }
     }
     if (object == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
-      return EngineExpressionEvaluator.EXPR_START + expressionBlock + EngineExpressionEvaluator.EXPR_END;
+      return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
     }
     return null;
   }
@@ -563,12 +563,14 @@ public class EngineExpressionEvaluator {
   }
 
   private static String runStringReplacer(@NotNull String expression, @NotNull ExpressionResolver resolver) {
-    StringReplacer replacer = new StringReplacer(resolver, EXPR_START, EXPR_END);
+    StringReplacer replacer =
+        new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
     return replacer.replace(expression);
   }
 
   public static boolean isSingleExpression(String str) {
-    return TrackingExpressionResolver.isSingleExpression(EXPR_START, EXPR_END, str);
+    return TrackingExpressionResolver.isSingleExpression(
+        ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END, str);
   }
 
   public static boolean hasExpressions(String str) {
@@ -576,11 +578,13 @@ public class EngineExpressionEvaluator {
   }
 
   public static List<String> findExpressions(String str) {
-    return TrackingExpressionResolver.findExpressions(EXPR_START, EXPR_END, true, false, str);
+    return TrackingExpressionResolver.findExpressions(
+        ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END, true, false, str);
   }
 
   public static List<String> findVariables(String str) {
-    return TrackingExpressionResolver.findExpressions(EXPR_START, EXPR_END, true, true, str);
+    return TrackingExpressionResolver.findExpressions(
+        ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END, true, true, str);
   }
 
   public static boolean validVariableFieldName(String name) {
@@ -598,7 +602,8 @@ public class EngineExpressionEvaluator {
   }
 
   public static String createExpression(String expr) {
-    return TrackingExpressionResolver.createExpression(EXPR_START, EXPR_END, expr);
+    return TrackingExpressionResolver.createExpression(
+        ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END, expr);
   }
 
   private static class RenderExpressionResolver implements ExpressionResolver {

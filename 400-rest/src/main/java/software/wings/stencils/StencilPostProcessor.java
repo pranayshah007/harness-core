@@ -77,24 +77,21 @@ public class StencilPostProcessor {
    * @return the list
    */
   public <T extends Stencil> List<Stencil> postProcess(List<T> stencils, String appId, Map<String, String> args) {
-    return stencils.stream().flatMap(t -> processStencil(t, appId, args)).collect(toList());
+    long startTime = -System.currentTimeMillis();
+    final List<Stencil> result = stencils.stream().flatMap(t -> processStencil(t, appId, args)).collect(toList());
+    log.info(
+        "postProcess stencil take {} ms over {} elements", startTime + System.currentTimeMillis(), stencils.size());
+    return result;
   }
 
   public <T extends Stencil> Stream<Stencil> processStencil(T t, String appId, Map<String, String> args) {
-    long startTime;
     Stencil stencil = t.getOverridingStencil();
 
-    startTime = -System.currentTimeMillis();
     stencil = processStencilFields(t, appId, args, stencil);
-    log.info("processStencilFields take {} ms", startTime + System.currentTimeMillis());
-
-    startTime = -System.currentTimeMillis();
     stencil = processStencilMethods(t, appId, args, stencil);
-    log.info("processStencilMethods take {} ms", startTime + System.currentTimeMillis());
 
     Stream<Stencil> returnValue = Stream.of(stencil);
 
-    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredFields())
             .filter(field -> field.getAnnotation(Expand.class) != null)
             .findFirst()
@@ -115,9 +112,7 @@ public class StencilPostProcessor {
                           return Stream.of(stencilForExpand);
                         });
     }
-    log.info("processStencilExpand take {} ms", startTime + System.currentTimeMillis());
 
-    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredMethods())
             .map(method -> method.getAnnotation(DefaultValue.class))
             .anyMatch(Objects::nonNull)) {
@@ -138,7 +133,6 @@ public class StencilPostProcessor {
           });
       returnValue = stencils.stream();
     }
-    log.info("processStencilDefaultValue take {} ms", startTime + System.currentTimeMillis());
 
     return returnValue;
   }

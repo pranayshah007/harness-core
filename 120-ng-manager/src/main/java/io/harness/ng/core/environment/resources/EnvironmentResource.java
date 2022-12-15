@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -32,6 +33,7 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -71,6 +73,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@Deprecated
 public class EnvironmentResource {
   private final EnvironmentService environmentService;
 
@@ -91,6 +94,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Create an Environment", nickname = "createEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> create(
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
+    mustBeAtProjectLevel(environmentRequestDTO);
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     Environment createdEnvironment = environmentService.create(environmentEntity);
     return ResponseDTO.newResponse(
@@ -112,6 +116,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Update an environment by identifier", nickname = "updateEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> update(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
+    mustBeAtProjectLevel(environmentRequestDTO);
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
@@ -124,6 +129,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Upsert an environment by identifier", nickname = "upsertEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
+    mustBeAtProjectLevel(environmentRequestDTO);
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment upsertedEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
@@ -152,5 +158,16 @@ public class EnvironmentResource {
     Page<EnvironmentResponseDTO> environmentList =
         environmentService.list(criteria, pageRequest).map(EnvironmentMapper::writeDTO);
     return ResponseDTO.newResponse(getNGPageResponse(environmentList));
+  }
+
+  private void mustBeAtProjectLevel(EnvironmentRequestDTO requestDTO) {
+    try {
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+          "org identifier must be specified. Environments can only be created at Project scope");
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+          "project identifier must be specified. Environments can only be created at Project scope");
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
   }
 }

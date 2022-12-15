@@ -161,6 +161,7 @@ mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -175,6 +176,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -189,7 +191,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 kubectlVersion: v1.13.2
-scmVersion: e3ee71bd
+scmVersion: 9ddfb2b9
 
 portal:
   url: https://localhost:8000
@@ -289,10 +291,8 @@ iteratorsConfig:
     threadPoolSize: ${DELEGATE_CAPABILITIES_RECORD_ITERATOR_THREAD_COUNT:-5}
   blockingCapabilityPermissionsRecordHandlerIteratorConfig:
     threadPoolSize: ${BLOCKING_CAPABILITY_PERMISSIONS_RECORD_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskExpiryCheckIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_EXPIRY_CHECK_ITERATOR_THREAD_COUNT:-5}
-  perpetualTaskRebalanceIteratorConfig:
-    threadPoolSize: ${PERPETUAL_TASK_REBALANCE_ITERATOR_THREAD_COUNT:-5}
+  delegateDisconnectDetectorIteratorConfig:
+    threadPoolSize: ${DELEGATE_DISCONNECT_DETECTOR_CHECK_ITERATOR_THREAD_COUNT:-2}
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
 

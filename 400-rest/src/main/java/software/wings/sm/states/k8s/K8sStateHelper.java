@@ -9,7 +9,6 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.KUBERNETES_EXPORT_MANIFESTS;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -57,7 +56,6 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -65,6 +63,7 @@ import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.K8sDummyCommandUnit;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sInstanceSyncTaskParameters;
@@ -425,14 +424,14 @@ public class K8sStateHelper {
       boolean exportManifests, boolean isPruneSupported) {
     List<CommandUnit> commandUnits = new ArrayList<>();
 
-    if (!(isExportManifestsEnabled(accountId) && inheritManifests)) {
+    if (!inheritManifests) {
       if (remoteStoreType) {
         commandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.FetchFiles));
       }
     }
     commandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Init));
 
-    if (!(isExportManifestsEnabled(accountId) && exportManifests)) {
+    if (!exportManifests) {
       commandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Prepare));
       commandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.Apply));
       commandUnits.add(new K8sDummyCommandUnit(K8sCommandUnitConstants.WaitForSteadyState));
@@ -442,10 +441,6 @@ public class K8sStateHelper {
       }
     }
     return commandUnits;
-  }
-
-  public boolean isExportManifestsEnabled(String accountId) {
-    return featureFlagService.isEnabled(KUBERNETES_EXPORT_MANIFESTS, accountId);
   }
 
   public void saveResourcesToSweepingOutput(

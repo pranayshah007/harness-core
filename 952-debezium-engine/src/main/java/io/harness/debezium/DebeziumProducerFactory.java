@@ -7,7 +7,7 @@
 
 package io.harness.debezium;
 
-import static io.harness.AuthorizationServiceHeader.DEBEZIUM_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.DEBEZIUM_SERVICE;
 import static io.harness.debezium.DebeziumConstants.DEBEZIUM_PREFIX;
 
 import io.harness.eventsframework.EventsFrameworkConfiguration;

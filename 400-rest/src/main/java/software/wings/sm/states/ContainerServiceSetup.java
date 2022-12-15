@@ -52,7 +52,6 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandMapper;
@@ -64,6 +63,7 @@ import software.wings.beans.container.ContainerTask;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.container.ContainerMasterUrlHelper;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -233,7 +233,7 @@ public abstract class ContainerServiceSetup extends State {
               .deploymentType(deploymentType.name())
               .containerSetupParams(containerSetupParams)
               .activityId(activity.getUuid())
-              .cloudProviderSetting(settingAttribute)
+              .cloudProviderSetting(settingAttribute.toDTO())
               .cloudProviderCredentials(encryptedDataDetails)
               .serviceVariables(serviceVariables)
               .safeDisplayServiceVariables(safeDisplayServiceVariables)

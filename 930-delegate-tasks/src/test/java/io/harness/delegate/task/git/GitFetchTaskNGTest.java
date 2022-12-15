@@ -116,10 +116,10 @@ public class GitFetchTaskNGTest {
         .getSSHSessionConfig(any(SSHKeySpecDTO.class), anyListOf(EncryptedDataDetail.class));
     doNothing()
         .when(gitFetchFilesTaskHelper)
-        .printFileNamesInExecutionLogs(anyListOf(String.class), any(LogCallback.class));
+        .printFileNamesInExecutionLogs(anyListOf(String.class), any(LogCallback.class), any(Boolean.class));
     doNothing()
         .when(gitFetchFilesTaskHelper)
-        .printFileNamesInExecutionLogs(any(LogCallback.class), anyListOf(GitFile.class));
+        .printFileNamesInExecutionLogs(any(LogCallback.class), anyListOf(GitFile.class), any(Boolean.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
   }
 

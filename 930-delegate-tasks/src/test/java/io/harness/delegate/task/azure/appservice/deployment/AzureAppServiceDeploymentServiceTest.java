@@ -15,6 +15,7 @@ import static io.harness.azure.model.AzureConstants.START_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.STOP_DEPLOYMENT_SLOT;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,7 +46,9 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +61,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import rx.Completable;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
@@ -116,9 +119,10 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .connSettingsToRemove(connSettingsToRemove)
             .build();
 
+    Mono<Response<Void>> responseMono = Mono.just(new SimpleResponse<>(null, 200, null, null));
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
-    doReturn(Completable.complete()).when(deploymentSlot).stopAsync();
-    doReturn(Completable.complete()).when(deploymentSlot).startAsync();
+    doReturn(responseMono).when(deploymentSlot).stopAsync();
+    doReturn(responseMono).when(deploymentSlot).startAsync();
     doReturn(Optional.of(deploymentSlot))
         .when(mockAzureWebClient)
         .getDeploymentSlotByName(azureWebClientContext, SLOT_NAME);
@@ -188,18 +192,14 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
         .isInstanceOf(Exception.class);
 
     reset(mockAzureWebClient);
-    doAnswer(invocation -> { throw new Exception(); })
-        .when(mockAzureWebClient)
-        .stopDeploymentSlotAsync(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(mockAzureWebClient).stopDeploymentSlotAsync(any(), any());
     assertThatThrownBy(()
                            -> azureAppServiceDeploymentService.deployDockerImage(azureAppServiceDockerDeploymentContext,
                                AzureAppServicePreDeploymentData.builder().build()))
         .isInstanceOf(Exception.class);
 
     reset(mockAzureWebClient);
-    doAnswer(invocation -> { throw new Exception(); })
-        .when(mockAzureWebClient)
-        .startDeploymentSlotAsync(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(mockAzureWebClient).startDeploymentSlotAsync(any(), any());
     assertThatThrownBy(()
                            -> azureAppServiceDeploymentService.deployDockerImage(azureAppServiceDockerDeploymentContext,
                                AzureAppServicePreDeploymentData.builder().build()))
@@ -231,9 +231,10 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .azureWebClientContext(azureWebClientContext)
             .build();
 
+    Mono<Response<Void>> responseMono = Mono.just(new SimpleResponse<>(null, 200, null, null));
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
-    doReturn(Completable.complete()).when(deploymentSlot).stopAsync();
-    doReturn(Completable.complete()).when(deploymentSlot).startAsync();
+    doReturn(responseMono).when(deploymentSlot).stopAsync();
+    doReturn(responseMono).when(deploymentSlot).startAsync();
     doReturn(Optional.of(deploymentSlot))
         .when(mockAzureWebClient)
         .getDeploymentSlotByName(azureWebClientContext, SLOT_NAME);
@@ -290,6 +291,42 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
     SlotStatusVerifier statusVerifier = statusVerifierArgument.getValue();
     assertThat(statusVerifier).isNotNull();
     assertThat(statusVerifier).isInstanceOf(SwapSlotStatusVerifier.class);
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldDetermineFileSuffixSeparator() {
+    String path = "/some/file_123";
+    int separator = azureAppServiceDeploymentService.determineSuffixSeparator(path);
+    assertThat(separator).isEqualTo('_');
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldDetermineFileSuffixSeparatorNoSuffix() {
+    String path = "/some/file#123";
+    int separator = azureAppServiceDeploymentService.determineSuffixSeparator(path);
+    assertThat(separator).isEqualTo(-1);
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldDetermineFileSuffixSeparatorUnderscoreAndNum() {
+    String path = "/some/file_name_1236";
+    int separator = azureAppServiceDeploymentService.determineSuffixSeparator(path);
+    assertThat(separator).isEqualTo('_');
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldDetermineFileSuffixSeparatorUnderscoreAndNumNotFromJenkins() {
+    String path = "/some/file_name_somethingElse";
+    int separator = azureAppServiceDeploymentService.determineSuffixSeparator(path);
+    assertThat(separator).isEqualTo(-1);
   }
 
   private AzureWebClientContext getAzureWebClientContext() {

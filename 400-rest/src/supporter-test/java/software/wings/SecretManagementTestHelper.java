@@ -31,6 +31,7 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -133,6 +134,17 @@ public class SecretManagementTestHelper {
     VaultConfig vaultConfig = getCommonVaultConfig();
     vaultConfig.setAppRoleId(appRoleId);
     vaultConfig.setSecretId(secretId);
+    return vaultConfig;
+  }
+
+  public VaultConfig getVaultConfigWithK8sAuth(
+      String k8sAuthEndpoint, String k8sRole, String k8sServiceAccountTokenPath) {
+    VaultConfig vaultConfig = getCommonVaultConfig();
+    vaultConfig.setK8sAuthEndpoint(k8sAuthEndpoint);
+    vaultConfig.setUseK8sAuth(true);
+    vaultConfig.setVaultK8sAuthRole(k8sRole);
+    vaultConfig.setServiceAccountTokenPath(k8sServiceAccountTokenPath);
+    vaultConfig.setDelegateSelectors(Collections.singleton("delegateSelector1"));
     return vaultConfig;
   }
 

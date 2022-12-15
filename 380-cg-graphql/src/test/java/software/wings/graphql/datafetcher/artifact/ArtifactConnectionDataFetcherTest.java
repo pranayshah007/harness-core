@@ -28,7 +28,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLArtifactConnection;
@@ -37,6 +36,7 @@ import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
 import software.wings.graphql.schema.type.aggregation.artifact.QLArtifactFilter;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;

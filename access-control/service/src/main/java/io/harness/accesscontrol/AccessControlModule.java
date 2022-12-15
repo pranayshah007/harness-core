@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ORGANIZATION_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PERMISSION;
@@ -18,6 +17,7 @@ import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_TOPIC_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -65,6 +65,9 @@ import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupSer
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
+import io.harness.accesscontrol.roleassignments.api.AccountRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.OrgRoleAssignmentsApiImpl;
+import io.harness.accesscontrol.roleassignments.api.ProjectRoleAssignmentsApiImpl;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResource;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResourceImpl;
@@ -117,9 +120,12 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
-import io.harness.spec.server.accesscontrol.AccountRolesApi;
-import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
-import io.harness.spec.server.accesscontrol.ProjectRolesApi;
+import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.AccountRolesApi;
+import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
+import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -392,5 +398,8 @@ public class AccessControlModule extends AbstractModule {
     bind(AccountRolesApi.class).to(AccountRolesApiImpl.class);
     bind(OrganizationRolesApi.class).to(OrgRolesApiImpl.class);
     bind(ProjectRolesApi.class).to(ProjectRolesApiImpl.class);
+    bind(AccountRoleAssignmentsApi.class).to(AccountRoleAssignmentsApiImpl.class);
+    bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
+    bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
   }
 }

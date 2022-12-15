@@ -36,9 +36,9 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.datafetcher.MutationContext;
+import software.wings.graphql.datafetcher.VariableController;
 import software.wings.graphql.datafetcher.artifact.ArtifactController;
 import software.wings.graphql.datafetcher.manifest.ManifestController;
 import software.wings.graphql.datafetcher.user.UserController;
@@ -58,6 +58,7 @@ import software.wings.graphql.schema.type.QLExecutedAlongPipeline;
 import software.wings.graphql.schema.type.QLExecutedByAPIKey;
 import software.wings.graphql.schema.type.QLExecutedByTrigger;
 import software.wings.graphql.schema.type.QLExecutedByUser;
+import software.wings.graphql.schema.type.QLInputVariable;
 import software.wings.graphql.schema.type.QLWorkflowExecution;
 import software.wings.graphql.schema.type.QLWorkflowExecution.QLWorkflowExecutionBuilder;
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
@@ -67,6 +68,7 @@ import software.wings.graphql.schema.type.manifest.QLManifest;
 import software.wings.graphql.schema.type.manifest.QLManifest.QLManifestBuilder;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.WorkflowLogContext;
@@ -119,6 +121,7 @@ public class WorkflowExecutionController {
     List<QLArtifact> artifacts = new ArrayList<>();
     List<QLArtifact> rollbackArtifacts = new ArrayList<>();
     List<QLManifest> manifests = new ArrayList<>();
+    List<QLInputVariable> inputVariables = new ArrayList<>();
 
     if (workflowExecution.getPipelineExecutionId() != null) {
       cause =
@@ -187,6 +190,10 @@ public class WorkflowExecutionController {
                               })
                               .collect(Collectors.toList());
     }
+    if (workflowExecution.getExecutionArgs() != null
+        && isNotEmpty(workflowExecution.getExecutionArgs().getWorkflowVariables())) {
+      VariableController.populateInputVariables(inputVariables, workflowExecution);
+    }
 
     final String url =
         buildAbsoluteUrl(format(EXECUTION_URL_TEMPLATE, workflowExecution.getAccountId(), workflowExecution.getAppId(),
@@ -214,6 +221,7 @@ public class WorkflowExecutionController {
         .tags(tags)
         .failureDetails(failureDetails)
         .artifacts(artifacts)
+        .inputVariables(inputVariables)
         .manifests(manifests)
         .rollbackArtifacts(rollbackArtifacts);
   }

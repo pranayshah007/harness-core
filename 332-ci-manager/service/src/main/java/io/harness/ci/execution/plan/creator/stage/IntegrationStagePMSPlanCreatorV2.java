@@ -36,6 +36,7 @@ import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
@@ -45,14 +46,15 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -60,10 +62,12 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.when.utils.RunInfoUtils;
@@ -91,10 +95,19 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+
+  @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
+        yamlField.getNode().getParentNode().getCurrJsonNode());
+  }
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IntegrationStageNode stageNode) {
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier());
     log.info("Received plan creation request for integration stageV2 {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -173,21 +186,25 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    return PlanNode.builder()
-        .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
-        .name(stageNode.getName())
-        .identifier(stageNode.getIdentifier())
-        .group(StepOutcomeGroup.STAGE.name())
-        .stepParameters(stageParameters.build())
-        .stepType(getStepType(stageNode))
-        .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
-        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
-        .build();
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .name(stageNode.getName())
+            .identifier(stageNode.getIdentifier())
+            .group(StepOutcomeGroup.STAGE.name())
+            .stepParameters(stageParameters.build())
+            .stepType(getStepType(stageNode))
+            .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
+    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+    }
+    return builder.build();
   }
 
   private void putNewExecutionYAMLInResponseMap(YamlField executionField,
@@ -243,9 +260,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
 
   private PlanNode getSpecPlanNode(PlanCreationContext ctx, YamlField specField,
       IntegrationStageStepParametersPMS stepParameters, Infrastructure infrastructure) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    Long timeout = IntegrationStageUtils.getStageTtl(
-        ciLicenseService, planCreationContextValue.getAccountIdentifier(), infrastructure);
+    Long timeout = IntegrationStageUtils.getStageTtl(ciLicenseService, ctx.getAccountIdentifier(), infrastructure);
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)
@@ -267,19 +282,17 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   }
 
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, IntegrationStageNode stageNode) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-
     CodeBase codeBase = getCICodebase(ctx);
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
       return null;
     }
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
+    ExecutionTriggerInfo triggerInfo = ctx.getTriggerInfo();
+    TriggerPayload triggerPayload = ctx.getTriggerPayload();
 
     return IntegrationStageUtils.buildExecutionSource(triggerInfo, triggerPayload, stageNode.getIdentifier(),
-        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, planCreationContextValue, codeBase);
+        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
@@ -347,5 +360,10 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
       log.warn("Failed to retrieve ciCodeBase from pipeline");
     }
     return ciCodeBaseYamlField;
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

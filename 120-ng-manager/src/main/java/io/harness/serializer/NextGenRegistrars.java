@@ -18,6 +18,7 @@ import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.serializer.kryo.NGCacheDataKryoRegistrar;
 import io.harness.serializer.morphia.FeedbackMorphiaRegistrars;
 import io.harness.serializer.morphia.InvitesMorphiaRegistrar;
 import io.harness.serializer.morphia.MockRoleAssignmentMorphiaRegistrar;
@@ -49,6 +50,7 @@ public class NextGenRegistrars {
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .add(NGCacheDataKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -78,7 +80,6 @@ public class NextGenRegistrars {
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGVariableRegistrars.morphiaRegistrars)
           .addAll(NGSettingRegistrar.morphiaRegistrars)
-          .addAll(FreezeRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
@@ -86,6 +87,7 @@ public class NextGenRegistrars {
           .addAll(ConnectorNextGenRegistrars.yamlSchemaRegistrars)
           .addAll(GitOpsRegistrars.yamlSchemaRegistrars)
           .addAll(CDNGRegistrars.yamlSchemaRegistrars)
+          .addAll(FreezeRegistrars.yamlSchemaRegistrars)
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SECRETS)
                    .availableAtProjectLevel(true)

@@ -79,7 +79,7 @@ public class RedissonClientFactory {
         }
 
         serverConfig.setConnectionMinimumIdleSize(
-            Math.max(DEFAULT_MIN_CONNECTION_IDLE_SIZE, redisConfig.getConnectionMinimumIdleSize()));
+            Math.max(DEFAULT_MIN_CONNECTION_IDLE_SIZE, redisConfig.getNettyThreads()));
 
         RedisSSLConfig sslConfig = redisConfig.getSslConfig();
         if (sslConfig != null && sslConfig.isEnabled()) {
@@ -125,7 +125,12 @@ public class RedissonClientFactory {
       }
 
       log.info("Creating Redis Client");
-      redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
+      try {
+        redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
+      } catch (Exception ex) {
+        log.error("Exception occurred when creating redis client.", ex);
+        throw ex;
+      }
       return redisConfigRedissonClientMap.get(redisConfig);
     }
   }

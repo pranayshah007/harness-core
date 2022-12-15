@@ -8,10 +8,7 @@
 package io.harness.platform;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
@@ -30,9 +27,6 @@ import net.sourceforge.argparse4j.inf.Subparser;
 @Slf4j
 public class GenerateOpenApiSpecCommand extends ConfiguredCommand<PlatformConfiguration> {
   public static final String OUTPUT_FILE_PATH = "outputFilePath";
-  public static final String LEADING_AND_TRAILING_QUOTES = "^\"|\"$";
-  public static final String NEW_LINE = "\\n";
-  public static final String BACKWARD_SLASH = "\\";
   private OutputStream outputStream;
 
   public GenerateOpenApiSpecCommand() {
@@ -62,18 +56,11 @@ public class GenerateOpenApiSpecCommand extends ConfiguredCommand<PlatformConfig
     Response json = localOpenAPIResource.getOpenApi(null, null, null, null, APPLICATION_JSON_TYPE.getSubtype());
 
     try (OutputStream out = outputStream != null ? outputStream : new FileOutputStream(outputFilePath)) {
-      String openApiSpecContent = sanitize(json);
+      String openApiSpecContent = (String) json.getEntity();
       out.write(openApiSpecContent.getBytes());
     } catch (Exception exception) {
       log.error("Failed to generate OpenAPI spec at location : " + OUTPUT_FILE_PATH + " because of : " + exception);
     }
-  }
-
-  private String sanitize(Response json) throws JsonProcessingException {
-    String openApiSpecContent = new ObjectMapper().writeValueAsString(json.getEntity());
-    return openApiSpecContent.replace(NEW_LINE, EMPTY)
-        .replace(BACKWARD_SLASH, EMPTY)
-        .replaceAll(LEADING_AND_TRAILING_QUOTES, EMPTY);
   }
 
   static class LocalOpenAPIResource extends BaseOpenApiResource {

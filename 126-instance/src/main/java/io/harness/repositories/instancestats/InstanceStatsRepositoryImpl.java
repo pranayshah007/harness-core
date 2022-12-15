@@ -19,28 +19,36 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
   private TimeScaleDBService timeScaleDBService;
   private static final int MAX_RETRY_COUNT = 3;
 
-  public InstanceStats getLatestRecord(String accountId) {
+  public InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId) {
     int totalTries = 0;
-    boolean successfulOperation = false;
-    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+    while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (
           Connection dbConnection = timeScaleDBService.getDBConnection();
           PreparedStatement statement = dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())) {
         statement.setString(1, accountId);
+        statement.setString(2, orgId);
+        statement.setString(3, projectId);
+        statement.setString(4, serviceId);
         resultSet = statement.executeQuery();
-        InstanceStats instanceStats = parseInstanceStatsRecord(resultSet);
-        successfulOperation = true;
-        return instanceStats;
+        return parseInstanceStatsRecord(resultSet);
       } catch (SQLException ex) {
+        if (totalTries == MAX_RETRY_COUNT) {
+          log.error("Error while fetching latest instance stats record", ex);
+        }
+        log.warn("Could not fetch latest instance stats record. Retrying again. Retry number: {}", totalTries, ex);
         totalTries++;
+      } catch (Exception ex) {
+        log.error("Error while fetching latest instance stats record", ex);
       } finally {
         DBUtils.close(resultSet);
       }

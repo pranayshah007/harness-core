@@ -7,9 +7,9 @@
 
 package io.harness.repositories;
 
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.entity.FreezeConfigEntity;
 
-import com.mongodb.client.result.DeleteResult;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,13 +17,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface FreezeRepositoryCustom {
   Page<FreezeConfigEntity> findAll(Criteria criteria, Pageable pageable);
-  FreezeConfigEntity upsert(Criteria criteria, FreezeConfigEntity serviceEntity);
-  FreezeConfigEntity update(Criteria criteria, FreezeConfigEntity serviceEntity);
   boolean delete(Criteria criteria);
-  DeleteResult deleteMany(Criteria criteria);
 
   Optional<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String freezeId);
   Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
-      String accountId, String orgIdentifier, String projectIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus);
 }

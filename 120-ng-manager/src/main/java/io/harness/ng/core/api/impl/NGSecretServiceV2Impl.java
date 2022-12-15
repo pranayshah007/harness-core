@@ -38,8 +38,13 @@ import io.harness.delegate.beans.secrets.BaseConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.api.NGSecretActivityService;
@@ -49,6 +54,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.events.SecretCreateEvent;
 import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.events.SecretUpdateEvent;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.Secret.SecretKeys;
@@ -67,6 +73,7 @@ import io.harness.utils.PageUtils;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -76,7 +83,7 @@ import io.serializer.HObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,8 +157,8 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public boolean delete(
-      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
+  public boolean delete(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String identifier, boolean forceDelete) {
     Optional<Secret> secretV2Optional = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
 
     if (!secretV2Optional.isPresent()) {
@@ -160,12 +167,24 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
     Secret secret = secretV2Optional.get();
 
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      secretRepository.delete(secret);
-      deleteSecretActivities(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    return Failsafe.with(transactionRetryPolicy)
+        .get(()
+                 -> transactionTemplate.execute(status
+                     -> deleteInternal(
+                         accountIdentifier, orgIdentifier, projectIdentifier, identifier, secret, forceDelete)));
+  }
+
+  @VisibleForTesting
+  protected boolean deleteInternal(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String identifier, Secret secret, boolean forceDelete) {
+    secretRepository.delete(secret);
+    deleteSecretActivities(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (forceDelete) {
+      outboxService.save(new SecretForceDeleteEvent(accountIdentifier, secret.toDTO()));
+    } else {
       outboxService.save(new SecretDeleteEvent(accountIdentifier, secret.toDTO()));
-      return true;
-    }));
+    }
+    return true;
   }
 
   private void deleteSecretActivities(
@@ -288,14 +307,25 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
             .executionTimeout(Duration.ofSeconds(45));
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
-    if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-      return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
-    } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
-      return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
+    try {
+      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+        return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
+      } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
+        return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
+      }
+    } catch (DelegateServiceDriverException ex) {
+      log.error("Exception while validating ssh secret", ex);
+      throw buildDelegateNotAvailableHintException("Delegates are not available for performing operation.");
     }
 
     return buildFailedValidationResult();
+  }
+
+  private HintException buildDelegateNotAvailableHintException(String delegateDownErrorMessage) {
+    return new HintException(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+        new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
   }
 
   private SecretValidationResultDTO validateSecretWinRmCredentials(String accountIdentifier, String orgIdentifier,
@@ -369,25 +399,14 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public Page<Secret> list(List<Secret> secrets, int page, int size) {
-    if (secrets.isEmpty()) {
+  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
+    if (unpagedSecrets.isEmpty()) {
       return Page.empty();
     }
-
-    Criteria[] criteria = secrets.stream()
-                              .map(secret
-                                  -> Criteria.where(SecretKeys.accountIdentifier)
-                                         .is(secret.getAccountIdentifier())
-                                         .and(SecretKeys.orgIdentifier)
-                                         .is(secret.getOrgIdentifier())
-                                         .and(SecretKeys.projectIdentifier)
-                                         .is(secret.getProjectIdentifier())
-                                         .and(SecretKeys.identifier)
-                                         .is(secret.getIdentifier()))
-                              .toArray(Criteria[] ::new);
-
-    return secretRepository.findAll(new Criteria().orOperator(criteria),
-        PageUtils.getPageRequest(page, size, Collections.singletonList(SecretKeys.createdAt + ",desc")));
+    List<Secret> secrets = new ArrayList<>(unpagedSecrets);
+    secrets.sort(Comparator.comparing(Secret::getCreatedAt).reversed());
+    // This method is used because here list of secrets have unpaginated results
+    return PageUtils.getPage(secrets, page, size);
   }
 
   private Collection<Secret> checkAccess(List<Secret> secrets) {

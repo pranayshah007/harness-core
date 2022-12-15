@@ -9,11 +9,11 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
 import static io.harness.expression.EngineExpressionEvaluator.hasExpressions;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START_ESC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -44,6 +44,9 @@ public class NGExpressionUtils {
   public static final String DEFAULT_INPUT_SET_EXPRESSION = EXPR_START + "input" + EXPR_END;
   public static final Pattern GENERIC_EXPRESSIONS_PATTERN =
       Pattern.compile(EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC);
+
+  public static final Pattern GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX =
+      Pattern.compile(".*" + EXPR_START_ESC + ".+" + EXPR_END_ESC + ".*");
 
   public boolean matchesInputSetPattern(String expression) {
     if (isEmpty(expression)) {
@@ -93,6 +96,14 @@ public class NGExpressionUtils {
 
   public boolean isRuntimeOrExpressionField(String fieldValue) {
     return matchesInputSetPattern(fieldValue) || hasExpressions(fieldValue);
+  }
+
+  public boolean isRuntimeField(String fieldValue) {
+    return matchesInputSetPattern(fieldValue);
+  }
+
+  public boolean isExpressionField(String fieldValue) {
+    return hasExpressions(fieldValue);
   }
 
   public List<String> getListOfExpressions(String s) {

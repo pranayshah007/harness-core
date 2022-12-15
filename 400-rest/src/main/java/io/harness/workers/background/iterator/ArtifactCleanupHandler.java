@@ -12,14 +12,13 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 
 import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.iterator.PersistenceIterator;
-import io.harness.iterator.PersistenceIterator.ProcessMode;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -40,14 +39,12 @@ import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
+public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
 
   @Inject private AccountService accountService;
@@ -58,31 +55,35 @@ public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
   @Inject private MorphiaPersistenceRequiredProvider<ArtifactStream> persistenceProvider;
   @Inject private SettingsService settingsService;
 
-  public void registerIterators(ScheduledThreadPoolExecutor artifactCollectionExecutor) {
-    PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCleanupHandler.class,
-        MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
-            .mode(ProcessMode.PUMP)
-            .iteratorName("ArtifactCleanup")
-            .clazz(ArtifactStream.class)
-            .fieldName(ArtifactStreamKeys.nextCleanupIteration)
-            .targetInterval(ofHours(2))
-            .acceptableNoAlertDelay(ofMinutes(15))
-            .executorService(artifactCollectionExecutor)
-            .semaphore(new Semaphore(5))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(query
-                -> query.field(ArtifactStreamKeys.artifactStreamType)
-                       .in(DelegateArtifactCollectionUtils.SUPPORTED_ARTIFACT_CLEANUP_LIST)
-                       .field(ArtifactStreamKeys.collectionEnabled)
-                       .in(Arrays.asList(true, null)))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  public void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       ArtifactCleanupHandler.class,
+                       MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
+                           .clazz(ArtifactStream.class)
+                           .fieldName(ArtifactStreamKeys.nextCleanupIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(15))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(query
+                               -> query.field(ArtifactStreamKeys.artifactStreamType)
+                                      .in(DelegateArtifactCollectionUtils.SUPPORTED_ARTIFACT_CLEANUP_LIST)
+                                      .field(ArtifactStreamKeys.collectionEnabled)
+                                      .in(Arrays.asList(true, null)))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
 
-    if (iterator != null) {
-      artifactCollectionExecutor.scheduleAtFixedRate(() -> iterator.process(), 0, 5, TimeUnit.MINUTES);
-    }
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "ArtifactCleanup";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

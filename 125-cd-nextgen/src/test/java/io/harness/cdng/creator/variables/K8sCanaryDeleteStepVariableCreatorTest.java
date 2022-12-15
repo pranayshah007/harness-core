@@ -56,7 +56,6 @@ public class K8sCanaryDeleteStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.description",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.name",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.timeout",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.spec.skipDryRun");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Canary_Delete.timeout");
   }
 }

@@ -18,6 +18,10 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.pcf.response.TasValidateTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.exception.InvalidRequestException;
 
@@ -52,7 +56,12 @@ public abstract class AbstractCloudProviderConnectorValidator extends AbstractCo
       return ((GcpValidationTaskResponse) delegateResponseData).getConnectorValidationResult();
     } else if (connectorConfigDTO instanceof AzureConnectorDTO) {
       return ((AzureValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
+    } else if (connectorConfigDTO instanceof SpotConnectorDTO) {
+      return ((SpotValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
+    } else if (connectorConfigDTO instanceof TasConnectorDTO) {
+      return ((TasValidateTaskResponse) delegateResponseData).getConnectorValidationResult();
     }
+
     throw new InvalidRequestException("Invalid connector type found during connection test");
   }
 }

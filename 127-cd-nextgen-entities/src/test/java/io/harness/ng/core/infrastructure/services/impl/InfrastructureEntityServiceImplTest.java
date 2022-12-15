@@ -9,11 +9,15 @@ package io.harness.ng.core.infrastructure.services.impl;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +26,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -35,6 +41,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +49,8 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -50,6 +59,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(Parameterized.class)
 public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
 
@@ -57,6 +67,31 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
+  private static final String ENV_ID = "ENV_ID";
+
+  private String pipelineInputYamlPath;
+  private String actualEntityYamlPath;
+  private String mergedInputYamlPath;
+  private boolean isMergedYamlEmpty;
+
+  public InfrastructureEntityServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
+      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
+    this.pipelineInputYamlPath = pipelineInputYamlPath;
+    this.actualEntityYamlPath = actualEntityYamlPath;
+    this.mergedInputYamlPath = mergedInputYamlPath;
+    this.isMergedYamlEmpty = isMergedYamlEmpty;
+  }
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return asList(new Object[][] {
+        {"infrastructure/infrastructure-inputs-in-pipeline.yaml", "infrastructure/infrastructure-with-few-inputs.yaml",
+            "infrastructure/infrastructureInput-merged.yaml", false},
+        {"infrastructure/infrastructure-inputs-in-pipeline.yaml", "infrastructure/infrastructure-with-no-input.yaml",
+            "infrastructure/empty-file.yaml", true},
+        {"infrastructure/empty-file.yaml", "infrastructure/infrastructure-with-few-inputs.yaml",
+            "infrastructure/infrastructureInput-merged.yaml", false}});
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -73,7 +108,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   }
 
   @Test
-  @Owner(developers = HINGER)
+  @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testCreateInfrastructureInputs() throws IOException {
     String filename = "infrastructure-with-runtime-inputs.yaml";
@@ -90,10 +125,14 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequest);
     Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).updateSetupUsages(eq(createInfraRequest));
 
-    String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false);
+    String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID,
+        ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.RETURN_EMPTY);
     String resFile = "infrastructure-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
+    assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
+
+    infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID,
+        PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
     assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
   }
 
@@ -114,10 +153,37 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     infrastructureEntityService.create(createInfraRequest);
 
-    String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER1"), false);
+    String infrastructureInputsFromYaml =
+        infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
+            Arrays.asList("IDENTIFIER1"), false, NoInputMergeInputAction.RETURN_EMPTY);
 
     assertThat(infrastructureInputsFromYaml).isNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateInfrastructureInputsV2WithoutRuntimeInputs() throws IOException {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .identifier("IDENTIFIER")
+                                                  .orgIdentifier(ORG_ID)
+                                                  .projectIdentifier(PROJECT_ID)
+                                                  .envIdentifier("ENV_IDENTIFIER")
+                                                  .yaml(yaml)
+                                                  .build();
+
+    infrastructureEntityService.create(createInfraRequest);
+
+    String infrastructureInputsFromYaml =
+        infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER",
+            Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
+
+    assertThat(infrastructureInputsFromYaml).isNotNull().isNotEmpty();
+    String resInputs = readFile("infra-inputset-yaml-with-no-runtime-inputs.yaml");
+    assertThat(infrastructureInputsFromYaml).isEqualTo(resInputs);
   }
 
   @Test
@@ -258,6 +324,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     // delete operations
     boolean delete = infrastructureEntityService.forceDeleteAllInEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER");
     assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
 
     // 1 infra remains
     Criteria criteriaAllInProject = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_ID, PROJECT_ID);
@@ -267,6 +334,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     boolean deleteProject = infrastructureEntityService.forceDeleteAllInProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
     assertThat(deleteProject).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(3)).deleteSetupUsages(any());
 
     listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
     assertThat(listPostDeletion.getContent()).isNotNull();
@@ -335,6 +403,37 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                    .filter(i -> i.getDeploymentType() == ServiceDefinitionType.NATIVE_HELM)
                    .collect(Collectors.toList()))
         .hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testMergeInfrastructureInputs() {
+    String yaml = readFile(actualEntityYamlPath);
+    InfrastructureEntity createRequest = InfrastructureEntity.builder()
+                                             .accountId(ACCOUNT_ID)
+                                             .orgIdentifier(ORG_ID)
+                                             .projectIdentifier(PROJECT_ID)
+                                             .envIdentifier(ENV_ID)
+                                             .name("Infra1")
+                                             .identifier("Infra1")
+                                             .yaml(yaml)
+                                             .build();
+
+    infrastructureEntityService.create(createRequest);
+
+    String oldTemplateInputYaml = readFile(pipelineInputYamlPath);
+    String mergedTemplateInputsYaml = readFile(mergedInputYamlPath);
+    InfrastructureInputsMergedResponseDto responseDto = infrastructureEntityService.mergeInfraStructureInputs(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, ENV_ID, "Infra1", oldTemplateInputYaml);
+    String mergedYaml = responseDto.getMergedInfrastructureInputsYaml();
+    if (isMergedYamlEmpty) {
+      assertThat(mergedYaml).isEmpty();
+    } else {
+      assertThat(mergedYaml).isNotNull().isNotEmpty();
+      assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
+    }
+    assertThat(responseDto.getInfrastructureYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
   }
 
   private String readFile(String filename) {

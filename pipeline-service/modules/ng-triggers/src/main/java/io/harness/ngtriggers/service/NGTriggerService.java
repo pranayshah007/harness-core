@@ -10,8 +10,10 @@ package io.harness.ngtriggers.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
@@ -70,4 +72,10 @@ public interface NGTriggerService {
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 
   List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier);
+
+  Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails);
+
+  void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, List<HeaderConfig> headerConfigs);
+  TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails);
 }

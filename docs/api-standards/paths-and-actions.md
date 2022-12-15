@@ -45,6 +45,21 @@ Given REST is built on top of HTTP the actions typically map to HTTP verbs allow
 | Upsert  |  Resource  | PUT    | /pets/max | Create or update pet “max”            |
 | Destroy | Resource   | DELETE | /pets/max | Destroy pet “max”                     |
 
+Ideally, our HTTP calls should follow the following guidelines:
+
+- GET 
+  * To be used for retrieving data for a resource as well as for Listing / Filtering resources.
+  * Endpoints should not contain a request body. 
+  
+- POST / PUT
+  * To be used for Creating and Updating details for a resource respectively. 
+  * Endpoints should preferably not contain any query parameters.
+
+- Exceptions
+  * Filtering
+    + Should be done using a GET endpoint with simple field based filters, but we can have complex operator/fiql based filtering as well in query parameters.
+    + Exceptionally we can have a POST call if it can be sufficiently justified, but this should be added as a separate Filter endpoint. 
+
 ## Harness Scoping and Path Namespacing
 
 Within each account end users can set up organizations and projects, depending on the resource type resources may be enforced to a level within this hierarchy or be available at any level [(ng docs)](https://ngdocs.harness.io/article/7fibxie636-projects-and-organizations). These act as namespaces for resources and allow for human-friendly named resources.
@@ -94,14 +109,3 @@ use: /audit-trails/audit-trail-name
 not: /audit_trails/audit-trail-name
 not: /auditTrails/audit-trail-name
 ```
-
-## Ingress
-
-In order to expose the new APIs without redundancies in their path, we will be using Ingress rules to map our created APIs to point specifically to our endpoints.
-```
-use: https://app.harness.io/v1/orgs/{org}/projects/{project}/resources
-not: https://app.harness.io/gateway/v1/orgs/{org}/projects/{project}/resources
-not: https://app.harness.io/gateway/service/api/v1/orgs/{org}/projects/{project}/resources
-```
-
-For more details regarding Ingress rules, please refer to [this](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21061108683/RFC-002+-+Remove+gateway+and+micro+service+details+from+API).

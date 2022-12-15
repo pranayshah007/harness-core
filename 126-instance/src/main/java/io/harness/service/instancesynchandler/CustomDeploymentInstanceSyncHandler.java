@@ -13,6 +13,7 @@ import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
+import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
@@ -52,8 +53,7 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
     CustomDeploymentInstanceInfoDTO deploymentPackageInstanceInfoDTO =
         (CustomDeploymentInstanceInfoDTO) instanceInfoDTO;
     return CustomDeploymentInfrastructureDetails.builder()
-        .properties(deploymentPackageInstanceInfoDTO.getProperties())
-        .hostname(deploymentPackageInstanceInfoDTO.getHostname())
+        .instanceName(deploymentPackageInstanceInfoDTO.getInstanceName())
         .build();
   }
 
@@ -67,7 +67,7 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
         (CustomDeploymentServerInstanceInfo) serverInstanceInfo;
 
     return CustomDeploymentInstanceInfoDTO.builder()
-        .hostname(customDeploymentServerInstanceInfo.getHostName())
+        .instanceName(customDeploymentServerInstanceInfo.getInstanceName())
         .infrastructureKey(((CustomDeploymentServerInstanceInfo) serverInstanceInfo).getInfrastructureKey())
         .properties(customDeploymentServerInstanceInfo.getProperties())
         .build();
@@ -92,5 +92,12 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
             ((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript())
         .infratructureKey(infrastructureOutcome.getInfrastructureKey())
         .build();
+  }
+
+  @Override
+  public InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer) {
+    instanceDTO.setInstanceInfoDTO(instanceInfoFromServer);
+    instanceDTO.setLastDeployedAt(System.currentTimeMillis());
+    return instanceDTO;
   }
 }

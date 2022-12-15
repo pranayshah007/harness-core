@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,4 +23,7 @@ import lombok.Data;
 public class AzureWebAppSlotDeploymentResponse implements AzureWebAppRequestResponse {
   private List<AzureAppDeploymentData> azureAppDeploymentData;
   private String deploymentProgressMarker;
+  private Set<String> userAddedAppSettingNames;
+  private Set<String> userAddedConnStringNames;
+  private boolean userChangedStartupCommand;
 }

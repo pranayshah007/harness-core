@@ -43,7 +43,7 @@ public class OrchestrationStartEventHandler implements OrchestrationStartObserve
 
   public OrchestrationGraph handleEventFromLog(Ambiance ambiance) {
     try {
-      PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
+      PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
 
       log.info("Starting Execution for planExecutionId [{}] with status [{}].", planExecution.getUuid(),
           planExecution.getStatus());

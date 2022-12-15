@@ -18,6 +18,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.DX)
 public class InstanceSyncResourceClientModule extends AbstractModule {
@@ -36,6 +37,7 @@ public class InstanceSyncResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private InstanceSyncResourceHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new InstanceSyncResourceHttpClientFactory(this.ngManagerClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);

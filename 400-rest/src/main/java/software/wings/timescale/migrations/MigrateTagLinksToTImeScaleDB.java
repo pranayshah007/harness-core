@@ -9,6 +9,8 @@ package software.wings.timescale.migrations;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
+
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -27,7 +29,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateTagLinksToTImeScaleDB {
+public class MigrateTagLinksToTImeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -37,9 +39,11 @@ public class MigrateTagLinksToTImeScaleDB {
   private static final String upsert_statement =
       "INSERT INTO CG_TAGS (ID,ACCOUNT_ID,APP_ID,TAG_KEY,TAG_VALUE,ENTITY_TYPE,ENTITY_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE SET ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,TAG_KEY = excluded.TAG_KEY,TAG_VALUE = excluded.TAG_VALUE,ENTITY_TYPE = excluded.ENTITY_TYPE,ENTITY_ID = excluded.ENTITY_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY;";
 
+  private static final String TABLE_NAME = "CG_TAGS";
+
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_TAGS");
       return false;
     }
     int count = 0;
@@ -48,26 +52,26 @@ public class MigrateTagLinksToTImeScaleDB {
       findOptionsTagLinks.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<HarnessTagLink> iterator =
-               new HIterator<>(wingsPersistence.createQuery(HarnessTagLink.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(HarnessTagLink.class, excludeAuthority)
                                    .field(HarnessTagLinkKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptionsTagLinks))) {
         while (iterator.hasNext()) {
           HarnessTagLink HarnessTagLink = iterator.next();
-          prepareTimeScaleQueries(HarnessTagLink);
+          saveToTimeScale(HarnessTagLink);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_TAGS", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_TAGS", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(HarnessTagLink harnessTagLink) {
+  public void saveToTimeScale(HarnessTagLink harnessTagLink) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -78,17 +82,16 @@ public class MigrateTagLinksToTImeScaleDB {
         successful = true;
       } catch (SQLException e) {
         if (retryCount >= MAX_RETRY) {
-          log.error("Failed to save application,[{}]", harnessTagLink.getUuid(), e);
+          log.error("Failed to save tag,[{}]", harnessTagLink.getUuid(), e);
         } else {
-          log.info("Failed to save application,[{}],retryCount=[{}]", harnessTagLink.getUuid(), retryCount);
+          log.info("Failed to save tag,[{}],retryCount=[{}]", harnessTagLink.getUuid(), retryCount);
         }
         retryCount++;
       } catch (Exception e) {
-        log.error("Failed to save application,[{}]", harnessTagLink.getUuid(), e);
+        log.error("Failed to save tag,[{}]", harnessTagLink.getUuid(), e);
         retryCount = MAX_RETRY + 1;
       } finally {
-        log.info(
-            "Total time =[{}] for application:[{}]", System.currentTimeMillis() - startTime, harnessTagLink.getUuid());
+        log.info("Total time =[{}] for tag:[{}]", System.currentTimeMillis() - startTime, harnessTagLink.getUuid());
       }
     }
   }
@@ -110,5 +113,13 @@ public class MigrateTagLinksToTImeScaleDB {
         11, harnessTagLink.getLastUpdatedBy() != null ? harnessTagLink.getLastUpdatedBy().getName() : null);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

@@ -7,9 +7,11 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GCP_SECRET_MANAGER_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -137,15 +139,23 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(googleCredentials)) {
       SecretVersionName secretVersionName = null;
       if (isNotEmpty(encryptedRecord.getPath())) {
-        String secretName =
-            encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey() : encryptedRecord.getName();
-        if (secretName == null || isEmpty(secretName)) {
+        String secretName;
+        String version;
+        if (encryptedRecord.getAdditionalMetadata() != null) {
+          secretName = encryptedRecord.getPath();
+          version = encryptedRecord.getAdditionalMetadata().getValues().get(VERSION).toString();
+        } else {
+          secretName = encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey()
+                                                                  : encryptedRecord.getName();
+          version = encryptedRecord.getPath();
+        }
+        if (isEmpty(secretName)) {
           throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
               "Secret Referencing Failed - Cannot Reference Secret in Gcp Secret Manager Without Name",
               WingsException.USER);
         }
         // referenced secret
-        secretVersionName = SecretVersionName.of(projectId, secretName, encryptedRecord.getPath());
+        secretVersionName = SecretVersionName.of(projectId, secretName, version);
       } else if (isNotEmpty(encryptedRecord.getEncryptedValue())) {
         SecretVersionName latestVersionName =
             SecretVersionName.parse(String.valueOf(encryptedRecord.getEncryptedValue()));
@@ -239,6 +249,9 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   @Override
   public EncryptedRecord renameSecret(
       String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
+    if (existingRecord.getName().equals(secretText.getName())) {
+      return existingRecord;
+    }
     throw new UnsupportedOperationException("Renaming Secrets in GCP Secret Manager is not supported");
   }
 
@@ -302,6 +315,10 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   @VisibleForTesting
   public GoogleCredentials getGoogleCredentials(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
+    if (gcpSecretsManagerConfig.getCredentials() == null) {
+      throw new SecretManagementException(GCP_SECRET_OPERATION_ERROR,
+          "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.", USER);
+    }
     try {
       return GoogleCredentials
           .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
@@ -324,5 +341,29 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
               + "credentials",
           USER_SRE);
     }
+  }
+
+  @Override
+  public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
+    GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
+    try {
+      GoogleCredentials credentials = getGoogleCredentials(gcpSecretsManagerConfig);
+      SecretManagerServiceClient client = getGcpSecretsManagerClient(credentials);
+      String projectId = getProjectId(credentials);
+      ProjectName projectName = ProjectName.of(projectId);
+      // Get all secrets.
+      SecretManagerServiceClient.ListSecretsPagedResponse pagedResponse = client.listSecrets(projectName);
+      // List all secrets.
+      pagedResponse.iterateAll().forEach(secret
+          -> {
+              // do nothing as we are just testing connectivity
+          });
+    } catch (IOException e) {
+      String message =
+          "Was not able to reach GCP Secrets Manager using the given credentials. Please check your credentials and try again";
+      throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, e, WingsException.USER);
+    }
+    log.info("Test connection to GCP Secrets Manager Succeeded for {}", gcpSecretsManagerConfig.getName());
+    return true;
   }
 }

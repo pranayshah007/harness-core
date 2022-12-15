@@ -38,6 +38,5 @@ public class CfRequestConfig {
   private String cfHomeDirPath;
   private boolean loggedin;
   private boolean limitPcfThreads;
-  private boolean ignorePcfConnectionContextCache;
   private boolean useNumbering;
 }

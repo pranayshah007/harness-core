@@ -11,10 +11,12 @@ import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildRespo
 
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidYamlException;
@@ -73,11 +75,15 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (servicesMap.isEmpty()) {
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
-      int maxConcurrency = 1;
-      if (stepParameters.getEnvironments().getEnvironmentsMetadata() != null
-          && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
-          && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()) {
-        maxConcurrency = 0;
+      int maxConcurrency = 0;
+      if (stepParameters.getEnvironments() != null && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+              && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
+              && !stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()
+          || stepParameters.getEnvironmentGroup() != null
+              && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata() != null
+              && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel() != null
+              && !stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel()) {
+        maxConcurrency = 1;
       }
       for (Map<String, String> environmentMap : environmentsMapList) {
         children.add(getChild(childNodeId, currentIteration, totalIterations, environmentMap,
@@ -90,11 +96,11 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (environmentsMapList.isEmpty()) {
       int currentIteration = 0;
       int totalIterations = servicesMap.size();
-      int maxConcurrency = 1;
+      int maxConcurrency = 0;
       if (stepParameters.getServices().getServicesMetadata() != null
           && stepParameters.getServices().getServicesMetadata().getParallel() != null
-          && stepParameters.getServices().getServicesMetadata().getParallel()) {
-        maxConcurrency = 0;
+          && !stepParameters.getServices().getServicesMetadata().getParallel()) {
+        maxConcurrency = 1;
       }
       for (Map<String, String> serviceMap : servicesMap) {
         children.add(getChild(childNodeId, currentIteration, totalIterations, serviceMap,
@@ -104,31 +110,21 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
 
-    boolean isServiceParallel = stepParameters.getServices().getServicesMetadata() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel();
-    boolean isEnvironmentParallel = stepParameters.getEnvironments() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
-        && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel();
+    boolean isServiceParallel = stepParameters.getServices() != null
+        && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata());
+    boolean isEnvironmentParallel = stepParameters.getEnvironmentGroup() != null
+        || (stepParameters.getEnvironments() != null
+            && shouldDeployInParallel(stepParameters.getEnvironments().getEnvironmentsMetadata()));
+
     int currentIteration = 0;
-    int totalIterations = servicesMap.size() + environmentsMapList.size();
+    int totalIterations = servicesMap.size() * environmentsMapList.size();
     int maxConcurrency = 0;
     if (isServiceParallel) {
-      if (isEnvironmentParallel) {
-        maxConcurrency = totalIterations;
-      } else {
+      if (!isEnvironmentParallel) {
         maxConcurrency = servicesMap.size();
+      } else {
+        maxConcurrency = totalIterations;
       }
-      for (Map<String, String> serviceMap : servicesMap) {
-        for (Map<String, String> environmentMap : environmentsMapList) {
-          children.add(
-              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
-          currentIteration++;
-        }
-      }
-    } else if (isEnvironmentParallel) {
-      maxConcurrency = environmentsMapList.size();
       for (Map<String, String> environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
           children.add(
@@ -136,8 +132,16 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
           currentIteration++;
         }
       }
+    } else if (isEnvironmentParallel) {
+      maxConcurrency = environmentsMapList.size();
+      for (Map<String, String> serviceMap : servicesMap) {
+        for (Map<String, String> environmentMap : environmentsMapList) {
+          children.add(
+              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          currentIteration++;
+        }
+      }
     } else {
-      maxConcurrency = 1;
       for (Map<String, String> environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
           children.add(
@@ -161,6 +165,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
                     MatrixMetadata.newBuilder().setSubType(subType).putAllMatrixValues(serviceMap).build())
                 .build())
         .build();
+  }
+
+  private boolean shouldDeployInParallel(EnvironmentsMetadata metadata) {
+    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
+  }
+
+  private boolean shouldDeployInParallel(ServicesMetadata metadata) {
+    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,
@@ -215,6 +227,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
             environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue()));
       } else {
+        if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
+          throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
+        }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
           environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra));
         }

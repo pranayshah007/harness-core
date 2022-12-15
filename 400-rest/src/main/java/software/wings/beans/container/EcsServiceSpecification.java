@@ -9,6 +9,8 @@ package software.wings.beans.container;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ECS_SERVICE_SPEC;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
@@ -17,7 +19,10 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.DeploymentSpecification;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +40,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Entity("ecsServiceSpecification")
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
-public class EcsServiceSpecification extends DeploymentSpecification {
+public class EcsServiceSpecification extends DeploymentSpecification implements NGMigrationEntity {
   public static final String ECS_REPLICA_SCHEDULING_STRATEGY = "REPLICA";
   @NotNull private String serviceId;
   private String serviceSpecJson;
@@ -64,6 +69,24 @@ public class EcsServiceSpecification extends DeploymentSpecification {
     specification.setAccountId(this.getAccountId());
     specification.setAppId(this.getAppId());
     return specification;
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getUuid();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getMigrationEntityName())
+        .type(ECS_SERVICE_SPEC)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   @Data

@@ -14,10 +14,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.gitsync.common.dtos.GitErrorMetadata;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -59,5 +61,13 @@ public class ScmExceptionUtils {
       return responseMessageList.get(responseMessageList.size() - 1).getMessage();
     }
     return "Unexpected error occurred while performing scm operation.";
+  }
+
+  public static GitErrorMetadata getGitErrorMetadata(WingsException ex) {
+    ErrorMetadataDTO errorMetadata = ExceptionUtils.getErrorMetadata(ex, GitErrorMetadata.TYPE);
+    if (errorMetadata == null) {
+      return GitErrorMetadata.builder().build();
+    }
+    return (GitErrorMetadata) errorMetadata;
   }
 }

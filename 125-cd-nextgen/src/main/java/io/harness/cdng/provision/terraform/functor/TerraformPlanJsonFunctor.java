@@ -9,8 +9,8 @@ package io.harness.cdng.provision.terraform.functor;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

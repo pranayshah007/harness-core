@@ -139,7 +139,7 @@ public class CfDeploymentManagerUnsupportedTest extends WingsBaseTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testCheckConnectivity() {
-    assertThat(deploymentManager.checkConnectivity(CfConfig.builder().build(), false, false))
+    assertThat(deploymentManager.checkConnectivity(CfConfig.builder().build(), false))
         .isEqualTo("FAILED: connection timed out");
   }
 

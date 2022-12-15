@@ -11,15 +11,16 @@ import static io.harness.NGDateUtils.DAY_IN_MS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.Dashboard.DashboardPipelineExecutionInfo;
-import io.harness.pms.Dashboard.DashboardPipelineHealthInfo;
-import io.harness.pms.Dashboard.MeanMedianInfo;
-import io.harness.pms.Dashboard.PipelineCountInfo;
-import io.harness.pms.Dashboard.PipelineExecutionInfo;
-import io.harness.pms.Dashboard.PipelineHealthInfo;
-import io.harness.pms.Dashboard.StatusAndTime;
-import io.harness.pms.Dashboard.SuccessHealthInfo;
-import io.harness.pms.Dashboard.TotalHealthInfo;
+import io.harness.pms.dashboard.DashboardPipelineExecutionInfo;
+import io.harness.pms.dashboard.DashboardPipelineHealthInfo;
+import io.harness.pms.dashboard.MeanAndMedian;
+import io.harness.pms.dashboard.MeanMedianInfo;
+import io.harness.pms.dashboard.PipelineCountInfo;
+import io.harness.pms.dashboard.PipelineExecutionInfo;
+import io.harness.pms.dashboard.PipelineHealthInfo;
+import io.harness.pms.dashboard.StatusAndTime;
+import io.harness.pms.dashboard.SuccessHealthInfo;
+import io.harness.pms.dashboard.TotalHealthInfo;
 import io.harness.pms.execution.ExecutionStatus;
 
 import com.google.inject.Inject;
@@ -36,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineDashboardServiceImpl implements PipelineDashboardService {
   @Inject PipelineDashboardQueryService pipelineDashboardQueryService;
 
-  private String tableName_default = "pipeline_execution_summary_ci";
+  private String tableName_default = "pipeline_execution_summary";
   private String CI_TableName = "pipeline_execution_summary_ci";
   private String CD_TableName = "pipeline_execution_summary_cd";
   private static final List<String> FAILED_STATUS_LIST =
@@ -70,10 +71,12 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
 
   public String selectTableFromModuleInfo(String moduleInfo) {
     String tableName = tableName_default;
-    if (moduleInfo.equalsIgnoreCase("CI")) {
-      tableName = CI_TableName;
-    } else if (moduleInfo.equalsIgnoreCase("CD")) {
-      tableName = CD_TableName;
+    if (moduleInfo != null) {
+      if (moduleInfo.equalsIgnoreCase("CI")) {
+        tableName = CI_TableName;
+      } else if (moduleInfo.equalsIgnoreCase("CD")) {
+        tableName = CD_TableName;
+      }
     }
     return tableName;
   }
@@ -91,7 +94,6 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
 
     List<StatusAndTime> statusAndTime = pipelineDashboardQueryService.getPipelineExecutionStatusAndTime(
         accountId, orgId, projectId, pipelineId, previousStartInterval, endInterval, tableName);
-
     long currentTotal = 0, currentSuccess = 0;
     long previousTotal = 0, previousSuccess = 0;
     for (int i = 0; i < statusAndTime.size(); i++) {
@@ -111,21 +113,12 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
         }
       }
     }
-
     // mean calculation
-    long currentMean = pipelineDashboardQueryService.getPipelineExecutionMeanDuration(
+    MeanAndMedian currMeanAndMedian = pipelineDashboardQueryService.getPipelineExecutionMeanAndMedianDuration(
         accountId, orgId, projectId, pipelineId, startInterval, endInterval, tableName);
-
-    long previousMean = pipelineDashboardQueryService.getPipelineExecutionMeanDuration(
+    MeanAndMedian prevMeanAndMedian = pipelineDashboardQueryService.getPipelineExecutionMeanAndMedianDuration(
         accountId, orgId, projectId, pipelineId, previousStartInterval, startInterval, tableName);
-
-    // Median calculation
-    long currentMedian = pipelineDashboardQueryService.getPipelineExecutionMedianDuration(
-        accountId, orgId, projectId, pipelineId, startInterval, endInterval, tableName);
-
-    long previousMedian = pipelineDashboardQueryService.getPipelineExecutionMedianDuration(
-        accountId, orgId, projectId, pipelineId, previousStartInterval, startInterval, tableName);
-
+    //    long currentMedian =
     return DashboardPipelineHealthInfo.builder()
         .executions(
             PipelineHealthInfo.builder()
@@ -134,9 +127,14 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
                              .rate(getRate(currentSuccess, previousSuccess))
                              .percent(successPercent(currentSuccess, currentTotal))
                              .build())
-                .meanInfo(MeanMedianInfo.builder().duration(currentMean).rate(currentMean - previousMean).build())
-                .medianInfo(
-                    MeanMedianInfo.builder().duration(currentMedian).rate(currentMedian - previousMedian).build())
+                .meanInfo(MeanMedianInfo.builder()
+                              .duration(currMeanAndMedian.getMean())
+                              .rate(currMeanAndMedian.getMean() - prevMeanAndMedian.getMean())
+                              .build())
+                .medianInfo(MeanMedianInfo.builder()
+                                .duration(currMeanAndMedian.getMedian())
+                                .rate(currMeanAndMedian.getMedian() - prevMeanAndMedian.getMedian())
+                                .build())
                 .build())
         .build();
   }
@@ -153,7 +151,6 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
 
     List<StatusAndTime> statusAndTime = pipelineDashboardQueryService.getPipelineExecutionStatusAndTime(
         accountId, orgId, projectId, pipelineId, startInterval, endInterval, tableName);
-
     List<PipelineExecutionInfo> pipelineExecutionInfoList = new ArrayList<>();
 
     while (startInterval < endInterval) {

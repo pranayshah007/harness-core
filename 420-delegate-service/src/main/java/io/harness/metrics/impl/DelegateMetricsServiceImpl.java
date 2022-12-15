@@ -45,6 +45,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_DESTROYED = "destroy_delegate";
+  public static final String DELEGATE_UPGRADE = "delegate_upgrade";
+  public static final String UPGRADER_UPGRADE = "upgrader_upgrade";
+  public static final String DELEGATE_LEGACY_UPGRADE = "delegate_legacy_upgrade";
 
   public static final String PERPETUAL_TASK_CREATE = "perpetual_task_create";
   public static final String PERPETUAL_TASK_RESET = "perpetual_task_reset";
@@ -52,6 +55,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_PAUSE = "perpetual_task_pause";
   public static final String PERPETUAL_TASK_ASSIGNED = "perpetual_task_assigned";
   public static final String PERPETUAL_TASK_UNASSIGNED = "perpetual_task_unassigned";
+  public static final String PERPETUAL_TASK_NONASSIGNABLE = "perpetual_task_nonassignable";
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
@@ -66,8 +70,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASKS = "perpetual_tasks_num";
   public static final String PERPETUAL_TASKS_ASSIGNED = "perpetual_tasks_assigned_num";
   public static final String PERPETUAL_TASKS_UNASSIGNED = "perpetual_tasks_unassigned_num";
-  public static final String PERPETUAL_TASKS_TO_REBALANCE = "perpetual_tasks_to_rebalance_num";
   public static final String PERPETUAL_TASKS_PAUSED = "perpetual_tasks_paused_num";
+  public static final String PERPETUAL_TASKS_NON_ASSIGNABLE = "perpetual_tasks_non_assignable_num";
+  public static final String PERPETUAL_TASKS_INVALID = "perpetual_invalid_tasks";
 
   private final MetricService metricService;
   private final DelegateTaskMetricContextBuilder metricContextBuilder;
@@ -77,8 +82,8 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
     try (AutoMetricContext ignore = new DelegateTaskMetricContext(task.getAccountId())) {
       metricService.incCounter(metricName);
     }
-
-    try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(task.getData().getTaskType())) {
+    String taskType = task.getTaskDataV2() != null ? task.getTaskDataV2().getTaskType() : task.getData().getTaskType();
+    try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(taskType)) {
       metricService.incCounter(metricName + TASK_TYPE_SUFFIX);
     }
   }

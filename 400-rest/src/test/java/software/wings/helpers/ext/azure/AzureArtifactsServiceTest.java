@@ -35,7 +35,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
@@ -48,6 +47,7 @@ import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.utils.ArtifactType;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -472,8 +472,8 @@ public class AzureArtifactsServiceTest extends WingsBaseTest {
         listNotifyResponseData);
 
     assertThat(listNotifyResponseData.getData().size()).isEqualTo(1);
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo(FILE_ID);
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getName()).isEqualTo("file.war");
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo(FILE_ID);
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getName()).isEqualTo("file.war");
   }
 
   @Test
@@ -538,8 +538,8 @@ public class AzureArtifactsServiceTest extends WingsBaseTest {
         listNotifyResponseData);
 
     assertThat(listNotifyResponseData.getData().size()).isEqualTo(1);
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo(FILE_ID);
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getName()).isEqualTo(PACKAGE_NAME_NUGET);
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo(FILE_ID);
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getName()).isEqualTo(PACKAGE_NAME_NUGET);
   }
 
   @Test

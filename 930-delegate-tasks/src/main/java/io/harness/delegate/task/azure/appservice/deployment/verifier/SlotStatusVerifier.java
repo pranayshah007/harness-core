@@ -17,7 +17,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
@@ -28,17 +27,19 @@ import io.harness.delegate.task.azure.appservice.deployment.context.SwapSlotStat
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
+import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.WebApp;
 import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(HarnessTeam.CDP)
 public abstract class SlotStatusVerifier {
   protected final String slotName;
   protected final AzureWebClient azureWebClient;
-  protected final AzureServiceCallBack restCallBack;
   protected final LogCallback logCallback;
   protected final AzureWebClientContext azureWebClientContext;
+  protected final Mono<Response<Void>> responseMono;
 
   public enum SlotStatus { STOPPED, RUNNING }
   public enum SlotStatusVerifierType {
@@ -50,12 +51,12 @@ public abstract class SlotStatusVerifier {
   }
 
   public SlotStatusVerifier(LogCallback logCallback, String slotName, AzureWebClient azureWebClient,
-      AzureWebClientContext azureWebClientContext, AzureServiceCallBack restCallBack) {
+      AzureWebClientContext azureWebClientContext, Mono<Response<Void>> responseMono) {
     this.logCallback = logCallback;
     this.slotName = slotName;
     this.azureWebClient = azureWebClient;
     this.azureWebClientContext = azureWebClientContext;
-    this.restCallBack = restCallBack;
+    this.responseMono = responseMono;
   }
 
   public boolean hasReachedSteadyState() {
@@ -70,14 +71,6 @@ public abstract class SlotStatusVerifier {
     logCallback.saveExecutionLog(
         color(format("%nCurrent state for deployment slot is - [%s]", currentSlotState), White, Bold));
     return getSteadyState().equalsIgnoreCase(currentSlotState);
-  }
-
-  public boolean operationFailed() {
-    return restCallBack.callFailed();
-  }
-
-  public String getErrorMessage() {
-    return restCallBack.getErrorMessage();
   }
 
   public void stopPolling() {
@@ -100,15 +93,15 @@ public abstract class SlotStatusVerifier {
 
   public static SlotStatusVerifier getStatusVerifier(String verifierType, LogCallback logCallback, String slotName,
       AzureWebClient azureWebClient, AzureMonitorClient azureMonitorClient, AzureWebClientContext azureWebClientContext,
-      AzureServiceCallBack restCallBack) {
+      Mono<Response<Void>> responseMono) {
     switch (verifierType) {
       case "STOP_VERIFIER":
-        return new StopSlotStatusVerifier(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+        return new StopSlotStatusVerifier(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
       case "START_VERIFIER":
-        return new StartSlotStatusVerifier(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+        return new StartSlotStatusVerifier(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
       case "SWAP_VERIFIER":
         return new SwapSlotStatusVerifier(
-            logCallback, slotName, azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack);
+            logCallback, slotName, azureWebClient, azureMonitorClient, azureWebClientContext, responseMono);
       default:
         throw new InvalidRequestException(String.format("No slot status verifier defined for - [%s]", verifierType));
     }
@@ -130,5 +123,9 @@ public abstract class SlotStatusVerifier {
       default:
         throw new InvalidRequestException(String.format("No slot status verifier defined for - [%s]", verifierType));
     }
+  }
+
+  public Mono<Response<Void>> getResponseMono() {
+    return responseMono;
   }
 }

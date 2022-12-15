@@ -28,6 +28,7 @@ import software.wings.beans.Account;
 import software.wings.beans.Event;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.account.AccountCrudObserver;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
@@ -42,7 +43,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
-public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver {
+public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
 
@@ -193,5 +194,10 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   @Override
   public void onAccountUpdated(Account account) {
     // do nothing
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    persistence.delete(persistence.createQuery(DelegateToken.class).filter(DelegateTokenKeys.accountId, accountId));
   }
 }

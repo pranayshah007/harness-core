@@ -94,7 +94,7 @@ public class UserGroupEventHandlerTest extends CategoryTest {
     notificationSettingConfigDTOs.add(new SlackConfigDTO(randomAlphabetic(10)));
     notificationSettingConfigDTOs.add(new PagerDutyConfigDTO(randomAlphabetic(10)));
     notificationSettingConfigDTOs.add(new MicrosoftTeamsConfigDTO(randomAlphabetic(10)));
-    notificationSettingConfigDTOs.add(new EmailConfigDTO(randomAlphabetic(10)));
+    notificationSettingConfigDTOs.add(new EmailConfigDTO(randomAlphabetic(10), true));
 
     return UserGroupDTO.builder()
         .accountIdentifier(accountIdentifier)

@@ -9,11 +9,14 @@ package io.harness.notification.notificationclient;
 
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
+import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.messageclient.MessageClient;
 import io.harness.notification.remote.NotificationHTTPClient;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
@@ -31,6 +34,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import retrofit2.Response;
 
 @Getter
 @Setter
@@ -47,6 +51,10 @@ public class NotificationClientImpl implements NotificationClient {
 
     this.messageClient.send(notificationRequest, notificationChannel.getAccountId());
     return NotificationResultWithoutStatus.builder().notificationId(notificationRequest.getId()).build();
+  }
+
+  public Response<ResponseDTO<NotificationTaskResponse>> sendEmail(EmailDTO emailDTO) throws IOException {
+    return notificationHTTPClient.sendEmail(emailDTO).execute();
   }
 
   @Override

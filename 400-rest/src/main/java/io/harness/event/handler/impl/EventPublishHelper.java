@@ -46,15 +46,12 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.event.handler.marketo.MarketoConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.event.model.Event;
 import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
-import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -80,7 +77,6 @@ import software.wings.service.impl.analysis.ContinuousVerificationService;
 import software.wings.service.impl.newrelic.LearningEngineAnalysisTask;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
-import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
@@ -94,6 +90,7 @@ import software.wings.verification.CVConfiguration;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,8 +119,6 @@ public class EventPublishHelper {
   @Inject private AccountService accountService;
   @Inject private UserService userService;
   @Inject private SSOSettingService ssoSettingService;
-  @Inject private DelegateCache delegateCache;
-  @Inject private DelegateService delegateService;
   @Inject private WhitelistService whitelistService;
   @Inject private UserGroupService userGroupService;
   @Inject private CVConfigurationService cvConfigurationService;
@@ -237,6 +232,7 @@ public class EventPublishHelper {
                                                    .addFieldsIncluded("_id")
                                                    .withLimit("1")
                                                    .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId, pageRequest);
 
     if (isEmpty(cvConfigurations)) {
@@ -283,6 +279,7 @@ public class EventPublishHelper {
               .addFilter("createdBy.email", Operator.EQ, userEmail)
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
+      pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
       PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
@@ -319,6 +316,7 @@ public class EventPublishHelper {
                                           .addOrder(User.CREATED_AT_KEY, OrderType.ASC)
                                           .withLimit("10")
                                           .build();
+      pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
 
       PageResponse<User> pageResponse = userService.list(pageRequest, false);
       List<User> users = pageResponse.getResponse();
@@ -373,6 +371,7 @@ public class EventPublishHelper {
                                              .addFieldsIncluded("_id")
                                              .withLimit("1")
                                              .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     PageResponse<Whitelist> pageResponse = whitelistService.list(accountId, pageRequest);
     List<Whitelist> whitelistConfigs = pageResponse.getResponse();
     if (isEmpty(whitelistConfigs)) {
@@ -450,54 +449,6 @@ public class EventPublishHelper {
         Event.builder().eventType(eventType).eventData(EventData.builder().properties(properties).build()).build());
   }
 
-  public void publishInstalledDelegateEvent(String accountId, String delegateId) {
-    if (!checkIfMarketoOrSegmentIsEnabled()) {
-      return;
-    }
-
-    executorService.submit(() -> {
-      if (!shouldPublishEventForAccount(accountId)) {
-        return;
-      }
-
-      if (!isFirstDelegateInAccount(delegateId, accountId)) {
-        return;
-      }
-
-      Map<String, String> properties = new HashMap<>();
-      properties.put(ACCOUNT_ID, accountId);
-      publishEvent(EventType.FIRST_DELEGATE_REGISTERED, properties);
-      publishDelegateInstalledAccountEvent(
-          accountId, AccountEvent.builder().accountEventType(AccountEventType.DELEGATE_INSTALLED).build());
-    });
-  }
-
-  private boolean isFirstDelegateInAccount(String delegateId, String accountId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    if (delegate != null && delegate.isSampleDelegate()) {
-      return false;
-    }
-
-    PageRequest<Delegate> pageRequest = aPageRequest()
-                                            .addFilter(DelegateKeys.accountId, Operator.EQ, accountId)
-                                            .addFilter(DelegateKeys.sampleDelegate, Operator.EQ, false)
-                                            .addOrder(DelegateKeys.createdAt, OrderType.ASC)
-                                            .addFieldsIncluded(DelegateKeys.uuid)
-                                            .withLimit("1")
-                                            .build();
-    PageResponse<Delegate> pageResponse = delegateService.list(pageRequest);
-    List<Delegate> delegates = pageResponse.getResponse();
-    if (isEmpty(delegates)) {
-      return false;
-    }
-
-    if (delegateId.equals(delegates.get(0).getUuid())) {
-      return true;
-    }
-
-    return false;
-  }
-
   public void publishWorkflowCreatedEvent(Workflow workflow, String accountId) {
     String userEmail = checkIfMarketoOrSegmentIsEnabledAndGetUserEmail(EventType.FIRST_WORKFLOW_CREATED);
 
@@ -529,16 +480,15 @@ public class EventPublishHelper {
       return false;
     }
 
-    List<String> appIds = appService.getAppIdsByAccountId(accountId);
-
     PageRequest<Workflow> pageRequest = aPageRequest()
-                                            .addFilter("appId", Operator.IN, appIds.toArray())
+                                            .addFilter("accountId", Operator.EQ, accountId)
                                             .addFilter("createdBy.email", Operator.EQ, userEmail)
                                             .addFilter("sample", Operator.EQ, false)
                                             .addOrder(Workflow.CREATED_AT_KEY, OrderType.ASC)
                                             .addFieldsIncluded("_id")
                                             .withLimit("1")
                                             .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     PageResponse<Workflow> pageResponse = workflowService.listWorkflows(pageRequest);
     List<Workflow> workflows = pageResponse.getResponse();
     if (isEmpty(workflows)) {
@@ -756,6 +706,8 @@ public class EventPublishHelper {
             .addFieldsIncluded("_id")
             .withLimit("1")
             .build();
+    cvPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
+
     List<ContinuousVerificationExecutionMetaData> cvExecutionMetaDataList =
         continuousVerificationService.getCVDeploymentData(cvPageRequest);
 
@@ -888,11 +840,12 @@ public class EventPublishHelper {
   private void publishIfFirstDeployment(
       String workflowExecutionId, List<String> appIds, String accountId, String userEmail) {
     PageRequest<WorkflowExecution> executionPageRequest = aPageRequest()
-                                                              .addFilter("appId", Operator.IN, appIds.toArray())
+                                                              .addFilter("accountId", Operator.EQ, accountId)
                                                               .addFilter("createdBy.email", Operator.EQ, userEmail)
                                                               .addOrder(WorkflowExecutionKeys.createdAt, OrderType.ASC)
                                                               .withLimit("1")
                                                               .build();
+    executionPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
 
     PageResponse<WorkflowExecution> executionPageResponse =
         workflowExecutionService.listExecutions(executionPageRequest, false);
@@ -1022,23 +975,6 @@ public class EventPublishHelper {
       if (isNotEmpty(accountEvent.getCategory())) {
         properties.put(CATEGORY, accountEvent.getCategory());
       }
-      publishEvent(EventType.CUSTOM, properties);
-    });
-  }
-
-  public void publishDelegateInstalledAccountEvent(String accountId, AccountEvent accountEvent) {
-    if (!checkIfMarketoOrSegmentIsEnabled()) {
-      return;
-    }
-    executorService.submit(() -> {
-      if (!shouldPublishAccountEventForAccount(accountId, accountEvent, true, true)) {
-        return;
-      }
-      accountService.updateAccountEvents(accountId, accountEvent);
-      Map<String, String> properties = new HashMap<>();
-      properties.put(ACCOUNT_ID, accountId);
-      properties.put(ACCOUNT_EVENT, String.valueOf(true));
-      properties.put(CUSTOM_EVENT_NAME, accountEvent.getCustomMsg());
       publishEvent(EventType.CUSTOM, properties);
     });
   }

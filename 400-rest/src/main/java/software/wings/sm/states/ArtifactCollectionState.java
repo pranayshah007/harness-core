@@ -60,7 +60,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -74,7 +73,9 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
+import software.wings.service.impl.ShellScriptUtils;
 import software.wings.service.impl.WorkflowExecutionLogContext;
 import software.wings.service.impl.applicationmanifest.ManifestCollectionUtils;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
@@ -310,6 +311,14 @@ public class ArtifactCollectionState extends State {
       }
     }
 
+    if (!artifactStream.isArtifactStreamParameterized()
+        && featureFlagService.isEnabled(FeatureName.SPG_FETCH_ARTIFACT_FROM_DB, context.getAccountId())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
     Integer timeout = getTimeoutMillis();
     DelegateTaskBuilder delegateTaskBuilder;
 
@@ -322,7 +331,8 @@ public class ArtifactCollectionState extends State {
                   -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
               .findFirst()
               .orElse(CustomArtifactStream.Script.builder().build());
-      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isEmpty(versionScript.getScriptString())) {
+      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled())
+          && ShellScriptUtils.isNoopScript(versionScript.getScriptString())) {
         return saveCustomArtifactResponse(customArtifactStream, evaluatedBuildNo, timeout);
       }
       ArtifactStreamAttributes artifactStreamAttributes =

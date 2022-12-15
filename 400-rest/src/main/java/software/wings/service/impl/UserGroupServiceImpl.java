@@ -20,7 +20,6 @@ import static io.harness.validation.Validator.unEqualCheck;
 
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
-import static software.wings.scheduler.LdapGroupSyncJob.add;
 import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -140,6 +139,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -213,7 +213,10 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   private AccountPermissions addDefaultCePermissions(AccountPermissions accountPermissions) {
     Set<PermissionType> accountPermissionsSet =
-        Optional.ofNullable(accountPermissions.getPermissions()).orElse(new HashSet<>());
+        accountPermissions == null || CollectionUtils.isEmpty(accountPermissions.getPermissions())
+        ? new HashSet<>()
+        : accountPermissions.getPermissions();
+
     accountPermissionsSet.add(PermissionType.CE_VIEWER);
     if (accountPermissionsSet.contains(PermissionType.ACCOUNT_MANAGEMENT)) {
       accountPermissionsSet.add(PermissionType.CE_ADMIN);
@@ -652,9 +655,6 @@ public class UserGroupServiceImpl implements UserGroupService {
             actionSet.add(EXECUTE_WORKFLOW_ROLLBACK);
             actionSet.add(ABORT_WORKFLOW);
           }
-          if (action != null && action.equals(EXECUTE_WORKFLOW)) {
-            actionSet.add(ABORT_WORKFLOW);
-          }
           actionSet.add(action);
         });
         appPermission.setActions(actionSet);
@@ -839,11 +839,13 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public boolean existsLinkedUserGroup(String ssoId) {
+  public boolean existsLinkedUserGroup(String accountId, String ssoId) {
     return 0
         != wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
+               .filter(UserGroupKeys.accountId, accountId)
+               .filter(UserGroupKeys.isSsoLinked, TRUE)
                .filter(UserGroupKeys.linkedSsoId, ssoId)
-               .count();
+               .count(new CountOptions().limit(1));
   }
 
   private UserGroup update(UserGroup userGroup, UpdateOperations<UserGroup> operations) {
@@ -979,7 +981,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       return emptyList();
     }
 
-    return wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(UserGroup.class, excludeAuthority)
         .field(UserGroup.ID_KEY2)
         .in(userGroupIds)
         .project(UserGroupKeys.name, true)
@@ -1049,7 +1051,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
     if (ssoType == SSOType.LDAP) {
-      add(jobScheduler, accountId, ssoId);
       ldapGroupSyncJobHelper.syncJob(ssoSettings);
     }
 
@@ -1338,14 +1339,14 @@ public class UserGroupServiceImpl implements UserGroupService {
   public void pruneByApplication(String appId) {
     Set<String> deletedIds = new HashSet<>();
     deletedIds.add(appId);
-
-    try (HIterator<UserGroup> userGroupIterator =
-             new HIterator<>(wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
-                                 .project(UserGroup.ID_KEY2, true)
-                                 .project(UserGroupKeys.accountId, true)
-                                 .project(UserGroupKeys.appPermissions, true)
-                                 .project(UserGroupKeys.memberIds, true)
-                                 .fetch())) {
+    String accountId = appService.getAccountIdByAppId(appId);
+    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
+                                                                      .filter(UserGroupKeys.accountId, accountId)
+                                                                      .project(UserGroup.ID_KEY2, true)
+                                                                      .project(UserGroupKeys.accountId, true)
+                                                                      .project(UserGroupKeys.appPermissions, true)
+                                                                      .project(UserGroupKeys.memberIds, true)
+                                                                      .fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeAppIdsFromAppPermissions(userGroup, deletedIds);

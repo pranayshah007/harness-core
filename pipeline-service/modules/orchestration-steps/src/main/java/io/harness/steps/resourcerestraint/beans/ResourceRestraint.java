@@ -15,7 +15,6 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
@@ -48,7 +47,7 @@ public class ResourceRestraint {
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
   private EmbeddedUser createdBy;
 
-  @FdIndex @CreatedDate private long createdAt;
+  @CreatedDate private long createdAt;
   private EmbeddedUser lastUpdatedBy;
   @NotNull @LastModifiedDate private long lastUpdatedAt;
   @Version Long version;

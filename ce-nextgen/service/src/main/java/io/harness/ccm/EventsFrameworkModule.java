@@ -7,8 +7,8 @@
 
 package io.harness.ccm;
 
-import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;

@@ -9,7 +9,10 @@ package io.harness.encryptors;
 
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
+import static io.harness.rule.OwnerRule.SHREYAS;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -42,16 +45,22 @@ import com.google.cloud.secretmanager.v1.SecretVersion;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 public class GcpSecretsManagerEncryptorTest extends CategoryTest {
   private GcpSecretsManagerEncryptor gcpSecretsManagerEncryptor;
   private SecretManagerServiceClient secretManagerServiceClient;
   private GcpSecretsManagerConfig gcpSecretsManagerConfig;
   private GoogleCredentials googleCredentials;
+
+  @Rule public ExpectedException expectedException = ExpectedException.none();
 
   String mockedProjectId = "MockProjectName";
   String secretName = "MockedSecret";
@@ -65,6 +74,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
       AccessSecretVersionResponse.newBuilder().setPayload(payload).build();
   String mockVersionFullString =
       "projects/" + mockedProjectId + "/secrets/" + secretName + "/versions/" + secretVersionName;
+  SecretManagerServiceClient.ListSecretsPagedResponse listSecretsPagedResponse;
 
   @Before
   public void setup() throws IOException {
@@ -72,6 +82,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     googleCredentials = mock(GoogleCredentials.class);
     gcpSecretsManagerConfig = mock(GcpSecretsManagerConfig.class);
     secretManagerServiceClient = mock(SecretManagerServiceClient.class);
+    listSecretsPagedResponse = mock(SecretManagerServiceClient.ListSecretsPagedResponse.class);
     when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenReturn(googleCredentials);
     when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GoogleCredentials.class)))
         .thenReturn(secretManagerServiceClient);
@@ -91,6 +102,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
         .when(secretManagerServiceClient)
         .accessSecretVersion(any(SecretVersionName.class));
     doNothing().when(secretManagerServiceClient).deleteSecret(any(SecretName.class));
+    doReturn(listSecretsPagedResponse).when(secretManagerServiceClient).listSecrets(any(ProjectName.class));
 
     // real method invocations for testing
     when(gcpSecretsManagerEncryptor.createSecret(anyString(), any(), any())).thenCallRealMethod();
@@ -99,6 +111,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     when(gcpSecretsManagerEncryptor.validateReference(anyString(), any(SecretText.class), any())).thenCallRealMethod();
     when(gcpSecretsManagerEncryptor.fetchSecretValue(anyString(), any(EncryptedRecord.class), any()))
         .thenCallRealMethod();
+    when(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(any(), any())).thenCallRealMethod();
   }
 
   @Test
@@ -257,5 +270,48 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     } catch (SecretManagementException e) {
       assertThat(e.getMessage()).isEqualTo("Cannot delete secret for Empty ProjectId or SecretId");
     }
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void test_whenThereAreNoSecretsShouldPass() {
+    assertThat(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void test_whenThereAreMultipleSecretsShouldPass() {
+    List<Secret> secrets = new LinkedList<>();
+    secrets.add(Secret.newBuilder().build());
+    secrets.add(Secret.newBuilder().build());
+    when(listSecretsPagedResponse.iterateAll()).thenReturn(secrets);
+    assertThat(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void test_RenameSecret_NoChange() {
+    when(gcpSecretsManagerEncryptor.renameSecret(any(), any(SecretText.class), any(), any())).thenCallRealMethod();
+    EncryptedRecord existingRecord = EncryptedRecordData.builder().name(secretName).build();
+    EncryptedRecord updatedRecord = gcpSecretsManagerEncryptor.renameSecret(
+        accountId, SecretText.builder().name(secretName).build(), existingRecord, gcpSecretsManagerConfig);
+    assertThat(updatedRecord).isEqualTo(existingRecord);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetGoogleCredentialsForMissingConnectorCredentials() {
+    GcpSecretsManagerConfig gcpSecretsManagerConfig = GcpSecretsManagerConfig.builder().build();
+    expectedException.expect(SecretManagementException.class);
+    expectedException.expectMessage(
+        "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.");
+    when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenCallRealMethod();
+    gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig);
   }
 }

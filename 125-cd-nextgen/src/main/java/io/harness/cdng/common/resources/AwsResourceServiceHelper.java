@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -40,6 +40,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -99,16 +100,15 @@ public class AwsResourceServiceHelper {
   }
 
   public DelegateResponseData getResponseData(BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType) {
+    Map<String, String> taskSetupAbstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(taskType)
             .taskParameters(taskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(taskSetupAbstractions)
             .taskSelectors(((AwsTaskParams) taskParameters).getAwsConnector().getDelegateSelectors())
             .build();
     try {
@@ -120,16 +120,14 @@ public class AwsResourceServiceHelper {
 
   public DelegateResponseData getResponseData(
       BaseNGAccess ngAccess, EcrArtifactDelegateRequest ecrRequest, TaskParameters taskParameters, String taskType) {
+    Map<String, String> taskSetupAbstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(taskType)
             .taskParameters(taskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(taskSetupAbstractions)
             .taskSelectors(ecrRequest.getAwsConnectorDTO().getDelegateSelectors())
             .build();
     try {

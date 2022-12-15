@@ -61,7 +61,20 @@ public enum PredefinedTemplate {
   SLACK_CCM_ANOMALY_ALERT("templates/slack_ccm_anomaly_alert.txt", "slack_ccm_anomaly_alert"),
   EMAIL_CCM_BUDGET_ALERT("templates/email_ccm_budget_alert.txt", "email_ccm_budget_alert"),
   SLACK_CCM_BUDGET_ALERT("templates/slack_ccm_budget_alert.txt", "slack_ccm_budget_alert"),
-  EMAIL_CCM_CLOUD_BILLING_DATA_READY("templates/email_ccm_cloud_data_ready.txt", "email_ccm_cloud_data_ready");
+  EMAIL_CCM_CLOUD_BILLING_DATA_READY("templates/email_ccm_cloud_data_ready.txt", "email_ccm_cloud_data_ready"),
+  FREEZE_EMAIL_ALERT("notification_templates/email_test.txt", "freeze_email_alert"),
+  FREEZE_SLACK_ALERT("notification_templates/slack_test.txt", "freeze_slack_alert"),
+  FREEZE_PD_ALERT("notification_templates/pd_test.txt", "freeze_pagerduty_alert"),
+  FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert"),
+  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert"),
+  PIPELINE_REJECTED_EMAIL_ALERT(
+      "notification_templates/pipeline_rejected_email_test.txt", "pipeline_rejected_email_alert"),
+  PIPELINE_REJECTED_SLACK_ALERT(
+      "notification_templates/pipeline_rejected_slack_test.txt", "pipeline_rejected_slack_alert"),
+  PIPELINE_REJECTED_PD_ALERT(
+      "notification_templates/pipeline_rejected_pd_test.txt", "pipeline_rejected_pagerduty_alert"),
+  PIPELINE_REJECTED_MSTEAMS_ALERT(
+      "notification_templates/pipeline_rejected_msteams_test.txt", "pipeline_rejected_msteams_alert");
 
   private String path;
   private String identifier;

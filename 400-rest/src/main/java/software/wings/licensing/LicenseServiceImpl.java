@@ -23,6 +23,8 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.observer.Subject;
+import io.harness.persistence.HIterator;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
@@ -45,7 +47,10 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
+import software.wings.service.intfc.account.AccountLicenseObserver;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -65,8 +70,10 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -106,13 +113,14 @@ public class LicenseServiceImpl implements LicenseService {
   private List<String> paidDefaultContacts;
 
   @Inject private MainConfiguration mainConfiguration;
-
+  private final Cache<String, CheckExpiryResultDTO> licenseExpiryCache;
+  @Getter private final Subject<AccountLicenseObserver> accountLicenseObserverSubject;
   @Inject
   public LicenseServiceImpl(AccountService accountService, AccountDao accountDao, WingsPersistence wingsPersistence,
       GenericDbCache dbCache, ExecutorService executorService, LicenseProvider licenseProvider,
       EmailNotificationService emailNotificationService, EventPublishHelper eventPublishHelper,
       MainConfiguration mainConfiguration, UserService userService, UserGroupService userGroupService,
-      NgLicenseHttpClient ngLicenseHttpClient) {
+      NgLicenseHttpClient ngLicenseHttpClient, Subject<AccountLicenseObserver> accountLicenseObserverSubject) {
     this.accountService = accountService;
     this.accountDao = accountDao;
     this.wingsPersistence = wingsPersistence;
@@ -124,6 +132,8 @@ public class LicenseServiceImpl implements LicenseService {
     this.userService = userService;
     this.userGroupService = userGroupService;
     this.ngLicenseHttpClient = ngLicenseHttpClient;
+    this.accountLicenseObserverSubject = accountLicenseObserverSubject = new Subject<>();
+    this.licenseExpiryCache = Caffeine.newBuilder().expireAfterWrite(6, TimeUnit.HOURS).build();
 
     DefaultSalesContacts defaultSalesContacts = mainConfiguration.getDefaultSalesContacts();
     if (defaultSalesContacts != null && defaultSalesContacts.isEnabled()) {
@@ -155,16 +165,11 @@ public class LicenseServiceImpl implements LicenseService {
       // Check if all ng licenses inactive before decides expire account
       CheckExpiryResultDTO ngLicenseDecision = CheckExpiryResultDTO.builder().shouldDelete(false).build();
       try {
-        ngLicenseDecision = getResponse(ngLicenseHttpClient.checkExpiry(account.getUuid()));
+        ngLicenseDecision = licenseExpiryCache.get(
+            account.getUuid(), accountId -> getResponse(ngLicenseHttpClient.checkExpiry(accountId)));
       } catch (Exception e) {
         log.warn("Error occurred during check NG license allInactive flag for account {}, due to {}", account.getUuid(),
             e.getMessage());
-        try {
-          ngLicenseDecision = getResponse(ngLicenseHttpClient.checkExpiry(account.getUuid()));
-        } catch (Exception ex) {
-          log.warn("Retry failed on check NG license allInactive flag for account {}, due to {}", account.getUuid(),
-              ex.getMessage());
-        }
       }
 
       LicenseInfo licenseInfo = account.getLicenseInfo();
@@ -251,6 +256,7 @@ public class LicenseServiceImpl implements LicenseService {
     LicenseInfo licenseInfo = account.getLicenseInfo();
     licenseInfo.setAccountStatus(AccountStatus.MARKED_FOR_DELETION);
     updateAccountLicense(account.getUuid(), licenseInfo);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, account);
   }
 
   @VisibleForTesting
@@ -423,6 +429,7 @@ public class LicenseServiceImpl implements LicenseService {
     dbCache.invalidate(Account.class, accountId);
     Account updatedAccount = wingsPersistence.get(Account.class, accountId);
     LicenseUtils.decryptLicenseInfo(updatedAccount, false);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
 
     eventPublishHelper.publishLicenseChangeEvent(accountId, oldAccountType, licenseInfo.getAccountType());
     return true;
@@ -488,31 +495,33 @@ public class LicenseServiceImpl implements LicenseService {
         throw new InvalidRequestException(msg);
       }
 
-      List<Account> accountList = accountService.listAllAccounts();
-      if (accountList == null) {
+      Query<Account> query = accountService.getBasicAccountWithLicenseInfoQuery();
+      if (query.count(new CountOptions().limit(1)) == 0) {
         String msg = "Couldn't find any accounts in DB";
         throw new InvalidRequestException(msg);
       }
 
-      accountList.forEach(account -> {
-        if (!account.getAccountName().equalsIgnoreCase("Global")) {
-          byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
-          byte[] encryptedLicenseInfoFromDB = account.getEncryptedLicenseInfo();
+      try (HIterator<Account> accountList = new HIterator<>(query.fetch())) {
+        accountList.forEach(account -> {
+          if (!account.getAccountName().equalsIgnoreCase("Global")) {
+            byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
+            byte[] encryptedLicenseInfoFromDB = account.getEncryptedLicenseInfo();
 
-          boolean noLicenseInfoInDB = isEmpty(encryptedLicenseInfoFromDB);
+            boolean noLicenseInfoInDB = isEmpty(encryptedLicenseInfoFromDB);
 
-          if (noLicenseInfoInDB || !Arrays.equals(encryptedLicenseInfo, encryptedLicenseInfoFromDB)) {
-            account.setEncryptedLicenseInfo(encryptedLicenseInfo);
-            LicenseUtils.decryptLicenseInfo(account, true);
-            LicenseInfo licenseInfo = account.getLicenseInfo();
-            if (licenseInfo != null) {
-              updateAccountLicense(account.getUuid(), licenseInfo);
-            } else {
-              throw new InvalidRequestException("No license info could be extracted from the encrypted license info");
+            if (noLicenseInfoInDB || !Arrays.equals(encryptedLicenseInfo, encryptedLicenseInfoFromDB)) {
+              account.setEncryptedLicenseInfo(encryptedLicenseInfo);
+              LicenseUtils.decryptLicenseInfo(account, true);
+              LicenseInfo licenseInfo = account.getLicenseInfo();
+              if (licenseInfo != null) {
+                updateAccountLicense(account.getUuid(), licenseInfo);
+              } else {
+                throw new InvalidRequestException("No license info could be extracted from the encrypted license info");
+              }
             }
           }
-        }
-      });
+        });
+      }
     } catch (Exception ex) {
       if (DeployVariant.isCommunity(mainConfiguration.getDeployVariant().name())) {
         log.info("Skip for updating on-prem license with community edition");
@@ -534,7 +543,12 @@ public class LicenseServiceImpl implements LicenseService {
     // TODO when we have distributed cache, account should be cached and referred.
     Account account = dbCache.get(Account.class, accountId);
     notNullCheck("Invalid account with id: " + accountId, account);
+    return isAccountExpired(account);
+  }
 
+  @Override
+  public boolean isAccountExpired(Account account) {
+    String accountId = account.getUuid();
     LicenseInfo licenseInfo = account.getLicenseInfo();
 
     if (licenseInfo == null) {
@@ -572,6 +586,7 @@ public class LicenseServiceImpl implements LicenseService {
   private void expireLicense(String accountId, LicenseInfo licenseInfo) {
     licenseInfo.setAccountStatus(AccountStatus.EXPIRED);
     updateAccountLicense(accountId, licenseInfo);
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
   }
 
   private void updateEmailSentToSales(String accountId, boolean status) {
@@ -622,6 +637,7 @@ public class LicenseServiceImpl implements LicenseService {
       log.error("Invalid AWS productcode received:[{}],", productCode);
       return false;
     }
+    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
     return true;
   }
 

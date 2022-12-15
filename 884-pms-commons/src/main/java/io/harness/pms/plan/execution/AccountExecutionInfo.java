@@ -20,4 +20,5 @@ import lombok.Data;
 @Builder
 public class AccountExecutionInfo {
   @Builder.Default Map<String, Long> countPerMonth = new HashMap<>();
+  @Builder.Default Map<String, Long> countPerDay = new HashMap<>();
 }

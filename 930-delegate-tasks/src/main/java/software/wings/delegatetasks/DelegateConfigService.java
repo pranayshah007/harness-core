@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks;
 
-import software.wings.beans.ConfigFileDto;
+import software.wings.beans.configfile.ConfigFileDto;
 
 import java.io.IOException;
 import java.util.List;

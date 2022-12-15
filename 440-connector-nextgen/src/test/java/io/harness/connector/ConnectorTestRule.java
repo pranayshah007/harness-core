@@ -23,7 +23,6 @@ import io.harness.connector.helper.DecryptionHelperViaManager;
 import io.harness.connector.impl.ConnectorActivityServiceImpl;
 import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorService;
-import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
@@ -43,14 +42,17 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.validator.service.api.NGHostValidationService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -123,6 +125,9 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
         bind(NGActivityService.class).toInstance(mock(NGActivityService.class));
         bind(SecretManagerClientService.class).toInstance(mock(SecretManagerClientService.class));
+        bind(SecretManagerClientService.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .toInstance(mock(SecretManagerClientService.class));
         bind(DecryptionHelper.class).toInstance(mock(DecryptionHelperViaManager.class));
         bind(SecretNGManagerClient.class).toInstance(mock(SecretNGManagerClient.class));
         bind(DelegateServiceGrpcClient.class).toInstance(mock(DelegateServiceGrpcClient.class));
@@ -143,6 +148,8 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
+        bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
       }
     });
     modules.add(mongoTypeModule(annotations));
@@ -153,8 +160,6 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build()));
     modules.add(KryoModule.getInstance());
     modules.add(YamlSdkModule.getInstance());
-    modules.add(new EntitySetupUsageClientModule(
-        ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build(), "test_secret", "Service"));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

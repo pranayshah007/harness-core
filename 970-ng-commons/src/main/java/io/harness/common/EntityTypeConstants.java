@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -16,6 +16,7 @@ public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -69,6 +70,40 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
+  String AQUA_TRIVY = "AquaTrivy";
+  String AWS_ECR = "AWSECR";
+  String BANDIT = "Bandit";
+  String BLACKDUCK = "BlackDuck";
+  String BRAKEMAN = "Brakeman";
+  String BURP = "Burp";
+  String CHECKMARX = "Checkmarx";
+  String CLAIR = "Clair";
+  String DATA_THEOREM = "DataTheorem";
+  String DOCKER_CONTENT_TRUST = "DockerContentTrust";
+  String EXTERNAL = "External";
+  String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  String GRYPE = "Grype";
+  String JFROG_XRAY = "JfrogXray";
+  String MEND = "Mend";
+  String METASPLOIT = "Metasploit";
+  String NESSUS = "Nessus";
+  String NEXUS_IQ = "NexusIQ";
+  String NIKTO = "Nikto";
+  String NMAP = "Nmap";
+  String OPENVAS = "Openvas";
+  String OWASP = "Owasp";
+  String PRISMA_CLOUD = "PrismaCloud";
+  String PROWLER = "Prowler";
+  String QUALYS = "Qualys";
+  String REAPSAW = "Reapsaw";
+  String SHIFT_LEFT = "ShiftLeft";
+  String SNIPER = "Sniper";
+  String SNYK = "Snyk";
+  String SONARQUBE = "Sonarqube";
+  String SYSDIG = "Sysdig";
+  String TENABLE = "Tenable";
+  String VERACODE = "Veracode";
+  String ZAP = "Zap";
   String SECURITY_STAGE = "SecurityStage";
   String SECURITY_STEPS = "SecuritySteps";
   String GIT_CLONE = "GitClone";
@@ -80,6 +115,9 @@ public interface EntityTypeConstants {
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
+  String ACTION_STEP = "Action";
+  String BITRISE_STEP = "Bitrise";
+
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";
   String TERRAFORM_DESTROY = "TerraformDestroy";
@@ -118,9 +156,11 @@ public interface EntityTypeConstants {
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  String ECS_RUN_TASK = "EcsRunTask";
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
@@ -128,4 +168,18 @@ public interface EntityTypeConstants {
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   String FREEZE = "Freeze";
+  String CHAOS_STEP = "Chaos";
+  String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
+  String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  String IACM_STAGE = "IACMStage";
+  String IACM_STEPS = "IACMStep";
+  String IACM = "IACM";
+  String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  String TERRAGRUNT_PLAN = "TerragruntPlan";
+  String TERRAGRUNT_APPLY = "TerragruntApply";
+  String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  String CONTAINER_STEP = "Container";
+  String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.buildtriggers.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -16,6 +17,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -34,21 +37,29 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.polling.contracts.AMIPayload;
 import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
+import io.harness.polling.contracts.AzureArtifactsPayload;
 import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
 import io.harness.polling.contracts.GithubPackagesPollingPayload;
 import io.harness.polling.contracts.JenkinsPayload;
+import io.harness.polling.contracts.Nexus2RegistryPayload;
+import io.harness.polling.contracts.Nexus3RegistryPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.yaml.core.variables.NGVariableTrigger;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
@@ -56,6 +67,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +80,13 @@ import org.apache.logging.log4j.util.Strings;
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelper {
   private PipelineServiceClient pipelineServiceClient;
+  public static final String REPOSITORY_NAME = "repository";
+  public static final String REPOSITORY_FORMAT = "repositoryFormat";
+  public static final String RAW = "raw";
+  public static final String DOCKER = "docker";
+  public static final String MAVEN = "maven";
+  public static final String NPM = "npm";
+  public static final String NUGET = "nuget";
 
   public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -245,7 +264,7 @@ public class BuildTriggerHelper {
 
   public void validatePollingItemForArtifact(PollingItem pollingItem) {
     String error = checkFiledValueError("ConnectorRef", pollingItem.getPollingPayloadData().getConnectorRef());
-    if (isNotBlank(error)) {
+    if (isNotBlank(error) && !pollingItem.getPollingPayloadData().hasCustomPayload()) {
       throw new InvalidRequestException(error);
     }
 
@@ -264,12 +283,54 @@ public class BuildTriggerHelper {
       validatePollingItemForS3(pollingItem);
     } else if (pollingPayloadData.hasJenkinsPayload()) {
       validatePollingItemForJenkins(pollingItem);
+    } else if (pollingPayloadData.hasCustomPayload()) {
+      validatePollingItemForCustom(pollingItem);
     } else if (pollingPayloadData.hasGarPayload()) {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
       validatePollingItemForGithubPackages(pollingItem);
+    } else if (pollingPayloadData.hasNexus2RegistryPayload()) {
+      validatePollingItemForNexus2Registry(pollingItem);
+    } else if (pollingPayloadData.hasNexus3RegistryPayload()) {
+      validatePollingItemForNexus3Registry(pollingItem);
+    } else if (pollingPayloadData.hasAzureArtifactsPayload()) {
+      validatePollingItemForAzureArtifacts(pollingItem);
+    } else if (pollingPayloadData.hasAmiPayload()) {
+      validatePollingItemForAMI(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
+    }
+  }
+
+  private void validatePollingItemForAzureArtifacts(PollingItem pollingItem) {
+    AzureArtifactsPayload azureArtifactsPayload = pollingItem.getPollingPayloadData().getAzureArtifactsPayload();
+
+    String error = checkFiledValueError("feed", azureArtifactsPayload.getFeed());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("package", azureArtifactsPayload.getPackageName());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("packageType", azureArtifactsPayload.getPackageType());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForAMI(PollingItem pollingItem) {
+    AMIPayload amiPayload = pollingItem.getPollingPayloadData().getAmiPayload();
+
+    String error = checkFiledValueError("region", amiPayload.getRegion());
+
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -308,6 +369,15 @@ public class BuildTriggerHelper {
     }
   }
 
+  private void validatePollingItemForCustom(PollingItem pollingItem) {
+    CustomPayload customPayload = pollingItem.getPollingPayloadData().getCustomPayload();
+
+    String error = checkFiledValueError("script", customPayload.getScript());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
   private void validatePollingItemForGcr(PollingItem pollingItem) {
     GcrPayload gcrPayload = pollingItem.getPollingPayloadData().getGcrPayload();
     String error = checkFiledValueError("imagePath", gcrPayload.getImagePath());
@@ -332,12 +402,12 @@ public class BuildTriggerHelper {
   private void validatePollingItemForArtifactory(PollingItem pollingItem) {
     ArtifactoryRegistryPayload artifactoryRegistryPayload =
         pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload();
-    String error = checkFiledValueError("repository", artifactoryRegistryPayload.getRepository());
+    String error = checkFiledValueError(REPOSITORY_NAME, artifactoryRegistryPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("repositoryFormat", artifactoryRegistryPayload.getRepositoryFormat());
+    error = checkFiledValueError(REPOSITORY_FORMAT, artifactoryRegistryPayload.getRepositoryFormat());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -354,6 +424,61 @@ public class BuildTriggerHelper {
         throw new InvalidRequestException(error);
       }
     }
+  }
+
+  private void validatePollingItemForNexus3Registry(PollingItem pollingItem) {
+    Map<String, String> fieldMaps = new HashMap<>();
+    Nexus3RegistryPayload nexus3RegistryPayload = pollingItem.getPollingPayloadData().getNexus3RegistryPayload();
+    String error;
+    fieldMaps.put(REPOSITORY_NAME, nexus3RegistryPayload.getRepository());
+    fieldMaps.put(REPOSITORY_FORMAT, nexus3RegistryPayload.getRepositoryFormat());
+    String repositoryFormat = nexus3RegistryPayload.getRepositoryFormat();
+    switch (repositoryFormat) {
+      case DOCKER:
+        fieldMaps.put("artifactPath", nexus3RegistryPayload.getArtifactPath());
+        error = checkFiledValueError("repositoryUrl", nexus3RegistryPayload.getRepositoryUrl());
+        String errorForPort = checkFiledValueError("repositoryPort", nexus3RegistryPayload.getRepositoryPort());
+        if (isNotBlank(error) && isNotBlank(errorForPort)) {
+          throw new InvalidRequestException(error + " \n " + errorForPort);
+        }
+        break;
+      case MAVEN:
+        fieldMaps.put("groupId", nexus3RegistryPayload.getGroupId());
+        fieldMaps.put("artifactId", nexus3RegistryPayload.getArtifactId());
+        break;
+      case NPM:
+      case NUGET:
+        fieldMaps.put("packageName", nexus3RegistryPayload.getPackageName());
+        break;
+      case RAW:
+        fieldMaps.put("group", nexus3RegistryPayload.getGroup());
+        break;
+      default:
+        throw new InvalidRequestException("repositoryFormat not supported");
+    }
+    checkAndThrowException(fieldMaps);
+  }
+
+  private void validatePollingItemForNexus2Registry(PollingItem pollingItem) {
+    Nexus2RegistryPayload nexus2RegistryPayload = pollingItem.getPollingPayloadData().getNexus2RegistryPayload();
+    Map<String, String> fieldMaps = new HashMap<>();
+    fieldMaps.put(REPOSITORY_NAME, nexus2RegistryPayload.getRepository());
+    fieldMaps.put(REPOSITORY_FORMAT, nexus2RegistryPayload.getRepositoryFormat());
+    String repositoryFormat = nexus2RegistryPayload.getRepositoryFormat();
+
+    switch (repositoryFormat) {
+      case MAVEN:
+        fieldMaps.put("groupId", nexus2RegistryPayload.getGroupId());
+        fieldMaps.put("artifactId", nexus2RegistryPayload.getArtifactId());
+        break;
+      case NPM:
+      case NUGET:
+        fieldMaps.put("packageName", nexus2RegistryPayload.getPackageName());
+        break;
+      default:
+        throw new InvalidRequestException("repositoryFormat not supported");
+    }
+    checkAndThrowException(fieldMaps);
   }
 
   private void validatePollingItemForEcr(PollingItem pollingItem) {
@@ -480,6 +605,67 @@ public class BuildTriggerHelper {
     return fieldName;
   }
 
+  public List<NGVariableTrigger> validateAndFetchListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<NGVariableTrigger> inputs = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<NGVariableTrigger>>() {})
+        : Collections.emptyList();
+    if (isEmpty(inputs)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+      inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<NGVariableTrigger>>() {});
+    }
+    return inputs;
+  }
+
+  public List<AMITag> validateAndFetchTagsListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMITag> tags = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMITag>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(tags)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      tags = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMITag>>() {});
+    }
+
+    return tags;
+  }
+
+  public List<AMIFilter> validateAndFetchFiltersListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<AMIFilter> filters = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(),
+            new TypeReference<List<AMIFilter>>() {})
+        : Collections.emptyList();
+
+    if (isEmpty(filters)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+
+      filters = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<AMIFilter>>() {});
+    }
+
+    return filters;
+  }
+
   public void verifyStageAndBuildRef(TriggerDetails triggerDetails, String fieldName) {
     NGTriggerSpecV2 spec = triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
     if (!BuildAware.class.isAssignableFrom(spec.getClass())) {
@@ -523,5 +709,14 @@ public class BuildTriggerHelper {
       errorMap.put(entry.getKey(), innerMap);
     }
     return errorMap;
+  }
+
+  private void checkAndThrowException(Map<String, String> fieldMaps) {
+    fieldMaps.entrySet().stream().forEach(fieldMap -> {
+      String error = checkFiledValueError(fieldMap.getKey(), fieldMap.getValue());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    });
   }
 }

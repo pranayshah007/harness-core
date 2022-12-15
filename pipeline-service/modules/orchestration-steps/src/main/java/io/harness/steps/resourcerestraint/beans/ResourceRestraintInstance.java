@@ -110,6 +110,22 @@ public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, 
                  .field(ResourceRestraintInstanceKeys.releaseEntityType)
                  .field(ResourceRestraintInstanceKeys.releaseEntityId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("resourceRestraintId_resourceUnit_state_idx")
+                 .field(ResourceRestraintInstanceKeys.resourceRestraintId)
+                 .field(ResourceRestraintInstanceKeys.resourceUnit)
+                 .field(ResourceRestraintInstanceKeys.state)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("releaseEntityId_state_idx")
+                 .field(ResourceRestraintInstanceKeys.releaseEntityId)
+                 .field(ResourceRestraintInstanceKeys.state)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("resourceRestraintId_state_idx")
+                 .field(ResourceRestraintInstanceKeys.resourceRestraintId)
+                 .field(ResourceRestraintInstanceKeys.state)
+                 .build())
         .build();
   }
 

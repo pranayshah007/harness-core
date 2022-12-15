@@ -177,7 +177,12 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRegisterIterators() {
-    workflowExecutionMonitorHandler.registerIterators(5);
+    workflowExecutionMonitorHandler.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                               .name("WorkflowExecutionMonitor")
+                                                               .poolSize(5)
+                                                               .interval(Duration.ofSeconds(10))
+                                                               .build(),
+        Duration.ofMinutes(1));
     Mockito.verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(WorkflowExecution.class), captor.capture());
     MongoPersistenceIterator<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>> persistenceIterator =

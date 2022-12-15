@@ -8,6 +8,8 @@
 package io.harness.batch.processing.billing.writer;
 
 import static io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData;
+import static io.harness.batch.processing.writer.constants.K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE;
+import static io.harness.batch.processing.writer.constants.K8sCCMConstants.VIRTUAL_KUBELET;
 import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.ROHIT;
 
@@ -43,9 +45,12 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableMap;
@@ -113,6 +118,12 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private BatchMainConfig config;
 
+  @Mock private ClusterRecordService eventsClusterRecordService;
+
+  @Mock private CloudToHarnessMappingService cloudToHarnessMappingService;
+
+  @Mock private FeatureFlagService featureFlagService;
+
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
   @Before
@@ -130,6 +141,57 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
     String parentInstanceId =
         getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.PARENT_RESOURCE_ID, instanceData);
     assertThat(parentInstanceId).isEqualTo(PARENT_RESOURCE_ID);
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testInValidAzureInstanceForBilling() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(InstanceMetaDataConstants.TYPE_LABEL, VIRTUAL_KUBELET);
+    InstanceData instanceData = InstanceData.builder()
+                                    .instanceType(InstanceType.K8S_NODE)
+                                    .instanceName("virtual-node-aci-linux")
+                                    .labels(labels)
+                                    .build();
+    boolean validInstanceForBilling = instanceBillingDataTasklet.validInstanceForBilling(instanceData);
+    assertThat(validInstanceForBilling).isFalse();
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testValidAzureInstanceForBilling() {
+    Map<String, String> labels = new HashMap<>();
+    InstanceData instanceData =
+        InstanceData.builder().instanceType(InstanceType.K8S_NODE).instanceName("aks-ins").labels(labels).build();
+    boolean validInstanceForBilling = instanceBillingDataTasklet.validInstanceForBilling(instanceData);
+    assertThat(validInstanceForBilling).isTrue();
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testValidAzurePODInstanceForBilling() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(InstanceMetaDataConstants.TYPE_LABEL, VIRTUAL_KUBELET);
+    InstanceData instanceData = InstanceData.builder()
+                                    .instanceType(InstanceType.K8S_POD)
+                                    .instanceName("virtual-node-aci-linux")
+                                    .labels(labels)
+                                    .build();
+    boolean validInstanceForBilling = instanceBillingDataTasklet.validInstanceForBilling(instanceData);
+    assertThat(validInstanceForBilling).isTrue();
+  }
+
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testInValidAWSInstanceForBilling() {
+    Map<String, String> metaData = new HashMap<>();
+    metaData.put(InstanceMetaDataConstants.COMPUTE_TYPE, AWS_FARGATE_COMPUTE_TYPE);
+    InstanceData instanceData = InstanceData.builder().instanceType(InstanceType.K8S_NODE).metaData(metaData).build();
+    boolean validInstanceForBilling = instanceBillingDataTasklet.validInstanceForBilling(instanceData);
+    assertThat(validInstanceForBilling).isFalse();
   }
 
   @Test
@@ -274,7 +336,7 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
             .harnessServiceInfo(getHarnessServiceInfo())
             .build();
 
-    when(instanceDataDao.getInstanceDataListsOfTypes(any(), anyInt(), any(), any(), any()))
+    when(instanceDataDao.getInstanceDataListsOfTypesAndClusterId(any(), anyInt(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(instanceData));
 
     RepeatStatus repeatStatus = instanceBillingDataTasklet.execute(null, chunkContext);

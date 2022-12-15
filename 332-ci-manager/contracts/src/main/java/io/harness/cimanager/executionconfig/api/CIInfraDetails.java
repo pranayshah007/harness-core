@@ -30,4 +30,5 @@ public class CIInfraDetails {
   private String infraType;
   private String infraOSType;
   private String infraHostType;
+  private String infraArchType;
 }

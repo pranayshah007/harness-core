@@ -61,7 +61,6 @@ public class DelegateStatus {
     private Map<String, SelectorType> implicitSelectors;
     private long profileExecutedAt;
     private boolean profileError;
-    private boolean sampleDelegate;
     private boolean grpcActive;
     private boolean tokenActive;
     private long delegateExpirationTime;

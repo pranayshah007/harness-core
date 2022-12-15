@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,6 +27,7 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
@@ -49,6 +51,8 @@ public class AzureArtifactsTaskHandlerTest extends CategoryTest {
   @Mock AzureArtifactsRegistryService azureArtifactsRegistryService;
 
   @InjectMocks AzureArtifactsTaskHandler azureArtifactsTaskHandler;
+
+  @Mock SecretDecryptionService secretDecryptionService;
 
   @Test
   @Owner(developers = VED)
@@ -188,6 +192,92 @@ public class AzureArtifactsTaskHandlerTest extends CategoryTest {
     assertThat(executionResponse.getBuildDetails().get(2).getUiDisplayName()).isEqualTo("Version# b3");
     assertThat(executionResponse.getBuildDetails().get(3).getUiDisplayName()).isEqualTo("Version# b4");
     assertThat(executionResponse.getBuildDetails().get(4).getNumber()).isEqualTo("b5");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetBuildsFromRegex() {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig =
+        AzureArtifactsInternalConfig.builder()
+            .authMechanism("PersonalAccessToken")
+            .registryUrl("https://dev.azure.com/automation-cdc/")
+            .packageId(null)
+            .username("")
+            .password("")
+            .token("value")
+            .build();
+
+    SecretRefData tokenRef = SecretRefData.builder().decryptedValue("value".toCharArray()).build();
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder().tokenRef(tokenRef).build();
+
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .credentialsSpec(azureArtifactsTokenDTO)
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .build();
+
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("https://dev.azure.com/automation-cdc/")
+            .auth(azureArtifactsAuthenticationDTO)
+            .build();
+
+    AzureArtifactsDelegateRequest sourceAttributes = AzureArtifactsDelegateRequest.builder()
+                                                         .project(null)
+                                                         .feed("feed")
+                                                         .packageId(null)
+                                                         .packageName("package")
+                                                         .packageType("maven")
+                                                         .versionRegex("4*")
+                                                         .azureArtifactsConnectorDTO(azureArtifactsConnectorDTO)
+                                                         .build();
+
+    List<BuildDetails> builds = new ArrayList<>();
+
+    BuildDetails build1 = new BuildDetails();
+    build1.setNumber("b1");
+    build1.setUiDisplayName("Version# b1");
+
+    BuildDetails build2 = new BuildDetails();
+    build2.setNumber("b2");
+    build2.setUiDisplayName("Version# b2");
+
+    BuildDetails build3 = new BuildDetails();
+    build3.setNumber("b3");
+    build3.setUiDisplayName("Version# b3");
+
+    BuildDetails build4 = new BuildDetails();
+    build4.setNumber("b4");
+    build4.setUiDisplayName("Version# b4");
+
+    BuildDetails build5 = new BuildDetails();
+    build5.setNumber("b5");
+    build5.setUiDisplayName("Version# b5");
+
+    builds.add(build1);
+    builds.add(build2);
+    builds.add(build3);
+    builds.add(build4);
+    builds.add(build5);
+
+    doReturn(builds)
+        .when(azureArtifactsRegistryService)
+        .listPackageVersions(azureArtifactsInternalConfig, sourceAttributes.getPackageType(),
+            sourceAttributes.getPackageName(), sourceAttributes.getVersionRegex(), sourceAttributes.getFeed(),
+            sourceAttributes.getProject());
+
+    ArtifactTaskExecutionResponse executionResponse = azureArtifactsTaskHandler.getBuilds(sourceAttributes);
+
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getBuildDetails()).isNotNull();
+    assertThat(executionResponse.getBuildDetails().size()).isEqualTo(1);
+    assertThat(executionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("b4");
+    assertThat(executionResponse.getBuildDetails().get(0).getUiDisplayName()).isEqualTo("Version# b4");
   }
 
   @Test
@@ -591,5 +681,56 @@ public class AzureArtifactsTaskHandlerTest extends CategoryTest {
     assertThat(executionResponse.getAzureArtifactsPackages().get(2).getId()).isEqualTo("p3");
     assertThat(executionResponse.getAzureArtifactsPackages().get(3).getProtocolType()).isEqualTo("maven");
     assertThat(executionResponse.getAzureArtifactsPackages().get(4).getId()).isEqualTo("p5");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testDecryptDTOs() {
+    SecretRefData tokenRef = SecretRefData.builder().decryptedValue("value".toCharArray()).build();
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder().tokenRef(tokenRef).build();
+
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .credentialsSpec(azureArtifactsTokenDTO)
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .build();
+
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("https://dev.azure.com/automation-cdc/")
+            .auth(azureArtifactsAuthenticationDTO)
+            .build();
+
+    AzureArtifactsDelegateRequest azureArtifactsDelegateRequest =
+        AzureArtifactsDelegateRequest.builder()
+            .project(null)
+            .feed(null)
+            .packageId(null)
+            .packageName(null)
+            .packageType(null)
+            .azureArtifactsConnectorDTO(azureArtifactsConnectorDTO)
+            .build();
+
+    doReturn(null)
+        .when(secretDecryptionService)
+        .decrypt(azureArtifactsDelegateRequest.getAzureArtifactsConnectorDTO()
+                     .getAuth()
+                     .getCredentials()
+                     .getCredentialsSpec(),
+            azureArtifactsDelegateRequest.getEncryptedDataDetails());
+
+    azureArtifactsTaskHandler.decryptRequestDTOs(azureArtifactsDelegateRequest);
+
+    verify(secretDecryptionService)
+        .decrypt(azureArtifactsDelegateRequest.getAzureArtifactsConnectorDTO()
+                     .getAuth()
+                     .getCredentials()
+                     .getCredentialsSpec(),
+            azureArtifactsDelegateRequest.getEncryptedDataDetails());
   }
 }

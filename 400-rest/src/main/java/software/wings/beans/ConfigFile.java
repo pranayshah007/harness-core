@@ -23,7 +23,12 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.validation.Create;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.beans.yaml.YamlType;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.persistence.BaseFile;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.yaml.BaseEntityYaml;
 
@@ -65,7 +70,7 @@ import org.mongodb.morphia.annotations.Transient;
 @HarnessEntity(exportable = true)
 @OwnedBy(CDC)
 @TargetModule(_957_CG_BEANS)
-public class ConfigFile extends BaseFile implements EncryptableSetting {
+public class ConfigFile extends BaseFile implements EncryptableSetting, NGMigrationEntity {
   public static final String DEFAULT_TEMPLATE_ID = "__TEMPLATE_ID";
 
   public static List<MongoIndex> mongoIndexes() {
@@ -219,7 +224,25 @@ public class ConfigFile extends BaseFile implements EncryptableSetting {
     //
   }
 
-  public ConfigFileDto toDto() {
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getRelativeFilePath();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .type(NGMigrationEntityType.CONFIG_FILE)
+        .accountId(getAccountId())
+        .appId(getAppId())
+        .id(getUuid())
+        .name(getRelativeFilePath())
+        .build();
+  }
+
+  public software.wings.beans.configfile.ConfigFileDto toDto() {
     Map<String, Integer> envVersionMap =
         getEnvIdVersionMap()
             .entrySet()

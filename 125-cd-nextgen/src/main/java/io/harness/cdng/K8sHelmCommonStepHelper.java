@@ -144,7 +144,7 @@ public class K8sHelmCommonStepHelper {
   private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   protected static final Set<String> HELM_CHART_REPO_STORE_TYPES =
-      ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP);
+      ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP, ManifestStoreType.OCI);
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private K8sEntityHelper k8sEntityHelper;
@@ -585,8 +585,7 @@ public class K8sHelmCommonStepHelper {
             .useCache(helmVersion != HelmVersion.V2
                 && !cdFeatureFlagHelper.isEnabled(
                     AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
-            .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
+            .checkIncorrectChartVersion(true)
             .useRepoFlags(helmVersion != HelmVersion.V2)
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .build();

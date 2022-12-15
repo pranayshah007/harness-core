@@ -25,21 +25,21 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 
 import software.wings.beans.Account;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.ArtifactCollectionFailedAlert;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.PermitServiceImpl;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.AlertService;
@@ -165,7 +165,12 @@ public class BuildSourceCallback implements OldNotifyCallback {
           }
         });
 
-        if (isUnstable) {
+        // CDS-45417: If artifact collection failed on first attempt after creating artifact stream,
+        // we want to trigger with artifact whenever server is available.
+        // (Asserting first collection failure by artifact stream being UNSTABLE and failed attempts are more than 0)
+        if (isUnstable
+            && (artifactStream.getFailedCronAttempts() == 0
+                || featureFlagService.isEnabled(FeatureName.TRIGGER_FOR_ALL_ARTIFACTS, accountId))) {
           updatePermit(artifactStream, false);
           return;
         }

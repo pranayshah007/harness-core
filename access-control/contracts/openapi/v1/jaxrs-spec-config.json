@@ -1,0 +1,24 @@
+{
+  "skipOverwrite": false,
+  "java11": true,
+  "typeMappings": {
+  },
+  "importMappings": {
+  },
+  "hideGenerationTimestamp": true,
+  "oas3": true,
+  "apiPackage": "io.harness.spec.server.accesscontrol.v1",
+  "modelPackage": "io.harness.spec.server.accesscontrol.v1.model",
+  "groupId": "io.harness",
+  "artifactId": "access-control-server-spec",
+  "artifactVersion": "1.0.9",
+  "interfaceOnly": true,
+  "returnResponse": true,
+  "sourceFolder": "src/main/java",
+  "dateLibrary": "java8",
+  "ignoreImportMapping": [
+  ],
+  "additionalProperties": {
+    "useTags": true
+  }
+}

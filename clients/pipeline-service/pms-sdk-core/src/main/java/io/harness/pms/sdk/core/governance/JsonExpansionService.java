@@ -66,7 +66,6 @@ public class JsonExpansionService extends JsonExpansionServiceImplBase {
         jsonNodeMap.put(cacheKey, expansionResponse);
         expansionResponseBatchBuilder.addExpansionResponseProto(convertToResponseProto(jsonNodeMap.get(cacheKey), fqn));
       } catch (Exception ex) {
-        log.error(ExceptionUtils.getMessage(ex), ex);
         WingsException processedException = exceptionManager.processException(ex);
         expansionResponseBatchBuilder.addExpansionResponseProto(
             ExpansionResponseProto.newBuilder()

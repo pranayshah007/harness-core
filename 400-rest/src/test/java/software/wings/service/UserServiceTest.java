@@ -96,7 +96,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
@@ -111,7 +110,6 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -279,7 +277,6 @@ public class UserServiceTest extends WingsBaseTest {
   @Mock private AuthenticationUtils authenticationUtils;
   @Mock private TOTPAuthHandler totpAuthHandler;
   @Mock private SSOSettingService ssoSettingService;
-  @Mock private FeatureFlagService featureFlagService;
 
   @Spy @InjectMocks private SignupServiceImpl signupService;
 
@@ -373,7 +370,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
 
     user = userService.get(USER_ID);
 
@@ -401,7 +398,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);
@@ -460,7 +457,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);
@@ -1781,13 +1778,13 @@ public class UserServiceTest extends WingsBaseTest {
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
     when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID)).thenReturn(true);
+    when(accountService.isSSOEnabled(any())).thenReturn(true);
     when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
     when(wingsPersistence.save(userInvite)).thenReturn(USER_INVITE_ID);
     when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
     when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
     when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
-    when(accountService.isAutoInviteAcceptanceEnabled(ACCOUNT_ID)).thenReturn(true);
-    when(accountService.isSSOEnabled(account)).thenReturn(true);
     when(ssoSettingService.getSamlSettingsByAccountId(ACCOUNT_ID)).thenReturn(samlSettings);
 
     List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
@@ -1823,13 +1820,47 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
     when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
     when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
-    when(featureFlagService.isEnabled(any(FeatureName.class), anyString())).thenReturn(true);
-    when(accountService.isSSOEnabled(account)).thenReturn(true);
+    when(accountService.isPLNoEmailForSamlAccountInvitesEnabled(anyString())).thenReturn(true);
 
     List<InviteOperationResponse> inviteOperationResponses = userService.inviteUsers(userInvite);
 
-    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
+    assertThat(inviteOperationResponses.get(0)).isEqualTo(InviteOperationResponse.USER_INVITE_NOT_REQUIRED);
     verify(emailDataNotificationService, times(0)).send(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void shouldInviteNewUser_withScimEnabledAndSsoDisabled() {
+    UserInvite userInvite = anUserInvite()
+                                .withAppId(GLOBAL_APP_ID)
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmails(asList(USER_EMAIL))
+                                .withEmail(USER_EMAIL)
+                                .withRoles(asList(aRole().withUuid(ROLE_ID).build()))
+                                .build();
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.isSSOEnabled(any())).thenReturn(false);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
+    when(wingsPersistence.save(userInvite)).thenReturn(USER_INVITE_ID);
+    when(wingsPersistence.saveAndGet(eq(User.class), any(User.class))).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(authenticationUtils.getDefaultAccount(any())).thenReturn(account);
+    when(wingsPersistence.getWithAppId(UserInvite.class, GLOBAL_APP_ID, USER_INVITE_ID)).thenReturn(userInvite);
+    doNothing().when(signupService).checkIfEmailIsValid(any());
+
+    InviteOperationResponse inviteOperationResponse = userService.inviteUser(userInvite, false, true);
+
+    assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
+    verify(signupService, times(1)).sendEmail(any(), anyString(), any());
   }
 
   private List<Account> getAccounts() {

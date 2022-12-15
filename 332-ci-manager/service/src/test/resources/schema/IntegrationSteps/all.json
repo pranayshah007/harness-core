@@ -94,6 +94,9 @@
                 }
               ]
             },
+            "subscriptionId": {
+              "type": "string"
+            },
             "tags": {
               "oneOf": [
                 {
@@ -109,6 +112,45 @@
             },
             "target": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ActionStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CIStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -241,6 +283,45 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BitriseStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CIStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
                 }
               ]
             }
@@ -845,7 +926,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -980,6 +1061,45 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMapStringString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PluginStepInfo": {
       "allOf": [
         {
@@ -987,10 +1107,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef",
-            "image"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -1075,6 +1191,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
             }
           }
         }
@@ -1582,6 +1701,9 @@
               ]
             },
             "testAnnotations": {
+              "type": "string"
+            },
+            "testGlobs": {
               "type": "string"
             },
             "testSplitStrategy": {

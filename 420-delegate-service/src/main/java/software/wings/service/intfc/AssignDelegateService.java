@@ -14,7 +14,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.TaskFailureReason;
 
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 
 import java.util.List;
 
@@ -45,9 +45,13 @@ public interface AssignDelegateService {
 
   List<String> getEligibleDelegatesToExecuteTask(DelegateTask task);
 
+  List<String> getEligibleDelegatesToExecuteTaskV2(DelegateTask task);
+
   List<String> getConnectedDelegateList(List<String> delegates, DelegateTask delegateTask);
 
   boolean canAssignTask(String delegateId, DelegateTask task);
+
+  boolean canAssignTaskV2(String delegateId, DelegateTask task);
 
   List<Delegate> fetchActiveDelegates(String accountId);
 }

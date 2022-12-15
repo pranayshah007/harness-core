@@ -47,7 +47,9 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
@@ -66,6 +68,8 @@ import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -113,6 +117,8 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private VmInitializeUtils vmInitializeUtils;
   @Inject ValidationUtils validationUtils;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SecretSpecBuilder secretSpecBuilder;
 
@@ -124,7 +130,8 @@ public class VmInitializeTaskParamsBuilder {
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
 
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
@@ -483,19 +490,35 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public String getHostedPoolId(ParameterField<Platform> platform) {
+  public String getHostedPoolId(ParameterField<Platform> platform, String accountId) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
     if (platform != null && platform.getValue() != null) {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
     }
+    boolean isLinux = os == OSType.Linux && (arch == ArchType.Amd64 || arch == ArchType.Arm64);
+    boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
 
-    if (os != OSType.Linux || arch != ArchType.Amd64) {
-      throw new CIStageExecutionException("Only linux amd64 platform is supported for hosted builds");
+    if (isLinux || isMacArm) {
+      if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
+        throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
+      }
+      log.info(format("%s %s platform is supported for hosted builds", os, arch));
+    } else {
+      throw new CIStageExecutionException(format("%s %s platform is not supported for hosted builds", os, arch));
     }
 
-    return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+    boolean isLinuxAmd64 = os == OSType.Linux && arch == ArchType.Amd64;
+    String pool = format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+    if (isLinuxAmd64 && ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxAmd64Pool()) {
+      LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+      if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+        pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+      }
+    }
+
+    return pool;
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {

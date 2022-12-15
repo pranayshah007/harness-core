@@ -16,7 +16,6 @@ import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.CV_CONFIG_ID;
-import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.USER_GROUP_ID;
 import static software.wings.utils.WingsTestConstants.USER_ID;
@@ -42,7 +41,6 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.Delegate;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.handler.marketo.MarketoConfig;
 import io.harness.event.handler.segment.SegmentConfig;
@@ -279,32 +277,6 @@ public class EventPublishHelperTest extends WingsBaseTest {
     try {
       eventPublishHelper.publishUserInviteFromAccountEvent(ACCOUNT_ID, "abcd@abcd.com");
       verify(eventPublisher, times(1)).publishEvent(any(Event.class));
-    } finally {
-      UserThreadLocal.unset();
-    }
-  }
-
-  @Test
-  @Owner(developers = RAMA)
-  @Category(UnitTests.class)
-  public void testSendInstalledDelegateEvent() {
-    UserThreadLocal.set(user);
-    try {
-      when(delegateService.list(any(PageRequest.class))).thenReturn(PageResponseBuilder.aPageResponse().build());
-      eventPublishHelper.publishInstalledDelegateEvent(ACCOUNT_ID, DELEGATE_ID);
-      verify(eventPublisher, never()).publishEvent(any(Event.class));
-
-      Delegate delegate = Delegate.builder().uuid("invalid").build();
-      when(delegateService.list(any(PageRequest.class)))
-          .thenReturn(PageResponseBuilder.aPageResponse().withResponse(Arrays.asList(delegate)).withTotal(1).build());
-      eventPublishHelper.publishInstalledDelegateEvent(ACCOUNT_ID, DELEGATE_ID);
-      verify(eventPublisher, never()).publishEvent(any(Event.class));
-
-      delegate = Delegate.builder().uuid(DELEGATE_ID).build();
-      when(delegateService.list(any(PageRequest.class)))
-          .thenReturn(PageResponseBuilder.aPageResponse().withResponse(Arrays.asList(delegate)).withTotal(1).build());
-      eventPublishHelper.publishInstalledDelegateEvent(ACCOUNT_ID, DELEGATE_ID);
-      verify(eventPublisher, times(2)).publishEvent(any(Event.class));
     } finally {
       UserThreadLocal.unset();
     }

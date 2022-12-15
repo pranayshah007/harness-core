@@ -25,7 +25,7 @@ import org.mongodb.morphia.query.QueryImpl;
 @OwnedBy(HarnessTeam.PL)
 public class QueryFactory extends DefaultQueryFactory {
   private final TraceMode traceMode;
-  private final int maxOperationTimeInMillis;
+  @Getter private final int maxOperationTimeInMillis;
   @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
 
   public QueryFactory(MongoConfig mongoConfig) {

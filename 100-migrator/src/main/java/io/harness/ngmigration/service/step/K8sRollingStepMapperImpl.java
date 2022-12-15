@@ -8,19 +8,40 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.k8s.K8sRollingStepInfo;
+import io.harness.cdng.k8s.K8sRollingStepNode;
+import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.StepSpecType;
 
+import software.wings.ngmigration.CgEntityId;
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
+
+import java.util.Map;
 
 public class K8sRollingStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType() {
+  public String getStepType(StepYaml stepYaml) {
+    return StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
+  }
+
+  @Override
+  public State getState(StepYaml stepYaml) {
     return null;
   }
 
   @Override
-  public StepSpecType getSpec(StepYaml stepYaml) {
-    return K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build();
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
+    K8sRollingStepNode k8sRollingStepNode = new K8sRollingStepNode();
+    baseSetup(stepYaml, k8sRollingStepNode);
+    k8sRollingStepNode.setK8sRollingStepInfo(
+        K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build());
+    return k8sRollingStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

@@ -149,10 +149,11 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateScope(Scope.PROJECT)
                                          .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, null, "template1", "1", false, false))
         .thenReturn(Optional.of(templateEntity));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false, false))
         .thenReturn(Optional.of(templateEntity2));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
@@ -165,13 +166,14 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .identifier("template2")
                                                 .templateScope(Scope.ACCOUNT)
                                                 .build();
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, null, null, "template2", "1", false, false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-step-diff-scope.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -227,10 +229,10 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .build();
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false, false))
         .thenReturn(Optional.of(templateEntity));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
@@ -245,13 +247,13 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .deleted(false)
                                                 .build();
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "1", false, false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-step.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -329,19 +331,19 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .build();
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false, false))
         .thenReturn(Optional.of(stageTemplateEntity));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(httpTemplateEntity));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", false, false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-stage-template.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull().hasSize(1);
@@ -373,14 +375,14 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .yaml(yaml)
                                          .build();
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             anyString(), anyString(), anyString(), any(), any(), eq(false)))
+             anyString(), anyString(), anyString(), any(), any(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity1));
 
     String pipelineYamlFile = "pipeline-temp-inf-rec.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
 
     assertThatThrownBy(
-        () -> templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+        () -> templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Exponentially growing template nesting. Aborting");
   }
@@ -400,7 +402,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .build();
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String approvalTemplateStepYaml = readFile("approval-step-template-without-runtime-inputs.yaml");
@@ -412,17 +414,113 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .deleted(false)
                                                 .build();
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "2", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "2", false, false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-invalid-template-steps.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     try {
-      templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+      templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     } catch (NGTemplateResolveException ngTemplateResolveException) {
       assertThat(ngTemplateResolveException.getErrorResponseDTO()).isNotNull();
       assertThat(ngTemplateResolveException.getErrorResponseDTO().getErrorMap()).hasSize(3);
     }
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesForStepGroupTemplates() {
+    String fileName = "stepgroup-template.yaml";
+    String stepGroupTemplate = readFile(fileName);
+    TemplateEntity templateEntity1 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stepGroupTemplate)
+                                         .identifier("testingStepG")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("r1h")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testingStepG", "r1h", false, false))
+        .thenReturn(Optional.of(templateEntity1));
+
+    String stepGroup2 = "stepgroup-template-nested.yaml";
+    String stepGroupTemplate2 = readFile(stepGroup2);
+    TemplateEntity templateEntity2 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stepGroupTemplate2)
+                                         .identifier("testStepGrp2")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("v1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testStepGrp2", "v1", false, false))
+        .thenReturn(Optional.of(templateEntity2));
+
+    String stageTemplate = "stage-template-with-stepgroup-templates.yaml";
+    String stageTemplateYaml = readFile(stageTemplate);
+    TemplateEntity templateEntity3 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stageTemplateYaml)
+                                         .identifier("testStage")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testStage", "1", false, false))
+        .thenReturn(Optional.of(templateEntity3));
+
+    String pipelineTemplate = "pipeline-template-with-stage-with-stepgroup-template.yaml";
+    String pipelineTemplateYaml = readFile(pipelineTemplate);
+    TemplateEntity templateEntity4 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(pipelineTemplateYaml)
+                                         .identifier("testpipeline")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testpipeline", "1", false, false))
+        .thenReturn(Optional.of(templateEntity4));
+
+    String pipelineYamlFile = "pipeline-with-stepgroup-template.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+
+    TemplateMergeResponseDTO pipelineMergeResponse =
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
+    String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
+    assertThat(finalPipelineYaml).isNotNull();
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("testpipeline")
+                                         .versionLabel("1")
+                                         .scope(Scope.PROJECT)
+                                         .fqn("pipeline")
+                                         .moduleInfo(new HashSet<>())
+                                         .build());
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
+
+    String resFile = "pipeline-with-stepgroup-template-field-replaced.yaml";
+    String resPipeline = readFile(resFile);
+    assertThat(finalPipelineYaml).isEqualTo(resPipeline);
   }
 
   @Test
@@ -443,13 +541,13 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .build();
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-field.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -500,17 +598,17 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                              .build();
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "PipelineTemplevel1", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "PipelineTemplevel1", "1", false, false))
         .thenReturn(Optional.of(pipelineTemplateEntity));
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stg_temp2", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stg_temp2", "1", false, false))
         .thenReturn(Optional.of(stageTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-for-opa-policy.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYamlWithTemplateRef();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();

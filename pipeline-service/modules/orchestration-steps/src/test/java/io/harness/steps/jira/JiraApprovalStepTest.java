@@ -7,6 +7,7 @@
 
 package io.harness.steps.jira;
 
+import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -132,8 +133,9 @@ public class JiraApprovalStepTest extends CategoryTest {
         jiraApprovalStep.handleAsyncResponse(ambiance, parameters, Collections.singletonMap("key", responseData));
     assertThat(response.getStatus()).isEqualTo(Status.APPROVAL_REJECTED);
     assertThat(response.getFailureInfo().getFailureData(0).getFailureTypesList())
-        .containsExactly(FailureType.UNKNOWN_FAILURE);
+        .containsExactly(FailureType.APPROVAL_REJECTION);
     assertThat(response.getFailureInfo().getFailureData(0).getMessage()).isEqualTo("Approval Step has been Rejected");
+    assertThat(response.getFailureInfo().getFailureData(0).getCode()).isEqualTo(APPROVAL_REJECTION.name());
     assertThat(response.getStepOutcomes().iterator().next().getOutcome())
         .isNotNull()
         .isInstanceOf(JiraApprovalOutcome.class);

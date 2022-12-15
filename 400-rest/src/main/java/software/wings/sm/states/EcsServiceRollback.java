@@ -22,6 +22,7 @@ import static software.wings.sm.states.EcsServiceDeploy.ECS_SERVICE_DEPLOY;
 import static java.util.Collections.singletonList;
 
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -68,6 +69,7 @@ public class EcsServiceRollback extends State {
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private ContainerDeploymentManagerHelper containerDeploymentHelper;
   @Inject private FeatureFlagService featureFlagService;
+  private String accountId;
 
   public EcsServiceRollback(String name) {
     super(name, StateType.ECS_SERVICE_ROLLBACK.name());
@@ -129,6 +131,8 @@ public class EcsServiceRollback extends State {
                                                   .withActivityId(activity.getUuid())
                                                   .build();
 
+    accountId = deployDataBag.getApp().getAccountId();
+
     EcsResizeParams resizeParams =
         anEcsResizeParams()
             .withClusterName(deployDataBag.getContainerElement().getClusterName())
@@ -146,23 +150,24 @@ public class EcsServiceRollback extends State {
             .withRollbackAllPhases(getRollbackAtOnce(deployDataBag))
             .withPreviousAwsAutoScalarConfigs(deployDataBag.getContainerElement().getPreviousAwsAutoScalarConfigs())
             .withContainerServiceName(deployDataBag.getContainerElement().getNewEcsServiceName())
-            .withEcsAutoscalarRedesignEnabled(
-                featureFlagService.isEnabled(ECS_AUTOSCALAR_REDESIGN, deployDataBag.getApp().getAccountId()))
+            .withEcsAutoscalarRedesignEnabled(featureFlagService.isEnabled(ECS_AUTOSCALAR_REDESIGN, accountId))
             .withIsLastDeployPhase(context.isLastPhase(true))
+            .withFFMaxDesiredCountEnabled(
+                featureFlagService.isEnabled(FeatureName.ECS_ROLLBACK_MAX_DESIRED_COUNT, accountId))
             .build();
 
-    EcsServiceDeployRequest request = EcsServiceDeployRequest.builder()
-                                          .accountId(deployDataBag.getApp().getAccountId())
-                                          .appId(deployDataBag.getApp().getUuid())
-                                          .commandName(ECS_SERVICE_DEPLOY)
-                                          .activityId(activity.getUuid())
-                                          .region(deployDataBag.getRegion())
-                                          .cluster(deployDataBag.getEcsInfrastructureMapping().getClusterName())
-                                          .awsConfig(deployDataBag.getAwsConfig())
-                                          .ecsResizeParams(resizeParams)
-                                          .timeoutErrorSupported(featureFlagService.isEnabled(
-                                              TIMEOUT_FAILURE_SUPPORT, deployDataBag.getApp().getAccountId()))
-                                          .build();
+    EcsServiceDeployRequest request =
+        EcsServiceDeployRequest.builder()
+            .accountId(accountId)
+            .appId(deployDataBag.getApp().getUuid())
+            .commandName(ECS_SERVICE_DEPLOY)
+            .activityId(activity.getUuid())
+            .region(deployDataBag.getRegion())
+            .cluster(deployDataBag.getEcsInfrastructureMapping().getClusterName())
+            .awsConfig(deployDataBag.getAwsConfig())
+            .ecsResizeParams(resizeParams)
+            .timeoutErrorSupported(featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, accountId))
+            .build();
 
     DelegateTask delegateTask = ecsStateHelper.createAndQueueDelegateTaskForEcsServiceDeploy(
         deployDataBag, request, activity, delegateService, isSelectionLogsTrackingForTasksEnabled());

@@ -16,6 +16,10 @@ import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.ListFilesInCommitRequest;
+import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -47,9 +51,9 @@ import java.util.Set;
 @OwnedBy(DX)
 public interface ScmClient {
   // It is assumed that ScmConnector is a decrypted connector.
-  CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
+  CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient);
 
-  UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
+  UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient);
 
   DeleteFileResponse deleteFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
 
@@ -64,7 +68,9 @@ public interface ScmClient {
 
   FindFilesInBranchResponse findFilesInBranch(ScmConnector scmConnector, String branchName);
 
-  FindFilesInCommitResponse findFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails);
+  FindFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, GitFilePathDetails gitFilePathDetails);
+
+  ListFilesInCommitResponse listFilesInCommit(ScmConnector scmConnector, ListFilesInCommitRequest request);
 
   GetLatestCommitResponse getLatestCommit(ScmConnector scmConnector, String branchName, String ref);
 
@@ -113,4 +119,6 @@ public interface ScmClient {
       ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken);
 
   GetLatestCommitOnFileResponse getLatestCommitOnFile(ScmConnector scmConnector, String branchName, String filepath);
+
+  GitFileResponse getFile(ScmConnector scmConnector, GitFileRequest gitFileContentRequest);
 }

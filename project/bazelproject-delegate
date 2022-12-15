@@ -5,7 +5,6 @@ directories:
   400-rest
   420-delegate-agent
   420-delegate-service
-  460-capability
   470-alert
   910-delegate-service-driver
   910-delegate-task-grpc-service
@@ -28,5 +27,6 @@ directories:
 import_run_configurations:
   project/run-configurations/DelegateApp.xml
   project/run-configurations/DelegateAgentApp.xml
+  project/run-configurations/DelegatePlatformApp.xml
   project/run-configurations/WingsApp.xml
   project/run-configurations/DataGenApp.xml

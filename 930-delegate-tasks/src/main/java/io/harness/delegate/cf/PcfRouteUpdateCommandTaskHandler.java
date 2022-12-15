@@ -111,7 +111,6 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
                   cfCommandRequest.isUseCfCLI(), cfCommandRequest.getCfCliVersion()))
               .cfCliVersion(cfCommandRequest.getCfCliVersion())
               .limitPcfThreads(cfCommandRequest.isLimitPcfThreads())
-              .ignorePcfConnectionContextCache(cfCommandRequest.isIgnorePcfConnectionContextCache())
               .build();
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =

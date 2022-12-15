@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.SettingAttribute;
@@ -93,7 +94,7 @@ public class ScalyrState extends AbstractLogAnalysisState {
             .dataUrl(ScalyrConfig.QUERY_URL)
             .headers(headers)
             .options(new HashMap<>())
-            .body(scalyrConfig.fetchLogBodyMap(false))
+            .jsonBody(JsonUtils.asJson(scalyrConfig.fetchLogBodyMap(false)))
             .encryptedDataDetails(secretManager.getEncryptionDetails(scalyrConfig, context.getAppId(), accountId))
             .query(getRenderedQuery())
             .hosts(hosts)

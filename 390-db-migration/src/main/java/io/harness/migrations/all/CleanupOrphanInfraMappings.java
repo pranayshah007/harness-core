@@ -42,7 +42,7 @@ public class CleanupOrphanInfraMappings implements Migration {
 
   public void migrate() {
     logInfo("The Beginning");
-    final List<Account> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+    final List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : allAccounts) {
       final String accountId = account.getUuid();
       logInfo("The Beginning for accountId " + accountId);

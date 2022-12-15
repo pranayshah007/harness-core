@@ -9,9 +9,11 @@ package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
@@ -22,8 +24,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
+import io.harness.delegate.task.shell.CommandTaskParameters;
+import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
@@ -31,6 +36,8 @@ import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.delegate.task.winrm.FileBasedWinRmExecutorNG;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -59,13 +66,9 @@ public class WinRmCopyCommandHandlerTest {
   @Mock private EncryptedDataDetail encryptedDataDetail;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private Map<String, Object> taskContext;
-  ;
-  final List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
   @InjectMocks private WinRmCopyCommandHandler winRmCopyCommandHandler;
 
-  final CopyCommandUnit copyArtifactCommandUnit =
-      CopyCommandUnit.builder().name("test").sourceType(FileSourceType.ARTIFACT).destinationPath("/test").build();
   final CopyCommandUnit copyConfigCommandUnit =
       CopyCommandUnit.builder().name("test").sourceType(FileSourceType.CONFIG).destinationPath("/test").build();
 
@@ -94,6 +97,45 @@ public class WinRmCopyCommandHandlerTest {
                                             CommandUnitsProgress.builder().build(), taskContext)
                                         .getStatus();
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleThrowsExceptionWrongTaskParameters() {
+    CommandTaskParameters wrongTaskParameters = SshCommandTaskParameters.builder().build();
+    assertThatThrownBy(()
+                           -> winRmCopyCommandHandler.handle(wrongTaskParameters, copyConfigCommandUnit,
+                               iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid task parameters submitted for command task.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleThrowsExceptionWrongCommandUnit() {
+    CommandTaskParameters taskParameters = WinrmTaskParameters.builder().build();
+    NgCleanupCommandUnit ngCleanupCommandUnit = NgCleanupCommandUnit.builder().build();
+
+    assertThatThrownBy(()
+                           -> winRmCopyCommandHandler.handle(taskParameters, ngCleanupCommandUnit,
+                               iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid command unit specified for command task.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleThrowsExceptionEmptyDestinationPath() {
+    CommandTaskParameters taskParameters = WinrmTaskParameters.builder().build();
+    CopyCommandUnit copyConfigCommandUnit = CopyCommandUnit.builder().build();
+
+    assertThatThrownBy(()
+                           -> winRmCopyCommandHandler.handle(taskParameters, copyConfigCommandUnit,
+                               iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
+        .isInstanceOf(HintException.class);
   }
 
   private WinrmTaskParameters getWinrmTaskParameters(

@@ -8,7 +8,31 @@ set -xe
 export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
 echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
 
-export VERSION_FILE=build.properties
+service_folders=("pipeline-service" "access-control" "platform-service" )
+
+#Need confirmation for below services reference path of build.properties
+#"ce-nextgen" "260-delegate" "315-sto-manager" "debezium-service"
+
+if [[ "${BRANCH_PREFIX}" != "release/" ]]
+  then
+    export VERSION_FILE=build.properties
+else
+  for i in "${service_folders[@]}"; do
+    if [[ "${ghprbTargetBranch}" == "release/$i/"* ]]; then
+        export VERSION_FILE=$i/build.properties
+        break
+    elif [[ "${ghprbTargetBranch}" == "release/ci-manager/"* ]]; then
+      export VERSION_FILE=332-ci-manager/build.properties
+      break
+    elif [[ "${ghprbTargetBranch}" == "release/delegate/"* ]]; then
+      export VERSION_FILE=260-delegate/build.properties
+      break
+    else
+      export VERSION_FILE=build.properties
+    fi
+  done
+fi
+
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 echo "INFO: VERSION=$VERSION"

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;

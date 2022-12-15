@@ -33,6 +33,7 @@ public class CIManagerTimeScaleMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, CreateServiceAndCIExecutionIndex.class))
+        .add(Pair.of(2, CreateTimescaleCIStageTableWhereNotExist.class))
         .build();
   }
 }

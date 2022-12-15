@@ -17,7 +17,7 @@ import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.FunctorException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import com.google.inject.Inject;
@@ -38,18 +38,31 @@ import org.apache.commons.io.FileUtils;
 public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
   private static final String JSON_PLAN_PREFIX = "tfPlan";
   private static final String JSON_PLAN_SUFFIX = ".json";
+  private static final String HUMAN_READABLE_PLAN_PREFIX = "tfHumanReadablePlan";
+  private static final String HUMAN_READABLE_PLAN_SUFFIX = ".txt";
 
   @Builder
   static class TerraformPlan implements TerraformPlanExpressionInterface {
     private String jsonPlanFilePath;
+    private String humanReadableFilePath;
 
     @Override
     public String jsonFilePath() {
       return jsonPlanFilePath;
     }
 
+    @Override
+    public String humanReadableFilePath() {
+      return humanReadableFilePath;
+    }
+
     public void cleanup() {
-      FileUtils.deleteQuietly(new File(jsonPlanFilePath));
+      if (jsonPlanFilePath != null) {
+        FileUtils.deleteQuietly(new File(jsonPlanFilePath));
+      }
+      if (humanReadableFilePath != null) {
+        FileUtils.deleteQuietly(new File(humanReadableFilePath));
+      }
     }
   }
 
@@ -74,6 +87,20 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
     return tfPlan;
   }
 
+  public TerraformPlan obtainHumanReadablePlan(String fileId, int token) {
+    if (expressionFunctorToken != token) {
+      throw new FunctorException("Inappropriate usage of internal functor");
+    }
+
+    if (cache.containsKey(fileId)) {
+      return cache.get(fileId);
+    }
+
+    TerraformPlan tfPlan = downloadHumanReadablePlan(fileId);
+    cache.put(fileId, tfPlan);
+    return tfPlan;
+  }
+
   public void cleanup() {
     if (isNotEmpty(cache)) {
       cache.values().forEach(TerraformPlan::cleanup);
@@ -88,6 +115,19 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
       Files.copy(decompressInputStream, outputFilePath, StandardCopyOption.REPLACE_EXISTING);
 
       return TerraformPlan.builder().jsonPlanFilePath(outputFilePath.toString()).build();
+    } catch (IOException e) {
+      throw new FunctorException(
+          format("Failed to download file '%s'", fileId), ExceptionMessageSanitizer.sanitizeException(e));
+    }
+  }
+  private TerraformPlan downloadHumanReadablePlan(String fileId) {
+    try (InputStream inputStream =
+             delegateFileManager.downloadByFileId(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN, fileId, accountId);
+         InputStream decompressInputStream = new GZIPInputStream(inputStream)) {
+      Path outputFilePath = Files.createTempFile(HUMAN_READABLE_PLAN_PREFIX, HUMAN_READABLE_PLAN_SUFFIX);
+      Files.copy(decompressInputStream, outputFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+      return TerraformPlan.builder().humanReadableFilePath(outputFilePath.toString()).build();
     } catch (IOException e) {
       throw new FunctorException(
           format("Failed to download file '%s'", fileId), ExceptionMessageSanitizer.sanitizeException(e));

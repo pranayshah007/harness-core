@@ -163,4 +163,23 @@ public class NexusClientImpl {
       return nexusThreeService.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     }
   }
+
+  public List<BuildDetailsInternal> getPackageNames(NexusRequest nexusConfig, String repository, String groupName) {
+    if (isNexusVersion2(nexusConfig)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
+          "Nexus 2.x connector does not support raw artifact type.",
+          new NexusRegistryException(
+              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+    } else {
+      try {
+        return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repository, groupName);
+      } catch (IOException | NexusRegistryException e) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Please check Nexus artifact configuration and verify that repository is valid.",
+            String.format("Failed to retrieve repository '%s'", repository),
+            new NexusRegistryException(e.getMessage()));
+      }
+    }
+  }
 }

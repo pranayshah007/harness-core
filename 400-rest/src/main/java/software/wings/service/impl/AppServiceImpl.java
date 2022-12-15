@@ -10,6 +10,8 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.data.structure.CollectionUtils.trimmedLowercaseSet;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -26,6 +28,7 @@ import static software.wings.beans.Role.Builder.aRole;
 import static software.wings.beans.RoleType.APPLICATION_ADMIN;
 import static software.wings.beans.RoleType.NON_PROD_SUPPORT;
 import static software.wings.beans.RoleType.PROD_SUPPORT;
+import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -103,8 +106,8 @@ import software.wings.service.intfc.ownership.OwnedByApplication;
 import software.wings.service.intfc.template.TemplateService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.service.intfc.yaml.YamlPushService;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -395,6 +398,11 @@ public class AppServiceImpl implements AppService {
       operations.set(ApplicationKeys.areWebHookSecretsMandated, app.getAreWebHookSecretsMandated());
     }
 
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, savedApp.getAccountId())
+        && app.getDisableTriggers() != null) {
+      operations.set(ApplicationKeys.disableTriggers, app.getDisableTriggers());
+    }
+
     setUnset(operations, "description", app.getDescription());
 
     PersistenceValidator.duplicateCheck(
@@ -475,6 +483,10 @@ public class AppServiceImpl implements AppService {
   @Override
   public void delete(String appId) {
     delete(appId, false);
+    String accountIdByAppId = getAccountIdByAppId(appId);
+    if (featureFlagService.isEnabled(PURGE_DANGLING_APP_ENV_REFS, accountIdByAppId)) {
+      usageRestrictionsService.purgeDanglingAppEnvReferences(accountIdByAppId, ALL);
+    }
   }
 
   @Override
@@ -630,5 +642,10 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<Application> getAppsByIds(Set<String> appIds) {
     return wingsPersistence.createQuery(Application.class).field(ApplicationKeys.appId).hasAnyOf(appIds).asList();
+  }
+
+  @Override
+  public Boolean getDisableTriggersByAppId(String appId) {
+    return get(appId).getDisableTriggers();
   }
 }

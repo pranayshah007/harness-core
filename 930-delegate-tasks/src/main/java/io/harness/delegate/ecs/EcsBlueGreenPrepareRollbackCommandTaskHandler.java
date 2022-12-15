@@ -86,6 +86,11 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
               .parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass())
               .build();
 
+      // update EcsLoadBalancerConfig with default listener rules if listener rules provided are empty
+      ecsCommandTaskHelper.updateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty(
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig(), awsInternalConfig, ecsInfraConfig,
+          prepareRollbackDataLogCallback);
+
       prepareRollbackDataLogCallback.saveExecutionLog(
           format("Fetching Target group for ELB Prod Listener: %s ",
               ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn()),
@@ -150,8 +155,15 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
           && ecsCommandTaskHelper.isServiceActive(optionalService.get())) { // If service exists
         Service service = optionalService.get();
 
+        Integer maxDesiredCount = service.desiredCount();
+        // compare max desired count with current desired count
+        if (createServiceRequest.desiredCount() != null) {
+          maxDesiredCount = Math.max(maxDesiredCount, createServiceRequest.desiredCount());
+        }
+        Service updatedService = service.toBuilder().desiredCount(maxDesiredCount).build();
+
         // Get createServiceRequestBuilderString from service
-        String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(service);
+        String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(updatedService);
         prepareRollbackDataLogCallback.saveExecutionLog(
             format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
 

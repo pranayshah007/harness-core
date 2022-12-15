@@ -24,6 +24,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -42,6 +43,7 @@ public class SecretNGManagerClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
+  @Singleton
   private SecretNGManagerHttpClientFactory privilegedSecretNGManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new SecretNGManagerHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
@@ -50,6 +52,7 @@ public class SecretNGManagerClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
+  @Singleton
   private SecretNGManagerHttpClientFactory nonPrivilegedSecretNGManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new SecretNGManagerHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),

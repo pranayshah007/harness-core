@@ -22,7 +22,7 @@ import static software.wings.api.ServiceTemplateElement.Builder.aServiceTemplate
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.ContextElement.ARTIFACT;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.states.HttpState.Builder.aHttpState;
@@ -69,7 +69,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskPackage;
-import io.harness.delegate.task.DelegateRunnableTask;
+import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.exception.FailureType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.http.HttpServiceImpl;

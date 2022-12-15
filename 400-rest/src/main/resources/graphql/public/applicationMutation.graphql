@@ -57,6 +57,7 @@ input CreateApplicationInput {
   isManualTriggerAuthorized: Boolean
   # Beta: When this WebhookSecrets flag is set to true for an application, webhook secrets are mandated for github triggers.
   areWebHookSecretsMandated: Boolean
+  disableTriggers: Boolean
 }
 input UpdateApplicationInput {
   clientMutationId: String
@@ -68,6 +69,7 @@ input UpdateApplicationInput {
   isManualTriggerAuthorized: Boolean
   # Beta: When this WebhookSecrets flag is set to true for an application, webhook secrets are mandated for github triggers.
   areWebHookSecretsMandated: Boolean
+  disableTriggers: Boolean
 }
 
 input DeleteApplicationInput {

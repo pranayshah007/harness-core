@@ -45,6 +45,11 @@ public class JiraProjectNG extends JiraProjectBasicNG {
     addIssueTypes(node.get("issuetypes"));
   }
 
+  public JiraProjectNG(JiraIssueCreateMetadataNGIssueTypes jiraIssueCreateMetadataNGIssueTypes) {
+    jiraIssueCreateMetadataNGIssueTypes.getIssueTypes().values().forEach(
+        issueType -> this.issueTypes.put(issueType.getName(), issueType));
+  }
+
   private void addIssueTypes(JsonNode node) {
     if (node == null || !node.isArray()) {
       return;

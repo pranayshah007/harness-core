@@ -42,7 +42,6 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -102,7 +101,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testCreateService() throws IOException {
+  public void testCreateService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
@@ -119,7 +118,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testCreateServices() throws IOException {
+  public void testCreateServices() {
     List<ServiceRequestDTO> serviceRequestDTOList = new ArrayList<>();
     List<ServiceEntity> serviceEntityList = new ArrayList<>();
     List<ServiceEntity> outputServiceEntitiesList = new ArrayList<>();
@@ -160,7 +159,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testUpdateService() throws IOException {
+  public void testUpdateService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
@@ -175,7 +174,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testUpsertService() throws IOException {
+  public void testUpsertService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);

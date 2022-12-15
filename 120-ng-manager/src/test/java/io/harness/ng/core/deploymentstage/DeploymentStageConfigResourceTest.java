@@ -14,8 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.creator.plan.stage.CDStageMetaDataDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -47,7 +48,11 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return asList(new Object[][] {{"deploymentstage/cdStageWithSvcEnvV1.yaml", "service1a", "environment1a"},
-        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "service2", "environment2"}});
+        {"deploymentstage/cdParallelStagesWithInheritedService.yaml", "S1", "EnvFromStage2"},
+        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"},
+        {"deploymentstage/cdStageWithSvcEnvV1WithRuntime.yaml", "<+input>", "environment1a"},
+        {"deploymentstage/cdParallelStagesWithInheritedServiceWithRuntime.yaml", "<+input>", "<+variable>"},
+        {"deploymentstage/cdStageWithSvcEnvV2WithRuntime.yaml", "<+variable>", "Env2"}});
   }
 
   @Test
@@ -55,8 +60,11 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCdStageMetadata() throws IOException {
     final String cdStageYaml = readFile(cdStageYamlFilePath);
+    CdDeployStageMetadataRequestDTO requestDTO =
+        CdDeployStageMetadataRequestDTO.builder().stageIdentifier("S2").pipelineYaml(cdStageYaml).build();
+
     final ResponseDTO<CDStageMetaDataDTO> cdStageMetadata =
-        deploymentStageConfigResource.getCdDeployStageMetadata(cdStageYaml);
+        deploymentStageConfigResource.getCdDeployStageMetadata(requestDTO);
 
     assertThat(cdStageMetadata.getData().getServiceRef()).isEqualTo(expectedSvcRef);
     assertThat(cdStageMetadata.getData().getEnvironmentRef()).isEqualTo(expectedEnvRef);

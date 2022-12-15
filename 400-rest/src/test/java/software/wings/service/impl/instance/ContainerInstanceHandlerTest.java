@@ -18,10 +18,10 @@ import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
 import static software.wings.beans.infrastructure.instance.InstanceType.ECS_CONTAINER_INSTANCE;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
@@ -103,7 +103,6 @@ import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
@@ -121,6 +120,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.instance.sync.ContainerSync;
 import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;

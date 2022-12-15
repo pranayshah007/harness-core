@@ -7,10 +7,8 @@
 
 package io.harness.delegate.task.shell;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
-
-import static software.wings.common.Constants.WINDOWS_HOME_DIR;
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWorkingDir;
 
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -19,8 +17,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.winrm.WinRmConfigAuthEnhancer;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
@@ -160,7 +158,7 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
                                                   .accountId(taskParameters.getAccountId())
                                                   .executionId(taskParameters.getExecutionId())
-                                                  .workingDirectory(WINDOWS_HOME_DIR)
+                                                  .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
                                                   .commandUnitName(INIT_UNIT)
                                                   .environment(taskParameters.getEnvironmentVariables())
                                                   .hostname(taskParameters.getHost())
@@ -188,7 +186,7 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
     WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
                                                   .accountId(taskParameters.getAccountId())
                                                   .executionId(taskParameters.getExecutionId())
-                                                  .workingDirectory(taskParameters.getWorkingDirectory())
+                                                  .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
                                                   .commandUnitName(COMMAND_UNIT)
                                                   .environment(taskParameters.getEnvironmentVariables())
                                                   .hostname(taskParameters.getHost())
@@ -268,6 +266,6 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
         + "    Write-Host \"${RUNTIME_PATH} Folder already exists.\"%n"
         + "}";
 
-    return String.format(script, isNotEmpty(workingDirectory) ? workingDirectory : WINDOWS_HOME_DIR);
+    return String.format(script, getWorkingDir(workingDirectory));
   }
 }

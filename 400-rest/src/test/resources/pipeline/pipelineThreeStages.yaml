@@ -50,3 +50,4 @@ pipelineStages:
     expression: ${app.defaults.BACKUP_PATH}=="test"
     type: CONDITIONAL_SKIP
   stageName: STAGE 1
+rollbackPreviousStages: false

@@ -9,15 +9,19 @@ package io.harness.ng.core.infrastructure.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.persistence.HIterator;
 import io.harness.repositories.UpsertOptions;
 
 import com.mongodb.client.result.UpdateResult;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,6 +40,9 @@ public interface InfrastructureEntityService {
 
   Page<InfrastructureEntity> list(@NotNull Criteria criteria, @NotNull Pageable pageable);
 
+  HIterator<InfrastructureEntity> listIterator(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, Collection<String> identifiers);
+
   boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
       @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
 
@@ -48,20 +55,18 @@ public interface InfrastructureEntityService {
   Page<InfrastructureEntity> bulkCreate(
       @NotEmpty String accountId, @NotNull List<InfrastructureEntity> infrastructureEntities);
 
-  InfrastructureEntity find(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
-
   List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String value, List<String> infraIdentifier);
 
   List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
-  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
+  List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  String createInfrastructureInputsFromYamlV2(String accountId, String orgIdentifier, String projectIdentifier,
-      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
+  String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll,
+      NoInputMergeInputAction noInputMergeInputAction);
 
   UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String envIdentifier, List<String> infraIdentifier, Update update);
@@ -71,4 +76,7 @@ public interface InfrastructureEntityService {
 
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String infraIdentifier);
+
+  InfrastructureInputsMergedResponseDto mergeInfraStructureInputs(String accountId, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String infraIdentifier, String oldInfrastructureInputsYaml);
 }

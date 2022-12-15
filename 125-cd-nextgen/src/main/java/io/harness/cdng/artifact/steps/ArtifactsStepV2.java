@@ -9,14 +9,13 @@ package io.harness.cdng.artifact.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
@@ -30,52 +29,70 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
+import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.exception.NGTemplateResolveException;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepUtils;
+import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -83,21 +100,23 @@ import lombok.extern.slf4j.Slf4j;
  * Fetch all artifacts ( primary + sidecars using async strategy and produce artifact outcome )
  */
 @Slf4j
-public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
+public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ARTIFACTS_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
+  private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
+  @Inject private KryoSerializer kryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -105,14 +124,40 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   }
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
-    final Optional<NGServiceV2InfoConfig> serviceOptional = cdStepHelper.fetchServiceConfigFromSweepingOutput(ambiance);
-    if (serviceOptional.isEmpty()) {
+  public void validateResources(Ambiance ambiance, EmptyStepParameters stepParameters) {
+    // nothing to validate here
+  }
+
+  @Override
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
+    NGServiceConfig ngServiceConfig = null;
+    try {
+      // get service merged with service inputs
+      String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
+      if (isEmpty(mergedServiceYaml)) {
+        return AsyncExecutableResponse.newBuilder().build();
+      }
+
+      // process artifact sources in service yaml and select primary
+      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
+
+      // resolve template refs in primary and sidecar artifacts
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+      mergedServiceYaml =
+          resolveArtifactSourceTemplateRefs(accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
+      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Failed to read Service yaml into config - ", ex);
+    }
+
+    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
       return AsyncExecutableResponse.newBuilder().build();
     }
 
-    final NGServiceV2InfoConfig service = serviceOptional.get();
+    final NGServiceV2InfoConfig service = ngServiceConfig.getNgServiceV2InfoConfig();
 
     if (service.getServiceDefinition().getServiceSpec() == null
         || service.getServiceDefinition().getServiceSpec().getArtifacts() == null) {
@@ -122,34 +167,39 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
-    processArtifactSourcesIfPresent(artifacts);
-
     resolveExpressions(ambiance, artifacts);
 
     final Set<String> taskIds = new HashSet<>();
-    String primaryArtifactTaskId = null;
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    String primaryArtifactTaskId = null;
+
     if (artifacts.getPrimary() != null) {
-      if (shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec())) {
-        primaryArtifactTaskId = handle(
+      ACTION actionForPrimaryArtifact =
+          shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
+      if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
+        primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
-      } else {
+      } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
       }
     }
 
     if (isNotEmpty(artifacts.getSidecars())) {
-      for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
-        if (shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec())) {
-          String taskId = handle(
+      List<SidecarArtifactWrapper> sidecarList =
+          artifacts.getSidecars().stream().filter(sidecar -> sidecar.getSidecar() != null).collect(Collectors.toList());
+      for (SidecarArtifactWrapper sidecar : sidecarList) {
+        ACTION actionForSidecar =
+            shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
+        if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
+          String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
-        } else {
+        } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
         }
       }
@@ -161,28 +211,56 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
-  private void processArtifactSourcesIfPresent(ArtifactListConfig artifacts) {
-    if (artifacts.getPrimary() == null) {
-      return;
+  enum ACTION {
+    CREATE_DELEGATE_TASK,
+    RUN_SYNC,
+    SKIP;
+  }
+
+  private boolean isSpecAndSourceTypePresent(ArtifactListConfig artifacts) {
+    return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
+  }
+
+  public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
+      String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
+      long start = System.currentTimeMillis();
+      try {
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+                null, null, null, null, null, null, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(true)
+                    .getMergedYamlWithTemplateField(false)
+                    .build()));
+        return templateMergeResponseDTO.getMergedPipelineYaml();
+      } catch (InvalidRequestException e) {
+        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
+          throw new NGTemplateResolveException(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
+        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+          throw new NGTemplateResolveExceptionV2(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
+        } else {
+          throw new NGTemplateException(e.getMessage(), e);
+        }
+      } catch (NGTemplateResolveException e) {
+        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
+      } catch (NGTemplateResolveExceptionV2 e) {
+        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
+      } catch (UnexpectedException e) {
+        log.error("Error connecting to Template Service", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception e) {
+        log.error("Unknown exception in resolving templates", e);
+        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } finally {
+        log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
+      }
     }
-    PrimaryArtifact primary = artifacts.getPrimary();
-    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())
-        && !primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
-      Optional<ArtifactSource> primaryArtifact =
-          primary.getSources()
-              .stream()
-              .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
-              .findFirst();
-      primaryArtifact.ifPresent(p -> {
-        p.getSpec().setPrimaryArtifact(true);
-        p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
-        artifacts.setPrimary(PrimaryArtifact.builder()
-                                 .spec(p.getSpec())
-                                 .sourceType(p.getSourceType())
-                                 .metadata(p.getMetadata())
-                                 .build());
-      });
-    }
+    return yaml;
   }
 
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
@@ -237,8 +315,15 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
       switch (taskResponse.getCommandExecutionStatus()) {
         case SUCCESS:
-          ArtifactOutcome artifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig,
-              taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0), true);
+
+          ArtifactDelegateResponse artifactDelegateResponses = null;
+          if (!EmptyPredicate.isEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
+            artifactDelegateResponses =
+                taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0);
+          }
+
+          ArtifactOutcome artifactOutcome =
+              ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponses, true);
           if (isPrimary) {
             outcomeBuilder.primary(artifactOutcome);
           } else {
@@ -282,8 +367,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 
-  private String handle(final Ambiance ambiance, final NGLogCallback logCallback, final ArtifactConfig artifactConfig,
-      final ArtifactSourceType sourceType, final boolean isPrimary) {
+  private String createDelegateTask(final Ambiance ambiance, final NGLogCallback logCallback,
+      final ArtifactConfig artifactConfig, final ArtifactSourceType sourceType, final boolean isPrimary) {
     if (isPrimary) {
       logCallback.saveExecutionLog("Processing primary artifact...");
       logCallback.saveExecutionLog(
@@ -307,15 +392,22 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
 
-    final DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.builder()
-            .accountId(AmbianceUtils.getAccountId(ambiance))
-            .taskParameters(taskParameters)
-            .taskSelectors(delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()))
-            .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
-            .executionTimeout(DEFAULT_TIMEOUT)
-            .taskSetupAbstraction("ng", "true")
-            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
+                                  .parameters(new Object[] {taskParameters})
+                                  .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
+                                  .timeout(DEFAULT_TIMEOUT)
+                                  .build();
+
+    String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
+        + taskParameters.getArtifactTaskType().getDisplayName();
+
+    TaskRequest taskRequest = StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
+        taskRequest, taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()));
 
     return delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
   }
@@ -334,7 +426,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
           LogColor.Cyan, LogWeight.Bold));
     }
     if (taskResponse != null && taskResponse.getArtifactTaskExecutionResponse() != null
-        && taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses() != null) {
+        && EmptyPredicate.isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
       logCallback.saveExecutionLog(LogHelper.color(
           taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
           LogColor.Green, LogWeight.Bold));
@@ -344,12 +436,15 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     }
   }
 
-  public boolean shouldCreateDelegateTask(ArtifactSourceType type, ArtifactConfig config) {
+  public ACTION shouldCreateDelegateTask(ArtifactSourceType type, ArtifactConfig config) {
+    if (type == null || config == null) {
+      return ACTION.SKIP;
+    }
     if (ArtifactSourceType.CUSTOM_ARTIFACT != type) {
-      return true;
+      return ACTION.CREATE_DELEGATE_TASK;
     }
     if (((CustomArtifactConfig) config).getScripts() == null) {
-      return false;
+      return ACTION.RUN_SYNC;
     } else {
       CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) ((CustomArtifactConfig) config)
                                                               .getScripts()
@@ -357,11 +452,9 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                               .getShellScriptBaseStepInfo()
                                                               .getSource()
                                                               .getSpec();
-      if (isEmpty(customScriptInlineSource.getScript().getValue().trim())) {
-        return false;
-      }
+      return !isEmpty(customScriptInlineSource.getScript().getValue().trim()) ? ACTION.CREATE_DELEGATE_TASK
+                                                                              : ACTION.RUN_SYNC;
     }
-    return true;
   }
 
   private boolean nonDelegateTaskArtifactsExist(OptionalSweepingOutput outputOptional) {

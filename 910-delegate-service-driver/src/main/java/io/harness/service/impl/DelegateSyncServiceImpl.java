@@ -48,6 +48,7 @@ import org.jooq.tools.StringUtils;
 public class DelegateSyncServiceImpl implements DelegateSyncService {
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
 
   @VisibleForTesting public final ConcurrentMap<String, AtomicLong> syncTaskWaitMap = new ConcurrentHashMap<>();
@@ -124,10 +125,15 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
     }
 
     if (disableDeserialization) {
-      return (T) BinaryResponseData.builder().data(taskResponse.getResponseData()).build();
+      return (T) BinaryResponseData.builder()
+          .data(taskResponse.getResponseData())
+          .usingKryoWithoutReference(taskResponse.isUsingKryoWithoutReference())
+          .build();
     }
     // throw exception here
-    Object response = kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    Object response = taskResponse.isUsingKryoWithoutReference()
+        ? referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
+        : kryoSerializer.asInflatedObject(taskResponse.getResponseData());
     if (response instanceof ErrorNotifyResponseData) {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
       // if task registered to error handling framework on delegate, then exception won't be null
@@ -136,6 +142,8 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
       }
     }
 
-    return (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    return taskResponse.isUsingKryoWithoutReference()
+        ? (T) referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
+        : (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
   }
 }

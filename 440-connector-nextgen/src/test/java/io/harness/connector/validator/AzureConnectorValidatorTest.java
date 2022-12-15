@@ -37,6 +37,7 @@ import io.harness.connector.task.azure.AzureNgConfigMapper;
 import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
@@ -244,7 +245,7 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     AzureValidationHandler azureValidationHandler = mock(AzureValidationHandler.class);
     on(azureValidationHandler).set("azureNgConfigMapper", azureNgConfigMapper);
     on(azureValidationHandler).set("azureAuthorizationClient", azureAuthorizationClient);
-    when(azureValidationHandler.validate(any(), any())).thenCallRealMethod();
+    when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
     when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();
@@ -288,7 +289,7 @@ public class AzureConnectorValidatorTest extends CategoryTest {
                 .message(
                     "Connector with credential type InheritFromDelegate does not support validation through harness")
                 .build());
-    when(azureValidationHandler.validate(any(), any())).thenCallRealMethod();
+    when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
     when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();

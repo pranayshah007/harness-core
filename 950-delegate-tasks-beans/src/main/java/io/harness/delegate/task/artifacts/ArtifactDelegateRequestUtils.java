@@ -10,10 +10,13 @@ package io.harness.delegate.task.artifacts;
 import static software.wings.utils.RepositoryType.generic;
 
 import static java.util.Objects.isNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
@@ -23,6 +26,9 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
@@ -37,11 +43,14 @@ import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -133,7 +142,7 @@ public class ArtifactDelegateRequestUtils {
       String imagePath, String repositoryFormat, String artifactRepositoryUrl, String tag, String tagRegex,
       String connectorRef, NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
       ArtifactSourceType sourceType, String groupId, String artifactName, String extension, String classifier,
-      String packageName) {
+      String packageName, String group) {
     return NexusArtifactDelegateRequest.builder()
         .repositoryName(repositoryName)
         .repositoryPort(repositoryPort)
@@ -151,6 +160,7 @@ public class ArtifactDelegateRequestUtils {
         .extension(extension)
         .classifier(classifier)
         .packageName(packageName)
+        .group(group)
         .build();
   }
 
@@ -229,6 +239,23 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
+  public JenkinsArtifactDelegateRequest getJenkinsDelegateArtifactRequest(String connectorRef,
+      JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
+      List<String> artifactPath, String BuildNumber) {
+    return JenkinsArtifactDelegateRequest.builder()
+        .connectorRef(connectorRef)
+        .jenkinsConnectorDTO(jenkinsConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .jobDetails(jobDetails)
+        .parentJobName(parentJobName)
+        .jobName(jobName)
+        .artifactPaths(artifactPath)
+        .buildNumber(BuildNumber)
+        .build();
+  }
+
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(String connectorRef,
       JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
       ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
@@ -281,6 +308,30 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId,
+      Map<String, EncryptionConfig> encryptionConfigs, Map<String, SecretDetail> secretDetails, int expressionToken) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(type)
+        .versionPath(versionPath)
+        .script(script)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
+        .encryptionConfigs(encryptionConfigs)
+        .secretDetails(secretDetails)
+        .expressionFunctorToken(expressionToken)
+        .build();
+  }
+
   private String trim(String str) {
     return str == null ? null : str.trim();
   }
@@ -317,6 +368,40 @@ public class ArtifactDelegateRequestUtils {
         .packageName(packageName)
         .version(version)
         .versionRegex(versionRegex)
+        .sourceType(artifactSourceType)
+        .build();
+  }
+
+  public static AMIArtifactDelegateRequest getAMIArtifactDelegateRequest(List<AMITag> tags, List<AMIFilter> filters,
+      String region, String version, String versionRegex, String connectorRef, AwsConnectorDTO awsConnectorDTO,
+      List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType artifactSourceType) {
+    Map<String, List<String>> tagMap = new HashMap<>();
+
+    Map<String, String> filterMap = new HashMap<>();
+
+    if (tags != null) {
+      Map<String, List<AMITag>> collect = tags.stream().collect(Collectors.groupingBy(AMITag::getName));
+      tagMap = tags.stream()
+                   .collect(Collectors.groupingBy(AMITag::getName))
+                   .keySet()
+                   .stream()
+                   .collect(Collectors.toMap(identity(),
+                       s -> collect.get(s).stream().map(tag -> tag.getValue()).collect(toList()), (a, b) -> b));
+    }
+
+    if (filters != null) {
+      filterMap = filters.stream().collect(Collectors.toMap(AMIFilter::getName, AMIFilter::getValue, (a, b) -> b));
+    }
+
+    return AMIArtifactDelegateRequest.builder()
+        .awsConnectorDTO(awsConnectorDTO)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptionDetails)
+        .version(version)
+        .versionRegex(versionRegex)
+        .region(region)
+        .tags(tagMap)
+        .filters(filterMap)
         .sourceType(artifactSourceType)
         .build();
   }

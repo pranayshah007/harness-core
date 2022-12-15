@@ -17,10 +17,12 @@ import io.harness.ModuleType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -142,6 +144,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(CILicenseService.class).to(CILicenseNoopServiceImpl.class);
       }
     });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+      }
+    });
 
     modules.add(new AbstractModule() {
       @Override
@@ -226,6 +234,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .liteEngineImage("harness/ci-lite-engine:1.4.0")
                                                  .pvcDefaultStorageSize(25600)
                                                  .stepConfig(ciStepConfig)
+                                                 .queueServiceClient(QueueServiceClient.builder().build())
                                                  .build(),
         false));
 

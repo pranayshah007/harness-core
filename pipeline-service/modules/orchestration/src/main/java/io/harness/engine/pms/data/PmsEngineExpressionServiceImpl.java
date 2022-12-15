@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
@@ -27,6 +27,12 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck) {
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
     return evaluator.renderExpression(expression, skipUnresolvedExpressionsCheck);
+  }
+
+  @Override
+  public String renderExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode) {
+    EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
+    return evaluator.renderExpression(expression, expressionMode);
   }
 
   @Override

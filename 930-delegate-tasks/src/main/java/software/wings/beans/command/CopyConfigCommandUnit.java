@@ -23,11 +23,11 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.task.shell.ConfigFileMetaData;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
-import software.wings.beans.ConfigFileDto;
 import software.wings.beans.Log;
+import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.delegatetasks.DelegateConfigService;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.delegatetasks.DelegateLogService;

@@ -7,15 +7,16 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.TemplateServiceConfiguration.getResourceClasses;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.collect.ImmutableMap.of;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.exception.GeneralException;
@@ -45,6 +46,7 @@ import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
@@ -222,6 +224,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerRequestContextFilter(environment);
     registerAuthFilters(templateServiceConfiguration, environment, injector);
     registerCorrelationFilter(environment, injector);
+    registerApiResponseFilter(environment, injector);
 
     if (templateServiceConfiguration.isShouldDeployWithGitSync()) {
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
@@ -309,6 +312,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
   }
 
   private void registerMigrations(Injector injector) {

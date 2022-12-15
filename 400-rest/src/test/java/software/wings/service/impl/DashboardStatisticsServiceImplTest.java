@@ -15,9 +15,11 @@ import static io.harness.rule.OwnerRule.ALEXANDRU_CIOFU;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static software.wings.beans.ObjectType.PHASE;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_1_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_2_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_3_ID;
@@ -48,6 +50,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_8_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_9_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_NAME;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_TYPE;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.INFRA_MAPPING_1_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.INFRA_MAPPING_1_NAME;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.INFRA_MAPPING_2_ID;
@@ -113,6 +116,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.SER
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.SERVICE_9_NAME;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.SERVICE_NAME;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+import static software.wings.utils.WingsTestConstants.ARTIFACTS_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_SOURCE_NAME;
@@ -168,7 +172,6 @@ import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
@@ -184,13 +187,17 @@ import software.wings.beans.instance.dashboard.InstanceSummaryStatsByService;
 import software.wings.beans.instance.dashboard.service.CurrentActiveInstances;
 import software.wings.beans.instance.dashboard.service.DeploymentHistory;
 import software.wings.beans.instance.dashboard.service.ServiceInstanceDashboard;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.AppPermissionSummaryForUI;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
+import software.wings.service.impl.instance.AggregationInfo;
+import software.wings.service.impl.instance.ArtifactInfo;
 import software.wings.service.impl.instance.CompareEnvironmentAggregationResponseInfo;
 import software.wings.service.impl.instance.DashboardStatisticsServiceImpl;
+import software.wings.service.impl.instance.EnvInfo;
 import software.wings.service.impl.instance.ServiceInfoResponseSummary;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
@@ -202,6 +209,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.instance.DashboardStatisticsService;
 import software.wings.sm.PipelineSummary;
+import software.wings.sm.StateExecutionInstance;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -243,6 +251,8 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
 
   @Inject private HPersistence persistence;
   @InjectMocks @Inject private DashboardStatisticsService dashboardService = spy(DashboardStatisticsServiceImpl.class);
+
+  @InjectMocks @Inject private DashboardStatisticsServiceImpl dashboardStatisticsService;
 
   private Instance instance1;
   private Instance instance2;
@@ -411,7 +421,7 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   }
 
   private WorkflowExecution buildWorkflowExecution(String workflowId) {
-    return WorkflowExecution.builder().uuid(workflowId).workflowId(workflowId).build();
+    return WorkflowExecution.builder().uuid(workflowId).workflowId(workflowId).appId(APP_1_ID).build();
   }
 
   private Instance buildInstance(String instanceId, String accountId, String appId, String serviceId, String envId,
@@ -1106,6 +1116,189 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
         .workflowId(WORKFLOW_ID)
         .uuid(uuid)
         .name(WORKFLOW_NAME)
+        .startTs(startTime)
+        .build();
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldReturnActiveInstancesWithSuccessDeployWhenLastWorkflowExecutionIsSuccess() {
+    long someTime = 1630969310005L;
+    long someTimeLater = 1630969317105L;
+
+    Artifact art = Artifact.Builder.anArtifact()
+                       .withBuildNo(BUILD_NO)
+                       .withUuid(ARTIFACT_ID)
+                       .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
+                       .withDisplayName(ARTIFACTS_NAME)
+                       .withArtifactStreamType("ARTIFACT")
+                       .build();
+
+    WorkflowExecution oldSuccessfulExecution =
+        createWorkflowExecutionWithArtifacts(WORKFLOW_EXECUTION_ID + "_old", someTime, ExecutionStatus.SUCCESS, art);
+    WorkflowExecution latestSuccessfulExecution = createWorkflowExecutionWithArtifacts(
+        WORKFLOW_EXECUTION_ID + "_new", someTimeLater, ExecutionStatus.SUCCESS, art);
+
+    ArtifactInfo artInfo = createArtifactInfo(art.getUuid(), art.getDisplayName(), art.getBuildNo(),
+        art.getArtifactStreamId(), art.getArtifactSourceName(), latestSuccessfulExecution.getUuid());
+    EnvInfo envInfo = createEnvInfo(ENV_1_ID, ENV_NAME, ENV_TYPE);
+
+    StateExecutionInstance stEI = StateExecutionInstance.Builder.aStateExecutionInstance()
+                                      .status(ExecutionStatus.SUCCESS)
+                                      .stateType(PHASE)
+                                      .executionUuid(WORKFLOW_EXECUTION_ID + "_new")
+                                      .rollback(true)
+                                      .build();
+
+    persistence.save(oldSuccessfulExecution);
+    persistence.save(latestSuccessfulExecution);
+    persistence.save(stEI);
+
+    Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
+        INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+
+    instance.setInstanceInfo(
+        K8sPodInfo.builder()
+            .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+            .build());
+
+    persistence.save(instance);
+
+    AggregationInfo aggInfo = createAggregationInfo(ENV_1_ID, art.getUuid(), envInfo, artInfo);
+
+    doReturn(oldSuccessfulExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(
+            ACCOUNT_1_ID, APP_1_ID, LAST_WORKFLOW_EXECUTION_1_ID, ENV_1_ID, SERVICE_1_ID, INFRA_MAPPING_1_ID);
+
+    doReturn(latestSuccessfulExecution)
+        .when(workflowExecutionService)
+        .getLastWorkflowExecution(
+            ACCOUNT_1_ID, APP_1_ID, LAST_WORKFLOW_EXECUTION_1_ID, ENV_1_ID, SERVICE_1_ID, INFRA_MAPPING_1_ID);
+    List<CurrentActiveInstances> activeList = dashboardStatisticsService.constructCurrentActiveInstances(
+        List.of(aggInfo), APP_1_ID, ACCOUNT_1_ID, SERVICE_1_ID);
+
+    assertThat(activeList).hasSize(1);
+    assertThat(activeList.get(0).getArtifact().getName()).isEqualTo(art.getDisplayName());
+    assertThat(activeList.get(0).getArtifact().getId()).isEqualTo(art.getUuid());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldReturnActiveInstancesWithSuccessDeployAndFailedRollbackWhenLastWorkflowExecutionFailed() {
+    long someTime = 1630969310005L;
+    long someTimeLater = 1630969317105L;
+
+    Artifact art = Artifact.Builder.anArtifact()
+                       .withBuildNo(BUILD_NO)
+                       .withUuid(ARTIFACT_ID)
+                       .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
+                       .withDisplayName(ARTIFACTS_NAME)
+                       .withArtifactStreamType("ARTIFACT")
+                       .build();
+
+    WorkflowExecution oldSuccessfulExecution =
+        createWorkflowExecutionWithArtifacts(WORKFLOW_EXECUTION_ID + "_old", someTime, ExecutionStatus.SUCCESS, art);
+    art.setUuid(ARTIFACT_ID + "new");
+    WorkflowExecution latestFailedExecution = createWorkflowExecutionWithArtifacts(
+        WORKFLOW_EXECUTION_ID + "_new", someTimeLater, ExecutionStatus.FAILED, art);
+
+    ArtifactInfo artInfo = createArtifactInfo(art.getUuid(), art.getDisplayName(), art.getBuildNo(),
+        art.getArtifactStreamId(), art.getArtifactSourceName(), oldSuccessfulExecution.getUuid());
+    EnvInfo envInfo = createEnvInfo(ENV_1_ID, ENV_NAME, ENV_TYPE);
+
+    StateExecutionInstance stEI = StateExecutionInstance.Builder.aStateExecutionInstance()
+                                      .status(ExecutionStatus.FAILED)
+                                      .stateType(PHASE)
+                                      .executionUuid(WORKFLOW_EXECUTION_ID + "_new")
+                                      .rollback(true)
+                                      .build();
+
+    persistence.save(oldSuccessfulExecution);
+    persistence.save(latestFailedExecution);
+    persistence.save(stEI);
+
+    Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
+        INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+
+    instance.setInstanceInfo(
+        K8sPodInfo.builder()
+            .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+            .build());
+
+    persistence.save(instance);
+
+    AggregationInfo aggInfo = createAggregationInfo(ENV_1_ID, art.getUuid(), envInfo, artInfo);
+
+    doReturn(oldSuccessfulExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(
+            ACCOUNT_1_ID, APP_1_ID, LAST_WORKFLOW_EXECUTION_1_ID, ENV_1_ID, SERVICE_1_ID, INFRA_MAPPING_1_ID);
+
+    doReturn(latestFailedExecution)
+        .when(workflowExecutionService)
+        .getLastWorkflowExecution(
+            ACCOUNT_1_ID, APP_1_ID, LAST_WORKFLOW_EXECUTION_1_ID, ENV_1_ID, SERVICE_1_ID, INFRA_MAPPING_1_ID);
+    List<CurrentActiveInstances> activeList = dashboardStatisticsService.constructCurrentActiveInstances(
+        List.of(aggInfo), APP_1_ID, ACCOUNT_1_ID, SERVICE_1_ID);
+
+    assertThat(activeList).hasSize(1);
+    assertThat(activeList.get(0).getArtifact().getId()).isEqualTo(art.getUuid());
+  }
+
+  private EnvInfo createEnvInfo(String envId, String envName, String envType) {
+    EnvInfo envInfo = new EnvInfo();
+    envInfo.setId(envId);
+    envInfo.setName(envName);
+    envInfo.setType(envType);
+    return envInfo;
+  }
+
+  private ArtifactInfo createArtifactInfo(
+      String artId, String artName, String artBuildNo, String artStreamId, String artSourceName, String artLastWEId) {
+    ArtifactInfo artInfo = new ArtifactInfo();
+    artInfo.setId(artId);
+    artInfo.setName(artName);
+    artInfo.setBuildNo(artBuildNo);
+    artInfo.setStreamId(artStreamId);
+    artInfo.setDeployedAt(1630969310005L);
+    artInfo.setSourceName(artSourceName);
+    artInfo.setLastWorkflowExecutionId(artLastWEId);
+    return artInfo;
+  }
+
+  private AggregationInfo createAggregationInfo(
+      String envId, String lastArtId, EnvInfo envInfo, ArtifactInfo artifactInfo) {
+    AggregationInfo.ID aggId = new AggregationInfo.ID();
+    aggId.setServiceId(null);
+    aggId.setEnvId(envId);
+    aggId.setLastArtifactId(lastArtId);
+
+    AggregationInfo aggInfo = new AggregationInfo();
+    aggInfo.set_id(aggId);
+    aggInfo.setCount(1);
+    aggInfo.setAppInfo(EntitySummary.builder().build());
+    aggInfo.setInfraMappingInfo(EntitySummary.builder().id(INFRA_MAPPING_1_ID).build());
+    aggInfo.setEnvInfo(envInfo);
+    aggInfo.setArtifactInfo(artifactInfo);
+
+    return aggInfo;
+  }
+
+  private WorkflowExecution createWorkflowExecutionWithArtifacts(
+      String uuid, long startTime, ExecutionStatus status, Artifact artifact) {
+    return WorkflowExecution.builder()
+        .appId(APP_1_ID)
+        .status(status)
+        .envIds(asList(ENV_1_ID))
+        .artifacts(List.of(artifact))
+        .serviceIds(asList(SERVICE_1_ID, SERVICE_2_ID))
+        .infraMappingIds(asList(INFRA_MAPPING_1_ID, INFRA_MAPPING_2_ID))
+        .workflowId(LAST_WORKFLOW_EXECUTION_1_ID)
+        .uuid(uuid)
+        .name(LAST_WORKFLOW_EXECUTION_1_NAME)
         .startTs(startTime)
         .build();
   }

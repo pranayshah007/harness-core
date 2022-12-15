@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;

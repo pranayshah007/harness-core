@@ -19,16 +19,16 @@ import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.template.refresh.NodeInfo;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.ServiceNodeErrorSummary;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.template.beans.refresh.NodeInfo;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
-import io.harness.template.beans.refresh.v2.NodeErrorSummary;
-import io.harness.template.beans.refresh.v2.ServiceNodeErrorSummary;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,7 +37,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InputsValidationHelper {
+  private static final List<String> keysToIgnoreInNodeToValidate =
+      Collections.singletonList("artifacts.primary.sources");
   @Inject ServiceEntityService serviceEntityService;
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
@@ -106,7 +110,7 @@ public class InputsValidationHelper {
       if (serviceEntityService.isServiceField(fieldName, value)) {
         validateServiceInputs(currentYamlNode, context, inputsValidationResponse);
         continue;
-      } else if (environmentRefreshHelper.isEnvironmentField(fieldName, value)) {
+      } else if (inputsValidationResponse.isValid() && environmentRefreshHelper.isEnvironmentField(fieldName, value)) {
         environmentRefreshHelper.validateEnvironmentInputs(currentYamlNode, context, inputsValidationResponse);
         continue;
       }
@@ -140,7 +144,7 @@ public class InputsValidationHelper {
     JsonNode serviceNode = entityNode.getCurrJsonNode();
     String serviceRef = serviceNode.get(YamlTypes.SERVICE_REF).asText();
     JsonNode serviceInputs = serviceNode.get(YamlTypes.SERVICE_INPUTS);
-    if (NGExpressionUtils.isRuntimeOrExpressionField(serviceRef)) {
+    if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       if (serviceInputs.isObject()
           || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
         errorNodeSummary.setValid(false);
@@ -148,6 +152,13 @@ public class InputsValidationHelper {
       }
       return;
     }
+
+    // if serviceRef is expression, we cannot validate service inputs. We will allow user to save any input because
+    // there is no way as of now, to provide service inputs in this case
+    if (NGExpressionUtils.isExpressionField(serviceRef)) {
+      return;
+    }
+
     ServiceEntity serviceEntity = entityFetchHelper.getService(
         context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
 
@@ -160,7 +171,7 @@ public class InputsValidationHelper {
     String serviceRuntimeInputYaml = serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(
         serviceYaml, serviceRef, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
     if (EmptyPredicate.isEmpty(serviceRuntimeInputYaml)) {
-      if (serviceInputs != null) {
+      if (EnvironmentRefreshHelper.isNodeNotNullAndNotHaveRuntimeValue(serviceInputs)) {
         errorNodeSummary.setValid(false);
       }
       return;
@@ -169,7 +180,8 @@ public class InputsValidationHelper {
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
     String linkedServiceInputsYaml = YamlPipelineUtils.writeYamlString(serviceInputsNode);
-    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml)) {
+    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml,
+            new HashSet<>(), new HashSet<>(keysToIgnoreInNodeToValidate))) {
       errorNodeSummary.setValid(false);
     }
   }

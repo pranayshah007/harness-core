@@ -157,6 +157,9 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
   @Owner(developers = JASMEET)
   @Category(UnitTests.class)
   public void getInstancesByEnvIdAndBuildIds() {
+    String infraId = "infraId";
+    String pipelineExecutionId = "pipelineExecutionId";
+    long lastDeployedAt = System.currentTimeMillis();
     List<Pair<Pair<String, String>, Integer>> mockList =
         Arrays.asList(Pair.of(Pair.of("envId1", "buildId1"), 30), Pair.of(Pair.of("envId1", "buildId2"), 30),
             Pair.of(Pair.of("envId2", "buildId1"), 30), Pair.of(Pair.of("envId2", "buildId2"), 30));
@@ -176,22 +179,25 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
 
     // Invalid cases that should return no results
 
-    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "randomServiceId", inputEnvName, inputBuildIds, 5);
-    assertThat(result.size()).isEqualTo(0);
-
-    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, "randomEnvName", inputBuildIds, 5);
+    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+        PROJECT_IDENTIFIER, "randomServiceId", inputEnvName, inputBuildIds, 5, infraId, null, pipelineExecutionId,
+        lastDeployedAt);
     assertThat(result.size()).isEqualTo(0);
 
     result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, Arrays.asList("randomBuildId"), 5);
+        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, "randomEnvName", inputBuildIds, 5, infraId, null, pipelineExecutionId,
+        lastDeployedAt);
+    assertThat(result.size()).isEqualTo(0);
+
+    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, Arrays.asList("randomBuildId"), 5, infraId, null,
+        pipelineExecutionId, lastDeployedAt);
     assertThat(result.size()).isEqualTo(0);
 
     // Valid case
 
-    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, inputBuildIds, 5);
+    result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, inputBuildIds, 5, null, null, null, 0);
     assertThat(result.size()).isEqualTo(2);
 
     for (int i = 0; i < inputBuildIds.size(); i++) {
@@ -237,11 +243,11 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
     Map<String, Map<String, Map<String, Map<String, Integer>>>> mock = new HashMap<>();
 
     ActiveServiceInstanceInfo instance1 =
-        new ActiveServiceInstanceInfo("infra1", "infraN1", "1", "a", "1", "env1", "envN1", "1", "abc", 1);
+        new ActiveServiceInstanceInfo("infra1", "infraN1", null, null, "1", "a", "1", "env1", "envN1", "1", "abc", 1);
     ActiveServiceInstanceInfo instance2 =
-        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "2", "abc", 2);
+        new ActiveServiceInstanceInfo("infra2", "infraN2", null, null, "2", "b", "2", "env2", "envN2", "2", "abc", 2);
     ActiveServiceInstanceInfo instance3 =
-        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "1", null, 3);
+        new ActiveServiceInstanceInfo("infra2", "infraN2", null, null, "2", "b", "2", "env2", "envN2", "1", null, 3);
 
     List<ActiveServiceInstanceInfo> mockList = Arrays.asList(instance1, instance2, instance3);
 

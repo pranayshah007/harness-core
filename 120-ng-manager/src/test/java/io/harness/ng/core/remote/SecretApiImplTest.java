@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -28,11 +29,11 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
-import io.harness.spec.server.ng.model.Secret;
-import io.harness.spec.server.ng.model.SecretRequest;
-import io.harness.spec.server.ng.model.SecretResponse;
-import io.harness.spec.server.ng.model.SecretSpec;
-import io.harness.spec.server.ng.model.SecretTextSpec;
+import io.harness.spec.server.ng.v1.model.Secret;
+import io.harness.spec.server.ng.v1.model.SecretRequest;
+import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretSpec;
+import io.harness.spec.server.ng.v1.model.SecretTextSpec;
 
 import java.util.Collections;
 import java.util.List;
@@ -436,7 +437,7 @@ public class SecretApiImplTest extends CategoryTest {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().secret(secretDTOV2).build();
 
     when(ngSecretService.get(any(), any(), any(), any())).thenReturn(of(secretResponseWrapper));
-    when(ngSecretService.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
 
     Response response = projectSecretApi.deleteProjectScopedSecret(org, project, slug, account);
 
@@ -458,7 +459,7 @@ public class SecretApiImplTest extends CategoryTest {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().secret(secretDTOV2).build();
 
     when(ngSecretService.get(any(), any(), any(), any())).thenReturn(of(secretResponseWrapper));
-    when(ngSecretService.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
 
     Response response = orgSecretApi.deleteOrgScopedSecret(org, slug, account);
 
@@ -480,7 +481,7 @@ public class SecretApiImplTest extends CategoryTest {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().secret(secretDTOV2).build();
 
     when(ngSecretService.get(any(), any(), any(), any())).thenReturn(of(secretResponseWrapper));
-    when(ngSecretService.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
 
     Response response = accountSecretApi.deleteAccountScopedSecret(slug, account);
 

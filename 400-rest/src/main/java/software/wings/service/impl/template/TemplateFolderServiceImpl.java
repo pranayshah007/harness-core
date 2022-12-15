@@ -604,4 +604,10 @@ public class TemplateFolderServiceImpl implements TemplateFolderService {
       throw new InvalidRequestException("Folder name cannot be " + PREFIX_FOR_APP, USER);
     }
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(TemplateFolder.class).filter(TemplateFolderKeys.accountId, accountId));
+  }
 }

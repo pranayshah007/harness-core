@@ -36,6 +36,7 @@ import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
+import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
@@ -74,7 +75,7 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
 
   final DelegateTaskPackage delegateTaskPackage =
       DelegateTaskPackage.builder().data(TaskData.builder().build()).build();
-  @Mock private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
+  @Mock private GitFetchTaskHelper serverlessGitFetchTaskHelper;
   @Mock private GitAuthenticationDTO gitAuthenticationDTO = GitHTTPAuthenticationDTO.builder().build();
   @Mock private BooleanSupplier preExecute;
   @Mock private Consumer<DelegateTaskResponse> consumer;
@@ -137,7 +138,7 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    Reflect.on(serverlessGitFetchTask).set("serverlessGitFetchTaskHelper", serverlessGitFetchTaskHelper);
+    Reflect.on(serverlessGitFetchTask).set("gitFetchTaskHelper", serverlessGitFetchTaskHelper);
     Reflect.on(serverlessGitFetchTaskHelper).set("gitDecryptionHelper", gitDecryptionHelper);
     Reflect.on(serverlessGitFetchTaskHelper).set("gitClientV2", gitClientV2);
     Reflect.on(serverlessGitFetchTaskHelper).set("gitFetchFilesTaskHelper", gitFetchFilesTaskHelper);

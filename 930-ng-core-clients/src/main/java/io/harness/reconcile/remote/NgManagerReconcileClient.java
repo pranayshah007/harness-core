@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
-import io.harness.template.beans.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;

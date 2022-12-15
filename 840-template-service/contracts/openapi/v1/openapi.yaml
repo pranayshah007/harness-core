@@ -1,0 +1,1811 @@
+openapi: 3.0.0
+x-stoplight:
+  id: t4e4wu6mfxgxh
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1'
+  description: This is the Open Api Spec 3 for the Templates Validations and Refresh. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'http://api.harness.io'
+    description: Harness host url
+tags:
+  - name: Account Template
+    description: This contains APIs for performing CRUD operations on Templates at account scope.
+  - name: Org Template
+    description: This contains APIs for performing CRUD operations on Templates at org scope.
+  - name: Project Template
+    description: This contains APIs for performing CRUD operations on Templates at project scope.
+paths:
+  /v1/templates:
+    post:
+      summary: Create Template
+      operationId: create-templates-acc
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateCreateBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/TemplateResponse'
+      tags:
+        - Account Template
+      description: Creates a Template in the Account scope.
+    get:
+      summary: Get Templates List
+      operationId: get-templates-list-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateMetaDataList'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/TemplateListType'
+        - $ref: '#/components/parameters/IncludeAllTemplatesAccessibleAtScope'
+        - $ref: '#/components/parameters/TemplateNames'
+        - $ref: '#/components/parameters/TemplateIds'
+        - $ref: '#/components/parameters/Description'
+        - $ref: '#/components/parameters/EntityType'
+        - $ref: '#/components/parameters/TemplateChildTypes'
+      tags:
+        - Account Template
+      description: Retrieves list of Template with meta-data at Account scope.
+    parameters: []
+  '/v1/templates/{template}':
+    parameters:
+      - $ref: '#/components/parameters/Template'
+    get:
+      summary: Get Stable Template
+      tags:
+        - Account Template
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      operationId: get-template-stable-acc
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      description: Retrieves stable version of Template at Account scope.
+  '/v1/templates/{template}/versions/{version}':
+    parameters:
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Version'
+    get:
+      summary: Retrieve a Template
+      tags:
+        - Account Template
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      operationId: get-template-acc
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      description: Retrieves particular version of Template at Account scope.
+    put:
+      summary: Update Template
+      operationId: update-template-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Account Template
+      description: Updates particular version of Template at Account scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateUpdateBody'
+    delete:
+      summary: Delete Template
+      operationId: delete-template-acc
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Comments'
+      tags:
+        - Account Template
+      description: Deletes particular version of Template at Account scope.
+      responses:
+        '204':
+          description: No Content
+  '/v1/templates/{template}/versions/{version}/stable':
+    parameters:
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Version'
+    put:
+      summary: Update Stable Template
+      operationId: update-template-stable-acc
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateUpdateStableResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Account Template
+      description: Updates the stable version of Template at Account scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateFetchBody'
+  '/v1/orgs/{org}/templates':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+    post:
+      summary: Create Template
+      operationId: create-templates-org
+      responses:
+        '201':
+          $ref: '#/components/responses/TemplateResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Org Template
+      description: Creates a Template in the Organization scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateCreateBody'
+    get:
+      summary: Get Templates List
+      operationId: get-templates-list-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateMetaDataList'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/TemplateListType'
+        - $ref: '#/components/parameters/IncludeAllTemplatesAccessibleAtScope'
+        - $ref: '#/components/parameters/TemplateNames'
+        - $ref: '#/components/parameters/TemplateIds'
+        - $ref: '#/components/parameters/Description'
+        - $ref: '#/components/parameters/EntityType'
+        - $ref: '#/components/parameters/TemplateChildTypes'
+      tags:
+        - Org Template
+      description: Retrieves list of Template with meta-data at Organization scope.
+  '/v1/orgs/{org}/templates/{template}':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Template'
+    get:
+      summary: Get Stable Template
+      operationId: get-template-stable-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      tags:
+        - Org Template
+      description: Retrieves stable version of Template at Organization scope.
+  '/v1/orgs/{org}/templates/{template}/versions/{version}':
+    parameters:
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Version'
+    get:
+      summary: Retrieve a Template
+      operationId: get-template-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      tags:
+        - Org Template
+      description: Retrieves particular version of Template at Organization scope.
+    put:
+      summary: Update Template
+      operationId: update-template-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Org Template
+      description: Updates particular version of Template at Organization scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateUpdateBody'
+    delete:
+      summary: Delete Template
+      operationId: delete-template-org
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Comments'
+      tags:
+        - Org Template
+      description: Deletes particular version of Template at Organization scope.
+      responses:
+        '204':
+          description: No Content
+  '/v1/orgs/{org}/templates/{template}/versions/{version}/stable':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Version'
+    put:
+      summary: Update Stable Template
+      operationId: update-template-stable-org
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateUpdateStableResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Org Template
+      description: Updates the stable version of Template at Organization scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateFetchBody'
+  '/v1/orgs/{org}/projects/{project}/templates':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Project'
+    post:
+      summary: Create Template
+      operationId: create-templates-project
+      responses:
+        '201':
+          $ref: '#/components/responses/TemplateResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Project Template
+      description: Creates a Template in the Project scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateCreateBody'
+    get:
+      summary: Get Templates List
+      operationId: get-templates-list-project
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateMetaDataList'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/TemplateListType'
+        - $ref: '#/components/parameters/IncludeAllTemplatesAccessibleAtScope'
+        - $ref: '#/components/parameters/TemplateNames'
+        - $ref: '#/components/parameters/TemplateIds'
+        - $ref: '#/components/parameters/Description'
+        - $ref: '#/components/parameters/EntityType'
+        - $ref: '#/components/parameters/TemplateChildTypes'
+      tags:
+        - Project Template
+      description: Retrieves list of Template with meta-data at Project scope.
+  '/v1/orgs/{org}/projects/{project}/templates/{template}':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Project'
+      - $ref: '#/components/parameters/Template'
+    get:
+      summary: Get Stable Template
+      tags:
+        - Project Template
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      operationId: get-template-stable-project
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      description: Retrieves stable version of Template at Project scope.
+  '/v1/orgs/{org}/projects/{project}/templates/{template}/versions/{version}':
+    parameters:
+      - $ref: '#/components/parameters/Project'
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Version'
+    get:
+      summary: Retrieve a Template
+      tags:
+        - Project Template
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateWithInputsResponse'
+      operationId: get-template-project
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/GetTemplateInputYaml'
+        - $ref: '#/components/parameters/Branch'
+        - $ref: '#/components/parameters/ParentConnectorRef'
+        - $ref: '#/components/parameters/ParentRepoName'
+        - $ref: '#/components/parameters/ParentAccountId'
+        - $ref: '#/components/parameters/ParentOrgId'
+        - $ref: '#/components/parameters/ParentProjectId'
+      description: Retrieves particular version of Template at Project scope.
+    put:
+      summary: Update Template
+      operationId: update-template-project
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Project Template
+      description: Updates particular version of Template at Project scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateUpdateBody'
+    delete:
+      summary: Delete Template
+      operationId: delete-template-project
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - $ref: '#/components/parameters/Comments'
+      tags:
+        - Project Template
+      description: Deletes particular version of Template at Project scope.
+      responses:
+        '204':
+          description: No Content
+  '/v1/orgs/{org}/projects/{project}/templates/{template}/versions/{version}/stable':
+    parameters:
+      - $ref: '#/components/parameters/Org'
+      - $ref: '#/components/parameters/Project'
+      - $ref: '#/components/parameters/Template'
+      - $ref: '#/components/parameters/Version'
+    put:
+      summary: Update Stable Template
+      operationId: update-template-stable-project
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateUpdateStableResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeaderParam'
+      tags:
+        - Project Template
+      description: Updates the stable version of Template at Project scope.
+      requestBody:
+        $ref: '#/components/requestBodies/TemplateFetchBody'
+components:
+  schemas:
+    TemplateResponse:
+      title: templateResponse
+      x-stoplight:
+        id: kj7anewxbf9xe
+      type: object
+      description: Default response when a template is returned
+      x-examples:
+        example-1:
+          account: example_account
+          org: example_organization
+          project: example_project
+          slug: example_template
+          name: Example_template
+          description: string
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          yaml: |
+            template:
+              name: Example_template
+              identifier: example_template
+              versionLabel: v1
+              type: Stage
+              tags: {}
+              spec:
+                type: Custom
+                spec:
+                  execution:
+                    steps:
+                      - step:
+                          type: ShellScript
+                          name: ss1
+                          identifier: ss1
+                          spec:
+                            shell: Bash
+                            onDelegate: true
+                            source:
+                              type: Inline
+                              spec:
+                                script: exit 1
+                            environmentVariables: []
+                            outputVariables: []
+                          timeout: 10m
+          version_label: example_version
+          entity_type: Stage
+          child_type: example_child_type
+          scope: org
+          version: 1234567890
+          git_details:
+            object_id: example_object
+            branch_name: branch
+            file_path: /folder/file.json
+            repo_name: example_repository
+            commit_id: abcd123
+            file_url: www.repo/folder/file.com
+            repo_url: www.repo.com
+          updated: 1234567890
+          store_type: INLINE
+          connector_ref: example_connector_ref
+          stable_template: true
+      properties:
+        account:
+          type: string
+          description: Account identifier
+        org:
+          type: string
+          description: Organization identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        project:
+          type: string
+          description: Project identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        slug:
+          type: string
+          description: Template identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          description: Template Name
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        description:
+          type: string
+          description: Template description
+          maxLength: 1024
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Template tags
+          maxProperties: 128
+        yaml:
+          type: string
+          description: Yaml related to template
+        version_label:
+          type: string
+          description: Version label of template
+        entity_type:
+          type: string
+          enum:
+            - Step
+            - Stage
+            - Pipeline
+            - CustomDeployment
+            - MonitoredService
+            - SecretManager
+          description: |
+            Type of Template
+        child_type:
+          type: string
+          description: Defines child template type
+        scope:
+          type: string
+          enum:
+            - org
+            - project
+            - account
+            - unknown
+          description: Scope of template
+        version:
+          type: integer
+          format: int64
+          description: Version of template
+        git_details:
+          $ref: '#/components/schemas/EntityGitDetails'
+        updated:
+          type: integer
+          format: int64
+          description: |
+            Last modification timestamp for Service.
+        store_type:
+          type: string
+          enum:
+            - INLINE
+            - REMOTE
+          description: Specifies whether the Entity is to be stored in Git or not (for Git Experience).
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        stable_template:
+          type: boolean
+          description: True if this version is stable version of Template
+      required:
+        - account
+        - slug
+        - name
+        - yaml
+    TemplateMetadataSummaryResponse:
+      title: TemplateMetadataSummaryResponse
+      x-stoplight:
+        id: 92a2rxt8uqji1
+      type: object
+      x-examples:
+        example-1:
+          account: example_account
+          org: example_organization
+          project: example_project
+          slug: example_template
+          name: Example_template
+          description: string
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          version_label: example_version
+          entity_type: Step
+          child_type: example_child_type
+          scope: org
+          version: 1234567890
+          git_details:
+            object_id: example_object
+            branch_name: branch
+            file_path: /folder/file.json
+            repo_name: example_repository
+            commit_id: abcd123
+            file_url: www.repo/folder/file.com
+            repo_url: www.repo.com
+          updated: 1234567890
+          store_type: INLINE
+          connector_ref: example_connector_ref
+          stable_template: true
+      description: Single Template Metadata Model
+      properties:
+        account:
+          type: string
+          description: Account identifier
+        org:
+          type: string
+          description: Organization identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        project:
+          type: string
+          description: Project identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        slug:
+          type: string
+          description: Template identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          description: Template Name
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        description:
+          type: string
+          description: Template description
+          maxLength: 1024
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Template tags
+          maxProperties: 128
+        version_label:
+          type: string
+          description: Version label of template
+        entity_type:
+          type: string
+          enum:
+            - Step
+            - Stage
+            - Pipeline
+            - CustomDeployment
+            - MonitoredService
+            - SecretManager
+          description: |
+            Type of Template
+        child_type:
+          type: string
+          description: Defines child template type
+        scope:
+          type: string
+          enum:
+            - org
+            - project
+            - account
+            - unknown
+          description: Scope of template
+        version:
+          type: integer
+          format: int64
+          description: Version of template
+        git_details:
+          $ref: '#/components/schemas/EntityGitDetails'
+        updated:
+          type: integer
+          format: int64
+          description: |
+            Last modification timestamp for Service.
+        store_type:
+          type: string
+          enum:
+            - INLINE
+            - REMOTE
+          description: Specifies whether the Entity is to be stored in Git or not (for Git Experience).
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        stable_template:
+          type: boolean
+          description: True if this version is stable version of Template
+    TemplateWithInputsResponse:
+      title: templateWithInputsResponse
+      x-stoplight:
+        id: 3fo3c6coeu472
+      type: object
+      x-examples:
+        example-1:
+          template:
+            account: example_account
+            org: example_organization
+            project: example_project
+            slug: example_template
+            name: Example_template
+            description: string
+            tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
+            yaml: |
+              template:
+                name: Example_template
+                identifier: example_template
+                versionLabel: v1
+                type: Stage
+                tags: {}
+                spec:
+                  type: Custom
+                  spec:
+                    execution:
+                      steps:
+                        - step:
+                            type: ShellScript
+                            name: ss1
+                            identifier: ss1
+                            spec:
+                              shell: Bash
+                              onDelegate: true
+                              source:
+                                type: Inline
+                                spec:
+                                  script: exit 1
+                              environmentVariables: []
+                              outputVariables: []
+                            timeout: 10m
+            version_label: example_version
+            entity_type: Stage
+            child_type: example_child_type
+            scope: org
+            version: 1234567890
+            git_details:
+              object_id: example_object
+              branch_name: branch
+              file_path: /folder/file.json
+              repo_name: example_repository
+              commit_id: abcd123
+              file_url: www.repo/folder/file.com
+              repo_url: www.repo.com
+            updated: 1234567890
+            store_type: INLINE
+            connector_ref: example_connector_ref
+            stable_template: true
+          inputs: example
+      description: Returns Template input YAML with template response
+      properties:
+        template:
+          $ref: '#/components/schemas/TemplateResponse'
+        inputs:
+          type: string
+          description: Input Yaml for the Template
+    TemplateMetaDataList:
+      title: TemplateMetaDataList
+      x-stoplight:
+        id: ld1ggfzj0v0nv
+      type: array
+      items:
+        $ref: '#/components/schemas/TemplateMetadataSummaryResponse'
+      x-examples:
+        example-1:
+          - account: example_account
+            org: example_organization
+            project: example_project
+            slug: example_template
+            name: Example_template
+            description: string
+            tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
+            version_label: example_version
+            entity_type: Step
+            child_type: example_child_type
+            scope: org
+            version: 1234567890
+            git_details:
+              object_id: example_object
+              branch_name: branch
+              file_path: /folder/file.json
+              repo_name: example_repository
+              commit_id: abcd123
+              file_url: www.repo/folder/file.com
+              repo_url: www.repo.com
+            updated: 1234567890
+            store_type: INLINE
+            connector_ref: example_connector_ref
+            stable_template: true
+      description: Template Meta Data List Model
+    EntityGitDetails:
+      title: entityGitDetails
+      x-stoplight:
+        id: bu0i4dwga5nkz
+      type: object
+      description: Git Experience related details of the Entity.
+      x-examples:
+        example-git:
+          object_id: example_object
+          branch_name: branch
+          file_path: /folder/file.json
+          repo_name: example_repository
+          commit_id: abcd123
+          file_url: www.repo/folder/file.com
+          repo_url: www.repo.com
+      properties:
+        object_id:
+          type: string
+          description: Entity identifier
+        branch_name:
+          type: string
+          description: Name of the branch.
+        file_path:
+          type: string
+          description: File path of the Entity in the repository.
+        repo_name:
+          type: string
+          description: Name of the repository.
+        commit_id:
+          type: string
+          description: Latest commit identifier.
+        file_url:
+          type: string
+          description: File URL of the Entity.
+        repo_url:
+          type: string
+          description: Repository URL of the Entity.
+    GitFindDetails:
+      title: GitFindDetails
+      x-stoplight:
+        id: 8b3cs1apis8zf
+      type: object
+      x-examples:
+        example-1:
+          branch_name: branch
+          parent_entity_connector_ref: example_connector_ref
+          parent_entity_repo_name: example_repo_name
+          parent_entity_account_id: example_account_id
+          parent_entity_org_id: example_org_id
+          parent_entity_project_id: example_project_id
+          comments: sample_comments
+      description: Contains parameters related to Fetching an Entity for Git Experience.
+      properties:
+        branch_name:
+          type: string
+          description: Name of the branch.
+        parent_entity_connector_ref:
+          type: string
+          description: Connector ref of parent template if its remote
+        parent_entity_repo_name:
+          type: string
+          description: Repo name of parent template if its remote
+        parent_entity_account_id:
+          type: string
+          description: Account name of parent template if its remote
+        parent_entity_org_id:
+          type: string
+          description: Organization name of parent template if its remote
+        parent_entity_project_id:
+          type: string
+          description: Project name of parent entity if its remote
+        comments:
+          type: string
+          description: 'Specify comment with respect to changes  '
+    GitCreateDetails:
+      title: Create Git Details
+      x-stoplight:
+        id: 18xzr2klzl8kn
+      type: object
+      description: Contains parameters related to creating an Entity for Git Experience.
+      properties:
+        branch_name:
+          type: string
+          description: Name of the branch.
+        file_path:
+          type: string
+          description: File path of the Entity in the repository.
+        commit_message:
+          type: string
+          description: Commit message used for the merge commit.
+        base_branch:
+          type: string
+          description: Name of the default branch (this checks out a new branch titled by branch_name).
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity.
+        store_type:
+          type: string
+          description: Specifies whether the Entity is to be stored in Git or not.
+          enum:
+            - INLINE
+            - REMOTE
+        repo_name:
+          type: string
+          description: Name of the repository.
+      x-examples:
+        example-create-git:
+          branch_name: branch
+          file_path: /folder/file.json
+          commit_message: Added Harness Git Experience
+          base_branch: old_branch
+          connector_ref: git_connector
+          store_type: INLINE
+          repo_name: example_repository
+    GitUpdateDetails:
+      title: GitUpdateDetails
+      x-stoplight:
+        id: jejwgam2kmatw
+      type: object
+      description: Contains parameters related to Updating an Entity for Git Experience.
+      x-examples:
+        example-1:
+          branch_name: branch
+          commit_message: Added Harness Git Experience
+          last_object_id: example_object_id
+          base_branch: old_branch
+          connector_ref: git_connector
+          last_commit_id: example_commit_id
+          file_path: /folder/file.json
+          repo_name: example_repository
+          store_type: INLINE
+      properties:
+        branch_name:
+          type: string
+          description: Name of the branch.
+        commit_message:
+          type: string
+          description: Commit message used for the merge commit.
+        last_object_id:
+          type: string
+          description: Last object identifier (for Github).
+        base_branch:
+          type: string
+          description: Name of the default branch (this checks out a new branch titled by branch_name).
+        connector_ref:
+          type: string
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity.
+        last_commit_id:
+          type: string
+          description: Last commit identifier (for Git Repositories other than Github).
+        file_path:
+          type: string
+          description: File path of the Entity in the repository.
+        repo_name:
+          type: string
+          description: Name of the repository.
+        store_type:
+          type: string
+          description: Specifies whether the Entity is to be stored in Git or not.
+          enum:
+            - INLINE
+            - REMOTE
+    TemplateUpdateRequestBody:
+      title: TemplateUpdateRequestBody
+      x-stoplight:
+        id: ok69fcmiqlm1c
+      type: object
+      x-examples:
+        example-2:
+          template_yaml: |
+            template:
+              name: Example_template
+              identifier: example_template
+              versionLabel: v1
+              type: Stage
+              tags: {}
+              spec:
+                type: Custom
+                spec:
+                  execution:
+                    steps:
+                      - step:
+                          type: ShellScript
+                          name: ss1
+                          identifier: ss1
+                          spec:
+                            shell: Bash
+                            onDelegate: true
+                            source:
+                              type: Inline
+                              spec:
+                                script: exit 1
+                            environmentVariables: []
+                            outputVariables: []
+                          timeout: 10m
+          git_details:
+            branch_name: branch
+            commit_message: Added Harness Git Experience
+            last_object_id: example_object_id
+            base_branch: old_branch
+            connector_ref: git_connector
+            last_commit_id: example_commit_id
+            file_path: /folder/file.json
+            repo_name: example_repository
+            store_type: INLINE
+          comments: sample_comment
+      description: Templates Update Request Body
+      properties:
+        template_yaml:
+          type: string
+          description: Yaml for updating existing Template
+        git_details:
+          $ref: '#/components/schemas/GitUpdateDetails'
+        comments:
+          type: string
+          description: 'Specify comment with respect to changes  '
+    TemplateCreateRequestBody:
+      title: TemplateCreateRequestBody
+      x-stoplight:
+        id: mp9rm9sp09yru
+      type: object
+      x-examples:
+        example-2:
+          template_yaml: |
+            template:
+              name: Example_template
+              identifier: example_template
+              versionLabel: v1
+              type: Stage
+              tags: {}
+              spec:
+                type: Custom
+                spec:
+                  execution:
+                    steps:
+                      - step:
+                          type: ShellScript
+                          name: ss1
+                          identifier: ss1
+                          spec:
+                            shell: Bash
+                            onDelegate: true
+                            source:
+                              type: Inline
+                              spec:
+                                script: exit 1
+                            environmentVariables: []
+                            outputVariables: []
+                          timeout: 10m
+          git_details:
+            branch_name: branch
+            file_path: /folder/file.json
+            commit_message: Added Harness Git Experience
+            base_branch: old_branch
+            connector_ref: git_connector
+            store_type: INLINE
+            repo_name: example_repository
+          is_stable: true
+          comments: sample_comment
+      description: Templates Create Request Body
+      properties:
+        template_yaml:
+          type: string
+          description: Yaml for creating new Template
+        git_details:
+          $ref: '#/components/schemas/GitCreateDetails'
+        is_stable:
+          type: boolean
+          description: True if given version for template to be set as stable
+        comments:
+          type: string
+          description: 'Specify comment with respect to changes  '
+    TemplateUpdateStableResponse:
+      title: TemplateUpdateStableResponse
+      x-stoplight:
+        id: 1h4plmwhpjnp4
+      type: object
+      properties:
+        stable_version:
+          type: string
+          description: |
+            Version which is set as stable for the given Template
+      description: Template stable version update Response
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+  parameters:
+    Org:
+      name: org
+      in: path
+      schema:
+        type: string
+      required: true
+      description: Organization Identifier
+    Project:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Project Identifier
+    Template:
+      name: template
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Template Identifier
+    Version:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Version Label for Template
+    AccountHeaderParam:
+      name: Harness-Account
+      in: header
+      schema:
+        type: string
+      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    Comments:
+      name: comments
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 'Specify comment with respect to changes  '
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 30
+      description: 'Pagination: Number of items to return'
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - slug
+          - name
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching with search term.
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
+    TemplateListType:
+      name: type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - STABLE_TEMPLATE
+          - LAST_UPDATES_TEMPLATE
+          - ALL
+      description: Template List Type
+    IncludeAllTemplatesAccessibleAtScope:
+      name: recursive
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: Specify true if all accessible Templates are to be included
+    GetTemplateInputYaml:
+      name: include_yaml
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: Use it to get Template along with Input Set YAML
+    Branch:
+      name: branch_name
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Name of the branch
+    ParentConnectorRef:
+      name: parent_entity_connector_ref
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Connector ref of parent template if its remote
+    ParentRepoName:
+      name: parent_entity_repo_name
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Repo name of parent template if its remote
+    ParentAccountId:
+      name: parent_entity_account_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Account name of parent template if its remote
+    ParentOrgId:
+      name: parent_entity_org_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Organization name of parent template if its remote
+    ParentProjectId:
+      name: parent_entity_project_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Project name of parent entity if its remote
+    TemplateNames:
+      name: names
+      in: query
+      required: false
+      schema:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+      description: Template names for filtering
+    TemplateIds:
+      name: identifiers
+      in: query
+      required: false
+      schema:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+      description: Template Ids for Filtering
+    Description:
+      name: description
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Filter properties description
+    EntityType:
+      name: entity_types
+      in: query
+      schema:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - Step
+            - Stage
+            - Pipeline
+            - CustomDeployment
+            - MonitoredService
+            - SecretManager
+      description: Type of Template
+    TemplateChildTypes:
+      name: child_types
+      in: query
+      required: false
+      schema:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+      description: Child types describe the type of Step or stage
+  requestBodies:
+    TemplateUpdateBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateUpdateRequestBody'
+          examples:
+            example-1:
+              value:
+                template_yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                git_details:
+                  branch_name: branch
+                  commit_message: Added Harness Git Experience
+                  last_object_id: example_object_id
+                  base_branch: old_branch
+                  connector_ref: git_connector
+                  last_commit_id: example_commit_id
+                  file_path: /folder/file.json
+                  repo_name: example_repository
+                  store_type: INLINE
+                comments: sample_comments
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateUpdateRequestBody'
+          examples:
+            example-1:
+              value: |
+                template_yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                git_details:
+                  branch_name: branch
+                  commit_message: Added Harness Git Experience
+                  last_object_id: example_object_id
+                  base_branch: old_branch
+                  connector_ref: git_connector
+                  last_commit_id: example_commit_id
+                  file_path: /folder/file.json
+                  repo_name: example_repository
+                  store_type: INLINE
+                comments: sample_comments
+      description: Templates Update Request Body
+    TemplateFetchBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GitFindDetails'
+          examples:
+            example-1:
+              value:
+                branch_name: branch
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
+                comments: sample_comments
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/GitFindDetails'
+          examples:
+            example-1:
+              value: |
+                branch_name: branch
+                parent_entity_connector_ref: example_connector_ref
+                parent_entity_repo_name: example_repo_name
+                parent_entity_account_id: example_account_id
+                parent_entity_org_id: example_org_id
+                parent_entity_project_id: example_project_id
+                comments: sample_comments
+      description: Templates Fetch Request Body
+    TemplateCreateBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateCreateRequestBody'
+          examples:
+            example-1:
+              value:
+                template_yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                git_details:
+                  branch_name: branch
+                  file_path: /folder/file.json
+                  commit_message: Added Harness Git Experience
+                  base_branch: old_branch
+                  connector_ref: git_connector
+                  store_type: INLINE
+                  repo_name: example_repository
+                is_stable: true
+                comments: sample_comment
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateCreateRequestBody'
+          examples:
+            example-1:
+              value: |
+                template_yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                git_details:
+                  branch_name: branch
+                  file_path: /folder/file.json
+                  commit_message: Added Harness Git Experience
+                  base_branch: old_branch
+                  connector_ref: git_connector
+                  store_type: INLINE
+                  repo_name: example_repository
+                is_stable: true
+                comments: sample_comment
+      description: Templates Create Request Body
+  responses:
+    TemplateResponse:
+      description: Template Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateResponse'
+          examples:
+            example-1:
+              value:
+                account: example_account
+                org: example_organization
+                project: example_project
+                slug: example_template
+                name: Example_template
+                description: string
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                version_label: example_version
+                entity_type: Stage
+                child_type: example_child_type
+                scope: org
+                version: 1234567890
+                git_details:
+                  object_id: example_object
+                  branch_name: branch
+                  file_path: /folder/file.json
+                  repo_name: example_repository
+                  commit_id: abcd123
+                  file_url: www.repo/folder/file.com
+                  repo_url: www.repo.com
+                updated: 1234567890
+                store_type: INLINE
+                connector_ref: example_connector_ref
+                stable_template: true
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateResponse'
+          examples:
+            example-1:
+              value: |
+                account: example_account
+                org: example_organization
+                project: example_project
+                slug: example_template
+                name: Example_template
+                description: string
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                yaml: |
+                  template:
+                    name: Example_template
+                    identifier: example_template
+                    versionLabel: v1
+                    type: Stage
+                    tags: {}
+                    spec:
+                      type: Custom
+                      spec:
+                        execution:
+                          steps:
+                            - step:
+                                type: ShellScript
+                                name: ss1
+                                identifier: ss1
+                                spec:
+                                  shell: Bash
+                                  onDelegate: true
+                                  source:
+                                    type: Inline
+                                    spec:
+                                      script: exit 1
+                                  environmentVariables: []
+                                  outputVariables: []
+                                timeout: 10m
+                version_label: example_version
+                entity_type: Stage
+                child_type: example_child_type
+                scope: org
+                version: 1234567890
+                git_details:
+                  object_id: example_object
+                  branch_name: branch
+                  file_path: /folder/file.json
+                  repo_name: example_repository
+                  commit_id: abcd123
+                  file_url: www.repo/folder/file.com
+                  repo_url: www.repo.com
+                updated: 1234567890
+                store_type: INLINE
+                connector_ref: example_connector_ref
+                stable_template: true
+    TemplateWithInputsResponse:
+      description: Template With Input reference
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateWithInputsResponse'
+          examples:
+            example-1:
+              value:
+                template:
+                  account: example_account
+                  org: example_organization
+                  project: example_project
+                  slug: example_template
+                  name: Example_template
+                  description: string
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  yaml: |
+                    template:
+                      name: Example_template
+                      identifier: example_template
+                      versionLabel: v1
+                      type: Stage
+                      tags: {}
+                      spec:
+                        type: Custom
+                        spec:
+                          execution:
+                            steps:
+                              - step:
+                                  type: ShellScript
+                                  name: ss1
+                                  identifier: ss1
+                                  spec:
+                                    shell: Bash
+                                    onDelegate: true
+                                    source:
+                                      type: Inline
+                                      spec:
+                                        script: exit 1
+                                    environmentVariables: []
+                                    outputVariables: []
+                                  timeout: 10m
+                  version_label: example_version
+                  entity_type: Stage
+                  child_type: example_child_type
+                  scope: org
+                  version: 1234567890
+                  git_details:
+                    object_id: example_object
+                    branch_name: branch
+                    file_path: /folder/file.json
+                    repo_name: example_repository
+                    commit_id: abcd123
+                    file_url: www.repo/folder/file.com
+                    repo_url: www.repo.com
+                  updated: 1234567890
+                  store_type: INLINE
+                  connector_ref: example_connector_ref
+                  stable_template: true
+                inputs: example
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateWithInputsResponse'
+          examples:
+            example-1:
+              value: |
+                template:
+                  account: example_account
+                  org: example_organization
+                  project: example_project
+                  slug: example_template
+                  name: Example_template
+                  description: string
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  yaml: |
+                    template:
+                      name: Example_template
+                      identifier: example_template
+                      versionLabel: v1
+                      type: Stage
+                      tags: {}
+                      spec:
+                        type: Custom
+                        spec:
+                          execution:
+                            steps:
+                              - step:
+                                  type: ShellScript
+                                  name: ss1
+                                  identifier: ss1
+                                  spec:
+                                    shell: Bash
+                                    onDelegate: true
+                                    source:
+                                      type: Inline
+                                      spec:
+                                        script: exit 1
+                                    environmentVariables: []
+                                    outputVariables: []
+                                  timeout: 10m
+                  version_label: example_version
+                  entity_type: Stage
+                  child_type: example_child_type
+                  scope: org
+                  version: 1234567890
+                  git_details:
+                    object_id: example_object
+                    branch_name: branch
+                    file_path: /folder/file.json
+                    repo_name: example_repository
+                    commit_id: abcd123
+                    file_url: www.repo/folder/file.com
+                    repo_url: www.repo.com
+                  updated: 1234567890
+                  store_type: INLINE
+                  connector_ref: example_connector_ref
+                  stable_template: true
+                inputs: example
+    TemplateMetaDataList:
+      description: Template Lists Meta Data Response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateMetaDataList'
+          examples:
+            example-1:
+              value:
+                - account: example_account
+                  org: example_organization
+                  project: example_project
+                  slug: example_template
+                  name: Example_template
+                  description: string
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  version_label: example_version
+                  entity_type: Step
+                  child_type: example_child_type
+                  scope: org
+                  version: 1234567890
+                  git_details:
+                    object_id: example_object
+                    branch_name: branch
+                    file_path: /folder/file.json
+                    repo_name: example_repository
+                    commit_id: abcd123
+                    file_url: www.repo/folder/file.com
+                    repo_url: www.repo.com
+                  updated: 1234567890
+                  store_type: INLINE
+                  connector_ref: example_connector_ref
+                  stable_template: true
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateMetaDataList'
+          examples:
+            example-1:
+              value: |
+                - account: example_account
+                  org: example_organization
+                  project: example_project
+                  slug: example_template
+                  name: Example_template
+                  description: string
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  version_label: example_version
+                  entity_type: Step
+                  child_type: example_child_type
+                  scope: org
+                  version: 1234567890
+                  git_details:
+                    object_id: example_object
+                    branch_name: branch
+                    file_path: /folder/file.json
+                    repo_name: example_repository
+                    commit_id: abcd123
+                    file_url: www.repo/folder/file.com
+                    repo_url: www.repo.com
+                  updated: 1234567890
+                  store_type: INLINE
+                  connector_ref: example_connector_ref
+                  stable_template: true
+    TemplateUpdateStableResponse:
+      description: Template stable version update Response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateUpdateStableResponse'
+          examples:
+            example-1:
+              value:
+                stable_version: example_version
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TemplateUpdateStableResponse'
+          examples:
+            example-1:
+              value: |
+                stable_version: example_version
+security:
+  - x-api-key: []

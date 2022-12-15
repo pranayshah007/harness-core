@@ -162,7 +162,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.approval.ApprovalInfo;
 import software.wings.beans.approval.PreviousApprovalDetails;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.security.UserGroup;
@@ -170,6 +169,7 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.WebHookTriggerCondition;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.rules.Listeners;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.deployment.checks.AccountExpirationChecker;
@@ -374,7 +374,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     PageResponse<WorkflowExecution> pageResponse = aPageResponse().build();
     when(wingsPersistence.query(WorkflowExecution.class, pageRequest)).thenReturn(pageResponse);
     PageResponse<WorkflowExecution> pageResponse2 =
-        workflowExecutionService.listExecutions(pageRequest, false, true, false, true, false);
+        workflowExecutionService.listExecutions(pageRequest, false, true, false, true, false, false);
     assertThat(pageResponse2).isNotNull().isEqualTo(pageResponse);
     verify(wingsPersistence).query(WorkflowExecution.class, pageRequest);
   }

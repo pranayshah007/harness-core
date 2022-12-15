@@ -125,6 +125,12 @@
             <property name="staticImports" value="java.lang.String.format"/>
         </module>
 
+        <!-- Use aggregate method with setting maxTimeMs in aggregate options -->
+        <module name="com.github.sevntu.checkstyle.checks.coding.ForbidCertainMethodCheck">
+            <property name="methodName" value="aggregate"/>
+            <property name="argumentCount" value="1"/>
+        </module>
+
         <!-- ERROR PREVENTION -->
 
         <!-- Novice Java programmers often make this mistake -->
@@ -257,10 +263,10 @@
         <property name="message" value="Do not static import for constants from FieldNameConstants"/>
     </module>
 
-    <module name="RegexpSingleline">
-        <property name="format" value="[Ww]orkFlow"/>
-        <property name="message" value="Workflow is a single word"/>
-    </module>
+<!--    <module name="RegexpSingleline">-->
+<!--        <property name="format" value="[Ww]orkFlow"/>-->
+<!--        <property name="message" value="Workflow is a single word"/>-->
+<!--    </module>-->
 
     <module name="RegexpSingleline">
         <property name="format" value="[Oo]ffSet"/>

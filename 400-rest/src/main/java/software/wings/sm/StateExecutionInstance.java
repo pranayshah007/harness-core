@@ -54,7 +54,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
-import org.simpleframework.xml.Transient;
 
 /**
  * Represents State Machine Instance.
@@ -96,6 +95,12 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.appId)
                  .ascSortField(StateExecutionInstanceKeys.endTs)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_status_stateType")
+                 .field(StateExecutionInstanceKeys.accountId)
+                 .field(StateExecutionInstanceKeys.status)
+                 .field(StateExecutionInstanceKeys.stateType)
+                 .build())
         .build();
   }
   @Id private String uuid;
@@ -103,7 +108,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
 
-  @FdIndex private String accountId;
+  private String accountId;
   private String childStateMachineId;
   private String displayName;
   private String stateName;
@@ -150,7 +155,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
 
   private WorkflowType executionType;
 
-  @FdIndex private String executionUuid;
+  private String executionUuid;
 
   @FdIndex private String parentInstanceId;
 
@@ -177,12 +182,12 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
 
   private boolean hasInspection;
 
-  @Transient private String workflowId;
-  @Transient private String pipelineStageElementId;
-  @Transient private int pipelineStageParallelIndex;
-  @Transient private String stageName;
-  @Transient private String phaseSubWorkflowId;
-  @Transient private String stepId;
+  private String workflowId;
+  private String pipelineStageElementId;
+  private int pipelineStageParallelIndex;
+  private String stageName;
+  private String phaseSubWorkflowId;
+  private String stepId;
 
   private OrchestrationWorkflowType orchestrationWorkflowType;
   private Boolean isOnDemandRollback;
@@ -248,6 +253,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
     private long lastUpdatedAt;
     private Long stateTimeout;
     private String accountId;
+    private boolean rollback;
 
     private Builder() {}
 
@@ -435,10 +441,16 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
       return this;
     }
 
+    public Builder rollback(boolean rollback) {
+      this.rollback = rollback;
+      return this;
+    }
+
     public Builder but() {
       return aStateExecutionInstance()
           .stateName(stateName)
           .displayName(displayName)
+          .rollback(rollback)
           .stateType(stateType)
           .contextElement(contextElement)
           .contextTransition(contextTransition)
@@ -500,6 +512,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
       stateExecutionInstance.setLastUpdatedAt(lastUpdatedAt);
       stateExecutionInstance.setStateTimeout(stateTimeout);
       stateExecutionInstance.setAccountId(accountId);
+      stateExecutionInstance.setRollback(rollback);
       return stateExecutionInstance;
     }
   }

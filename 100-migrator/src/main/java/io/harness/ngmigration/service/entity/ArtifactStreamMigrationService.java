@@ -15,17 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.ArtifactStreamSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
-import io.harness.ngmigration.client.NGClient;
-import io.harness.ngmigration.client.PmsClient;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -40,7 +34,6 @@ import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,6 +71,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
         CgEntityId.builder().type(NGMigrationEntityType.ARTIFACT_STREAM).id(entityId).build();
     CgEntityNode artifactStreamNode = CgEntityNode.builder()
                                           .id(entityId)
+                                          .appId(artifactStream.getAppId())
                                           .type(NGMigrationEntityType.ARTIFACT_STREAM)
                                           .entityId(artifactStreamEntityId)
                                           .entity(artifactStream)
@@ -110,13 +104,8 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {}
-
-  @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     return new ArrayList<>();
   }
 
@@ -128,18 +117,6 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return false;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    ArtifactStream stream = (ArtifactStream) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(stream.getName())))
-        .name(BaseInputDefinition.buildName(stream.getName()))
-        .spec(null)
-        .build();
   }
 
   @Override

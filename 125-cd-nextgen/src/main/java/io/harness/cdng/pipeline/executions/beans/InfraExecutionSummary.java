@@ -22,4 +22,7 @@ public class InfraExecutionSummary {
   String type;
   String infrastructureIdentifier;
   String infrastructureName;
+
+  String envGroupId;
+  String envGroupName;
 }

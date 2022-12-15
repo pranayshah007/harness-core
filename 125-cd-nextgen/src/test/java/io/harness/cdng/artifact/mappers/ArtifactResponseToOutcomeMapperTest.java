@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,6 +42,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
@@ -96,6 +98,62 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(NexusArtifactOutcome.class);
     assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testToNexusArtifactOutcomeMaven() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+    ArtifactConfig artifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.createValueField("connector"))
+            .repository(ParameterField.createValueField("REPO_NAME"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.maven.name()))
+            .build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        NexusArtifactDelegateResponse.builder().artifactPath("test").build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+
+    assertThat(artifactOutcome).isInstanceOf(NexusArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName());
+    assertThat(((NexusArtifactOutcome) artifactOutcome).getArtifactPath()).isEqualTo("test");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testToNexusArtifactOutcomeNPM() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+    ArtifactConfig artifactConfig = NexusRegistryArtifactConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .repository(ParameterField.createValueField("REPO_NAME"))
+                                        .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+                                        .repositoryFormat(ParameterField.createValueField(RepositoryFormat.npm.name()))
+                                        .build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        NexusArtifactDelegateResponse.builder()
+            .buildDetails(
+                ArtifactBuildDetailsNG.builder().metadata(Collections.singletonMap("package", "test")).build())
+            .build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+
+    assertThat(artifactOutcome).isInstanceOf(NexusArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName());
+    assertThat(((NexusArtifactOutcome) artifactOutcome).getArtifactPath()).isEqualTo("test");
   }
 
   @Test
@@ -303,6 +361,43 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .version(ParameterField.createValueField("build-x"))
             .build();
     assertCustomArtifactOutcome(artifactConfig);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCustomArtifactOutcome() {
+    ArtifactConfig artifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+    CustomArtifactDelegateResponse customArtifactDelegateResponse =
+        CustomArtifactDelegateResponse.builder()
+            .buildDetails(ArtifactBuildDetailsNG.builder().uiDisplayName("BuildName").build())
+            .build();
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, customArtifactDelegateResponse, true);
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome).isInstanceOf(CustomArtifactOutcome.class);
+    assertThat(artifactOutcome.getArtifactType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT.getDisplayName());
+    assertThat(((CustomArtifactOutcome) artifactOutcome).getVersion()).isEqualTo("build-x");
+    assertThat(((CustomArtifactOutcome) artifactOutcome).getDisplayName()).isEqualTo("BuildName");
+    assertThat(((CustomArtifactOutcome) artifactOutcome).getImage()).isEqualTo("build-x");
   }
 
   private void assertCustomArtifactOutcome(ArtifactConfig artifactConfig) {

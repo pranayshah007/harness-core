@@ -11,6 +11,8 @@ import static io.harness.ccm.commons.constants.InstanceMetaDataConstants.GCE_STO
 import static io.harness.ccm.commons.constants.InstanceMetaDataConstants.PV_TYPE;
 import static io.harness.perpetualtask.k8s.watch.PVInfo.PVType.PV_TYPE_GCE_PERSISTENT_DISK;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -24,6 +26,7 @@ import io.harness.batch.processing.pricing.fargatepricing.EcsFargateInstancePric
 import io.harness.batch.processing.pricing.pricingprofile.PricingProfileService;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.storagepricing.StoragePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.ComputeInstancePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.EcsFargatePricingInfo;
@@ -31,6 +34,7 @@ import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.batch.processing.pricing.vmpricing.VMPricingServiceImpl;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceResourceService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.cluster.entities.PricingProfile;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -40,6 +44,8 @@ import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
 import io.harness.pricing.dto.cloudinfo.ZonePrice;
 import io.harness.rule.Owner;
@@ -73,10 +79,13 @@ public class BillingCalculationServiceTest extends CategoryTest {
   @Mock private VMPricingServiceImpl vmPricingService;
   @Mock private AwsCustomBillingService awsCustomBillingService;
   @Mock private AzureCustomBillingService azureCustomBillingService;
+
+  @Mock private GcpCustomBillingService gcpCustomBillingService;
   @Mock private InstanceResourceService instanceResourceService;
   @Mock private EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private PricingProfileService pricingProfileService;
+  @Mock private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   private final Instant NOW = Instant.now().truncatedTo(ChronoUnit.DAYS);
   private final Instant INSTANCE_STOP_TIMESTAMP = NOW;
@@ -270,9 +279,15 @@ public class BillingCalculationServiceTest extends CategoryTest {
     InstanceData instanceData = getInstance(instanceResource, instanceResource, metaData, INSTANCE_START_TIMESTAMP,
         INSTANCE_STOP_TIMESTAMP, InstanceType.ECS_TASK_EC2);
     BillingAmountBreakup billingAmountForResource =
-        billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
+        billingCalculationService.getBillingAmountBreakupForResource(instanceData,
+            BillingAmountBreakup.builder()
+                .billingAmount(BigDecimal.valueOf(200))
+                .cpuBillingAmount(BigDecimal.valueOf(100))
+                .memoryBillingAmount(BigDecimal.valueOf(100))
+                .build(),
             instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
-    Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("75.000"));
+    Assertions.assertThat(billingAmountForResource.getBillingAmount().intValue())
+        .isEqualTo((new BigDecimal("75.000")).intValue());
   }
 
   @Test
@@ -289,7 +304,12 @@ public class BillingCalculationServiceTest extends CategoryTest {
         INSTANCE_STOP_TIMESTAMP, InstanceType.K8S_POD);
 
     BillingAmountBreakup billingAmountForResource =
-        billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
+        billingCalculationService.getBillingAmountBreakupForResource(instanceData,
+            BillingAmountBreakup.builder()
+                .billingAmount(BigDecimal.valueOf(200))
+                .cpuBillingAmount(BigDecimal.valueOf(100))
+                .memoryBillingAmount(BigDecimal.valueOf(100))
+                .build(),
             instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
 
     Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("0.0"));
@@ -423,7 +443,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
     UtilizationData utilizationData = getUtilization(CPU_UTILIZATION, MEMORY_UTILIZATION);
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
-    Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount()).isEqualTo(new BigDecimal("9.60"));
+    Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount().intValue())
+        .isEqualTo(BigDecimal.valueOf(9.60).intValue());
     Assertions.assertThat(billingAmount.getIdleCostData().getIdleCost()).isEqualTo(new BigDecimal("4.8"));
     Assertions.assertThat(billingAmount.getIdleCostData().getCpuIdleCost()).isEqualTo(new BigDecimal("2.4"));
     Assertions.assertThat(billingAmount.getIdleCostData().getMemoryIdleCost()).isEqualTo(new BigDecimal("2.4"));
@@ -542,6 +563,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
             PricingProfile.builder().accountId(ACCOUNT_ID).vCpuPricePerHr(0.2).memoryGbPricePerHr(0.05).build());
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_NODE))
         .thenReturn(getComputeInstancePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
     Resource totalResource = getInstanceResource(4096, 16384);
     Resource instanceResource = getInstanceResource(3988, 14360);
     Map<String, String> metaData = new HashMap<>();
@@ -620,8 +644,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
   private ComputeInstancePricingStrategy getComputeInstancePricingStrategy() {
     return new ComputeInstancePricingStrategy(vmPricingService, awsCustomBillingService, azureCustomBillingService,
-        instanceResourceService, ecsFargateInstancePricingStrategy, customBillingMetaDataService,
-        pricingProfileService);
+        gcpCustomBillingService, instanceResourceService, ecsFargateInstancePricingStrategy,
+        customBillingMetaDataService, pricingProfileService);
   }
 
   @Test
@@ -630,6 +654,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
   public void testGetInstanceBillingAmountCustomInstance() throws IOException {
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_POD))
         .thenReturn(getComputeInstancePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
     Resource instanceResource = getInstanceResource(4 * 1024, 5 * 1024);
     Map<String, String> metaData = new HashMap<>();
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, CloudProvider.IBM.name());
@@ -659,6 +686,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
   public void testGetInstanceBillingAmountIBMInstance() throws IOException {
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_POD))
         .thenReturn(getComputeInstancePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
     Resource instanceResource = getInstanceResource(4 * 1024, 5 * 1024);
     Map<String, String> metaData = new HashMap<>();
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER, CloudProvider.IBM.name());
@@ -694,6 +724,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
@@ -721,6 +754,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
@@ -746,6 +782,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.K8S_PV))
         .thenReturn(new StoragePricingStrategy());
+    when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+             anyString(), any(CloudServiceProvider.class), any(Currency.class)))
+        .thenReturn(1.0);
 
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 43200.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);

@@ -70,8 +70,9 @@ spec:
         </#if>
         resources:
           limits:
-            cpu: "1"
             memory: "${delegateRam}Gi"
+          requests:
+            cpu: "${delegateCpu}"
         readinessProbe:
           exec:
             command:

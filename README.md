@@ -489,7 +489,6 @@ bazel build --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //cmd
 For details see the [Go rules for Bazel](https://github.com/bazelbuild/rules_go#how-do-i-cross-compile).
 
 
-
 ## Testing
 
 Tests can be executed using the `bazel test` command:

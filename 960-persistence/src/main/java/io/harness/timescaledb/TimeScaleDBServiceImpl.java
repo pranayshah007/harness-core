@@ -7,6 +7,7 @@
 
 package io.harness.timescaledb;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -14,7 +15,6 @@ import io.harness.annotations.retry.RetryOnException;
 import io.harness.health.HealthException;
 import io.harness.timescaledb.TimeScaleDBConfig.TimeScaleDBConfigFields;
 
-import com.google.common.base.Strings;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.jayway.jsonpath.internal.Utils;
@@ -33,6 +33,7 @@ import org.apache.commons.dbcp.BasicDataSource;
 @Singleton
 @Slf4j
 public class TimeScaleDBServiceImpl implements TimeScaleDBService {
+  public static final String SSL_MODE_DISABLE = "disable";
   private TimeScaleDBConfig timeScaleDBConfig;
   private boolean validDB;
   private BasicDataSource ds = new BasicDataSource();
@@ -88,10 +89,7 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
   }
 
   private boolean isValid(TimeScaleDBConfig timeScaleDBConfig) {
-    if (timeScaleDBConfig == null || Strings.isNullOrEmpty(timeScaleDBConfig.getTimescaledbUrl())) {
-      return false;
-    }
-    return true;
+    return timeScaleDBConfig != null && !isNullOrEmpty(timeScaleDBConfig.getTimescaledbUrl());
   }
 
   private void initializeTimeScaleDB(TimeScaleDBConfig config) throws SQLException {
@@ -117,6 +115,15 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
     }
     if (!Utils.isEmpty(timeScaleDBConfig.getTimescaledbPassword())) {
       ds.addConnectionProperty("password", timeScaleDBConfig.getTimescaledbPassword());
+    }
+    if (isNullOrEmpty(timeScaleDBConfig.getSslMode())
+        || SSL_MODE_DISABLE.equalsIgnoreCase(timeScaleDBConfig.getSslMode())) {
+      ds.addConnectionProperty("sslmode", SSL_MODE_DISABLE);
+    } else {
+      ds.addConnectionProperty("sslmode", timeScaleDBConfig.getSslMode());
+      if (!isNullOrEmpty(timeScaleDBConfig.getSslRootCert())) {
+        ds.addConnectionProperty("sslrootcert", timeScaleDBConfig.getSslRootCert());
+      }
     }
 
     try (Connection connection = ds.getConnection(); Statement statement = connection.createStatement()) {

@@ -44,6 +44,8 @@ public class NGTriggerDetailsResponseDTO {
   List<Integer> executions;
   String yaml;
   String webhookUrl;
+  String webhookCurlCommand;
   WebhookRegistrationStatus registrationStatus;
   boolean enabled;
+  boolean isPipelineInputOutdated;
 }

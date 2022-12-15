@@ -7,8 +7,6 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.DELEGATE_SERVICE;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
@@ -16,6 +14,8 @@ import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
 import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
+import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
@@ -33,6 +33,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
+import io.harness.artifacts.ami.service.AMIRegistryService;
+import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
@@ -110,6 +112,7 @@ import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
+import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
@@ -463,7 +466,6 @@ import software.wings.service.impl.analysis.ContinuousVerificationService;
 import software.wings.service.impl.analysis.ContinuousVerificationServiceImpl;
 import software.wings.service.impl.analysis.ExperimentalAnalysisServiceImpl;
 import software.wings.service.impl.analysis.ExperimentalMetricAnalysisRecordServiceImpl;
-import software.wings.service.impl.analysis.LogLabelingServiceImpl;
 import software.wings.service.impl.analysis.MetricDataAnalysisServiceImpl;
 import software.wings.service.impl.analysis.TimeSeriesMLAnalysisRecordServiceImpl;
 import software.wings.service.impl.analysis.VerificationServiceImpl;
@@ -683,7 +685,6 @@ import software.wings.service.intfc.alert.NotificationRulesStatusService;
 import software.wings.service.intfc.analysis.AnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalAnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalMetricAnalysisRecordService;
-import software.wings.service.intfc.analysis.LogLabelingService;
 import software.wings.service.intfc.analysis.LogVerificationService;
 import software.wings.service.intfc.analysis.LogVerificationServiceImpl;
 import software.wings.service.intfc.analysis.TimeSeriesMLAnalysisRecordService;
@@ -814,6 +815,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -958,6 +960,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
       }
     });
 
+    install(new HeartbeatModule());
+
     bind(MainConfiguration.class).toInstance(configuration);
     bind(PortalConfig.class).toInstance(configuration.getPortal());
     // RetryOnException Binding start
@@ -1088,6 +1092,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
     bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
+    bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);
     bind(AmiService.class).to(AmiServiceImpl.class);
@@ -1141,7 +1146,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SumoLogicAnalysisService.class).to(SumoLogicAnalysisServiceImpl.class);
     bind(InstanceStatService.class).to(InstanceStatServiceImpl.class);
     bind(StatsCollector.class).to(StatsCollectorImpl.class);
-    bind(LogLabelingService.class).to(LogLabelingServiceImpl.class);
+
     bind(AwsRoute53HelperServiceManager.class).to(AwsRoute53HelperServiceManagerImpl.class);
     bind(HarnessApiKeyService.class).to(HarnessApiKeyServiceImpl.class);
     bind(K8sGlobalConfigService.class).to(K8sGlobalConfigServiceUnsupported.class);
@@ -1346,10 +1351,25 @@ public class WingsModule extends AbstractModule implements ServersModule {
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
 
+    if (configuration.getExecutorsConfig() != null) {
+      bind(ExecutorService.class)
+          .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
+          .toInstance(ThreadPool.create(
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getCorePoolSize(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getMaxPoolSize(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getIdleTime(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getTimeUnit(),
+              new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+    }
+
     bind(ExecutorService.class)
-        .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
-        .toInstance(ThreadPool.create(1, 5, 10, TimeUnit.SECONDS,
-            new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+        .annotatedWith(Names.named("CustomDashboardAPIExecutor"))
+        .toInstance(Executors.newFixedThreadPool(2));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("LookerEntityReconTaskExecutor"))
+        .toInstance(ThreadPool.create(8, 16, 10, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("LookerEntityReconTaskExecutor-%d").build()));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("BuildSourceCallbackExecutor"))

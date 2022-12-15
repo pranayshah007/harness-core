@@ -9,18 +9,19 @@ package io.harness.pms.template.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.YamlDiffResponseDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface PipelineRefreshService {
   boolean refreshTemplateInputsInPipeline(String accountId, String orgId, String projectId, String pipelineIdentifier);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsInPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache);
 
   YamlDiffResponseDTO getYamlDiff(String accountId, String orgId, String projectId, String pipelineIdentifier);
 
-  boolean recursivelyRefreshAllTemplateInputsInPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+  boolean recursivelyRefreshAllTemplateInputsInPipeline(String accountId, String orgId, String projectId,
+      String pipelineIdentifier, GitEntityUpdateInfoDTO gitEntityBasicInfo);
 }

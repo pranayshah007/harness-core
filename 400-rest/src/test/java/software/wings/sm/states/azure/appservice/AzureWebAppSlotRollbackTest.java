@@ -46,10 +46,10 @@ import software.wings.beans.AzureWebAppInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.config.ArtifactoryConfig;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -302,7 +302,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
 
     ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder().build();
     artifactStreamAttributes.setArtifactStreamType(ArtifactStreamType.ARTIFACTORY.name());
-    artifactStreamAttributes.setServerSetting(serverSetting);
+    artifactStreamAttributes.setServerSetting(serverSetting.toDTO());
     Map<String, String> metadata = new HashMap<>();
     metadata.put("buildNo", "artifact-builder-number");
     metadata.put("url", "artifact-job-name/random-guid/artifact-name");

@@ -68,6 +68,14 @@ if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCP_PROJECT_ID" ]]; then
   export GCP_PROJECT_ID; yq -i '.gcp-project-id=env(GCP_PROJECT_ID)' $CONFIG_FILE
 fi

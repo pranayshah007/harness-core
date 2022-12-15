@@ -42,6 +42,9 @@ public class VmRunTestStep implements VmStepInfo {
   private long timeoutSecs;
   private String buildEnvironment;
   private String frameworkVersion;
+  private String testSplitStrategy;
+  private boolean parallelizeTests;
+  private String testGlobs;
 
   @Override
   public VmStepInfo.Type getType() {

@@ -26,7 +26,6 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
@@ -197,34 +196,35 @@ public class SSOServiceImpl implements SSOService {
     return ssoConfig;
   }
 
-  private void auditSSOActivity(
-      String accountId, AuthenticationMechanism mechanism, AuthenticationMechanism currentAuthMechanism) {
-    boolean createAudit = false;
-    boolean enableFlag = false;
+  private void cgAuditLoginSettings(
+      String accountIdentifier, AuthenticationMechanism oldAuthMechanism, AuthenticationMechanism newAuthMechanism) {
     SSOSettings ssoSettings = null;
-    if (mechanism == SAML && currentAuthMechanism == USER_PASSWORD) {
-      createAudit = true;
-      enableFlag = true;
-      ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-    } else if (currentAuthMechanism == SAML && mechanism == USER_PASSWORD) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-    } else if (currentAuthMechanism == USER_PASSWORD && mechanism == LDAP) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-      enableFlag = true;
-    } else if (currentAuthMechanism == LDAP && mechanism == USER_PASSWORD) {
-      createAudit = true;
-      ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-    }
-    if (createAudit) {
-      if (enableFlag) {
-        auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, ssoSettings, Event.Type.ENABLE);
-      } else {
-        auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, ssoSettings, Event.Type.DISABLE);
+
+    if (newAuthMechanism == USER_PASSWORD) {
+      if (oldAuthMechanism == SAML) {
+        ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+      } else if (oldAuthMechanism == LDAP) {
+        ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
       }
-      ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
+      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.DISABLE);
+    } else {
+      switch (newAuthMechanism) {
+        case SAML:
+          ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+          break;
+        case LDAP:
+          ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
+          break;
+        case OAUTH:
+          ssoSettings = ssoSettingService.getOauthSettingsByAccountId(accountIdentifier);
+          break;
+        default:
+          throw new InvalidRequestException("Unexpected authentication mechanism type: " + newAuthMechanism.name());
+      }
+      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.ENABLE);
     }
+    log.info("CG Auth Audits: for account {} succesfully audited the change of authentication machanism from {} to {}",
+        accountIdentifier, oldAuthMechanism.name(), newAuthMechanism.name());
   }
 
   private void ngAuditLoginSettings(
@@ -273,8 +273,9 @@ public class SSOServiceImpl implements SSOService {
           String.format("Cannot enable OAuth for accountId %s because OAuthSetting does not exist", accountId));
     }
     account.setOauthEnabled(shouldEnableOauth);
-    if (shouldUpdateAuthMechanism) {
-      auditSSOActivity(accountId, mechanism, currentAuthMechanism);
+    if (shouldUpdateAuthMechanism && currentAuthMechanism != mechanism) {
+      cgAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
+      ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
       account.setAuthenticationMechanism(mechanism);
     }
     accountService.update(account);
@@ -423,7 +424,7 @@ public class SSOServiceImpl implements SSOService {
       encryptedDataDetail = inputLdapSettings.getEncryptedDataDetails(secretManager);
     } finally {
       if (null != encryptedDataDetail) {
-        deleteTempSecret(temporaryEncryption, encryptedDataDetail, inputLdapSettings, accountId);
+        deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
       }
     }
     return buildLdapSettingsWithEncryptedDataDetail(inputLdapSettings, encryptedDataDetail);
@@ -458,7 +459,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapConnectionSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -478,7 +479,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapUserSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -498,7 +499,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapGroupSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -677,23 +678,14 @@ public class SSOServiceImpl implements SSOService {
   }
 
   private void encryptSecretIfFFisEnabled(@NotNull LdapSettings ldapSettings) {
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(
-          ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(
+        ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
   }
 
-  private void deleteTempSecret(boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail,
-      LdapSettings ldapSettings, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
-      if (temporaryEncryption) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
-    } else {
-      if (temporaryEncryption
-          && LdapConnectionSettings.INLINE_SECRET.equals(ldapSettings.getConnectionSettings().getPasswordType())) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
+  private void deleteTempSecret(
+      boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
+    if (temporaryEncryption) {
+      secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
     }
   }
 }

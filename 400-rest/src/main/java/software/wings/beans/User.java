@@ -80,13 +80,32 @@ public class User extends Base implements Principal {
                  .field(UserKeys.accounts)
                  .field(UserKeys.externalUserId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("name_accounts_disabled")
+                 .field(UserKeys.name)
+                 .field(UserKeys.accounts)
+                 .field(UserKeys.disabled)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("email_accounts_disabled")
+                 .field(UserKeys.email)
+                 .field(UserKeys.accounts)
+                 .field(UserKeys.disabled)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("email_pendingAccounts_disabled")
+                 .field(UserKeys.email)
+                 .field(UserKeys.pendingAccounts)
+                 .field(UserKeys.disabled)
+                 .build())
         .build();
   }
 
   public static final String EMAIL_KEY = "email";
   public static final String ROLES_KEY = "roles";
 
-  @NotEmpty @FdIndex private String name;
+  @NotEmpty private String name;
+
   @FdIndex private String externalUserId;
 
   private String givenName;

@@ -1,0 +1,32 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+  ],
+  "totalResults": 2,
+  "Resources": [
+    {
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User"
+      ],
+      "id": "User",
+      "documentationUri": "https://docs.harness.io/category/fe0577j8ie-access-management",
+      "name": "User",
+      "endpoint": "/Users",
+      "description": "User Account",
+      "schema": "urn:ietf:params:scim:schemas:core:2.0:User"
+    },
+    {
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group"
+      ],
+      "id": "Group",
+      "documentationUri": "https://docs.harness.io/category/fe0577j8ie-access-management",
+      "name": "Group",
+      "endpoint": "/Group",
+      "description": "Groups",
+      "schema": "urn:ietf:params:scim:schemas:core:2.0:Group"
+    }
+  ],
+  "startIndex": 0,
+  "itemsPerPage": 2
+}

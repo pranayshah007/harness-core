@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.secretmanagerclient.WinRmAuthScheme;
 
 import java.time.Duration;
 import lombok.Builder;
@@ -29,6 +30,7 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
 
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean useWinRMKerberosUniqueCacheFile;
+  String host;
 
   @Override
   public EvaluationMode evaluationMode() {
@@ -39,8 +41,6 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
   public String fetchCapabilityBasis() {
     StringBuilder builder = new StringBuilder(128);
 
-    String host = !winRmInfraDelegateConfig.getHosts().isEmpty() ? winRmInfraDelegateConfig.getHosts().iterator().next()
-                                                                 : UNKNOWN_HOST;
     String port = String.valueOf(winRmInfraDelegateConfig.getWinRmCredentials().getPort());
     String extractedHost = PhysicalDataCenterUtils.extractHostnameFromHost(host).orElseThrow(
         ()
@@ -51,6 +51,11 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
     if (isNotBlank(port)) {
       builder.append(':').append(port);
     }
+
+    if (winRmInfraDelegateConfig.getWinRmCredentials().getAuth().getAuthScheme() == WinRmAuthScheme.Kerberos) {
+      builder.append(":kerberos");
+    }
+
     return builder.toString();
   }
 

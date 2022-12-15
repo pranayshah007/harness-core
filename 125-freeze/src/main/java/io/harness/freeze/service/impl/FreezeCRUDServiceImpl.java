@@ -7,22 +7,29 @@
 
 package io.harness.freeze.service.impl;
 
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.response.FreezeErrorResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
+import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.repositories.FreezeConfigRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -35,30 +42,55 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   private final FreezeConfigRepository freezeConfigRepository;
+  private final FreezeSchemaService freezeSchemaService;
 
   static final String FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE =
       "Freeze Config for freezeIdentifier: %s , ogrIdentifier: %s , projIdentifier: %s doesn't exist";
   static final String FREEZE_CONFIG_ALREADY_EXISTS_ERROR_TEMPLATE =
       "Freeze Config for freezeIdentifier: %s , ogrIdentifier: %s , projIdentifier: %s already exist";
 
+  static final String GLOBAL_FREEZE_CONFIG_WITH_WRONG_IDENTIFIER =
+      "Can't update global freeze with identifier: '%s'. Please use _GLOBAL_ as the id";
+
   @Inject
-  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository) {
+  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, FreezeSchemaService freezeSchemaService) {
     this.freezeConfigRepository = freezeConfigRepository;
+    this.freezeSchemaService = freezeSchemaService;
   }
 
   @Override
   public FreezeResponseDTO createFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
+    return createFreezeConfig(freezeConfigEntity);
+  }
+
+  public FreezeResponseDTO createGlobalFreezeConfig(
+      String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
+    FreezeConfigEntity freezeConfigEntity =
+        NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
+    return createFreezeConfig(freezeConfigEntity);
+  }
+
+  private FreezeResponseDTO createFreezeConfig(FreezeConfigEntity freezeConfigEntity) {
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
-        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(accountId,
-            freezeConfigEntity.getOrgIdentifier(), freezeConfigEntity.getProjectIdentifier(),
-            freezeConfigEntity.getIdentifier());
+        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            freezeConfigEntity.getAccountId(), freezeConfigEntity.getOrgIdentifier(),
+            freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getIdentifier());
     if (freezeConfigEntityOptional.isPresent()) {
-      throw new DuplicateEntityException(
-          String.format(FREEZE_CONFIG_ALREADY_EXISTS_ERROR_TEMPLATE, freezeConfigEntity.getIdentifier(),
-              freezeConfigEntity.getOrgIdentifier(), freezeConfigEntity.getProjectIdentifier()));
+      throw new DuplicateEntityException(createFreezeConfigAlreadyExistsMessage(freezeConfigEntity.getOrgIdentifier(),
+          freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getIdentifier()));
     } else {
       freezeConfigRepository.save(freezeConfigEntity);
     }
@@ -68,57 +100,38 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   @Override
   public FreezeResponseDTO manageGlobalFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
-    freezeConfigRepository.upsert(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntity), freezeConfigEntity);
-    return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
-  }
-
-  @Override
-  public Optional<Boolean> isGlobalDeploymentFreezeActive(String accountId, String orgId, String projectId) {
-    Optional<FreezeConfigEntity> entity;
-    Boolean result = false;
-    if (accountId != null) {
-      entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, null, null);
-      if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
-        result = true;
-      }
+    if (!freezeConfigEntity.getIdentifier().equals("_GLOBAL_")) {
+      throw new NGFreezeException(
+          String.format(GLOBAL_FREEZE_CONFIG_WITH_WRONG_IDENTIFIER, freezeConfigEntity.getIdentifier()));
     }
-    if (!result && orgId != null) {
-      entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, null);
-      if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
-        result = true;
-      }
-    }
-    if (!result && projectId != null) {
-      entity =
-          freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, projectId);
-      if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
-        result = true;
-      }
-    }
-    return Optional.ofNullable(result);
+    FreezeConfigEntity updatedFreezeConfigEntity =
+        updateFreezeConfig(freezeConfigEntity, accountId, orgId, projectId, freezeConfigEntity.getIdentifier());
+    deleteFreezeWindowsIfDisabled(updatedFreezeConfigEntity);
+    updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
+    return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
   }
 
   @Override
   public FreezeResponseDTO updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier) {
+    try {
+      freezeSchemaService.validateYamlSchema(deploymentFreezeYaml);
+    } catch (IOException e) {
+      log.error("Freeze Config could not be validated for yaml: " + deploymentFreezeYaml);
+    }
     FreezeConfigEntity updatedFreezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
-    Optional<FreezeConfigEntity> freezeConfigEntityOptional =
-        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            accountId, orgId, projectId, freezeIdentifier);
-    if (freezeConfigEntityOptional.isPresent()) {
-      freezeConfigRepository.update(
-          FreezeFilterHelper.getFreezeEqualityCriteria(updatedFreezeConfigEntity), updatedFreezeConfigEntity);
-      return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
-    } else {
-      throw new EntityNotFoundException(
-          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
-    }
+    updatedFreezeConfigEntity = updateFreezeConfig(
+        updatedFreezeConfigEntity, accountId, orgId, projectId, updatedFreezeConfigEntity.getIdentifier());
+    updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
+    return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
   }
 
   @Override
@@ -131,8 +144,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       freezeConfigRepository.delete(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntityToDelete));
       return;
     } else {
-      throw new EntityNotFoundException(
-          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
+      throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
     }
   }
 
@@ -145,8 +157,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
-      throw new EntityNotFoundException(
-          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
+      throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
     }
   }
 
@@ -209,6 +220,63 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
         .build();
   }
 
+  @Override
+  public FreezeResponseDTO getGlobalFreeze(String accountId, String orgId, String projectId) {
+    Optional<FreezeConfigEntity> freezeConfigEntityOptional =
+        freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
+            accountId, orgId, projectId, null);
+    if (freezeConfigEntityOptional.isPresent()) {
+      FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
+      return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+    } else {
+      String globalFreezeYaml = createGlobalFreezeConfigYaml();
+      try {
+        freezeSchemaService.validateYamlSchema(globalFreezeYaml);
+      } catch (IOException e) {
+        log.error("Freeze Config could not be validated for yaml: " + globalFreezeYaml);
+      }
+      return createGlobalFreezeConfig(globalFreezeYaml, accountId, orgId, projectId);
+    }
+  }
+
+  @Override
+  public FreezeSummaryResponseDTO getGlobalFreezeSummary(String accountId, String orgId, String projectId) {
+    Optional<FreezeConfigEntity> freezeConfigEntityOptional =
+        freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
+            accountId, orgId, projectId, null);
+    if (freezeConfigEntityOptional.isPresent()) {
+      FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
+      return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
+    } else {
+      String globalFreezeYaml = createGlobalFreezeConfigYaml();
+      try {
+        freezeSchemaService.validateYamlSchema(globalFreezeYaml);
+      } catch (IOException e) {
+        log.error("Freeze Config could not be validated for yaml: " + globalFreezeYaml);
+      }
+      return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(
+          createGlobalFreezeConfig(globalFreezeYaml, accountId, orgId, projectId));
+    }
+  }
+
+  @Override
+  public List<FreezeResponseDTO> getParentGlobalFreezeSummary(String accountId, String orgId, String projectId) {
+    List<FreezeResponseDTO> parentGlobalFreeze = new LinkedList<>();
+    Scope scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgId, projectId);
+    switch (scope) {
+      case PROJECT:
+        parentGlobalFreeze.add(getGlobalFreeze(accountId, orgId, null));
+        // fallthrough to ignore
+      case ORG:
+        parentGlobalFreeze.add(getGlobalFreeze(accountId, null, null));
+        // fallthrough to ignore
+      case ACCOUNT:
+      default:
+        break;
+    }
+    return parentGlobalFreeze;
+  }
+
   private FreezeResponseDTO updateActiveStatus(
       String freezeIdentifier, String accountId, String orgId, String projectId, FreezeStatus freezeStatus) {
     Optional<FreezeConfigEntity> freezeConfigEntityOptional =
@@ -221,12 +289,84 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
       freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
       freezeConfigEntity.setStatus(freezeStatus);
-      freezeConfigRepository.update(
-          FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntity), freezeConfigEntity);
+      freezeConfigEntity = freezeConfigRepository.save(freezeConfigEntity);
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
-      throw new EntityNotFoundException(
-          String.format(FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE, freezeIdentifier, orgId, projectId));
+      throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
+    }
+  }
+
+  private String createGlobalFreezeConfigYaml() {
+    FreezeConfig freezeConfig =
+        FreezeConfig.builder()
+            .freezeInfoConfig(FreezeInfoConfig.builder()
+                                  .identifier("_GLOBAL_")
+                                  .name("Global Freeze")
+                                  .description(ParameterField.<String>builder().value("Global Freeze").build())
+                                  .status(FreezeStatus.DISABLED)
+                                  .build())
+            .build();
+    return NGFreezeDtoMapper.toYaml(freezeConfig);
+  }
+
+  private FreezeConfigEntity updateFreezeConfig(FreezeConfigEntity updatedFreezeConfigEntity, String accountId,
+      String orgId, String projectId, String freezeIdentifier) {
+    Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional =
+        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgId, projectId, freezeIdentifier);
+    if (oldFreezeConfigEntityOptional.isPresent()) {
+      updatedFreezeConfigEntity =
+          NGFreezeDtoMapper.updateOldFreezeConfig(updatedFreezeConfigEntity, oldFreezeConfigEntityOptional.get());
+      return updatedFreezeConfigEntity;
+    } else {
+      throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
+    }
+  }
+
+  private void deleteFreezeWindowsIfDisabled(FreezeConfigEntity freezeConfigEntity) {
+    if (FreezeStatus.DISABLED.equals(freezeConfigEntity.getStatus())) {
+      String deploymentFreezeYaml = freezeConfigEntity.getYaml();
+      FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(deploymentFreezeYaml);
+      freezeConfig.getFreezeInfoConfig().setWindows(null);
+      freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
+    }
+  }
+
+  private String createFreezeConfigAlreadyExistsMessage(String orgId, String projId, String freezeIdentifier) {
+    StringBuilder errorBuilder = new StringBuilder("Freeze Config for freezeIdentifier: ");
+    errorBuilder.append(freezeIdentifier);
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      errorBuilder.append(" ,orgIdentifier: ");
+      errorBuilder.append(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projId)) {
+      errorBuilder.append(" ,projIdentifier: ");
+      errorBuilder.append(projId);
+    }
+    errorBuilder.append(" already exist");
+    return errorBuilder.toString();
+  }
+
+  private String createFreezeConfigDoesntExistMessage(String orgId, String projId, String freezeIdentifier) {
+    StringBuilder errorBuilder = new StringBuilder("Freeze Config for freezeIdentifier: ");
+    errorBuilder.append(freezeIdentifier);
+    appendOrgIdentifierToMessage(errorBuilder, orgId);
+    appendProjectIdentifierToMessage(errorBuilder, projId);
+    errorBuilder.append(" doesn't exist");
+    return errorBuilder.toString();
+  }
+
+  private void appendOrgIdentifierToMessage(StringBuilder stringBuilder, String orgId) {
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      stringBuilder.append(" ,orgIdentifier: ");
+      stringBuilder.append(orgId);
+    }
+  }
+
+  private void appendProjectIdentifierToMessage(StringBuilder stringBuilder, String projId) {
+    if (EmptyPredicate.isNotEmpty(projId)) {
+      stringBuilder.append(" ,projIdentifier: ");
+      stringBuilder.append(projId);
     }
   }
 }

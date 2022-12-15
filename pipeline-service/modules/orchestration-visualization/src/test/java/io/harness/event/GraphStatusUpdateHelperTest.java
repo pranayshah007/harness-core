@@ -13,9 +13,9 @@ import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
-import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -42,12 +42,15 @@ import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.PmsOutcome;
@@ -63,6 +66,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -101,8 +105,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
   @RealMongo
   public void shouldDoNothingIfRuntimeIdIsNull() {
     String planExecutionId = generateUuid();
-    eventHandlerV2.handleEvent(
-        planExecutionId, null, NODE_EXECUTION_STATUS_UPDATE, OrchestrationGraph.builder().build());
+    eventHandlerV2.handleEvent(planExecutionId, null, OrchestrationGraph.builder().build());
 
     verify(graphGenerationService, never()).getCachedOrchestrationGraph(planExecutionId);
   }
@@ -154,8 +157,8 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .build();
     mongoStore.upsert(cachedGraph, Duration.ofDays(10));
 
-    OrchestrationGraph updatedGraph = eventHandlerV2.handleEvent(
-        planExecution.getUuid(), dummyStart.getUuid(), NODE_EXECUTION_STATUS_UPDATE, cachedGraph);
+    OrchestrationGraph updatedGraph =
+        eventHandlerV2.handleEvent(planExecution.getUuid(), dummyStart.getUuid(), cachedGraph);
 
     Awaitility.await().atMost(2, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS).until(() -> {
       OrchestrationGraph graphInternal = graphGenerationService.getCachedOrchestrationGraph(planExecution.getUuid());
@@ -248,8 +251,8 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                   .build();
     mongoTemplate.insert(outcome);
 
-    OrchestrationGraph updatedGraph = eventHandlerV2.handleEvent(
-        planExecution.getUuid(), dummyStart.getUuid(), NODE_EXECUTION_STATUS_UPDATE, cachedGraph);
+    OrchestrationGraph updatedGraph =
+        eventHandlerV2.handleEvent(planExecution.getUuid(), dummyStart.getUuid(), cachedGraph);
 
     assertThat(updatedGraph).isNotNull();
     assertThat(updatedGraph.getPlanExecutionId()).isEqualTo(planExecution.getUuid());
@@ -304,5 +307,71 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
 
     outcomeUpdateGraphStatus = eventHandlerV2.isOutcomeUpdateGraphStatus(RUNNING);
     assertThat(outcomeUpdateGraphStatus).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testConvertFromNodeExecution() {
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId("plaExecutionId")
+                          .addLevels(Level.newBuilder()
+                                         .setStepType(StepType.newBuilder().setType("http").build())
+                                         .setNodeType(NodeType.PLAN_NODE.name())
+                                         .setSetupId("planNodeUuid")
+                                         .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .status(SUCCEEDED)
+            .nodeId("planNodeUuid")
+            .name("planNodeName")
+            .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
+            .stepType(StepType.newBuilder().setType("Http").build())
+            .lastUpdatedAt(100L)
+            .failureInfo(FailureInfo.newBuilder().build())
+            .interruptHistory(InterruptEffect.builder().build())
+            .retryIds(Collections.emptyList())
+            .identifier("planNodeId")
+            .module("PMS")
+            .resolvedParams(PmsStepParameters.parse(Map.of("AA", "BB")))
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+
+    GraphVertex prevValue = GraphVertex.builder().stepParameters(PmsStepParameters.parse(Map.of("a", "b"))).build();
+    GraphVertex newValue = eventHandlerV2.convertFromNodeExecution(prevValue, nodeExecution);
+
+    assertThat(newValue.getIdentifier())
+        .isEqualTo(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getIdentifier());
+    assertThat(newValue.getUuid()).isEqualTo(nodeExecution.getUuid());
+    assertThat(newValue.getStartTs()).isEqualTo(nodeExecution.getStartTs());
+    assertThat(newValue.getAmbiance()).isEqualTo(nodeExecution.getAmbiance());
+    assertThat(newValue.getStepType())
+        .isEqualTo(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStepType().getType());
+    assertThat(newValue.getStatus()).isEqualTo(nodeExecution.getStatus());
+    assertThat(newValue.getNodeRunInfo()).isEqualTo(nodeExecution.getNodeRunInfo());
+    assertThat(newValue.getSkipInfo()).isEqualTo(nodeExecution.getSkipInfo());
+    assertThat(newValue.getMode()).isEqualTo(nodeExecution.getMode());
+    assertThat(newValue.getInterruptHistories()).isEqualTo(nodeExecution.getInterruptHistories());
+    assertThat(newValue.getRetryIds()).isEqualTo(nodeExecution.getRetryIds());
+    assertThat(newValue.getExecutableResponses()).isEqualTo(nodeExecution.getExecutableResponses());
+    assertThat(newValue.getProgressData()).isEqualTo(nodeExecution.getPmsProgressData());
+    assertThat(newValue.getFailureInfo()).isEqualTo(nodeExecution.getFailureInfo());
+    assertThat(newValue.getLastUpdatedAt()).isEqualTo(nodeExecution.getLastUpdatedAt());
+    assertThat(newValue.getRetryIds()).isEqualTo(nodeExecution.getRetryIds());
+    assertThat(newValue.getRetryIds()).isEqualTo(nodeExecution.getRetryIds());
+
+    // Since prevValue.getStepParameters is not null. It will remain same.
+    assertThat(newValue.getStepParameters()).isEqualTo(prevValue.getStepParameters());
+    assertThat(newValue.getStepParameters()).isNotEqualTo(nodeExecution.getResolvedParams());
+
+    prevValue = GraphVertex.builder().build();
+    newValue = eventHandlerV2.convertFromNodeExecution(prevValue, nodeExecution);
+
+    // Since prevValue.getStepParameters is null. it will be set from nodeExecution.
+    assertThat(newValue.getStepParameters()).isNotEqualTo(prevValue.getStepParameters());
+    assertThat(newValue.getStepParameters()).isEqualTo(nodeExecution.getResolvedParams());
   }
 }

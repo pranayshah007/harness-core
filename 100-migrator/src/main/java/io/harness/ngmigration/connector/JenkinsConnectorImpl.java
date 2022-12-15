@@ -33,6 +33,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class JenkinsConnectorImpl implements BaseConnector {
+  public static final String USERNAME_AUTH_TYPE = "Username/Password";
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {
     return settingAttribute.getValue().fetchRelevantEncryptedSecrets();
@@ -48,7 +49,7 @@ public class JenkinsConnectorImpl implements BaseConnector {
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     JenkinsConfig jenkinsConfig = (JenkinsConfig) settingAttribute.getValue();
     JenkinsAuthenticationDTOBuilder jenkinsAuthenticationDTOBuilder = JenkinsAuthenticationDTO.builder();
-    if (JenkinsConfig.USERNAME_DEFAULT_TEXT.equals(jenkinsConfig.getAuthMechanism())) {
+    if (USERNAME_AUTH_TYPE.equals(jenkinsConfig.getAuthMechanism())) {
       jenkinsAuthenticationDTOBuilder.authType(USER_PASSWORD)
           .credentials(
               JenkinsUserNamePasswordDTO.builder()

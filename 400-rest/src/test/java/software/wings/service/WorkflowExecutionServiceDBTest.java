@@ -79,10 +79,10 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionBuilder;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.infrastructure.Host;
 import software.wings.events.TestUtils;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.resources.WorkflowResource;
 import software.wings.rules.Listeners;
 import software.wings.security.UserThreadLocal;
@@ -185,7 +185,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
 
     PageResponse<WorkflowExecution> pageResponse = workflowExecutionService.listExecutions(
         aPageRequest().addFilter(WorkflowExecutionKeys.appId, Operator.EQ, APP_ID).build(), false, true, false, true,
-        false);
+        false, true);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.size()).isEqualTo(7);
   }
@@ -202,7 +202,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
 
     PageResponse<WorkflowExecution> pageResponse = workflowExecutionService.listExecutions(
         aPageRequest().addFilter(WorkflowExecutionKeys.appId, Operator.EQ, APP_ID).build(), false, true, false, true,
-        false);
+        false, true);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.size()).isEqualTo(1);
   }
@@ -707,7 +707,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
         "{\"harnessTagFilter\":{\"matchAll\":false,\"conditions\":[{\"name\":\"foo\",\"operator\":\"EXISTS\"}]}}");
 
     PageResponse<WorkflowExecution> pageResponse =
-        workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false);
+        workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false, true);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.size()).isEqualTo(4);
   }
@@ -742,7 +742,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
     workflowExecutionService.addTagFilterToPageRequest(pageRequest,
         "{\"harnessTagFilter\":{\"matchAll\":false,\"conditions\":[{\"name\":\"commitId\",\"operator\":\"IN\",\"values\":[\"1\"]}]}}");
     PageResponse<WorkflowExecution> pageResponse =
-        workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false);
+        workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false, true);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.size()).isEqualTo(2);
 
@@ -752,7 +752,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
         .addFilter(WorkflowExecutionKeys.appId, Operator.EQ, APP_ID);
     workflowExecutionService.addTagFilterToPageRequest(pageRequest,
         "{\"harnessTagFilter\":{\"matchAll\":false,\"conditions\":[{\"name\":\"COMMITID\",\"operator\":\"IN\",\"values\":[\"1\"]}]}}");
-    pageResponse = workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false);
+    pageResponse = workflowExecutionService.listExecutions(pageRequest, false, true, true, false, false, true);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.size()).isEqualTo(0);
   }

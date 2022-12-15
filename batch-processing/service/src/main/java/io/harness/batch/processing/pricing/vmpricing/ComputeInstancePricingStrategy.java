@@ -16,10 +16,12 @@ import io.harness.batch.processing.pricing.fargatepricing.EcsFargateInstancePric
 import io.harness.batch.processing.pricing.pricingprofile.PricingProfileService;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.service.support.GCPCustomInstanceDetailProvider;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceResourceService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
+import io.harness.batch.processing.tasklet.util.K8sResourceUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.ccm.cluster.entities.PricingProfile;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -46,6 +48,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
   private final VMPricingService vmPricingService;
   private final AwsCustomBillingService awsCustomBillingService;
   private final AzureCustomBillingService azureCustomBillingService;
+  private final GcpCustomBillingService gcpCustomBillingService;
   private final InstanceResourceService instanceResourceService;
   private final EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy;
   private final CustomBillingMetaDataService customBillingMetaDataService;
@@ -54,7 +57,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
   @Autowired
   public ComputeInstancePricingStrategy(VMPricingService vmPricingService,
       AwsCustomBillingService awsCustomBillingService, AzureCustomBillingService azureCustomBillingService,
-      InstanceResourceService instanceResourceService,
+      GcpCustomBillingService gcpCustomBillingService, InstanceResourceService instanceResourceService,
       EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy,
       CustomBillingMetaDataService customBillingMetaDataService, PricingProfileService pricingProfileService) {
     this.vmPricingService = vmPricingService;
@@ -64,6 +67,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     this.customBillingMetaDataService = customBillingMetaDataService;
     this.pricingProfileService = pricingProfileService;
     this.azureCustomBillingService = azureCustomBillingService;
+    this.gcpCustomBillingService = gcpCustomBillingService;
   }
 
   @Override
@@ -77,6 +81,8 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     String instanceFamily = instanceMetaData.get(InstanceMetaDataConstants.INSTANCE_FAMILY);
     String computeType = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
         InstanceMetaDataConstants.COMPUTE_TYPE, instanceMetaData);
+    String virtualNode = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
+        InstanceMetaDataConstants.VIRTUAL_NODE, instanceMetaData);
     String region = instanceMetaData.get(InstanceMetaDataConstants.REGION);
     PricingData customVMPricing = getCustomVMPricing(
         instanceData, startTime, endTime, parentInstanceActiveSecond, instanceFamily, region, cloudProvider);
@@ -89,6 +95,8 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       } else if (cloudProvider == CloudProvider.AWS && K8sCCMConstants.AWS_FARGATE_COMPUTE_TYPE.equals(computeType)) {
         return ecsFargateInstancePricingStrategy.getPricePerHour(
             instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
+      } else if (cloudProvider == CloudProvider.AZURE && "AZURE".equals(virtualNode)) {
+        return getAzureVMPricingData(instanceData);
       }
 
       ProductDetails vmComputePricingInfo =
@@ -103,6 +111,26 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
           .build();
     }
     return customVMPricing;
+  }
+
+  private PricingData getAzureVMPricingData(InstanceData instanceData) {
+    Double cpuUnits = instanceData.getTotalResource().getCpuUnits();
+    Double memoryMb = instanceData.getTotalResource().getMemoryMb();
+
+    if (null != instanceData.getPricingResource()) {
+      cpuUnits = instanceData.getPricingResource().getCpuUnits();
+      memoryMb = instanceData.getPricingResource().getMemoryMb();
+    }
+
+    double cpuPricePerHour = K8sResourceUtils.getAzureVMVCpu(cpuUnits) * 0.04656;
+    double memoryPricePerHour = K8sResourceUtils.getAzureVMMemoryGb(memoryMb) * 0.00511;
+    return PricingData.builder()
+        .pricePerHour(cpuPricePerHour + memoryPricePerHour)
+        .cpuPricePerHour(cpuPricePerHour)
+        .memoryPricePerHour(memoryPricePerHour)
+        .cpuUnit(instanceData.getTotalResource().getCpuUnits())
+        .memoryMb(instanceData.getTotalResource().getMemoryMb())
+        .build();
   }
 
   private PricingData getUserCustomInstancePricingData(InstanceData instanceData, InstanceCategory instanceCategory) {
@@ -156,20 +184,30 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
 
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(instanceData.getAccountId());
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(instanceData.getAccountId());
+    String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(instanceData.getAccountId());
+
     if (cloudProvider == CloudProvider.AWS && null != awsDataSetId) {
       vmInstanceBillingData = awsCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.AZURE && null != azureDataSetId) {
       vmInstanceBillingData = azureCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
+    } else if (cloudProvider == CloudProvider.GCP && null != gcpDataSetId) {
+      vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     }
+
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
-      if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0) {
+      double cpuPricePerHr = (vmInstanceBillingData.getCpuCost() * 3600) / parentInstanceActiveSecond;
+      double memoryPricePerHr = (vmInstanceBillingData.getMemoryCost() * 3600) / parentInstanceActiveSecond;
+      if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0
+          && cloudProvider != CloudProvider.GCP) {
         pricePerHr = vmInstanceBillingData.getRate();
       }
       pricingData = PricingData.builder()
                         .pricePerHour(pricePerHr)
                         .networkCost(vmInstanceBillingData.getNetworkCost())
                         .pricingSource(PricingSource.CUR_REPORT)
+                        .cpuPricePerHour(cpuPricePerHr)
+                        .memoryPricePerHour(memoryPricePerHr)
                         .cpuUnit(cpuUnit)
                         .memoryMb(memoryMb)
                         .build();

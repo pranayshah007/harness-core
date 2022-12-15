@@ -79,13 +79,13 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.workflow.StepSkipStrategy.Scope.SPECIFIC_STEPS;
 import static software.wings.common.TemplateConstants.LATEST_TAG;
 import static software.wings.common.WorkflowConstants.PHASE_NAME_PREFIX;
 import static software.wings.common.WorkflowConstants.PHASE_STEP_VALIDATION_MESSAGE;
 import static software.wings.common.WorkflowConstants.STEP_VALIDATION_MESSAGE;
 import static software.wings.common.WorkflowConstants.WORKFLOW_VALIDATION_MESSAGE;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.DEPLOY_CONTAINERS;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.KUBERNETES_SWAP_SERVICES_PRIMARY_STAGE;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.UPGRADE_CONTAINERS;
@@ -168,6 +168,7 @@ import static software.wings.sm.StateType.ECS_SERVICE_SETUP;
 import static software.wings.sm.StateType.ENV_LOOP_RESUME_STATE;
 import static software.wings.sm.StateType.ENV_LOOP_STATE;
 import static software.wings.sm.StateType.ENV_RESUME_STATE;
+import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
 import static software.wings.sm.StateType.ENV_STATE;
 import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.HTTP;
@@ -354,7 +355,6 @@ import software.wings.beans.WorkflowCategorySteps;
 import software.wings.beans.WorkflowCategoryStepsMeta;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamSummary;
@@ -383,6 +383,7 @@ import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.rules.Listeners;
 import software.wings.service.StaticMap;
 import software.wings.service.impl.AuditServiceHelper;
@@ -4781,7 +4782,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
   public void testAllStateTypesDefinedInStepTypes() {
     List<StateType> excludedStateTypes = asList(SUB_WORKFLOW, REPEAT, FORK, WAIT, PAUSE, ENV_STATE, PHASE, PHASE_STEP,
         AWS_LAMBDA_VERIFICATION, STAGING_ORIGINAL_EXECUTION, SCALYR, ENV_RESUME_STATE, ENV_LOOP_RESUME_STATE,
-        APPROVAL_RESUME, ENV_LOOP_STATE, ARTIFACT_COLLECT_LOOP_STATE, COLLECT_REMAINING_INSTANCES);
+        APPROVAL_RESUME, ENV_LOOP_STATE, ARTIFACT_COLLECT_LOOP_STATE, COLLECT_REMAINING_INSTANCES, ENV_ROLLBACK_STATE);
 
     Set<String> stateTypes = new HashSet<>();
     for (StateType stateType : StateType.values()) {

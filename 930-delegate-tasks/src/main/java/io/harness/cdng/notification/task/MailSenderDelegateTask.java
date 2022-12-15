@@ -16,8 +16,8 @@ import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.senders.MailSenderImpl;
 
@@ -63,8 +63,8 @@ public class MailSenderDelegateTask extends AbstractDelegateRunnableTask {
     notificationSmtpConfig.setPassword(restSmtpConfig.getPassword());
     try {
       NotificationProcessingResponse processingResponse =
-          mailSender.send(mailTaskParams.getEmailIds(), mailTaskParams.getSubject(), mailTaskParams.getBody(),
-              mailTaskParams.getNotificationId(), notificationSmtpConfig);
+          mailSender.send(mailTaskParams.getEmailIds(), mailTaskParams.getCcEmailIds(), mailTaskParams.getSubject(),
+              mailTaskParams.getBody(), mailTaskParams.getNotificationId(), notificationSmtpConfig);
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

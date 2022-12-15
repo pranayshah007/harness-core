@@ -16,10 +16,10 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-@Value
+@Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(PIPELINE)
@@ -27,4 +27,5 @@ public class TriggerDetails {
   NGTriggerEntity ngTriggerEntity;
   NGTriggerConfig ngTriggerConfig;
   NGTriggerConfigV2 ngTriggerConfigV2;
+  Boolean authenticated;
 }

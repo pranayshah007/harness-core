@@ -27,6 +27,7 @@ import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.ScopeLevel;
 import io.harness.common.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
@@ -422,8 +423,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new ConnectorLogContext(connectorIdentifier, OVERRIDE_ERROR)) {
@@ -436,12 +437,18 @@ public class ConnectorServiceImpl implements ConnectorService {
           fullyQualifiedIdentifier, projectIdentifier, orgIdentifier, accountIdentifier, true);
       if (connectorOptional.isPresent()) {
         Connector connector = connectorOptional.get();
+        Boolean isSecretManager =
+            ConnectorRegistryFactory.getConnectorCategory(connector.getType()).equals(SECRET_MANAGER);
+        if (isSecretManager
+            && ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).equals(ScopeLevel.ACCOUNT)) {
+          verifyOtherSecretManagerPresentInAccount(accountIdentifier, connectorIdentifier);
+        }
         boolean isConnectorHeartbeatDeleted = deleteConnectorHeartbeatTask(
             accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
         if (isConnectorHeartbeatDeleted || connector.getHeartbeatPerpetualTaskId() == null) {
           boolean isConnectorDeleted =
               getConnectorService(connector.getType())
-                  .delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+                  .delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, forceDelete);
           if (!isDefaultBranchConnector) {
             instrumentationHelper.sendConnectorDeleteEvent(
                 orgIdentifier, projectIdentifier, connectorIdentifier, accountIdentifier);
@@ -467,10 +474,22 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void verifyOtherSecretManagerPresentInAccount(String accountIdentifier, String connectorIdentifier) {
+    int page = 0;
+    int size = 2;
+    Page<ConnectorResponseDTO> connectorResponseDTOList =
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null);
+    if (connectorResponseDTOList.getContent().size() == 1) {
+      throw new InvalidRequestException(
+          String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
+              connectorIdentifier));
+    }
+  }
+
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
-    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
+    return delete(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, forceDelete);
   }
 
   private void deleteConnectorActivities(String accountIdentifier, String connectorFQN) {

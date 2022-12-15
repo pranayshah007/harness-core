@@ -50,6 +50,7 @@ public class Cluster implements PersistentEntity {
                  .field(ClusterKeys.accountId)
                  .field(ClusterKeys.orgIdentifier)
                  .field(ClusterKeys.projectIdentifier)
+                 .field(ClusterKeys.agentIdentifier)
                  .field(ClusterKeys.envRef)
                  .field(ClusterKeys.clusterRef)
                  .build())
@@ -58,6 +59,7 @@ public class Cluster implements PersistentEntity {
                  .field(ClusterKeys.accountId)
                  .field(ClusterKeys.orgIdentifier)
                  .field(ClusterKeys.projectIdentifier)
+                 .field(ClusterKeys.agentIdentifier)
                  .field(ClusterKeys.envRef)
                  .sortField(ClusterKeys.createdAt)
                  .build())
@@ -69,6 +71,7 @@ public class Cluster implements PersistentEntity {
 
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
+  @Trimmed String agentIdentifier;
 
   @NotEmpty String envRef;
 

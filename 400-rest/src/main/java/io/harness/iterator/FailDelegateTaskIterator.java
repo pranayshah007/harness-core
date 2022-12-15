@@ -33,7 +33,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
@@ -69,7 +69,8 @@ import org.mongodb.morphia.query.Query;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._870_ORCHESTRATION)
-public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handler<DelegateTask> {
+public class FailDelegateTaskIterator
+    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<DelegateTask> persistenceProvider;
   @Inject private AssignDelegateService assignDelegateService;
@@ -87,26 +88,34 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
 
   private static final long DELEGATE_TASK_FAIL_TIMEOUT = 30;
 
-  public void registerIterators(int threadPoolSize) {
-    PersistenceIteratorFactory.PumpExecutorOptions options =
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .interval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
-            .poolSize(threadPoolSize)
-            .name("DelegateTaskFail")
-            .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, FailDelegateTaskIterator.class,
-        MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
-            .clazz(DelegateTask.class)
-            .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
-            .targetInterval(Duration.ofSeconds(DELEGATE_TASK_FAIL_TIMEOUT))
-            .acceptableNoAlertDelay(Duration.ofSeconds(45))
-            .acceptableExecutionTime(Duration.ofSeconds(30))
-            .filterExpander(query -> query.field(DelegateTaskKeys.expiry).lessThan(currentTimeMillis()))
-            .handler(this)
-            .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .unsorted(true)
-            .redistribute(true));
+  @Override
+  public void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       FailDelegateTaskIterator.class,
+                       MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
+                           .clazz(DelegateTask.class)
+                           .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofSeconds(45))
+                           .acceptableExecutionTime(Duration.ofSeconds(30))
+                           .filterExpander(query
+                               -> query.criteria(DelegateTaskKeys.createdAt)
+                                      .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                           .handler(this)
+                           .schedulingType(MongoPersistenceIterator.SchedulingType.REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .unsorted(true)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DelegateTaskFail";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override
@@ -224,6 +233,9 @@ public class FailDelegateTaskIterator implements MongoPersistenceIterator.Handle
 
   @VisibleForTesting
   public void failValidationCompletedQueuedTask(DelegateTask delegateTask) {
+    if (delegateTask == null) {
+      return;
+    }
     long validationTime = clock.millis() - VALIDATION_TIMEOUT;
     if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getValidationStartedAt() != null
         && delegateTask.getValidationStartedAt() < validationTime) {

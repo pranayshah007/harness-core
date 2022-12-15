@@ -10,9 +10,12 @@ package io.harness.pms.sdk.core.plan.creation.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncCreatorContext;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -21,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Singular;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
@@ -38,10 +41,18 @@ import lombok.Singular;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PlanCreationContext implements AsyncCreatorContext {
   YamlField currentField;
-  @Singular("globalContext") Map<String, PlanCreationContextValue> globalContext;
+  @Singular("globalContext") private Map<String, PlanCreationContextValue> globalContext;
   String yaml;
   Dependency dependency;
   String executionInputTemplate;
+
+  public Map<String, PlanCreationContextValue> getGlobalContext() {
+    return globalContext;
+  }
+
+  public Dependency getDependency() {
+    return dependency;
+  }
 
   public static PlanCreationContext cloneWithCurrentField(PlanCreationContext planCreationContext, YamlField field,
       String yaml, Dependency dependency, String executionInputTemplate) {
@@ -54,15 +65,80 @@ public class PlanCreationContext implements AsyncCreatorContext {
         .build();
   }
 
-  public void mergeContextFromPlanCreationResponse(PlanCreationResponse planCreationResponse) {
-    if (EmptyPredicate.isEmpty(getGlobalContext())) {
-      this.setGlobalContext(new HashMap<>());
-    }
-    this.getGlobalContext().putAll(planCreationResponse.getContextMap());
-  }
-
   public PlanCreationContextValue getMetadata() {
     return globalContext == null ? null : globalContext.get("metadata");
+  }
+
+  public String getAccountIdentifier() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getAccountIdentifier();
+  }
+
+  public String getOrgIdentifier() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getOrgIdentifier();
+  }
+
+  public String getProjectIdentifier() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getProjectIdentifier();
+  }
+
+  public String getPipelineIdentifier() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getMetadata().getPipelineIdentifier();
+  }
+
+  public String getExecutionUuid() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getMetadata().getExecutionUuid();
+  }
+
+  public TriggerPayload getTriggerPayload() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return null;
+    }
+    return metadata.getTriggerPayload();
+  }
+
+  public ExecutionTriggerInfo getTriggerInfo() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return null;
+    }
+    return metadata.getMetadata().getTriggerInfo();
+  }
+
+  public int getRunSequence() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return -1;
+    }
+    return metadata.getMetadata().getRunSequence();
+  }
+
+  public String getPipelineConnectorRef() {
+    PlanCreationContextValue metadata = getMetadata();
+    if (metadata == null) {
+      return "";
+    }
+    return metadata.getMetadata().getPipelineConnectorRef();
   }
 
   @Override
@@ -116,5 +192,18 @@ public class PlanCreationContext implements AsyncCreatorContext {
       }
     });
     return stepFields;
+  }
+
+  public PipelineStoreType getPipelineStoreType() {
+    PlanCreationContextValue value = getMetadata();
+    if (value == null) {
+      return PipelineStoreType.UNDEFINED;
+    }
+    return value.getMetadata().getPipelineStoreType();
+  }
+
+  public String getYamlVersion() {
+    String harnessVersion = getMetadata().getMetadata().getHarnessVersion();
+    return StringUtils.isEmpty(harnessVersion) ? PipelineVersion.V0 : harnessVersion;
   }
 }

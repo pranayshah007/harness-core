@@ -1,114 +1,78 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 2
+version : 9
 settings :
-  - identifier: test_setting_CI_1
-    name: Test CI setting
-    category : CI
-    groupIdentifier: group_1
-    defaultValue: default
-    valueType : STRING
-    allowOverrides : true
+  - identifier: mandate_webhook_secrets_for_github_triggers
+    name: Mandate Webhook Secrets for Github Triggers
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: disable_harness_built_in_secret_manager
+    name: Disable Harness Built-In Secret Manager
+    category : CORE
+    defaultValue: false
+    valueType : BOOLEAN
     allowedScopes :
       - ACCOUNT
-      - ORGANIZATION
-  - identifier: test_setting_CI_2
-    name: Test CI setting
-    category: CI
-    defaultValue: 2
-    valueType: NUMBER
-    groupIdentifier: group_1
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_3
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_1
-    valueType: BOOLEAN
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_4
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_2
-    valueType: STRING
-    allowOverrides: false
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_5
-    name: Test CI setting
-    category: CI
-    groupIdentifier: group_2
-    defaultValue: v2
-    valueType: STRING
-    allowedValues:
-      - v1
-      - v2
-      - v3
-      - v4
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_6
-    name: Test CI setting
-    category: CI
-    defaultValue: default
-    valueType: STRING
-    allowOverrides: false
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CI_7
-    name: Test CI setting
-    category: CI
-    defaultValue: default
-    valueType: STRING
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: test_setting_CD_1
-    name: Test CD setting
-    category: CD
-    defaultValue: true
+  - identifier: mandate_custom_webhook_authorization
+    name: Mandate Authorization for Custom Webhook Triggers
+    category: CORE
+    defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
-  - identifier: test_setting_CD_2
-    name: Test CD setting
-    category: CD
-    defaultValue: 1
-    valueType: NUMBER
-    allowedValues:
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
       - PROJECT
-  - identifier: test_setting_CD_3
-    name: Test CD setting
-    category: CD
-    defaultValue: default
+  - identifier: scim_jwt_token_key_field
+    name: SCIM JWT token Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
     valueType: STRING
-    allowOverrides: true
+    allowOverrides: false
     allowedScopes:
       - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
+  - identifier: scim_jwt_token_value_field
+    name: SCIM JWT token value to be matched for Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_jwks_keys_url
+    name: SCIM JWT token jwks keys public URL
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_service_account_id
+    name: SCIM JWT token mapped Service Account identifier
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_git_commands
+    name: Use Git client for commits
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_force_delete
+    name: Enable Force Delete of Harness Resources
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowedScopes:
+      - ACCOUNT

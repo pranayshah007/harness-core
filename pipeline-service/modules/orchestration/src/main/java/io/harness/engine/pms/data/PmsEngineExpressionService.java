@@ -10,7 +10,7 @@ package io.harness.engine.pms.data;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -19,6 +19,7 @@ public interface PmsEngineExpressionService {
     return renderExpression(ambiance, expression, false);
   }
   String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck);
+  String renderExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);
 
   String evaluateExpression(Ambiance ambiance, String expression);
   String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);

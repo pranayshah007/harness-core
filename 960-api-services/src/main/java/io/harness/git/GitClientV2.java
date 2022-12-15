@@ -18,6 +18,7 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 
 import java.io.IOException;
+import javax.annotation.Nullable;
 
 public interface GitClientV2 {
   void ensureRepoLocallyClonedAndUpdated(GitBaseRequest request);
@@ -34,5 +35,16 @@ public interface GitClientV2 {
 
   FetchFilesResult fetchFilesBetweenCommits(FetchFilesBwCommitsRequest request);
 
-  void downloadFiles(DownloadFilesRequest request) throws IOException;
+  /**
+   * @return git reference
+   */
+  @Nullable String downloadFiles(DownloadFilesRequest request) throws IOException;
+
+  /**
+   * This method wrap 2 other methods ensureRepoLocallyClonedAndUpdated & copy files to output directory but is doing
+   * this in a sync way. It's similar to downloadFiles, but downloadFiles doesn't support downloading git modules. Once
+   * this issue is solved for downloadFiles then this method can be replaced without any expected issues
+   * @return git reference
+   */
+  @Nullable String cloneRepoAndCopyToDestDir(DownloadFilesRequest request);
 }

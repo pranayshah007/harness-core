@@ -19,6 +19,7 @@ import static io.harness.pms.contracts.execution.Status.PAUSING;
 import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RESOURCE_WAITING;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
+import static io.harness.pms.contracts.execution.Status.SKIPPED;
 import static io.harness.pms.contracts.execution.Status.SUSPENDED;
 import static io.harness.pms.contracts.execution.Status.TASK_WAITING;
 import static io.harness.pms.contracts.execution.Status.TIMED_WAITING;
@@ -344,7 +345,7 @@ public class StatusUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanAllowedStartSet() {
     assertThat(StatusUtils.planAllowedStartSet(Status.INTERVENTION_WAITING))
-        .containsExactlyInAnyOrder(RUNNING, PAUSING, PAUSED);
+        .containsExactlyInAnyOrder(RUNNING, PAUSING, PAUSED, WAIT_STEP_RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.PAUSED))
         .containsExactlyInAnyOrder(QUEUED, RUNNING, PAUSING, INTERVENTION_WAITING);
     assertThat(StatusUtils.planAllowedStartSet(Status.SUCCEEDED))
@@ -376,5 +377,14 @@ public class StatusUtilsTest extends CategoryTest {
         .containsExactlyInAnyOrder(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
     assertThatThrownBy(() -> StatusUtils.planAllowedStartSet(Status.UNRECOGNIZED))
         .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testCheckIfAllChildrenSkipped() {
+    assertThat(StatusUtils.checkIfAllChildrenSkipped(Collections.emptyList())).isTrue();
+    assertThat(StatusUtils.checkIfAllChildrenSkipped(List.of(Status.SKIPPED, SKIPPED))).isTrue();
+    assertThat(StatusUtils.checkIfAllChildrenSkipped(List.of(Status.SKIPPED, EXPIRED))).isFalse();
   }
 }

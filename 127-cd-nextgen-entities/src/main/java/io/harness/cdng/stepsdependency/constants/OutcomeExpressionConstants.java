@@ -36,10 +36,11 @@ public class OutcomeExpressionConstants {
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
-  public final String SERVERLESS_GIT_FETCH_OUTCOME = "serverlessGitFetchOutcome";
+  public final String SERVERLESS_FETCH_FILE_OUTCOME = "serverlessFetchFileOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
   public final String STARTUP_COMMAND = "startupCommand";
+  public final String STARTUP_SCRIPT = "startupScript";
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
@@ -54,4 +55,9 @@ public class OutcomeExpressionConstants {
   public final String ECS_BLUE_GREEN_ROLLBACK_OUTCOME = "ecsBlueGreenRollbackOutcome";
   public final String UPDATE_RELEASE_REPO_OUTCOME = "updateReleaseRepoOutcome";
   public final String INSTANCES = "instances";
+  public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
+  public final String FREEZE_OUTCOME = "freezeOutcome";
+  public final String ELASTIGROUP_SETUP_OUTCOME = "elastigroupSetupOutcome";
+  public final String ELASTIGROUP_PRE_FETCH_OUTCOME = "elastigroupPreFetchOutcome";
+  public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
 }

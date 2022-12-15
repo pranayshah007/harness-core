@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,11 +22,13 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -53,6 +56,11 @@ public class S3StoreConfig implements StoreConfig, Visitable, WithConnectorRef {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither private ParameterField<String> region;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither private ParameterField<String> folderPath;
 
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @Wither
+  private ParameterField<List<String>> paths;
+
   @Override
   public String getKind() {
     return ManifestStoreType.S3;
@@ -69,6 +77,7 @@ public class S3StoreConfig implements StoreConfig, Visitable, WithConnectorRef {
         .bucketName(bucketName)
         .region(region)
         .folderPath(folderPath)
+        .paths(paths)
         .build();
   }
 

@@ -30,13 +30,17 @@ import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.NonNull;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class MarkStatusInterruptHandler implements InterruptHandler {
+  private static int MAX_NODES_BATCH_SIZE = 1000;
+
   @Inject protected NodeExecutionService nodeExecutionService;
   @Inject protected InterruptService interruptService;
   @Inject private OrchestrationEngine orchestrationEngine;
@@ -98,8 +102,14 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
   }
 
   private void handlePlanStatus(String planExecutionId, String nodeExecutionId) {
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses());
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+                 planExecutionId, StatusUtils.activeStatuses(), NodeProjectionUtils.withStatus)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
     List<Status> filteredExecutions = nodeExecutions.stream()
                                           .filter(ne -> !ne.getUuid().equals(nodeExecutionId))
                                           .map(NodeExecution::getStatus)

@@ -7,8 +7,8 @@
 
 package io.harness.template.eventsframework;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;

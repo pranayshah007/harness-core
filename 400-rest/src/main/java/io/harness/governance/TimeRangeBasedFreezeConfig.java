@@ -74,13 +74,13 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
     if (!isApplicable()) {
       return false;
     }
-    long currentTime = System.currentTimeMillis();
-    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
-        getTimeRange().getTo());
     if (timeRange == null) {
       log.warn("Time range is null for deployment freeze window: " + getUuid());
       return false;
     }
+    long currentTime = System.currentTimeMillis();
+    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
+        getTimeRange().getTo());
     if (timeRange.getFreezeOccurrence() != null) {
       return timeRange.isInRange();
     }
@@ -91,13 +91,13 @@ public class TimeRangeBasedFreezeConfig extends GovernanceFreezeConfig {
     if (!isApplicable()) {
       return FreezeWindowStateType.INACTIVE;
     }
-    long currentTime = System.currentTimeMillis();
-    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
-        getTimeRange().getTo());
     if (timeRange == null) {
       log.warn("Time range is null for deployment freeze window: " + getUuid());
       return FreezeWindowStateType.INACTIVE;
     }
+    long currentTime = System.currentTimeMillis();
+    log.info("Window id: {}, Current time: {}, from: {}, to: {}", getUuid(), currentTime, getTimeRange().getFrom(),
+        getTimeRange().getTo());
     if (timeRange.getFreezeOccurrence() != null) {
       return timeRange.isInRange() ? FreezeWindowStateType.ACTIVE : FreezeWindowStateType.INACTIVE;
     }

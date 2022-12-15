@@ -14,8 +14,13 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = InlineTerraformBackendConfigSpec.class, name = TerraformVarFileTypes.Inline)
+  , @JsonSubTypes.Type(value = RemoteTerraformBackendConfigSpec.class, name = TerraformVarFileTypes.Remote)
+})
 public interface TerraformBackendConfigSpec {}

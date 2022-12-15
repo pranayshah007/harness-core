@@ -16,17 +16,20 @@ import io.harness.ng.core.invites.api.InviteService;
 import io.harness.ng.core.invites.api.impl.InviteServiceImpl;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import lombok.AllArgsConstructor;
-import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 @AllArgsConstructor
 public class InviteModule extends AbstractModule {
+  public static final String NG_INVITE_THREAD_EXECUTOR = "ngInviteExecutorService";
   private final boolean isNGAuthUIEnabled;
 
   @Override
@@ -48,14 +51,16 @@ public class InviteModule extends AbstractModule {
     return isNGAuthUIEnabled;
   }
 
-  @Provides
-  @Singleton
-  protected TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
-    return new TransactionTemplate(mongoTransactionManager);
-  }
-
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
     requireBinding(AccessControlAdminClient.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named(NG_INVITE_THREAD_EXECUTOR))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("ng-invite-executor-thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
   }
 }

@@ -10,9 +10,12 @@ package io.harness.freeze.beans.yaml;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class FreezeConfig implements YamlDTO {
-  @JsonProperty("freeze") FreezeInfoConfig freezeInfoConfig;
+  @NotNull @JsonProperty("freeze") FreezeInfoConfig freezeInfoConfig;
 }

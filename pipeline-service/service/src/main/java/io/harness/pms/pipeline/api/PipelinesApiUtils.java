@@ -14,6 +14,7 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -22,30 +23,39 @@ import io.harness.filter.FilterType;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.PolicyMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.spec.server.pipeline.model.ExecutionSummary;
-import io.harness.spec.server.pipeline.model.ExecutorInfo;
-import io.harness.spec.server.pipeline.model.ExecutorInfo.TriggerTypeEnum;
-import io.harness.spec.server.pipeline.model.GitCreateDetails;
-import io.harness.spec.server.pipeline.model.GitDetails;
-import io.harness.spec.server.pipeline.model.GitUpdateDetails;
-import io.harness.spec.server.pipeline.model.NodeInfo;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody.StoreTypeEnum;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo;
-import io.harness.spec.server.pipeline.model.RecentExecutionInfo.ExecutionStatusEnum;
-import io.harness.spec.server.pipeline.model.YAMLSchemaErrorWrapper;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.spec.server.commons.model.GovernanceMetadata;
+import io.harness.spec.server.commons.model.GovernanceStatus;
+import io.harness.spec.server.commons.model.Policy;
+import io.harness.spec.server.commons.model.PolicySet;
+import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
+import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
+import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
+import io.harness.spec.server.pipeline.v1.model.NodeInfo;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
+import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,7 +78,7 @@ public class PipelinesApiUtils {
     gitDetails.setBranchName(entityGitDetails.getBranch());
     gitDetails.setCommitId(entityGitDetails.getCommitId());
     gitDetails.setFilePath(entityGitDetails.getFilePath());
-    gitDetails.setEntityIdentifier(entityGitDetails.getObjectId());
+    gitDetails.setObjectId(entityGitDetails.getObjectId());
     gitDetails.setFileUrl(entityGitDetails.getFileUrl());
     gitDetails.setRepoUrl(entityGitDetails.getRepoUrl());
     gitDetails.setRepoName(entityGitDetails.getRepoName());
@@ -111,12 +121,43 @@ public class PipelinesApiUtils {
   public static PipelineGetResponseBody getGetResponseBody(PipelineEntity pipelineEntity) {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
+    pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
+    pipelineGetResponseBody.setName(pipelineEntity.getName());
+    pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
+    pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
+    pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
+    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
     pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
+    pipelineGetResponseBody.setCacheResponseMetadata(
+        getCacheResponseMetadataDTO(PMSPipelineDtoMapper.getCacheResponse(pipelineEntity)));
     return pipelineGetResponseBody;
+  }
+
+  public static CacheResponseMetadataDTO getCacheResponseMetadataDTO(
+      io.harness.pms.pipeline.CacheResponseMetadataDTO cacheResponseMetadata) {
+    if (cacheResponseMetadata == null) {
+      return null;
+    }
+    CacheResponseMetadataDTO cacheResponseMetadataDTO = new CacheResponseMetadataDTO();
+    cacheResponseMetadataDTO.setCacheState(CacheStateMapper.getCacheStateEnum(cacheResponseMetadata.getCacheState()));
+    cacheResponseMetadataDTO.setTtlLeft(cacheResponseMetadata.getTtlLeft());
+    cacheResponseMetadataDTO.setLastUpdatedAt(cacheResponseMetadata.getLastUpdatedAt());
+    return cacheResponseMetadataDTO;
+  }
+
+  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
+    if (isEmpty(ngTags)) {
+      return null;
+    }
+    Map<String, String> tags = new HashMap<>();
+    for (NGTag ngTag : ngTags) {
+      tags.put(ngTag.getKey(), ngTag.getValue());
+    }
+    return tags;
   }
 
   public static List<String> getModules(Set<String> modules) {
@@ -240,7 +281,6 @@ public class PipelinesApiUtils {
     if (pipelineDTO.getModules() != null) {
       responseBody.setModules(new ArrayList<>(pipelineDTO.getModules()));
     }
-    responseBody.setExecutionSummary(getExecutionSummary(pipelineDTO.getExecutionSummaryInfo()));
     responseBody.setStoreType(getStoreType(pipelineDTO.getStoreType()));
     responseBody.setConnectorRef(pipelineDTO.getConnectorRef());
     responseBody.setValid((pipelineDTO.getIsDraft() == null) ? null : !pipelineDTO.getIsDraft());
@@ -252,16 +292,6 @@ public class PipelinesApiUtils {
                                               .collect(Collectors.toList()));
     }
     return responseBody;
-  }
-
-  public static ExecutionSummary getExecutionSummary(ExecutionSummaryInfoDTO executionSummaryInfo) {
-    if (executionSummaryInfo == null) {
-      return null;
-    }
-    ExecutionSummary executionSummary = new ExecutionSummary();
-    executionSummary.setErrorsCount(executionSummaryInfo.getNumOfErrors());
-    executionSummary.setDeploymentsCount(executionSummaryInfo.getDeployments());
-    return executionSummary;
   }
 
   public static StoreTypeEnum getStoreType(StoreType storeType) {
@@ -329,26 +359,25 @@ public class PipelinesApiUtils {
 
   public static List<String> getSorting(String field, String order) {
     if (field == null) {
+      if (order != null) {
+        throw new InvalidRequestException("Order of sorting provided without Sort field.");
+      }
       return null;
     }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
-    }
     switch (field) {
-      case "slug":
-        field = "identifier";
-        break;
       case "name":
-        break;
-      case "created":
-        field = "createdAt";
         break;
       case "updated":
         field = "lastUpdatedAt";
         break;
       default:
-        throw new InvalidRequestException(
-            "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+        throw new InvalidRequestException("Field provided for sorting unidentified. Accepted values: name / updated");
+    }
+    if (order == null) {
+      order = "DESC";
+    }
+    if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+      throw new InvalidRequestException("Order of sorting unidentified. Accepted values: ASC / DESC");
     }
     return new ArrayList<>(Collections.singleton(field + "," + order));
   }
@@ -361,7 +390,7 @@ public class PipelinesApiUtils {
         .branch(gitDetails.getBranchName())
         .filePath(gitDetails.getFilePath())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .connectorRef(gitDetails.getConnectorRef())
         .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
@@ -376,10 +405,14 @@ public class PipelinesApiUtils {
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
         .commitMsg(gitDetails.getCommitMessage())
-        .isNewBranch(gitDetails.getBranchName() != null && gitDetails.getBaseBranch() != null)
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .repoName(gitDetails.getRepoName())
+        .storeType(StoreType.getFromStringOrNull(
+            (gitDetails.getStoreType() == null) ? null : gitDetails.getStoreType().value()))
+        .connectorRef(gitDetails.getConnectorRef())
         .build();
   }
 
@@ -407,5 +440,56 @@ public class PipelinesApiUtils {
         .description(updateRequestBody.getDescription())
         .tags(updateRequestBody.getTags())
         .build();
+  }
+
+  public static PipelineValidationUUIDResponseBody buildPipelineValidationUUIDResponseBody(
+      PipelineValidationEvent event) {
+    return new PipelineValidationUUIDResponseBody().uuid(event.getUuid());
+  }
+
+  public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
+    return new PipelineValidationResponseBody().status(event.getStatus().name());
+  }
+
+  public static GovernanceMetadata buildGovernanceMetadataFromProto(
+      io.harness.governance.GovernanceMetadata protoMetadata) {
+    return new GovernanceMetadata()
+        .deny(protoMetadata.getDeny())
+        .message(protoMetadata.getMessage())
+        .status(GovernanceStatus.fromValue(protoMetadata.getStatus().toUpperCase()))
+        .policySets(buildPolicySetMetadata(protoMetadata.getDetailsList()));
+  }
+
+  private static List<PolicySet> buildPolicySetMetadata(List<PolicySetMetadata> detailsList) {
+    if (EmptyPredicate.isEmpty(detailsList)) {
+      return null;
+    }
+    return detailsList.stream()
+        .map(policySet
+            -> new PolicySet()
+                   .identifier(policySet.getIdentifier())
+                   .name(policySet.getPolicySetName())
+                   .org(policySet.getOrgId())
+                   .project(policySet.getProjectId())
+                   .status(GovernanceStatus.fromValue(policySet.getStatus().toUpperCase()))
+                   .policies(buildPoliciesMetadata(policySet.getPolicyMetadataList())))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Policy> buildPoliciesMetadata(List<PolicyMetadata> policyMetadataList) {
+    if (EmptyPredicate.isEmpty(policyMetadataList)) {
+      return null;
+    }
+    return policyMetadataList.stream()
+        .map(policy
+            -> new Policy()
+                   .identifier(policy.getIdentifier())
+                   .name(policy.getPolicyName())
+                   .org(policy.getOrgId())
+                   .project(policy.getProjectId())
+                   .evaluationError(policy.getError())
+                   .denyMessages(policy.getDenyMessagesList())
+                   .status(GovernanceStatus.fromValue(policy.getStatus().toUpperCase())))
+        .collect(Collectors.toList());
   }
 }

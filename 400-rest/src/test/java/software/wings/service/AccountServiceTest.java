@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANKIT;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
@@ -45,6 +46,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -147,6 +149,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -263,6 +266,7 @@ public class AccountServiceTest extends WingsBaseTest {
                 CgServiceUsage.builder().name("svc1").serviceId("svcId").instanceCount(1).licensesUsed(1).build()))
             .build();
     when(cgCdLicenseUsageService.getActiveServiceLicenseUsage(anyString())).thenReturn(cgActiveServicesUsageInfo);
+    when(cgCdLicenseUsageService.getActiveServiceInTimePeriod(anyString(), anyInt())).thenReturn(5);
     Account account = setUpDataForTestingSetAccountStatusInternal(AccountType.PAID);
     when(featureFlagService.isEnabled(FeatureName.CG_LICENSE_USAGE, account.getUuid())).thenReturn(true);
 
@@ -273,6 +277,7 @@ public class AccountServiceTest extends WingsBaseTest {
     assertThat(details.isCreatedFromNG()).isEqualTo(false);
     assertThat(details.getLicenseInfo().getAccountType()).isEqualTo(AccountType.PAID);
     assertThat(details.getActiveServicesUsageInfo()).isSameAs(cgActiveServicesUsageInfo);
+    assertThat(details.getActiveServiceCount()).isEqualTo(5);
   }
 
   @Test
@@ -461,6 +466,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void shouldDeleteAccount() {
     String accountId = wingsPersistence.save(anAccount().withCompanyName(HARNESS_NAME).build());
     accountService.delete(accountId);
@@ -587,17 +593,20 @@ public class AccountServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
-  public void shouldListAllAccounts() {
+  public void shouldListSupportAccounts() {
     Account account = anAccount().withCompanyName(HARNESS_NAME).build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
-    assertThat(accountService.listAllAccounts()).isNotEmpty();
-    assertThat(accountService.listAccounts(Collections.emptySet())).isNotEmpty();
-    assertThat(accountService.listAllAccounts().get(0)).isNotNull();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo()).isNotEmpty();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo().get(0)).isNotNull();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo().get(0).getUuid())
-        .isEqualTo(account.getUuid());
+    assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), null).get(0).getUuid()).isNotEmpty();
+    assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
+                   .get(0)
+                   .getAccountName())
+        .isNull();
+    assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
+    assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0).getUuid()).isEqualTo(account.getUuid());
     assertThat(accountService.listAllActiveAccounts()).isNotEmpty();
   }
 
@@ -1096,7 +1105,7 @@ public class AccountServiceTest extends WingsBaseTest {
     account.setHarnessSupportAccessAllowed(false);
     Account savedAccount = accountService.save(account, false);
 
-    assertThat(accountService.isRestrictedAccessEnabled(savedAccount.getUuid())).isTrue();
+    assertThat(accountService.isHarnessSupportAccessDisabled(savedAccount.getUuid())).isTrue();
   }
 
   @Test
@@ -1104,31 +1113,9 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAccountIteration() throws IllegalAccessException {
     final Account account = anAccount().withCompanyName(generateUuid()).build();
-    long serviceGuardDataCollectionIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration, true);
-    long serviceGuardDataAnalysisIteration = random.nextLong();
-    FieldUtils.writeField(
-        account, AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration, true);
+
     long workflowDataCollectionIteration = random.nextLong();
     FieldUtils.writeField(account, AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration, true);
-
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.workflowDataCollectionIteration))
-        .isEqualTo(workflowDataCollectionIteration);
-
-    serviceGuardDataCollectionIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataCollectionIteration, serviceGuardDataCollectionIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataCollectionIteration))
-        .isEqualTo(serviceGuardDataCollectionIteration);
-
-    serviceGuardDataAnalysisIteration = random.nextLong();
-    account.updateNextIteration(AccountKeys.serviceGuardDataAnalysisIteration, serviceGuardDataAnalysisIteration);
-    assertThat(account.obtainNextIteration(AccountKeys.serviceGuardDataAnalysisIteration))
-        .isEqualTo(serviceGuardDataAnalysisIteration);
 
     workflowDataCollectionIteration = random.nextLong();
     account.updateNextIteration(AccountKeys.workflowDataCollectionIteration, workflowDataCollectionIteration);
@@ -1504,5 +1491,34 @@ public class AccountServiceTest extends WingsBaseTest {
     Account account = saveAccount(generateUuid());
     boolean updated = accountService.updateAccountPreference(account.getUuid(), "thisKeyDoesntExist", new Integer(2));
     assertThat(updated).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_checkIfMultipleAccountsExist() {
+    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    wingsPersistence.save(account);
+    assertThat(accountService.doMultipleAccountsExist()).isEqualTo(false);
+    account = anAccount().withCompanyName("test").build();
+    wingsPersistence.save(account);
+    assertThat(accountService.doMultipleAccountsExist()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_listAllAccountsDTO() {
+    Account account = anAccount()
+                          .withCompanyName(HARNESS_NAME)
+                          .withAccountName("Account Name 1")
+                          .withAccountKey("ACCOUNT_KEY")
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withNextGenEnabled(true)
+                          .withGlobalDelegateAccount(false)
+                          .build();
+    wingsPersistence.save(account);
+    assertThat(accountService.getAllAccounts().get(0).getDefaultExperience()).isEqualTo(DefaultExperience.CG);
+    assertThat(accountService.getAllAccounts().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
   }
 }

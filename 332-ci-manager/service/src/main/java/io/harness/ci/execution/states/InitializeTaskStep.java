@@ -8,8 +8,12 @@
 package io.harness.ci.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
+import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
+import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
@@ -17,6 +21,7 @@ import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.IdentifierRef;
@@ -27,17 +32,21 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.license.CILicenseService;
+import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -50,13 +59,18 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -68,14 +82,21 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
+import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
+import io.harness.steps.matrix.StrategyExpansionData;
+import io.harness.steps.matrix.StrategyHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
@@ -92,6 +113,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -105,14 +127,19 @@ import lombok.extern.slf4j.Slf4j;
 public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementParameters, CITaskExecutionResponse> {
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
+  @Inject private AccountClient accountClient;
 
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIFeatureFlagService ciFeatureFlagService;
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
   @Inject private DockerInitializeTaskParamsBuilder dockerInitializeTaskParamsBuilder;
+
+  @Inject private StrategyHelper strategyHelper;
+
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -121,6 +148,9 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @Inject private CIYAMLSanitizationService sanitizationService;
+  @Inject private BackgroundTaskUtility backgroundTaskUtility;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -145,6 +175,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
     }
 
+    validateFeatureFlags(initializeStepInfo, accountIdentifier);
     validateConnectors(
         initializeStepInfo, connectorsEntityDetails, accountIdentifier, orgIdentifier, projectIdentifier);
     sanitizeExecution(initializeStepInfo);
@@ -202,13 +233,29 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
+  private void validateFeatureFlags(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
+    if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
+      return;
+    }
+
+    // For hosted VMs, we need to check whether the feature flag is enabled or not
+    Boolean isEnabled = ciFeatureFlagService.isEnabled(CIE_HOSTED_VMS, accountIdentifier);
+    if (!isEnabled) {
+      throw new CIStageExecutionException(
+          "Hosted builds are not enabled for this account. Please contact Harness support.");
+    }
+  }
+
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
 
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
@@ -221,9 +268,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       log.info("Created params for build task: {}", buildSetupTaskParams);
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
-      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector =
-          vmInitializeTaskParamsBuilder.getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+      AccountDTO accountDTO =
+          CGRestUtils.getResponse(accountClient.getAccountDTO(AmbianceUtils.getAccountId(ambiance)));
+      if (accountDTO == null) {
+        throw new CIStageExecutionException("Account does not exist, contact Harness support team.");
+      }
+
+      String platformSelector = ((DliteVmInitializeTaskParams) buildSetupTaskParams).getSetupVmRequest().getPoolID();
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;
@@ -248,6 +299,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<CITaskExecutionResponse> responseSupplier)
       throws Exception {
+    backgroundTaskUtility.queueJob(() -> saveInitialiseExecutionSweepingOutput(ambiance));
     ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
@@ -321,6 +373,31 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
+  private void populateStrategyExpansion(InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    ExecutionElementConfig executionElement = initializeStepInfo.getExecutionElementConfig();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
+    Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
+
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+      maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
+    }
+
+    for (ExecutionWrapperConfig config : executionElement.getSteps()) {
+      // Inject the envVariables before calling strategy expansion
+      IntegrationStageUtils.injectLoopEnvVariables(config);
+      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+          strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+      strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+    }
+
+    initializeStepInfo.setExecutionElementConfig(
+        ExecutionElementConfig.builder().steps(expandedExecutionElement).build());
+    initializeStepInfo.setStrategyExpansionMap(strategyExpansionMap);
+  }
   private StepResponse handleVmTaskResponse(CITaskExecutionResponse ciTaskExecutionResponse) {
     VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) ciTaskExecutionResponse;
     DependencyOutcome dependencyOutcome = getVmDependencyOutcome(vmTaskExecutionResponse);
@@ -507,5 +584,23 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.CONNECTORS).build();
+  }
+
+  private void saveInitialiseExecutionSweepingOutput(Ambiance ambiance) {
+    long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
+    long currentTime = System.currentTimeMillis();
+
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION));
+    if (!optionalSweepingOutput.isFound()) {
+      try {
+        InitializeExecutionSweepingOutput initializeExecutionSweepingOutput =
+            InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(currentTime - startTime).build();
+        executionSweepingOutputResolver.consume(
+            ambiance, INITIALIZE_EXECUTION, initializeExecutionSweepingOutput, StepOutcomeGroup.STAGE.name());
+      } catch (Exception e) {
+        log.error("Error while consuming initialize execution sweeping output", e);
+      }
+    }
   }
 }

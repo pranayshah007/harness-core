@@ -22,6 +22,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
+import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -81,6 +82,14 @@ public class InfrastructureStepHelper {
     if (ParameterField.isNull(connectorRef)) {
       throw new InvalidRequestException("Connector ref field not present in infrastructure");
     }
+    if (connectorRef.isExpression()) {
+      if (NGExpressionUtils.isRuntimeField(connectorRef.getExpressionValue())) {
+        throw new InvalidRequestException(
+            "Connector ref is a runtime input but its value is not provided in the infrastructure");
+      }
+      throw new InvalidRequestException(String.format(
+          "Connector ref [%s] could not be resolved in infrastructure", connectorRef.getExpressionValue()));
+    }
     String connectorRefValue = connectorRef.getValue();
     IdentifierRef connectorIdentifierRef = IdentifierRefHelper.getIdentifierRef(connectorRefValue,
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -88,7 +97,7 @@ public class InfrastructureStepHelper {
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     ConnectorInfoDTO connectorInfoDTO;
-    if (!connectorDTO.isPresent()) {
+    if (connectorDTO.isEmpty()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     } else {
       saveExecutionLogSafely(logCallback, color("Connector fetched", Green));

@@ -1,0 +1,51 @@
+template:
+  name: pipTemp
+  identifier: pipTemp
+  versionLabel: v1
+  type: Pipeline
+  projectIdentifier: inder_test
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          name: test1
+          identifier: test1
+          type: Deployment
+          spec:
+            deploymentType: Kubernetes
+            service:
+              serviceRef: <+input>
+              serviceInputs: <+input>
+            environment:
+              environmentRef: testenv
+              deployToAll: false
+              infrastructureDefinitions:
+                - identifier: infra1
+                  inputs:
+                    spec:
+                      namespace: <+input>
+            execution:
+              steps:
+                - step:
+                    name: Rollout Deployment
+                    identifier: rolloutDeployment
+                    type: K8sRollingDeploy
+                    timeout: 10m
+                    spec:
+                      skipDryRun: false
+                      pruningEnabled: false
+              rollbackSteps:
+                - step:
+                    name: Rollback Rollout Deployment
+                    identifier: rollbackRolloutDeployment
+                    type: K8sRollingRollback
+                    timeout: 10m
+                    spec:
+                      pruningEnabled: false
+          failureStrategies:
+            - onFailure:
+                errors:
+                  - AllErrors
+                action:
+                  type: StageRollback

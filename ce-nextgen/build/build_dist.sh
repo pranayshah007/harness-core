@@ -35,8 +35,6 @@ cp ${HOME}/.bazel-dirs/bin/ce-nextgen/service/module_deploy.jar ce-nextgen-capsu
 cp ../../ce-nextgen/config/keystore.jks .
 cp ../../ce-nextgen/config/config.yml .
 cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-cie-jdk Dockerfile-ce-nextgen-cie-jdk
-cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-jenkins-k8-openjdk Dockerfile
-cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-jenkins-k8-gcr-openjdk Dockerfile-gcr
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../ce-nextgen/build/container/scripts/ .

@@ -15,6 +15,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -29,4 +30,6 @@ public class HostOutcome implements Outcome, ExecutionSweepingOutput {
   String hostName;
   String privateIp;
   String publicIp;
+  String instanceName;
+  Map<String, Object> properties;
 }

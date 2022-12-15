@@ -21,7 +21,7 @@ public class SlotContainerDeploymentStatusVerifier extends SlotStatusVerifier {
 
   public SlotContainerDeploymentStatusVerifier(SlotContainerDeploymentVerifierContext context) {
     super(context.getLogCallback(), context.getSlotName(), context.getAzureWebClient(),
-        context.getAzureWebClientContext(), null);
+        context.getAzureWebClientContext(), context.getResponseMono());
     this.logStreamer = context.getLogStreamer();
   }
 
@@ -33,15 +33,5 @@ public class SlotContainerDeploymentStatusVerifier extends SlotStatusVerifier {
   @Override
   public String getSteadyState() {
     return null;
-  }
-
-  @Override
-  public boolean operationFailed() {
-    return logStreamer.failed();
-  }
-
-  @Override
-  public String getErrorMessage() {
-    return logStreamer.getErrorLog();
   }
 }

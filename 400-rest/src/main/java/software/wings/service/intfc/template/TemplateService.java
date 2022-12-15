@@ -122,4 +122,6 @@ public interface TemplateService extends OwnedByAccount, OwnedByApplication {
   List<Template> getTemplatesByType(@Nonnull String accountId, String appId, @Nonnull TemplateType templateType);
 
   List<Template> batchGet(List<String> templateUuids, String accountId);
+
+  List<Template> listAccountLevelTemplates(String accountId);
 }

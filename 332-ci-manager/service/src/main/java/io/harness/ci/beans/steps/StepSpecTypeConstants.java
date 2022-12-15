@@ -31,6 +31,10 @@ public interface StepSpecTypeConstants {
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
+  String ACTION = "Action";
+  String BITRISE = "Bitrise";
+
   String CI_STAGE = "CI";
   String SECURITY_STAGE = "SecurityTests";
+  String CI_STAGE_V2 = "ci";
 }

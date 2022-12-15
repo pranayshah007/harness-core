@@ -7,8 +7,16 @@
 
 package io.harness.event.reconciliation.service;
 
-import io.harness.event.reconciliation.deployment.ReconciliationStatus;
+import io.harness.event.reconciliation.ReconciliationStatus;
+
+import software.wings.search.framework.ExecutionEntity;
+
+import java.util.Map;
 
 public interface DeploymentReconService {
-  ReconciliationStatus performReconciliation(String accountId, long durationStartTs, long durationEndTs);
+  ReconciliationStatus performReconciliation(
+      String accountId, long durationStartTs, long durationEndTs, ExecutionEntity executionEntity);
+  long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs);
+  boolean isStatusMismatchedAndUpdated(Map<String, String> tsdbRunningWFs);
+  void insertMissingRecords(String accountId, long durationStartTs, long durationEndTs);
 }

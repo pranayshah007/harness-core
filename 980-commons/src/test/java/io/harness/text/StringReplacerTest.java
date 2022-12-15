@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.text.resolver.ExpressionResolver;
+import io.harness.text.resolver.StringReplacer;
 
 import java.util.List;
 import org.junit.Test;

@@ -77,8 +77,9 @@ spec:
         </#if>
         resources:
           limits:
-            cpu: "${delegateCpu}"
             memory: "${delegateRam}Gi"
+          requests:
+            cpu: "${delegateCpu}"
         livenessProbe:
           httpGet:
             path: /api/health

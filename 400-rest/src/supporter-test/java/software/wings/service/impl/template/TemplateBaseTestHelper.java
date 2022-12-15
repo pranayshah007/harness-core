@@ -43,6 +43,7 @@ public class TemplateBaseTestHelper extends WingsBaseTest {
   @Inject protected TemplateFolderService templateFolderService;
   @Inject protected TemplateService templateService;
   @Inject protected TemplateGalleryService templateGalleryService;
+  @Inject protected TemplateFolderServiceImpl templateFolderServiceImpl;
 
   @Before
   public void setUp() {

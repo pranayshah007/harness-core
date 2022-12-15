@@ -218,7 +218,7 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   private void modifyCEViewAndSetDefaults(CEView ceView) {
-    if (ceView.getViewVisualization() == null) {
+    if (ceView.getViewVisualization() == null || ceView.getViewVisualization().getGroupBy() == null) {
       ceView.setViewVisualization(ViewVisualization.builder()
                                       .granularity(ViewTimeGranularity.DAY)
                                       .chartType(ViewChartType.STACKED_TIME_SERIES)
@@ -289,6 +289,11 @@ public class CEViewServiceImpl implements CEViewService {
     modifyCEViewAndSetDefaults(ceView);
     // For now, we are not returning AWS account Name in case of AWS Account rules
     return ceViewDao.update(ceView);
+  }
+
+  @Override
+  public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
+    ceViewDao.updateBusinessMappingName(accountId, buinessMappingUuid, newBusinessMappingName);
   }
 
   @Override

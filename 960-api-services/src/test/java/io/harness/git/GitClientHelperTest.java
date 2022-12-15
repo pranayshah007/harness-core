@@ -556,6 +556,22 @@ public class GitClientHelperTest extends CategoryTest {
         .doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
+    assertThatThrownBy(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldServer. git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS erver.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS%erver.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatCode(() -> GitClientHelper.validateURL("  https://github.com/smjt-h/goHelloWorldServer.git  "))
+        .doesNotThrowAnyException();
+    assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS%20erver.git"))
+        .doesNotThrowAnyException();
+    assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS%1Aerver.git"))
+        .doesNotThrowAnyException();
+    assertThatThrownBy(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS%%erver.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldS%%20erver.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
   }
 
   @Test

@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.FeatureName;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;

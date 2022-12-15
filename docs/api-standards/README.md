@@ -1,6 +1,6 @@
 # Harness API Guidelines
 
-This repo holds the collection of guides on writing APIs within Harness. 
+This repo holds the collection of guides on writing APIs within Harness and relates to the APIs located at `https://api.app.harness.io/v1`.
 
 ## REST
 
@@ -10,10 +10,3 @@ RESTful APIs are focused on resources, how to group them, and a set of actions t
 
 
 ## Process For Change
-For creating APIs to expose new functionality as well as for redesigning currently implemented APIs, we will be using the Spec-First approach. In this approach, we first create the OpenAPI specification (in JSON or YAML form) for the resource, and then we use code generator tools like swagger-codegen to create server-stubs. 
-
-The link for understanding how we practically do this process can be found [here](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21071988993/Server+stub+generation).
-
-Next, we register a new dependency in harness-core and implement the generated server-stubs to write the implementation for our resource.
-
-_Note: As of now, the focus is on moving only our customer-facing APIs using this process._

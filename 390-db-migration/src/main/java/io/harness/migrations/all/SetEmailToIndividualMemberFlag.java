@@ -8,6 +8,7 @@
 package io.harness.migrations.all;
 
 import io.harness.migrations.Migration;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.beans.notification.NotificationSettings;
@@ -18,8 +19,8 @@ import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 /**
  * Refer to https://harness.atlassian.net/browse/PL-1296 for context.
@@ -35,36 +36,37 @@ public class SetEmailToIndividualMemberFlag implements Migration {
     try {
       log.info("Running Migration: {}", SetEmailToIndividualMemberFlag.class.getSimpleName());
 
-      List<Account> accounts = accountService.listAllAccounts();
+      Query<Account> query = accountService.getBasicAccountQuery();
 
-      for (Account account : accounts) {
-        String accountId = account.getUuid();
-        if (Account.GLOBAL_ACCOUNT_ID.equals(accountId)) {
-          continue;
+      try (HIterator<Account> accounts = new HIterator<>(query.fetch())) {
+        for (Account account : accounts) {
+          String accountId = account.getUuid();
+          if (Account.GLOBAL_ACCOUNT_ID.equals(accountId)) {
+            continue;
+          }
+
+          UserGroup userGroup = userGroupService.getDefaultUserGroup(accountId);
+          if (null == userGroup) {
+            log.info("No default user group present. accountId={}", accountId);
+            continue;
+          }
+
+          log.info(
+              "Setting useIndividualEmails flag to true. accountId={} userGroupId={}", accountId, userGroup.getUuid());
+          NotificationSettings existing = userGroup.getNotificationSettings();
+          NotificationSettings updatedSetting;
+
+          if (null == existing) {
+            updatedSetting = new NotificationSettings(true, true, Collections.emptyList(), null, "", "");
+          } else {
+            updatedSetting = new NotificationSettings(true, true, existing.getEmailAddresses(),
+                existing.getSlackConfig(), "", existing.getMicrosoftTeamsWebhookUrl());
+          }
+
+          wingsPersistence.updateField(
+              UserGroup.class, userGroup.getUuid(), UserGroup.NOTIFICATION_SETTINGS_KEY, updatedSetting);
         }
-
-        UserGroup userGroup = userGroupService.getDefaultUserGroup(accountId);
-        if (null == userGroup) {
-          log.info("No default user group present. accountId={}", accountId);
-          continue;
-        }
-
-        log.info(
-            "Setting useIndividualEmails flag to true. accountId={} userGroupId={}", accountId, userGroup.getUuid());
-        NotificationSettings existing = userGroup.getNotificationSettings();
-        NotificationSettings updatedSetting;
-
-        if (null == existing) {
-          updatedSetting = new NotificationSettings(true, true, Collections.emptyList(), null, "", "");
-        } else {
-          updatedSetting = new NotificationSettings(true, true, existing.getEmailAddresses(), existing.getSlackConfig(),
-              "", existing.getMicrosoftTeamsWebhookUrl());
-        }
-
-        wingsPersistence.updateField(
-            UserGroup.class, userGroup.getUuid(), UserGroup.NOTIFICATION_SETTINGS_KEY, updatedSetting);
       }
-
     } catch (Exception e) {
       log.error("Error running SetEmailToIndividualMemberFlag migration", e);
     }

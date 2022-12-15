@@ -55,11 +55,10 @@ public class CfRunPluginCommandRequest extends CfCommandRequest
       String workflowExecutionId, Integer timeoutIntervalInMin, boolean useCLIForPcfAppCreation,
       boolean enforceSslValidation, boolean useAppAutoscalar, String renderedScriptString,
       List<String> filePathsInScript, List<FileData> fileDataList, List<EncryptedDataDetail> encryptedDataDetails,
-      String repoRoot, boolean limitPcfThreads, boolean ignorePcfConnectionContextCache,
-      @NotNull CfCliVersion cfCliVersion) {
+      String repoRoot, boolean limitPcfThreads, @NotNull CfCliVersion cfCliVersion) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCLIForPcfAppCreation, enforceSslValidation, useAppAutoscalar,
-        limitPcfThreads, ignorePcfConnectionContextCache, cfCliVersion);
+        limitPcfThreads, cfCliVersion);
     this.renderedScriptString = renderedScriptString;
     this.filePathsInScript = filePathsInScript;
     this.fileDataList = fileDataList;

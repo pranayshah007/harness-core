@@ -21,18 +21,22 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
 import io.harness.exception.runtime.GcrConnectRuntimeException;
 import io.harness.exception.runtime.GcrImageNotFoundRuntimeException;
-import io.harness.exception.runtime.GcrInvalidTagRuntimeException;
 import io.harness.expression.RegexFunctor;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
@@ -45,16 +49,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
-/**
- * @author brett on 8/2/17
- */
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -95,16 +95,9 @@ public class GcrApiServiceImpl implements GcrApiService {
       GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       throw ex;
     } catch (IOException e) {
-      ErrorHandlingGlobalContextData globalContextData =
-          GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
-      if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
-        Map<String, String> imageDataMap = new HashMap<>();
-        imageDataMap.put(ExceptionMetadataKeys.URL.name(), gcpConfig.getRegistryHostname());
-        MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(imageDataMap).build();
-        GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
-        throw new GcrConnectRuntimeException(e.getMessage(), e.getCause());
-      }
-      throw new WingsException(ErrorCode.DEFAULT_ERROR_CODE, USER, e).addParam("message", ExceptionUtils.getMessage(e));
+      throw handleIOException(gcpConfig, e);
+    } catch (InvalidRequestException e) {
+      throw new HintException(e.getMessage());
     }
   }
 
@@ -113,6 +106,10 @@ public class GcrApiServiceImpl implements GcrApiService {
       if (response.code() == 404) {
         ErrorHandlingGlobalContextData globalContextData =
             GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
+        if (response.body() == null) {
+          throw new InvalidRequestException(
+              "Image name [" + imageName + "] does not exist in Google Container Registry.");
+        }
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
             && response.body().tags.size() == 0) {
           throw new GcrImageNotFoundRuntimeException(
@@ -135,30 +132,22 @@ public class GcrApiServiceImpl implements GcrApiService {
   private List<BuildDetailsInternal> processBuildResponse(
       String gcrUrl, String imageName, GcrImageTagResponse dockerImageTagResponse) {
     if (dockerImageTagResponse != null && dockerImageTagResponse.getTags() != null) {
-      List<BuildDetailsInternal> buildDetails =
-          dockerImageTagResponse.getTags()
-              .stream()
-              .map(tag -> {
-                Map<String, String> metadata = new HashMap();
-                metadata.put(ArtifactMetadataKeys.IMAGE,
-                    (gcrUrl.endsWith("/") ? gcrUrl : gcrUrl.concat("/")) + imageName + ":" + tag);
-                metadata.put(ArtifactMetadataKeys.TAG, tag);
-                return BuildDetailsInternal.builder()
-                    .uiDisplayName("Tag# " + tag)
-                    .number(tag)
-                    .metadata(metadata)
-                    .build();
-              })
-              .collect(toList());
+      List<BuildDetailsInternal> buildDetails = dockerImageTagResponse.getTags()
+                                                    .stream()
+                                                    .map(tag -> getBuildDetailsInternal(gcrUrl, imageName, tag))
+                                                    .collect(toList());
       // Sorting at build tag for docker artifacts.
       return buildDetails.stream().sorted(new BuildDetailsInternalComparatorAscending()).collect(toList());
     }
     return emptyList();
   }
 
-  @Override
-  public BuildDetailsInternal getLastSuccessfulBuild(GcrInternalConfig gcpConfig, String imageName) {
-    return null;
+  private BuildDetailsInternal getBuildDetailsInternal(String registryUrl, String imageName, String tag) {
+    Map<String, String> metadata = new HashMap();
+    metadata.put(ArtifactMetadataKeys.IMAGE,
+        (registryUrl.endsWith("/") ? registryUrl : registryUrl.concat("/")) + imageName + ":" + tag);
+    metadata.put(ArtifactMetadataKeys.TAG, tag);
+    return BuildDetailsInternal.builder().uiDisplayName("Tag# " + tag).number(tag).metadata(metadata).build();
   }
 
   @Override
@@ -168,20 +157,16 @@ public class GcrApiServiceImpl implements GcrApiService {
                                                    .listImageTags(gcpConfig.getBasicAuthHeader(), imageName)
                                                    .execute();
       if (!isSuccessful(response)) {
-        return validateImageName(imageName);
+        // image not found or user doesn't have permission to list image tags
+        log.warn("Image name [" + imageName + "] does not exist in Google Container Registry.");
+        throw new WingsException(ErrorCode.INVALID_ARGUMENT, USER)
+            .addParam("args", "Image name [" + imageName + "] does not exist in Google Container Registry.");
       }
     } catch (IOException e) {
       log.error(ExceptionUtils.getMessage(e), e);
-      throw new WingsException(ErrorCode.REQUEST_TIMEOUT, USER).addParam("name", "Registry server");
+      throw handleIOException(gcpConfig, e);
     }
     return true;
-  }
-
-  private boolean validateImageName(String imageName) {
-    // image not found or user doesn't have permission to list image tags
-    log.warn("Image name [" + imageName + "] does not exist in Google Container Registry.");
-    throw new WingsException(ErrorCode.INVALID_ARGUMENT, USER)
-        .addParam("args", "Image name [" + imageName + "] does not exist in Google Container Registry.");
   }
 
   @Override
@@ -191,7 +176,10 @@ public class GcrApiServiceImpl implements GcrApiService {
       Response response = registryRestClient.listImageTags(gcpConfig.getBasicAuthHeader(), imageName).execute();
       return isSuccessful(response);
     } catch (IOException e) {
-      throw new WingsException(ErrorCode.DEFAULT_ERROR_CODE, USER, e).addParam("message", ExceptionUtils.getMessage(e));
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "There was an error reaching the Google container registry",
+          "The connector or the artifact source may not be setup correctly.",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
   }
 
@@ -212,19 +200,35 @@ public class GcrApiServiceImpl implements GcrApiService {
 
   @Override
   public BuildDetailsInternal verifyBuildNumber(GcrInternalConfig gcrInternalConfig, String imageName, String tag) {
-    List<BuildDetailsInternal> builds = getBuilds(gcrInternalConfig, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
-    if (builds.size() != 1) {
+    try {
+      Response<DockerImageManifestResponse> response =
+          getGcrRestClient(gcrInternalConfig.getRegistryHostname())
+              .getImageManifest(gcrInternalConfig.getBasicAuthHeader(), imageName, tag)
+              .execute();
+
+      if (!isSuccessful(response)) {
+        throw new InvalidRequestException("Please provide a valid ImageName or Tag.");
+      }
+
+      return getBuildDetailsInternal(gcrInternalConfig.getRegistryHostname(), imageName, tag);
+    } catch (IOException e) {
+      throw handleIOException(gcrInternalConfig, e);
+    }
+  }
+
+  private WingsException handleIOException(GcrInternalConfig gcrInternalConfig, IOException e) {
+    ErrorHandlingGlobalContextData globalContextData =
+        GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
+    if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
       Map<String, String> imageDataMap = new HashMap<>();
-      imageDataMap.put(ExceptionMetadataKeys.IMAGE_NAME.name(), imageName);
-      imageDataMap.put(ExceptionMetadataKeys.IMAGE_TAG.name(), tag);
-      imageDataMap.put(
-          ExceptionMetadataKeys.URL.name(), gcrInternalConfig.getRegistryHostname() + "/" + imageName + ":" + tag);
+      imageDataMap.put(ExceptionMetadataKeys.URL.name(), gcrInternalConfig.getRegistryHostname());
       MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(imageDataMap).build();
       GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
-      throw new GcrInvalidTagRuntimeException("Could not find tag [" + tag + "] for GCR image [" + imageName + "]");
+      throw new GcrConnectRuntimeException(e.getMessage(), e.getCause());
     }
-    return builds.get(0);
+    throw NestedExceptionUtils.hintWithExplanationException("There was an error reaching the Google container registry",
+        "The connector or the artifact source may not be setup correctly.",
+        new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
   }
 
   private boolean isSuccessful(Response<?> response) {
@@ -233,6 +237,7 @@ public class GcrApiServiceImpl implements GcrApiService {
       case 200:
         return true;
       case 404:
+        return false;
       case 400:
         log.info("Response code {} received. Mostly with Image does not exist", code);
         return false;

@@ -13,6 +13,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
@@ -75,7 +76,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
-      , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
+      , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error"),
+          @ApiResponse(code = 403, response = AccessDeniedErrorDTO.class, message = "Unauthorized")
     })
 @OwnedBy(HarnessTeam.PIPELINE)
 @Api("/pipeline/execute")
@@ -104,7 +106,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
@@ -142,7 +144,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
@@ -171,7 +173,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier @NotEmpty @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
@@ -198,7 +200,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier @NotEmpty @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
@@ -229,7 +231,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @NotNull @PathParam("originalExecutionId") @Parameter(
           description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
@@ -264,7 +266,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @NotNull @PathParam("originalExecutionId") @Parameter(
           description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
@@ -325,7 +327,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
@@ -354,8 +356,8 @@ public interface PlanExecutionResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @NotNull @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE,
-          required = true) @QueryParam(NGCommonEntityConstants.MODULE_TYPE) String moduleType,
+      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.MODULE_TYPE) String moduleType,
       @NotNull @Parameter(description = PipelineResourceConstants.ORIGINAL_EXECUTION_ID_PARAM_MESSAGE,
           required = true) @PathParam("originalExecutionId") String originalExecutionId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
@@ -537,7 +539,7 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
           description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @NotNull @QueryParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
           description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)

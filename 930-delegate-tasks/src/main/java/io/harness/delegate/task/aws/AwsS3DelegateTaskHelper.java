@@ -12,10 +12,13 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.S3BuildResponse;
@@ -122,9 +125,30 @@ public class AwsS3DelegateTaskHelper {
     if (buildDetails == new BuildDetails()) {
       return S3BuildResponse.builder().commandExecutionStatus(FAILURE).build();
     } else {
-      filePath = awsTaskParams.getFilePath();
+      filePath = buildDetails.getArtifactPath();
     }
 
     return S3BuildResponse.builder().commandExecutionStatus(SUCCESS).filePath(filePath).build();
+  }
+
+  public DelegateResponseData putAuditBatchToBucket(AwsPutAuditBatchToBucketTaskParamsRequest awsTaskParams) {
+    decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
+    AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
+    try {
+      PutObjectResultResponse putObjectResultResponse = awsApiHelperService.putAuditBatchToBucket(
+          awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getAuditBatch());
+
+      return AwsPutAuditBatchToBucketTaskResponse.builder()
+          .commandExecutionStatus(SUCCESS)
+          .putObjectResultResponse(putObjectResultResponse)
+          .build();
+    } catch (Exception ex) {
+      log.error("Exception while writing to S3 bucket: ", ex);
+
+      return AwsPutAuditBatchToBucketTaskResponse.builder()
+          .commandExecutionStatus(FAILURE)
+          .errorMessage("Exception while writing to S3 bucket " + (ex.getMessage() != null ? ex.getMessage() : ""))
+          .build();
+    }
   }
 }

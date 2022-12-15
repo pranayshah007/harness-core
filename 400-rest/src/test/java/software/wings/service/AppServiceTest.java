@@ -14,6 +14,7 @@ package software.wings.service;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -25,6 +26,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.LALIT;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static software.wings.api.DeploymentType.CUSTOM;
 import static software.wings.beans.Application.Builder.anApplication;
@@ -106,7 +108,7 @@ import software.wings.service.intfc.template.TemplateService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.settings.SettingVariableTypes;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -477,6 +479,54 @@ public class AppServiceTest extends WingsBaseTest {
     verify(updateOperations)
         .set("keywords", new HashSet<>(asList("App_Name".toLowerCase(), "Description".toLowerCase())));
     verify(updateOperations, never()).set("areWebHookSecretsMandated", true);
+    verify(wingsPersistence).update(query, updateOperations);
+    verify(wingsPersistence, times(2)).get(Application.class, APP_ID);
+    verify(yamlPushService).pushYamlChangeSet(ACCOUNT_ID, application, application, Type.UPDATE, false, true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldUpdateApplicationWithDisableTriggers() {
+    when(featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
+    Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
+    when(wingsPersistence.get(Application.class, APP_ID)).thenReturn(application);
+
+    appService.update(anApplication()
+                          .uuid(APP_ID)
+                          .name("App_Name")
+                          .description("Description")
+                          .isManualTriggerAuthorized(true)
+                          .disableTriggers(true)
+                          .accountId(ACCOUNT_ID)
+                          .build());
+    verify(query).filter(ID_KEY, APP_ID);
+    verify(updateOperations).set("name", "App_Name");
+    verify(updateOperations).set("description", "Description");
+    verify(updateOperations)
+        .set("keywords", new HashSet<>(asList("App_Name".toLowerCase(), "Description".toLowerCase())));
+    verify(updateOperations).set("disableTriggers", true);
+    verify(wingsPersistence).update(query, updateOperations);
+    verify(wingsPersistence, times(2)).get(Application.class, APP_ID);
+    verify(yamlPushService).pushYamlChangeSet(ACCOUNT_ID, application, application, Type.UPDATE, false, true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldUpdateApplicationWithoutDisableTriggers() {
+    when(featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
+    Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
+    when(wingsPersistence.get(Application.class, APP_ID)).thenReturn(application);
+
+    appService.update(
+        anApplication().uuid(APP_ID).name("App_Name").description("Description").accountId(ACCOUNT_ID).build());
+    verify(query).filter(ID_KEY, APP_ID);
+    verify(updateOperations).set("name", "App_Name");
+    verify(updateOperations).set("description", "Description");
+    verify(updateOperations)
+        .set("keywords", new HashSet<>(asList("App_Name".toLowerCase(), "Description".toLowerCase())));
+    verify(updateOperations, never()).set("disableTriggers", true);
     verify(wingsPersistence).update(query, updateOperations);
     verify(wingsPersistence, times(2)).get(Application.class, APP_ID);
     verify(yamlPushService).pushYamlChangeSet(ACCOUNT_ID, application, application, Type.UPDATE, false, true);

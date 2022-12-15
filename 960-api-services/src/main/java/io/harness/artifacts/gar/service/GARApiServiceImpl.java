@@ -23,6 +23,7 @@ import io.harness.artifacts.gar.beans.GarTags;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -182,9 +183,8 @@ public class GARApiServiceImpl implements GarApiService {
   private boolean isSuccessful(int code, String errormessage) {
     switch (code) {
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException("Please check region, repository name, package fields",
-            "Please verify the values of region, repository name, package",
-            new InvalidArtifactServerException(errormessage, USER));
+        throw new HintException(
+            "Please provide valid values for region, project, repository, package and version fields.");
       case 400:
         return false;
       case 401:
@@ -193,9 +193,7 @@ public class GARApiServiceImpl implements GarApiService {
             "Please check connector's permission and credentials",
             new InvalidArtifactServerException(errormessage, USER));
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Connector provided does not have access to project provided", "Please check project field",
-            new InvalidArtifactServerException(errormessage, USER));
+        throw new HintException("Connector provided does not have access to project. Please check the project field.");
       default:
         throw NestedExceptionUtils.hintWithExplanationException(
             "The server could have failed authenticate ,Please check your credentials",

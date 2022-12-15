@@ -7,29 +7,35 @@
 
 package io.harness.azure.impl;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.azure.AzureClient;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.network.Http;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
-import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.monitor.AutoscaleProfile;
-import com.microsoft.azure.management.monitor.AutoscaleSetting;
-import com.microsoft.azure.management.monitor.AutoscaleSettings;
-import com.microsoft.azure.management.monitor.ScaleCapacity;
-import com.microsoft.azure.management.monitor.implementation.AutoscaleSettingResourceInner;
-import com.microsoft.azure.management.monitor.implementation.AutoscaleSettingsInner;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.http.HttpClient;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.monitor.fluent.AutoscaleSettingsClient;
+import com.azure.resourcemanager.monitor.fluent.MonitorClient;
+import com.azure.resourcemanager.monitor.fluent.models.AutoscaleSettingResourceInner;
+import com.azure.resourcemanager.monitor.implementation.MonitorClientImpl;
+import com.azure.resourcemanager.monitor.models.AutoscaleProfile;
+import com.azure.resourcemanager.monitor.models.AutoscaleSetting;
+import com.azure.resourcemanager.monitor.models.AutoscaleSettings;
+import com.azure.resourcemanager.monitor.models.ScaleCapacity;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -39,38 +45,36 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
-import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  private AzureResourceManager.Configurable configurable;
+  private AzureResourceManager.Authenticated authenticated;
+  private AzureResourceManager azure;
 
   @InjectMocks AzureAutoScaleSettingsClientImpl azureAutoScaleSettingsClient;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = Mockito.mock(ApplicationTokenCredentials.class);
-    PowerMockito.whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    Mockito.when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    PowerMockito.mockStatic(Azure.class);
-    Mockito.when(Azure.configure()).thenReturn(configurable);
-    Mockito.when(configurable.withLogLevel(Matchers.any(LogLevel.class))).thenReturn(configurable);
-    Mockito.when(configurable.authenticate(Matchers.any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    Mockito.when(authenticated.withSubscription(anyString())).thenReturn(azure);
-    Mockito.when(authenticated.withDefaultSubscription()).thenReturn(azure);
+    MockitoAnnotations.initMocks(this);
+
+    azure = mock(AzureResourceManager.class);
+    configurable = mock(AzureResourceManager.Configurable.class);
+    authenticated = mock(AzureResourceManager.Authenticated.class);
+
+    MockedStatic<AzureResourceManager> azureMockStatic = mockStatic(AzureResourceManager.class);
+    azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
+    when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
+    when(configurable.authenticate(any(), any())).thenReturn(authenticated);
+    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
 
   @Test
@@ -81,8 +85,7 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     String resourceGroupName = "resourceGroupName";
     String targetResourceId = "targetResourceId";
     String autoScaleSettingId = "autoScaleSettingId";
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = buildAzureConfig();
 
     mockAutosScaleSettings(resourceGroupName, targetResourceId, autoScaleSettingId);
 
@@ -180,24 +183,21 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     defaultProfileScalePolicy.withMaximum("1");
     defaultProfileScalePolicy.withMinimum("0");
     defaultProfileScalePolicy.withDefaultProperty("1");
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = buildAzureConfig();
 
-    AutoscaleSettings mockAutoScaleSettings =
-        mockAutosScaleSettings(resourceGroupName, targetResourceId, autoScaleSettingId);
-    AutoscaleSettingResourceInner mockAutoScaleSettingResourceInner = Mockito.mock(AutoscaleSettingResourceInner.class);
-    AutoscaleSettingsInner mockAutoScaleSettingsInner = Mockito.mock(AutoscaleSettingsInner.class);
+    MonitorClientImpl monitorClientMock = mock(MonitorClientImpl.class);
+    AutoscaleSettingsClient autoscaleSettingsClientMock = mockAutoscaleSettingsClient(monitorClientMock);
+    Mono<AutoscaleSettingResourceInner> autoscaleSettingResourceInnerMono = mock(Mono.class);
 
-    Mockito.when(mockAutoScaleSettings.inner()).thenReturn(mockAutoScaleSettingsInner);
     ArgumentCaptor<AutoscaleSettingResourceInner> autoScaleSettingResourceInnerCapture =
         ArgumentCaptor.forClass(AutoscaleSettingResourceInner.class);
-
-    Mockito.doReturn(mockAutoScaleSettingResourceInner)
-        .when(mockAutoScaleSettingsInner)
-        .createOrUpdate(Matchers.eq(resourceGroupName), anyString(), autoScaleSettingResourceInnerCapture.capture());
+    Mockito.doReturn(autoscaleSettingResourceInnerMono)
+        .when(autoscaleSettingsClientMock)
+        .createOrUpdateAsync(any(), anyString(), autoScaleSettingResourceInnerCapture.capture());
 
     azureAutoScaleSettingsClient.attachAutoScaleSettingToTargetResourceId(azureConfig, subscriptionId,
-        resourceGroupName, targetResourceId, autoScaleSettingsJSONs, defaultProfileScalePolicy);
+        resourceGroupName, targetResourceId, autoScaleSettingsJSONs.get(0), defaultProfileScalePolicy,
+        autoscaleSettingsClientMock);
 
     AutoscaleSettingResourceInner autoScaleSettingResult = autoScaleSettingResourceInnerCapture.getValue();
     Assertions.assertThat(autoScaleSettingResult).isNotNull();
@@ -219,8 +219,7 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     String resourceGroupName = "resourceGroupName";
     String targetResourceId = "targetResourceId";
     String autoScaleSettingId = "autoScaleSettingId";
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = buildAzureConfig();
 
     AutoscaleSettings mockAutoScaleSettings =
         mockAutosScaleSettings(resourceGroupName, targetResourceId, autoScaleSettingId);
@@ -244,8 +243,7 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     String resourceGroupName = "resourceGroupName";
     String targetResourceId = "targetResourceId";
     String autoScaleSettingId = "autoScaleSettingId";
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = buildAzureConfig();
 
     mockAutosScaleSettings(resourceGroupName, targetResourceId, autoScaleSettingId);
 
@@ -263,8 +261,7 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     String resourceGroupName = "resourceGroupName";
     String targetResourceId = "targetResourceId";
     String autoScaleSettingId = "autoScaleSettingId";
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    AzureConfig azureConfig = buildAzureConfig();
 
     mockAutosScaleSettings(resourceGroupName, targetResourceId, autoScaleSettingId);
 
@@ -279,11 +276,13 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
       String resourceGroupName, String targetResourceId, String autoScaleSettingId) throws IOException {
     AutoscaleSettings mockAutoScaleSettings = Mockito.mock(AutoscaleSettings.class);
     AutoscaleSetting mockAutoScaleSetting = Mockito.mock(AutoscaleSetting.class);
-    PagedList<AutoscaleSetting> pageList = getPageList();
-    pageList.add(mockAutoScaleSetting);
+
+    List<AutoscaleSetting> responseList = new ArrayList<>();
+    responseList.add(mockAutoScaleSetting);
+    Response response = new SimpleResponse(null, 200, null, responseList);
 
     Mockito.when(azure.autoscaleSettings()).thenReturn(mockAutoScaleSettings);
-    Mockito.when(mockAutoScaleSettings.listByResourceGroup(resourceGroupName)).thenReturn(pageList);
+    Mockito.when(mockAutoScaleSettings.listByResourceGroup(resourceGroupName)).thenReturn(getPagedIterable(response));
     Mockito.when(mockAutoScaleSetting.autoscaleEnabled()).thenReturn(true);
     Mockito.when(mockAutoScaleSetting.targetResourceId()).thenReturn(targetResourceId);
     Mockito.when(mockAutoScaleSetting.id()).thenReturn(autoScaleSettingId);
@@ -294,22 +293,18 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
     return mockAutoScaleSettings;
   }
 
+  private AutoscaleSettingsClient mockAutoscaleSettingsClient(MonitorClient monitorClientMock) {
+    AutoscaleSettingsClient autoscaleSettingsClientMock = mock(AutoscaleSettingsClient.class);
+    when(monitorClientMock.getAutoscaleSettings()).thenReturn(autoscaleSettingsClientMock);
+    return autoscaleSettingsClientMock;
+  }
+
   @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
-      @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
+  }
+
+  private AzureConfig buildAzureConfig() {
+    return AzureConfig.builder().key("key".toCharArray()).clientId("clientId").tenantId("tenantId").build();
   }
 }

@@ -10,14 +10,15 @@ package io.harness.template.helpers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.template.beans.refresh.ErrorNodeSummary;
-import io.harness.template.beans.refresh.TemplateInfo;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
-import io.harness.template.beans.refresh.v2.ErrorNodeType;
-import io.harness.template.beans.refresh.v2.NodeErrorSummary;
-import io.harness.template.beans.refresh.v2.TemplateNodeErrorSummary;
-import io.harness.template.beans.refresh.v2.ValidateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.ErrorNodeSummary;
+import io.harness.ng.core.template.refresh.TemplateInfo;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.v2.ErrorNodeType;
+import io.harness.ng.core.template.refresh.v2.NodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.TemplateNodeErrorSummary;
+import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntityGetResponse;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -31,9 +32,9 @@ public class TemplateInputsValidator {
   @Inject private InputsValidator inputsValidator;
 
   public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForTemplates(
-      String accountId, String orgId, String projectId, TemplateEntity templateEntity) {
+      String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
     ValidateInputsResponseDTO validateInputsResponseDTO =
-        inputsValidator.validateInputsForTemplate(accountId, orgId, projectId, templateEntity);
+        inputsValidator.validateInputsForTemplate(accountId, orgId, projectId, templateEntityGetResponse);
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 
@@ -44,10 +45,10 @@ public class TemplateInputsValidator {
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 
-  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
+  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(String accountId, String orgId,
+      String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     ValidateInputsResponseDTO validateInputsResponseDTO =
-        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml, templateCacheMap);
+        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml, templateCacheMap, loadFromCache);
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 

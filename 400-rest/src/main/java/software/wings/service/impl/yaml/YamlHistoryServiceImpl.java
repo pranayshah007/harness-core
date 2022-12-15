@@ -109,4 +109,10 @@ public class YamlHistoryServiceImpl implements YamlHistoryService {
 
     return versions.isEmpty() ? null : versions.get(0);
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlVersion.class).filter(YamlVersionKeys.accountId, accountId));
+  }
 }

@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.delegate.beans.Delegate;
@@ -76,7 +75,6 @@ import software.wings.features.api.RestrictedApi;
 import software.wings.features.extractors.LdapSettingsAccountIdExtractor;
 import software.wings.features.extractors.SamlSettingsAccountIdExtractor;
 import software.wings.scheduler.LdapGroupScheduledHandler;
-import software.wings.scheduler.LdapGroupSyncJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.security.authentication.oauth.OauthOptions;
@@ -382,7 +380,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public boolean deleteSamlSettings(SamlSettings samlSettings) {
-    if (userGroupService.existsLinkedUserGroup(samlSettings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
@@ -402,27 +400,36 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (isNotEmpty(accountId)) {
       query.field("accountId").equal(accountId);
     }
-    return new HIterator(query.fetch());
+    HIterator hSamlSettingsIterator = new HIterator(query.fetch());
+    if (hSamlSettingsIterator.hasNext()) {
+      return hSamlSettingsIterator;
+    }
+    if (isNotEmpty(accountId)) {
+      query = wingsPersistence.createQuery(SamlSettings.class, excludeAuthority)
+                  .field("accountId")
+                  .equal(accountId)
+                  .field("type")
+                  .equal(SSOType.SAML);
+      return new HIterator(query.fetch());
+    }
+    return null;
   }
 
   @Override
   @RestrictedApi(LdapFeature.class)
   public LdapSettings createLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
-    validateLdapSetting(settings);
     if (getLdapSettingsByAccountId(settings.getAccountId()) != null) {
       throw new InvalidRequestException("Ldap settings already exist for this account.");
     }
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
+
     settings.encryptLdapInlineSecret(secretManager, false);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
@@ -436,7 +443,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   public LdapSettings updateLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
     LdapSettings oldSettings = getLdapSettingsByAccountId(settings.getAccountId());
-    validateLdapSetting(settings);
     if (oldSettings == null) {
       throw new InvalidRequestException("No existing Ldap settings found for this account.");
     }
@@ -452,9 +458,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     oldSettings.setUserSettingsList(settings.getUserSettingsList());
     oldSettings.setGroupSettingsList(settings.getGroupSettingsList());
     oldSettings.setDisabled(settings.isDisabled());
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
+
     oldSettings.encryptLdapInlineSecret(secretManager, false);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
@@ -465,17 +470,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     return savedSettings;
-  }
-
-  private void validateLdapSetting(LdapSettings settings) {
-    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())
-        && settings.getConnectionSettings().getBindSecret() != null
-        && isNotEmpty(settings.getConnectionSettings().getBindSecret())) {
-      throw new InvalidRequestException("Please turn on FF (LDAP_SECRET_AUTH) to use secrets ");
-    }
   }
 
   @Override
@@ -489,7 +485,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public LdapSettings deleteLdapSettings(@NotNull LdapSettings settings) {
-    if (userGroupService.existsLinkedUserGroup(settings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(settings.getAccountId(), settings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }
@@ -499,7 +495,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
           settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
     }
     wingsPersistence.delete(settings);
-    LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
     ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());

@@ -19,6 +19,7 @@ public class DelegateRingConstants {
   public static final String RING_NAME_1 = "ring1";
   public static final String RING_NAME_2 = "ring2";
   public static final String RING_NAME_3 = "ring3";
+  public static final String RING_NAME_4 = "ring4";
   public static final String DEFAULT_RING_NAME = "ring3";
   public static final String LATEST_DELEGATE_IMAGE = "harness/delegate:latest";
   public static final String LATEST_UPGRADER_IMAGE = "harness/upgrader:latest";

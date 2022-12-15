@@ -109,12 +109,13 @@ public class GithubApiClient implements GitApiClient {
       String repo = gitApiTaskParams.getRepo();
       String prNumber = gitApiTaskParams.getPrNumber();
       JSONObject mergePRResponse = githubService.mergePR(gitApiURL, token, gitApiTaskParams.getOwner(), repo, prNumber);
-      if (mergePRResponse != null) {
+      if (mergePRResponse != null && (boolean) mergePRResponse.get("merged") == true) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
       } else {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
-            format("Merging PR encountered a problem. URL:%s Repo:%s PrNumber:%s", gitApiURL, repo, prNumber));
+            format("Merging PR encountered a problem. URL:%s Repo:%s PrNumber:%s Message:%s Code:%s", gitApiURL, repo,
+                prNumber, mergePRResponse.get("error"), mergePRResponse.get("code")));
       }
     } catch (Exception e) {
       log.error(new StringBuilder("Failed while merging PR using connector: ")

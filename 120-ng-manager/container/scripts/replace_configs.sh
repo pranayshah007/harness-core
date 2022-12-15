@@ -93,7 +93,7 @@ if [[ "" != "$MONGO_TRACE_MODE" ]]; then
 fi
 
 if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
-  export $MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
@@ -102,6 +102,10 @@ fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
@@ -302,6 +306,14 @@ if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
   export TIMESCALEDB_USERNAME; yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
   export ENABLE_DASHBOARD_TIMESCALE; yq -i '.enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
 fi
@@ -452,10 +464,7 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
-if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
-  export CD_TSDB_RETENTION_PERIOD_MONTHS; yq -i '.cdTsDbRetentionPeriodMonths=env(CD_TSDB_RETENTION_PERIOD_MONTHS)' $CD_TSDB_RETENTION_PERIOD_MONTHS
-fi
-
+replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -568,3 +577,5 @@ replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value chaosServiceClientConfig.baseUrl "$CHAOS_SERVICE_BASE_URL"

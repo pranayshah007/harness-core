@@ -55,7 +55,7 @@ import retrofit2.Converter;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
-import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
+import retrofit2.converter.jaxb.JaxbConverterFactory;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -111,8 +111,7 @@ public class NexusTwoClientImpl {
   }
 
   private NexusRestClient getRestClient(NexusRequest nexusConfig) {
-    return NexusHelper.getRetrofit(nexusConfig, SimpleXmlConverterFactory.createNonStrict())
-        .create(NexusRestClient.class);
+    return NexusHelper.getRetrofit(nexusConfig, JaxbConverterFactory.create()).create(NexusRestClient.class);
   }
 
   public List<BuildDetailsInternal> getVersions(NexusRequest nexusConfig, String repoId, String groupId,

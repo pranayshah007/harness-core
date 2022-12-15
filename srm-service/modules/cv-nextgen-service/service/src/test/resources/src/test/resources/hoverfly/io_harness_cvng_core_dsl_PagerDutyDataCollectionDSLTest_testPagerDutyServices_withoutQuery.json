@@ -1,0 +1,71 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/services"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "api.pagerduty.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "limit" : [ {
+            "matcher" : "exact",
+            "value" : "1000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAA+1XbU/bMBD+K5Y/NzRJWxXyBYHopG1Mq3jbypgik1xaC8eObKdQof73ndM0BcpgHWziA1Irpc75/Dzne+6ut9SAnvIEDI1+3FKe0ogOdw4OhoMz2qKS5YALyVSO8VcKJtG8sFxJGslSiBZNNDALacwsmoV+GHj+jhd0ToJ+VH3OcVtZpM/aGMtsiRDQIbc8YQL3WWC5Q/WzRZkAbePqsOrw+ty4Wjcxk2nMZcJTkNbgTpamStZbTTKBtBQOY+I2L5fLolDoc6JKjUsLNoIZ2ziKLc8BceXFglro+dvI7iToRN1e1A0dNQwIExWmuFCCJzMaLWPY2x+dfx86GrPCxXDNNNaQgQaZABqZMs+Zxu30ADJWCuvWQGS4MLG2MFG7zQq+VbAx6LS0s61E5e2HLjmY9rA5d2JzEZda3HHh7tGzSMoLNnA1b9FlcNHfGBHPYo0RdVxrcgnG1TLpUNcW7lQ+nlDczJIrqa7xBsaQ4wVVcVUlJswi6Ky0CmNhlJjCw3dcWhjrKsB389PvHw6+Hq1ii5hA8ySGqUuAGCOFt3ipyiotGg+/CzizLFUuv58N+FIq7Voh7bv42sMG1kah/zOn89YysUZdf390+gj5nHGxAe+Bs38F1g2e12RdO12x/uzvhP6nO3JaXfU03IR1tY/sDT+Ss/AV2De4XpN97XSOla8WWJ0kDnBTKeqqvHHWopO/AeulXENilZ4t0x/FvUzK7uH++RdX7eqOUWgvmXoSbixqE5fvtQ76QWliJ0CGRwTklNyzXO8oge86it+Put2oU5Xd9Y6ybtN0FFf2p67Gvr1+0vFC7Cfbkd+JQv+9n/z3fvK0vh7m8AZCa+TwUqHVjlZCO+0f9fYGK6Edq+t8xtYUNsKxhmRcG0vq0kE8shDhJZDrCbMoQG6al/iYK8lR3VyOCc5T+J0RLjOl86r9ojnuueZCkAmIgmDDLpRMQZutC3khnaLhBmclARH55kzRo5P48eEeUdm9w3bRAAcfwvDrTHSJvVpdGYKH3UdlEA+kzt7h5aCJwBYvFr5X6HeR/nrZwEHU758EftTDQTR4vGys27zpsrEYmB6Ofe9D5z8dOp8uEo3+NqgOjYZfWh1qR25OEDznOFIHvt+iKssM4A98tMrif6l60s5RTTTKmDAw/wUy+E1r+A0AAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Access-Control-Allow-Headers" : [ "Authorization, Content-Type, AuthorizationOauth, X-EARLY-ACCESS" ],
+          "Access-Control-Allow-Methods" : [ "GET, POST, PUT, DELETE, OPTIONS" ],
+          "Access-Control-Allow-Origin" : [ "*" ],
+          "Access-Control-Expose-Headers" : [ "" ],
+          "Access-Control-Max-Age" : [ "1728000" ],
+          "Cache-Control" : [ "max-age=0, private, must-revalidate" ],
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "886" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Sun, 20 Nov 2022 14:47:19 GMT" ],
+          "Etag" : [ "W/\"8dffacd65472d147411330237c820e34\"" ],
+          "Feature-Policy" : [ "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; payment 'none'; usb 'none'" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Referrer-Policy" : [ "strict-origin-when-cross-origin", "strict-origin-when-cross-origin" ],
+          "Server" : [ "nginx" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Request-Id" : [ "fbc99886babb2a588f24059a7e8d39c0" ],
+          "X-Xss-Protection" : [ "1; mode=block" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-11-20T14:47:19Z"
+  }
+}

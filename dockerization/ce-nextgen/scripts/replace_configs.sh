@@ -68,6 +68,8 @@ replace_key_value jwtIdentityServiceSecret $JWT_IDENTITY_SERVICE_SECRET
 replace_key_value timescaledb.timescaledbUrl "$TIMESCALEDB_URI"
 replace_key_value timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
 replace_key_value timescaledb.timescaledbPassword "$TIMESCALEDB_PASSWORD"
+replace_key_value timescaledb.sslMode "$TIMESCALEDB_SSL_MODE"
+replace_key_value timescaledb.sslRootCert "$TIMESCALEDB_SSL_ROOT_CERT"
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
@@ -100,6 +102,7 @@ replace_key_value awsGovCloudConfig.secretKey "$AWS_GOV_CLOUD_SECRET_KEY"
 replace_key_value awsGovCloudConfig.harnessAwsAccountId "$AWS_GOV_CLOUD_ACCOUNT_ID"
 replace_key_value awsGovCloudConfig.awsConnectorTemplate "$AWS_GOV_CLOUD_TEMPLATE_LINK"
 replace_key_value awsGovCloudConfig.awsRegionName "$AWS_GOV_CLOUD_REGION_NAME"
+replace_key_value awsGovCloudCftUrl "$AWS_GOV_CLOUD_CFT_URL"
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -171,3 +174,5 @@ replace_key_value lightwingAutoCUDClientConfig.baseUrl "$LIGHTWING_AUTOCUD_CLIEN
 replace_key_value enableLightwingAutoCUDDC "$ENABLE_LIGHTWING_AUTOCUD_DC"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"

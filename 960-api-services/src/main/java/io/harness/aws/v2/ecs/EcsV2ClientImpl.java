@@ -65,6 +65,8 @@ import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
+import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.ServiceNotActiveException;
 import software.amazon.awssdk.services.ecs.model.ServiceNotFoundException;
 import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
@@ -129,23 +131,6 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       super.handleException(exception);
     }
     return RegisterTaskDefinitionResponse.builder().build();
-  }
-
-  @Override
-  public WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout) {
-    // Polling interval of 10 sec with total waiting done till a timeout of <serviceSteadyStateTimeout> min
-    int delayInSeconds = 10;
-    int maxAttempts = (int) TimeUnit.MILLISECONDS.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
-    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region);
-         EcsWaiter ecsWaiter = getEcsWaiter(ecsClient, delayInSeconds, maxAttempts)) {
-      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
-      return ecsWaiter.waitUntilServicesStable(describeServicesRequest);
-    } catch (Exception exception) {
-      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
-      super.handleException(exception);
-    }
-    return null;
   }
 
   @Override
@@ -290,6 +275,18 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       super.handleException(exception);
     }
     return DescribeTasksResponse.builder().build();
+  }
+
+  @Override
+  public RunTaskResponse runTask(AwsInternalConfig awsConfig, RunTaskRequest runTaskRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.runTask(runTaskRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return RunTaskResponse.builder().build();
   }
 
   private EcsWaiter getEcsWaiter(

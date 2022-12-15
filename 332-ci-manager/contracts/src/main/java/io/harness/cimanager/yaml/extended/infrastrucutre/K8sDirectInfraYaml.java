@@ -53,6 +53,7 @@ public class K8sDirectInfraYaml implements Infrastructure {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+
   @Data
   @Builder
   @NoArgsConstructor

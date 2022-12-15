@@ -12,16 +12,18 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
+import static io.harness.beans.FeatureName.SPG_FETCH_ARTIFACT_FROM_DB;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PUNEET;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateType.ARTIFACT_COLLECTION;
 import static software.wings.sm.states.ArtifactCollectionState.DEFAULT_ARTIFACT_COLLECTION_STATE_TIMEOUT_MILLIS;
@@ -69,8 +71,6 @@ import software.wings.app.PortalConfig;
 import software.wings.beans.Application;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.CustomArtifactStream;
@@ -84,6 +84,8 @@ import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Status;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.AccountService;
@@ -827,5 +829,47 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
     assertThat(((ArtifactCollectionExecutionData) executionResponse.getStateExecutionData()).getBuildNo()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldFetchArtifactFromDatabaseWhenArtifactStreamNotParameterizedAndFFisON() {
+    CustomArtifactStream artifactStream =
+        CustomArtifactStream.builder()
+            .appId(APP_ID)
+            .uuid(ARTIFACT_STREAM_ID)
+            .scripts(asList(CustomArtifactStream.Script.builder().scriptString("echo hi").build()))
+            .sourceName(ARTIFACT_SOURCE_NAME)
+            .settingId(SETTING_ID)
+            .serviceId(SERVICE_ID)
+            .build();
+    artifactStream.setArtifactStreamParameterized(false);
+
+    Artifact lastCollectedArtifact = Artifact.Builder.anArtifact().build();
+    lastCollectedArtifact.getMetadata().put(ArtifactMetadataKeys.buildNo, "1.1");
+    when(artifactService.getArtifactByBuildNumber(artifactStream, "1.1", false)).thenReturn(lastCollectedArtifact);
+
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(SPG_FETCH_ARTIFACT_FROM_DB), anyString())).thenReturn(true);
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    artifactCollectionState.setBuildNo("1.1");
+    when(artifactCollectionUtils.renderCustomArtifactScriptString(artifactStream))
+        .thenReturn(ArtifactStreamAttributes.builder().build());
+    when(artifactCollectionUtils.fetchCustomDelegateTask(
+             anyString(), any(), any(), eq(false), eq(BuildSourceParameters.BuildSourceRequestType.GET_BUILD), any()))
+        .thenReturn(DelegateTask.builder());
+
+    ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getDelegateTaskId()).isNull();
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(executionResponse.getStateExecutionData())
+        .isNotNull()
+        .isInstanceOf(ArtifactCollectionExecutionData.class);
+    ArtifactCollectionExecutionData executionData =
+        (ArtifactCollectionExecutionData) executionResponse.getStateExecutionData();
+    assertThat(executionData.getBuildNo()).isEqualTo("1.1");
   }
 }

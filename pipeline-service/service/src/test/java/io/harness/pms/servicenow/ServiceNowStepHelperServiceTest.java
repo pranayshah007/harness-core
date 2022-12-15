@@ -8,15 +8,40 @@
 package io.harness.pms.servicenow;
 
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
+import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
+import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowImportSetResponseNG;
 import io.harness.servicenow.ServiceNowImportSetTransformMapResult;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome;
@@ -24,10 +49,16 @@ import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
+import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class ServiceNowStepHelperServiceTest extends CategoryTest {
@@ -49,7 +80,10 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
   private ServiceNowImportSetTransformMapResult invalidResultWithoutStatus;
   private ServiceNowImportSetTransformMapResult invalidResultWithoutTransformMap;
 
-  @InjectMocks @Inject ServiceNowStepHelperServiceImpl serviceNowStepHelperService;
+  @Mock private ConnectorResourceClient connectorResourceClient;
+  @Mock private SecretManagerClientService secretManagerClientService;
+  @Mock private KryoSerializer kryoSerializer;
+  @Inject @InjectMocks ServiceNowStepHelperServiceImpl serviceNowStepHelperService;
 
   @Before
   public void setup() {
@@ -163,5 +197,78 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
             .build();
     assertThatThrownBy(() -> serviceNowStepHelperService.prepareImportSetStepResponse(() -> serviceNowTaskNGResponse4))
         .isInstanceOf(ServiceNowException.class);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testPrepareTaskRequest() {
+    MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class);
+
+    Optional<ConnectorDTO> connectorDTO =
+        Optional.of(ConnectorDTO.builder()
+                        .connectorInfo(ConnectorInfoDTO.builder()
+                                           .connectorConfig(ServiceNowConnectorDTO.builder()
+                                                                .username("USERNAME")
+                                                                .serviceNowUrl("url")
+                                                                .passwordRef(SecretRefData.builder().build())
+                                                                .build())
+                                           .build())
+                        .build());
+    Optional<ConnectorDTO> connectorDTO1 = Optional.of(
+        ConnectorDTO.builder()
+            .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build())
+            .build());
+    Optional<ConnectorDTO> connectorDTO2 = Optional.of(
+        ConnectorDTO.builder()
+            .connectorInfo(
+                ConnectorInfoDTO.builder()
+                    .connectorConfig(ServiceNowConnectorDTO.builder()
+                                         .username("username")
+                                         .serviceNowUrl("url")
+                                         .passwordRef(SecretRefData.builder().build())
+                                         .auth(ServiceNowAuthenticationDTO.builder()
+                                                   .authType(ServiceNowAuthType.USER_PASSWORD)
+                                                   .credentials(ServiceNowUserNamePasswordDTO.builder()
+                                                                    .username("username")
+                                                                    .passwordRef(SecretRefData.builder().build())
+                                                                    .build())
+                                                   .build())
+                                         .build())
+                    .build())
+            .build());
+    ServiceNowTaskNGParametersBuilder paramsBuilder = ServiceNowTaskNGParameters.builder();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                                "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                            .build();
+
+    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
+    assertThatThrownBy(
+        () -> serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", null, ""))
+        .isInstanceOf(InvalidRequestException.class);
+
+    when(NGRestUtils.getResponse(null)).thenReturn(Optional.empty());
+    assertThatThrownBy(
+        () -> serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", null, ""))
+        .isInstanceOf(InvalidRequestException.class);
+
+    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
+    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "");
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    ArgumentCaptor<NGAccess> requestArgumentCaptorForNGAccess = ArgumentCaptor.forClass(NGAccess.class);
+    verify(secretManagerClientService)
+        .getEncryptionDetails(
+            requestArgumentCaptorForNGAccess.capture(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowConnectorDTO).isTrue();
+    assertThat(requestArgumentCaptorForNGAccess.getValue()).isEqualTo(AmbianceUtils.getNgAccess(ambiance));
+    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO2);
+    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "");
+    verify(secretManagerClientService, times(2))
+        .getEncryptionDetails(
+            requestArgumentCaptorForNGAccess.capture(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowAuthCredentialsDTO).isTrue();
+    assertThat(requestArgumentCaptorForNGAccess.getValue()).isEqualTo(AmbianceUtils.getNgAccess(ambiance));
   }
 }

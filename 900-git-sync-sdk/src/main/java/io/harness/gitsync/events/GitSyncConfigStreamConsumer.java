@@ -11,11 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;
 import static io.harness.gitsync.AbstractGitSyncSdkModule.GIT_SYNC_SDK;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(DX)
-public class GitSyncConfigStreamConsumer implements Runnable {
+public class GitSyncConfigStreamConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   private final List<MessageListener> messageListenersList;
@@ -96,18 +97,7 @@ public class GitSyncConfigStreamConsumer implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      return processMessage(message);
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
     messageListenersList.forEach(messageListener -> {
       if (!messageListener.handleMessage(message)) {

@@ -26,7 +26,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,9 +69,7 @@ public class InputWaitingStepStatusUpdateTest extends CategoryTest {
                                             .build())
                          .build();
 
-    doReturn(Collections.emptyList())
-        .when(nodeExecutionService)
-        .findByParentIdAndStatusIn(parentId, EnumSet.noneOf(Status.class));
+    doReturn(0L).when(nodeExecutionService).findCountByParentIdAndStatusIn(parentId, EnumSet.noneOf(Status.class));
     inputWaitingStepStatusUpdate.handleNodeStatusUpdate(nodeUpdateInfo);
 
     verify(nodeExecutionService, times(1))

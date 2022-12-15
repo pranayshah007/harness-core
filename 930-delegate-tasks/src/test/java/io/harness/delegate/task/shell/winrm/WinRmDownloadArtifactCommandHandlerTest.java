@@ -24,9 +24,9 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
-import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
@@ -84,7 +84,8 @@ public class WinRmDownloadArtifactCommandHandlerTest {
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testShouldDownloadArtifactWithWinRmExecutor() {
-    when(defaultWinRmExecutor.executeCommandString(COMMAND_STRING)).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(defaultWinRmExecutor.executeCommandString(COMMAND_STRING, false, false))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     WinrmTaskParameters winrmTaskParameters =
         getWinrmTaskParameters(downloadArtifactCommandUnit, Collections.emptyList());
     CommandExecutionStatus result =
@@ -101,7 +102,7 @@ public class WinRmDownloadArtifactCommandHandlerTest {
   public void testShouldHandleInvalidRequestException_InvalidCommandUnit() {
     assertThatThrownBy(()
                            -> winRmDownloadArtifactCommandHandler.handle(WinrmTaskParameters.builder().build(),
-                               ScriptCommandUnit.builder().build(), iLogStreamingTaskClient,
+                               CopyCommandUnit.builder().build(), iLogStreamingTaskClient,
                                CommandUnitsProgress.builder().build(), taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");

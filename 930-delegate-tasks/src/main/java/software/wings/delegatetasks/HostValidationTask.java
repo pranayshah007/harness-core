@@ -17,14 +17,14 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.HostValidationTaskParameters;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 

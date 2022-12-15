@@ -72,7 +72,7 @@ public class GcsFileMetadata extends Base implements AccountAccess, GcsHarnessFi
   @NotEmpty @FdIndex private String gcsFileId;
   @NotEmpty private String fileName;
   @NotEmpty private FileBucket fileBucket;
-  @FdIndex private String entityId;
+  private String entityId;
   private int version;
   private long fileLength;
   private String mimeType;

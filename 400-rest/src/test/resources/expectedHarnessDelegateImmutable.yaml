@@ -67,8 +67,9 @@ spec:
           runAsUser: 0
         resources:
           limits:
-            cpu: "1.0"
             memory: "8Gi"
+          requests:
+            cpu: "1.0"
         livenessProbe:
           httpGet:
             path: /api/health
@@ -187,7 +188,7 @@ data:
 
 ---
 
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   labels:
