@@ -9,25 +9,25 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.aws.asg.AsgCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
-import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.aws.asg.request.AsgCommandRequest;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
+import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCanaryDeleteTaskNG extends AbstractDelegateRunnableTask {
+  @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
+  @Inject private AsgCanaryDeleteCommandTaskHandler asgCanaryDeleteTaskHandler;
   public AsgCanaryDeleteTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-                               Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+      Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -40,10 +40,9 @@ public class AsgCanaryDeleteTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
-    // TODO
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    return asgDelegateTaskHelper.getAsgCommandResponse(asgCommandRequest, getLogStreamingTaskClient());
-    return AsgCanaryDeleteResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    return asgDelegateTaskHelper.getAsgCommandResponse(
+        asgCanaryDeleteTaskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override
