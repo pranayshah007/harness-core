@@ -7,9 +7,7 @@
 
 package software.wings.delegatetasks.azure;
 
-import static io.harness.azure.model.AzureConstants.AZLOGIN_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
-import static io.harness.azure.model.AzureConstants.AZLOGIN_USER_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.AZ_VERSION;
 import static io.harness.azure.model.AzureConstants.CLIENT_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
@@ -406,7 +404,8 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getCertificateWorkingDirectory());
 
     boolean shouldUseAuthProvider = !isKubeloginInstalled();
-    if (!shouldUseAuthProvider) {
+    if (!shouldUseAuthProvider
+        && azureConfig.getAzureAuthenticationType().equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)) {
       azClusterLogin(azureConfig);
     }
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
@@ -577,7 +576,8 @@ public class AzureAsyncTaskHelper {
       }
       verifyAzureKubeConfig(azureKubeConfig);
 
-      return getKubernetesConfig(azureKubeConfig, namespace, shouldUseAuthProvider);
+      return getKubernetesConfig(
+          azureKubeConfig, namespace, azureConfig.getAzureAuthenticationType(), shouldUseAuthProvider);
 
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(format("Kube Config could not be read from cluster"),
@@ -711,8 +711,8 @@ public class AzureAsyncTaskHelper {
     log.info("Azure Kube Config is valid.");
   }
 
-  private KubernetesConfig getKubernetesConfig(
-      AzureKubeConfig azureKubeConfig, String namespace, boolean shouldUseAuthProvider) {
+  private KubernetesConfig getKubernetesConfig(AzureKubeConfig azureKubeConfig, String namespace,
+      AzureAuthenticationType azureAuthenticationType, boolean shouldUseAuthProvider) {
     if (isNotEmpty(azureKubeConfig.getAadToken())) {
       KubernetesAzureConfig.KubernetesAzureConfigBuilder kubernetesAzureConfigBuilder =
           KubernetesAzureConfig.builder()
@@ -720,6 +720,7 @@ public class AzureAsyncTaskHelper {
               .clusterUser(azureKubeConfig.getUsers().get(0).getName())
               .currentContext(azureKubeConfig.getCurrentContext())
               .aadIdToken(azureKubeConfig.getAadToken())
+              .azureAuthenticationType(azureAuthenticationType)
               .shouldUseAuthProvider(shouldUseAuthProvider);
       if (shouldUseAuthProvider) {
         kubernetesAzureConfigBuilder
@@ -881,27 +882,22 @@ public class AzureAsyncTaskHelper {
 
   private void azClusterLogin(AzureConfig azureConfig) {
     String loginCommand = AzureCliCommandToLogin(azureConfig);
-    runCommand(loginCommand);
+    if (isNotEmpty(loginCommand)) {
+      runCommand(loginCommand);
+    }
   }
 
   private String AzureCliCommandToLogin(AzureConfig azureConfig) {
     switch (azureConfig.getAzureAuthenticationType()) {
-      case SERVICE_PRINCIPAL_SECRET:
-        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
-            .replace("${PASSWORD-OR-CERT}", String.valueOf(azureConfig.getKey()))
-            .replace("${TENANT_ID}", azureConfig.getTenantId());
-
       case SERVICE_PRINCIPAL_CERT:
         return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
             .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
             .replace("${TENANT_ID}", azureConfig.getTenantId());
 
+      case SERVICE_PRINCIPAL_SECRET:
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
-        return AZLOGIN_MANAGED_IDENTITY;
-
       case MANAGED_IDENTITY_USER_ASSIGNED:
-        return AZLOGIN_MANAGED_IDENTITY + " "
-            + AZLOGIN_USER_MANAGED_IDENTITY.replace("${CLIENT_ID}", azureConfig.getClientId());
+        return "";
 
       default:
         throw new UnexpectedTypeException("Invalid Azure Authentication Type");

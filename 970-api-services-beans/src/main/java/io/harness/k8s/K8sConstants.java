@@ -166,7 +166,7 @@ public interface K8sConstants {
       + "      - get-token\n"
       + "${ARGS}"
       + "      - --login\n"
-      + "      - azurecli\n"
+      + "      - ${AUTH_TYPE}\n"
       + "      command: ${KUBELOGIN_BINARY_PATH}\n"
       + "      env: null\n"
       + "      interactiveMode: Never\n"
@@ -180,6 +180,8 @@ public interface K8sConstants {
       + "      - ${ENVIRONMENT}\n";
   String tenantId = "      - --tenant-id\n"
       + "      - ${TENANT_ID}\n";
+  String clientSecret = "      - --client-secret\n"
+      + "      - ${CLIENT_SECRET}";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
@@ -199,4 +201,6 @@ public interface K8sConstants {
   String HARNESS_KUBE_CONFIG_PATH = "HARNESS_KUBE_CONFIG_PATH";
 
   String CANARY_WORKLOAD_SUFFIX_NAME = "-canary";
+  enum AzureAuthCommand { SPN, MSI, AZURECLI }
+  ;
 }

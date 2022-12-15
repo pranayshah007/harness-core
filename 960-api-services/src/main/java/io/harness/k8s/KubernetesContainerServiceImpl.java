@@ -42,6 +42,7 @@ import static io.harness.k8s.K8sConstants.OIDC_ISSUER_URL;
 import static io.harness.k8s.K8sConstants.OIDC_RERESH_TOKEN;
 import static io.harness.k8s.K8sConstants.REFRESH_TOKEN;
 import static io.harness.k8s.K8sConstants.clientId;
+import static io.harness.k8s.K8sConstants.clientSecret;
 import static io.harness.k8s.K8sConstants.environment;
 import static io.harness.k8s.K8sConstants.serverId;
 import static io.harness.k8s.K8sConstants.tenantId;
@@ -74,6 +75,7 @@ import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
 import io.harness.container.ContainerInfo.ContainerInfoBuilder;
@@ -83,6 +85,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedTypeException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
@@ -90,6 +93,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.k8s.apiclient.KubernetesApiCall;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.Kind;
+import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
@@ -230,6 +234,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public static final String METRICS_SERVER_ABSENT = "CE.MetricsServerCheck: Please install metrics server.";
   public static final String RESOURCE_PERMISSION_REQUIRED =
       "CE: The provided serviceaccount is missing the following permissions: %n %s. Please grant these to the service account.";
+  private enum AzureAuthCommand { spn, msi, azurecli }
+  ;
 
   @Inject private KubernetesHelperService kubernetesHelperService = new KubernetesHelperService();
   @Inject private TimeLimiter timeLimiter;
@@ -2256,19 +2262,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
     String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
-    String args = "";
-    args += isEmpty(config.getAzureConfig().getApiServerId())
-        ? ""
-        : serverId.replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId());
-    args += isEmpty(config.getAzureConfig().getClientId())
-        ? ""
-        : clientId.replace("${CLIENT_ID}", config.getAzureConfig().getClientId());
-    args += isEmpty(config.getAzureConfig().getEnvironment())
-        ? ""
-        : environment.replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment());
-    args += isEmpty(config.getAzureConfig().getTenantId())
-        ? ""
-        : tenantId.replace("${TENANT_ID}", config.getAzureConfig().getTenantId());
+    String args = getArgsForKubeConfigFile(config);
+    Map<AzureAuthenticationType, AzureAuthCommand> authCommand = getAzureAuthCommandHashMap();
 
     return AZURE_KUBE_CONFIG_EXEC_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
@@ -2279,7 +2274,54 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
         .replace("${TOKEN}", config.getAzureConfig().getAadIdToken())
         .replace("${ARGS}", args)
+        .replace("${AUTH_TYPE}", authCommand.get(config.getAzureConfig().getAzureAuthenticationType()).toString())
         .replace("${KUBELOGIN_BINARY_PATH}", KUBELOGIN_BINARY_PATH);
+  }
+
+  private String getArgsForKubeConfigFile(KubernetesConfig config) {
+    String args = "";
+    KubernetesAzureConfig kubernetesAzureConfig = config.getAzureConfig();
+    args += isEmpty(kubernetesAzureConfig.getApiServerId())
+        ? ""
+        : serverId.replace("${APISERVER_ID}", kubernetesAzureConfig.getApiServerId());
+    switch (kubernetesAzureConfig.getAzureAuthenticationType()) {
+      case SERVICE_PRINCIPAL_SECRET:
+        args += isEmpty(kubernetesAzureConfig.getClientId())
+            ? ""
+            : clientId.replace("${CLIENT_ID}", kubernetesAzureConfig.getClientId());
+        args += isEmpty(config.getClientKey())
+            ? ""
+            : clientSecret.replace("${CLIENT_SECRET}", String.valueOf(config.getClientKey()));
+        args += isEmpty(kubernetesAzureConfig.getEnvironment())
+            ? ""
+            : environment.replace("${ENVIRONMENT}", kubernetesAzureConfig.getEnvironment());
+        args += isEmpty(kubernetesAzureConfig.getTenantId())
+            ? ""
+            : tenantId.replace("${TENANT_ID}", kubernetesAzureConfig.getTenantId());
+        return args;
+
+      case SERVICE_PRINCIPAL_CERT:
+      case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
+        return args;
+
+      case MANAGED_IDENTITY_USER_ASSIGNED:
+        args += isEmpty(kubernetesAzureConfig.getClientId())
+            ? ""
+            : clientId.replace("${CLIENT_ID}", kubernetesAzureConfig.getClientId());
+        return args;
+
+      default:
+        throw new UnexpectedTypeException("Invalid Azure Authentication Type");
+    }
+  }
+
+  private Map<AzureAuthenticationType, AzureAuthCommand> getAzureAuthCommandHashMap() {
+    Map<AzureAuthenticationType, AzureAuthCommand> authCommand = new HashMap<>();
+    authCommand.put(AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET, AzureAuthCommand.spn);
+    authCommand.put(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT, AzureAuthCommand.azurecli);
+    authCommand.put(AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED, AzureAuthCommand.msi);
+    authCommand.put(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED, AzureAuthCommand.msi);
+    return authCommand;
   }
 
   private void encodeCharsIfNeeded(KubernetesConfig config) {

@@ -961,7 +961,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .thenReturn(!shouldUseAuthProvider);
     azureAsyncTaskHelperMockedStatic.when(() -> AzureAsyncTaskHelper.runCommand(eq(AZ_VERSION)))
         .thenReturn(!shouldUseAuthProvider);
-    if (!shouldUseAuthProvider) {
+    if (!shouldUseAuthProvider
+        && azureConfig.getAzureAuthenticationType().equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)) {
       azureAsyncTaskHelperMockedStatic
           .when(() -> AzureAsyncTaskHelper.runCommand(eq(AzureCliCommandToLogin(azureConfig))))
           .thenReturn(true);

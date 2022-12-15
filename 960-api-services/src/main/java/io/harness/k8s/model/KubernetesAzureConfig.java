@@ -9,6 +9,7 @@ package io.harness.k8s.model;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureAuthenticationType;
 
 import lombok.Builder;
 import lombok.Data;
@@ -27,12 +28,13 @@ public class KubernetesAzureConfig {
   private String tenantId;
   private String environment;
   private String aadIdToken;
+  private AzureAuthenticationType azureAuthenticationType;
   private boolean shouldUseAuthProvider;
 
   @Builder
   public KubernetesAzureConfig(String clusterName, String clusterUser, String currentContext, String apiServerId,
       String clientId, String configMode, String tenantId, String environment, String aadIdToken,
-      boolean shouldUseAuthProvider) {
+      AzureAuthenticationType azureAuthenticationType, boolean shouldUseAuthProvider) {
     this.clusterName = clusterName;
     this.clusterUser = clusterUser;
     this.currentContext = currentContext;
@@ -43,5 +45,6 @@ public class KubernetesAzureConfig {
     this.environment = environment;
     this.aadIdToken = aadIdToken;
     this.shouldUseAuthProvider = shouldUseAuthProvider;
+    this.azureAuthenticationType = azureAuthenticationType;
   }
 }
