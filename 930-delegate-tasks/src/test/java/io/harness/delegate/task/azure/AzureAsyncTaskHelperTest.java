@@ -7,9 +7,7 @@
 
 package io.harness.delegate.task.azure;
 
-import static io.harness.azure.model.AzureConstants.AZLOGIN_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
-import static io.harness.azure.model.AzureConstants.AZLOGIN_USER_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.AZ_VERSION;
 import static io.harness.azure.model.AzureConstants.KUBELOGIN_VERSION;
 import static io.harness.rule.OwnerRule.BUHA;
@@ -887,8 +885,17 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
 
     mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
-
+    azureAsyncTaskHelperMockedStatic = Mockito.mockStatic(AzureAsyncTaskHelper.class, CALLS_REAL_METHODS);
+    azureAsyncTaskHelperMockedStatic.when(() -> AzureAsyncTaskHelper.runCommand(eq(KUBELOGIN_VERSION)))
+        .thenReturn(true);
+    azureAsyncTaskHelperMockedStatic.when(() -> AzureAsyncTaskHelper.runCommand(eq(AZ_VERSION))).thenReturn(true);
+    if (azureConfig.getAzureAuthenticationType().equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)) {
+      azureAsyncTaskHelperMockedStatic
+          .when(() -> AzureAsyncTaskHelper.runCommand(eq(AzureCliCommandToLogin(azureConfig))))
+          .thenReturn(true);
+    }
     KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock);
+    azureAsyncTaskHelperMockedStatic.close();
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-test-a-cdp-test-rg-20d6a9-19a8a771.hcp.eastus.azmk8s.io:443");
@@ -1124,22 +1131,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
   private String AzureCliCommandToLogin(AzureConfig azureConfig) {
     switch (azureConfig.getAzureAuthenticationType()) {
-      case SERVICE_PRINCIPAL_SECRET:
-        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
-            .replace("${PASSWORD-OR-CERT}", String.valueOf(azureConfig.getKey()))
-            .replace("${TENANT_ID}", azureConfig.getTenantId());
-
       case SERVICE_PRINCIPAL_CERT:
         return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
             .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
             .replace("${TENANT_ID}", azureConfig.getTenantId());
-
+      case SERVICE_PRINCIPAL_SECRET:
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
-        return AZLOGIN_MANAGED_IDENTITY;
-
       case MANAGED_IDENTITY_USER_ASSIGNED:
-        return AZLOGIN_MANAGED_IDENTITY + " "
-            + AZLOGIN_USER_MANAGED_IDENTITY.replace("${CLIENT_ID}", azureConfig.getClientId());
+        return "";
 
       default:
         throw new UnexpectedTypeException("Invalid Azure Authentication Type");

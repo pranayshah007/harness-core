@@ -405,11 +405,7 @@ public interface AzureConstants {
   String KUBELOGIN_BINARY_PATH = "kubelogin";
   String AZLOGIN_SERVICE_PRINCIPAL =
       "az login --service-principal -u ${APP_ID} -p ${PASSWORD-OR-CERT} --tenant ${TENANT_ID}";
-  String AZLOGIN_MANAGED_IDENTITY = "az login --identity";
-  String AZLOGIN_USER_MANAGED_IDENTITY = "--username ${CLIENT_ID}";
   int TIMEOUTINMINUTES = 2;
-  String ERROR_AZLOGIN = "Unable to login to Azure cluster %n%nCommand Executed: %n%s";
-  String HINT_ERROR_AZLOGIN = "Please check if azure cli is installed on your delegate.";
   String KUBELOGIN_VERSION = KUBELOGIN_BINARY_PATH + " --version";
   String AZ_VERSION = "az version";
 }

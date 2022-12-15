@@ -404,7 +404,7 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
         azureConfigContext.getCertificateWorkingDirectory());
 
-    boolean shouldUseAuthProvider = !isKubeloginInstalled();
+    boolean shouldUseAuthProvider = !isKubeloginInstalled(azureConfig.getAzureAuthenticationType());
     if (!shouldUseAuthProvider
         && azureConfig.getAzureAuthenticationType().equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)) {
       azClusterLogin(azureConfig);
@@ -566,7 +566,7 @@ public class AzureAsyncTaskHelper {
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
-      if (!shouldUseAuthProvider) {
+      if (!shouldUseAuthProvider && azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
         azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(KUBELOGIN_BINARY_PATH);
         extractConfigFromArgs(azureKubeConfig);
       }
@@ -905,8 +905,10 @@ public class AzureAsyncTaskHelper {
     }
   }
 
-  private boolean isKubeloginInstalled() {
-    return runCommand(KUBELOGIN_VERSION) && runCommand(AZ_VERSION);
+  private boolean isKubeloginInstalled(AzureAuthenticationType azureAuthenticationType) {
+    return azureAuthenticationType.equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)
+        ? runCommand(KUBELOGIN_VERSION) && runCommand(AZ_VERSION)
+        : runCommand(KUBELOGIN_VERSION);
   }
 
   public static boolean runCommand(final String command) {
