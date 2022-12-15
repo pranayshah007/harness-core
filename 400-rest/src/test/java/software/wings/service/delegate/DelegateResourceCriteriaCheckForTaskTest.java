@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -279,6 +280,24 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     assertThat(delegateWithCapacityList.get(1).getUuid()).isEqualTo(delegate2.getUuid());
     assertThat(delegateWithCapacityList.get(2).getUuid()).isEqualTo(delegate4.getUuid());
     assertThat(delegateWithCapacityList).containsExactly(delegate1, delegate2, delegate4);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  @Description("Verify delegate with least number of currently task assigned, comes first in the list. Three delegates")
+  public void testANDDelegateResourceCriteria() {
+    String accountId = generateUuid();
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
+
+    List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+
+    createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
+    Optional<List<String>> delegateList = resourceBasedDelegateSelectionCheckForTask.perform(
+        eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
+    assertThat(delegateList.isPresent()).isTrue();
+    assertThat(delegateList.get().size()).isEqualTo(1);
   }
 
   private void createDelegateTaskWithDelegateAssigned(String accountId, String delegateId) {

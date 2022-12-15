@@ -90,7 +90,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                   -> DelegateTaskDequeue.builder()
                          .payload(dequeueResponse.getPayload())
                          .itemId(dequeueResponse.getItemId())
-                         .delegateTask(convertToDelegateTask(dequeueResponse.getPayload()).orElse(null))
+                         .delegateTask(convertToDelegateTask(dequeueResponse.getPayload(), dequeueResponse.getItemId())
+                                           .orElse(null))
                          .build())
               .filter(this::isResourceAvailableToAssignTask)
               .collect(toList());
@@ -144,12 +145,12 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     }
   }
 
-  public Optional<DelegateTask> convertToDelegateTask(String payload) {
+  public Optional<DelegateTask> convertToDelegateTask(String payload, String itemId) {
     try {
       return Optional.ofNullable(
           (DelegateTask) referenceFalseKryoSerializer.asObject(Base64.getDecoder().decode(payload)));
     } catch (Exception e) {
-      log.error("Error while decoding delegate task from queue. ", e);
+      log.error("Error while decoding delegate task from queue, item Id {}. ", itemId, e);
     }
     return Optional.empty();
   }
