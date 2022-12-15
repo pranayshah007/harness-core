@@ -181,7 +181,7 @@ public interface K8sConstants {
   String tenantId = "      - --tenant-id\n"
       + "      - ${TENANT_ID}\n";
   String clientSecret = "      - --client-secret\n"
-      + "      - ${CLIENT_SECRET}";
+      + "      - ${CLIENT_SECRET}\n";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
