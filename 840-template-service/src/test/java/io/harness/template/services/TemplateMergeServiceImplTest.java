@@ -776,10 +776,11 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateScope(Scope.PROJECT)
                                          .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, null, "template1", "1", false, false))
         .thenReturn(Optional.of(templateEntity));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false, false))
         .thenReturn(Optional.of(templateEntity2));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
@@ -792,13 +793,14 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .identifier("template2")
                                                 .templateScope(Scope.ACCOUNT)
                                                 .build();
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, null, null, "template2", "1", false, false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-step-diff-scope.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
