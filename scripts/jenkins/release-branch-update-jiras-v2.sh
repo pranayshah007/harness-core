@@ -4,6 +4,8 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+
+export $PATH
 function check_file_present(){
      local_file=$1
      if [ ! -f "$local_file" ]; then
