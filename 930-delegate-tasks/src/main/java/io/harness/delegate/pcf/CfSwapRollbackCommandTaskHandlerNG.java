@@ -133,8 +133,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .cfAppNamePrefix(cfRollbackCommandRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfRollbackCommandRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(getExistingApplicationNames(cfRollbackCommandRequestNG))
-              .existingInActiveApplicationDetails(cfRollbackCommandRequestNG.getActiveApplicationDetails() != null
-                      ? cfRollbackCommandRequestNG.getActiveApplicationDetails().toCfAppSetupTimeDetails()
+              .existingInActiveApplicationDetails(cfRollbackCommandRequestNG.getInActiveApplicationDetails() != null
+                      ? cfRollbackCommandRequestNG.getInActiveApplicationDetails().toCfAppSetupTimeDetails()
                       : null)
               .tempRoutes(cfRollbackCommandRequestNG.getTempRoutes())
               .skipRollback(false)
@@ -188,8 +188,9 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // During rollback, always upsize old ones
       cfCommandTaskHelperNG.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
           cfRequestConfig, upsizeList, cfInstanceElements);
-      // Enable autoscalar for older app, if it was disabled during deploy
+      cfCommandTaskHelperNG.restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
 
+      // Enable autoscalar for older app, if it was disabled during deploy
       if (cfRollbackCommandRequestNG.isUseAppAutoScalar()) {
         cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
             cfRollbackCommandRequestNG.getActiveApplicationDetails(), autoscalarRequestData, executionLogCallback);
@@ -203,6 +204,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfCommandTaskHelperNG.downSizeListOfInstances(executionLogCallback, cfServiceDataUpdated, cfRequestConfig,
           updateNewAppName(cfRequestConfig, cfRollbackCommandRequestNG, downSizeList),
           cfRollbackCommandRequestNG.isUseAppAutoScalar(), autoscalarRequestData);
+      cfCommandTaskHelperNG.unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
 
       // Deleting
       cfCommandTaskHelperNG.deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG.getCfAppNamePrefix(),

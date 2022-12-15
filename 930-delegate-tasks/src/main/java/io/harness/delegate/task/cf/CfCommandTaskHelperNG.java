@@ -800,7 +800,7 @@ public class CfCommandTaskHelperNG {
                                    .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
-    restoreRoutesForOldApplication(cfRollbackCommandRequestNG, cfRequestConfig, executionLogCallback);
+    restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
   }
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
@@ -889,7 +889,7 @@ public class CfCommandTaskHelperNG {
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
-    unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig);
+    unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
   }
 
   public ApplicationSummary findActiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
@@ -973,13 +973,12 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
-  public void restoreRoutesForOldApplication(CfRollbackCommandRequestNG commandRollbackRequest,
+  public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (isNull(commandRollbackRequest.getActiveApplicationDetails())) {
+    if (isNull(tasApplicationInfo)) {
       return;
     }
 
-    TasApplicationInfo tasApplicationInfo = commandRollbackRequest.getActiveApplicationDetails();
     cfRequestConfig.setApplicationName(tasApplicationInfo.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
 
@@ -994,15 +993,15 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
-      CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig)
+  public void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
+      TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig)
       throws PivotalClientApiException {
-    if (commandRollbackRequest.getNewApplicationDetails() == null
-        || isBlank(commandRollbackRequest.getNewApplicationDetails().getApplicationName())) {
+    if (newApplicationDetails == null
+        || isBlank(newApplicationDetails.getApplicationName())) {
       return;
     }
 
-    cfRequestConfig.setApplicationName(commandRollbackRequest.getNewApplicationDetails().getApplicationName());
+    cfRequestConfig.setApplicationName(newApplicationDetails.getApplicationName());
     ApplicationDetail appDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
 
     if (appDetail.getInstances() == 0) {

@@ -125,7 +125,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                       : null)
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getReleaseNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
-              .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
+              .existingApplicationNames(activeApplicationDetails == null ? Collections.emptyList() : Collections.singletonList(activeApplicationDetails.getApplicationName()))
               .tempRoutes(cfSwapRoutesRequestNG.getTempRoutes())
               .skipRollback(false)
               .isStandardBlueGreen(true)
@@ -269,6 +269,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized), INFO, FAILURE);
         throw e;
       }
+    } else {
+      executionLogCallback.saveExecutionLog("Nothing to Downsize", INFO, SUCCESS);
     }
   }
 
@@ -302,7 +304,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       CfRouteUpdateRequestConfigData data, ILogStreamingTaskClient iLogStreamingTaskClient,
       CommandUnitsProgress commandUnitsProgress, LogCallback executionLogCallback) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 

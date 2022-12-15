@@ -87,6 +87,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private TasStepHelper tasStepHelper;
   public static final String COMMAND_UNIT = "Tas Swap Routes";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -126,7 +127,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
           .build();
     }
 

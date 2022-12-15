@@ -81,8 +81,9 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
   @Inject private TasEntityHelper tasEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private TasStepHelper tasStepHelper;
   public static final String TAS_SWAP_ROLLBACK = "SwapRollback";
-  public static final String COMMAND_UNIT = "SwapRollback";
+  public static final String COMMAND_UNIT = "Swap Rollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
@@ -215,7 +216,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
           .build();
     }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
