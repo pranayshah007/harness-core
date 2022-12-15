@@ -118,12 +118,11 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     PerpetualTaskExecutionBundle.Builder builder =
         PerpetualTaskExecutionBundle.newBuilder()
-            .setTaskParams(
-                Any.pack(CgInstanceSyncTaskParams.newBuilder()
-                             .setAccountId(cloudProvider.getAccountId())
-                             .setCloudProviderType(cloudProvider.getValue().getType())
-                             .setCloudProviderDetails(ByteString.copyFrom(kryoSerializer.asBytes(cloudProvider)))
-                             .build()))
+            .setTaskParams(Any.pack(CgInstanceSyncTaskParams.newBuilder()
+                                        .setAccountId(cloudProvider.getAccountId())
+                                        .setCloudProviderType(cloudProvider.getValue().getType())
+                                        .setCloudProviderDetails(ByteString.copyFrom(new byte[0]))
+                                        .build()))
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
         -> builder
@@ -437,7 +436,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     if (deploymentSummary.getDeploymentInfo() instanceof K8sDeploymentInfo) {
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-      List<K8sPodInfo> pods = ((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo()).getK8sPods();
+      List<K8sPodInfo> pods = Collections.emptyList();
       return getInstancesForK8sPods(deploymentSummary, infrastructureMapping, pods, Collections.emptyList());
     } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
       InfrastructureMapping infrastructureMapping =
