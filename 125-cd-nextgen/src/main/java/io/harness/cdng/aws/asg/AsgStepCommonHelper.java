@@ -333,7 +333,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public static StepResponseBuilder getFailureResponseBuilder(
-      AsgCommandResponse asgCommandResponse, StepResponse.StepResponseBuilder stepResponseBuilder) {
+      AsgCommandResponse asgCommandResponse, StepResponseBuilder stepResponseBuilder) {
     stepResponseBuilder.status(Status.FAILED)
         .failureInfo(
             FailureInfo.newBuilder().setErrorMessage(AsgStepCommonHelper.getErrorMessage(asgCommandResponse)).build());
