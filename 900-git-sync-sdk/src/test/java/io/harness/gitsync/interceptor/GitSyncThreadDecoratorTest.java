@@ -63,7 +63,5 @@ public class GitSyncThreadDecoratorTest extends CategoryTest {
     Exception exception = assertThrows(InvalidRequestException.class,
         () -> { gitSyncThreadDecorator.getRequestParamFromContext("filePath", null, queryParameters); });
     assertEquals(ERROR_MESSAGE, exception.getMessage());
-
-
   }
 }

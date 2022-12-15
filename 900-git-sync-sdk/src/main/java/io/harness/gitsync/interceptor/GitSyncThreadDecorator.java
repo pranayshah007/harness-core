@@ -114,10 +114,7 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
       // browser converts the query param like 'testing/abc' to 'testing%20abc',
       // we use decode to convert the string back to 'testing/abc'
       String requestParamFromContextWithoutDecoding = getRequestParamFromContextWithoutDecoding(key, queryParameters);
-      if (GitSyncApiConstants.FILE_PATH_KEY.equals(key) && EmptyPredicate.isNotEmpty(requestParamFromContextWithoutDecoding)
-          && requestParamFromContextWithoutDecoding.contains("%")) {
-        throw new InvalidRequestException("Unsupported char '%' present in the filepath: " + requestParamFromContextWithoutDecoding);
-      }
+      validateRequestParamFromContextWithoutDecoding(key, requestParamFromContextWithoutDecoding);
       return URLDecoder.decode(requestParamFromContextWithoutDecoding, Charsets.UTF_8.name());
     } catch (UnsupportedEncodingException e) {
       log.error("Error in setting request param for {}", key);
@@ -128,6 +125,16 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
   @VisibleForTesting
   String getRequestParamFromContextWithoutDecoding(String key, MultivaluedMap<String, String> queryParameters) {
     return queryParameters.getFirst(key) != null ? queryParameters.getFirst(key) : DEFAULT;
+  }
+
+  private void validateRequestParamFromContextWithoutDecoding(
+      String key, String requestParamFromContextWithoutDecoding) {
+    if (GitSyncApiConstants.FILE_PATH_KEY.equals(key)
+        && EmptyPredicate.isNotEmpty(requestParamFromContextWithoutDecoding)
+        && requestParamFromContextWithoutDecoding.contains("%")) {
+      throw new InvalidRequestException(
+          "Unsupported char '%' present in the filepath: " + requestParamFromContextWithoutDecoding);
+    }
   }
 
   @Override
