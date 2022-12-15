@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 public class InternalChangeEventMetaData extends ChangeEventMetadata {
   ActivityType activityType;
   String updatedBy;
-  EventDetails eventDetails;
+  InternalChangeEvent internalChangeEvent;
   Long eventStartTime;
   Long eventEndTime;
 

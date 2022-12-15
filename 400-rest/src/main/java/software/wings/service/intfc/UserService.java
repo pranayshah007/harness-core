@@ -650,6 +650,8 @@ public interface UserService extends OwnedByAccount {
 
   void setUserEmailVerified(String userId);
 
+  List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
+
   boolean isUserPasswordPresent(String accountId, String emailId);
 
   URI getInviteAcceptRedirectURL(InviteOperationResponse inviteResponse, UserInvite userInvite, String jwtToken)

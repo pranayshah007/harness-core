@@ -14,6 +14,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
@@ -689,9 +690,9 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
 
     setMandatoryEnvironmentVariable(
-        map, PLUGIN_BUCKET, resolveStringParameter("bucket", "S3Upload", identifier, stepInfo.getBucket(), true));
+        map, PLUGIN_BUCKET, resolveStringParameterV2("bucket", "S3Upload", identifier, stepInfo.getBucket(), true));
     setMandatoryEnvironmentVariable(map, PLUGIN_SOURCE,
-        resolveStringParameter("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
+        resolveStringParameterV2("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
 
     String target = resolveStringParameter("target", "S3Upload", identifier, stepInfo.getTarget(), false);
     if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {

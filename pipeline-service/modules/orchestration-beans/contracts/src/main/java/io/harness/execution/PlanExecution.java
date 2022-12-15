@@ -123,13 +123,10 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_pipelineId_status_createdAt_idx")
+                 .name("accountId_status_createdAt_idx")
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
-                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
-                 .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
-                 .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
                  .field(PlanExecutionKeys.status)
-                 .descSortField(PlanExecutionKeys.createdAt)
+                 .ascSortField(PlanExecutionKeys.createdAt)
                  .build())
         .build();
   }

@@ -24,18 +24,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.manifest.yaml.GithubStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.provision.terraform.TerraformStepDataGenerator;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
-import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.InlineFileConfig;
 import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
@@ -106,9 +97,9 @@ public class TerragruntPlanStepTest extends CategoryTest {
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testValidateResourcesWithGithubStore() {
-    TerragruntConfigFilesWrapper configFilesWrapper = createConfigFilesWrapper();
-    LinkedHashMap<String, TerragruntVarFile> varFilesMap = createVarFilesRemote();
-    TerragruntBackendConfig terragruntBackendConfig = createRemoteBackendConfig();
+    TerragruntConfigFilesWrapper configFilesWrapper = TerragruntTestStepUtils.createConfigFilesWrapper();
+    LinkedHashMap<String, TerragruntVarFile> varFilesMap = TerragruntTestStepUtils.createVarFilesRemote();
+    TerragruntBackendConfig terragruntBackendConfig = TerragruntTestStepUtils.createRemoteBackendConfig();
 
     TerragruntPlanStepParameters parameters =
         TerragruntPlanStepParameters.infoBuilder()
@@ -133,22 +124,13 @@ public class TerragruntPlanStepTest extends CategoryTest {
     assertThat(entityDetails.get(3).getEntityRef().getIdentifier()).isEqualTo("test-secretManager");
   }
 
-  private TerragruntBackendConfig createInlineBackendConfig() {
-    InlineTerragruntBackendConfigSpec inlineTerragruntBackendConfigSpec = new InlineTerragruntBackendConfigSpec();
-    inlineTerragruntBackendConfigSpec.setContent(ParameterField.createValueField("back-content"));
-    return TerragruntBackendConfig.builder()
-        .type(TerragruntBackendFileTypes.Inline)
-        .spec(inlineTerragruntBackendConfigSpec)
-        .build();
-  }
-
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testobtainTaskAfterRbac() {
-    TerragruntConfigFilesWrapper configFilesWrapper = createConfigFilesWrapper();
-    LinkedHashMap<String, TerragruntVarFile> varFilesMap = createVarFilesInline();
-    TerragruntBackendConfig backendConfig = createInlineBackendConfig();
+    TerragruntConfigFilesWrapper configFilesWrapper = TerragruntTestStepUtils.createConfigFilesWrapper();
+    LinkedHashMap<String, TerragruntVarFile> varFilesMap = TerragruntTestStepUtils.createVarFilesInline();
+    TerragruntBackendConfig backendConfig = TerragruntTestStepUtils.createInlineBackendConfig();
 
     Map<String, Object> envVars = new HashMap<>() {
       { put("envKey", "envVal"); }
@@ -162,7 +144,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
                                .configFiles(configFilesWrapper)
                                .backendConfig(backendConfig)
                                .varFiles(varFilesMap)
-                               .terragruntModuleConfig(createTerragruntModuleConfig())
+                               .terragruntModuleConfig(TerragruntTestStepUtils.createTerragruntModuleConfig())
                                .exportTerragruntPlanJson(ParameterField.createValueField(true))
                                .targets(ParameterField.createValueField(Collections.singletonList("test-target")))
                                .environmentVariables(envVars)
@@ -176,7 +158,8 @@ public class TerragruntPlanStepTest extends CategoryTest {
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
     when(terragruntStepHelper.generateFullIdentifier(any(), any())).thenReturn("testEntityId");
-    when(terragruntStepHelper.getGitFetchFilesConfig(any(), any(), any())).thenReturn(createGitStoreDelegateConfig());
+    when(terragruntStepHelper.getGitFetchFilesConfig(any(), any(), any()))
+        .thenReturn(TerragruntTestStepUtils.createGitStoreDelegateConfig());
     when(terragruntStepHelper.toStoreDelegateVarFiles(anyMap(), any()))
         .thenReturn(Collections.singletonList(
             InlineStoreDelegateConfig.builder()
@@ -218,7 +201,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
     List<UnitProgress> unitProgresses = new ArrayList<>();
     unitProgresses.add(UnitProgress.newBuilder().setStatus(UnitStatus.SUCCESS).build());
 
-    TerragruntPlanTaskResponse terraformTaskNGResponse =
+    TerragruntPlanTaskResponse terragruntTaskNGResponse =
         TerragruntPlanTaskResponse.builder()
             .unitProgressData(UnitProgressData.builder().unitProgresses(unitProgresses).build())
             .stateFileId("test-stateFileId")
@@ -229,10 +212,10 @@ public class TerragruntPlanStepTest extends CategoryTest {
             .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
             .configuration(TerragruntPlanExecutionDataParameters.builder()
                                .command(TerragruntPlanCommand.APPLY)
-                               .configFiles(createConfigFilesWrapper())
-                               .backendConfig(createInlineBackendConfig())
-                               .varFiles(createVarFilesInline())
-                               .terragruntModuleConfig(createTerragruntModuleConfig())
+                               .configFiles(TerragruntTestStepUtils.createConfigFilesWrapper())
+                               .backendConfig(TerragruntTestStepUtils.createInlineBackendConfig())
+                               .varFiles(TerragruntTestStepUtils.createVarFilesInline())
+                               .terragruntModuleConfig(TerragruntTestStepUtils.createTerragruntModuleConfig())
                                .exportTerragruntPlanJson(ParameterField.createValueField(true))
                                .targets(ParameterField.createValueField(Collections.singletonList("test-target")))
                                .environmentVariables(new HashMap<>())
@@ -244,7 +227,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
 
     StepResponse stepResponse = terragruntPlanStep.handleTaskResultWithSecurityContext(
-        ambiance, stepElementParameters, () -> terraformTaskNGResponse);
+        ambiance, stepElementParameters, () -> terragruntTaskNGResponse);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
@@ -256,116 +239,5 @@ public class TerragruntPlanStepTest extends CategoryTest {
     verify(terragruntStepHelper, times(1)).generateFullIdentifier(any(), any());
     verify(terragruntStepHelper, times(1)).saveTerragruntPlanExecutionDetails(any(), any(), any(), any());
     verify(terragruntStepHelper, times(1)).saveTerraformPlanJsonOutput(any(), any(), any());
-  }
-
-  private TerragruntConfigFilesWrapper createConfigFilesWrapper() {
-    TerragruntConfigFilesWrapper configFilesWrapper = new TerragruntConfigFilesWrapper();
-    StoreConfig storeConfigFiles;
-
-    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
-        TerraformStepDataGenerator.GitStoreConfig.builder()
-            .branch("master")
-            .fetchType(FetchType.BRANCH)
-            .folderPath(ParameterField.createValueField("Config/"))
-            .connectoref(ParameterField.createValueField("terragrunt-configFiles"))
-            .build();
-
-    storeConfigFiles =
-        GithubStore.builder()
-            .branch(ParameterField.createValueField(gitStoreConfigFiles.getBranch()))
-            .gitFetchType(gitStoreConfigFiles.getFetchType())
-            .folderPath(ParameterField.createValueField(gitStoreConfigFiles.getFolderPath().getValue()))
-            .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.getConnectoref().getValue()))
-            .build();
-    configFilesWrapper.setStore(
-        StoreConfigWrapper.builder().spec(storeConfigFiles).type(StoreConfigType.GITHUB).build());
-
-    return configFilesWrapper;
-  }
-
-  private LinkedHashMap<String, TerragruntVarFile> createVarFilesRemote() {
-    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
-        TerraformStepDataGenerator.GitStoreConfig.builder()
-            .branch("master")
-            .fetchType(FetchType.BRANCH)
-            .folderPath(ParameterField.createValueField("varFiles/"))
-            .connectoref(ParameterField.createValueField("terragrunt-varFiles"))
-            .build();
-
-    StoreConfig storeVarFiles;
-    RemoteTerragruntVarFileSpec remoteTerragruntVarFileSpec = new RemoteTerragruntVarFileSpec();
-
-    storeVarFiles = GithubStore.builder()
-                        .branch(ParameterField.createValueField(gitStoreVarFiles.getBranch()))
-                        .gitFetchType(gitStoreVarFiles.getFetchType())
-                        .folderPath(ParameterField.createValueField(gitStoreVarFiles.getFolderPath().getValue()))
-                        .connectorRef(ParameterField.createValueField(gitStoreVarFiles.getConnectoref().getValue()))
-                        .build();
-
-    remoteTerragruntVarFileSpec.setStore(
-        StoreConfigWrapper.builder().spec(storeVarFiles).type(StoreConfigType.GITHUB).build());
-
-    LinkedHashMap<String, TerragruntVarFile> varFilesMap = new LinkedHashMap<>();
-    varFilesMap.put("var-file-01",
-        TerragruntVarFile.builder().identifier("var-file-01").type("Remote").spec(remoteTerragruntVarFileSpec).build());
-    return varFilesMap;
-  }
-
-  private TerragruntBackendConfig createRemoteBackendConfig() {
-    TerraformStepDataGenerator.GitStoreConfig gitStoreBackend =
-        TerraformStepDataGenerator.GitStoreConfig.builder()
-            .branch("master")
-            .fetchType(FetchType.BRANCH)
-            .folderPath(ParameterField.createValueField("backend/"))
-            .connectoref(ParameterField.createValueField("terragrunt-backendFile"))
-            .build();
-
-    StoreConfig storeBackend;
-    storeBackend = GithubStore.builder()
-                       .branch(ParameterField.createValueField(gitStoreBackend.getBranch()))
-                       .gitFetchType(gitStoreBackend.getFetchType())
-                       .folderPath(ParameterField.createValueField(gitStoreBackend.getFolderPath().getValue()))
-                       .connectorRef(ParameterField.createValueField(gitStoreBackend.getConnectoref().getValue()))
-                       .build();
-
-    RemoteTerragruntBackendConfigSpec remoteTerragruntBackendConfigSpec = new RemoteTerragruntBackendConfigSpec();
-    remoteTerragruntBackendConfigSpec.setStore(
-        StoreConfigWrapper.builder().spec(storeBackend).type(StoreConfigType.GITHUB).build());
-
-    TerragruntBackendConfig terragruntBackendConfig = new TerragruntBackendConfig();
-    terragruntBackendConfig.setType("Remote");
-    terragruntBackendConfig.setTerragruntBackendConfigSpec(remoteTerragruntBackendConfigSpec);
-    return terragruntBackendConfig;
-  }
-
-  private GitStoreDelegateConfig createGitStoreDelegateConfig() {
-    GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
-                                    .gitAuthType(GitAuthType.HTTP)
-                                    .gitConnectionType(GitConnectionType.ACCOUNT)
-                                    .delegateSelectors(Collections.singleton("delegateName"))
-                                    .url("https://github.com/wings-software")
-                                    .branchName("master")
-                                    .build();
-    return GitStoreDelegateConfig.builder()
-        .branch("master")
-        .connectorName("terragrunt")
-        .gitConfigDTO(gitConfigDTO)
-        .build();
-  }
-
-  private LinkedHashMap<String, TerragruntVarFile> createVarFilesInline() {
-    InlineTerragruntVarFileSpec inlineTerragruntVarFileSpec = new InlineTerragruntVarFileSpec();
-    inlineTerragruntVarFileSpec.setContent(ParameterField.createValueField("test-backendContent"));
-    LinkedHashMap<String, TerragruntVarFile> varFilesMap = new LinkedHashMap<>();
-    varFilesMap.put("var-file-01",
-        TerragruntVarFile.builder().identifier("var-file-01").type("Inline").spec(inlineTerragruntVarFileSpec).build());
-    return varFilesMap;
-  }
-
-  private TerragruntModuleConfig createTerragruntModuleConfig() {
-    TerragruntModuleConfig terragruntModuleConfig = new TerragruntModuleConfig();
-    terragruntModuleConfig.terragruntRunType = TerragruntRunType.RUN_MODULE;
-    terragruntModuleConfig.path = ParameterField.createValueField("test-path");
-    return terragruntModuleConfig;
   }
 }

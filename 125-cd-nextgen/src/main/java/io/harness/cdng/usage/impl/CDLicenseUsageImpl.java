@@ -12,6 +12,7 @@ import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.mapper.ActiveServiceMapper.buildActiveServiceFetchData;
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.computeLicenseConsumed;
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.getEpochMilliNDaysAgo;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DEFAULT_FILTER_PROPERTIES_VALUE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
@@ -104,12 +105,18 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
 
   @Override
   public Page<ActiveServiceDTO> listLicenseUsage(
-      String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequestParams) {
-    Preconditions.checkArgument(
-        currentTS > 0, format("Invalid timestamp %d while fetching licence usage for CD", currentTS));
-    Preconditions.checkArgument(
-        ModuleType.CD == module, format("Invalid Module type %s provided, expected CD", module.toString()));
-    Preconditions.checkArgument(isNotBlank(accountIdentifier), "Account Identifier cannot be null or empty");
+      String accountIdentifier, ModuleType module, long currentTsInMs, PageableUsageRequestParams usageRequestParams) {
+    if (currentTsInMs <= 0) {
+      throw new InvalidArgumentsException(
+          format("Invalid timestamp %d while fetching CD active services", currentTsInMs));
+    }
+    if (ModuleType.CD != module) {
+      throw new InvalidArgumentsException(format("Invalid Module type %s provided, expected CD", module.toString()));
+    }
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account Identifier cannot be null or empty");
+    }
+
     DefaultPageableUsageRequestParams defaultUsageRequestParams =
         (DefaultPageableUsageRequestParams) usageRequestParams;
     Pageable pageRequest = defaultUsageRequestParams.getPageRequest();
@@ -120,7 +127,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     String serviceIdentifier = getServiceIdentifierByFilterServiceName(scope, filterParams.getServiceName());
 
     ActiveServiceFetchData activeServiceFetchData =
-        buildActiveServiceFetchData(scope, serviceIdentifier, pageRequest, currentTS);
+        buildActiveServiceFetchData(scope, serviceIdentifier, pageRequest, currentTsInMs);
     log.info("Start fetching active services for accountIdentifier: {}, startTSInMs: {}, endTSInMs: {}",
         accountIdentifier, activeServiceFetchData.getStartTSInMs(), activeServiceFetchData.getEndTSInMs());
     long fetchActiveServiceQueryStartTime = System.currentTimeMillis();
@@ -142,7 +149,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         accountIdentifier, updateActiveServiceQueryEndTime);
 
     List<ActiveServiceDTO> activeServiceDTOs =
-        ActiveServiceMapper.toActiveServiceDTO(accountIdentifier, activeServices, currentTS);
+        ActiveServiceMapper.toActiveServiceDTO(accountIdentifier, activeServices, currentTsInMs);
     return new PageImpl<>(activeServiceDTOs, pageRequest, activeServiceBaseResponse.getTotalCountOfItems());
   }
 

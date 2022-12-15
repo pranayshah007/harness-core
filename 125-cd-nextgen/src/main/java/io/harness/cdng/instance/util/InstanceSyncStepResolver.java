@@ -20,6 +20,7 @@ import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -38,15 +39,15 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class InstanceSyncStepResolver {
-  public final Set<String> INSTANCE_SYN_STEP_TYPES =
-      Collections.unmodifiableSet(Sets.newHashSet(K8sRollingStep.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(),
-          K8sBlueGreenStep.STEP_TYPE.getType(), K8sRollingRollbackStep.STEP_TYPE.getType(),
-          HelmDeployStep.STEP_TYPE.getType(), HelmRollbackStep.STEP_TYPE.getType(),
-          ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(), AzureWebAppSlotDeploymentStep.STEP_TYPE.getType(),
-          AzureWebAppRollbackStep.STEP_TYPE.getType(), CommandStep.STEP_TYPE.getType(),
-          EcsRollingDeployStep.STEP_TYPE.getType(), EcsRollingRollbackStep.STEP_TYPE.getType(),
-          EcsCanaryDeployStep.STEP_TYPE.getType(), EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(),
-          EcsBlueGreenRollbackStep.STEP_TYPE.getType(), FetchInstanceScriptStep.STEP_TYPE.getType()));
+  public final Set<String> INSTANCE_SYN_STEP_TYPES = Collections.unmodifiableSet(Sets.newHashSet(
+      K8sRollingStep.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(), K8sBlueGreenStep.STEP_TYPE.getType(),
+      K8sRollingRollbackStep.STEP_TYPE.getType(), HelmDeployStep.STEP_TYPE.getType(),
+      HelmRollbackStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(),
+      AzureWebAppSlotDeploymentStep.STEP_TYPE.getType(), AzureWebAppRollbackStep.STEP_TYPE.getType(),
+      CommandStep.STEP_TYPE.getType(), EcsRollingDeployStep.STEP_TYPE.getType(),
+      EcsRollingRollbackStep.STEP_TYPE.getType(), EcsCanaryDeployStep.STEP_TYPE.getType(),
+      EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStep.STEP_TYPE.getType(),
+      FetchInstanceScriptStep.STEP_TYPE.getType(), ElastigroupDeployStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

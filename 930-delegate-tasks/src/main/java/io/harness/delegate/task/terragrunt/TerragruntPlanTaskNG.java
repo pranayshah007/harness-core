@@ -135,7 +135,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
       String planName = getPlanName(planTaskParameters);
       planLogCallback.saveExecutionLog(
-          color(format("Create terragrunt plan '%s'", planName), LogColor.White, LogWeight.Bold));
+          color(format("\nCreate terragrunt plan '%s'", planName), LogColor.White, LogWeight.Bold));
       executeWithErrorHandling(client::plan,
           createCliRequest(TerragruntPlanCliRequest.builder(), terragruntContext, planTaskParameters)
               .planOutputStream(planLogOutputStream)
@@ -144,7 +144,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
               .build(),
           planLogCallback);
       planLogCallback.saveExecutionLog(
-          color(format("Terragrunt plan '%s' successfully created %n", planName), LogColor.White, LogWeight.Bold));
+          color(format("\nTerragrunt plan '%s' successfully created \n", planName), LogColor.White, LogWeight.Bold));
 
       EncryptedRecordData tfPlanEncryptedRecord = null;
       String planJsonFileId = null;
@@ -165,17 +165,15 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
             planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan successfully encrypted.\n");
 
-        if (isNotEmpty(terragruntContext.getBackendFileSourceReference())) {
-          planLogCallback.saveExecutionLog("Uploading terraform state file");
-          stateFileId =
-              taskService.uploadStateFile(terragruntContext.getScriptDirectory(), planTaskParameters.getWorkspace(),
-                  planTaskParameters.getAccountId(), planTaskParameters.getEntityId(), getDelegateId(), getTaskId());
-          planLogCallback.saveExecutionLog("Terraform state file successfully uploaded.\n");
-        }
+        planLogCallback.saveExecutionLog("Uploading terraform state file");
+        stateFileId =
+            taskService.uploadStateFile(terragruntContext.getScriptDirectory(), planTaskParameters.getWorkspace(),
+                planTaskParameters.getAccountId(), planTaskParameters.getEntityId(), getDelegateId(), getTaskId());
+        planLogCallback.saveExecutionLog("Terraform state file successfully uploaded.\n");
 
         if (planTaskParameters.isExportJsonPlan()) {
           planLogCallback.saveExecutionLog(
-              color(format("Export terragrunt plan '%s' as json", planName), LogColor.White, LogWeight.Bold));
+              color(format("\nExport terragrunt plan '%s' as json", planName), LogColor.White, LogWeight.Bold));
           boolean executed = executeWithErrorHandling(client::show,
               createCliRequest(TerragruntShowCliRequest.builder(), terragruntContext, planTaskParameters)
                   .planName(planName)
@@ -190,18 +188,18 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
           }
 
           String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
-          planLogCallback.saveExecutionLog(format("Uploading json plan '%s' to file service", planName));
+          planLogCallback.saveExecutionLog(format("\nUploading json plan '%s' to file service", planName));
           planJsonFileId = terraformHelper.uploadTfPlanJson(planTaskParameters.getAccountId(), getDelegateId(),
               getTaskId(), planTaskParameters.getEntityId(), planName, tfPlanJsonFilePath);
 
           planLogCallback.saveExecutionLog(
-              format("%nTerraform JSON plan will be available at: %s%n", tfPlanJsonFilePath), INFO,
+              format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath), INFO,
               CommandExecutionStatus.RUNNING);
         }
       }
 
       planLogCallback.saveExecutionLog(
-          color("%n Terragrunt plan successfully completed", LogColor.White, LogWeight.Bold), INFO,
+          color("\nTerragrunt plan successfully completed", LogColor.White, LogWeight.Bold), INFO,
           CommandExecutionStatus.SUCCESS);
 
       return TerragruntPlanTaskResponse.builder()

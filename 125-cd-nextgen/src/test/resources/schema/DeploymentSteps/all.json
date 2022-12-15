@@ -2463,8 +2463,7 @@
         {
           "type": "object",
           "required": [
-            "instances",
-            "name"
+            "instances"
           ],
           "properties": {
             "delegateSelectors": {
@@ -2483,16 +2482,7 @@
               ]
             },
             "instances": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ElastigroupInstances"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/ElastigroupInstances"
             },
             "name": {
               "type": "string"

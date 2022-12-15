@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: dlx56eyqljwug
+  id: uo2r4f4vt18on
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1'
@@ -415,6 +415,40 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/inputs':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    get:
+      summary: Get Pipeline Inputs
+      operationId: get-pipeline-inputs
+      responses:
+        '200':
+          $ref: '#/components/responses/InputsResponseBody'
+      description: Return Inputs for a Pipeline.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: branch_name
+          description: Name of the branch (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+          description: Name of the repository (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: connector_ref
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+      tags:
+        - Inputs
+      x-internal: false
 components:
   schemas:
     GitDetails:
@@ -1670,6 +1704,65 @@ components:
         parent_entity_repo_name:
           type: string
           description: Repository name for Parent Entity (Pipeline).
+    InputsResponseBody:
+      title: Inputs Response Body
+      x-stoplight:
+        id: opv8b35dycaey
+      type: object
+      properties:
+        inputs:
+          type: object
+        repository:
+          type: object
+          properties:
+            reference:
+              type: object
+              properties:
+                type:
+                  type: object
+                value:
+                  type: object
+      x-examples:
+        example-inputs-response:
+          inputs:
+            key1:
+              prompt: false
+              required: false
+              default: golang
+              type: string
+              desc: sample desc
+            key2:
+              prompt: true
+              required: true
+              type: string
+              desc: sample desc
+            key3:
+              prompt: false
+              required: false
+              type: number
+            key4:
+              prompt: false
+              required: true
+              type: secret
+              desc: sample desc
+              enums:
+                - enum1
+                - enum2
+          repository:
+            reference:
+              type:
+                prompt: false
+                required: true
+                type: string
+                enums:
+                  - enum1
+                  - enum2
+                  - enum3
+              value:
+                prompt: false
+                required: true
+                type: string
+      description: Response Body for Pipeline Inputs
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2177,6 +2270,53 @@ components:
           examples:
             sample:
               value: '</v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=2&limit=1>; rel="next", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=1&limit=1>; rel="self", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=0&limit=1>; rel="previous", '
+    InputsResponseBody:
+      description: Inputs Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputsResponseBody'
+          examples:
+            inputs-response-body:
+              value:
+                inputs:
+                  key1:
+                    prompt: false
+                    required: false
+                    default: golang
+                    type: string
+                    desc: sample desc
+                  key2:
+                    prompt: true
+                    required: true
+                    type: string
+                    desc: sample desc
+                  key3:
+                    prompt: false
+                    required: false
+                    type: number
+                  key4:
+                    prompt: false
+                    required: true
+                    type: secret
+                    desc: sample desc
+                    enums:
+                      - enum1
+                      - enum2
+                repository:
+                  reference:
+                    type:
+                      prompt: false
+                      required: true
+                      type: string
+                      enums:
+                        - enum1
+                        - enum2
+                        - enum3
+                    value:
+                      prompt: false
+                      required: true
+                      type: string
   requestBodies:
     PipelineCreateRequestBody:
       content:

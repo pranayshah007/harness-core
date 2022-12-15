@@ -17,6 +17,7 @@
 package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
@@ -45,6 +46,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
+import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigBuilder;
 import io.harness.cdng.provision.terragrunt.TerragruntInheritOutput.TerragruntInheritOutputBuilder;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -62,6 +64,7 @@ import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -77,7 +80,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.CGRestUtils;
@@ -88,9 +93,12 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.validation.Validator;
 import io.harness.validator.NGRegexValidatorConstants;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,6 +110,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 @Singleton
@@ -113,6 +122,7 @@ public class TerragruntStepHelper {
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%s";
   private static final String TG_INHERIT_OUTPUT_FORMAT = "tgInheritOutput_%s_%s";
   public static final String DEFAULT_TIMEOUT = "10m";
+  public static final String TERRAGRUNT_FILE_NAME_FORMAT = "terragrunt-${UUID}.tf";
 
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -121,6 +131,7 @@ public class TerragruntStepHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
+  @Inject public TerragruntConfigDAL terragruntConfigDAL;
 
   public static StepType addStepType(String yamlType) {
     return StepType.newBuilder().setType(yamlType).setStepCategory(StepCategory.STEP).build();
@@ -340,7 +351,7 @@ public class TerragruntStepHelper {
                 ParameterFieldHelper.getParameterFieldValue(((InlineTerragruntVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
               List<InlineFileConfig> files = new ArrayList<>();
-              files.add(InlineFileConfig.builder().content(content).name("terragrunt-${UUID}.tfvars").build());
+              files.add(InlineFileConfig.builder().content(content).name(TERRAGRUNT_FILE_NAME_FORMAT).build());
               varFileInfo.add(InlineStoreDelegateConfig.builder().files(files).build());
             }
           } else if (spec instanceof RemoteTerragruntVarFileSpec) {
@@ -363,6 +374,35 @@ public class TerragruntStepHelper {
     return Collections.emptyList();
   }
 
+  public List<StoreDelegateConfig> toStoreDelegateVarFilesFromTgConfig(
+      List<TerragruntVarFileConfig> varFilesList, Ambiance ambiance) {
+    if (EmptyPredicate.isNotEmpty(varFilesList)) {
+      List<StoreDelegateConfig> varFileInfo = new ArrayList<>();
+
+      varFilesList.forEach(config -> {
+        if (config instanceof TerragruntInlineVarFileConfig) {
+          List<InlineFileConfig> files = new ArrayList<>();
+          files.add(InlineFileConfig.builder()
+                        .content(((TerragruntInlineVarFileConfig) config).getVarFileContent())
+                        .name(TERRAGRUNT_FILE_NAME_FORMAT)
+                        .build());
+          varFileInfo.add(InlineStoreDelegateConfig.builder().files(files).build());
+        }
+
+        if (config instanceof TerragruntRemoteVarFileConfig) {
+          StoreConfig storeConfig = ((TerragruntRemoteVarFileConfig) config).getGitStoreConfigDTO().toGitStoreConfig();
+          String varFileIdentifier = ((TerragruntRemoteVarFileConfig) config).getVarFileIdentifier();
+          GitStoreDelegateConfig gitStoreDelegateConfig = getGitFetchFilesConfig(
+              storeConfig, ambiance, format(TerragruntStepHelper.TF_VAR_FILES, varFileIdentifier));
+          varFileInfo.add(gitStoreDelegateConfig);
+        }
+      });
+
+      return varFileInfo;
+    }
+    return Collections.emptyList();
+  }
+
   private List<StoreDelegateConfig> toStoreDelegateVarFilesWithCommitId(
       Map<String, TerragruntVarFile> varFilesMap, Map<String, String> varFilesSourceReference, Ambiance ambiance) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
@@ -376,7 +416,7 @@ public class TerragruntStepHelper {
                 ParameterFieldHelper.getParameterFieldValue(((InlineTerragruntVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
               List<InlineFileConfig> files = new ArrayList<>();
-              files.add(InlineFileConfig.builder().content(content).name("terragrunt-${UUID}.tfvars").build());
+              files.add(InlineFileConfig.builder().content(content).name(TERRAGRUNT_FILE_NAME_FORMAT).build());
               varFileInfo.add(InlineStoreDelegateConfig.builder().files(files).build());
             }
           } else if (spec instanceof RemoteTerragruntVarFileSpec) {
@@ -389,6 +429,45 @@ public class TerragruntStepHelper {
                   getStoreConfigAtCommitId(storeConfig, varFilesSourceReference.get(identifier));
 
               varFileInfo.add(getGitFetchFilesConfig(gitStoreConfig, ambiance, TerragruntStepHelper.TF_VAR_FILES));
+            }
+          }
+        }
+      }
+
+      return varFileInfo;
+    }
+    return Collections.emptyList();
+  }
+
+  private List<TerragruntVarFileConfig> toTerragruntVarFilesConfigWithCommitId(
+      Map<String, TerragruntVarFile> varFilesMap, Map<String, String> varFilesSourceReference) {
+    if (EmptyPredicate.isNotEmpty(varFilesMap)) {
+      List<TerragruntVarFileConfig> varFileInfo = new ArrayList<>();
+
+      for (TerragruntVarFile file : varFilesMap.values()) {
+        if (file != null) {
+          TerragruntVarFileSpec spec = file.getSpec();
+          if (spec instanceof InlineTerragruntVarFileSpec) {
+            String content =
+                ParameterFieldHelper.getParameterFieldValue(((InlineTerragruntVarFileSpec) spec).getContent());
+            if (EmptyPredicate.isNotEmpty(content)) {
+              TerragruntInlineVarFileConfig inlineVarFileConfig = TerragruntInlineVarFileConfig.builder()
+                                                                      .varFileContent(content)
+                                                                      .varFileName(TERRAGRUNT_FILE_NAME_FORMAT)
+                                                                      .varFileIdentifier(file.identifier)
+                                                                      .build();
+              varFileInfo.add(inlineVarFileConfig);
+            }
+          } else if (spec instanceof RemoteTerragruntVarFileSpec) {
+            StoreConfigWrapper storeConfigWrapper = ((RemoteTerragruntVarFileSpec) spec).getStore();
+            if (storeConfigWrapper != null) {
+              StoreConfig storeConfig = storeConfigWrapper.getSpec();
+
+              String identifier = file.getIdentifier();
+              GitStoreConfig gitStoreConfig =
+                  getStoreConfigAtCommitId(storeConfig, varFilesSourceReference.get(identifier));
+
+              varFileInfo.add((TerragruntRemoteVarFileConfig) gitStoreConfig.toGitStoreConfigDTO());
             }
           }
         }
@@ -415,7 +494,7 @@ public class TerragruntStepHelper {
             ((InlineTerragruntBackendConfigSpec) terragruntBackendConfigSpec).getContent());
 
         List<InlineFileConfig> inlineFiles = new ArrayList<>();
-        inlineFiles.add(InlineFileConfig.builder().content(content).name("terragrunt-${UUID}.tf").build());
+        inlineFiles.add(InlineFileConfig.builder().content(content).name(TERRAGRUNT_FILE_NAME_FORMAT).build());
         return InlineStoreDelegateConfig.builder().files(inlineFiles).build();
       }
       if (terragruntBackendConfigSpec instanceof RemoteTerragruntBackendConfigSpec) {
@@ -428,16 +507,33 @@ public class TerragruntStepHelper {
     return null;
   }
 
-  public StoreDelegateConfig getBackendConfigWithCommitIdReference(
-      TerragruntBackendConfig backendConfig, Ambiance ambiance, String backendConfigCommitItReference) {
+  public StoreDelegateConfig getBackendConfigFromTgConfig(
+      TerragruntBackendConfigFileConfig backendConfig, Ambiance ambiance) {
+    if (backendConfig != null) {
+      if (backendConfig instanceof TerragruntInlineBackendConfigFileConfig) {
+        String content = ((TerragruntInlineBackendConfigFileConfig) backendConfig).backendConfigFileContent;
+
+        List<InlineFileConfig> inlineFiles = new ArrayList<>();
+        inlineFiles.add(InlineFileConfig.builder().content(content).name(TERRAGRUNT_FILE_NAME_FORMAT).build());
+        return InlineStoreDelegateConfig.builder().files(inlineFiles).build();
+      }
+      if (backendConfig instanceof TerragruntRemoteBackendConfigFileConfig) {
+        StoreConfig storeConfig =
+            ((TerragruntRemoteBackendConfigFileConfig) backendConfig).gitStoreConfigDTO.toGitStoreConfig();
+        return getGitFetchFilesConfig(storeConfig, ambiance, TerragruntStepHelper.TF_BACKEND_CONFIG_FILE);
+      }
+    }
+    return null;
+  }
+
+  public TerragruntBackendConfigFileConfig getTerragruntBackendConfigWithCommitIdReference(
+      TerragruntBackendConfig backendConfig, String backendConfigCommitItReference) {
     if (backendConfig != null) {
       TerragruntBackendConfigSpec terragruntBackendConfigSpec = backendConfig.getTerragruntBackendConfigSpec();
       if (terragruntBackendConfigSpec instanceof InlineTerragruntBackendConfigSpec) {
         String content = ParameterFieldHelper.getParameterFieldValue(
             ((InlineTerragruntBackendConfigSpec) terragruntBackendConfigSpec).getContent());
-        return InlineStoreDelegateConfig.builder()
-            .files(List.of(InlineFileConfig.builder().content(content).build()))
-            .build();
+        return TerragruntInlineBackendConfigFileConfig.builder().backendConfigFileContent(content).build();
       }
       if (terragruntBackendConfigSpec instanceof RemoteTerragruntBackendConfigSpec) {
         StoreConfigWrapper storeConfigWrapper =
@@ -445,7 +541,7 @@ public class TerragruntStepHelper {
         StoreConfig storeConfig = storeConfigWrapper.getSpec();
 
         GitStoreConfig gitStoreConfig = getStoreConfigAtCommitId(storeConfig, backendConfigCommitItReference);
-        return getGitFetchFilesConfig(gitStoreConfig, ambiance, TerragruntStepHelper.TF_BACKEND_CONFIG_FILE);
+        return (TerragruntRemoteBackendConfigFileConfig) gitStoreConfig.toGitStoreConfigDTO();
       }
     }
     return null;
@@ -487,7 +583,7 @@ public class TerragruntStepHelper {
       case BITBUCKET:
         GitStoreConfig gitStoreConfig = getStoreConfigAtCommitId(configuration.getConfigFiles().getStore().getSpec(),
             terragruntTaskNGResponse.getConfigFilesSourceReference());
-        builder.configFiles(getGitFetchFilesConfig(gitStoreConfig, ambiance, TerragruntStepHelper.TG_CONFIG_FILES));
+        builder.configFiles(gitStoreConfig);
         builder.useConnectorCredentials(isExportCredentialForSourceModule(
             configuration.getConfigFiles(), ExecutionNodeType.TERRAGRUNT_PLAN.getYamlType()));
         break;
@@ -496,15 +592,15 @@ public class TerragruntStepHelper {
     }
 
     builder
-        .varFileConfigs(toStoreDelegateVarFilesWithCommitId(
-            configuration.getVarFiles(), terragruntTaskNGResponse.getVarFilesSourceReference(), ambiance))
-        .backendConfigFile(getBackendConfigWithCommitIdReference(
-            configuration.getBackendConfig(), ambiance, terragruntTaskNGResponse.getBackendFileSourceReference()))
+        .varFileConfigs(toTerragruntVarFilesConfigWithCommitId(
+            configuration.getVarFiles(), terragruntTaskNGResponse.getVarFilesSourceReference()))
+        .backendConfigFile(getTerragruntBackendConfigWithCommitIdReference(
+            configuration.getBackendConfig(), terragruntTaskNGResponse.getBackendFileSourceReference()))
         .encryptedPlan(terragruntTaskNGResponse.getEncryptedPlan())
         .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
         .environmentVariables(getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
         .targets(getParameterFieldValue(configuration.getTargets()))
-        .runConfiguration(getTerragruntRunConfiguration(configuration))
+        .runConfiguration(getTerragruntRunConfiguration(configuration.getTerragruntModuleConfig()))
         .planName(getTerragruntPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
             planStepParameters.getProvisionerIdentifier().getValue()));
     String fullEntityId = generateFullIdentifier(
@@ -514,17 +610,16 @@ public class TerragruntStepHelper {
     executionSweepingOutputService.consume(ambiance, inheritOutputName, builder.build(), StepOutcomeGroup.STAGE.name());
   }
 
-  private TerragruntRunConfiguration getTerragruntRunConfiguration(
-      TerragruntPlanExecutionDataParameters configuration) {
-    if (configuration.getTerragruntModuleConfig().terragruntRunType == TerragruntRunType.RUN_ALL) {
+  private TerragruntRunConfiguration getTerragruntRunConfiguration(TerragruntModuleConfig moduleConfig) {
+    if (moduleConfig.terragruntRunType == TerragruntRunType.RUN_ALL) {
       return TerragruntRunConfiguration.builder()
           .runType(TerragruntTaskRunType.RUN_ALL)
-          .path(configuration.getTerragruntModuleConfig().getPath().getValue())
+          .path(moduleConfig.getPath().getValue())
           .build();
     } else {
       return TerragruntRunConfiguration.builder()
           .runType(TerragruntTaskRunType.RUN_MODULE)
-          .path(configuration.getTerragruntModuleConfig().getPath().getValue())
+          .path(moduleConfig.getPath().getValue())
           .build();
     }
   }
@@ -653,5 +748,143 @@ public class TerragruntStepHelper {
     });
 
     return encryptedDataDetailsList;
+  }
+
+  public List<EncryptedDataDetail> getEncryptionDetailsFromTgInheritConfig(StoreConfig configFiles,
+      TerragruntBackendConfigFileConfig backendConfigFile, List<TerragruntVarFileConfig> varFileConfigs,
+      Ambiance ambiance) {
+    List<EncryptedDataDetail> encryptedDataDetailsList = new ArrayList<>();
+    addAllEncryptionDataDetail(configFiles, ambiance, encryptedDataDetailsList);
+
+    if (backendConfigFile instanceof TerragruntRemoteBackendConfigFileConfig) {
+      StoreConfig backendStoreConfig =
+          ((TerragruntRemoteBackendConfigFileConfig) backendConfigFile).getGitStoreConfigDTO().toGitStoreConfig();
+      addAllEncryptionDataDetail(backendStoreConfig, ambiance, encryptedDataDetailsList);
+    }
+
+    varFileConfigs.forEach(terragruntVarFile -> {
+      if (terragruntVarFile instanceof TerragruntRemoteVarFileConfig) {
+        StoreConfig varFileStoreConfig =
+            ((TerragruntRemoteVarFileConfig) terragruntVarFile).getGitStoreConfigDTO().toGitStoreConfig();
+
+        addAllEncryptionDataDetail(varFileStoreConfig, ambiance, encryptedDataDetailsList);
+      }
+    });
+
+    return encryptedDataDetailsList;
+  }
+
+  public void validateApplyStepParamsInline(TerragruntApplyStepParameters stepParameters) {
+    Validator.notNullCheck("Apply Step Parameters are null", stepParameters);
+    Validator.notNullCheck("Apply Step configuration is NULL", stepParameters.getConfiguration());
+  }
+
+  public void validateApplyStepConfigFilesInline(TerragruntApplyStepParameters stepParameters) {
+    Validator.notNullCheck("Apply Step Parameters are null", stepParameters);
+    Validator.notNullCheck("Apply Step configuration is NULL", stepParameters.getConfiguration());
+    TerragruntExecutionDataParameters spec = stepParameters.getConfiguration().getSpec();
+    Validator.notNullCheck("Apply Step Spec is NULL", spec);
+    Validator.notNullCheck("Apply Step Spec does not have Config files", spec.getConfigFiles());
+    Validator.notNullCheck("Apply Step Spec does not have Config files store", spec.getConfigFiles().getStore());
+  }
+
+  public TerragruntInheritOutput getSavedInheritOutput(
+      String provisionerIdentifier, String command, Ambiance ambiance) {
+    String fullEntityId = generateFullIdentifier(provisionerIdentifier, ambiance);
+    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(format(TG_INHERIT_OUTPUT_FORMAT, command, fullEntityId)));
+    if (!output.isFound()) {
+      throw new InvalidRequestException(
+          format("Did not find any Plan step for provisioner identifier: [%s]", provisionerIdentifier));
+    }
+
+    return (TerragruntInheritOutput) output.getOutput();
+  }
+
+  public void saveRollbackDestroyConfigInline(
+      TerragruntApplyStepParameters stepParameters, TerragruntApplyTaskResponse response, Ambiance ambiance) {
+    validateApplyStepConfigFilesInline(stepParameters);
+    TerragruntStepConfigurationParameters configuration = stepParameters.getConfiguration();
+    TerragruntExecutionDataParameters spec = configuration.getSpec();
+    TerragruntConfigBuilder builder =
+        TerragruntConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(
+                generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
+            .pipelineExecutionId(ambiance.getPlanExecutionId());
+
+    StoreConfigWrapper store = spec.getConfigFiles().getStore();
+    StoreConfigType storeConfigType = store.getType();
+    switch (storeConfigType) {
+      case GIT:
+      case GITHUB:
+      case GITLAB:
+      case BITBUCKET:
+        GitStoreConfig gitStoreConfig = getStoreConfigAtCommitId(
+            spec.getConfigFiles().getStore().getSpec(), response.getConfigFilesSourceReference());
+        builder.configFiles(gitStoreConfig.toGitStoreConfigDTO());
+        builder.useConnectorCredentials(isExportCredentialForSourceModule(
+            configuration.getSpec().getConfigFiles(), ExecutionNodeType.TERRAGRUNT_APPLY.getYamlType()));
+        break;
+      default:
+        throw new InvalidRequestException(format("Unsupported store type: [%s]", storeConfigType));
+    }
+
+    builder
+        .varFileConfigs(
+            toTerragruntVarFilesConfigWithCommitId(spec.getVarFiles(), response.getVarFilesSourceReference()))
+        .backendConfigFile(getTerragruntBackendConfigWithCommitIdReference(
+            spec.getBackendConfig(), response.getBackendFileSourceReference()))
+        .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
+        .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
+        .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
+        .runConfiguration(getTerragruntRunConfiguration(spec.getTerragruntModuleConfig()));
+
+    terragruntConfigDAL.saveTerragruntConfig(builder.build());
+  }
+
+  public Map<String, Object> parseTerragruntOutputs(String terragruntOutputString) {
+    Map<String, Object> outputs = new LinkedHashMap<>();
+    if (isEmpty(terragruntOutputString)) {
+      return outputs;
+    }
+    try {
+      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(terragruntOutputString), typeRef);
+
+      json.forEach((key, object) -> outputs.put(key, ((Map<String, Object>) object).get("value")));
+
+    } catch (IOException exception) {
+      log.error("", exception);
+    }
+    return outputs;
+  }
+
+  public void saveRollbackDestroyConfigInherited(TerragruntApplyStepParameters stepParameters, Ambiance ambiance) {
+    TerragruntInheritOutput inheritOutput = getSavedInheritOutput(
+        ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(), ambiance);
+
+    TerragruntConfig terragruntConfig =
+        TerragruntConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(
+                generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
+            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .configFiles(
+                inheritOutput.getConfigFiles() != null ? inheritOutput.getConfigFiles().toGitStoreConfigDTO() : null)
+            .useConnectorCredentials(inheritOutput.isUseConnectorCredentials())
+            .varFileConfigs(inheritOutput.getVarFileConfigs())
+            .backendConfigFile(inheritOutput.getBackendConfigFile())
+            .environmentVariables(inheritOutput.getEnvironmentVariables())
+            .workspace(inheritOutput.getWorkspace())
+            .targets(inheritOutput.getTargets())
+            .runConfiguration(inheritOutput.getRunConfiguration())
+            .build();
+
+    terragruntConfigDAL.saveTerragruntConfig(terragruntConfig);
   }
 }

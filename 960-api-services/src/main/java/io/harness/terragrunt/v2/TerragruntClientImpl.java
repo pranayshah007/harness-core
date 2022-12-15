@@ -28,7 +28,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
 import io.harness.terragrunt.v2.request.AbstractTerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntOutputCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntPlanCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntRunType;
 import io.harness.terragrunt.v2.request.TerragruntShowCliRequest;
@@ -69,7 +71,7 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse init(@Nonnull TerragruntCliRequest request, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = TerragruntCommandUtils.init(request.getArgs().getBackendConfigFile());
+    String command = TerragruntCommandUtils.init(request.getArgs().getBackendConfigFile(), request.getRunType());
     log.info("Execute terragrunt init: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
@@ -86,13 +88,13 @@ public class TerragruntClientImpl implements TerragruntClient {
 
     Set<String> existingWorkspaces = parseWorkspaceList(workspaceListResponse.getOutput());
     if (existingWorkspaces.contains(request.getWorkspace())) {
-      String command = TerragruntCommandUtils.workspaceSelect(request.getWorkspace());
+      String command = TerragruntCommandUtils.workspaceSelect(request.getWorkspace(), request.getRunType());
       log.info("Workspace {} exists in workspaces set: {}", request.getWorkspace(), existingWorkspaces);
       return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
     } else {
       log.info("No workspace {} found in workspaces set {}", request.getWorkspace(), existingWorkspaces);
       logCallback.saveExecutionLog(format("Workspace %s doesn't exist, create a new one", request.getWorkspace()));
-      String command = TerragruntCommandUtils.workspaceNew(request.getWorkspace());
+      String command = TerragruntCommandUtils.workspaceNew(request.getWorkspace(), request.getRunType());
       return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
     }
   }
@@ -120,6 +122,30 @@ public class TerragruntClientImpl implements TerragruntClient {
         ? TerragruntCommandUtils.runAllPlan(targetArgs, varArgs, request.isDestroy())
         : TerragruntCommandUtils.plan(targetArgs, varArgs, request.isDestroy());
     log.info("Execute terragrunt plan: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse apply(@NotNull TerragruntApplyCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    String targetArgs = getTargetArgs(request.getArgs().getTargets());
+    String varArgs = getVarArgs(request.getArgs().getVarFiles());
+    String command = TerragruntRunType.RUN_ALL == request.getRunType()
+        ? TerragruntCommandUtils.runAllApply(targetArgs, varArgs)
+        : TerragruntCommandUtils.apply();
+    log.info("Execute terragrunt apply: {}", command);
+    return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
+  }
+
+  @NotNull
+  @Override
+  public CliResponse output(@NotNull TerragruntOutputCliRequest request, @NotNull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException {
+    String command = TerragruntRunType.RUN_ALL == request.getRunType()
+        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile())
+        : TerragruntCommandUtils.output(request.getTerraformOutputsFile());
+    log.info("Execute terragrunt output: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
 

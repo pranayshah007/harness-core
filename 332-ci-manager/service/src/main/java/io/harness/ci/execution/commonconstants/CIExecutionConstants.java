@@ -89,4 +89,6 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+
+  public static final String NULL_STR = "null";
 }

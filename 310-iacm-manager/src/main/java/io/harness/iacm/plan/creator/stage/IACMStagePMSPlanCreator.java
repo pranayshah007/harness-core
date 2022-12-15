@@ -97,7 +97,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IACMStageNode stageNode) {
-    log.info("Received plan creation request for security stage {}", stageNode.getIdentifier());
+    log.info("Received plan creation request for iacm stage {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // Spec from the stages/IACM stage
