@@ -18,6 +18,5 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateCapacity {
-  private int taskLimit;
   private int maximumNumberOfBuilds;
 }

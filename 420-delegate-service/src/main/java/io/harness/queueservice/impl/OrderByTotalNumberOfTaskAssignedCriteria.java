@@ -6,7 +6,7 @@
  */
 package io.harness.queueservice.impl;
 
-import static io.harness.beans.DelegateTask.Status.QUEUED;
+import static io.harness.beans.DelegateTask.Status.STARTED;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,6 +19,7 @@ import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -82,7 +83,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(String accountId) {
     return persistence.createQuery(DelegateTask.class)
         .filter(DelegateTaskKeys.accountId, accountId)
-        .filter(DelegateTaskKeys.status, QUEUED)
+        .filter(DelegateTaskKeys.status, STARTED)
         .project(DelegateTaskKeys.delegateId, true)
         .asList();
   }

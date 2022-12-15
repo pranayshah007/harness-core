@@ -21,8 +21,8 @@ import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.queueservice.DelegateTaskDequeue;
+import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
-import io.harness.queueservice.infc.DelegateResourceCriteria;
 import io.harness.queueservice.infc.DelegateServiceQueue;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
@@ -44,7 +44,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Inject private HsqsServiceClient hsqsServiceClient;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
-  @Inject private DelegateResourceCriteria delegateResourceCriteria;
+  @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
   @Inject private DelegateCache delegateCache;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
@@ -123,9 +123,9 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     String accountId = delegateTaskDequeue.getDelegateTask().getAccountId();
     List<Delegate> delegateList =
         getDelegatesList(delegateTaskDequeue.getDelegateTask().getEligibleToExecuteDelegateIds(), accountId);
-    List<Delegate> filteredList =
-        delegateResourceCriteria.getFilteredEligibleDelegateList(delegateList, taskType, accountId);
-    return filteredList.size() > 0;
+    Optional<List<String>> filteredDelegateList =
+        delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
+    return filteredDelegateList.isPresent();
   }
 
   private List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
@@ -139,7 +139,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
         acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
       }
     } catch (Exception e) {
-      log.error("Unable to acknowledge queue service on dequeue delegate task", e);
+      log.error("Unable to acknowledge queue service on dequeue delegate task id {}, item Id {}",
+          delegateTaskDequeue.getDelegateTask().getUuid(), delegateTaskDequeue.getItemId(), e);
     }
   }
 

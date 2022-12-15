@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -65,13 +66,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegate(accountId, "");
     when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(
-            Arrays.asList(DelegateTask.builder()
-                              .accountId(accountId)
-                              .delegateId(delegate.getUuid())
-                              .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
-                              .build()));
+    createDelegateTaskWithDelegateAssigned(accountId, delegate.getUuid());
     List<Delegate> eligibleDelegateIds = Collections.singletonList(delegate);
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -84,7 +79,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Description("Verify delegate with least number of currently task assigned, comes first in the list. Three delegates")
   public void testOrderByTotalNumberOfTaskAssignedCriteria_3Delegates() {
     String accountId = generateUuid();
-    Delegate delegate1 = createDelegate(accountId, "delelgate1");
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
     Delegate delegate2 = createDelegate(accountId, "delegate2");
     Delegate delegate3 = createDelegate(accountId, "delegate3");
 
@@ -93,16 +88,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
 
-    DelegateTask delegateTask1 = createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
-    DelegateTask delegateTask2 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask3 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask4 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(
-            Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5, delegateTask6));
+    createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid()));
+    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid()));
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -119,7 +107,7 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Description("Verify delegate with least number of currently task assigned, comes first in the list. Five delegates")
   public void testOrderByTotalNumberOfTaskAssignedCriteria_fiveDelegates() {
     String accountId = generateUuid();
-    Delegate delegate1 = createDelegate(accountId, "delelgate1");
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
     Delegate delegate2 = createDelegate(accountId, "delegate2");
     Delegate delegate3 = createDelegate(accountId, "delegate3");
     Delegate delegate4 = createDelegate(accountId, "delegate3");
@@ -132,26 +120,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
     when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
 
-    DelegateTask delegateTask1 = createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
-    DelegateTask delegateTask2 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask3 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask4 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask7 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask8 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask9 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask10 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask11 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask12 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask13 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask14 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask15 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5,
-            delegateTask6, delegateTask7, delegateTask8, delegateTask9, delegateTask10, delegateTask11, delegateTask12,
-            delegateTask13, delegateTask14, delegateTask15));
+    createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid()));
+    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid()));
+    IntStream.range(5, 9).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid()));
+    IntStream.range(9, 14).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid()));
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -170,12 +143,6 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testOrderByTotalNumberOfTaskAssignedCriteria_NoDelegate() {
     String accountId = generateUuid();
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(
-            Arrays.asList(DelegateTask.builder()
-                              .accountId(accountId)
-                              .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
-                              .build()));
     List<Delegate> eligibleDelegateIds = Collections.emptyList();
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -257,16 +224,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
 
-    DelegateTask delegateTask1 = createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
-    DelegateTask delegateTask2 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask3 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask4 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(
-            Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5, delegateTask6));
+    createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid()));
+    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid()));
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -303,26 +263,11 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
     when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
 
-    DelegateTask delegateTask1 = createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
-    DelegateTask delegateTask2 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask3 = createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid());
-    DelegateTask delegateTask4 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask5 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask6 = createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid());
-    DelegateTask delegateTask7 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask8 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask9 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask10 = createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid());
-    DelegateTask delegateTask11 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask12 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask13 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask14 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-    DelegateTask delegateTask15 = createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid());
-
-    when(orderByTotalNumberOfTaskAssignedCriteria.getTotalNumberOfTaskAssignedInDelegate(accountId))
-        .thenReturn(Arrays.asList(delegateTask1, delegateTask2, delegateTask3, delegateTask4, delegateTask5,
-            delegateTask6, delegateTask7, delegateTask8, delegateTask9, delegateTask10, delegateTask11, delegateTask12,
-            delegateTask13, delegateTask14, delegateTask15));
+    createDelegateTaskWithDelegateAssigned(accountId, delegate1.getUuid());
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate2.getUuid()));
+    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate3.getUuid()));
+    IntStream.range(5, 9).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate4.getUuid()));
+    IntStream.range(9, 14).forEach(i -> createDelegateTaskWithDelegateAssigned(accountId, delegate5.getUuid()));
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
@@ -336,12 +281,15 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     assertThat(delegateWithCapacityList).containsExactly(delegate1, delegate2, delegate4);
   }
 
-  private DelegateTask createDelegateTaskWithDelegateAssigned(String accountId, String delegateId) {
-    return DelegateTask.builder()
-        .accountId(accountId)
-        .delegateId(delegateId)
-        .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
-        .build();
+  private void createDelegateTaskWithDelegateAssigned(String accountId, String delegateId) {
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .status(DelegateTask.Status.STARTED)
+            .delegateId(delegateId)
+            .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
+            .build();
+    persistence.save(delegateTask);
   }
 
   private Delegate createDelegateWithTaskAssignedField(String accountId, int numberOfTaskAssigned) {
