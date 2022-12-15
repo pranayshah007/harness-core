@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.aws;
+package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -13,9 +13,10 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.aws.asg.request.AsgCommandRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
@@ -24,9 +25,9 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AsgCanaryDeployTaskNG extends AbstractDelegateRunnableTask {
-  public AsgCanaryDeployTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-      Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+public class AsgCanaryDeleteTaskNG extends AbstractDelegateRunnableTask {
+  public AsgCanaryDeleteTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+                               Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -40,8 +41,9 @@ public class AsgCanaryDeployTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     // TODO
-
-    return AsgCanaryDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
+    return asgDelegateTaskHelper.getAsgCommandResponse(asgCommandRequest, getLogStreamingTaskClient());
+    return AsgCanaryDeleteResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
   }
 
   @Override
