@@ -18,6 +18,7 @@ import static io.harness.pcf.CfCommandUnitConstants.Upsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
 
+import static io.harness.pcf.model.CfConstants.CLOUD_FOUNDRY_LOG_PREFIX;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.tas;
 
+import static java.util.Objects.isNull;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,16 +16,21 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
+import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -57,7 +63,13 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -73,6 +85,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
   @Inject private TasEntityHelper tasEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
   public static final String TAS_ROLLBACK = "TasRollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -154,9 +167,9 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
       throws Exception {
     StepResponse.StepResponseBuilder builder = StepResponse.builder();
 
-    CfDeployCommandResponseNG response;
+    CfRollbackCommandResponseNG response;
     try {
-      response = (CfDeployCommandResponseNG) responseDataSupplier.get();
+      response = (CfRollbackCommandResponseNG) responseDataSupplier.get();
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
@@ -168,9 +181,43 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
           .build();
     }
+    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+    StepResponse.StepOutcome stepOutcome =
+            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
+  }
+
+  private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollbackCommandResponseNG response, Ambiance ambiance) {
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    CfRollbackCommandResult cfRollbackCommandResult = response.getCfRollbackCommandResult();
+    if (cfRollbackCommandResult == null) {
+      log.error("Could not generate server instance info for app resize step");
+      return Collections.emptyList();
+    }
+    List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
+    if (!isNull(instances)) {
+      return instances.stream()
+              .map(instance -> getServerInstance(instance, infrastructureOutcome))
+              .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
+  }
+
+  private ServerInstanceInfo getServerInstance(
+          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+    return TasServerInstanceInfo.builder()
+            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+            .instanceIndex(instance.getInstanceIndex())
+            .tasApplicationName(instance.getDisplayName())
+            .tasApplicationGuid(instance.getApplicationId())
+            .organization(infrastructureOutcome.getOrganization())
+            .space(infrastructureOutcome.getSpace())
+            .build();
   }
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

@@ -41,7 +41,7 @@ public class TasSwapRoutesBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes(value = {runtime})
   ParameterField<Boolean> downSizeOldApplication;
   @JsonIgnore String tasResizeFqn;
   @JsonIgnore String tasBGSetupFqn;

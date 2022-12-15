@@ -699,10 +699,6 @@ public class CfCommandTaskHelperNG {
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
       Integer updateCount, List<CfInternalInstanceElement> pcfInstanceElements,
       CfAppAutoscalarRequestData appAutoscalarRequestData) throws PivotalClientApiException {
-    if (cfDeployCommandRequestNG.isStandardBlueGreen()) {
-      executionLogCallback.saveExecutionLog("# BG Deployment. Old Application will not be downsized.");
-      return;
-    }
 
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 
@@ -773,7 +769,7 @@ public class CfCommandTaskHelperNG {
 
   void unmapRoutesIfAppDownsizedToZero(CfDeployCommandRequestNG cfCommandDeployRequest, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (cfCommandDeployRequest.isStandardBlueGreen() || cfCommandDeployRequest.getDownsizeAppDetail() == null
+    if (cfCommandDeployRequest.getDownsizeAppDetail() == null
         || isBlank(cfCommandDeployRequest.getDownsizeAppDetail().getApplicationName())) {
       return;
     }
@@ -835,7 +831,7 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
       CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo, CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG) throws PivotalClientApiException {
+      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(oldApplicationInfo.getApplicationName());
     cfRequestConfig.setDesiredCount(oldApplicationInfo.getRunningCount());
     executionLogCallback.saveExecutionLog(color("# Upsizing application:", White, Bold));
@@ -845,7 +841,12 @@ public class CfCommandTaskHelperNG {
         CFLogCallbackFormatter.formatNewLineKeyValue(DESIRED_INSTANCE_COUNT, oldApplicationInfo.getRunningCount())));
     ApplicationDetail detailsAfterUpsize =
         cfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
-
+    detailsAfterUpsize.getInstanceDetails().forEach(instanceDetail
+            -> oldAppInstances.add(CfInternalInstanceElement.builder()
+            .applicationId(detailsAfterUpsize.getId())
+            .displayName(detailsAfterUpsize.getName())
+            .instanceIndex(instanceDetail.getIndex())
+            .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
     restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);

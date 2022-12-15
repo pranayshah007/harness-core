@@ -29,6 +29,7 @@ import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasAppResizeStep;
+import io.harness.cdng.tas.TasRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
 
@@ -49,7 +50,7 @@ public class InstanceSyncStepResolver {
           EcsRollingDeployStep.STEP_TYPE.getType(), EcsRollingRollbackStep.STEP_TYPE.getType(),
           EcsCanaryDeployStep.STEP_TYPE.getType(), EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(),
           EcsBlueGreenRollbackStep.STEP_TYPE.getType(), FetchInstanceScriptStep.STEP_TYPE.getType(),
-          TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType()));
+          TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());
