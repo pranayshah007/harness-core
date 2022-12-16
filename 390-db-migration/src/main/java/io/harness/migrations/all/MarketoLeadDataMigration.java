@@ -28,6 +28,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import retrofit2.Retrofit;
@@ -80,11 +81,12 @@ public class MarketoLeadDataMigration implements Migration {
             continue;
           }
 
-          Account accountWithDecryptedLicenseInfo = LicenseUtils.decryptLicenseInfo(account, false);
-          LicenseInfo licenseInfo = accountWithDecryptedLicenseInfo.getLicenseInfo();
-          if (licenseInfo == null) {
+          Optional<LicenseInfo> optionalLicenseInfo =
+              LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+          if (!optionalLicenseInfo.isPresent()) {
             continue;
           }
+          LicenseInfo licenseInfo = optionalLicenseInfo.get();
 
           String accountType = licenseInfo.getAccountType();
 

@@ -24,6 +24,7 @@ import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -208,23 +209,17 @@ public class LicenseUtils {
     return calendar.getTimeInMillis();
   }
 
-  public Account decryptLicenseInfo(Account account, boolean setExpiry) {
-    if (account == null) {
-      return null;
-    }
-
-    byte[] encryptedLicenseInfo = account.getEncryptedLicenseInfo();
+  public Optional<LicenseInfo> getDecryptedLicenseInfo(byte[] encryptedLicenseInfo, boolean setExpiry) {
     if (isNotEmpty(encryptedLicenseInfo)) {
       byte[] decryptedBytes = EncryptionUtils.decrypt(encryptedLicenseInfo, null);
       if (isNotEmpty(decryptedBytes)) {
-        LicenseInfo licenseInfo = LicenseUtils.convertToObject(decryptedBytes, setExpiry);
-        account.setLicenseInfo(licenseInfo);
+        return Optional.of(LicenseUtils.convertToObject(decryptedBytes, setExpiry));
       } else {
         log.error("Error while decrypting license info. Deserialized object is not instance of LicenseInfo");
       }
     }
 
-    return account;
+    return Optional.empty();
   }
 
   public String convertToString(LicenseInfo licenseInfo) {

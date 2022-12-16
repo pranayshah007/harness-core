@@ -3108,7 +3108,11 @@ public class UserServiceImpl implements UserService {
 
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
-      accounts.forEach(account -> software.wings.service.impl.LicenseUtils.decryptLicenseInfo(account, false));
+      for (Account account : accounts) {
+        Optional<LicenseInfo> optionalLicenseInfo =
+            LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+        optionalLicenseInfo.ifPresent(account::setLicenseInfo);
+      }
     }
 
     return user;

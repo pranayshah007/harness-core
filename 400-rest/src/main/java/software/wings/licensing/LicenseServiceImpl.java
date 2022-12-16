@@ -58,15 +58,7 @@ import com.google.inject.Singleton;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -428,7 +420,9 @@ public class LicenseServiceImpl implements LicenseService {
     updateEmailSentToSales(accountId, false);
     dbCache.invalidate(Account.class, accountId);
     Account updatedAccount = wingsPersistence.get(Account.class, accountId);
-    LicenseUtils.decryptLicenseInfo(updatedAccount, false);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(updatedAccount.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(updatedAccount::setLicenseInfo);
     accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
 
     eventPublishHelper.publishLicenseChangeEvent(accountId, oldAccountType, licenseInfo.getAccountType());
@@ -483,7 +477,9 @@ public class LicenseServiceImpl implements LicenseService {
     updateEmailSentToSales(accountId, false);
     dbCache.invalidate(Account.class, accountId);
     Account updatedAccount = wingsPersistence.get(Account.class, accountId);
-    LicenseUtils.decryptLicenseInfo(updatedAccount, false);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(updatedAccount.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(updatedAccount::setLicenseInfo);
     return updatedAccount;
   }
 
@@ -511,10 +507,10 @@ public class LicenseServiceImpl implements LicenseService {
 
             if (noLicenseInfoInDB || !Arrays.equals(encryptedLicenseInfo, encryptedLicenseInfoFromDB)) {
               account.setEncryptedLicenseInfo(encryptedLicenseInfo);
-              LicenseUtils.decryptLicenseInfo(account, true);
-              LicenseInfo licenseInfo = account.getLicenseInfo();
-              if (licenseInfo != null) {
-                updateAccountLicense(account.getUuid(), licenseInfo);
+              Optional<LicenseInfo> optionalLicenseInfo =
+                  LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), true);
+              if (optionalLicenseInfo.isPresent()) {
+                updateAccountLicense(account.getUuid(), optionalLicenseInfo.get());
               } else {
                 throw new InvalidRequestException("No license info could be extracted from the encrypted license info");
               }

@@ -22,6 +22,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 
@@ -46,12 +47,12 @@ public class LicenseDataMigration implements Migration {
         try {
           account = records.next();
 
-          Account accountWithDecryptedLicenseInfo = LicenseUtils.decryptLicenseInfo(account, false);
-          LicenseInfo licenseInfo = accountWithDecryptedLicenseInfo.getLicenseInfo();
-          if (licenseInfo == null) {
+          Optional<LicenseInfo> optionalLicenseInfo =
+              LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+          if (!optionalLicenseInfo.isPresent()) {
             continue;
           }
-
+          LicenseInfo licenseInfo = optionalLicenseInfo.get();
           String accountType = licenseInfo.getAccountType();
 
           if (!AccountType.isValid(accountType)) {

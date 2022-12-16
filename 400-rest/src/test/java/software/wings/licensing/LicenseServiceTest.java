@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -427,12 +428,14 @@ public class LicenseServiceTest extends WingsBaseTest {
 
     Account account = new Account();
     account.setEncryptedLicenseInfo(decodeBase64(generatedLicense));
-    Account accountWithDecryptedInfo = LicenseUtils.decryptLicenseInfo(account, false);
-    assertThat(accountWithDecryptedInfo).isNotNull();
-    assertThat(accountWithDecryptedInfo.getLicenseInfo()).isNotNull();
-    assertThat(accountWithDecryptedInfo.getLicenseInfo().getExpiryTime()).isEqualTo(expiryTime);
-    assertThat(accountWithDecryptedInfo.getLicenseInfo().getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
-    assertThat(accountWithDecryptedInfo.getLicenseInfo().getAccountType()).isEqualTo(AccountType.TRIAL);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(account::setLicenseInfo);
+    assertThat(account).isNotNull();
+    assertThat(account.getLicenseInfo()).isNotNull();
+    assertThat(account.getLicenseInfo().getExpiryTime()).isEqualTo(expiryTime);
+    assertThat(account.getLicenseInfo().getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
+    assertThat(account.getLicenseInfo().getAccountType()).isEqualTo(AccountType.TRIAL);
   }
 
   @Test

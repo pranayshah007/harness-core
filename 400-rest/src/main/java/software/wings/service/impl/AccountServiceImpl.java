@@ -538,7 +538,9 @@ public class AccountServiceImpl implements AccountService {
       throw new AccountNotFoundException(
           "Account is not found for the given id:" + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
     }
-    LicenseUtils.decryptLicenseInfo(account, false);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(account::setLicenseInfo);
     return account;
   }
 
@@ -573,7 +575,9 @@ public class AccountServiceImpl implements AccountService {
       throw new AccountNotFoundException(
           "Account is not found for the given id:" + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
     }
-    LicenseUtils.decryptLicenseInfo(account, false);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(account::setLicenseInfo);
     AccountDetails accountDetails = new AccountDetails();
     accountDetails.setAccountId(accountId);
     accountDetails.setAccountName(account.getAccountName());
@@ -614,7 +618,11 @@ public class AccountServiceImpl implements AccountService {
       return;
     }
 
-    accounts.forEach(account -> LicenseUtils.decryptLicenseInfo(account, false));
+    for (Account account : accounts) {
+      Optional<LicenseInfo> optionalLicenseInfo =
+          LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+      optionalLicenseInfo.ifPresent(account::setLicenseInfo);
+    }
   }
 
   @Override
@@ -890,7 +898,8 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public Account update(@Valid Account account) {
-    LicenseUtils.decryptLicenseInfo(account, false);
+    Optional<LicenseInfo> optionalLicenseInfo =
+        LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
 
     UpdateOperations<Account> updateOperations =
         wingsPersistence.createUpdateOperations(Account.class)
@@ -903,8 +912,8 @@ public class AccountServiceImpl implements AccountService {
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("isProductLed", account.isProductLed());
 
-    if (null != account.getLicenseInfo()) {
-      updateOperations.set(AccountKeys.licenseInfo, account.getLicenseInfo());
+    if (optionalLicenseInfo.isPresent()) {
+      updateOperations.set(AccountKeys.licenseInfo, optionalLicenseInfo.get());
     }
 
     if (account.getAuthenticationMechanism() != null) {
@@ -923,7 +932,8 @@ public class AccountServiceImpl implements AccountService {
     dbCache.invalidate(Account.class, account.getUuid());
     authService.evictUserPermissionCacheForAccount(account.getUuid(), true);
     Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
-    LicenseUtils.decryptLicenseInfo(updatedAccount, false);
+    optionalLicenseInfo = LicenseUtils.getDecryptedLicenseInfo(updatedAccount.getEncryptedLicenseInfo(), false);
+    optionalLicenseInfo.ifPresent(updatedAccount::setLicenseInfo);
 
     publishAccountChangeEvent(updatedAccount);
     try (AutoLogContext logContext = new AccountLogContext(account.getUuid(), OVERRIDE_ERROR)) {
@@ -977,7 +987,9 @@ public class AccountServiceImpl implements AccountService {
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
       for (Account account : iterator) {
-        LicenseUtils.decryptLicenseInfo(account, false);
+        Optional<LicenseInfo> optionalLicenseInfo =
+            LicenseUtils.getDecryptedLicenseInfo(account.getEncryptedLicenseInfo(), false);
+        optionalLicenseInfo.ifPresent(account::setLicenseInfo);
         if (!excludedAccountIds.contains(account.getUuid())) {
           accountList.add(account);
         }
