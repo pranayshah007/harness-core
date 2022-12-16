@@ -48,6 +48,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -227,7 +228,7 @@ public class PipelinesApiImpl implements PipelinesApi {
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/pipelines", org, project), pipelines.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pipelines.getContent()

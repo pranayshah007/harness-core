@@ -7,7 +7,6 @@
 
 package io.harness.pms.ngpipeline.inputset.api;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,7 +17,6 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
@@ -35,11 +33,10 @@ import io.harness.spec.server.pipeline.v1.model.InputSetErrorDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetGitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.utils.ApiUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -52,7 +49,7 @@ public class InputSetsApiUtils {
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
     responseBody.setDescription(inputSetEntity.getDescription());
-    responseBody.setTags(getTags(inputSetEntity.getTags()));
+    responseBody.setTags(ApiUtils.getTags(inputSetEntity.getTags()));
     responseBody.setGitDetails(getGitDetails(inputSetEntity));
     responseBody.setCreated(inputSetEntity.getCreatedAt());
     responseBody.setUpdated(inputSetEntity.getLastUpdatedAt());
@@ -69,7 +66,7 @@ public class InputSetsApiUtils {
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
     responseBody.setDescription(inputSetEntity.getDescription());
-    responseBody.setTags(getTags(inputSetEntity.getTags()));
+    responseBody.setTags(ApiUtils.getTags(inputSetEntity.getTags()));
     responseBody.setGitDetails(getGitDetails(inputSetEntity));
     responseBody.setCreated(inputSetEntity.getCreatedAt());
     responseBody.setUpdated(inputSetEntity.getLastUpdatedAt());
@@ -82,17 +79,6 @@ public class InputSetsApiUtils {
     errorDetails.setFqnErrors(getFQNErrors(errorWrapperDTO));
     responseBody.setErrorDetails(errorDetails);
     return responseBody;
-  }
-
-  public Map<String, String> getTags(List<NGTag> ngTags) {
-    if (isEmpty(ngTags)) {
-      return null;
-    }
-    Map<String, String> tags = new HashMap<>();
-    for (NGTag ngTag : ngTags) {
-      tags.put(ngTag.getKey(), ngTag.getValue());
-    }
-    return tags;
   }
 
   public GitDetails getGitDetails(InputSetEntity inputSetEntity) {

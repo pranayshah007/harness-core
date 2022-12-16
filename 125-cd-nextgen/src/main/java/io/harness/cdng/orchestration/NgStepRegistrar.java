@@ -38,9 +38,12 @@ import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRunTaskStep;
+import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.elastigroup.ElastigroupSetupStep;
+import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
+import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -98,6 +101,10 @@ import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.ssh.CommandStep;
+import io.harness.cdng.tas.TasBGAppSetupStep;
+import io.harness.cdng.tas.TasBasicAppSetupStep;
+import io.harness.cdng.tas.TasCanaryAppSetupStep;
+import io.harness.cdng.tas.TasCommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -206,10 +213,19 @@ public class NgStepRegistrar {
     engineSteps.put(TerragruntApplyStep.STEP_TYPE, TerragruntApplyStep.class);
     engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
+    engineSteps.put(ElastigroupBGStageSetupStep.STEP_TYPE, ElastigroupBGStageSetupStep.class);
+    engineSteps.put(ElastigroupSwapRouteStep.STEP_TYPE, ElastigroupSwapRouteStep.class);
+    engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
 
     // Asg
     engineSteps.put(AsgCanaryDeployStep.STEP_TYPE, AsgCanaryDeployStep.class);
     engineSteps.put(AsgCanaryDeleteStep.STEP_TYPE, AsgCanaryDeleteStep.class);
+
+    // TAS
+    engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
+    engineSteps.put(TasBGAppSetupStep.STEP_TYPE, TasBGAppSetupStep.class);
+    engineSteps.put(TasBasicAppSetupStep.STEP_TYPE, TasBasicAppSetupStep.class);
+    engineSteps.put(TasCommandStep.STEP_TYPE, TasCommandStep.class);
 
     return engineSteps;
   }

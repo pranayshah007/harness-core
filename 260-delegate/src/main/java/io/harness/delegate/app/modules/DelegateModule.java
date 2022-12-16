@@ -265,11 +265,14 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.ecs.EcsS3FetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupDeployTask;
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
 import io.harness.delegate.task.elastigroup.ElastigroupPreFetchTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupRollbackTask;
 import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
+import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1994,9 +1997,14 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAGRUNT_ROLLBACK_TASK_NG).toInstance(TerragruntRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_FETCH_APP_TASK).toInstance(GitOpsFetchAppTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_INITIALIZATION).toInstance(CIInitializeTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_ROLLBACK).toInstance(ElastigroupRollbackTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_EXECUTE_STEP).toInstance(CIExecuteStepTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_LE_STATUS).toInstance(StepStatusTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_CLEANUP).toInstance(CICleanupTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG)
+        .toInstance(ElastigroupBGStageSetupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG)
+        .toInstance(ElastigroupSwapRouteCommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {

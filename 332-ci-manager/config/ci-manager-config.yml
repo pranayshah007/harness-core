@@ -115,6 +115,10 @@ stoServiceConfig:
   baseUrl: http://localhost:4000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
+iacmServiceConfig:
+  baseUrl: http://localhost:4000
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
 managerTarget: localhost:9880
 managerAuthority: localhost
 managerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"

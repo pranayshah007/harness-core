@@ -23,8 +23,11 @@ import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
+import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
+import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
+import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -94,8 +97,15 @@ import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
-import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepParameters;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStepParameters;
+import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
+import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasCommandStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -211,8 +221,17 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntApplyStepInfo.class, 12623);
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
-
     kryo.register(AsgCanaryDeployStepInfo.class, 12626);
     kryo.register(AsgCanaryDeleteStepInfo.class, 12627);
+    kryo.register(TasCanaryAppSetupStepInfo.class, 12628);
+    kryo.register(TasCanaryAppSetupStepParameters.class, 12629);
+    kryo.register(TasBGAppSetupStepInfo.class, 12630);
+    kryo.register(TasBGAppSetupStepParameters.class, 12631);
+    kryo.register(TasBasicAppSetupStepInfo.class, 12632);
+    kryo.register(TasBasicAppSetupStepParameters.class, 12633);
+    kryo.register(TasCommandStepInfo.class, 12634);
+    kryo.register(TasCommandStepParameters.class, 12635);
+    kryo.register(ElastigroupBGStageSetupStepInfo.class, 12800);
+    kryo.register(ElastigroupSwapRouteStepInfo.class, 12801);
   }
 }

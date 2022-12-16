@@ -7,6 +7,7 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME;
 import static io.harness.cdng.elastigroup.ElastigroupSetupStep.ELASTIGROUP_SETUP_COMMAND_NAME;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -372,8 +373,10 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     SpotInstConfig spotInstConfig = getSpotInstConfig(infrastructureOutcome, ambiance);
 
-    String elastigroupNamePrefix = "";
-    if (!executionPassThroughData.isBlueGreen()) {
+    String elastigroupNamePrefix;
+    if (executionPassThroughData.isBlueGreen()) {
+      elastigroupNamePrefix = getElastigroupNamePrefixForBG(ambiance, stepParameters);
+    } else {
       elastigroupNamePrefix = getElastigroupNamePrefixForNonBG(ambiance, stepParameters);
     }
 
@@ -392,8 +395,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
-            .commandName(
-                executionPassThroughData.isBlueGreen() ? "ElastigroupBGStageSetup" : ELASTIGROUP_SETUP_COMMAND_NAME)
+            .commandName(executionPassThroughData.isBlueGreen() ? ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME
+                                                                : ELASTIGROUP_SETUP_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(getSteadyStateTimeout(stepParameters))
             .build();
@@ -403,11 +406,17 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   }
 
   private int getSteadyStateTimeout(StepElementParameters stepParameters) {
-    final int timeoutInMin = CDStepHelper.getTimeoutInMin(stepParameters);
-    if (timeoutInMin > 1) {
-      return timeoutInMin - 1;
-    }
-    return timeoutInMin;
+    return CDStepHelper.getTimeoutInMin(stepParameters);
+  }
+
+  private String getElastigroupNamePrefixForBG(Ambiance ambiance, StepElementParameters stepParameters) {
+    ElastigroupBGStageSetupStepParameters elastigroupBGStageSetupStepParameters =
+        (ElastigroupBGStageSetupStepParameters) stepParameters.getSpec();
+
+    ParameterField<String> elastigroupSetupStepParametersName = elastigroupBGStageSetupStepParameters.getName();
+    return elastigroupSetupStepParametersName.isExpression()
+        ? renderExpression(ambiance, elastigroupSetupStepParametersName.getExpressionValue())
+        : elastigroupSetupStepParametersName.getValue();
   }
 
   private String getElastigroupNamePrefixForNonBG(Ambiance ambiance, StepElementParameters stepParameters) {

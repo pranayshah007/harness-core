@@ -105,7 +105,6 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, applyTaskParameters, baseDir);
-      taskService.cleanupTerragruntLocalFiles(terragruntContext.getScriptDirectory());
 
       TerragruntClient client = terragruntContext.getClient();
       LogCallback applyLogCallback =
@@ -153,11 +152,13 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
         }
       }
 
-      String planName = "tfPlan";
+      String planName = TERRAFORM_PLAN_FILE_OUTPUT_NAME;
       applyLogCallback.saveExecutionLog(
           color(format("\nExecute terragrunt apply for '%s'", planName), LogColor.White, LogWeight.Bold));
       executeWithErrorHandling(client::apply,
-          createCliRequest(TerragruntApplyCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
+          createCliRequest(TerragruntApplyCliRequest.builder(), terragruntContext, applyTaskParameters)
+              .terraformPlanName(planName)
+              .build(),
           applyLogCallback);
 
       applyLogCallback.saveExecutionLog(
@@ -178,10 +179,9 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       String stateFileId = null;
       if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()) {
         applyLogCallback.saveExecutionLog("Uploading terraform state file");
-        stateFileId =
-            taskService.uploadStateFile(terragruntContext.getScriptDirectory(), applyTaskParameters.getWorkspace(),
-                applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId(), getDelegateId(), getTaskId());
-        applyLogCallback.saveExecutionLog("Terraform state file successfully uploaded.\n");
+        stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
+            applyTaskParameters.getWorkspace(), applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId(),
+            getDelegateId(), getTaskId(), applyLogCallback);
       }
 
       applyLogCallback.saveExecutionLog(

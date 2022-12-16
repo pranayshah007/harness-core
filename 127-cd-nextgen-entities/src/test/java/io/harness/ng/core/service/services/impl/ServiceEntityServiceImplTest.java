@@ -30,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
@@ -137,6 +138,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .orgIdentifier("ORG_ID")
                                       .projectIdentifier("PROJECT_ID")
                                       .name("Service")
+                                      .type(ServiceDefinitionType.NATIVE_HELM)
                                       .build();
 
     // Create operations
@@ -147,6 +149,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(createdService.getProjectIdentifier()).isEqualTo(serviceEntity.getProjectIdentifier());
     assertThat(createdService.getIdentifier()).isEqualTo(serviceEntity.getIdentifier());
     assertThat(createdService.getName()).isEqualTo(serviceEntity.getName());
+    assertThat(createdService.getType()).isEqualTo(serviceEntity.getType());
     assertThat(createdService.getVersion()).isEqualTo(0L);
 
     // Get operations
@@ -163,6 +166,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .projectIdentifier("PROJECT_ID")
                                              .name("UPDATED_SERVICE")
                                              .description("NEW_DESCRIPTION")
+                                             .type(ServiceDefinitionType.NATIVE_HELM)
                                              .build();
     ServiceEntity updatedServiceResponse = serviceEntityService.update(updateServiceRequest);
     assertThat(updatedServiceResponse.getAccountId()).isEqualTo(updateServiceRequest.getAccountId());
@@ -178,6 +182,12 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         .isInstanceOf(InvalidRequestException.class);
     updatedServiceResponse.setAccountId("ACCOUNT_ID");
 
+    // adding test for 'Deployment Type is not allowed to change'
+    updateServiceRequest.setType(ServiceDefinitionType.KUBERNETES);
+    assertThatThrownBy(() -> serviceEntityService.update(updateServiceRequest))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThat(updatedServiceResponse.getType()).isNotEqualTo(ServiceDefinitionType.KUBERNETES);
+
     // Upsert operations
     ServiceEntity upsertServiceRequest = ServiceEntity.builder()
                                              .accountId("ACCOUNT_ID")
@@ -186,6 +196,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .projectIdentifier("NEW_PROJECT")
                                              .name("UPSERTED_SERVICE")
                                              .description("NEW_DESCRIPTION")
+                                             .type(ServiceDefinitionType.NATIVE_HELM)
                                              .build();
     ServiceEntity upsertService = serviceEntityService.upsert(upsertServiceRequest, UpsertOptions.DEFAULT);
     assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
@@ -194,6 +205,33 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(upsertService.getIdentifier()).isEqualTo(upsertServiceRequest.getIdentifier());
     assertThat(upsertService.getName()).isEqualTo(upsertServiceRequest.getName());
     assertThat(upsertService.getDescription()).isEqualTo(upsertServiceRequest.getDescription());
+    assertThat(upsertService.getType()).isEqualTo(upsertServiceRequest.getType());
+
+    // Upsert operations // update via Upsert
+    upsertServiceRequest = ServiceEntity.builder()
+                               .accountId("ACCOUNT_ID")
+                               .identifier("NEW_IDENTIFIER")
+                               .orgIdentifier("ORG_ID")
+                               .projectIdentifier("NEW_PROJECT")
+                               .name("UPSERTED_SERVICE")
+                               .description("NEW_DESCRIPTION")
+                               .type(ServiceDefinitionType.NATIVE_HELM)
+                               .build();
+    upsertService = serviceEntityService.upsert(upsertServiceRequest, UpsertOptions.DEFAULT);
+    assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
+    assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
+    assertThat(upsertService.getProjectIdentifier()).isEqualTo(upsertServiceRequest.getProjectIdentifier());
+    assertThat(upsertService.getIdentifier()).isEqualTo(upsertServiceRequest.getIdentifier());
+    assertThat(upsertService.getName()).isEqualTo(upsertServiceRequest.getName());
+    assertThat(upsertService.getDescription()).isEqualTo(upsertServiceRequest.getDescription());
+    assertThat(upsertService.getType()).isEqualTo(upsertServiceRequest.getType());
+
+    // adding test for 'Deployment Type is not allowed to change'
+    upsertServiceRequest.setType(ServiceDefinitionType.KUBERNETES);
+    ServiceEntity finalUpsertServiceRequest = upsertServiceRequest;
+    assertThatThrownBy(() -> serviceEntityService.upsert(finalUpsertServiceRequest, UpsertOptions.DEFAULT))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThat(upsertService.getType()).isNotEqualTo(ServiceDefinitionType.KUBERNETES);
 
     // List services operations.
     Criteria criteriaFromServiceFilter =

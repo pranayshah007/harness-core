@@ -964,7 +964,6 @@
 7501:software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest
 7502:software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse
 7510:io.harness.jira.JiraFieldSchema
-
 8030:io.harness.delegate.beans.storeconfig.FetchType
 8035:software.wings.service.impl.azure.manager.AzureVMSSCommandRequest
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
@@ -1767,7 +1766,6 @@
 55346:io.harness.delegate.task.jira.JiraSearchUserParams
 55347:io.harness.delegate.task.jira.JiraSearchUserData
 55348:io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit
-
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
@@ -2364,12 +2362,14 @@
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
 573568:io.harness.delegate.beans.terragrunt.request.TerragruntCommandType
 573569:io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters
+573570:io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters
 573571:io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest
 573572:io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
 573603:io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest
+573604:io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest
 573605:io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse
 573606:io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult
 573607:io.harness.delegate.task.elastigroup.request.ElastigroupPreFetchRequest
@@ -2511,7 +2511,6 @@
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
-
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2557,3 +2556,5 @@
 10000255:io.harness.delegate.task.pcf.request.AbstractTasTaskRequest
 10000256:io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails
 10000257:io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType
+10000258:io.harness.delegate.beans.pcf.TasResizeStrategyType
+10000259:io.harness.delegate.beans.pcf.TasConstants

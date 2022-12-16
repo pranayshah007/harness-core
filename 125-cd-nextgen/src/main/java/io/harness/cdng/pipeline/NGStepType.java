@@ -158,7 +158,6 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
   AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
-
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE("ECS Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
@@ -199,9 +198,29 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
   ASG_CANARY_DEPLOY(
       "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
+
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE(
-      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE);
+      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
+  @JsonProperty(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+  TAS_BASIC_APP_SETUP(
+      "Basic App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BASIC_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+  TAS_BG_APP_SETUP(
+      "BG App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BG_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+  TAS_CANARY_APP_SETUP(
+      "Canary App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_CANARY_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
+  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TANZU_COMMAND),
+
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+  ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
+      "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),
+
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+  ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -233,7 +252,6 @@ public enum NGStepType {
   public static String getDisplayName(NGStepType ngStepType) {
     return ngStepType.displayName;
   }
-
   public static String getCategory(NGStepType ngStepType) {
     return ngStepType.category;
   }

@@ -191,8 +191,12 @@ public class AccountResource {
   @ExceptionMetered
   public RestResponse<PageResponse<CVEnabledService>> getAllServicesFor24x7(@QueryParam("accountId") String accountId,
       @QueryParam("serviceId") String serviceId, @BeanParam PageRequest<String> request) {
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(true), request, serviceId));
+    }
     return new RestResponse<>(
-        accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(), request, serviceId));
+        accountService.getServices(accountId, UserThreadLocal.get().getPublicUser(false), request, serviceId));
   }
 
   @GET
@@ -200,7 +204,12 @@ public class AccountResource {
   @Timed
   @ExceptionMetered
   public RestResponse<List<Service>> getAllServicesFor24x7(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser()));
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(true)));
+    }
+    return new RestResponse<>(
+        accountService.getServicesBreadCrumb(accountId, UserThreadLocal.get().getPublicUser(false)));
   }
 
   @PUT

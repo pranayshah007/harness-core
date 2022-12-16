@@ -37,6 +37,7 @@ import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -138,7 +139,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     Page<InputSetResponseBody> inputSetList = inputSetEntities.map(inputSetsApiUtils::getInputSetResponse);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/pipelines/%s/input-sets", org, project, pipeline),
         inputSetList.getContent().size(), page, limit);
     return responseBuilderWithLinks.entity(inputSetList.getContent()).build();

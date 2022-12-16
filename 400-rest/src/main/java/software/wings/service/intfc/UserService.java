@@ -663,4 +663,6 @@ public interface UserService extends OwnedByAccount {
       String userId, int pageIndex, int pageSize, String searchTerm);
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled();
 }

@@ -86,4 +86,9 @@ public interface StepSpecTypeConstants {
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
+
+  String TAS_CANARY_APP_SETUP = "CanaryAppSetup";
+  String TAS_BG_APP_SETUP = "BGAppSetup";
+  String TAS_BASIC_APP_SETUP = "BasicAppSetup";
+  String TANZU_COMMAND = "TanzuCommand";
 }

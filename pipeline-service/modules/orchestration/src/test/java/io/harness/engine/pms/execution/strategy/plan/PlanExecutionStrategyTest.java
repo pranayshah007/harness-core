@@ -173,6 +173,10 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
         PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build());
     assertThat(planExecution.getStatus()).isEqualTo(Status.ERRORED);
 
+    // Governance is denying the execution. executorService and waitNotifyEngine invocations should remain same.
+    verify(executorService, times(2)).submit(any(Callable.class));
+    verify(waitNotifyEngine, times(2)).waitForAllOn(any(), any(), any());
+
     // OrchestrationStartObserver throwing exception. PlanExecution should be marked as ERRORED.
     doThrow(new InvalidRequestException("Error Message")).when(orchestrationStartSubject).fireInform(any(), any());
     String planExecutionId1 = generateUuid();

@@ -73,6 +73,10 @@ stoServiceConfig:
   baseUrl: http://localhost:4000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
+iacmServiceConfig:
+  baseUrl: http://localhost:4000
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
 managerTarget: localhost:9880
 managerAuthority: localhost
 managerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
@@ -90,6 +94,10 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 ciExecutionServiceConfig:
+  miningPatternConfig:
+    gcsCreds: null
+    projectId: null
+    bucketName: null
   queueServiceClient:
     queueServiceConfig:
       baseUrl: http://localhost:9091/
@@ -117,22 +125,8 @@ ciExecutionServiceConfig:
         image: harness/bandit-job-runner
       - product: blackduck_default
         image: harness/blackduckhub-job-runner
-      - product: burp_default
-        image: harness/burp-job-runner
-      - product: checkmarx_default
-        image: harness/checkmarx-job-runner
-      - product: fortifyondemand_default
-        image: harness/fortifyondemand-job-runner
-      - product: prismacloud_default
-        image: harness/twistlock-job-runner
       - product: snyk_default
         image: harness/snyk-job-runner
-      - product: sonarqube_default
-        image: harness/sonarqube-agent-job-runner
-      - product: veracode_default
-        image: harness/veracode-agent-job-runner
-      - product: zap_default
-        image: harness/zap-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

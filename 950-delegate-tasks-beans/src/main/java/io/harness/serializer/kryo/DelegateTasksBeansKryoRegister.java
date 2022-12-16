@@ -333,6 +333,8 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasConstants;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.pcf.response.TasDelegateTaskResponse;
 import io.harness.delegate.beans.pcf.response.TasValidateTaskResponse;
@@ -366,6 +368,7 @@ import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
+import io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
@@ -596,6 +599,7 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRe
 import io.harness.delegate.task.elastigroup.request.ElastigroupPreFetchRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -1455,6 +1459,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AbstractTasTaskRequest.class, 10000255);
     kryo.register(NexusTasArtifactRequestDetails.class, 10000256);
     kryo.register(TasArtifactRegistryType.class, 10000257);
+    kryo.register(TasResizeStrategyType.class, 10000258);
+    kryo.register(TasConstants.class, 10000259);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -2092,6 +2098,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573601);
     kryo.register(ElastigroupParametersFetchResponse.class, 573602);
     kryo.register(ElastigroupParametersFetchRequest.class, 573603);
+    kryo.register(ElastigroupSwapRouteCommandRequest.class, 573604);
     kryo.register(ElastigroupSwapRouteResponse.class, 573605);
     kryo.register(ElastigroupSwapRouteResult.class, 573606);
     kryo.register(ElastigroupPreFetchRequest.class, 573607);
@@ -2127,6 +2134,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
     kryo.register(TerragruntCommandType.class, 573568);
     kryo.register(TerragruntApplyTaskParameters.class, 573569);
+    kryo.register(TerragruntDestroyTaskParameters.class, 573570);
     kryo.register(ConcurrentHashMap.class, 673567);
   }
 }

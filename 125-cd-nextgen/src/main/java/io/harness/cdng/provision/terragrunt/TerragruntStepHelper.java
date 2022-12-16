@@ -47,6 +47,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetai
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigBuilder;
+import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKeys;
 import io.harness.cdng.provision.terragrunt.TerragruntInheritOutput.TerragruntInheritOutputBuilder;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -76,6 +77,7 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -111,6 +113,8 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @Singleton
@@ -122,7 +126,7 @@ public class TerragruntStepHelper {
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%s";
   private static final String TG_INHERIT_OUTPUT_FORMAT = "tgInheritOutput_%s_%s";
   public static final String DEFAULT_TIMEOUT = "10m";
-  public static final String TERRAGRUNT_FILE_NAME_FORMAT = "terragrunt-${UUID}.tf";
+  public static final String TERRAGRUNT_FILE_NAME_FORMAT = "terragrunt-${UUID}.tfvars";
 
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -132,6 +136,7 @@ public class TerragruntStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
   @Inject public TerragruntConfigDAL terragruntConfigDAL;
+  @Inject private HPersistence persistence;
 
   public static StepType addStepType(String yamlType) {
     return StepType.newBuilder().setType(yamlType).setStepCategory(StepCategory.STEP).build();
@@ -762,14 +767,16 @@ public class TerragruntStepHelper {
       addAllEncryptionDataDetail(backendStoreConfig, ambiance, encryptedDataDetailsList);
     }
 
-    varFileConfigs.forEach(terragruntVarFile -> {
-      if (terragruntVarFile instanceof TerragruntRemoteVarFileConfig) {
-        StoreConfig varFileStoreConfig =
-            ((TerragruntRemoteVarFileConfig) terragruntVarFile).getGitStoreConfigDTO().toGitStoreConfig();
+    if (varFileConfigs != null) {
+      varFileConfigs.forEach(terragruntVarFile -> {
+        if (terragruntVarFile instanceof TerragruntRemoteVarFileConfig) {
+          StoreConfig varFileStoreConfig =
+              ((TerragruntRemoteVarFileConfig) terragruntVarFile).getGitStoreConfigDTO().toGitStoreConfig();
 
-        addAllEncryptionDataDetail(varFileStoreConfig, ambiance, encryptedDataDetailsList);
-      }
-    });
+          addAllEncryptionDataDetail(varFileStoreConfig, ambiance, encryptedDataDetailsList);
+        }
+      });
+    }
 
     return encryptedDataDetailsList;
   }
@@ -886,5 +893,27 @@ public class TerragruntStepHelper {
             .build();
 
     terragruntConfigDAL.saveTerragruntConfig(terragruntConfig);
+  }
+
+  public void validateDestroyStepParamsInline(TerragruntDestroyStepParameters stepParameters) {
+    Validator.notNullCheck("Destroy Step Parameters are null", stepParameters);
+    Validator.notNullCheck("Destroy Step configuration is NULL", stepParameters.getConfiguration());
+  }
+
+  public TerragruntConfig getLastSuccessfulApplyConfig(TerragruntDestroyStepParameters parameters, Ambiance ambiance) {
+    String entityId = generateFullIdentifier(
+        ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
+    Query<TerragruntConfig> query =
+        persistence.createQuery(TerragruntConfig.class)
+            .filter(TerragruntConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+            .filter(TerragruntConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+            .filter(TerragruntConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+            .filter(TerragruntConfigKeys.entityId, entityId)
+            .order(Sort.descending(TerragruntConfigKeys.createdAt));
+    TerragruntConfig terragruntConfig = terragruntConfigDAL.getTerragruntConfig(query, ambiance);
+    if (terragruntConfig == null) {
+      throw new InvalidRequestException(format("Terragrunt config for Last Apply not found: [%s]", entityId));
+    }
+    return terragruntConfig;
   }
 }

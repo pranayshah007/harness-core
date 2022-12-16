@@ -20,6 +20,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.iacm.beans.entities.IACMServiceConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -90,6 +91,7 @@ public class STOManagerConfiguration extends Configuration implements AssetsBund
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;
   private STOServiceConfig stoServiceConfig;
+  private IACMServiceConfig iacmServiceConfig;
 
   private String managerServiceSecret;
   private String jwtAuthSecret;

@@ -7,9 +7,6 @@
 
 package io.harness.connector.apis.resource;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
-import io.harness.NGCommonEntityConstants;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorDTO;
@@ -71,20 +68,16 @@ import com.google.api.client.util.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
 
 public class ConnectorApiUtils {
   public static final String CONNECTOR_TYPE_S_IS_NOT_SUPPORTED = "Connector type [%s] is not supported";
-  public static final int PAGE = 1;
   private final Validator validator;
 
   @Inject
@@ -757,36 +750,5 @@ public class ConnectorApiUtils {
     connectorTestConnectionErrorDetail.setMessage(errorDetail.getMessage());
     connectorTestConnectionErrorDetail.setReason(errorDetail.getReason());
     return connectorTestConnectionErrorDetail;
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam(NGCommonEntityConstants.PAGE, page)
-                               .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                               .build())
-                  .rel(NGCommonEntityConstants.SELF_REL)
-                  .build());
-
-    if (page >= PAGE) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page - 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page + 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.NEXT_REL)
-                    .build());
-    }
-
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }

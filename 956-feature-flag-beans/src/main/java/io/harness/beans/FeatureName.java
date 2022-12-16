@@ -526,10 +526,14 @@ public enum FeatureName {
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
-
-  CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
-  ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP);
+  CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
+  DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED(
+      "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
+      HarnessTeam.PL),
+  ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
+  CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP),
+  SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {

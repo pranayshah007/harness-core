@@ -1074,19 +1074,10 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User getUserByEmail(String email) {
-    User user = null;
-    if (isNotEmpty(email)) {
-      user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
-      loadSupportAccounts(user);
-      if (user != null && isEmpty(user.getAccounts())) {
-        user.setAccounts(newArrayList());
-      }
-      if (user != null && isEmpty(user.getPendingAccounts())) {
-        user.setPendingAccounts(newArrayList());
-      }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return getUserByEmail(email, true);
     }
-
-    return user;
+    return getUserByEmail(email, false);
   }
 
   @Override
@@ -1098,7 +1089,6 @@ public class UserServiceImpl implements UserService {
                  .field(UserKeys.accounts)
                  .hasThisOne(accountId)
                  .get();
-      loadSupportAccounts(user);
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
       }
@@ -1106,7 +1096,9 @@ public class UserServiceImpl implements UserService {
         user.setPendingAccounts(newArrayList());
       }
     }
-
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      loadSupportAccounts(user);
+    }
     return user;
   }
 
@@ -1126,9 +1118,10 @@ public class UserServiceImpl implements UserService {
       query.or(query.criteria(UserKeys.accounts).hasThisOne(accountId),
           query.criteria(UserKeys.pendingAccounts).hasThisOne(accountId));
       user = query.get();
+    }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
       loadSupportAccounts(user);
     }
-
     return user;
   }
 
@@ -1139,9 +1132,10 @@ public class UserServiceImpl implements UserService {
       Query<User> query = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase());
       query.criteria(UserKeys.accounts).hasThisOne(accountId);
       user = query.get();
+    }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
       loadSupportAccounts(user);
     }
-
     return user;
   }
 
@@ -3092,7 +3086,10 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, true);
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return get(userId, true);
+    }
+    return get(userId, false);
   }
 
   @Override
@@ -3215,7 +3212,9 @@ public class UserServiceImpl implements UserService {
       throw new InvalidRequestException(EXC_MSG_USER_DOESNT_EXIST, USER);
     }
 
-    loadSupportAccounts(user);
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      loadSupportAccounts(user);
+    }
     loadUserGroups(accountId, user);
     return user;
   }
@@ -4133,5 +4132,10 @@ public class UserServiceImpl implements UserService {
     segmentHelper.reportTrackEvent(SYSTEM, SETUP_ACCOUNT_FROM_MARKETPLACE, properties, integrations);
 
     return accountId;
+  }
+
+  @Override
+  public boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled() {
+    return !featureFlagService.isEnabledForAllAccounts(FeatureName.DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED);
   }
 }

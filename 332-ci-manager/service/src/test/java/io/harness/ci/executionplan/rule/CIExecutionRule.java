@@ -57,6 +57,9 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.iacm.beans.entities.IACMServiceConfig;
+import io.harness.iacmserviceclient.IACMServiceClient;
+import io.harness.iacmserviceclient.IACMServiceClientFactory;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -85,6 +88,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
@@ -162,6 +166,10 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
         bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
         bind(AwsClient.class).to(AwsClientImpl.class);
+        bind(IACMServiceConfig.class)
+            .toInstance(
+                IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
+        bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
       }
     });
 

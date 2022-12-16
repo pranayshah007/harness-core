@@ -23,4 +23,5 @@ public interface CfCommandUnitConstants {
   String Pcfplugin = "Execute CF Command";
   String Downsize = "Downsize Application";
   String Upsize = "Upsize Application";
+  String FetchCommandScript = "Download Command Script";
 }

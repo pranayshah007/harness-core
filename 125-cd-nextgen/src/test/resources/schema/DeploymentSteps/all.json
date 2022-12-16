@@ -214,6 +214,53 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsCloudProviderBasicConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudProviderSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsLoadBalancerConfigYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/LoadBalancerSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListenerPort": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListenerPort": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureARMRollbackStepInfo": {
       "allOf": [
         {
@@ -948,6 +995,52 @@
       "properties": {
         "type": {
           "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudProvider": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "AWS"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCloudProviderBasicConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CloudProviderSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "AWS"
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2284,6 +2377,55 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ElastigroupBGStageSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectedCloudProvider",
+            "instances",
+            "loadBalancers",
+            "name"
+          ],
+          "properties": {
+            "connectedCloudProvider": {
+              "$ref": "#/definitions/CloudProvider"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instances": {
+              "$ref": "#/definitions/ElastigroupInstances"
+            },
+            "loadBalancers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LoadBalancer"
+              }
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ElastigroupCurrentRunningInstances": {
       "allOf": [
         {
@@ -2510,6 +2652,47 @@
             },
             "name": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ElastigroupSwapRouteStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "downsizeOldElastigroup"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldElastigroup": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -3919,6 +4102,52 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "LoadBalancer": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "AWSLoadBalancerConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWSLoadBalancerConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLoadBalancerConfigYaml"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "LoadBalancerSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "AWSLoadBalancerConfig"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ManifestAttributes": {
@@ -5666,6 +5895,268 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasBGAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount",
+            "tempRoutes"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            },
+            "tempRoutes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasBasicAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCanaryAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount",
+            "resizeStrategy"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            },
+            "resizeStrategy": {
+              "type": "string",
+              "enum": [
+                "UpScaleNewFirst",
+                "DownScaleOldFirst"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCommandScript": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCommandStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "script": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/TasCommandScript"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TasManifest": {
