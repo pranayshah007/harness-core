@@ -28,6 +28,7 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.GitConnectionDelegateException;
 import io.harness.exception.WingsException;
@@ -85,14 +86,6 @@ public class GitClientHelper {
   private static final String REPOSITORY_GIT_LOCK_DIR = "./repository/gitFileDownloads/.locks";
   private static final String REPOSITORY_GIT_LOCK_FIlE = REPOSITORY_GIT_LOCK_DIR + "/lock_%s";
 
-  static {
-    try {
-      createDirectoryIfDoesNotExist(REPOSITORY_GIT_LOCK_DIR);
-    } catch (IOException e) {
-      log.error("Error occurred while creating the lock directory", e);
-    }
-  }
-
   private LoadingCache<String, File> cache = CacheBuilder.newBuilder()
                                                  .maximumSize(2000)
                                                  .expireAfterAccess(1, TimeUnit.HOURS)
@@ -105,10 +98,33 @@ public class GitClientHelper {
                                                    }
                                                  });
 
+  public GitClientHelper() {
+    createLockDirectory();
+  }
+
+  private void createLockDirectory() {
+    try {
+      createDirectoryIfDoesNotExist(REPOSITORY_GIT_LOCK_DIR);
+    } catch (Exception e) {
+      log.error(String.format("Error occurred while creating the lock directory [%s]", REPOSITORY_GIT_LOCK_DIR), e);
+    }
+  }
+
   public File getLockObject(String gitConnectorId) {
     try {
-      return cache.get(gitConnectorId);
+      if ("true".equalsIgnoreCase(System.getenv("GIT_RECREATE_LOCK_DIR"))) {
+        log.info("Recreate git lock directory");
+        createLockDirectory();
+      }
+      if ("true".equalsIgnoreCase(System.getenv("GIT_RANDOM_LOCK_FILE"))) {
+        final String value = UUIDGenerator.generateUuid();
+        log.info("Using random lock file name: {}", value);
+        return cache.get(value);
+      } else {
+        return cache.get(gitConnectorId);
+      }
     } catch (Exception e) {
+      log.error(String.format("Failure to get lock object to %s", gitConnectorId), e);
       throw new WingsException(ErrorCode.GENERAL_ERROR, WingsException.USER);
     }
   }
