@@ -10,6 +10,7 @@ package io.harness.delegate.task.aws.asg;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.aws.asg.AsgCommandTaskNGHandler;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -18,6 +19,11 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.Service;
+
+import java.util.Optional;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

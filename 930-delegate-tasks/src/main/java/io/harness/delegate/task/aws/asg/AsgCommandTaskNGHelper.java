@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws.asg;
 
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -114,5 +115,16 @@ import static software.wings.beans.LogWeight.Bold;
 @Singleton
 @Slf4j
 public class AsgCommandTaskNGHelper {
+
+    public Optional<Service> describeAsg(
+            String cluster, String serviceName, String region, AwsConnectorDTO awsConnectorDTO) {
+
+        DescribeAutoScalingGroupsResult describeAutoScalingGroupsResult =
+                closeableAmazonAutoScalingClient.getClient().describeAutoScalingGroups(describeAutoScalingGroupsRequest);
+        DescribeServicesResponse describeServicesResponse = ecsV2Client.describeService(
+                awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), cluster, serviceName, region);
+        return CollectionUtils.isNotEmpty(describeServicesResponse.services())
+                ? Optional.of(describeServicesResponse.services().get(0))
+                : Optional.empty();
 
 }
