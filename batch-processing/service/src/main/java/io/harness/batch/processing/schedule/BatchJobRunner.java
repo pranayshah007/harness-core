@@ -73,43 +73,42 @@ public class BatchJobRunner {
              JobInstanceAlreadyCompleteException {
     BatchJobType batchJobType = BatchJobType.fromJob(job);
     // Disable some jobs based on the flag. This can be removed later on
-    if (batchJobType == BatchJobType.SYNC_BILLING_REPORT_AZURE
-        && batchMainConfig.getAzureStorageSyncConfig().isSyncJobDisabled()) {
-      log.warn("Azure sync job is disabled in this environment");
-      return;
-    }
-    long duration = batchJobType.getInterval();
-    ChronoUnit chronoUnit = batchJobType.getIntervalUnit();
-    BatchJobInterval batchJobInterval = batchJobIntervalService.fetchBatchJobInterval(accountId, batchJobType);
-    if (null != batchJobInterval) {
-      chronoUnit = batchJobInterval.getIntervalUnit();
-      duration = batchJobInterval.getInterval();
-    }
-    List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
-    Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
-    if (null == startAt) {
-      log.debug("Event not received for account {} ", accountId);
-      return;
-    }
-    Instant endAt = Instant.now().minus(1, ChronoUnit.HOURS);
-    if (batchJobType == BatchJobType.ANOMALY_DETECTION_CLOUD) {
-      endAt = Instant.now().minus(7, ChronoUnit.HOURS);
-    }
-    if (batchJobType == BatchJobType.RERUN_JOB) {
-      endAt = Instant.now().minus(15, ChronoUnit.HOURS);
-    }
-    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
-      endAt = Instant.now();
-    }
-    BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
-        new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
-    Instant startInstant = startAt;
+    //    if (batchJobType == BatchJobType.SYNC_BILLING_REPORT_AZURE
+    //        && batchMainConfig.getAzureStorageSyncConfig().isSyncJobDisabled()) {
+    //      log.warn("Azure sync job is disabled in this environment");
+    //      return;
+    //    }
+    //    long duration = batchJobType.getInterval();
+    //    ChronoUnit chronoUnit = batchJobType.getIntervalUnit();
+    //    BatchJobInterval batchJobInterval = batchJobIntervalService.fetchBatchJobInterval(accountId, batchJobType);
+    //    if (null != batchJobInterval) {
+    //      chronoUnit = batchJobInterval.getIntervalUnit();
+    //      duration = batchJobInterval.getInterval();
+    //    }
+    //    List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
+    //    Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
+    //    if (null == startAt) {
+    //      log.debug("Event not received for account {} ", accountId);
+    //      return;
+    //    }
+    //    Instant endAt = Instant.now().minus(1, ChronoUnit.HOURS);
+    //    if (batchJobType == BatchJobType.ANOMALY_DETECTION_CLOUD) {
+    //      endAt = Instant.now().minus(7, ChronoUnit.HOURS);
+    //    }
+    //    if (batchJobType == BatchJobType.RERUN_JOB) {
+    //      endAt = Instant.now().minus(15, ChronoUnit.HOURS);
+    //    }
+    //    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
+    //      endAt = Instant.now();
+    //    }
+    BatchJobScheduleTimeProvider batchJobScheduleTimeProvider = new BatchJobScheduleTimeProvider(
+        Instant.ofEpochMilli(1669507200000l), Instant.ofEpochMilli(1669939200000l), 1, ChronoUnit.DAYS);
+    Instant startInstant = Instant.ofEpochMilli(1669507200000l);
     Instant jobsStartTime = Instant.now();
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
-      if (null != endInstant && checkDependentJobFinished(accountId, endInstant, dependentBatchJobs)
-          && checkOutOfClusterDependentJobs(accountId, startInstant, endInstant, batchJobType)
-          && checkClusterToBigQueryJobCompleted(accountId, batchJobType)) {
+      log.info("Running job for {} : {} : {}", startInstant, jobsStartTime, endInstant);
+      if (null != endInstant) {
         if (runningMode) {
           JobParameters params =
               new JobParametersBuilder()

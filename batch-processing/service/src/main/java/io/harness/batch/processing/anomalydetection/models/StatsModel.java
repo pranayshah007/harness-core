@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class StatsModel {
   public Anomaly detectAnomaly(AnomalyDetectionTimeSeries data) {
+    log.info("Data is {}", data);
     List<Double> stats = TimeSeriesUtils.getStats(data);
     Double mean = stats.get(0);
     Double standardDeviation = stats.get(1);

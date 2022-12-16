@@ -109,22 +109,22 @@ public class EventJobScheduler {
   }
 
   // this job runs every 1 hours "0 0 * ? * *". For debugging, run every minute "* * * ? * *"
-  @Scheduled(cron = "0 */20 * * * ?")
+  //  @Scheduled(cron = "0 */20 * * * ?")
   public void runCloudEfficiencyInClusterJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER, true);
   }
 
-  @Scheduled(cron = "0 */30 * * * ?")
+  //  @Scheduled(cron = "0 */30 * * * ?")
   public void runCloudEfficiencyInClusterRecommendationsJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_RECOMMENDATION, true);
   }
 
-  @Scheduled(cron = "0 0 */1 * * ?") // run every hour
+  @Scheduled(cron = "0 */10 * * * ?") // run every hour
   public void runCloudEfficiencyInClusterNodeRecommendationJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_NODE_RECOMMENDATION, true);
   }
 
-  @Scheduled(cron = "0 */1 * * * ?")
+  //  @Scheduled(cron = "0 */1 * * * ?")
   public void runRecentlyAddedAccountJob() {
     boolean masterPod = accountShardService.isMasterPod();
     if (masterPod) {
@@ -136,7 +136,7 @@ public class EventJobScheduler {
     }
   }
 
-  @Scheduled(cron = "0 */15 * * * ?")
+  //  @Scheduled(cron = "0 */15 * * * ?")
   public void runCloudEfficiencyInClusterBillingJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_BILLING, true);
   }
