@@ -21,10 +21,9 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourceCriteria {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
+  final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
   @Inject
   public OrderByTotalNumberOfTaskAssignedCriteria(HPersistence persistence, DelegateCache delegateCache) {
@@ -47,17 +47,16 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   }
 
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId) {
-    Map<String, Integer> numberOfTaskAssigned = new HashMap<>();
+    TreeMap<String, Integer> numberOfTaskAssigned = new TreeMap<>();
     getTotalNumberOfTaskAssignedInDelegate(accountId).forEach(delegateTask -> {
       if (delegateTask.getDelegateId() != null) {
         numberOfTaskAssigned.put(
             delegateTask.getDelegateId(), numberOfTaskAssigned.getOrDefault(delegateTask.getDelegateId(), 0) + 1);
       }
     });
-    TreeSet<Map.Entry<String, Integer>> delegateListOrdered =
-        new TreeSet<>(Map.Entry.comparingByValue(Comparator.naturalOrder()));
-    delegateListOrdered.addAll(numberOfTaskAssigned.entrySet());
-    return delegateListOrdered.stream()
+    return numberOfTaskAssigned.entrySet()
+        .stream()
+        .sorted(valueComparator)
         .map(entry -> updateDelegateWithNumberTaskAssigned(entry, accountId))
         .collect(Collectors.toList());
   }
