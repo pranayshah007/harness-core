@@ -59,10 +59,11 @@ fi
 
 if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "OpenTelemetry is enabled"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service}"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar"
 
-    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
-        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    if [ "$OTEL_EXPORTER_OTLP_ENDPOINT" != "" ]; then
+        echo "OpenTelemetry collector not configured"
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service} -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
     fi
     echo "Using OpenTelemetry Java Agent"
 fi
