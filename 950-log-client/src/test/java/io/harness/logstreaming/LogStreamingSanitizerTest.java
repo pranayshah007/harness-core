@@ -10,6 +10,7 @@ package io.harness.logstreaming;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.rule.OwnerRule.GAURAV;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
 
 import io.harness.CategoryTest;
@@ -94,5 +95,63 @@ public class LogStreamingSanitizerTest extends CategoryTest {
         .isEqualTo("sanitize ************** log: **************\n"
             + "      **************\n"
             + "       **************");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void shouldReplaceMultiLineJsonSecretPrintedAsMultiline() {
+    String secret = "{\n"
+        + "  \"date\": \"2012-10-17\",\n"
+        + "  \"mydata\": [\n"
+        + "    {\n"
+        + "      \"user\": \"someuser\",\n"
+        + "      \"password\": \"abc\",\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+    Set<String> secrets = ImmutableSet.<String>builder().add(secret).build();
+    LogStreamingSanitizer logSanitizer = LogStreamingSanitizer.builder().secrets(secrets).build();
+
+    LogLine logLine = LogLine.builder().message("sanitize this log: " + secret).build();
+    logSanitizer.sanitizeLogMessage(logLine);
+
+    Assertions.assertThat(logLine.getMessage())
+        .isEqualTo("sanitize this log: {\n"
+            + "  **************\n"
+            + "  **************\n"
+            + "    {\n"
+            + "      **************\n"
+            + "      **************\n"
+            + "    }\n"
+            + "  ]\n"
+            + "}");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void shouldReplaceMultiLineJsonSecretPrintedAsSingleLine() {
+    String secret = "{\n"
+        + "  \"date\": \"2012-10-17\",\n"
+        + "  \"mydata\": [\n"
+        + "    {\n"
+        + "      \"user\": \"someuser\",\n"
+        + "      \"password\": \"abc\",\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+    Set<String> secrets = ImmutableSet.<String>builder().add(secret).build();
+    LogStreamingSanitizer logSanitizer = LogStreamingSanitizer.builder().secrets(secrets).build();
+
+    LogLine logLine =
+        LogLine.builder()
+            .message(
+                "sanitize this log: { \"date\": \"2012-10-17\", \"mydata\": [ { \"user\": \"someuser\", \"password\": \"abc\", } ] }")
+            .build();
+    logSanitizer.sanitizeLogMessage(logLine);
+
+    Assertions.assertThat(logLine.getMessage())
+        .isEqualTo("sanitize this log: { ************** ************** { ************** ************** } ] }");
   }
 }

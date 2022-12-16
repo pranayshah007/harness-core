@@ -57,9 +57,20 @@ public class LogStreamingSanitizer {
     return secrets.stream()
         .flatMap(secret -> {
           String[] split = secret.split("\\r?\\n");
-          return Arrays.stream(split).filter(EmptyPredicate::isNotEmpty);
+          return Arrays.stream(split).map(LogStreamingSanitizer::cleanup).filter(EmptyPredicate::isNotEmpty);
         })
         .collect(Collectors.toSet());
+  }
+
+  public static String cleanup(String secretLine) {
+    if (secretLine == null) {
+      return null;
+    }
+    String line = secretLine.trim();
+    if (line.length() < 3) {
+      return null;
+    }
+    return line;
   }
 
   private void addSecretMasksWithQuotesRemoved(
