@@ -26,5 +26,5 @@ public class FeatureFlagNames {
 
   public static final String SRM_CODE_ERROR_NOTIFICATIONS = "SRM_CODE_ERROR_NOTIFICATIONS";
 
-  public static final String SRM_FF_INTEGRATION = "SRM_FF_INTEGRATION";
+  public static final String SRM_INTERNAL_CHANGE_SOURCE_FF = "SRM_INTERNAL_CHANGE_SOURCE_FF";
 }

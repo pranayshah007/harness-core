@@ -532,7 +532,7 @@ public enum FeatureName {
       "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
       HarnessTeam.PL),
   ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
-  SRM_FF_INTEGRATION("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV);
+  SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {
