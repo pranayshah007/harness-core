@@ -129,7 +129,10 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-          .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
+          .unitProgressList(
+              tasStepHelper
+                  .completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage())
+                  .getUnitProgresses())
           .build();
     }
 
@@ -194,9 +197,9 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .downsizeOldApplication(downSizeOldApplication)
             .existingApplicationNames(existingAppNames)
             .accountId(accountId)
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
-            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
+            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails())
             .releaseNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .commandName(CfCommandTypeNG.SWAP_ROUTES.toString())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())

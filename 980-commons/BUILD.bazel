@@ -24,6 +24,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/artifact:module",
         "//980-commons/src/main/java/io/harness/authorization:module",
         "//980-commons/src/main/java/io/harness/beans:module",
+        "//980-commons/src/main/java/io/harness/beans/user:module",
         "//980-commons/src/main/java/io/harness/cache:module",
         "//980-commons/src/main/java/io/harness/concurrent:module",
         "//980-commons/src/main/java/io/harness/config:module",

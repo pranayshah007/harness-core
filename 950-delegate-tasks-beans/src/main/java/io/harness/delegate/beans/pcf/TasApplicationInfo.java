@@ -17,7 +17,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class TasApplicationInfo{
+public class TasApplicationInfo {
   int runningCount;
   String applicationName;
   String oldName;
@@ -32,9 +32,5 @@ public class TasApplicationInfo{
         .initialInstanceCount(runningCount)
         .urls(attachedRoutes)
         .build();
-  }
-
-  public TasApplicationInfo cloneObject(){
-    return TasApplicationInfo.builder().runningCount(runningCount).applicationName(applicationName).oldName(oldName).applicationGuid(applicationGuid).attachedRoutes(attachedRoutes).build();
   }
 }

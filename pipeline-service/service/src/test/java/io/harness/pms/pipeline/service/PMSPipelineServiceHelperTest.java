@@ -264,14 +264,14 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                             .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, false);
+        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
 
     Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
         .thenReturn(PipelineValidationResponse.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
     GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
     assertThat(governanceMetadata.getDeny()).isFalse();
   }
 
@@ -288,7 +288,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                         .harnessVersion(PipelineVersion.V1)
                                         .build();
     GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
     assertThat(governanceMetadata.getDeny()).isFalse();
   }
 

@@ -34,9 +34,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class TasBGAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
   @NotNull ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")
-  public TasBGAppSetupStepParameters(TasInstanceCountType tasInstanceCountType, ParameterField<String> existingVersionToKeep,
-      ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<List<String>> tempRoutes) {
+  public TasBGAppSetupStepParameters(TasInstanceCountType tasInstanceCountType,
+      ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<List<String>> tempRoutes) {
     super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.tempRoutes = tempRoutes;
   }

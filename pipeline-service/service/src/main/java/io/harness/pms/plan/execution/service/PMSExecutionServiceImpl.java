@@ -416,25 +416,18 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
 
-      // latestTemplate is templateYaml for the pipeline in the current branch with the latest changes
-      String latestTemplate = getLatestTemplate(accountId, orgId, projectId, executionSummaryEntity);
-      // template for pipelineYaml at the time of execution.
-      String template = executionSummaryEntity.getPipelineTemplate();
       // InputSet yaml used during execution
       String yaml = executionSummaryEntity.getInputSetYaml();
-
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
         yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(yaml, planExecutionId);
       }
-      if (EmptyPredicate.isEmpty(template) && EmptyPredicate.isNotEmpty(yaml)) {
-        template = latestTemplate;
-      }
 
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
-      return InputSetYamlWithTemplateDTO.builder()
-          .inputSetTemplateYaml(template)
+      return InputSetYamlWithTemplateDTO
+          .builder()
+          // template for pipelineYaml at the time of execution.
+          .inputSetTemplateYaml(executionSummaryEntity.getPipelineTemplate())
           .inputSetYaml(yaml)
-          .latestTemplateYaml(latestTemplate)
           .expressionValues(stagesExecutionMetadata != null ? stagesExecutionMetadata.getExpressionValues() : null)
           .build();
     }

@@ -75,7 +75,7 @@ public class CIDelegateTaskExecutor {
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
-      LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken) {
+      String stageExecutionId, LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -93,6 +93,7 @@ public class CIDelegateTaskExecutor {
             .taskSetupAbstractions(setupAbstractions)
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .emitEvent(emitEvent)
+            .stageId(stageExecutionId)
             .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),

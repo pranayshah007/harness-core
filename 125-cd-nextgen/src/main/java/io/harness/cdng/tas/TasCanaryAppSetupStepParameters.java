@@ -10,7 +10,7 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -33,11 +33,11 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasCanaryAppSetupStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasCanaryAppSetupStepParameters")
 public class TasCanaryAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
-  @NotNull ResizeStrategy resizeStrategy;
+  @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepParameters(TasInstanceCountType tasInstanceCountType,
       ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ResizeStrategy resizeStrategy) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TasResizeStrategyType resizeStrategy) {
     super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }

@@ -15,7 +15,6 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQ
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
 import static io.harness.steps.container.execution.ContainerDetailsSweepingOutput.INIT_POD;
 import static io.harness.steps.plugin.infrastructure.ContainerStepInfra.Type.KUBERNETES_DIRECT;
@@ -47,8 +46,6 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
@@ -91,7 +88,6 @@ public class ContainerStepInitHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ContainerStepImageUtils harnessImageUtils;
   @Inject private ContainerParamsProvider internalContainerParamsProvider;
-
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
 
@@ -165,7 +161,6 @@ public class ContainerStepInitHelper {
         .runAsUser(stepAsUser)
         .automountServiceAccountToken(k8sDirectInfraYaml.getSpec().getAutomountServiceAccountToken().getValue())
         .priorityClassName(k8sDirectInfraYaml.getSpec().getPriorityClassName().getValue())
-        //                .tolerations(k8InitializeTaskUtils.getPodTolerations(k8sDirectInfraYaml.getSpec().getTolerations()))
         .containerParamsList(podContainers.getRight())
         .initContainerParamsList(singletonList(podContainers.getLeft()))
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
@@ -195,28 +190,30 @@ public class ContainerStepInitHelper {
     k8sPodInitUtils.checkSecretAccess(ambiance, secretVariableDetails, accountId,
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getOrgIdentifier(ambiance));
 
-    CIK8ContainerParams setupAddOnContainerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
-        harnessInternalImageConnector, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
-        k8sPodInitUtils.getCtrSecurityContext(infrastructure), ngAccess.getAccountIdentifier(), os);
-
     Pair<Integer, Integer> wrapperRequests = k8sPodInitUtils.getStepRequest(containerStepInfo, accountId);
     Integer stageCpuRequest = wrapperRequests.getLeft();
     Integer stageMemoryRequest = wrapperRequests.getRight();
-
-    CIK8ContainerParams liteEngineContainerParams = internalContainerParamsProvider.getLiteEngineContainerParams(
-        harnessInternalImageConnector, k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars, volumeToMountPath,
-        k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance);
-
     List<CIK8ContainerParams> containerParams = new ArrayList<>();
-    containerParams.add(liteEngineContainerParams);
 
+    CIK8ContainerParams setupAddOnContainerParams =
+        getSetupAddOnContainerParams(infrastructure, volumeToMountPath, os, ngAccess, harnessInternalImageConnector);
+    CIK8ContainerParams liteEngineContainerParams = getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance,
+        logPrefix, volumeToMountPath, logEnvVars, harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest);
+    List<ContainerDefinitionInfo> stepCtrDefinitions =
+        getContainerDefinitionInfos(containerStepInfo, infrastructure, ambiance, logPrefix, volumeToMountPath, os,
+            ngAccess, commonEnvVars, harnessInternalImageConnector, secretVariableDetails, containerParams);
+
+    consumePortDetails(ambiance, stepCtrDefinitions);
+    containerParams.add(liteEngineContainerParams);
+    return Pair.of(setupAddOnContainerParams, containerParams);
+  }
+
+  private List<ContainerDefinitionInfo> getContainerDefinitionInfos(ContainerStepInfo containerStepInfo,
+      ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
+      OSType os, NGAccess ngAccess, Map<String, String> commonEnvVars, ConnectorDetails harnessInternalImageConnector,
+      List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getStepContainerDefinitions(containerStepInfo, infrastructure, ambiance);
-    consumePortDetails(ambiance, stepCtrDefinitions);
-    // todo(abhinav) skipping it for run step.
-    //        Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> stepConnectors =
-    //                k8sPodInitUtils.getStepConnectorRefs(containerStepInfo.getStageElementConfig(), ambiance);
-
     for (ContainerDefinitionInfo containerDefinitionInfo : stepCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams =
           createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
@@ -224,7 +221,24 @@ public class ContainerStepInitHelper {
               k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, secretVariableDetails, os);
       containerParams.add(cik8ContainerParams);
     }
-    return Pair.of(setupAddOnContainerParams, containerParams);
+    return stepCtrDefinitions;
+  }
+
+  private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
+      ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
+      Map<String, String> logEnvVars, ConnectorDetails harnessInternalImageConnector, Integer stageCpuRequest,
+      Integer stageMemoryRequest) {
+    return internalContainerParamsProvider.getLiteEngineContainerParams(harnessInternalImageConnector, k8PodDetails,
+        stageCpuRequest, stageMemoryRequest, logEnvVars, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
+        k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance);
+  }
+
+  private CIK8ContainerParams getSetupAddOnContainerParams(ContainerK8sInfra infrastructure,
+      Map<String, String> volumeToMountPath, OSType os, NGAccess ngAccess,
+      ConnectorDetails harnessInternalImageConnector) {
+    return internalContainerParamsProvider.getSetupAddonContainerParams(harnessInternalImageConnector,
+        volumeToMountPath, k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure),
+        ngAccess.getAccountIdentifier(), os);
   }
 
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
@@ -262,7 +276,7 @@ public class ContainerStepInitHelper {
     if (containerDefinitionInfo.isHarnessManagedImage()) {
       imgConnector = harnessInternalImageConnector;
     }
-    String fullyQualifiedImageName = getFullyQualifiedImageName(imageDetails.getName(), imgConnector);
+    String fullyQualifiedImageName = harnessImageUtils.getFullyQualifiedImageName(imageDetails.getName(), imgConnector);
     imageDetails.setName(fullyQualifiedImageName);
     ImageDetailsWithConnector imageDetailsWithConnector =
         ImageDetailsWithConnector.builder().imageConnectorDetails(imgConnector).imageDetails(imageDetails).build();
@@ -391,7 +405,7 @@ public class ContainerStepInitHelper {
                 .connectorIdentifier(ExpressionResolverUtils.resolveStringParameter(
                     "connectorRef", "Run", identifier, runStepInfo.getConnectorRef(), true))
                 .build())
-        .containerResourceParams(getStepContainerResource(runStepInfo, "Run", identifier, accountId))
+        .containerResourceParams(getStepContainerResource(runStepInfo, accountId))
         .ports(Arrays.asList(port))
         .containerType(CIContainerType.RUN)
         .stepName(runStepInfo.getName())
@@ -401,8 +415,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private ContainerResourceParams getStepContainerResource(
-      ContainerStepInfo resource, String stepType, String stepId, String accountId) {
+  private ContainerResourceParams getStepContainerResource(ContainerStepInfo resource, String accountId) {
     Integer cpuLimit;
     Integer memoryLimit;
     Pair<Integer, Integer> stepRequest = k8sPodInitUtils.getStepRequest(resource, accountId);
@@ -415,20 +428,5 @@ public class ContainerStepInitHelper {
         .resourceLimitMilliCpu(cpuLimit)
         .resourceLimitMemoryMiB(memoryLimit)
         .build();
-  }
-
-  public String getFullyQualifiedImageName(String imageName, ConnectorDetails connectorDetails) {
-    if (connectorDetails == null) {
-      return imageName;
-    }
-
-    ConnectorType connectorType = connectorDetails.getConnectorType();
-    if (connectorType != DOCKER) {
-      return imageName;
-    }
-
-    DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorDetails.getConnectorConfig();
-    String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
-    return harnessImageUtils.getImageWithRegistryPath(imageName, dockerRegistryUrl, connectorDetails.getIdentifier());
   }
 }

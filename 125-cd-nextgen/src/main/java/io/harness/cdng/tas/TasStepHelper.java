@@ -54,7 +54,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -92,12 +91,10 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
-import io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
@@ -109,16 +106,14 @@ import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig.TasContainerArtifactConfigBuilder;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -179,6 +174,7 @@ import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -274,13 +270,14 @@ public class TasStepHelper {
 
     logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
-    TasManifestFileContents tasManifestFileContents = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance),
-        getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript", "TasCommandScript", logCallback);
-    if (tasManifestFileContents.getLocalStoreFetchFilesResult() != null
-        && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents() != null
-        && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().size() == 1) {
-      scriptString = tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(0);
+    List<TasManifestFileContents> tasManifestFileContents =
+        getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
+            "TasCommandScript", "TasCommandScript", logCallback);
+
+    if (isEmpty(tasManifestFileContents) || tasManifestFileContents.size() > 1) {
+      throw new InvalidRequestException("No or Multiple script found", USER);
     }
+    scriptString = tasManifestFileContents.get(0).getFileContent();
     logCallback.saveExecutionLog("Done", INFO, SUCCESS);
 
     // Resolving expressions
@@ -429,33 +426,32 @@ public class TasStepHelper {
 
   public List<TasManifestFileContents> getFileContentsAsLocalStoreFetchFilesResult(
       TasManifestOutcome manifestOutcome, NGAccess ngAccess, LogCallback logCallback) {
-    List<TasManifestFileContents> localStoreFetchFilesResultMap = new ArrayList<>();
     String manifestIdentifier = manifestOutcome.getIdentifier();
     HarnessStore localStoreConfig = (HarnessStore) manifestOutcome.getStore();
     if (localStoreConfig.getFiles().getValue().size() != 1) {
       throw new UnsupportedOperationException("Only one TAS manifest File is supported");
     }
     List<String> varsScopedFilePathList = getParameterFieldValue(manifestOutcome.getVarsPaths());
-    List<String> autoScalerScopedFilePath = getParameterFieldValue(manifestOutcome.getAutoScalerPath());
+    List<String> autoScalarScopedFilePath = getParameterFieldValue(manifestOutcome.getAutoScalerPath());
 
-    localStoreFetchFilesResultMap.add(getFileContentsFromManifest(ngAccess,
+    List<TasManifestFileContents> localStoreFetchFilesResultMap = new ArrayList<>(getFileContentsFromManifest(ngAccess,
         List.of(localStoreConfig.getFiles().getValue().get(0)), TAS_MANIFEST, manifestIdentifier, logCallback));
+
     if (isNotEmpty(varsScopedFilePathList)) {
-      localStoreFetchFilesResultMap.add(
+      localStoreFetchFilesResultMap.addAll(
           getFileContentsFromManifest(ngAccess, varsScopedFilePathList, TAS_VARS, manifestIdentifier, logCallback));
     }
-    if (isNotEmpty(autoScalerScopedFilePath)) {
-      localStoreFetchFilesResultMap.add(getFileContentsFromManifest(
-          ngAccess, autoScalerScopedFilePath, TAS_AUTOSCALER, manifestIdentifier, logCallback));
+    if (isNotEmpty(autoScalarScopedFilePath)) {
+      localStoreFetchFilesResultMap.addAll(getFileContentsFromManifest(
+          ngAccess, autoScalarScopedFilePath, TAS_AUTOSCALER, manifestIdentifier, logCallback));
     }
     return localStoreFetchFilesResultMap;
-    // TODO: Check if default vars.yaml file need to be fetched
   }
 
-  public TasManifestFileContents getFileContentsFromManifest(NGAccess ngAccess, List<String> scopedFilePathList,
+  public List<TasManifestFileContents> getFileContentsFromManifest(NGAccess ngAccess, List<String> scopedFilePathList,
       String manifestType, String manifestIdentifier, LogCallback logCallback) {
-    List<String> fileContents = new ArrayList<>();
-    List<String> filePaths = new ArrayList<>();
+    List<TasManifestFileContents> manifestContents = new ArrayList<>();
+
     if (isNotEmpty(scopedFilePathList)) {
       logCallback.saveExecutionLog(
           color(format("%nFetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
@@ -470,8 +466,9 @@ public class TasStepHelper {
           FileStoreNodeDTO fileStoreNodeDTO = varsFile.get();
           if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
             FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-            fileContents.add(file.getContent());
-            filePaths.add(scopedFilePath);
+
+            manifestContents.add(
+                TasManifestFileContents.builder().fileContent(file.getContent()).filePath(scopedFilePath).build());
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {
             throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
@@ -479,13 +476,7 @@ public class TasStepHelper {
         }
       }
     }
-    return TasManifestFileContents.builder()
-        .manifestType(manifestType)
-        .localStoreFetchFilesResult(LocalStoreFetchFilesResult.builder()
-                                        .LocalStoreFileContents(fileContents)
-                                        .LocalStoreFilePaths(filePaths)
-                                        .build())
-        .build();
+    return manifestContents;
   }
 
   public void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
@@ -653,7 +644,7 @@ public class TasStepHelper {
     Optional<FileStoreNodeDTO> manifestFile =
         fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
             fileReference.getProjectIdentifier(), fileReference.getPath(), true);
-    if (!manifestFile.isPresent()) {
+    if (manifestFile.isEmpty()) {
       throw new InvalidRequestException(
           format("File/Folder not found in File Store with path: [%s], scope: [%s], manifest identifier: [%s]",
               fileReference.getPath(), fileReference.getScope(), manifestIdentifier));
@@ -667,9 +658,8 @@ public class TasStepHelper {
         .filter(manifestOutcome -> ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind()))
         .collect(Collectors.toMap(ManifestOutcome::getIdentifier,
             manifestOutcome
-            -> List.of(
-                getFileContentsFromManifest(ngAccess, ((HarnessStore) manifestOutcome.getStore()).getFiles().getValue(),
-                    manifestOutcome.getType(), manifestOutcome.getIdentifier(), logCallback))));
+            -> getFileContentsFromManifest(ngAccess, ((HarnessStore) manifestOutcome.getStore()).getFiles().getValue(),
+                manifestOutcome.getType(), manifestOutcome.getIdentifier(), logCallback)));
   }
 
   public TaskChainResponse prepareManifestFilesFetchTask(TasStepExecutor tasStepExecutor, Ambiance ambiance,
@@ -960,41 +950,35 @@ public class TasStepHelper {
         tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
     CDExpressionResolveFunctor cdExpressionResolveFunctor =
-            new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     Map<String, String> allFilesFetched = new HashMap<>();
-    if (tasStepPassThroughData.getGitFetchFilesResultMap() != null
-        && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
+    if (tasStepPassThroughData.getGitFetchFilesResultMap() != null) {
       for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
         if (entry.getFiles() != null) {
           for (int iterate = 0; iterate < entry.getFiles().size(); iterate++) {
-              allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(), (String) ExpressionEvaluatorUtils.updateExpressions(
-                      entry.getFiles().get(iterate).getFileContent(), cdExpressionResolveFunctor));
+            allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(),
+                (String) ExpressionEvaluatorUtils.updateExpressions(
+                    entry.getFiles().get(iterate).getFileContent(), cdExpressionResolveFunctor));
           }
         }
       }
     }
-    if (tasStepPassThroughData.getLocalStoreFileMapContents() != null
-        && tasStepPassThroughData.getLocalStoreFileMapContents().values() != null) {
+    if (tasStepPassThroughData.getLocalStoreFileMapContents() != null) {
       for (List<TasManifestFileContents> tasManifestFileContentsList :
           tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
         for (TasManifestFileContents tasManifestFileContents : tasManifestFileContentsList) {
-          for (int iterate = 0;
-               iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size();
-               iterate++) {
-            allFilesFetched.put(
-                tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
-                    (String) ExpressionEvaluatorUtils.updateExpressions(
-                            tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate), cdExpressionResolveFunctor));
-          }
+          allFilesFetched.put(tasManifestFileContents.getFilePath(),
+              (String) ExpressionEvaluatorUtils.updateExpressions(
+                  tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor));
         }
       }
     }
-    if (tasStepPassThroughData.getCustomFetchContent() != null
-        && tasStepPassThroughData.getCustomFetchContent().values() != null) {
+    if (tasStepPassThroughData.getCustomFetchContent() != null) {
       for (Collection<CustomSourceFile> customSourceFileCollection :
           tasStepPassThroughData.getCustomFetchContent().values()) {
-        for (CustomSourceFile customSourceFile: customSourceFileCollection) {
-          allFilesFetched.put(customSourceFile.getFilePath(), (String) ExpressionEvaluatorUtils.updateExpressions(
+        for (CustomSourceFile customSourceFile : customSourceFileCollection) {
+          allFilesFetched.put(customSourceFile.getFilePath(),
+              (String) ExpressionEvaluatorUtils.updateExpressions(
                   customSourceFile.getFileContent(), cdExpressionResolveFunctor));
         }
       }
@@ -1075,7 +1059,7 @@ public class TasStepHelper {
         List<TasManifestFileContents> localStoreValuesFileContent = localStoreFetchFilesResultMap.get(identifier);
         for (TasManifestFileContents tasManifestFileContent : localStoreValuesFileContent) {
           addToPcfManifestPackageByType(pcfManifestsPackage,
-              tasManifestFileContent.getLocalStoreFetchFilesResult().getLocalStoreFileContents(),
+              Collections.singletonList(tasManifestFileContent.getFileContent()),
               tasManifestFileContent.getManifestType());
         }
       }
@@ -1107,30 +1091,27 @@ public class TasStepHelper {
 
   public void addToPcfManifestPackageByType(
       PcfManifestsPackage pcfManifestsPackage, List<String> fileContents, String manifestType) {
+    if (fileContents.isEmpty()) {
+      return;
+    }
     switch (manifestType) {
       case TAS_AUTOSCALER:
         if (!isNull(pcfManifestsPackage.getAutoscalarManifestYml()) || fileContents.size() > 1) {
-          throw new UnsupportedOperationException("Only one AutoScaler Yml is supported");
+          throw new UnsupportedOperationException("Only one AutoScalar Yml is supported");
         }
-        if (!fileContents.isEmpty()) {
-          pcfManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
-        }
+        pcfManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
         break;
       case TAS_VARS:
         if (isNull(pcfManifestsPackage.getVariableYmls())) {
           pcfManifestsPackage.setVariableYmls(new ArrayList<>());
         }
-        if (!fileContents.isEmpty()) {
-          pcfManifestsPackage.getVariableYmls().addAll(fileContents);
-        }
+        pcfManifestsPackage.getVariableYmls().addAll(fileContents);
         break;
       case TAS_MANIFEST:
         if (!isNull(pcfManifestsPackage.getManifestYml()) || fileContents.size() > 1) {
           throw new UnsupportedOperationException("Only one Tas Manifest Yml is supported");
         }
-        if (!fileContents.isEmpty()) {
-          pcfManifestsPackage.setManifestYml(fileContents.get(0));
-        }
+        pcfManifestsPackage.setManifestYml(fileContents.get(0));
         break;
       default:
         throw new UnsupportedOperationException(format("Unsupported Manifest type: %s", manifestType));
@@ -1350,8 +1331,7 @@ public class TasStepHelper {
 
   private TasArtifactConfig getTasContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     ConnectorInfoDTO connectorInfo;
-    TasContainerArtifactConfig.TasContainerArtifactConfigBuilder artifactConfigBuilder =
-        TasContainerArtifactConfig.builder();
+    TasContainerArtifactConfigBuilder artifactConfigBuilder = TasContainerArtifactConfig.builder();
 
     switch (artifactOutcome.getArtifactType()) {
       case DOCKER_REGISTRY_NAME:

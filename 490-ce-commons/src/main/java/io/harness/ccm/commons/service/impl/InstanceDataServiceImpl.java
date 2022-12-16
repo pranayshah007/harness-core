@@ -66,6 +66,9 @@ public class InstanceDataServiceImpl implements InstanceDataService {
     if (instanceData.getTopOwnerLabels() != null) {
       labelsMap.putAll(instanceData.getTopOwnerLabels());
     }
+    if (instanceData.getMetadataAnnotations() != null) {
+      labelsMap.putAll(instanceData.getMetadataAnnotations());
+    }
     return labelsMap;
   }
 

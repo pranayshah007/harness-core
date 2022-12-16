@@ -24,6 +24,15 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
   export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOGGERS" ]]; then
+  IFS=',' read -ra LOGGER_ITEMS <<< "$LOGGERS"
+  for ITEM in "${LOGGER_ITEMS[@]}"; do
+    LOGGER=`echo $ITEM | awk -F= '{print $1}'`
+    LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
+    export LOGGER_LEVEL; export LOGGER; yq -i '.logging.loggers.[env(LOGGER)]=env(LOGGER_LEVEL)' $CONFIG_FILE
+  done
+fi
+
 if [[ "" != "$VERIFICATION_PORT" ]]; then
   export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else

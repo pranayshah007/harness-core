@@ -35,8 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.NonNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class MarkStatusInterruptHandler implements InterruptHandler {
@@ -103,22 +102,14 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
   }
 
   private void handlePlanStatus(String planExecutionId, String nodeExecutionId) {
-    int currentPage = 0;
-    int totalPages = 0;
-
     List<NodeExecution> nodeExecutions = new LinkedList<>();
-    do {
-      Page<NodeExecution> paginatedNodeExecutions =
-          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, StatusUtils.activeStatuses(),
-              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+                 planExecutionId, StatusUtils.activeStatuses(), NodeProjectionUtils.withStatus)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-      currentPage++;
-    } while (currentPage < totalPages);
-
+    }
     List<Status> filteredExecutions = nodeExecutions.stream()
                                           .filter(ne -> !ne.getUuid().equals(nodeExecutionId))
                                           .map(NodeExecution::getStatus)

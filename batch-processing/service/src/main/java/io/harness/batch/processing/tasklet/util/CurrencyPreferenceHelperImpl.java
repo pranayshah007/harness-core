@@ -14,8 +14,8 @@ import io.harness.ccm.currency.Currency;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Objects;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CurrencyPreferenceHelperImpl implements CurrencyPreferenceHelper {
   @Inject private CurrencyPreferenceService currencyPreferenceService;
 
-  private final Cache<CacheKey, Double> destinationCurrencyConversionFactorCache =
+  private final LoadingCache<CacheKey, Double> destinationCurrencyConversionFactorCache =
       Caffeine.newBuilder()
           .maximumSize(200)
           .expireAfterWrite(12, TimeUnit.HOURS)
@@ -42,7 +42,7 @@ public class CurrencyPreferenceHelperImpl implements CurrencyPreferenceHelper {
   public Double getDestinationCurrencyConversionFactor(@NonNull final String accountId,
       @NonNull final CloudServiceProvider cloudServiceProvider, @NonNull final Currency sourceCurrency) {
     final CacheKey cacheKey = new CacheKey(accountId, cloudServiceProvider, sourceCurrency);
-    final Double destinationCurrencyConversionFactor = destinationCurrencyConversionFactorCache.getIfPresent(cacheKey);
+    final Double destinationCurrencyConversionFactor = destinationCurrencyConversionFactorCache.get(cacheKey);
 
     if (Objects.isNull(destinationCurrencyConversionFactor)) {
       log.error("Unable to get destination currency conversion factor for key: {}", cacheKey);

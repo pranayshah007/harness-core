@@ -2,19 +2,22 @@ openapi: 3.0.3
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1'
-  description: This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
+  description: This is the Open Api Spec 3 for Connectors. This is under active development. Beware of the breaking change with respect to the generated code stub
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Connector
-    description: Everything about account scoped connector
+    description: This contains APIs for Account-scoped Connectors.
+    x-displayName: Account Connectors
   - name: Org Connector
-    description: Everything about org scoped connector
+    description: This contains APIs for Organization-scoped Connectors.
+    x-displayName: Organization Connectors
   - name: Project Connector
-    description: Everything about project scoped connector
+    description: This contains APIs for Project-scoped Connectors.
+    x-displayName: Project Connectors
 paths:
   /v1/connectors:
     post:
@@ -52,6 +55,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -65,6 +70,8 @@ paths:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-account-scoped-connector
@@ -78,6 +85,8 @@ paths:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Account Connector
+      security:
+        - x-api-key: []
     parameters:
       - schema:
           type: string
@@ -96,6 +105,8 @@ paths:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/connectors/{connector}/test-connection':
     get:
       summary: Test a connector
@@ -109,6 +120,8 @@ paths:
         - Account Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - schema:
           type: string
@@ -154,6 +167,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/orgs/{org}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -167,6 +182,8 @@ paths:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-org-scoped-connector
@@ -180,6 +197,8 @@ paths:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Org Connector
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a connector
       operationId: delete-org-scoped-connector
@@ -191,6 +210,8 @@ paths:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
@@ -212,6 +233,8 @@ paths:
         - Org Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
@@ -259,6 +282,8 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -272,6 +297,8 @@ paths:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     put:
       summary: Update a connector
       operationId: update-project-scoped-connector
@@ -285,6 +312,8 @@ paths:
         $ref: '#/components/requestBodies/ConnectorRequest'
       tags:
         - Project Connector
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a connector
       operationId: delete-project-scoped-connector
@@ -296,6 +325,8 @@ paths:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -318,6 +349,8 @@ paths:
         - Project Connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'

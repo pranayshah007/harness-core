@@ -3592,12 +3592,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private List<WorkflowExecution> getRunningWorkflowExecutions(
       WorkflowType workflowType, String appId, String workflowId) {
-    PageRequest<WorkflowExecution> pageRequest = aPageRequest()
-                                                     .addFilter("appId", EQ, appId)
-                                                     .addFilter("workflowId", EQ, workflowId)
-                                                     .addFilter("workflowType", EQ, workflowType)
-                                                     .addFilter("status", IN, NEW, QUEUED, RUNNING, PAUSED)
-                                                     .build();
+    PageRequest<WorkflowExecution> pageRequest =
+        aPageRequest()
+            .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+            .addFilter(WorkflowExecutionKeys.workflowId, EQ, workflowId)
+            .addFilter(WorkflowExecutionKeys.workflowType, EQ, workflowType)
+            .addFilter(WorkflowExecutionKeys.status, IN, NEW, QUEUED, RUNNING, PAUSED)
+            .addFieldsIncluded(WorkflowExecutionKeys.status)
+            .build();
 
     PageResponse<WorkflowExecution> pageResponse = wingsPersistence.query(WorkflowExecution.class, pageRequest);
     if (pageResponse == null) {

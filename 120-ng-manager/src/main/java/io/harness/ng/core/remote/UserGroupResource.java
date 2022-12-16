@@ -271,8 +271,6 @@ public class UserGroupResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @BeanParam PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
@@ -303,7 +301,7 @@ public class UserGroupResource {
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
+        Resource.of(USERGROUP, userGroupIdentifier), VIEW_USERGROUP_PERMISSION);
     List<ScopeNameDTO> inheritingScopeNames = userGroupService.getInheritingChildScopeList(
         accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     return ResponseDTO.newResponse(inheritingScopeNames);
@@ -354,10 +352,6 @@ public class UserGroupResource {
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(
           description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
-            userGroupFilterDTO.getProjectIdentifier()),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     List<UserGroupDTO> userGroups =
         userGroupService.list(userGroupFilterDTO).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
     return ResponseDTO.newResponse(userGroups);

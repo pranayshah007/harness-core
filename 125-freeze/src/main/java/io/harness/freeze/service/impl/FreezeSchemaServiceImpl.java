@@ -71,7 +71,7 @@ public class FreezeSchemaServiceImpl implements FreezeSchemaService {
       JsonNode yamlNode = YamlPipelineUtils.getMapper().readTree(freezeConfigYaml);
       Set<ValidationMessage> validationMessages =
           yamlSchemaValidator.validateWithDetailedMessage(freezeConfigYaml, EntityType.FREEZE);
-      yamlSchemaValidator.processAndHandleValidationMessage(yamlNode, validationMessages);
+      yamlSchemaValidator.processAndHandleValidationMessage(yamlNode, validationMessages, freezeConfigYaml);
     } catch (io.harness.yaml.validator.InvalidYamlException e) {
       log.info("[FREEZE_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
@@ -82,7 +82,7 @@ public class FreezeSchemaServiceImpl implements FreezeSchemaService {
               .schemaErrors(Collections.singletonList(
                   YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.freeze").build()))
               .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO);
+      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, freezeConfigYaml);
     }
   }
 }

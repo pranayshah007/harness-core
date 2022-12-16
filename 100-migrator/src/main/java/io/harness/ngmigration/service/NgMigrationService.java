@@ -191,7 +191,7 @@ public abstract class NgMigrationService {
                      inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
                      mimeType)
                  .execute();
-      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
+      log.info("File store creation Response details {} {}", resp.code(), resp.message());
     } catch (IOException e) {
       log.error("Failed to create file", e);
       return MigrationImportSummaryDTO.builder()

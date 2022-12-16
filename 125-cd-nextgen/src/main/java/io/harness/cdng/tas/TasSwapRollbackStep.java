@@ -71,7 +71,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -166,9 +165,9 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .timeoutIntervalInMin(10)
             .swapRouteOccurred(swapRouteOccurred)
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
-                .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
+            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
             .instanceData(instanceData)
@@ -182,8 +181,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(CfCommandUnitConstants.SwapRollback, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize,
-            CfCommandUnitConstants.Wrapup),
+        Arrays.asList(CfCommandUnitConstants.SwapRollback, CfCommandUnitConstants.Upsize,
+            CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -224,23 +223,25 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-          .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
+          .unitProgressList(
+              tasStepHelper
+                  .completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage())
+                  .getUnitProgresses())
           .build();
     }
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
-            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
   }
 
-
   private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollbackCommandResponseNG response, Ambiance ambiance) {
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
-            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
-                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     CfRollbackCommandResult cfRollbackCommandResult = response.getCfRollbackCommandResult();
     if (cfRollbackCommandResult == null) {
       log.error("Could not generate server instance info for app resize step");
@@ -249,24 +250,23 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
     if (!isNull(instances)) {
       return instances.stream()
-              .map(instance -> getServerInstance(instance, infrastructureOutcome))
-              .collect(Collectors.toList());
+          .map(instance -> getServerInstance(instance, infrastructureOutcome))
+          .collect(Collectors.toList());
     }
     return new ArrayList<>();
   }
 
   private ServerInstanceInfo getServerInstance(
-          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+      CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
     return TasServerInstanceInfo.builder()
-            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
-            .instanceIndex(instance.getInstanceIndex())
-            .tasApplicationName(instance.getDisplayName())
-            .tasApplicationGuid(instance.getApplicationId())
-            .organization(infrastructureOutcome.getOrganization())
-            .space(infrastructureOutcome.getSpace())
-            .build();
+        .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+        .instanceIndex(instance.getInstanceIndex())
+        .tasApplicationName(instance.getDisplayName())
+        .tasApplicationGuid(instance.getApplicationId())
+        .organization(infrastructureOutcome.getOrganization())
+        .space(infrastructureOutcome.getSpace())
+        .build();
   }
-
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

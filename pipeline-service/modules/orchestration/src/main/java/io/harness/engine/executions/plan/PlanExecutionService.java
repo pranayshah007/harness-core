@@ -61,8 +61,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
-  long countRunningExecutionsForGivenPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+  long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
-  PlanExecution findNextExecutionToRun(String accountId, String orgId, String projectId, String pipelineIdentifier);
+  PlanExecution findNextExecutionToRunInAccount(String accountId);
 }

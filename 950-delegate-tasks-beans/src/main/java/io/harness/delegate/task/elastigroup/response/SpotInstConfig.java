@@ -9,10 +9,10 @@ package io.harness.delegate.task.elastigroup.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.encryption.SecretRefData;
-import io.harness.secret.SecretReference;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.security.encryption.EncryptedDataDetail;
 
-import javax.validation.constraints.NotNull;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -20,7 +20,6 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class SpotInstConfig {
-  String accountId;
-  @SecretReference SecretRefData accountIdRef;
-  @NotNull @SecretReference SecretRefData apiTokenRef;
+  SpotConnectorDTO spotConnectorDTO;
+  List<EncryptedDataDetail> encryptionDataDetails;
 }

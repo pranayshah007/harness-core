@@ -57,7 +57,11 @@ public class OutcomeExpressionConstants {
   public final String INSTANCES = "instances";
   public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
   public final String FREEZE_OUTCOME = "freezeOutcome";
-  public final String ELASTIGROUP_SETUP_OUTCOME = "elastgroupSetupOutcome";
+  public final String ELASTIGROUP_SETUP_OUTCOME = "elastigroupSetupOutcome";
+  public final String ELASTIGROUP_PRE_FETCH_OUTCOME = "elastigroupPreFetchOutcome";
+  public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
+  public final String ASG_CANARY_DELETE_OUTCOME = "asgCanaryDeleteOutcome";
+  public final String ASG_CANARY_DEPLOY_OUTCOME = "asgCanaryDeployOutcome";
   public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
   public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";

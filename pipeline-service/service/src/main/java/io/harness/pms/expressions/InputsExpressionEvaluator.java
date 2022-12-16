@@ -21,17 +21,17 @@ import io.harness.pms.expressions.functors.InputsFunctor;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputsExpressionEvaluator extends EngineExpressionEvaluator {
   // inputs in json format.
-  private final String inputs;
+  private final String inputSet;
   private final String pipelineYamlV1;
-  public InputsExpressionEvaluator(String inputs, String pipelineYamlV1) {
+  public InputsExpressionEvaluator(String inputSet, String pipelineYamlV1) {
     super(null);
-    this.inputs = inputs;
+    this.inputSet = inputSet;
     this.pipelineYamlV1 = pipelineYamlV1;
   }
 
   @Override
   protected void initialize() {
     super.initialize();
-    addToContext("inputs", new InputsFunctor(inputs, pipelineYamlV1));
+    addToContext("inputs", new InputsFunctor(inputSet, pipelineYamlV1));
   }
 }

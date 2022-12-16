@@ -37,6 +37,8 @@ import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.filter.creation.FilterCreationResponseWrapper.FilterCreationResponseWrapperBuilder;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -75,6 +77,8 @@ public class FilterCreatorMergeService {
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
   private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final GitSyncSdkService gitSyncSdkService;
+  private final PrincipalInfoHelper principalInfoHelper;
+  private final TriggeredByHelper triggeredByHelper;
 
   public static final int MAX_DEPTH = 10;
   private final Executor executor = Executors.newFixedThreadPool(5);
@@ -82,13 +86,16 @@ public class FilterCreatorMergeService {
   @Inject
   public FilterCreatorMergeService(PmsSdkHelper pmsSdkHelper, PipelineSetupUsageHelper pipelineSetupUsageHelper,
       PmsGitSyncHelper pmsGitSyncHelper, PMSPipelineTemplateHelper pmsPipelineTemplateHelper,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, GitSyncSdkService gitSyncSdkService) {
+      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, GitSyncSdkService gitSyncSdkService,
+      PrincipalInfoHelper principalInfoHelper, TriggeredByHelper triggeredByHelper) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pipelineSetupUsageHelper = pipelineSetupUsageHelper;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.pmsPipelineTemplateHelper = pmsPipelineTemplateHelper;
     this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.gitSyncSdkService = gitSyncSdkService;
+    this.principalInfoHelper = principalInfoHelper;
+    this.triggeredByHelper = triggeredByHelper;
   }
 
   public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
@@ -101,6 +108,8 @@ public class FilterCreatorMergeService {
     if (gitSyncBranchContext != null) {
       setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
     }
+    setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
+    setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
     FilterCreationBlobResponse response =
         obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
     validateFilterCreationBlobResponse(response);

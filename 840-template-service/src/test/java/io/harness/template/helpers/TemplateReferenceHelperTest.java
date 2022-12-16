@@ -9,6 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
@@ -31,7 +32,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
@@ -114,6 +114,27 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", metadata1);
     assertThat(templateReferences).containsExactlyInAnyOrder(expected1, expected2);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testErrorMessageForInvalidScopeTemplates() {
+    String templateYaml = readFile("stage-template-with-invalid-scope-references.yaml");
+    // Project scope template cannot be used at Acc level
+    assertThatThrownBy(
+        () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, null, null, templateYaml, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at account level");
+
+    // Project scope template cannot be used at Org level
+    assertThatThrownBy(
+        () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, templateYaml, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at org level");
+
+    // Project scope template can be used at Project level
+    templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, templateYaml, false);
   }
 
   @Test
@@ -246,7 +267,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
-        .isInstanceOf(InvalidIdentifierRefException.class)
-        .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level template cannot be used at org level");
   }
 }

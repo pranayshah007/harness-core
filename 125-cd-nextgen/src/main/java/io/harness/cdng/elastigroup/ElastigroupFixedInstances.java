@@ -9,32 +9,40 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
+@Data
 @Builder
 @JsonTypeName("Fixed")
 @TypeAlias("ElastigroupFixedInstances")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupFixedInstances")
 public class ElastigroupFixedInstances implements ElastigroupInstancesSpec {
-  @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> desired;
+  @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  ParameterField<Integer> desired;
 
-  @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> min;
+  @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  ParameterField<Integer> min;
 
-  @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> max;
+  @YamlSchemaTypes({SupportedPossibleFieldTypes.expression})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  ParameterField<Integer> max;
 
   @Override
   @JsonIgnore

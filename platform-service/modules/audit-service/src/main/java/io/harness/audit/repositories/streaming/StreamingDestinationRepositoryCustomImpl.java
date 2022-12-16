@@ -10,7 +10,9 @@ package io.harness.audit.repositories.streaming;
 import io.harness.audit.entities.streaming.StreamingDestination;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -18,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
+@Slf4j
 public class StreamingDestinationRepositoryCustomImpl implements StreamingDestinationRepositoryCustom {
   private final MongoTemplate template;
 
@@ -32,5 +35,13 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
     List<StreamingDestination> streamingDestinations = template.find(query, StreamingDestination.class);
     return PageableExecutionUtils.getPage(streamingDestinations, pageable,
         () -> template.count(Query.of(query).limit(-1).skip(-1), StreamingDestination.class));
+  }
+
+  @Override
+  public boolean deleteByCriteria(Criteria criteria) {
+    Query query = new Query(criteria);
+    DeleteResult deleteResult = template.remove(query, StreamingDestination.class);
+
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() == 1;
   }
 }

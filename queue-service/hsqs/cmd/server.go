@@ -17,6 +17,7 @@ import (
 	"github.com/harness/harness-core/queue-service/hsqs/config"
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
 	"github.com/harness/harness-core/queue-service/hsqs/handler"
+	"github.com/harness/harness-core/queue-service/hsqs/instrumentation/metrics"
 	"github.com/harness/harness-core/queue-service/hsqs/profiler"
 	"github.com/harness/harness-core/queue-service/hsqs/router"
 	"github.com/harness/harness-core/queue-service/hsqs/store/redis"
@@ -75,6 +76,10 @@ func startServer(c *config.Config) {
 		}
 	}
 
+	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath)
+	customMetrics := metrics.InitMetrics()
+	h := handler.NewHandler(store, customMetrics)
+
 	r := router.New(c)
 	r.GET("/swagger/*", echoSwagger.WrapHandler)
 	r.GET("/", func(c echo.Context) error {
@@ -83,8 +88,6 @@ func startServer(c *config.Config) {
 
 	g := r.Group("v1")
 
-	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath)
-	h := handler.NewHandler(store)
 	h.Register(g)
 
 	err := r.Start(fmt.Sprintf("%s:%s", c.Server.Host, c.Server.PORT))

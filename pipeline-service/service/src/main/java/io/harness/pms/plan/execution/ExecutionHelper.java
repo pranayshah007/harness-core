@@ -74,6 +74,7 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -191,8 +192,9 @@ public class ExecutionHelper {
       switch (version) {
         case PipelineVersion.V1:
           allowedStageExecution = false;
-          pipelineYaml = pipelineEntity.getYaml();
-          pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
           break;
         case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -509,9 +511,11 @@ public class ExecutionHelper {
 
     // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
     // pipeline
-    if (pipelineStageHelper.validateGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
+    if (pipelineStageHelper.validateChildGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
       NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
-      if (isNotEmpty(nodeExecution.getExecutableResponses())) {
+      if (nodeExecution != null && isNotEmpty(nodeExecution.getExecutableResponses())) {
+        // TODO: check with @sahilHindwani whether this update is required or not.
+        pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
         return pipelineStageHelper.getResponseDTOWithChildGraph(
             accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
       }

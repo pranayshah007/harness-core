@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,8 @@ public class SCMDataObtainerTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     initMocks(this);
+    on(scmDataObtainer).set("kryoSerializer", kryoSerializer);
+    on(scmDataObtainer).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
   }
 
   @Test

@@ -52,6 +52,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
@@ -146,6 +147,7 @@ public class PipelineServiceConfiguration extends Configuration {
   OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
   @JsonProperty("yamlSchemaExecutorServiceConfig") private ThreadPoolConfig yamlSchemaExecutorServiceConfig;
   @JsonProperty(value = "containerStepConfig") ContainerExecutionConfig containerExecutionConfig;
+  @JsonProperty(value = "grpcNegotiationType") NegotiationType grpcNegotiationType;
 
   private String managerServiceSecret;
   private String managerTarget;

@@ -61,7 +61,6 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
@@ -800,7 +799,8 @@ public class CfCommandTaskHelperNG {
                                    .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
-    restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
+    restoreRoutesForOldApplication(
+        cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
   }
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
@@ -889,7 +889,8 @@ public class CfCommandTaskHelperNG {
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
-    unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
+    unmapRoutesFromNewAppAfterDownsize(
+        executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
   }
 
   public ApplicationSummary findActiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
@@ -973,8 +974,8 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
-  public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo,
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+  public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo, CfRequestConfig cfRequestConfig,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     if (isNull(tasApplicationInfo)) {
       return;
     }
@@ -994,10 +995,8 @@ public class CfCommandTaskHelperNG {
   }
 
   public void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
-      TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig)
-      throws PivotalClientApiException {
-    if (newApplicationDetails == null
-        || isBlank(newApplicationDetails.getApplicationName())) {
+      TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    if (newApplicationDetails == null || isBlank(newApplicationDetails.getApplicationName())) {
       return;
     }
 

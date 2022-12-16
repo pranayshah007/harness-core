@@ -20,6 +20,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.expressions.NodeExecutionsCache;
@@ -45,6 +46,7 @@ import io.harness.utils.steps.TestStepParameters;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
@@ -57,6 +59,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionValueTest extends OrchestrationTestBase {
@@ -268,21 +271,55 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
              nodeExecution8.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
         .thenReturn(nodeExecution8);
 
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+    List<NodeExecution> nodeExecutionsList1 = Collections.singletonList(nodeExecution1);
+    CloseableIterator<NodeExecution> iterator1 =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionsList1.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, null, NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(Collections.singletonList(nodeExecution1));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+        .thenReturn(iterator1);
+
+    List<NodeExecution> nodeExecutionList2 = asList(nodeExecution2, nodeExecution3);
+    CloseableIterator<NodeExecution> iterator2 =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList2.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, nodeExecution1.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(asList(nodeExecution2, nodeExecution3));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+        .thenReturn(iterator2);
+
+    List<NodeExecution> nodeExecutionList3 = asList(nodeExecution4, nodeExecution5);
+    CloseableIterator<NodeExecution> iterator3 =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList3.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, nodeExecution3.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(asList(nodeExecution4, nodeExecution5));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+        .thenReturn(iterator3);
+
+    List<NodeExecution> nodeExecutionList4 = Collections.singletonList(nodeExecution6);
+    CloseableIterator<NodeExecution> iterator4 =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList4.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, nodeExecution4.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(Collections.singletonList(nodeExecution6));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+        .thenReturn(iterator4);
+
+    List<NodeExecution> nodeExecutionList5 = asList(nodeExecution7, nodeExecution8);
+    CloseableIterator<NodeExecution> iterator5 =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList5.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, nodeExecution6.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(asList(nodeExecution7, nodeExecution8));
+        .thenReturn(iterator5);
+
+    CloseableIterator<NodeExecution> emptyIterator =
+        OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution2.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution5.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution7.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution8.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
   }
 
   @Test
@@ -362,9 +399,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution7).set(NodeExecutionKeys.status, Status.SUCCEEDED);
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
-    when(nodeExecutionService.findAllChildrenWithStatusIn(planExecutionId, nodeExecution4.getUuid(),
-             StatusUtils.finalStatuses(), false, true,
-             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status), Collections.emptySet()))
+    when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(planExecutionId, nodeExecution4.getUuid(),
+             StatusUtils.finalStatuses(), false, Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status)))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for SUCCEEDED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("SUCCEEDED");
@@ -388,9 +424,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution7).set(NodeExecutionKeys.status, Status.FAILED);
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
-    when(nodeExecutionService.findAllChildrenWithStatusIn(planExecutionId, nodeExecution4.getUuid(), null, false, true,
-             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-             Collections.emptySet()))
+    when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
+             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet()))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for FAILED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("FAILED");
@@ -414,9 +449,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution7).set(NodeExecutionKeys.status, Status.ERRORED);
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
-    when(nodeExecutionService.findAllChildrenWithStatusIn(planExecutionId, nodeExecution4.getUuid(), null, false, true,
-             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-             Collections.emptySet()))
+    when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
+             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet()))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for ERRORED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("ERRORED");

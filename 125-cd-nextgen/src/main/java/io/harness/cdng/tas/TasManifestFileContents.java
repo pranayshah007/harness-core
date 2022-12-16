@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 
 import lombok.Builder;
 import lombok.Value;
@@ -24,5 +23,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.TasManifestFileContents")
 public class TasManifestFileContents {
   String manifestType;
-  LocalStoreFetchFilesResult localStoreFetchFilesResult;
+  String fileContent;
+  String filePath;
 }

@@ -52,6 +52,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
 import java.util.Collections;
 
 @OwnedBy(HarnessTeam.CI)
@@ -241,7 +242,7 @@ public class CiBeansRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
+                                           .modulesSupported(Arrays.asList(ModuleType.CI))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .availableAtAccountLevel(false)

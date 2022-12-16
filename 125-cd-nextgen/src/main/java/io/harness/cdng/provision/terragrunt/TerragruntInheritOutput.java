@@ -12,7 +12,7 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -33,9 +33,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntInheritOutput")
 public class TerragruntInheritOutput implements ExecutionSweepingOutput {
   String workspace;
-  StoreDelegateConfig configFiles;
-  List<StoreDelegateConfig> varFileConfigs;
-  StoreDelegateConfig backendConfigFile;
+  GitStoreConfig configFiles;
+  List<TerragruntVarFileConfig> varFileConfigs;
+  TerragruntBackendConfigFileConfig backendConfigFile;
   Map<String, String> environmentVariables;
   List<String> targets;
   EncryptedRecordData encryptedPlan;
