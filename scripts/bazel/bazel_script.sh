@@ -6,6 +6,12 @@
 
 set -ex
 
+function check_cmd_status() {
+  if [ $1 != 0 ]; then
+      echo "ERROR: $LINENO: $2. Exiting..."; exit 1
+  fi
+}
+
 #local_repo=${HOME}/.m2/repository
 BAZEL_ARGUMENTS=
 if [ "${PLATFORM}" == "jenkins" ]; then
@@ -20,6 +26,18 @@ BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --show_timestamps --announce_rc"
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
+
+HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{print $3}' | sort -u | tr '\r\n' ' ')
+check_cmd_status "$?" "Failed to list harness core modules."
+
+GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+
+PR_MODULES=()
+PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+check_cmd_status "$?" "Failed to get modules from commits."
+
+echo "List of targets modules for your PR."
+echo ${PR_MODULES[@]}
 
 #if [[ ! -z "${OVERRIDE_LOCAL_M2}" ]]; then
 #  local_repo=${OVERRIDE_LOCAL_M2}
@@ -43,8 +61,19 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  TARGETS=$(bazel query 'attr(tags, "checkstyle", //...:*)')
-  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
+  TARGETS=()
+  for module in "${PR_MODULES[@]}"
+  do
+    TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"':*)'))
+  done
+
+  echo "list of target to be build "
+  echo ${TARGETS[@]}
+
+  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS[@]}
+
+  # TARGETS=$(bazel query 'attr(tags, "checkstyle", //...:*)')
+  # bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
   exit $?
 fi
 
