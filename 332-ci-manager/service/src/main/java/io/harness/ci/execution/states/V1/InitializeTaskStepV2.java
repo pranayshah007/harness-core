@@ -179,7 +179,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
     boolean emitEvent = false;
-    String stageId = ambiance.getStageExecutionId();
+    String stageExecutionId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
     // Secrets are in decrypted format for DLITE_VM type
@@ -220,7 +220,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
 
     String taskId = ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
-        executeOnHarnessHostedDelegates, emitEvent, generateLogAbstractions(ambiance),
+        executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
         ambiance.getExpressionFunctorToken());
     String logKey = getLogKey(ambiance);
 
