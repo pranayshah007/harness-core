@@ -30,20 +30,4 @@ import lombok.EqualsAndHashCode;
 @Singleton
 @OwnedBy(DEL)
 public class DelegateServiceConfig extends MainConfiguration implements AssetsBundleConfiguration {
-  @JsonProperty("delegateServiceUrl") private String delegateServiceUrl;
-  @JsonProperty("grpcServerClassicConfig") private GrpcServerConfig grpcServerClassicConfig;
-
-  private static final String IS_OPTION_HEAD_HTTP_METHOD_BLOCKED = "IS_OPTION_HEAD_REQUEST_METHOD_BLOCKED";
-
-  protected ConnectorFactory getDefaultAdminConnectorFactory() {
-    final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(9081);
-    return factory;
-  }
-
-  protected ConnectorFactory getDefaultApplicationConnectorFactory() {
-    final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(9080);
-    return factory;
-  }
 }

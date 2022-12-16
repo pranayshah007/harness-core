@@ -29,5 +29,6 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
-  public void dummyTest() {}
+  public void dummyTest() {
+  }
 }

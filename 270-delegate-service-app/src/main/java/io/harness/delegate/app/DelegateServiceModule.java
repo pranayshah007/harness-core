@@ -14,17 +14,13 @@ import com.google.inject.AbstractModule;
 
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateServiceModule extends AbstractModule {
-  private final DelegateServiceConfig config;
+  private final io.harness.delegate.app.DelegateServiceConfig config;
 
   /**
    * Delegate Service App Config.
    */
-  public DelegateServiceModule(DelegateServiceConfig config) {
+  public DelegateServiceModule(io.harness.delegate.app.DelegateServiceConfig config) {
     this.config = config;
   }
 
-  @Override
-  protected void configure() {
-    install(new DelegateServiceClassicGrpcServerModule(config));
-  }
 }
