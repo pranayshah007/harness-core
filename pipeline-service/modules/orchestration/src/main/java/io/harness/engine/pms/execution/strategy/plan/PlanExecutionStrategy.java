@@ -42,6 +42,7 @@ import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
 import io.harness.waiter.WaitNotifyEngine;
@@ -98,6 +99,13 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
       planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, planExecutionSettingResponse);
 
+      // if planExecution in final state, then do not start.
+      if (StatusUtils.isFinalStatus(planExecution.getStatus())) {
+        log.info(
+            "Not starting the planExecution with planExecutionId: {} as the planExecution is already in final status: {}",
+            planExecution.getUuid(), planExecution.getStatus());
+        return planExecution;
+      }
       // isNewFlow: for restrictions using the enforcements.
       if (planExecutionSettingResponse.isUseNewFlow() || planExecutionSettingResponse.isShouldQueue()) {
         // Attach a Callback so that if this finishes then next execution starts
