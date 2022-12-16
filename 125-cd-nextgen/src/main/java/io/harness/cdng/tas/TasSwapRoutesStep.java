@@ -28,7 +28,9 @@ import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfSwapRoutesRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -192,9 +194,9 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .downsizeOldApplication(downSizeOldApplication)
             .existingApplicationNames(existingAppNames)
             .accountId(accountId)
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
-            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails())
+            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
             .releaseNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .commandName(CfCommandTypeNG.SWAP_ROUTES.toString())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
