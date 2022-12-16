@@ -29,6 +29,8 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -55,6 +57,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
+  @Inject private OutcomeService outcomeService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -86,6 +89,9 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
 
+    InfrastructureOutcome infrastructureOutcome2 = (InfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
     AsgCanaryDeployRequest asgCanaryDeployRequest =
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
@@ -96,6 +102,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .serviceNameSuffix(CANARY_SUFFIX)
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
+            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome2, ambiance))
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,

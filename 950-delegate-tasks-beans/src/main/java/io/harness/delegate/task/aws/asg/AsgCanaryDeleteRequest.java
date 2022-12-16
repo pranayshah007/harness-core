@@ -26,7 +26,6 @@ public class AsgCanaryDeleteRequest implements AsgCommandRequest, NestedAnnotati
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
-  AsgInfraConfig AsgInfraConfig;
 
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 

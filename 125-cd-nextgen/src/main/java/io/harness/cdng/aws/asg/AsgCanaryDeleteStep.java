@@ -171,7 +171,8 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
             .commandName(ASG_CANARY_DELETE_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
-            .canaryAsgName(asgCanaryDeployOutcome.getCanaryAsgName())
+            //.canaryAsgName(asgCanaryDeployOutcome.getCanaryAsgName())
+            .canaryAsgName("asg1")
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .build();
 
