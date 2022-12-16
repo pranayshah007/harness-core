@@ -4,6 +4,7 @@ logging:
     org.glassfish.jersey: WARN
     allbegray.slack: WARN
     org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+    io.opentelemetry.exporter.internal.grpc.OkHttpGrpcExporter: "OFF"
   appenders:
     - type: console
       threshold: TRACE
