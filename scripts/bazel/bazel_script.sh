@@ -30,7 +30,7 @@ BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --experimental_convenience_symlinks=normal -
 #HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{print $3}' | sort -u | tr '\r\n' ' ')
 #check_cmd_status "$?" "Failed to list harness core modules."
 
-GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+GIT_DIFF="git diff --name-only $COMMIT_SHA $BASE_SHA"
 
 PR_MODULES=()
 PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
