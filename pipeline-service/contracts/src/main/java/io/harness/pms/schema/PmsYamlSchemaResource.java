@@ -72,4 +72,8 @@ public interface PmsYamlSchemaResource {
   @Path("/dummyApiForSwaggerSchemaCheck")
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
   ResponseDTO<PipelineConfig> dummyApiForSwaggerSchemaCheck();
+
+  @GET
+  @Path("/test")
+  ResponseDTO<String> test();
 }

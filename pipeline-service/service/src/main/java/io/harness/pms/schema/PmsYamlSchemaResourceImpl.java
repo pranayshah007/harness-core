@@ -27,11 +27,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotSupportedException;
+
+import io.opentelemetry.api.trace.Span;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@PipelineServiceAuth
+//@PipelineServiceAuth
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSchemaResource {
@@ -70,5 +72,9 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   public ResponseDTO<PipelineConfig> dummyApiForSwaggerSchemaCheck() {
     log.info("Get pipeline");
     return ResponseDTO.newResponse(PipelineConfig.builder().build());
+  }
+
+  public ResponseDTO<String> test() {
+    return ResponseDTO.newResponse(Span.current().getSpanContext().getTraceId());
   }
 }
