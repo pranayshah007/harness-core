@@ -27,8 +27,8 @@ BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --show_timestamps --announce_rc"
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
 
-HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{print $3}' | sort -u | tr '\r\n' ' ')
-check_cmd_status "$?" "Failed to list harness core modules."
+#HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{print $3}' | sort -u | tr '\r\n' ' ')
+#check_cmd_status "$?" "Failed to list harness core modules."
 
 GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
 
