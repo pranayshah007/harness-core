@@ -144,7 +144,8 @@ public class DelegateAgentResource {
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
-      DelegatePollingHeartbeatService delegatePollingHeartbeatService, DelegateCapacityManagementService delegateCapacityManagementService) {
+      DelegatePollingHeartbeatService delegatePollingHeartbeatService,
+      DelegateCapacityManagementService delegateCapacityManagementService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;

@@ -139,7 +139,8 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final DelegateTaskService delegateTaskService = mock(DelegateTaskService.class);
   private static final InstanceSyncResponsePublisher instanceSyncResponsePublisher =
       mock(InstanceSyncResponsePublisher.class);
-  private static final DelegateCapacityManagementService delegateCapacityManagementService = mock(DelegateCapacityManagementService.class);
+  private static final DelegateCapacityManagementService delegateCapacityManagementService =
+      mock(DelegateCapacityManagementService.class);
 
   static {
     artifactCollectionResponseHandler = mock(ArtifactCollectionResponseHandler.class);
@@ -163,11 +164,12 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence,
-              delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
-              instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
-              kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
+          .instance(
+              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
+                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
+                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
+                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
+                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

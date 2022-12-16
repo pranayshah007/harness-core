@@ -27,7 +27,7 @@ public class ResourceBasedDelegateSelectionCheckForTask {
 
   public Optional<List<String>> perform(List<Delegate> delegateList, TaskType taskType, String accountId) {
     DelegateResourceCriteria delegateResourceCriteria =
-            orderByTotalNumberOfTaskAssignedCriteria.and(filterByDelegateCapacity);
+        orderByTotalNumberOfTaskAssignedCriteria.and(filterByDelegateCapacity);
     List<String> filteredList =
         delegateResourceCriteria.getFilteredEligibleDelegateList(delegateList, taskType, accountId)
             .stream()
