@@ -35,7 +35,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.environment.K8BuildJobEnvInfo;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.executionargs.CIExecutionArgs;
@@ -1043,14 +1043,14 @@ public class K8InitializeStepUtils {
     }
   }
 
-  public Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorRefs(
+  public Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(
       IntegrationStageConfig integrationStageConfig, Ambiance ambiance) {
     List<ExecutionWrapperConfig> executionWrappers = integrationStageConfig.getExecution().getSteps();
     if (isEmpty(executionWrappers)) {
       return Collections.emptyMap();
     }
 
-    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
+    Map<String, List<ConnectorConversionInfo>> map = new HashMap<>();
     for (ExecutionWrapperConfig executionWrapperConfig : executionWrappers) {
       populateStepConnectorRefsUtil(executionWrapperConfig, ambiance, map, null);
     }
@@ -1058,7 +1058,7 @@ public class K8InitializeStepUtils {
   }
 
   public void populateStepConnectorRefsUtil(ExecutionWrapperConfig executionWrapperConfig, Ambiance ambiance,
-      Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map, String stepGroupIdOfParent) {
+      Map<String, List<ConnectorConversionInfo>> map, String stepGroupIdOfParent) {
     if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
       CIAbstractStepNode stepNode = getStepNode(executionWrapperConfig);
       map.putAll(getStepConnectorConversionInfo(stepNode, ambiance, stepGroupIdOfParent));
@@ -1076,9 +1076,9 @@ public class K8InitializeStepUtils {
     }
   }
 
-  private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
+  private Map<String, List<ConnectorConversionInfo>> getStepConnectorConversionInfo(
       CIAbstractStepNode stepElement, Ambiance ambiance, String stepGroupIdOfParent) {
-    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
+    Map<String, List<ConnectorConversionInfo>> map = new HashMap<>();
     if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
         && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       String stepIdentifier = stepElement.getIdentifier();
@@ -1093,21 +1093,18 @@ public class K8InitializeStepUtils {
       Map<EnvVariableEnum, String> envToSecretMap =
           PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType());
       map.get(stepIdentifier)
-          .add(K8BuildJobEnvInfo.ConnectorConversionInfo.builder()
-                   .connectorRef(connectorRef)
-                   .envToSecretsMap(envToSecretMap)
-                   .build());
-      List<K8BuildJobEnvInfo.ConnectorConversionInfo> baseConnectorConversionInfo =
+          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
+      List<ConnectorConversionInfo> baseConnectorConversionInfo =
           this.getBaseImageConnectorConversionInfo(step, ambiance);
       map.get(stepIdentifier).addAll(baseConnectorConversionInfo);
     }
     return map;
   }
 
-  private List<K8BuildJobEnvInfo.ConnectorConversionInfo> getBaseImageConnectorConversionInfo(
+  private List<ConnectorConversionInfo> getBaseImageConnectorConversionInfo(
       PluginCompatibleStep step, Ambiance ambiance) {
     List<String> baseConnectorRefs = PluginSettingUtils.getBaseImageConnectorRefs(step);
-    List<K8BuildJobEnvInfo.ConnectorConversionInfo> baseImageConnectorConversionInfos = new ArrayList<>();
+    List<ConnectorConversionInfo> baseImageConnectorConversionInfos = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (!isEmpty(baseConnectorRefs)) {
       baseImageConnectorConversionInfos =
@@ -1125,7 +1122,7 @@ public class K8InitializeStepUtils {
                         "Unexpected base connector: " + connectorDetails.getConnectorType());
                 }
                 Map<EnvVariableEnum, String> envToSecretMap = PluginSettingUtils.getConnectorSecretEnvMap(stepInfoType);
-                return K8BuildJobEnvInfo.ConnectorConversionInfo.builder()
+                return ConnectorConversionInfo.builder()
                     .connectorRef(baseConnectorRef)
                     .envToSecretsMap(envToSecretMap)
                     .build();

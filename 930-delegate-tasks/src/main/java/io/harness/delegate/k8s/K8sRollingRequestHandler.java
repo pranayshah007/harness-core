@@ -132,18 +132,22 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     List<KubernetesResource> allWorkloads = ListUtils.union(managedWorkloads, customWorkloads);
     List<K8sPod> existingPodList = k8sRollingBaseHandler.getExistingPods(
         steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName, prepareLogCallback);
-
-    k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true);
     shouldSaveReleaseHistory = true;
+
+    try {
+      k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
+          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true);
+    } finally {
+      if (isNotEmpty(managedWorkloads) || isNotEmpty(customWorkloads)) {
+        k8sRollingBaseHandler.setManagedWorkloadsInRelease(k8sDelegateTaskParams, managedWorkloads, release, client);
+        k8sRollingBaseHandler.setCustomWorkloadsInRelease(customWorkloads, release);
+      }
+    }
 
     if (isEmpty(managedWorkloads) && isEmpty(customWorkloads)) {
       k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress)
           .saveExecutionLog("Skipping Status Check since there is no Managed Workload.", INFO, SUCCESS);
     } else {
-      k8sRollingBaseHandler.setManagedWorkloadsInRelease(k8sDelegateTaskParams, managedWorkloads, release, client);
-      k8sRollingBaseHandler.setCustomWorkloadsInRelease(customWorkloads, release);
-
       kubernetesContainerService.saveReleaseHistory(kubernetesConfig, k8sRollingDeployRequest.getReleaseName(),
           releaseHistory.getAsYaml(), !customWorkloads.isEmpty());
 

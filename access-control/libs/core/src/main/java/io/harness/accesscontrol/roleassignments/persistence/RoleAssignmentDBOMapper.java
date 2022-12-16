@@ -10,7 +10,6 @@ package io.harness.accesscontrol.roleassignments.persistence;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PL)
@@ -27,6 +26,7 @@ class RoleAssignmentDBOMapper {
         .principalType(object.getPrincipalType())
         .roleIdentifier(object.getRoleIdentifier())
         .managed(object.isManaged())
+        .internal(object.isInternal())
         .disabled(object.isDisabled())
         .version(object.getVersion())
         .createdAt(object.getCreatedAt())
@@ -45,6 +45,7 @@ class RoleAssignmentDBOMapper {
         .principalType(object.getPrincipalType())
         .roleIdentifier(object.getRoleIdentifier())
         .managed(object.isManaged())
+        .internal(object.isInternal())
         .disabled(object.isDisabled())
         .version(object.getVersion())
         .createdAt(object.getCreatedAt())

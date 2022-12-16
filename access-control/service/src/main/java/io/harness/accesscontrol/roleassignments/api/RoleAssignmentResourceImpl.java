@@ -183,51 +183,56 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   @Override
   public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
       PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
-    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
-    if (USER.equals(principalFilter.getType())) {
-      boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
-      if (!hasAccessToUserRoleAssignments) {
-        throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
-            USER_NOT_AUTHORIZED, WingsException.USER);
-      }
-      Set<ScopeSelector> scopeFilter = roleAssignmentFilterV2.getScopeFilters();
-      if (isEmpty(scopeFilter)) {
-        scopeFilter.add(ScopeSelector.builder()
-                            .accountIdentifier(harnessScopeParams.getAccountIdentifier())
-                            .orgIdentifier(harnessScopeParams.getOrgIdentifier())
-                            .projectIdentifier(harnessScopeParams.getProjectIdentifier())
-                            .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
-                            .build());
-      }
-      roleAssignmentFilterV2.setScopeFilters(scopeFilter);
-      List<UserGroup> userGroups = userGroupService.list(principalFilter.getIdentifier());
-      RoleAssignmentFilter filter =
-          roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
-      PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
-      PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
-        String userGroupName = null;
-        if (USER_GROUP.equals(response.getPrincipalType())) {
-          UserGroup principal =
-              userGroups.stream()
-                  .filter(userGroup
-                      -> userGroup.getIdentifier().equals(response.getPrincipalIdentifier())
-                          && scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier())
-                                 .getLevel()
-                                 .toString()
-                                 .equals(response.getPrincipalScopeLevel()))
-                  .findAny()
-                  .orElse(null);
-          if (principal != null) {
-            userGroupName = principal.getName();
-          }
-        }
-
-        return roleAssignmentAggregateMapper.toDTO(response, userGroupName);
-      });
-
-      return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
+    if (!hasAccessToUserRoleAssignments) {
+      throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
+          USER_NOT_AUTHORIZED, WingsException.USER);
     }
-    throw new InvalidRequestException("Current principal is not supported to the view the role assignments");
+    Set<ScopeSelector> scopeFilter = new HashSet<>();
+    if (isEmpty(roleAssignmentFilterV2.getScopeFilters())) {
+      scopeFilter.add(ScopeSelector.builder()
+                          .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                          .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                          .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+                          .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                          .build());
+    } else {
+      scopeFilter.addAll(roleAssignmentFilterV2.getScopeFilters());
+    }
+    roleAssignmentFilterV2.setScopeFilters(scopeFilter);
+
+    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
+    RoleAssignmentFilter filter = null;
+    List<UserGroup> userGroups = new ArrayList<>();
+    if (principalFilter != null && USER.equals(principalFilter.getType())) {
+      userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
+      filter = roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
+    } else {
+      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2);
+    }
+
+    PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
+    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
+      String userGroupName = null;
+      if (USER_GROUP.equals(response.getPrincipalType())) {
+        UserGroup principal = userGroups.stream()
+                                  .filter(userGroup
+                                      -> userGroup.getIdentifier().equals(response.getPrincipalIdentifier())
+                                          && scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier())
+                                                 .getLevel()
+                                                 .toString()
+                                                 .equals(response.getPrincipalScopeLevel()))
+                                  .findAny()
+                                  .orElse(null);
+        if (principal != null) {
+          userGroupName = principal.getName();
+        }
+      }
+
+      return roleAssignmentAggregateMapper.toDTO(response, userGroupName);
+    });
+
+    return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
   }
 
   @Override
@@ -279,6 +284,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
             .stream()
             .map(ResourceGroupDTOMapper::toDTO)
             .collect(toList());
+
     List<RoleAssignmentDTO> roleAssignmentDTOs =
         roleAssignments.stream().map(RoleAssignmentDTOMapper::toDTO).collect(toList());
     return ResponseDTO.newResponse(

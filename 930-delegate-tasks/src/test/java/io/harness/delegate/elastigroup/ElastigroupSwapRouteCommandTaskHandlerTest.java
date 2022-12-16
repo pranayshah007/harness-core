@@ -7,6 +7,11 @@
 
 package io.harness.delegate.elastigroup;
 
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
@@ -25,6 +30,8 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
@@ -38,6 +45,9 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
+
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,14 +55,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -72,7 +74,7 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest = ElastigroupSetupCommandRequest.builder().build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     elastigroupSwapRouteCommandTaskHandler.executeTaskInternal(
-            elastigroupSetupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
+        elastigroupSetupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
   }
 
   @Test
@@ -81,35 +83,56 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
   public void executeTaskInternalElastigroupSetupRequestTest() throws Exception {
     int timeout = 10;
     String elastigroupNamePrefix = "prefix";
-    String prefix = format("%s__", elastigroupNamePrefix);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback)
+        .when(elastigroupCommandTaskNGHelper)
+        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true,
+            commandUnitsProgress);
+    doReturn(createServiceLogCallback)
+        .when(elastigroupCommandTaskNGHelper)
+        .getLogCallback(
+            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(), true, commandUnitsProgress);
+    doReturn(createServiceLogCallback)
+        .when(elastigroupCommandTaskNGHelper)
+        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(),
+            true, commandUnitsProgress);
 
     String awsRegion = "awsRegion";
 
     AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
     ConnectorConfigDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
-    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList();
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-    doReturn(awsInternalConfig).when(elastigroupCommandTaskNGHelper).getAwsInternalConfig((AwsConnectorDTO) connectorConfigDTO, awsRegion);
+    doReturn(awsInternalConfig)
+        .when(elastigroupCommandTaskNGHelper)
+        .getAwsInternalConfig((AwsConnectorDTO) connectorConfigDTO, awsRegion);
 
     List<LoadBalancerDetailsForBGDeployment> lbDetailList = Arrays.asList();
 
     SecretRefData spotAccountId = SecretRefData.builder().build();
-    SecretRefData spotInstApiTokenRef = SecretRefData.builder().decryptedValue(new char[]{'a'}).build();
+    SecretRefData spotInstApiTokenRef = SecretRefData.builder().decryptedValue(new char[] {'a'}).build();
     String decryptedSpotAccountIdRef = "a";
     String decryptedSpotInstApiTokenRef = "a";
-    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = SpotPermanentTokenConfigSpecDTO.builder().spotAccountId(decryptedSpotAccountIdRef).spotAccountIdRef(spotAccountId).apiTokenRef(spotInstApiTokenRef).build();
-    SpotCredentialDTO spotCredentialDTO = SpotCredentialDTO.builder().config(spotPermanentTokenConfigSpecDTO).spotCredentialType(SpotCredentialType.PERMANENT_TOKEN).build();
+    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = SpotPermanentTokenConfigSpecDTO.builder()
+                                                                          .spotAccountId(decryptedSpotAccountIdRef)
+                                                                          .spotAccountIdRef(spotAccountId)
+                                                                          .apiTokenRef(spotInstApiTokenRef)
+                                                                          .build();
+    SpotCredentialDTO spotCredentialDTO = SpotCredentialDTO.builder()
+                                              .config(spotPermanentTokenConfigSpecDTO)
+                                              .spotCredentialType(SpotCredentialType.PERMANENT_TOKEN)
+                                              .build();
     SpotConnectorDTO spotConnectorDTO = SpotConnectorDTO.builder().credential(spotCredentialDTO).build();
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().spotConnectorDTO(spotConnectorDTO).build();
 
     String id = "id";
     String name = "name";
     ElastiGroup elastiGroup = ElastiGroup.builder().name(name).id(id).build();
+
+    AwsLoadBalancerConfig awsLoadBalancerConfig =
+        AwsLoadBalancerConfig.builder().loadBalancerDetails(lbDetailList).build();
 
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         ElastigroupSwapRouteCommandRequest.builder()
@@ -118,27 +141,31 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
             .spotInstConfig(spotInstConfig)
             .newElastigroup(elastiGroup)
             .oldElastigroup(elastiGroup)
-            //                    .awsRegion(awsRegion)
-            //                    .lBdetailsForBGDeploymentList(lbDetailList)
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder()
+                                        .connectorInfoDTO(connectorInfoDTO)
+                                        .encryptionDetails(encryptedDataDetails)
+                                        .region(awsRegion)
+                                        .build())
+
+            .loadBalancerConfig(awsLoadBalancerConfig)
             .downsizeOldElastigroup("false")
-            //                    .connectorInfoDTO(connectorInfoDTO)
-            //                    .awsEncryptedDetails(encryptedDataDetails)
             .build();
 
     ElastigroupSwapRouteResult elastigroupSwapRouteResult =
         ElastigroupSwapRouteResult.builder()
             .downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
-            //                    .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList())
+            .lbDetails(awsLoadBalancerConfig.getLoadBalancerDetails())
             .oldElastiGroupId(id)
             .oldElastiGroupName(name)
             .newElastiGroupId(id)
             .newElastiGroupName(name)
             .build();
 
-    ElastigroupSwapRouteResponse elastigroupSwapRouteResponse = (ElastigroupSwapRouteResponse) elastigroupSwapRouteCommandTaskHandler.executeTaskInternal(elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
+    ElastigroupSwapRouteResponse elastigroupSwapRouteResponse =
+        (ElastigroupSwapRouteResponse) elastigroupSwapRouteCommandTaskHandler.executeTaskInternal(
+            elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
 
     assertThat(elastigroupSwapRouteResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(elastigroupSwapRouteResponse.getElastigroupSwapRouteResult())
-        .isEqualTo(elastigroupSwapRouteResult);
+    assertThat(elastigroupSwapRouteResponse.getElastigroupSwapRouteResult()).isEqualTo(elastigroupSwapRouteResult);
   }
 }

@@ -9,12 +9,14 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -27,7 +29,7 @@ public interface StepMapper {
 
   State getState(StepYaml stepYaml);
 
-  AbstractStepNode getSpec(StepYaml stepYaml);
+  AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml);
 
   boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2);
 

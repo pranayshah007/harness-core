@@ -81,6 +81,8 @@ import org.apache.commons.lang3.StringUtils;
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private NgManifestFactory manifestFactory;
+
+  @Inject private ServiceVariableMigrationService serviceVariableMigrationService;
   private static final List<AppManifestKind> SUPPORTED_MANIFEST_KIND =
       Lists.newArrayList(AppManifestKind.VALUES, AppManifestKind.K8S_MANIFEST);
 
@@ -180,7 +182,8 @@ public class ManifestMigrationService extends NgMigrationService {
     List<NGYamlFile> yamlFiles = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
     String serviceId = applicationManifest.getServiceId();
     String envId = applicationManifest.getEnvId();
-    if (StringUtils.isNoneBlank(serviceId, envId)) {
+    if (StringUtils.isNoneBlank(serviceId, envId)
+        && serviceVariableMigrationService.doReferenceExists(migratedEntities, envId, serviceId)) {
       // We need to generate the overrides
       NGYamlFile override =
           ServiceVariableMigrationService.getBlankServiceOverride(inputDTO, migratedEntities, envId, serviceId, null);

@@ -7,6 +7,14 @@
 
 package io.harness.delegate.elastigroup;
 
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
@@ -26,6 +34,8 @@ import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.ElastigroupBGTaskHelper;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -40,6 +50,12 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,18 +63,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -94,10 +98,8 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
   @Category(UnitTests.class)
   public void executeTaskInternalElastigroupSetupRequestTest() throws Exception {
     int timeout = 10;
-    int elastiGroupVersion = 1;
     String elastigroupNamePrefix = "prefix";
     String region = "region";
-    String prefix = format("%s__", elastigroupNamePrefix);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     doReturn(createServiceLogCallback)
         .when(elastigroupCommandTaskNGHelper)
@@ -114,7 +116,14 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
         .when(elastigroupCommandTaskNGHelper)
         .getAwsInternalConfig((AwsConnectorDTO) connectorConfigDTO, region);
 
-    List<LoadBalancerDetailsForBGDeployment> lbDetailList = Arrays.asList();
+    List<LoadBalancerDetailsForBGDeployment> lbDetailList = new ArrayList<>();
+    lbDetailList.add(LoadBalancerDetailsForBGDeployment.builder()
+                         .loadBalancerName("loadbalancer")
+                         .prodListenerPort("80")
+                         .stageListenerPort("8080")
+                         .prodListenerArn("prodListenerArn")
+                         .stageListenerArn("stageListenerArn")
+                         .build());
     String finalJson = "finalJson";
 
     SecretRefData spotAccountId = SecretRefData.builder().build();
@@ -136,18 +145,21 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
     String id = "id";
     ElastiGroupCapacity elastiGroupCapacity = ElastiGroupCapacity.builder().minimum(1).maximum(1).target(1).build();
     ElastiGroup elastigroupOriginalConfig = ElastiGroup.builder().id(id).capacity(elastiGroupCapacity).build();
-
+    AwsLoadBalancerConfig awsLoadBalancerConfig =
+        AwsLoadBalancerConfig.builder().loadBalancerDetails(lbDetailList).build();
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
             .timeoutIntervalInMin(timeout)
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .spotInstConfig(spotInstConfig)
-            //            .connectorInfoDTO(connectorInfoDTO)
-            //            .connectorEncryptedDetails(encryptedDataDetails)
             .generatedElastigroupConfig(elastigroupOriginalConfig)
-            //            .awsRegion(region)
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder()
+                                        .connectorInfoDTO(connectorInfoDTO)
+                                        .encryptionDetails(encryptedDataDetails)
+                                        .region(region)
+                                        .build())
+            .loadBalancerConfig(awsLoadBalancerConfig)
             .build();
-
     doReturn(lbDetailList)
         .when(elastigroupCommandTaskNGHelper)
         .fetchAllLoadBalancerDetails(elastigroupSetupCommandRequest, awsInternalConfig, createServiceLogCallback);

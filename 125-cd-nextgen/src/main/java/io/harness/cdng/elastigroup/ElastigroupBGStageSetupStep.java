@@ -134,11 +134,7 @@ public class ElastigroupBGStageSetupStep
   }
 
   private int getSteadyStateTimeout(StepElementParameters stepParameters) {
-    final int timeoutInMin = CDStepHelper.getTimeoutInMin(stepParameters);
-    if (timeoutInMin > 1) {
-      return timeoutInMin - 1;
-    }
-    return timeoutInMin;
+    return CDStepHelper.getTimeoutInMin(stepParameters);
   }
 
   @Override

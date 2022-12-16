@@ -8,7 +8,6 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.executablePSFilePath;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getEncodedScriptFile;
@@ -106,12 +105,24 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   }
 
   @Override
+  public CommandExecutionStatus executeCommandString(
+      String command, boolean displayCommand, boolean winrmScriptCommandSplit) {
+    return executeCommandString(command, winrmScriptCommandSplit, null, displayCommand);
+  }
+
+  @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output) {
     return executeCommandString(command, output, false);
   }
 
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
+    return executeCommandString(command, winrmScriptCommandSplit, output, displayCommand);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(
+      String command, boolean winrmScriptCommandSplit, StringBuffer output, boolean displayCommand) {
     CommandExecutionStatus commandExecutionStatus;
     saveExecutionLog(format("Initializing WinRM connection to %s ...", config.getHostname()), INFO);
 
@@ -125,25 +136,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         saveExecutionLog(format("Executing command ...%n"), INFO);
       }
 
-      int exitCode;
-      String psScriptFile = null;
-      if (disableCommandEncoding) {
-        psScriptFile = getPSScriptFile();
-        if (winrmScriptCommandSplit) {
-          String encodedScriptFilePath = getEncodedScriptFile(config.getWorkingDirectory(), config.getExecutionId());
-          exitCode = splitAndExecute(command, session, outputWriter, errorWriter, psScriptFile, encodedScriptFilePath);
-        } else {
-          List<List<String>> commandList =
-              constructPSScriptWithCommands(command, psScriptFile, powershell, config.getCommandParameters());
-          exitCode = session.executeCommandsList(
-              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
-        }
-      } else {
-        exitCode = session.executeCommandString(
-            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
-            outputWriter, errorWriter, false);
-      }
-      commandExecutionStatus = (exitCode == 0) ? SUCCESS : FAILURE;
+      String psScriptFile = getPSScriptFile();
+      int exitCode =
+          executeCommand(command, session, outputWriter, errorWriter, psScriptFile, winrmScriptCommandSplit, false);
+      commandExecutionStatus = getCommandExecutionStatus(exitCode);
       saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO, commandExecutionStatus);
       WinRmExecutorHelper.cleanupFiles(
           session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
@@ -159,6 +155,32 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       logCallback.dispatchLogs();
     }
     return commandExecutionStatus;
+  }
+
+  private int executeCommand(String command, WinRmSession session, Writer outputWriter, Writer errorWriter,
+      String psScriptFile, boolean winrmScriptCommandSplit, boolean isOutputWriter) throws IOException {
+    int exitCode;
+    if (disableCommandEncoding) {
+      if (winrmScriptCommandSplit) {
+        String encodedScriptFilePath = getEncodedScriptFile(config.getWorkingDirectory(), config.getExecutionId());
+        exitCode = splitAndExecute(command, session, outputWriter, errorWriter, psScriptFile, encodedScriptFilePath);
+      } else {
+        List<List<String>> commandList =
+            constructPSScriptWithCommands(command, psScriptFile, powershell, config.getCommandParameters());
+        exitCode = session.executeCommandsList(commandList, outputWriter, errorWriter, isOutputWriter,
+            getScriptExecutingCommand(psScriptFile, powershell));
+      }
+    } else {
+      exitCode = session.executeCommandString(
+          WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
+          outputWriter, errorWriter, isOutputWriter);
+    }
+    return exitCode;
+  }
+
+  @NotNull
+  private CommandExecutionStatus getCommandExecutionStatus(int exitCode) {
+    return (exitCode == 0) ? SUCCESS : FAILURE;
   }
 
   @VisibleForTesting
@@ -206,7 +228,6 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
 
     saveExecutionLog(format("Initializing WinRM connection to %s ...", config.getHostname()), INFO);
     String envVariablesOutputFile = null;
-    String psScriptFile = null;
 
     // combine both variable types
     List<String> allVariablesToCollect =
@@ -225,25 +246,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       saveExecutionLog(format("Executing command ...%n"), INFO);
 
       command = addEnvVariablesCollector(command, allVariablesToCollect, envVariablesOutputFile);
-      int exitCode;
-      if (disableCommandEncoding) {
-        psScriptFile = getPSScriptFile();
-        if (winrmScriptCommandSplit) {
-          String encodedScriptFilePath = getEncodedScriptFile(config.getWorkingDirectory(), config.getExecutionId());
-          exitCode = splitAndExecute(command, session, outputWriter, errorWriter, psScriptFile, encodedScriptFilePath);
-        } else {
-          List<List<String>> commandList =
-              constructPSScriptWithCommands(command, psScriptFile, powershell, config.getCommandParameters());
-          exitCode = session.executeCommandsList(
-              commandList, outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
-        }
-
-      } else {
-        exitCode = session.executeCommandString(
-            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
-            outputWriter, errorWriter, false);
-      }
-      commandExecutionStatus = (exitCode == 0) ? SUCCESS : FAILURE;
+      String psScriptFile = getPSScriptFile();
+      int exitCode =
+          executeCommand(command, session, outputWriter, errorWriter, psScriptFile, winrmScriptCommandSplit, false);
+      commandExecutionStatus = getCommandExecutionStatus(exitCode);
 
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         // If we are here, we will run another command to get the output variables. Make sure we delete the previous
@@ -279,37 +285,21 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
   private Map<String, String> collectOutputEnvironmentVariables(
       WinRmSession session, String envVariablesOutputFile, List<String> secretOutputVars) {
     Map<String, String> envVariablesMap = new HashMap<>();
-    String command = "$base64string = [Convert]::ToBase64String([IO.File]::ReadAllBytes('" + envVariablesOutputFile
-        + "'))\n"
-        + "Write-Host $base64string -NoNewline";
+    String command;
+    if (disableCommandEncoding) {
+      // Note we are already receving file contents in UTF-8
+      command = "$envVarString = Get-Content -Path \"" + envVariablesOutputFile
+          + "\" -Encoding UTF8 -Raw; Write-Host $envVarString -NoNewline ";
+    } else {
+      command = "$base64string = [Convert]::ToBase64String([IO.File]::ReadAllBytes('" + envVariablesOutputFile + "'))\n"
+          + "Write-Host $base64string -NoNewline";
+    }
 
-    // Note we are already receving file contents in UTF-8
-    String commandWithoutEncoding = "$envVarString = Get-Content -Path \"" + envVariablesOutputFile
-        + "\" -Encoding UTF8 -Raw; Write-Host $envVarString -NoNewline ";
-
-    String psScriptFile = null;
-
+    String psScriptFile;
     try (StringWriter outputAccumulator = new StringWriter(1024);
          StringWriter errorAccumulator = new StringWriter(1024)) {
-      int exitCode;
-      if (disableCommandEncoding) {
-        psScriptFile = getPSScriptFile();
-        if (winrmScriptCommandSplit) {
-          String encodedScriptFilePath = getEncodedScriptFile(config.getWorkingDirectory(), config.getExecutionId());
-          exitCode = splitAndExecute(
-              command, session, outputAccumulator, errorAccumulator, psScriptFile, encodedScriptFilePath);
-        } else {
-          List<List<String>> commandList = constructPSScriptWithCommands(
-              commandWithoutEncoding, psScriptFile, powershell, config.getCommandParameters());
-          exitCode = session.executeCommandsList(commandList, outputAccumulator, errorAccumulator, true,
-              getScriptExecutingCommand(psScriptFile, powershell));
-        }
-
-      } else {
-        exitCode = session.executeCommandString(
-            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
-            outputAccumulator, errorAccumulator, true);
-      }
+      psScriptFile = getPSScriptFile();
+      int exitCode = executeCommand(command, session, outputAccumulator, errorAccumulator, psScriptFile, false, true);
       if (exitCode != 0) {
         log.error("Powershell script collecting output environment Variables failed with exitCode {}", exitCode);
         return envVariablesMap;
@@ -384,19 +374,27 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       return exitCode;
     }
 
-    String executable = executablePSFilePath(config.getWorkingDirectory(), config.getExecutionId());
+    String executablePSFilePath = executablePSFilePath(config.getWorkingDirectory(), config.getExecutionId());
     String psExecutionCommand = prepareCommandForCopyingToRemoteFile(
-        encodedScriptFilePath, psScriptFile, powershell, config.getCommandParameters(), executable);
+        encodedScriptFilePath, psScriptFile, powershell, config.getCommandParameters(), executablePSFilePath);
     exitCode = session.executeCommandString(psExecutionCommand, outputWriter, errorWriter, false);
     if (exitCode != 0) {
-      log.error("Transferring execution script to PowerShell script file FAILED.");
+      log.error("Transferring script for decoding failed.");
       return exitCode;
     }
 
     String scriptFileExecutingCommand = getScriptExecutingCommand(psScriptFile, powershell);
-    if (isNotEmpty(scriptFileExecutingCommand)) {
-      exitCode = session.executeScript(scriptFileExecutingCommand, outputWriter, errorWriter);
+    exitCode = session.executeScript(scriptFileExecutingCommand, outputWriter, errorWriter);
+    if (exitCode != 0) {
+      log.error("Decoding of the script on remote failed.");
+      return exitCode;
     }
+
+    String executeScript = getScriptExecutingCommand(executablePSFilePath, powershell);
+    exitCode = session.executeScript(executeScript, outputWriter, errorWriter);
+
+    WinRmExecutorHelper.cleanupFiles(
+        session, executablePSFilePath, powershell, disableCommandEncoding, config.getCommandParameters());
     return exitCode;
   }
 

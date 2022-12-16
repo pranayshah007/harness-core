@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static software.wings.utils.RepositoryFormat.generic;
 
@@ -30,18 +31,22 @@ import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.hash.Hashing;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -222,5 +227,19 @@ public class ArtifactUtils {
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }
+  }
+
+  public static Map<String, String> getTaskSetupAbstractions(BaseNGAccess ngAccess) {
+    Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    Map<String, String> abstractions = new HashMap<>(owner);
+    abstractions.put(SetupAbstractionKeys.ng, "true");
+    if (ngAccess.getOrgIdentifier() != null) {
+      abstractions.put(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier());
+    }
+    if (ngAccess.getProjectIdentifier() != null) {
+      abstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
+    }
+    return abstractions;
   }
 }

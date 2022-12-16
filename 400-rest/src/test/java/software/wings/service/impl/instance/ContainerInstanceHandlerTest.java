@@ -12,16 +12,17 @@ import static io.harness.k8s.model.HarnessLabelValues.colorBlue;
 import static io.harness.k8s.model.HarnessLabelValues.colorGreen;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
 import static software.wings.beans.infrastructure.instance.InstanceType.ECS_CONTAINER_INSTANCE;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
@@ -69,6 +70,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
@@ -103,7 +105,6 @@ import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
@@ -121,6 +122,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.instance.sync.ContainerSync;
 import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
@@ -964,6 +966,67 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     assertThat(instance.getLastArtifactName()).isEqualTo("image3:version3");
     assertThat(instance.getLastArtifactSourceName()).isEqualTo("image3");
     assertThat(instance.getLastArtifactBuildNum()).isEqualTo("version3");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testNewDeployment_AddNewInstance_UpdateBuildNum() throws Exception {
+    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+
+    doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
+        .when(infraMappingService)
+        .get(any(), any());
+
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
+        .thenReturn(asList(K8sPod.builder()
+                               .name("podName")
+                               .namespace("default")
+                               .releaseName("releaseName")
+                               .containerList(asList(
+                                   K8sContainer.builder().image("image1:version1").containerId("containerId1").build()))
+                               .build()));
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX), eq(ACCOUNT_ID)))
+        .thenReturn(true);
+
+    OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
+
+    final Map<String, String> metadata = new HashMap<>();
+    metadata.put("buildNo", "version1");
+    metadata.put("image", "slightlyDifferent/image1:version1");
+    persistence.save(anArtifact()
+                         .withUuid(ARTIFACT_ID)
+                         .withArtifactStreamId(ARTIFACT_STREAM_ID)
+                         .withAppId("app_id")
+                         .withMetadata(new ArtifactMetadata(metadata))
+                         .build());
+
+    containerInstanceHandler.handleNewDeployment(Arrays.asList(DeploymentSummary.builder()
+                                                                   .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                                       .namespace("default")
+                                                                                       .releaseName("releaseName")
+                                                                                       .releaseNumber(1)
+                                                                                       .build())
+                                                                   .accountId(ACCOUNT_ID)
+                                                                   .artifactStreamId(ARTIFACT_STREAM_ID)
+                                                                   .infraMappingId(INFRA_MAPPING_ID)
+                                                                   .workflowExecutionId("workflowExecution_1")
+                                                                   .stateExecutionInstanceId("stateExecutionInstanceId")
+                                                                   .artifactBuildNum("version1")
+                                                                   .build()),
+        false, onDemandRollbackInfo);
+
+    ArgumentCaptor<Instance> captor = ArgumentCaptor.forClass(Instance.class);
+    verify(instanceService).saveOrUpdate(captor.capture());
+
+    Instance instance = captor.getValue();
+    assertThat(instance.getLastArtifactId()).isEqualTo(ARTIFACT_ID);
+    assertThat(instance.getLastArtifactName()).isEqualTo("image1:version1");
+    assertThat(instance.getLastArtifactSourceName()).isEqualTo("image1");
+    assertThat(instance.getLastArtifactBuildNum()).isEqualTo("version1");
+
+    persistence.delete(Artifact.class, ARTIFACT_ID);
   }
 
   @Test

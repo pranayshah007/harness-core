@@ -8,6 +8,9 @@
 package io.harness.delegate.resources;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_LEGACY_UPGRADE;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_UPGRADE;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.UPGRADER_UPGRADE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +18,7 @@ import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 
@@ -26,6 +30,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -34,13 +39,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces("application/json")
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateUpgraderResource {
   private final DelegateUpgraderService delegateUpgraderService;
-
-  @Inject
-  public DelegateUpgraderResource(DelegateUpgraderService delegateUpgraderService) {
-    this.delegateUpgraderService = delegateUpgraderService;
-  }
+  private final DelegateMetricsService delegateMetricsService;
 
   @DelegateAuth
   @GET
@@ -50,6 +52,7 @@ public class DelegateUpgraderResource {
   public RestResponse<UpgradeCheckResult> getDelegateImageTag(@QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("currentDelegateImageTag") @NotEmpty String currentDelegateImageTag) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_LEGACY_UPGRADE);
       return new RestResponse<>(delegateUpgraderService.getDelegateImageTag(accountId, currentDelegateImageTag));
     }
   }
@@ -63,6 +66,7 @@ public class DelegateUpgraderResource {
       @QueryParam("currentDelegateImageTag") @NotEmpty String currentDelegateImageTag,
       @QueryParam("delegateGroupName") String delegateGroupName) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_UPGRADE);
       return new RestResponse<>(
           delegateUpgraderService.getDelegateImageTag(accountId, currentDelegateImageTag, delegateGroupName));
     }
@@ -76,6 +80,7 @@ public class DelegateUpgraderResource {
   public RestResponse<UpgradeCheckResult> getUpgraderImageTag(@QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("currentUpgraderImageTag") @NotEmpty String currentUpgraderImageTag) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, UPGRADER_UPGRADE);
       return new RestResponse<>(delegateUpgraderService.getUpgraderImageTag(accountId, currentUpgraderImageTag));
     }
   }

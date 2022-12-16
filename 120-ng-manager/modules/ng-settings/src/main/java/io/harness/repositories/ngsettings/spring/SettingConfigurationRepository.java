@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.entities.SettingConfiguration;
+import io.harness.repositories.ngsettings.custom.SettingConfigurationRepositoryCustom;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +22,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
 @HarnessRepo
-public interface SettingConfigurationRepository extends PagingAndSortingRepository<SettingConfiguration, String> {
+public interface SettingConfigurationRepository
+    extends PagingAndSortingRepository<SettingConfiguration, String>, SettingConfigurationRepositoryCustom {
   List<SettingConfiguration> findByCategoryAndAllowedScopesIn(SettingCategory category, List<ScopeLevel> scopes);
   List<SettingConfiguration> findByCategoryAndGroupIdentifierAndAllowedScopesIn(
       SettingCategory category, String groupIdentifier, List<ScopeLevel> scopes);

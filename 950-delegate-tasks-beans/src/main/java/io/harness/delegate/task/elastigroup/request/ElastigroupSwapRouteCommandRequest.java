@@ -27,8 +27,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Data
 @Builder
 @OwnedBy(CDP)
-public class ElastigroupSwapRouteCommandRequest
-    implements ElastigroupCommandRequest {
+public class ElastigroupSwapRouteCommandRequest implements ElastigroupCommandRequest {
   String accountId;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;

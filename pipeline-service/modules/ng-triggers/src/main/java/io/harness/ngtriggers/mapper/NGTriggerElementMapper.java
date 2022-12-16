@@ -157,11 +157,7 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigV2Yaml(NGTriggerConfigV2 ngTriggerConfigV2) {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    ObjectMapper objectMapper = getObjectMapper();
     try {
       return objectMapper.writeValueAsString(ngTriggerConfigV2);
     } catch (Exception e) {
@@ -170,11 +166,7 @@ public class NGTriggerElementMapper {
   }
 
   public String generateNgTriggerConfigYaml(NGTriggerConfig ngTriggerConfig) throws Exception {
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
-                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                                                     .disable(USE_NATIVE_TYPE_ID));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    ObjectMapper objectMapper = getObjectMapper();
     return objectMapper.writeValueAsString(ngTriggerConfig);
   }
 
@@ -616,5 +608,14 @@ public class NGTriggerElementMapper {
                     .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
                     .toString());
     }
+  }
+
+  public ObjectMapper getObjectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
+                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                                     .disable(USE_NATIVE_TYPE_ID));
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    return objectMapper;
   }
 }

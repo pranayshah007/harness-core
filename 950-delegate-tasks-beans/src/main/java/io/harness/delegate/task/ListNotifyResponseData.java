@@ -9,7 +9,8 @@ package io.harness.delegate.task;
 
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
-import io.harness.persistence.PersistentEntity;
+
+import software.wings.beans.artifact.ArtifactFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +18,10 @@ import lombok.Data;
 
 @Data
 public class ListNotifyResponseData implements DelegateTaskNotifyResponseData {
-  private List<PersistentEntity> data = new ArrayList<>();
+  private List<ArtifactFile> data = new ArrayList<>();
   private DelegateMetaInfo delegateMetaInfo;
 
-  public List getData() {
+  public List<ArtifactFile> getData() {
     return data;
   }
 
@@ -29,7 +30,7 @@ public class ListNotifyResponseData implements DelegateTaskNotifyResponseData {
    *
    * @param data the data
    */
-  public void addData(PersistentEntity data) {
+  public void addData(ArtifactFile data) {
     this.data.add(data);
   }
 
@@ -38,7 +39,7 @@ public class ListNotifyResponseData implements DelegateTaskNotifyResponseData {
    *
    * @param data the data
    */
-  public void setData(List data) {
+  public void setData(List<ArtifactFile> data) {
     this.data = data;
   }
 
@@ -68,7 +69,7 @@ public class ListNotifyResponseData implements DelegateTaskNotifyResponseData {
   }
 
   public static final class Builder {
-    private List<PersistentEntity> data = new ArrayList<>();
+    private List<ArtifactFile> data = new ArrayList<>();
 
     private Builder() {}
 
@@ -76,7 +77,7 @@ public class ListNotifyResponseData implements DelegateTaskNotifyResponseData {
       return new Builder();
     }
 
-    public Builder addData(PersistentEntity data) {
+    public Builder addData(ArtifactFile data) {
       this.data.add(data);
       return this;
     }

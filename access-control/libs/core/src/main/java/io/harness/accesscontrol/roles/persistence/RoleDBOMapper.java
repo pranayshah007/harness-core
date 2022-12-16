@@ -10,7 +10,6 @@ package io.harness.accesscontrol.roles.persistence;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PL)
@@ -24,6 +23,7 @@ public class RoleDBOMapper {
         .allowedScopeLevels(object.getAllowedScopeLevels())
         .permissions(object.getPermissions())
         .managed(object.isManaged())
+        .internal(object.isInternal())
         .description(object.getDescription())
         .tags(object.getTags())
         .createdAt(object.getCreatedAt())
@@ -40,6 +40,7 @@ public class RoleDBOMapper {
         .allowedScopeLevels(roleDBO.getAllowedScopeLevels())
         .permissions(roleDBO.getPermissions())
         .managed(roleDBO.isManaged())
+        .internal(Boolean.TRUE.equals(roleDBO.getInternal()))
         .description(roleDBO.getDescription())
         .tags(roleDBO.getTags())
         .createdAt(roleDBO.getCreatedAt())

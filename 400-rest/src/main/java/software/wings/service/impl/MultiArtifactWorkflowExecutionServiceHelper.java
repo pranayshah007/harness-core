@@ -27,7 +27,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.VariableType;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 

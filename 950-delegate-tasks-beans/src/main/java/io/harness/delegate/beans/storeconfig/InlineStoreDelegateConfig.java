@@ -22,6 +22,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(CDP)
 public class InlineStoreDelegateConfig implements StoreDelegateConfig, NestedAnnotationResolver {
+  String identifier;
   @Expression(ALLOW_SECRETS) private List<InlineFileConfig> files;
 
   @Override

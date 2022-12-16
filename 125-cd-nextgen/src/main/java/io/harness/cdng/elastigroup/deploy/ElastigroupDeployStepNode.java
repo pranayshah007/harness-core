@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
 @TypeAlias("ElastigroupDeployStepNode")
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode")
+@RecasterAlias("io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepNode")
 public class ElastigroupDeployStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.ElastigroupDeploy;
   @JsonProperty("spec")

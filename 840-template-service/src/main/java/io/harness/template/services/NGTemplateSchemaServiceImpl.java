@@ -185,7 +185,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
               .schemaErrors(Collections.singletonList(
                   YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
               .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO);
+      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, templateYaml);
     }
   }
 }

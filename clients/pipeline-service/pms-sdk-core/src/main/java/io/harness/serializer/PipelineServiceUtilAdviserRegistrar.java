@@ -14,11 +14,11 @@ import io.harness.advisers.nextstep.NextStageAdviser;
 import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
-import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStartAdvisor;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.sdk.core.adviser.Adviser;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 
 import java.util.HashMap;
 import java.util.Map;

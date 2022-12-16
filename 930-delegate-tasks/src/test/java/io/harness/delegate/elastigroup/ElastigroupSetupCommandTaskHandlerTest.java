@@ -134,7 +134,7 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
             .groupToBeDownsized(Arrays.asList())
             .elastigroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
             .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
-            .useCurrentRunningInstanceCount((elastigroupSetupCommandRequest).isUseCurrentRunningInstanceCount())
+            .useCurrentRunningInstanceCount(elastigroupSetupCommandRequest.isUseCurrentRunningInstanceCount())
             .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
             .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
             .build();

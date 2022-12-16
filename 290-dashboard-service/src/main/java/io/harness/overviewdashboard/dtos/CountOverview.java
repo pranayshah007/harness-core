@@ -9,7 +9,6 @@ package io.harness.overviewdashboard.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.Builder;
 import lombok.Value;
 
@@ -21,5 +20,6 @@ public class CountOverview {
   CountChangeDetails servicesCountDetail;
   CountChangeDetails envCountDetail;
   CountChangeDetails pipelinesCountDetail;
+  CountChangeDetails executionsCountDetail;
   CountChangeDetails usersCountDetail;
 }

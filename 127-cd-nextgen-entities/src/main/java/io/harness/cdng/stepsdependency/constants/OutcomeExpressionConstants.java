@@ -60,4 +60,6 @@ public class OutcomeExpressionConstants {
   public final String ELASTIGROUP_SETUP_OUTCOME = "elastigroupSetupOutcome";
   public final String ELASTIGROUP_PRE_FETCH_OUTCOME = "elastigroupPreFetchOutcome";
   public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
+  public final String ASG_CANARY_DELETE_OUTCOME = "asgCanaryDeleteOutcome";
+  public final String ASG_CANARY_DEPLOY_OUTCOME = "asgCanaryDeployOutcome";
 }

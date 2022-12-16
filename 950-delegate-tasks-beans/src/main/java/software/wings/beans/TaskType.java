@@ -410,6 +410,13 @@ public enum TaskType {
   VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
   ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task"),
+  CONTAINER_INITIALIZATION(TaskGroup.CONTAINER_PMS, "Run task container initialization"),
+  AWS_ASG_CANARY_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Canary Deploy"),
+
+  CONTAINER_LE_STATUS(TaskGroup.CONTAINER_PMS, "Get lite engine status"),
+  CONTAINER_CLEANUP(TaskGroup.CONTAINER_PMS, "Cleanup container for run task"),
+  CONTAINER_EXECUTE_STEP(TaskGroup.CONTAINER_PMS, "Run step on a container spawned"),
+  AWS_ASG_CANARY_DELETE_TASK_NG(TaskGroup.ASG, "AWS Asg Canary Delete"),
 
   SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task"),
 

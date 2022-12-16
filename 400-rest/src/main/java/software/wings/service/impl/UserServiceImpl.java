@@ -535,6 +535,33 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm) {
+    Query<Account> query = getUserAccountsQuery(userId, searchTerm);
+    return query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+  }
+
+  private Query<Account> getUserAccountsQuery(String userId, String searchTerm) {
+    Query<Account> query = wingsPersistence.createQuery(Account.class);
+    List<String> accountIds = getUserAccountIds(userId);
+    if (harnessUserGroupService.isHarnessSupportUser(userId)) {
+      accountIds.addAll(accessRequestService.getAccountsHavingActiveAccessRequestForUser(userId));
+      query.or(query.criteria(AccountKeys.isHarnessSupportAccessAllowed).equal(true),
+          query.criteria(AccountKeys.uuid).in(accountIds));
+
+    } else {
+      query.field(AccountKeys.uuid).in(accountIds);
+    }
+    query.and(getSearchCriterion(query, AccountKeys.accountName, searchTerm));
+    query.order(Sort.ascending(AccountKeys.accountName));
+    return query;
+  }
+
+  public List<String> getUserAccountIds(String userId) {
+    User user = wingsPersistence.createQuery(User.class).filter("uuid", userId).project(UserKeys.accounts, true).get();
+    return user.getAccounts().stream().map(Account::getUuid).collect(toList());
+  }
+
+  @Override
   public User completeNewSignupInvite(UserInvite userInvite) {
     User existingUser = getUserByEmail(userInvite.getEmail());
     if (existingUser != null) {
@@ -1047,19 +1074,10 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User getUserByEmail(String email) {
-    User user = null;
-    if (isNotEmpty(email)) {
-      user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
-      loadSupportAccounts(user);
-      if (user != null && isEmpty(user.getAccounts())) {
-        user.setAccounts(newArrayList());
-      }
-      if (user != null && isEmpty(user.getPendingAccounts())) {
-        user.setPendingAccounts(newArrayList());
-      }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return getUserByEmail(email, true);
     }
-
-    return user;
+    return getUserByEmail(email, false);
   }
 
   @Override
@@ -1071,7 +1089,6 @@ public class UserServiceImpl implements UserService {
                  .field(UserKeys.accounts)
                  .hasThisOne(accountId)
                  .get();
-      loadSupportAccounts(user);
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
       }
@@ -1079,7 +1096,9 @@ public class UserServiceImpl implements UserService {
         user.setPendingAccounts(newArrayList());
       }
     }
-
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      loadSupportAccounts(user);
+    }
     return user;
   }
 
@@ -1099,9 +1118,10 @@ public class UserServiceImpl implements UserService {
       query.or(query.criteria(UserKeys.accounts).hasThisOne(accountId),
           query.criteria(UserKeys.pendingAccounts).hasThisOne(accountId));
       user = query.get();
+    }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
       loadSupportAccounts(user);
     }
-
     return user;
   }
 
@@ -1112,9 +1132,10 @@ public class UserServiceImpl implements UserService {
       Query<User> query = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase());
       query.criteria(UserKeys.accounts).hasThisOne(accountId);
       user = query.get();
+    }
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
       loadSupportAccounts(user);
     }
-
     return user;
   }
 
@@ -1486,7 +1507,7 @@ public class UserServiceImpl implements UserService {
       addUserToUserGroups(accountId, user, userGroups, false, true);
       userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     }
-    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
+    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired && accountService.isSSOEnabled(account);
 
     if (!(isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled())) {
       if (isAutoInviteAcceptanceEnabled
@@ -3065,7 +3086,10 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, true);
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return get(userId, true);
+    }
+    return get(userId, false);
   }
 
   @Override
@@ -3109,13 +3133,19 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void loadSupportAccounts(User user) {
+    loadSupportAccounts(user, Collections.EMPTY_SET);
+  }
+
+  @Override
+  public void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded) {
     if (user == null) {
       return;
     }
 
     if (harnessUserGroupService.isHarnessSupportUser(user.getUuid())) {
       Set<String> excludeAccounts = user.getAccounts().stream().map(Account::getUuid).collect(Collectors.toSet());
-      List<Account> accountList = harnessUserGroupService.listAllowedSupportAccounts(excludeAccounts);
+      List<Account> accountList =
+          harnessUserGroupService.listAllowedSupportAccounts(excludeAccounts, fieldsToBeIncluded);
 
       Set<String> restrictedAccountsIds = accountService.getAccountsWithDisabledHarnessUserGroupAccess();
       restrictedAccountsIds.removeAll(excludeAccounts);
@@ -3124,7 +3154,7 @@ public class UserServiceImpl implements UserService {
       supportAccountList.addAll(accountList);
       if (isNotEmpty(restrictedAccountsIds)) {
         Set<Account> restrictedAccountsWithActiveAccessRequest =
-            getRestrictedAccountsWithActiveAccessRequest(restrictedAccountsIds, user);
+            getRestrictedAccountsWithActiveAccessRequest(restrictedAccountsIds, user.getUuid());
         if (isNotEmpty(restrictedAccountsWithActiveAccessRequest)) {
           restrictedAccountsWithActiveAccessRequest.forEach(account -> supportAccountList.add(account));
         }
@@ -3133,7 +3163,17 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  private Set<Account> getRestrictedAccountsWithActiveAccessRequest(Set<String> restrictedAccountIds, User user) {
+  public boolean ifUserHasAccessToSupportAccount(String userId, String accountId) {
+    if (isNotEmpty(userId) && isNotEmpty(accountId) && harnessUserGroupService.isHarnessSupportUser(userId)
+        && !accountService.isHarnessSupportAccessDisabled(accountId)) {
+      return true;
+    } else if (isNotEmpty(getRestrictedAccountsWithActiveAccessRequest(Set.of(accountId), userId))) {
+      return true;
+    }
+    return false;
+  }
+
+  private Set<Account> getRestrictedAccountsWithActiveAccessRequest(Set<String> restrictedAccountIds, String userId) {
     Set<Account> accountSet = new HashSet<>();
     restrictedAccountIds.forEach(restrictedAccountId -> {
       List<AccessRequest> accessRequestList =
@@ -3141,13 +3181,13 @@ public class UserServiceImpl implements UserService {
       if (isNotEmpty(accessRequestList)) {
         accessRequestList.forEach(accessRequest -> {
           if (AccessRequest.AccessType.MEMBER_ACCESS.equals(accessRequest.getAccessType())) {
-            if (isNotEmpty(accessRequest.getMemberIds()) && accessRequest.getMemberIds().contains(user.getUuid())) {
+            if (isNotEmpty(accessRequest.getMemberIds()) && accessRequest.getMemberIds().contains(userId)) {
               accountSet.add(accountService.get(restrictedAccountId));
             }
           } else {
             HarnessUserGroup harnessUserGroup = harnessUserGroupService.get(accessRequest.getHarnessUserGroupId());
             if (harnessUserGroup != null && isNotEmpty(harnessUserGroup.getMemberIds())
-                && harnessUserGroup.getMemberIds().contains(user.getUuid())) {
+                && harnessUserGroup.getMemberIds().contains(userId)) {
               accountSet.add(accountService.get(restrictedAccountId));
             }
           }
@@ -3172,7 +3212,9 @@ public class UserServiceImpl implements UserService {
       throw new InvalidRequestException(EXC_MSG_USER_DOESNT_EXIST, USER);
     }
 
-    loadSupportAccounts(user);
+    if (isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      loadSupportAccounts(user);
+    }
     loadUserGroups(accountId, user);
     return user;
   }
@@ -3188,7 +3230,7 @@ public class UserServiceImpl implements UserService {
     }
     if (user == null) {
       log.info("User [{}] not found in Cache. Load it from DB", userId);
-      user = get(userId, true);
+      user = get(userId);
       try {
         userCache.put(user.getUuid(), user);
       } catch (Exception ex) {
@@ -4090,5 +4132,10 @@ public class UserServiceImpl implements UserService {
     segmentHelper.reportTrackEvent(SYSTEM, SETUP_ACCOUNT_FROM_MARKETPLACE, properties, integrations);
 
     return accountId;
+  }
+
+  @Override
+  public boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled() {
+    return !featureFlagService.isEnabledForAllAccounts(FeatureName.DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED);
   }
 }

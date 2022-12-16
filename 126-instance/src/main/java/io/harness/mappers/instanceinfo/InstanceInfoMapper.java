@@ -35,8 +35,8 @@ import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
 import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
 import io.harness.entities.instanceinfo.ServerlessAwsLambdaInstanceInfo;
-import io.harness.entities.instanceinfo.TasInstanceInfo;
 import io.harness.entities.instanceinfo.SpotInstanceInfo;
+import io.harness.entities.instanceinfo.TasInstanceInfo;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;

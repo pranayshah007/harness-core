@@ -24,6 +24,7 @@ import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
@@ -79,7 +80,9 @@ import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.FailureType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.MapperUtils;
 import io.harness.testlib.RealMongo;
 import io.harness.waiter.OrchestrationNotifyEventListener;
 
@@ -112,10 +115,13 @@ import software.wings.sm.states.ForkState;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -128,6 +134,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.modelmapper.MappingException;
+import org.modelmapper.spi.ErrorMessage;
 
 /**
  * Created by rishi on 2/25/17.
@@ -1365,5 +1375,39 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     assertThat(newInstance).isNotNull();
     assertThat(forkState.getForkStateNames().size()).isEqualTo(1);
     assertThat(forkState.getForkStateNames().get(0)).isEqualTo(envRollbackState2.getName());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldIgnoreMappingExceptionWhenGetStateForExecution() throws IllegalAccessException {
+    final StateMachine stateMachine = mock(StateMachine.class);
+    when(context.getStateMachine()).thenReturn(stateMachine);
+
+    final State currentState = mock(State.class);
+    when(stateMachine.getState(null, null)).thenReturn(currentState);
+
+    final HashMap<String, Object> stateParams = new HashMap<>();
+    stateParams.put("paramsA", "valueA");
+    stateParams.put("paramsB", "valueB");
+    when(stateExecutionInstance.getStateParams()).thenReturn(stateParams);
+
+    // DEPENDENCY MANUALLY INJECTED TO AVOID SIDE EFFECTS ON OTHER TESTS. WHEN DECLARED AT CLASS LEVEL
+    // AT LEAST 6 TEST CASES FAILED WITHOUT ADDITIONAL EXPLANATION.
+    Injector injector = mock(Injector.class);
+    final Field injectorField = ReflectionUtils.getFieldByName(StateMachineExecutor.class, "injector");
+    ReflectionUtils.setObjectField(injectorField, stateMachineExecutor, injector);
+
+    try (MockedStatic<MapperUtils> mapper = Mockito.mockStatic(MapperUtils.class)) {
+      List<ErrorMessage> messages = Collections.singletonList(new ErrorMessage(""));
+      mapper.when(() -> MapperUtils.mapObject(stateParams, currentState)).thenThrow(new MappingException(messages));
+
+      final State result = stateMachineExecutor.getStateForExecution(context, stateExecutionInstance);
+
+      verify(injector).injectMembers(currentState);
+      assertThat(result).isNotNull();
+    } finally {
+      ReflectionUtils.setObjectField(injectorField, stateMachineExecutor, null);
+    }
   }
 }

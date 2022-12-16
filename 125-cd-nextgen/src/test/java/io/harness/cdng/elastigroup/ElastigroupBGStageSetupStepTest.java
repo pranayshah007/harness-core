@@ -10,7 +10,10 @@ package io.harness.cdng.elastigroup;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -19,8 +22,15 @@ import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
@@ -33,6 +43,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
@@ -41,6 +52,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,6 +103,16 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
             .build();
     CloudProvider cloudProvider =
         CloudProvider.builder().type(CloudProviderType.AWS).spec(awsCloudProviderBasicConfig).build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
+    ConnectorConfigDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList();
+    AwsConnectedCloudProvider awsConnectedCloudProvider = AwsConnectedCloudProvider.builder()
+                                                              .region(region)
+                                                              .connectorInfoDTO(connectorInfoDTO)
+                                                              .encryptionDetails(encryptedDataDetails)
+                                                              .build();
     ElastigroupBGStageSetupStepParameters elastigroupBGStageSetupStepParameters =
         ElastigroupBGStageSetupStepParameters.infoBuilder()
             .name(ParameterField.<String>builder().value(elastigroupNamePrefix).build())
@@ -102,16 +124,24 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
                                                       .spec(elastigroupBGStageSetupStepParameters)
                                                       .timeout(ParameterField.createValueField("10m"))
                                                       .build();
-    String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
+    String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupBGStageSetup";
     ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder()
                                                                       .elastigroupConfiguration(elastigroupJson)
                                                                       .startupScript(startupScript)
                                                                       .build();
     ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
         ElastigroupInfrastructureOutcome.builder().build();
-    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
-        ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupInfrastructureOutcome).build();
+
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().build();
+    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .infrastructure(elastigroupInfrastructureOutcome)
+            .connectedCloudProvider(awsConnectedCloudProvider)
+            .elastigroupNamePrefix(elastigroupNamePrefix)
+            .elastigroupConfiguration(elastigroupJson)
+            .base64EncodedStartupScript(startupScript)
+            .spotInstConfig(spotInstConfig)
+            .build();
     doReturn(spotInstConfig)
         .when(elastigroupStepCommonHelper)
         .getSpotInstConfig(elastigroupInfrastructureOutcome, ambiance);
@@ -121,7 +151,7 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     doReturn(startupScript).when(elastigroupStepCommonHelper).getBase64EncodedStartupScript(ambiance, startupScript);
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
-            .blueGreen(false)
+            .blueGreen(true)
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId("test-account")
             .spotInstConfig(spotInstConfig)
@@ -134,7 +164,11 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
             .maxInstanceCount(1)
             .useCurrentRunningInstanceCount(false)
             .generatedElastigroupConfig(elastiGroup)
+            .loadBalancerConfig(AwsLoadBalancerConfig.builder().build())
+            .connectedCloudProvider(awsConnectedCloudProvider)
             .build();
+    doReturn(connectorInfoDTO).when(elastigroupStepCommonHelper).getConnector(null, ambiance);
+    doReturn(region).when(elastigroupStepCommonHelper).renderExpression(ambiance, region);
     TaskChainResponse taskChainResponse = TaskChainResponse.builder()
                                               .chainEnd(false)
                                               .taskRequest(TaskRequest.newBuilder().build())
@@ -143,13 +177,18 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     doReturn(taskChainResponse)
         .when(elastigroupStepCommonHelper)
         .queueElastigroupTask(stepElementParameters, elastigroupSetupCommandRequest, ambiance,
-            elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
+            elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG);
+    doReturn(
+        ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().maximum(1).minimum(1).target(1).build()).build())
+        .when(elastigroupStepCommonHelper)
+        .generateOriginalConfigFromJson(
+            elastigroupJson, elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
     elastigroupSetupStep.executeElastigroupTask(
         ambiance, stepElementParameters, elastigroupExecutionPassThroughData, null);
-    //    verify(elastigroupStepCommonHelper)
-    //            .queueElastigroupTask(
-    //                    stepElementParameters, elastigroupSetupCommandRequest, ambiance,
-    //                    elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(eq(stepElementParameters), any(), eq(ambiance),
+            any(ElastigroupExecutionPassThroughData.class), eq(true),
+            eq(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG));
   }
 
   @Test
@@ -214,26 +253,31 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
                                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                             .unitProgressData(unitProgressData)
                                                             .build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
+    ConnectorConfigDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList();
     ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
         ElastigroupInfrastructureOutcome.builder().build();
     ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
-        ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupInfrastructureOutcome).build();
+        ElastigroupExecutionPassThroughData.builder()
+            .infrastructure(elastigroupInfrastructureOutcome)
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder()
+                                        .region(region)
+                                        .connectorInfoDTO(connectorInfoDTO)
+                                        .encryptionDetails(encryptedDataDetails)
+                                        .build())
+            .elastigroupNamePrefix(elastigroupNamePrefix)
+            .build();
     ResponseData responseData = elastigroupSetupResponse;
     ThrowingSupplier<ResponseData> responseSupplier = () -> responseData;
-    StepResponse.StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
     doReturn(elastiGroup).when(elastigroupStepCommonHelper).fetchOldElasticGroup(elastigroupSetupResult);
-    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
-        ElastigroupSetupDataOutcome.builder()
-            .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
-            .elastigroupNamePrefix(elastigroupSetupResult.getElastigroupNamePrefix())
-            .useCurrentRunningInstanceCount(elastigroupSetupResult.isUseCurrentRunningInstanceCount())
-            .currentRunningInstanceCount(1)
-            .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
-            .isBlueGreen(elastigroupSetupResult.isBlueGreen())
-            .oldElastigroupOriginalConfig(elastiGroup)
-            .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
-            .build();
+    doReturn(
+        ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().maximum(1).minimum(1).target(1).build()).build())
+        .when(elastigroupStepCommonHelper)
+        .generateOriginalConfigFromJson(
+            elastigroupJson, elastigroupBGStageSetupStepParameters.getInstances(), ambiance);
     StepResponse stepResponse = elastigroupSetupStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, elastigroupExecutionPassThroughData, responseSupplier);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);

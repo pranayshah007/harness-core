@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode
 @TypeAlias("ElastigroupDeployStepParameters")
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepParameters")
+@RecasterAlias("io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepParameters")
 public class ElastigroupDeployStepParameters implements ElastigroupSpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   Capacity newService;

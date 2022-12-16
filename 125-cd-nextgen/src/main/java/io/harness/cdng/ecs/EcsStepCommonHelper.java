@@ -166,8 +166,10 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     EcsHarnessStoreManifestsContent ecsHarnessStoreContent =
         getHarnessStoreManifestFilesContent(ambiance, ecsManifestOutcomes, ecsStepHelper, logCallback);
 
-    EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs =
-        getS3ManifestFileConfigs(ambiance, ecsManifestOutcomes, ecsStepHelper);
+    EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs = null;
+    if (isAnyS3Manifest(ecsManifestOutcomes)) {
+      ecsS3ManifestFileConfigs = getS3ManifestFileConfigs(ambiance, ecsManifestOutcomes, ecsStepHelper);
+    }
 
     TaskChainResponse taskChainResponse = null;
     if (isAnyGitManifest(ecsManifestOutcomes)) { // at least one git
@@ -403,8 +405,10 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     EcsRunTaskManifestsContent runTaskHarnessStoreContent =
         getHarnessStoreRunTaskFilesContent(ambiance, ecsRunTaskManifestOutcomes, logCallback, ecsStepHelper);
 
-    EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs =
-        getRunTaskS3ManifestFileConfigs(ambiance, ecsRunTaskManifestOutcomes, ecsStepHelper);
+    EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs = null;
+    if (isAnyS3Manifest(ecsRunTaskManifestOutcomes)) {
+      ecsRunTaskS3FileConfigs = getRunTaskS3ManifestFileConfigs(ambiance, ecsRunTaskManifestOutcomes, ecsStepHelper);
+    }
 
     TaskChainResponse taskChainResponse = null;
     if (isAnyGitManifest(ecsRunTaskManifestOutcomes)) {

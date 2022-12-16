@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -38,6 +39,7 @@ import io.harness.yaml.core.timeout.Timeout;
 import software.wings.beans.approval.JiraApprovalParams;
 import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.approval.ShellScriptApprovalParams;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.ApprovalState;
 import software.wings.yaml.workflow.StepYaml;
@@ -74,7 +76,7 @@ public class ApprovalStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     ApprovalState state = (ApprovalState) getState(stepYaml);
 
     switch (state.getApprovalStateType()) {

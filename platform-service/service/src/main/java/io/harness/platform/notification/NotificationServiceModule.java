@@ -7,8 +7,8 @@
 
 package io.harness.platform.notification;
 
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 import static io.harness.notification.NotificationServiceConstants.MAILSERVICE;
 import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVICE;
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;

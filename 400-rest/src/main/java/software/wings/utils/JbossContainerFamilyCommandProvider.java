@@ -20,12 +20,12 @@ import static software.wings.beans.command.CommandUnitType.SCP;
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.Collections.singletonList;
 
-import software.wings.beans.AppContainer;
 import software.wings.beans.Graph;
 import software.wings.beans.GraphNode;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandType;
 import software.wings.beans.command.ScpCommandUnit;
+import software.wings.persistence.AppContainer;
 
 import com.google.common.collect.ImmutableMap;
 

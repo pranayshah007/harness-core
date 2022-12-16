@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
@@ -161,7 +162,7 @@ public class ValidateAndMergeHelper {
         && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       // returning resolved yaml
       return pipelineTemplateHelper
-          .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineYaml)
+          .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineYaml, BOOLEAN_FALSE_VALUE)
           .getMergedPipelineYaml();
     }
     return pipelineYaml;

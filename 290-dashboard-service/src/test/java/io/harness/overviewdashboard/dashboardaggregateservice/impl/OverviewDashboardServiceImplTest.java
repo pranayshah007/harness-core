@@ -12,6 +12,7 @@ import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_CD_TOP_PROJECT_LIST;
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_DEPLOYMENT_STATS_SUMMARY;
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_ENV_COUNT;
+import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_EXECUTIONS_COUNT;
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_MOST_ACTIVE_SERVICES;
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_PIPELINES_COUNT;
 import static io.harness.overviewdashboard.bean.OverviewDashboardRequestType.GET_PROJECTS_COUNT;
@@ -74,6 +75,7 @@ import io.harness.overviewdashboard.dtos.TopProjectsPanel;
 import io.harness.overviewdashboard.rbac.impl.DashboardRBACServiceImpl;
 import io.harness.overviewdashboard.remote.ParallelRestCallExecutor;
 import io.harness.pipeline.dashboards.PMSLandingDashboardResourceClient;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.dashboards.PipelinesCount;
 import io.harness.project.remote.ProjectClient;
@@ -118,11 +120,13 @@ public class OverviewDashboardServiceImplTest {
   Map<String, String> mapOfOrganizationIdentifierAndOrganizationName = new HashMap<>();
   List<RestCallResponse> deploymentStatsOverviewRestCallResponseList1 = new ArrayList<>();
   List<RestCallResponse> deploymentStatsOverviewRestCallResponseList2 = new ArrayList<>();
+  List<RestCallResponse> deploymentStatsOverviewRestCallResponseList3 = new ArrayList<>();
   List<RestCallResponse> restCallResponseListForCountOverview1 = new ArrayList<>();
   List<RestCallResponse> restCallResponseListForCountOverview2 = new ArrayList<>();
 
   DeploymentsStatsOverview expectedDeploymentsStatsOverview1;
   DeploymentsStatsOverview expectedDeploymentsStatsOverview2;
+  DeploymentsStatsOverview expectedDeploymentsStatsOverview3;
   CountOverview expectedCountOverview1;
 
   CountOverview expectedCountOverview2;
@@ -181,6 +185,8 @@ public class OverviewDashboardServiceImplTest {
     deploymentStatsOverviewRestCallResponseList2.add(deploymentStatsSummaryRestCallResponse1);
     deploymentStatsOverviewRestCallResponseList2.add(mostActivesServices1);
 
+    deploymentStatsOverviewRestCallResponseList3.add(activeDeploymentsStatsInfo1);
+
     List<TimeBasedStats> timeBasedStatsList1 = new ArrayList<>();
     timeBasedStatsList1.add(getTimeBasedStats(10L, 10L, 10L, 10L));
     DeploymentsStatsSummary expectedDeploymentsStatsSummary1 =
@@ -210,34 +216,39 @@ public class OverviewDashboardServiceImplTest {
         expectedDeploymentsStatsSummary1, expectedMostActiveServicesList, expectedDeploymentsOverview1);
     expectedDeploymentsStatsOverview2 = getExpectedResponseForDeploymentStatsOverview(
         expectedDeploymentsStatsSummary1, expectedMostActiveServicesList, null);
+    expectedDeploymentsStatsOverview3 =
+        getExpectedResponseForDeploymentStatsOverview(null, null, expectedDeploymentsOverview1);
 
     restCallResponseListForCountOverview1.add(getServicesCount(10L, 12L));
     restCallResponseListForCountOverview1.add(getEnvCount(10L, 12L));
     restCallResponseListForCountOverview1.add(getPipelinesCount(10L, 12L));
+    restCallResponseListForCountOverview1.add(getExecutionsCount(10L, 12L));
     restCallResponseListForCountOverview1.add(getProjectsCount(12));
     restCallResponseListForCountOverview1.add(getUsersCount(10L, 12L));
 
     restCallResponseListForCountOverview2.add(getServicesCount(10L, 12L));
     restCallResponseListForCountOverview2.add(getEnvCount(10L, 12L));
     restCallResponseListForCountOverview2.add(getPipelinesCount(10L, 12L));
+    restCallResponseListForCountOverview2.add(getExecutionsCount(10L, 12L));
     restCallResponseListForCountOverview2.add(getUsersCount(10L, 12L));
 
     CountChangeDetails expectedServiceCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedEnvCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedPipelinesCountDetails1 = getExpectedCountDetail(10L, 12L);
+    CountChangeDetails expectedExecutionsCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedUsersCountDetails1 = getExpectedCountDetail(10L, 12L);
     CountChangeDetails expectedProjectsCountDetails1 = getExpectedCountDetail(1L, 12L);
     CountChangeDetails expectedProjectsCountDetails3 = getExpectedCountDetail(0L, 0L);
 
     expectedCountOverview1 = getExpectedResponseForGetCountOverview(expectedServiceCountDetails1,
-        expectedEnvCountDetails1, expectedPipelinesCountDetails1, expectedProjectsCountDetails1, null);
+        expectedEnvCountDetails1, expectedPipelinesCountDetails1, null, expectedProjectsCountDetails1, null);
 
-    expectedCountOverview2 =
-        getExpectedResponseForGetCountOverview(expectedServiceCountDetails1, expectedEnvCountDetails1,
-            expectedPipelinesCountDetails1, expectedProjectsCountDetails3, expectedUsersCountDetails1);
+    expectedCountOverview2 = getExpectedResponseForGetCountOverview(expectedServiceCountDetails1,
+        expectedEnvCountDetails1, expectedPipelinesCountDetails1, expectedExecutionsCountDetails1,
+        expectedProjectsCountDetails3, expectedUsersCountDetails1);
 
     expectedCountOverview3 = getExpectedResponseForGetCountOverview(expectedServiceCountDetails1,
-        expectedEnvCountDetails1, expectedPipelinesCountDetails1, expectedProjectsCountDetails3, null);
+        expectedEnvCountDetails1, expectedPipelinesCountDetails1, null, expectedProjectsCountDetails3, null);
   }
 
   @Test
@@ -274,6 +285,38 @@ public class OverviewDashboardServiceImplTest {
     ExecutionResponse<DeploymentsStatsOverview> actualFailureResponse =
         overviewDashboardService.getDeploymentStatsOverview(
             accountIdentifier1, null, null, userId1, anyLong(), anyLong(), groupBy, sortBy);
+    assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testActiveDeploymentOverview() throws Exception {
+    Call<ResponseDTO<DeploymentStatsSummary>> requestDeploymentStatsSummary = Mockito.mock(Call.class);
+    Call<ResponseDTO<ServicesDashboardInfo>> requestServicesDashboardInfo = Mockito.mock(Call.class);
+    Call<ResponseDTO<PipelinesExecutionDashboardInfo>> requestActiveDeploymentStats = Mockito.mock(Call.class);
+
+    when(dashboardRBACService.listAccessibleProject(anyString(), anyString())).thenReturn(listOfAccessibleProjects);
+    when(dashboardRBACService.getMapOfOrganizationIdentifierAndOrganizationName(anyString(), anyList()))
+        .thenReturn(mapOfOrganizationIdentifierAndOrganizationName);
+    doReturn(requestActiveDeploymentStats)
+        .when(cdLandingDashboardResourceClient)
+        .getActiveDeploymentStats(anyString(), any());
+    when(cdLandingDashboardResourceClient.getDeploymentStatsSummary(
+             anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestDeploymentStatsSummary);
+    when(cdLandingDashboardResourceClient.get(anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestServicesDashboardInfo);
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList3);
+
+    ExecutionResponse<DeploymentsStatsOverview> actualSuccessResponse =
+        overviewDashboardService.getActiveDeploymentsOverview(accountIdentifier1, null, null, userId1);
+    assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedDeploymentsStatsOverview3);
+
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList2);
+    ExecutionResponse<DeploymentsStatsOverview> actualFailureResponse =
+        overviewDashboardService.getActiveDeploymentsOverview(accountIdentifier1, null, null, userId1);
     assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
   }
 
@@ -363,6 +406,7 @@ public class OverviewDashboardServiceImplTest {
     Call<ResponseDTO<PipelinesCount>> requestPipelinesCount = Mockito.mock(Call.class);
     Call<ResponseDTO<ActiveProjectsCountDTO>> requestProjectsCount = Mockito.mock(Call.class);
     Call<ResponseDTO<UsersCountDTO>> requestUsersCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<ExecutionsCount>> requestExecutionsCount = Mockito.mock(Call.class);
 
     when(dashboardRBACService.listAccessibleProject(anyString(), anyString())).thenReturn(listOfAccessibleProjects);
     when(cdLandingDashboardResourceClient.getServicesCount(anyString(), eq(startTime1), eq(endTime1), any()))
@@ -371,6 +415,8 @@ public class OverviewDashboardServiceImplTest {
         .thenReturn(requestEnvCount);
     when(pmsLandingDashboardResourceClient.getPipelinesCount(anyString(), eq(startTime1), eq(endTime1), any()))
         .thenReturn(requestPipelinesCount);
+    when(pmsLandingDashboardResourceClient.getExecutionsCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestExecutionsCount);
     when(userClient.getUsersCount(anyString(), eq(startTime1), eq(endTime1))).thenReturn(requestUsersCount);
     when(projectClient.getAccessibleProjectsCount(anyString(), eq(startTime1), eq(endTime1)))
         .thenReturn(requestProjectsCount);
@@ -394,6 +440,7 @@ public class OverviewDashboardServiceImplTest {
     Call<ResponseDTO<ServicesCount>> requestServicesCount = Mockito.mock(Call.class);
     Call<ResponseDTO<EnvCount>> requestEnvCount = Mockito.mock(Call.class);
     Call<ResponseDTO<PipelinesCount>> requestPipelinesCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<ExecutionsCount>> requestExecutionsCount = Mockito.mock(Call.class);
     Call<ResponseDTO<ActiveProjectsCountDTO>> requestProjectsCount = Mockito.mock(Call.class);
     Call<ResponseDTO<UsersCountDTO>> requestUsersCount = Mockito.mock(Call.class);
 
@@ -404,6 +451,8 @@ public class OverviewDashboardServiceImplTest {
         .thenReturn(requestEnvCount);
     when(pmsLandingDashboardResourceClient.getPipelinesCount(anyString(), eq(startTime1), eq(endTime1), any()))
         .thenReturn(requestPipelinesCount);
+    when(pmsLandingDashboardResourceClient.getExecutionsCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestExecutionsCount);
     when(userClient.getUsersCount(anyString(), eq(startTime1), eq(endTime1))).thenReturn(requestUsersCount);
     when(projectClient.getAccessibleProjectsCount(anyString(), eq(startTime1), eq(endTime1)))
         .thenReturn(requestProjectsCount);
@@ -431,6 +480,7 @@ public class OverviewDashboardServiceImplTest {
     Call<ResponseDTO<ServicesCount>> requestServicesCount = Mockito.mock(Call.class);
     Call<ResponseDTO<EnvCount>> requestEnvCount = Mockito.mock(Call.class);
     Call<ResponseDTO<PipelinesCount>> requestPipelinesCount = Mockito.mock(Call.class);
+    Call<ResponseDTO<ExecutionsCount>> requestExecutionsCount = Mockito.mock(Call.class);
     Call<ResponseDTO<ActiveProjectsCountDTO>> requestProjectsCount = Mockito.mock(Call.class);
     Call<ResponseDTO<UsersCountDTO>> requestUsersCount = Mockito.mock(Call.class);
     when(featureFlagHelperService.isEnabled(accountIdentifier1, LANDING_OVERVIEW_PAGE_V2)).thenReturn(true);
@@ -442,6 +492,8 @@ public class OverviewDashboardServiceImplTest {
         .thenReturn(requestEnvCount);
     when(pmsLandingDashboardResourceClient.getPipelinesCount(anyString(), eq(startTime1), eq(endTime1), any()))
         .thenReturn(requestPipelinesCount);
+    when(pmsLandingDashboardResourceClient.getExecutionsCount(anyString(), eq(startTime1), eq(endTime1), any()))
+        .thenReturn(requestExecutionsCount);
     when(userClient.getUsersCount(anyString(), eq(startTime1), eq(endTime1))).thenReturn(requestUsersCount);
     when(projectClient.getAccessibleProjectsCount(anyString(), eq(startTime1), eq(endTime1)))
         .thenReturn(requestProjectsCount);
@@ -680,6 +732,13 @@ public class OverviewDashboardServiceImplTest {
         .build();
   }
 
+  private RestCallResponse<ExecutionsCount> getExecutionsCount(long count, long newCount) {
+    return RestCallResponse.<ExecutionsCount>builder()
+        .response(ExecutionsCount.builder().newCount(newCount).totalCount(count).build())
+        .requestType(GET_EXECUTIONS_COUNT)
+        .build();
+  }
+
   private RestCallResponse<UsersCountDTO> getUsersCount(long count, long newCount) {
     return RestCallResponse.<UsersCountDTO>builder()
         .response(UsersCountDTO.builder().totalCount(count).newCount(newCount).build())
@@ -703,11 +762,13 @@ public class OverviewDashboardServiceImplTest {
 
   private CountOverview getExpectedResponseForGetCountOverview(CountChangeDetails servicesCountDetail,
       CountChangeDetails envCountDetail, CountChangeDetails pipelinesCountDetail,
-      CountChangeDetails projectsCountDetail, CountChangeDetails userCountDetail) {
+      CountChangeDetails executionsCountDetail, CountChangeDetails projectsCountDetail,
+      CountChangeDetails userCountDetail) {
     return CountOverview.builder()
         .servicesCountDetail(servicesCountDetail)
         .envCountDetail(envCountDetail)
         .pipelinesCountDetail(pipelinesCountDetail)
+        .executionsCountDetail(executionsCountDetail)
         .projectsCountDetail(projectsCountDetail)
         .usersCountDetail(userCountDetail)
         .build();

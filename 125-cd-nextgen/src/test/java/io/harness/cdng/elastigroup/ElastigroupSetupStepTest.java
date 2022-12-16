@@ -192,20 +192,7 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
         ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupInfrastructureOutcome).build();
     ResponseData responseData = elastigroupSetupResponse;
     ThrowingSupplier<ResponseData> responseSupplier = () -> responseData;
-    StepResponse.StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
     doReturn(elastiGroup).when(elastigroupStepCommonHelper).fetchOldElasticGroup(elastigroupSetupResult);
-    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
-        ElastigroupSetupDataOutcome.builder()
-            .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
-            .elastigroupNamePrefix(elastigroupSetupResult.getElastigroupNamePrefix())
-            .useCurrentRunningInstanceCount(elastigroupSetupResult.isUseCurrentRunningInstanceCount())
-            .currentRunningInstanceCount(1)
-            .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
-            .isBlueGreen(elastigroupSetupResult.isBlueGreen())
-            .oldElastigroupOriginalConfig(elastiGroup)
-            .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
-            .build();
     StepResponse stepResponse = elastigroupSetupStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, elastigroupExecutionPassThroughData, responseSupplier);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);

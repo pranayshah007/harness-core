@@ -17,14 +17,13 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDelegateTaskHelper {
   public ElastigroupCommandResponse getElastigroupCommandResponse(ElastigroupCommandTaskHandler commandTaskHandler,
-                                                                  ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
+      ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = elastigroupCommandRequest.getCommandUnitsProgress() != null
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();

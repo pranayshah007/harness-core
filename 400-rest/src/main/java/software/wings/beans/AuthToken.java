@@ -15,6 +15,7 @@ import static software.wings.utils.CryptoUtils.secureRandAlphaNumString;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -36,8 +37,8 @@ import org.mongodb.morphia.annotations.Transient;
 @HarnessEntity(exportable = true)
 public class AuthToken extends Base implements AccountAccess {
   @Transient private User user;
-  private String accountId;
-  private String userId;
+  @FdIndex private String accountId;
+  @FdIndex private String userId;
   private long expireAt;
   private String jwtToken;
   private boolean refreshed;

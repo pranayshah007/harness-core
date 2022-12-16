@@ -32,8 +32,8 @@ import static software.wings.beans.appmanifest.AppManifestKind.HELM_CHART_OVERRI
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.appmanifest.StoreType.CUSTOM;
 import static software.wings.beans.appmanifest.StoreType.HelmChartRepo;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.ServiceOverride;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateType.HELM_DEPLOY;

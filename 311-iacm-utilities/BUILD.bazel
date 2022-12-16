@@ -20,6 +20,19 @@ java_library(
     ],
 )
 
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = [],
+    visibility = ["//visibility:public"],
+    deps = shared_dependencies + [
+        "module",
+        "//:lombok",
+        "//990-commons-test:module",
+    ],
+)
+
 run_tests()
 
 run_analysis()

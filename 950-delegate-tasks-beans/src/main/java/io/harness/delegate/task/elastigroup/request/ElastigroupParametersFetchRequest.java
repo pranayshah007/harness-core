@@ -27,7 +27,7 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupParametersFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander{
+public class ElastigroupParametersFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander {
   String executionLogName;
   String activityId;
   String accountId;

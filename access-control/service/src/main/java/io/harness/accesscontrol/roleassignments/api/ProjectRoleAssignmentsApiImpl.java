@@ -41,6 +41,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -230,8 +231,8 @@ public class ProjectRoleAssignmentsApiImpl implements ProjectRoleAssignmentsApi 
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = roleAssignmentApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/roleassignments", org, project), roleAssignmentResponses.size(), page,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
+        String.format("/v1/orgs/%s/projects/%s/role-assignments", org, project), roleAssignmentResponses.size(), page,
         limit);
 
     return responseBuilderWithLinks.entity(roleAssignmentResponses).build();

@@ -222,7 +222,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                                                                                 .stageListenerPort("c")
                                                                                 .prodRuleArn("d")
                                                                                 .stageRuleArn("e")
-                                                                                .useSpecificRules(false)
+                                                                                .useSpecificRules(true)
                                                                                 .build();
     doReturn("a").when(engineExpressionService).renderExpression(ambiance, "a");
     doReturn("b").when(engineExpressionService).renderExpression(ambiance, "b");
@@ -359,7 +359,9 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                                                                       .build();
 
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
+        ElastigroupExecutionPassThroughData.builder().build();
 
-//    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, passThroughData);
+    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, elastigroupExecutionPassThroughData);
   }
 }

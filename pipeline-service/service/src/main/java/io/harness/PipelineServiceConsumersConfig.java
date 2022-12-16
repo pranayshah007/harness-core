@@ -9,7 +9,6 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.Builder;
 import lombok.Value;
 
@@ -33,4 +32,5 @@ public class PipelineServiceConsumersConfig {
   PipelineServiceConsumerConfig webhookEvent;
   PipelineServiceConsumerConfig initiateNode;
   PipelineServiceConsumerConfig pollingEvent;
+  PipelineServiceConsumerConfig pipelineExecutionEvent;
 }

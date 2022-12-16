@@ -309,7 +309,8 @@ public class StageExecutionHelper {
       List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
       return Optional.of(CustomDeploymentExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build());
     } else if (InfrastructureKind.ELASTIGROUP.equals(infrastructureKind)) {
-      return Optional.of(ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
+      return Optional.of(
+          ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
     }
     Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
     List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());

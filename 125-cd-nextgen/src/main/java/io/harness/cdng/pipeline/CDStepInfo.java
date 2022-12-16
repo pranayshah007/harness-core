@@ -23,7 +23,6 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
-import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
@@ -58,7 +57,6 @@ import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
@@ -69,7 +67,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepUtils;
 import io.harness.yaml.core.StepSpecType;
-
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(
@@ -89,7 +86,13 @@ import io.swagger.annotations.ApiModel;
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
+<<<<<<< HEAD
         TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
+=======
+        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, AsgCanaryDeployStepInfo.class,
+        AsgCanaryDeleteStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
+        TasBasicAppSetupStepInfo.class, TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
+>>>>>>> 8d94fe21b55adeee8ade41c69195808d62e515a7
         ElastigroupSwapRouteStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)

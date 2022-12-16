@@ -9,7 +9,6 @@ package io.harness.cdng.pipeline.executions.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.Builder;
 import lombok.Value;
 
@@ -22,4 +21,7 @@ public class InfraExecutionSummary {
   String type;
   String infrastructureIdentifier;
   String infrastructureName;
+
+  String envGroupId;
+  String envGroupName;
 }

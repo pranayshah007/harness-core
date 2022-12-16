@@ -15,6 +15,7 @@ import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
 import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.currency.Currency;
 import io.harness.data.structure.EmptyPredicate;
 
 import com.google.inject.Singleton;
@@ -41,7 +42,7 @@ public class EmailMessageGenerator {
       "<tr><td style=\"padding-right: 20; font-size: 14px;\"><b>%s:</b></td><td style=\"font-size: 14px;\"><a href=\"%s\">%s</a></td></tr>";
 
   public String getAnomalyDetailsString(String accountId, String perspectiveId, String perspectiveName,
-      List<AnomalyData> anomalies) throws URISyntaxException {
+      List<AnomalyData> anomalies, Currency currency) throws URISyntaxException {
     StringBuilder anomaliesList = new StringBuilder();
     for (AnomalyData anomaly : anomalies) {
       AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
@@ -55,7 +56,7 @@ public class EmailMessageGenerator {
       templateString = addAwsAccountInfo(templateString, anomalyEntity);
       templateString = addAwsServiceInfo(templateString, anomalyEntity);
       templateString = String.format(ANOMALY_LIST_ITEM_FORMAT, templateString);
-      templateString = replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
+      templateString = replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency));
       templateString = replace(templateString,
           AnomalyUtility.getNgURLMap(
               accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));

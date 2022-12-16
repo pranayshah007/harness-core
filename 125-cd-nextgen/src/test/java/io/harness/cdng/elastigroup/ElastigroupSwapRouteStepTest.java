@@ -147,8 +147,6 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         ElastigroupSwapRouteCommandRequest.builder()
             .blueGreen(elastigroupSetupDataOutcome.isBlueGreen())
-//            .awsEncryptedDetails(Collections.emptyList())
-//            .connectorInfoDTO(ConnectorInfoDTO.builder().build())
             .newElastigroup(elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig())
             .oldElastigroup(elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig())
             .elastigroupNamePrefix(elastigroupSetupDataOutcome.getElastigroupNamePrefix())
@@ -156,14 +154,14 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
             .downsizeOldElastigroup(
                 String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
             .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
-//            .awsRegion(region)
+            //            .awsRegion(region)
             .spotInstConfig(spotInstConfig)
-//            .connectorInfoDTO(connectorInfoDTO)
+            //            .connectorInfoDTO(connectorInfoDTO)
             .commandName(ELASTIGROUP_SWAP_ROUTE_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(null))
             .timeoutIntervalInMin(10)
-//            .awsEncryptedDetails(encryptedDataDetails)
-//            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
+            //            .awsEncryptedDetails(encryptedDataDetails)
+            //            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
             .build();
     TaskChainResponse taskChainResponse = TaskChainResponse.builder()
                                               .chainEnd(false)
@@ -211,8 +209,6 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
         ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupInfrastructureOutcome).build();
     ResponseData responseData = elastigroupSwapRouteResponse;
     ThrowingSupplier<ResponseData> responseSupplier = () -> responseData;
-    StepResponse.StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(elastigroupSwapRouteResponse.getUnitProgressData().getUnitProgresses());
     StepResponse stepResponse = elastigroupSetupStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, elastigroupExecutionPassThroughData, responseSupplier);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);

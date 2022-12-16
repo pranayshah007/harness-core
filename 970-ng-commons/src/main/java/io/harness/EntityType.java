@@ -447,14 +447,34 @@ public enum EntityType {
   IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
   IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
+  @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
+  CONTAINER_STEP(
+      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
 
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE);
-
+      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DEPLOY)
+  ASG_CANARY_DEPLOY_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
+  ASG_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE),
+  @JsonProperty(EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP)
+  TAS_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BG_APP_SETUP_STEP)
+  TAS_BG_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BG_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BG_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP)
+  TAS_BASIC_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BASIC_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
+  TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TANZU_COMMAND_STEP);
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

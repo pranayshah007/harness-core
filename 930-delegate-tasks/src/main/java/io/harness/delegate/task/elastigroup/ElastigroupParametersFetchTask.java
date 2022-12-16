@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask {
-
   public ElastigroupParametersFetchTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {

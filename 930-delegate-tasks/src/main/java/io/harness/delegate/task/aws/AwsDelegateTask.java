@@ -18,6 +18,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
@@ -110,6 +111,8 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
         return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerList(awsTaskParams);
       case LIST_ELASTIC_LOAD_BALANCER_LISTENER_RULE:
         return awsElasticLoadBalancersDelegateTaskHelper.getElbListenerRulesList(awsTaskParams);
+      case PUT_AUDIT_BATCH_TO_BUCKET:
+        return awsS3DelegateTaskHelper.putAuditBatchToBucket((AwsPutAuditBatchToBucketTaskParamsRequest) awsTaskParams);
       default:
         throw new InvalidRequestException("Task type not identified");
     }

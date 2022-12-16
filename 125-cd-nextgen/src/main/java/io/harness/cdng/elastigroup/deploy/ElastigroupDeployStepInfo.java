@@ -46,7 +46,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
 @SimpleVisitorHelper(helperClass = ElastigroupDeployStepInfoVisitorHelper.class)
 @TypeAlias("ElastigroupDeployStepInfo")
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo")
+@RecasterAlias("io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo")
 public class ElastigroupDeployStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

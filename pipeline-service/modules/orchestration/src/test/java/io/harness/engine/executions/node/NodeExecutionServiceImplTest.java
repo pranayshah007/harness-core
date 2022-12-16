@@ -12,27 +12,23 @@ import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
-import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -44,25 +40,26 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.AmbianceTestUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
@@ -142,60 +139,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  public void shouldTestFinaAllNodesTrimmed() {
-    String nodeExecutionId1 = generateUuid();
-    String parentId1 = generateUuid();
-    String nodeExecutionId2 = generateUuid();
-    String parentId2 = generateUuid();
-    Ambiance am1 = AmbianceTestUtils.buildAmbiance();
-    Ambiance am2 = AmbianceTestUtils.buildAmbiance();
-    NodeExecution nodeExecution1 =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId1)
-            .ambiance(am1)
-            .mode(ExecutionMode.SYNC)
-            .nodeId(generateUuid())
-            .name("name")
-            .identifier("dummy")
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .parentId(parentId1)
-            .status(Status.RUNNING)
-            .build();
-    NodeExecution nodeExecution2 =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId2)
-            .ambiance(am2)
-            .mode(ExecutionMode.CHILD)
-            .nodeId(generateUuid())
-            .name("name")
-            .identifier("dummy")
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .parentId(parentId2)
-            .status(Status.SUCCEEDED)
-            .build();
-    nodeExecutionService.save(nodeExecution1);
-    nodeExecutionService.save(nodeExecution2);
-
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.findAllNodeExecutionsTrimmed(AmbianceTestUtils.PLAN_EXECUTION_ID);
-    assertThat(nodeExecutions).hasSize(2);
-
-    NodeExecution ne1 = nodeExecutions.get(0);
-    assertThat(ne1).isNotNull();
-    assertThat(ne1.getUuid()).isEqualTo(nodeExecutionId1);
-    assertThat(ne1.getStatus()).isEqualTo(RUNNING);
-    assertThat(ne1.getParentId()).isEqualTo(parentId1);
-    assertThat(ne1.getMode()).isEqualTo(ExecutionMode.SYNC);
-    assertThat(ne1.getAmbiance()).isEqualTo(am1);
-  }
-
-  @Test
-  @Owner(developers = PRASHANT)
-  @Category(UnitTests.class)
   public void shouldTestExtractChildExecutions() {
     NodeExecutionService service = spy(NodeExecutionServiceImpl.class);
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
@@ -205,65 +148,58 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                   .uuid("stageNode")
                                   .status(Status.RUNNING)
                                   .parentId(pipelineNode.getUuid())
-                                  .ambiance(ambiance)
                                   .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-
-                                  .version(1L)
                                   .build();
     NodeExecution forkNode = NodeExecution.builder()
                                  .uuid("forkNode")
                                  .status(RUNNING)
                                  .parentId(stageNode.getUuid())
                                  .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-                                 .ambiance(ambiance)
-                                 .version(1L)
                                  .build();
     NodeExecution child1 = NodeExecution.builder()
                                .uuid("child1")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
                                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-
-                               .ambiance(ambiance)
-                               .version(1L)
                                .build();
     NodeExecution child2 = NodeExecution.builder()
                                .uuid("child2")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
                                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-
-                               .ambiance(ambiance)
-                               .version(1L)
                                .build();
     NodeExecution child3 = NodeExecution.builder()
                                .uuid("child3")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
                                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-
-                               .ambiance(ambiance)
-                               .version(1L)
                                .build();
 
-    doReturn(Arrays.asList(pipelineNode, stageNode, forkNode, child1, child2, child3))
-        .when(service)
-        .fetchNodeExecutionsWithoutOldRetriesAndStatusIn(any(), any(), eq(false), any());
+    List<NodeExecution> nodeExecutions = Arrays.asList(pipelineNode, stageNode, forkNode, child1, child2, child3);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
+    doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
 
-    List<NodeExecution> stageChildList = service.findAllChildrenWithStatusIn(
-        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), true);
+    List<NodeExecution> stageChildList = service.findAllChildrenWithStatusInAndWithoutOldRetries(
+        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), true, Collections.emptySet());
     assertThat(stageChildList).isNotEmpty();
     assertThat(stageChildList).hasSize(5);
     assertThat(stageChildList).containsExactlyInAnyOrder(stageNode, forkNode, child1, child2, child3);
 
-    List<NodeExecution> stageChildListWithoutParent = service.findAllChildrenWithStatusIn(
-        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), false);
+    // Iterator cannot be reused again, thus initialise again
+    iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
+    doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
+    List<NodeExecution> stageChildListWithoutParent = service.findAllChildrenWithStatusInAndWithoutOldRetries(
+        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), false, Collections.emptySet());
     assertThat(stageChildListWithoutParent).isNotEmpty();
     assertThat(stageChildListWithoutParent).hasSize(4);
     assertThat(stageChildListWithoutParent).containsExactlyInAnyOrder(forkNode, child1, child2, child3);
 
-    List<NodeExecution> forkChildList = service.findAllChildrenWithStatusIn(
-        ambiance.getPlanExecutionId(), forkNode.getUuid(), EnumSet.of(Status.RUNNING), true);
+    // Iterator cannot be reused again, thus initialise again
+    iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
+    doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
+    List<NodeExecution> forkChildList = service.findAllChildrenWithStatusInAndWithoutOldRetries(
+        ambiance.getPlanExecutionId(), forkNode.getUuid(), EnumSet.of(Status.RUNNING), true, Collections.emptySet());
     assertThat(forkChildList).isNotEmpty();
     assertThat(forkChildList).hasSize(4);
     assertThat(forkChildList).containsExactlyInAnyOrder(forkNode, child1, child2, child3);
@@ -303,79 +239,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(found).isNotNull();
 
     assertThat(found.getUuid()).isEqualTo(nodeExecutionId);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestGetByNodeIdentifier() {
-    String nodeExecutionId = generateUuid();
-    String planNodeUuid = generateUuid();
-    String planNodeIdentifier = generateUuid();
-    String planExecutionUuid = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .nodeId(planNodeUuid)
-            .name("name")
-            .identifier(planNodeIdentifier)
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.SUCCEEDED)
-            .build();
-    nodeExecutionService.save(nodeExecution);
-
-    Optional<NodeExecution> found = nodeExecutionService.getByNodeIdentifier(planNodeIdentifier, planExecutionUuid);
-    assertThat(found.isPresent()).isTrue();
-
-    assertThat(found.get().getUuid()).isEqualTo(nodeExecutionId);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestFetchNodeExecutionsByStatus() {
-    String planExecutionUuid = generateUuid();
-    String parentId = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.RUNNING)
-            .build();
-    NodeExecution nodeExecution1 =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.RUNNING)
-            .build();
-    nodeExecutionService.save(nodeExecution);
-    nodeExecutionService.save(nodeExecution1);
-
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.fetchNodeExecutionsByStatus(planExecutionUuid, Status.RUNNING);
-    assertThat(nodeExecutions).isNotEmpty();
-
-    assertThat(nodeExecutions.size()).isEqualTo(2);
-    assertThat(nodeExecutions)
-        .extracting(NodeExecution::getUuid)
-        .containsExactlyInAnyOrder(nodeExecution.getUuid(), nodeExecution1.getUuid());
   }
 
   @Test
@@ -475,9 +338,9 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @Owner(developers = ALEXEI)
+  @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void shouldTestFetchNodeExecutionsByParentId() {
+  public void shouldTestFetchChildrenNodeExecutionsIterator() {
     String planExecutionUuid = generateUuid();
     String parentId = generateUuid();
     NodeExecution nodeExecution =
@@ -511,7 +374,13 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
 
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentId(parentId, false);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             parentId, NodeProjectionUtils.fieldsForResponseNotifyData)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
     assertThat(nodeExecutions).isNotEmpty();
 
     assertThat(nodeExecutions.size()).isEqualTo(2);
@@ -797,38 +666,5 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     Update update = new Update();
     update.set(NodeExecutionKeys.nodeId, "test");
     assertThat(nodeExecutionService.shouldLog(update)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = BRIJESH)
-  @Category(UnitTests.class)
-  public void testFetchWithoutRetriesAndStatusIn() {
-    mongoTemplate = mock(MongoTemplate.class);
-
-    String planExecutionId = "tempId";
-    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
-    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
-    nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class));
-    verify(mongoTemplate, times(1)).find(argumentCaptor.capture(), any());
-    Query query = argumentCaptor.getValue();
-    assertThat(query.toString())
-        .isEqualTo("Query: { \"ambiance.planExecutionId\" : \"tempId\", \"oldRetry\" : false}, Fields: {}, Sort: {}");
-  }
-
-  @Test
-  @Owner(developers = BRIJESH)
-  @Category(UnitTests.class)
-  public void testGetPipelineNodeExecution() {
-    mongoTemplate = mock(MongoTemplate.class);
-
-    String planExecutionId = "tempId";
-    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
-    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
-    nodeExecutionService.getPipelineNodeExecution(planExecutionId);
-    verify(mongoTemplate, times(1)).findOne(argumentCaptor.capture(), any());
-    Query query = argumentCaptor.getValue();
-    assertThat(query.toString())
-        .isEqualTo(
-            "Query: { \"ambiance.planExecutionId\" : \"tempId\", \"stepType.stepCategory\" : { \"$java\" : PIPELINE } }, Fields: {}, Sort: { \"createdAt\" : 1}");
   }
 }

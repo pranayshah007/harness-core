@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.outbox;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 

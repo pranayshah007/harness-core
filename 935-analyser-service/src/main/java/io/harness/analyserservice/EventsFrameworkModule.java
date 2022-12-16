@@ -7,8 +7,8 @@
 
 package io.harness.analyserservice;
 
-import static io.harness.AuthorizationServiceHeader.ANALYZER_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.ANALYZER_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.QueryAnalysisMessageListener;

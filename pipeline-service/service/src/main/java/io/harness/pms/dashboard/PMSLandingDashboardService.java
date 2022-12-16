@@ -8,11 +8,14 @@
 package io.harness.pms.dashboard;
 
 import io.harness.ng.core.OrgProjectIdentifier;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.PipelinesCount;
 
 import java.util.List;
 
 public interface PMSLandingDashboardService {
   PipelinesCount getPipelinesCount(
+      String accountIdentifier, List<OrgProjectIdentifier> orgProjectIdentifiers, long startInterval, long endInterval);
+  ExecutionsCount getExecutionsCount(
       String accountIdentifier, List<OrgProjectIdentifier> orgProjectIdentifiers, long startInterval, long endInterval);
 }

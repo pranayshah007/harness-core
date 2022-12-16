@@ -9,7 +9,9 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 
 import static java.lang.String.format;
@@ -72,6 +74,7 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -189,8 +192,9 @@ public class ExecutionHelper {
       switch (version) {
         case PipelineVersion.V1:
           allowedStageExecution = false;
-          pipelineYaml = pipelineEntity.getYaml();
-          pipelineYamlWithTemplateRef = pipelineEntity.getYaml();
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
           break;
         case PipelineVersion.V0:
           TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -210,7 +214,7 @@ public class ExecutionHelper {
                                                     .pipelineYamlToRun(pipelineYaml)
                                                     .allowStagesExecution(allowedStageExecution)
                                                     .build();
-      if (EmptyPredicate.isNotEmpty(stagesToRun)) {
+      if (isNotEmpty(stagesToRun)) {
         if (!allowedStageExecution) {
           throw new InvalidRequestException(
               String.format("Stage executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
@@ -259,7 +263,7 @@ public class ExecutionHelper {
             .setPipelineIdentifier(pipelineIdentifier)
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules))
+            .setIsNotificationConfigured(isNotEmpty(notificationRules))
             .setHarnessVersion(pipelineEntity.getHarnessVersion());
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
@@ -290,7 +294,7 @@ public class ExecutionHelper {
       YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
       Map<FQN, String> invalidFQNsInInputSet =
           InputSetErrorsHelper.getInvalidFQNsInInputSet(pipelineEntityYamlConfig, runtimeInputYamlConfig);
-      if (EmptyPredicate.isNotEmpty(invalidFQNsInInputSet)) {
+      if (isNotEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
             + invalidFQNsInInputSet.entrySet()
                   .stream()
@@ -321,7 +325,8 @@ public class ExecutionHelper {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
-              featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+              featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
+              BOOLEAN_FALSE_VALUE);
       pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
       pipelineYamlWithTemplateRef =
           EmptyPredicate.isEmpty(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef())
@@ -389,7 +394,7 @@ public class ExecutionHelper {
     }
     planExecutionMetadataBuilder.processedYaml(currentProcessedYaml);
 
-    if (EmptyPredicate.isNotEmpty(originalExecutionId)) {
+    if (isNotEmpty(originalExecutionId)) {
       planExecutionMetadataBuilder = populateTriggerDataForRerun(originalExecutionId, planExecutionMetadataBuilder);
     }
     log.info("[PMS_EXECUTE] PlanExecution Metadata creation took total time {}ms", System.currentTimeMillis() - start);
@@ -508,8 +513,10 @@ public class ExecutionHelper {
     // pipeline
     if (pipelineStageHelper.validateGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
       NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
-      return pipelineStageHelper.getResponseDTOWithChildGraph(
-          accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
+      if (isNotEmpty(nodeExecution.getExecutableResponses())) {
+        return pipelineStageHelper.getResponseDTOWithChildGraph(
+            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
+      }
     }
 
     if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {

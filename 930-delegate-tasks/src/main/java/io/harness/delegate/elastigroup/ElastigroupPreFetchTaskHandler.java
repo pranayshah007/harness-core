@@ -57,8 +57,8 @@ public class ElastigroupPreFetchTaskHandler extends ElastigroupCommandTaskHandle
 
     timeoutInMillis = elastigroupPreFetchRequest.getTimeoutIntervalInMin() * 60000;
 
-    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
+    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
     deployLogCallback.saveExecutionLog("Creating snapshot of Elastigroups");
 
     try {

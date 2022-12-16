@@ -14,6 +14,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
@@ -44,6 +45,8 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH
 import static io.harness.ci.commonconstants.CIExecutionConstants.TENANT_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.sto.utils.STOSettingsUtils.getSTOKey;
+import static io.harness.sto.utils.STOSettingsUtils.getSTOPluginEnvVariables;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -68,6 +71,7 @@ import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
@@ -90,8 +94,10 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -130,7 +136,6 @@ public class PluginSettingUtils {
   public static final String PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT = "PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT";
   public static final String PLUGIN_SNAPSHOT_MODE = "PLUGIN_SNAPSHOT_MODE";
   public static final String REDO_SNAPSHOT_MODE = "redo";
-  public static final String SECURITY_ENV_PREFIX = "SECURITY_";
   public static final String PLUGIN_BACKEND_OPERATION_TIMEOUT = "PLUGIN_BACKEND_OPERATION_TIMEOUT";
   public static final String PLUGIN_CACHE_KEY = "PLUGIN_CACHE_KEY";
   public static final String PLUGIN_AUTO_DETECT_CACHE = "PLUGIN_AUTO_CACHE";
@@ -524,21 +529,23 @@ public class PluginSettingUtils {
 
     return map;
   }
-
   private static Map<String, String> getSecurityStepInfoEnvVariables(SecurityStepInfo stepInfo, String identifier) {
     Map<String, String> map = new HashMap<>();
 
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Security", identifier, stepInfo.getSettings(), false);
 
+    if (stepInfo instanceof STOGenericStepInfo) {
+      map.putAll(getSTOPluginEnvVariables((STOGenericStepInfo) stepInfo, identifier));
+    }
     if (!isEmpty(settings)) {
       for (Map.Entry<String, JsonNode> entry : settings.entrySet()) {
-        String key = SECURITY_ENV_PREFIX + entry.getKey().toUpperCase();
-        map.put(key, SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
+        map.put(getSTOKey(entry.getKey()), SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
 
     setMandatoryEnvironmentVariable(map, PLUGIN_STEP_ID, identifier);
+    map.values().removeAll(Collections.singleton(null));
     return map;
   }
 
@@ -683,9 +690,9 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
 
     setMandatoryEnvironmentVariable(
-        map, PLUGIN_BUCKET, resolveStringParameter("bucket", "S3Upload", identifier, stepInfo.getBucket(), true));
+        map, PLUGIN_BUCKET, resolveStringParameterV2("bucket", "S3Upload", identifier, stepInfo.getBucket(), true));
     setMandatoryEnvironmentVariable(map, PLUGIN_SOURCE,
-        resolveStringParameter("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
+        resolveStringParameterV2("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
 
     String target = resolveStringParameter("target", "S3Upload", identifier, stepInfo.getTarget(), false);
     if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {
@@ -831,7 +838,7 @@ public class PluginSettingUtils {
       depth = depthParameter.getValue();
     }
     if (depth != null && depth != 0) {
-      String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase();
+      String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase(Locale.ROOT);
       map.put(pluginDepthKey, depth.toString());
     }
     return map;

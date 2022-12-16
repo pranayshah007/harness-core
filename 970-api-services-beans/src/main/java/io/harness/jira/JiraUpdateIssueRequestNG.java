@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
@@ -30,8 +31,8 @@ public class JiraUpdateIssueRequestNG {
   JiraIssueTransitionRequestNG transition;
   @NotNull Map<String, Object> fields = new HashMap<>();
 
-  public JiraUpdateIssueRequestNG(
-      JiraIssueUpdateMetadataNG updateMetadata, String transitionId, Map<String, String> fields) {
+  public JiraUpdateIssueRequestNG(JiraIssueUpdateMetadataNG updateMetadata, String transitionId,
+      Map<String, String> fields, JiraDeploymentType jiraDeploymentType) {
     if (EmptyPredicate.isNotEmpty(transitionId)) {
       this.transition = new JiraIssueTransitionRequestNG(transitionId);
     }
@@ -41,6 +42,6 @@ public class JiraUpdateIssueRequestNG {
     }
 
     fields = new HashMap<>(fields);
-    JiraIssueUtilsNG.updateFieldValues(this.fields, updateMetadata.getFields(), fields, false);
+    JiraIssueUtilsNG.updateFieldValues(this.fields, updateMetadata.getFields(), fields, false, jiraDeploymentType);
   }
 }
