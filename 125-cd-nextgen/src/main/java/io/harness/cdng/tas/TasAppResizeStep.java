@@ -40,6 +40,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -47,6 +48,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -111,6 +113,13 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
+    }
+    if (!CommandExecutionStatus.SUCCESS.equals(response.getCommandExecutionStatus())) {
+      return StepResponse.builder()
+              .status(Status.FAILED)
+              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+              .build();
     }
     TasAppResizeDataOutcome tasAppResizeDataOutcome =
         TasAppResizeDataOutcome.builder()
