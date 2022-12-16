@@ -182,7 +182,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(COMMAND_UNIT, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize,
+        Arrays.asList(CfCommandUnitConstants.SwapRollback, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize,
             CfCommandUnitConstants.Wrapup),
         CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),

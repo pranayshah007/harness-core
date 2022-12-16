@@ -27,4 +27,5 @@ public interface CfCommandUnitConstants {
   String SwapRoutesForNewApplication = "Swap Routes For New Application";
   String SwapRoutesForExistingApplication = "Swap Routes For Existing Application";
   String Rename = "Renaming Apps";
+  String SwapRollback = "Swap Rollback";
 }
