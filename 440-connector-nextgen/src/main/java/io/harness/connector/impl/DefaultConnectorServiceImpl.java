@@ -126,6 +126,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -162,7 +163,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   private final ProjectService projectService;
   private final OrganizationService organizationService;
   ConnectorStatisticsHelper connectorStatisticsHelper;
-  NGSettingsClient settingsClient;
+  @Inject @Named("PRIVILEGED") NGSettingsClient settingsClient;
   private NGErrorHelper ngErrorHelper;
   private ConnectorErrorMessagesHelper connectorErrorMessagesHelper;
   private SecretRefInputValidationHelper secretRefInputValidationHelper;

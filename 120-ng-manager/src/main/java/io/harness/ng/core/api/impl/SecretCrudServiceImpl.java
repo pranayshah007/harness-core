@@ -126,8 +126,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretCrudServiceImpl(SecretEntityReferenceHelper secretEntityReferenceHelper, FileUploadLimit fileUploadLimit,
       NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
       NGEncryptedDataService encryptedDataService, NGConnectorSecretManagerService ngConnectorSecretManagerService,
-      AccessControlClient accessControlClient, OpaSecretService opaSecretService, NGSettingsClient settingsClient,
-      NGFeatureFlagHelperService featureFlagHelperService) {
+      AccessControlClient accessControlClient, OpaSecretService opaSecretService,
+      @Named("PRIVILEGED") NGSettingsClient settingsClient, NGFeatureFlagHelperService featureFlagHelperService) {
     this.fileUploadLimit = fileUploadLimit;
     this.secretEntityReferenceHelper = secretEntityReferenceHelper;
     this.ngSecretService = ngSecretService;

@@ -33,6 +33,7 @@ import io.harness.repositories.ConnectorRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.List;
 import lombok.AccessLevel;
@@ -50,7 +51,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ConnectorStatisticsHelper {
   ConnectorRepository connectorRepository;
-  NGSettingsClient settingsClient;
+  @Inject @Named("PRIVILEGED") NGSettingsClient settingsClient;
   AccountClient accountClient;
 
   public ConnectorStatistics getStats(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
