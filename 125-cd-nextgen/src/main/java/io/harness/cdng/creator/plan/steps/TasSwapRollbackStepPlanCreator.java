@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
@@ -55,6 +56,8 @@ public class TasSwapRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSw
     tasSwapRollbackStepParameters.setTasBasicSetupFqn(tasBasicSetupFqn);
     String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
     tasSwapRollbackStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
+    String tasAppResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
+    tasSwapRollbackStepParameters.setTasResizeFqn(tasAppResizeFqn);
     return stepParameters;
   }
 }
