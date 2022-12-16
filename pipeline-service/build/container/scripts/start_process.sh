@@ -63,7 +63,7 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
 
     if [ "$OTEL_EXPORTER_OTLP_ENDPOINT" != "" ]; then
         echo "OpenTelemetry collector not configured"
-        JAVA_OPTS=$JAVA_OPTS" -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service} -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service} -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT -Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=off"
     fi
     echo "Using OpenTelemetry Java Agent"
 fi
