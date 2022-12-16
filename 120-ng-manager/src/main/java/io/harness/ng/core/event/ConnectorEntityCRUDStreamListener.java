@@ -34,6 +34,7 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -49,8 +50,8 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
 
   @Inject
   public ConnectorEntityCRUDStreamListener(HarnessSMManager harnessSMManager,
-      ConnectorEntityCRUDEventHandler connectorEntityCRUDEventHandler, NGSettingsClient settingsClient,
-      NGFeatureFlagHelperService featureFlagHelperService) {
+      ConnectorEntityCRUDEventHandler connectorEntityCRUDEventHandler,
+      @Named("PRIVILEGED") NGSettingsClient settingsClient, NGFeatureFlagHelperService featureFlagHelperService) {
     this.harnessSMManager = harnessSMManager;
     this.connectorEntityCRUDEventHandler = connectorEntityCRUDEventHandler;
     this.settingsClient = settingsClient;
