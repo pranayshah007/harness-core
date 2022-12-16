@@ -7,17 +7,16 @@
 
 package io.harness.delegate.task.aws.asg;
 
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
-
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @Value
 @Builder
@@ -27,6 +26,7 @@ public class AsgCanaryDeleteRequest implements AsgCommandRequest, NestedAnnotati
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
+  AsgInfraConfig AsgInfraConfig;
 
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 

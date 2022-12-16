@@ -24,6 +24,7 @@ public interface AsgCommandRequest extends TaskParameters, ExecutionCapabilityDe
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
   Integer getTimeoutIntervalInMin();
+  AsgInfraConfig getAsgInfraConfig();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
