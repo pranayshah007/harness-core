@@ -96,6 +96,14 @@ import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepParameters;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStepParameters;
+import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
+import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasCommandStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -214,5 +222,14 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(AsgCanaryDeployStepInfo.class, 12626);
     kryo.register(AsgCanaryDeleteStepInfo.class, 12627);
+
+    kryo.register(TasCanaryAppSetupStepInfo.class, 12628);
+    kryo.register(TasCanaryAppSetupStepParameters.class, 12629);
+    kryo.register(TasBGAppSetupStepInfo.class, 12630);
+    kryo.register(TasBGAppSetupStepParameters.class, 12631);
+    kryo.register(TasBasicAppSetupStepInfo.class, 12632);
+    kryo.register(TasBasicAppSetupStepParameters.class, 12633);
+    kryo.register(TasCommandStepInfo.class, 12634);
+    kryo.register(TasCommandStepParameters.class, 12635);
   }
 }

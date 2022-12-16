@@ -533,6 +533,7 @@ public enum FeatureName {
       HarnessTeam.PL),
   ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
   SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV);
+  CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

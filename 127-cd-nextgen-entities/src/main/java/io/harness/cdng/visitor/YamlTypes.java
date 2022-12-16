@@ -176,4 +176,9 @@ public interface YamlTypes {
 
   String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
   String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
+
+  String TAS_CANARY_APP_SETUP = StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+  String TAS_BG_APP_SETUP = StepSpecTypeConstants.TAS_BG_APP_SETUP;
+  String TAS_BASIC_APP_SETUP = StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 }

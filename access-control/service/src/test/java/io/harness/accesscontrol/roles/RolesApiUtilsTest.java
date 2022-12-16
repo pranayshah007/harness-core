@@ -24,6 +24,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse.AllowedScopeLevelsEnum;
+import io.harness.utils.ApiUtils;
 
 import java.util.Collections;
 import javax.validation.Validation;
@@ -131,7 +132,7 @@ public class RolesApiUtilsTest {
     String sort = "name";
     String order = "desc";
 
-    PageRequest pageRequest = RolesApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     assertEquals(pageRequest.getPageIndex(), page);
     assertEquals(pageRequest.getPageSize(), limit);
     assertEquals(pageRequest.getSortOrders().get(0).getFieldName(), sort);

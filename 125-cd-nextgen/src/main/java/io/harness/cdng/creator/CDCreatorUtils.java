@@ -47,6 +47,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
         StepSpecTypeConstants.TERRAGRUNT_PLAN, StepSpecTypeConstants.TERRAGRUNT_APPLY,
         StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
-        StepSpecTypeConstants.ASG_CANARY_DEPLOY, StepSpecTypeConstants.ASG_CANARY_DELETE);
+        StepSpecTypeConstants.ASG_CANARY_DEPLOY, StepSpecTypeConstants.ASG_CANARY_DELETE,
+        StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP,
+        StepSpecTypeConstants.TAS_BASIC_APP_SETUP, StepSpecTypeConstants.TANZU_COMMAND);
   }
 }

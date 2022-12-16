@@ -462,7 +462,20 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY),
   @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE_STEP(
-      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE);
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE),
+  @JsonProperty(EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP)
+  TAS_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BG_APP_SETUP_STEP)
+  TAS_BG_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BG_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BG_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP)
+  TAS_BASIC_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BASIC_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
+  TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TANZU_COMMAND_STEP),
+  ;
 
   private final ModuleType moduleType;
   String yamlName;

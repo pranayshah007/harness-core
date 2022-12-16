@@ -11,8 +11,8 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.pcf.CfServiceData;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -36,7 +36,7 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   String newReleaseName;
   Integer maxCount;
   List<CfServiceData> instanceData;
-  ResizeStrategy resizeStrategy;
+  TasResizeStrategyType resizeStrategy;
   String cfAppNamePrefix;
   CfCliVersion cfCliVersion;
   Integer timeoutIntervalInMinutes;

@@ -5668,6 +5668,268 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasBGAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount",
+            "tempRoutes"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            },
+            "tempRoutes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasBasicAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCanaryAppSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "existingVersionToKeep",
+            "instanceCount",
+            "resizeStrategy"
+          ],
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "existingVersionToKeep": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceCount": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
+              ]
+            },
+            "resizeStrategy": {
+              "type": "string",
+              "enum": [
+                "UpScaleNewFirst",
+                "DownScaleOldFirst"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCommandScript": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCommandStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "script": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/TasCommandScript"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasManifest": {
       "allOf": [
         {

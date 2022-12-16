@@ -302,3 +302,4 @@ io.harness.beans.steps.nodes.V1.PluginStepNodeV1
 io.harness.beans.steps.stepinfo.V1.PluginStepInfoV1
 io.harness.ci.beans.entities.PluginMetadataConfig
 io.harness.ci.beans.entities.PluginMetadataStatus
+io.harness.ci.states.V1.InitStepV2DelegateTaskInfo

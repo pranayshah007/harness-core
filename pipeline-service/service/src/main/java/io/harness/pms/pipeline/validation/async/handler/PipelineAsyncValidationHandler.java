@@ -20,7 +20,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
-import io.harness.spec.server.commons.model.GovernanceMetadata;
+import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
 
 import io.fabric8.utils.Pair;
 import lombok.Builder;

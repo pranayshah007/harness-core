@@ -201,7 +201,18 @@ public enum NGStepType {
       "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE(
-      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE);
+      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
+  @JsonProperty(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+  TAS_BASIC_APP_SETUP(
+      "Basic App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BASIC_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+  TAS_BG_APP_SETUP(
+      "BG App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BG_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+  TAS_CANARY_APP_SETUP(
+      "Canary App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_CANARY_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
+  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TANZU_COMMAND);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

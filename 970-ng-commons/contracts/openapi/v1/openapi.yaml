@@ -1,12 +1,12 @@
-openapi: 3.1.0
+openapi: 3.0.3
 x-stoplight:
   id: oc91t4vrfnjyi
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: |
     This is the Open Api Spec 3 for Harness. This is under active development. Beware of the breaking change with respect to the generated code stub.
-    
+
     # Introduction
     This API is documented in **OpenAPI format**
   contact:
@@ -18,8 +18,8 @@ info:
     altText: Harness
   termsOfService: 'https://harness.io/terms-of-use/'
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Governance Status
     description: |
@@ -85,7 +85,6 @@ components:
             type: string
         status:
           $ref: '#/components/schemas/GovernanceStatus'
-          description: Governance Status
       description: Contains Details about Policy
     PolicySet:
       title: PolicySet
@@ -123,7 +122,9 @@ components:
       x-stoplight:
         id: 05qhnkvljwzzm
       description: Governace Error Details
+      x-discriminator-value: GovernanceMetadata
       allOf:
+        - $ref: '#/components/schemas/ErrorMetadata'
         - type: object
           properties:
             deny:
@@ -134,31 +135,22 @@ components:
               description: Governance Message
             status:
               $ref: '#/components/schemas/GovernanceStatus'
-              description: Governace Status
             policy_sets:
               type: array
               items:
                 $ref: '#/components/schemas/PolicySet'
-            type:
-              type: string
-          required:
-            - type
-        - $ref: '#/components/schemas/ErrorMetadata'
     TestErrorMetadata:
       title: TestErrorMetadata
+      x-discriminator-value: TestErrorMetadata
       x-stoplight:
         id: mgogkf26yt2ka
       description: Test Error Metadata
       allOf:
+        - $ref: '#/components/schemas/ErrorMetadata'
         - type: object
           properties:
-            type:
-              type: string
             test:
               type: string
-          required:
-            - type
-        - $ref: '#/components/schemas/ErrorMetadata'
     ErrorMetadata:
       title: ErrorMetadata
       x-stoplight:
@@ -166,14 +158,16 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          governance: '#/components/schemas/GovernanceMetadata'
-          test: '#/components/schemas/TestErrorMetadata'
+          GovernanceMetadata: '#/components/schemas/GovernanceMetadata'
+          TestErrorMetadata: '#/components/schemas/TestErrorMetadata'
       description: Contains more details about the error
-      x-internal: false
       type: object
       properties:
         type:
           type: string
+          enum:
+            - GovernanceMetadata
+            - TestErrorMetadata
       required:
         - type
     FieldError:
@@ -212,4 +206,3 @@ components:
             $ref: '#/components/schemas/FieldError'
         error_metadata:
           $ref: '#/components/schemas/ErrorMetadata'
-          description: Contains more details about the error

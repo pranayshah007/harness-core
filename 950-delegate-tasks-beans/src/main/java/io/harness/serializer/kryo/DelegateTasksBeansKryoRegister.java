@@ -333,6 +333,8 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasConstants;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.pcf.response.TasDelegateTaskResponse;
 import io.harness.delegate.beans.pcf.response.TasValidateTaskResponse;
@@ -1455,6 +1457,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AbstractTasTaskRequest.class, 10000255);
     kryo.register(NexusTasArtifactRequestDetails.class, 10000256);
     kryo.register(TasArtifactRegistryType.class, 10000257);
+    kryo.register(TasResizeStrategyType.class, 10000258);
+    kryo.register(TasConstants.class, 10000259);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

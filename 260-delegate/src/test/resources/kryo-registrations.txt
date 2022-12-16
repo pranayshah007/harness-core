@@ -2557,3 +2557,5 @@
 10000255:io.harness.delegate.task.pcf.request.AbstractTasTaskRequest
 10000256:io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails
 10000257:io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType
+10000258:io.harness.delegate.beans.pcf.TasResizeStrategyType
+10000259:io.harness.delegate.beans.pcf.TasConstants
