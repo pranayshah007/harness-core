@@ -271,7 +271,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
         accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, true);
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
