@@ -285,6 +285,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         .applicationGuid(currentActiveApplication.getId())
         .attachedRoutes(currentActiveApplication.getUrls())
         .runningCount(currentActiveApplication.getRunningInstances())
+        .oldName(currentActiveApplication.getName())
         .build();
   }
 
@@ -548,6 +549,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     String appNamePrefix = blueGreenSetupRequestNG.getReleaseNamePrefix();
     String newName = appNamePrefix + DELIMITER + (highestVersionUsed + 1);
     pcfCommandTaskBaseHelper.renameApp(inActiveApplication, cfRequestConfig, logCallback, newName);
+    inActiveApplicationInfo.setOldName(inActiveApplicationInfo.getApplicationName());
     inActiveApplicationInfo.setApplicationName(newName);
   }
 

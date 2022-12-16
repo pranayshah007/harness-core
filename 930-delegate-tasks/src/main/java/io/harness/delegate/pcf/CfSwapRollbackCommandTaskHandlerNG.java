@@ -169,8 +169,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                       : 10)
               .build();
 
-      executionLogCallback.saveExecutionLog("#---------- Successfully Completed", INFO, SUCCESS);
-
       executionLogCallback = tasTaskHelperBase.getLogCallback(
           iLogStreamingTaskClient, CfCommandUnitConstants.Upsize, true, commandUnitsProgress);
       // get Upsize Instance data
@@ -275,6 +273,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     executionLogCallback.saveExecutionLog(color("# No Route Update Required for Active app", White, Bold));
     restoreInActiveAppForFailureBeforeSwapRouteStep(executionLogCallback, cfRollbackCommandRequestNG,
         cfRouteUpdateRequestConfigData, cfRequestConfig, workingDirectory.getAbsolutePath());
+    executionLogCallback.saveExecutionLog("#---------- Successfully Completed", INFO, SUCCESS);
     return updateValues;
   }
 
@@ -469,6 +468,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     }
     clearRoutesAndEnvVariablesForNewApplication(
         cfRequestConfig, executionLogCallback, data.getNewApplicationName(), data.getFinalRoutes());
+    executionLogCallback.saveExecutionLog("#---------- Successfully Completed", INFO, SUCCESS);
   }
 
   private void clearRoutesAndEnvVariablesForNewApplication(CfRequestConfig cfRequestConfig,
