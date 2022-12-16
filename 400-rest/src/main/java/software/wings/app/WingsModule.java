@@ -200,7 +200,6 @@ import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
-import io.harness.queueservice.infc.DelegateResourceCriteria;
 import io.harness.queueservice.infc.DelegateServiceQueue;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
