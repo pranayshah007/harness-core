@@ -345,6 +345,13 @@ enableAudit: false
 currentJre: openjdk11014_9
 migrateToJre: openjdk11014_9
 
+delegateQueueServiceConfig:
+  queueServiceConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  topic: "delegate-service"
+
 iteratorsConfig:
   delegateCapabilitiesRecordIteratorConfig:
     threadPoolSize: ${DELEGATE_CAPABILITIES_RECORD_ITERATOR_THREAD_COUNT:-5}
