@@ -17,13 +17,18 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
@@ -65,6 +70,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -82,6 +89,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
   public static final String TAS_SWAP_ROLLBACK = "SwapRollback";
   public static final String COMMAND_UNIT = "Swap Rollback";
   @Override
@@ -219,10 +227,47 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
           .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
           .build();
     }
+    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+    StepResponse.StepOutcome stepOutcome =
+            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
   }
+
+
+  private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollbackCommandResponseNG response, Ambiance ambiance) {
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    CfRollbackCommandResult cfRollbackCommandResult = response.getCfRollbackCommandResult();
+    if (cfRollbackCommandResult == null) {
+      log.error("Could not generate server instance info for app resize step");
+      return Collections.emptyList();
+    }
+    List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
+    if (!isNull(instances)) {
+      return instances.stream()
+              .map(instance -> getServerInstance(instance, infrastructureOutcome))
+              .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
+  }
+
+  private ServerInstanceInfo getServerInstance(
+          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+    return TasServerInstanceInfo.builder()
+            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+            .instanceIndex(instance.getInstanceIndex())
+            .tasApplicationName(instance.getDisplayName())
+            .tasApplicationGuid(instance.getApplicationId())
+            .organization(infrastructureOutcome.getOrganization())
+            .space(infrastructureOutcome.getSpace())
+            .build();
+  }
+
+
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
