@@ -109,6 +109,7 @@ public class GitClientHelper {
     try {
       return cache.get(gitConnectorId);
     } catch (Exception e) {
+      log.error(String.format("Failure to get lock object to %s", gitConnectorId), e);
       throw new WingsException(ErrorCode.GENERAL_ERROR, WingsException.USER);
     }
   }
