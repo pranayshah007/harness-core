@@ -33,4 +33,14 @@ public class TasApplicationInfo {
         .urls(attachedRoutes)
         .build();
   }
+
+  public TasApplicationInfo cloneObject() {
+    return TasApplicationInfo.builder()
+            .applicationGuid(applicationGuid)
+            .applicationName(applicationName)
+            .oldName(oldName)
+            .runningCount(runningCount)
+            .attachedRoutes(attachedRoutes)
+            .build();
+  }
 }
