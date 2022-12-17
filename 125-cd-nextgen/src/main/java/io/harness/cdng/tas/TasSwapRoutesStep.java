@@ -87,9 +87,9 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
   @Inject private TasEntityHelper tasEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private TasStepHelper tasStepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  @Inject private TasStepHelper tasStepHelper;
   public static final String COMMAND_UNIT = "Tas Swap Routes";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -160,6 +160,8 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
 
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     builder.stepOutcome(stepOutcome);
@@ -197,9 +199,15 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .downsizeOldApplication(downSizeOldApplication)
             .existingApplicationNames(existingAppNames)
             .accountId(accountId)
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails() == null ? null : tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null ? null : tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
-            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails() == null ? null : tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
+            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails() == null
+                    ? null
+                    : tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null
+                    ? null
+                    : tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails() == null
+                    ? null
+                    : tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
             .releaseNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .commandName(CfCommandTypeNG.SWAP_ROUTES.toString())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())

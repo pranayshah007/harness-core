@@ -75,6 +75,9 @@ public interface CfDeploymentManager {
   boolean checkIfAppHasAutoscalarAttached(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
       throws PivotalClientApiException;
 
+  boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
+      throws PivotalClientApiException;
+
   ApplicationDetail upsizeApplicationWithSteadyStateCheck(CfRequestConfig cfRequestConfig, LogCallback logCallback)
       throws PivotalClientApiException;
 

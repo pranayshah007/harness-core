@@ -18,6 +18,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
@@ -61,6 +62,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
@@ -68,6 +70,10 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.instance.outcome.HostOutcome;
+import io.harness.cdng.instance.outcome.InstanceOutcome;
+import io.harness.cdng.instance.outcome.InstancesOutcome;
+import io.harness.cdng.instance.outcome.TasOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -82,11 +88,15 @@ import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
@@ -103,6 +113,7 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.CustomArtifactTasRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -143,18 +154,21 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -201,7 +215,7 @@ public class TasStepHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  private static int DEFAULT_INSTANCE_COUNT = 2;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -259,15 +273,15 @@ public class TasStepHelper {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
-            .setStartTime(System.currentTimeMillis())
-            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
+                                            .setStartTime(System.currentTimeMillis())
+                                            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
     logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
     if (ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
       HarnessStore storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
       List<TasManifestFileContents> tasManifestFileContents =
-              getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
-                      "TasCommandScript", "TasCommandScript", logCallback);
+          getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance),
+              getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript", "TasCommandScript", logCallback);
       if (isEmpty(tasManifestFileContents) || tasManifestFileContents.size() > 1) {
         logCallback.saveExecutionLog("Failed", INFO, FAILURE);
         throw new InvalidRequestException("No or Multiple script found", USER);
@@ -812,10 +826,10 @@ public class TasStepHelper {
       stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
     }
 
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, tasStepPassThroughData.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        tasStepPassThroughData.getCommandUnits(), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -1125,22 +1139,32 @@ public class TasStepHelper {
   }
 
   public void shouldExecuteStoreFetch(TasStepPassThroughData tasStepPassThroughData) {
-    for (ManifestOutcome manifestOutcome : tasStepPassThroughData.getManifestOutcomeList()) {
-      if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestOutcome.getStore().getKind())) {
-        tasStepPassThroughData.setShouldExecuteCustomFetch(true);
-      } else if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-        tasStepPassThroughData.setShouldExecuteGitStoreFetch(true);
-      } else if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
-        tasStepPassThroughData.setShouldExecuteHarnessStoreFetch(true);
-      } else {
-        throw new InvalidRequestException(
-            format("Manifest store type: %s not supported yet", manifestOutcome.getStore().getKind()));
-      }
+    for (ManifestOutcome manifestOutcome : tasStepPassThroughData.getVarsManifestOutcomeList()) {
+      shouldExecuteStoreFetch(tasStepPassThroughData, manifestOutcome);
+    }
+    for (ManifestOutcome manifestOutcome : tasStepPassThroughData.getAutoScalerManifestOutcomeList()) {
+      shouldExecuteStoreFetch(tasStepPassThroughData, manifestOutcome);
+    }
+    shouldExecuteStoreFetch(tasStepPassThroughData, tasStepPassThroughData.getTasManifestOutcome());
+  }
+
+  public void shouldExecuteStoreFetch(TasStepPassThroughData tasStepPassThroughData, ManifestOutcome manifestOutcome) {
+    if (isNull(manifestOutcome)) {
+      return;
+    }
+    if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestOutcome.getStore().getKind())) {
+      tasStepPassThroughData.setShouldExecuteCustomFetch(true);
+    } else if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
+      tasStepPassThroughData.setShouldExecuteGitStoreFetch(true);
+    } else if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
+      tasStepPassThroughData.setShouldExecuteHarnessStoreFetch(true);
+    } else {
+      throw new InvalidRequestException(
+          format("Manifest store type: %s not supported yet", manifestOutcome.getStore().getKind()));
     }
   }
 
   public String fetchTasApplicationName(PcfManifestsPackage pcfManifestsPackage) {
-    String appName = null;
     Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
     String name = (String) applicationYamlMap.get(NAME_MANIFEST_YML_ELEMENT);
     if (isBlank(name)) {
@@ -1224,7 +1248,7 @@ public class TasStepHelper {
     }
 
     if (isBlank(maxVal)) {
-      return DEFAULT_INSTANCE_COUNT;
+      return 0;
     }
 
     maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
@@ -1306,14 +1330,15 @@ public class TasStepHelper {
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
+      case CUSTOM_ARTIFACT_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getTasPackageArtifactConfig(ambiance, artifactOutcome);
         } else {
           return getTasContainerArtifactConfig(ambiance, artifactOutcome);
         }
       default:
-        throw new InvalidArgumentsException(Pair.of("artifacts",
-            format("Artifact type %s is not yet supported in Azure WebApp", artifactOutcome.getArtifactType())));
+        throw new InvalidArgumentsException(Pair.of(
+            "artifacts", format("Artifact type %s is not yet supported in TAS", artifactOutcome.getArtifactType())));
     }
   }
 
@@ -1330,6 +1355,8 @@ public class TasStepHelper {
         return artifactOutcome instanceof JenkinsArtifactOutcome;
       case AZURE_ARTIFACTS_NAME:
         return artifactOutcome instanceof AzureArtifactsOutcome;
+      case CUSTOM_ARTIFACT_NAME:
+        return true;
       default:
         return false;
     }
@@ -1418,7 +1445,7 @@ public class TasStepHelper {
 
   private TasPackageArtifactConfig getTasPackageArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     final TasPackageArtifactConfigBuilder artifactConfigBuilder = TasPackageArtifactConfig.builder();
-    ConnectorInfoDTO connectorInfoDTO;
+    ConnectorInfoDTO connectorInfoDTO = null;
     switch (artifactOutcome.getArtifactType()) {
       case ARTIFACTORY_REGISTRY_NAME:
         ArtifactoryGenericArtifactOutcome artifactoryArtifactOutcome =
@@ -1431,6 +1458,17 @@ public class TasStepHelper {
                 .artifactPaths(new ArrayList<>(singletonList(artifactoryArtifactOutcome.getArtifactPath())))
                 .build());
         connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case CUSTOM_ARTIFACT_NAME:
+        CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(ArtifactSourceType.CUSTOM_ARTIFACT);
+        artifactConfigBuilder.artifactDetails(CustomArtifactTasRequestDetails.builder()
+                                                  .identifier(customArtifactOutcome.getIdentifier())
+                                                  .artifactPath(customArtifactOutcome.getArtifactPath())
+                                                  .image(customArtifactOutcome.getImage())
+                                                  .displayName(customArtifactOutcome.getDisplayName())
+                                                  .metadata(customArtifactOutcome.getMetadata())
+                                                  .build());
         break;
       case AMAZON_S3_NAME:
         S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
@@ -1488,13 +1526,14 @@ public class TasStepHelper {
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
-    if (connectorInfoDTO.getConnectorConfig().getDecryptableEntities() != null) {
+    if (!isNull(connectorInfoDTO) && connectorInfoDTO.getConnectorConfig().getDecryptableEntities() != null) {
       for (DecryptableEntity decryptableEntity : connectorInfoDTO.getConnectorConfig().getDecryptableEntities()) {
         encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
       }
     }
 
-    return artifactConfigBuilder.connectorConfig(connectorInfoDTO.getConnectorConfig())
+    return artifactConfigBuilder
+        .connectorConfig(isNull(connectorInfoDTO) ? null : connectorInfoDTO.getConnectorConfig())
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
@@ -1539,5 +1578,37 @@ public class TasStepHelper {
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
       logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
     }
+  }
+
+  public void saveInstancesOutcome(Ambiance ambiance, List<ServerInstanceInfo> serverInstanceInfoList) {
+    InstancesOutcome instancesOutcome = buildInstancesOutcome(serverInstanceInfoList);
+    executionSweepingOutputService.consume(
+        ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
+    Set<String> instances = getInstances(serverInstanceInfoList);
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+        HostsOutput.builder().hosts(instances).build(), StepCategory.STAGE.name());
+  }
+
+  private Set<String> getInstances(List<ServerInstanceInfo> instanceElements) {
+    return instanceElements.stream()
+        .map(instanceElement -> ((TasServerInstanceInfo) instanceElement).getId())
+        .collect(Collectors.toSet());
+  }
+
+  private InstancesOutcome buildInstancesOutcome(List<ServerInstanceInfo> instanceElements) {
+    List<InstanceOutcome> instanceOutcomeList = new ArrayList<>();
+    for (ServerInstanceInfo instance : instanceElements) {
+      TasServerInstanceInfo serverInstanceInfo = (TasServerInstanceInfo) instance;
+      instanceOutcomeList.add(InstanceOutcome.builder()
+                                  .name(serverInstanceInfo.getId())
+                                  .hostName(serverInstanceInfo.getId())
+                                  .pcfElement(TasOutcome.builder()
+                                                  .displayName(serverInstanceInfo.getTasApplicationName())
+                                                  .applicationId(serverInstanceInfo.getTasApplicationGuid())
+                                                  .instanceIndex(serverInstanceInfo.getInstanceIndex())
+                                                  .build())
+                                  .build());
+    }
+    return InstancesOutcome.builder().instances(instanceOutcomeList).build();
   }
 }

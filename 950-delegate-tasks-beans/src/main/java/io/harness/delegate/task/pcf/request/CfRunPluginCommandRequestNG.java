@@ -10,12 +10,17 @@ package io.harness.delegate.task.pcf.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.PcfInstallationCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.expression.Expression;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -51,5 +56,16 @@ public class CfRunPluginCommandRequestNG extends AbstractTasTaskRequest {
     this.fileDataList = fileDataList;
     this.repoRoot = repoRoot;
     this.encryptedDataDetails = encryptedDataDetails;
+  }
+
+  @Override
+  public void populateRequestCapabilities(
+      List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    if (useCfCLI) {
+      capabilities.add(PcfInstallationCapability.builder()
+                           .criteria(format("Checking that CF CLI version: %s is installed", cfCliVersion))
+                           .version(cfCliVersion)
+                           .build());
+    }
   }
 }

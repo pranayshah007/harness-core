@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -80,7 +87,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
     }
 
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, CfCommandUnitConstants.Pcfplugin, true, commandUnitsProgress);
+        iLogStreamingTaskClient, CfCommandUnitConstants.Pcfplugin, true, commandUnitsProgress);
     CfRunPluginCommandRequestNG pluginCommandRequest = (CfRunPluginCommandRequestNG) cfCommandRequestNG;
 
     executionLogCallback.saveExecutionLog(color("---------- Starting PCF Run Plugin Command Execution", White, Bold));
@@ -129,7 +136,8 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       return handleError(executionLogCallback, pluginCommandRequest, sanitizedException);
     } finally {
-      executionLogCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
+      executionLogCallback =
+          tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
       removeTempFilesCreated(executionLogCallback, workingDirectory);
       executionLogCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }

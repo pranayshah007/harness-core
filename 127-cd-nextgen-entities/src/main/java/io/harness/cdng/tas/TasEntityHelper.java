@@ -7,6 +7,10 @@
 package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.TAS_AUTOSCALER;
+import static io.harness.cdng.manifest.ManifestType.TAS_MANIFEST;
+import static io.harness.cdng.manifest.ManifestType.TAS_VARS;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -24,6 +28,10 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.kinds.TasManifest;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -35,11 +43,15 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -55,12 +67,16 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 
 @Slf4j
 @Singleton
@@ -141,7 +157,7 @@ public class TasEntityHelper {
                 SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskParameters(params)
-            .taskType(taskType.getDisplayName())
+            .taskType(taskType.name())
             .taskSelectors(taskSelectors)
             .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
             .build();
@@ -184,5 +200,52 @@ public class TasEntityHelper {
           ambiance, RefObjectUtils.getSweepingOutputRefObject(tasCanarySetupFqn + "." + tasAppSetupOutcomeName));
     }
     return optionalSweepingSetupOutput;
+  }
+
+  public void validateServiceEntity(@NotNull @Valid ServiceEntity serviceEntity) {
+    if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
+      try {
+        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+        TanzuApplicationServiceSpec tanzuApplicationServiceSpec =
+            (TanzuApplicationServiceSpec) ngServiceConfig.getNgServiceV2InfoConfig()
+                .getServiceDefinition()
+                .getServiceSpec();
+        if (isNull(tanzuApplicationServiceSpec.getManifests())) {
+          throw new InvalidYamlException("Atleast one manifest is required for TAS");
+        }
+        boolean tasManifestFound = false;
+        boolean autoScalerManifestFound = false;
+        for (ManifestConfigWrapper manifestConfigWrapper : tanzuApplicationServiceSpec.getManifests()) {
+          switch (manifestConfigWrapper.getManifest().getType()) {
+            case TAS_MANIFEST:
+              TasManifest tasManifest = (TasManifest) manifestConfigWrapper.getManifest().getSpec();
+              if (tasManifestFound) {
+                throw new InvalidYamlException("Only one TAS Manifest is supported");
+              }
+              tasManifestFound = true;
+              if (ObjectUtils.isNotEmpty(getParameterFieldValue(tasManifest.getAutoScalerPath()))) {
+                if (autoScalerManifestFound || getParameterFieldValue(tasManifest.getAutoScalerPath()).size() > 1) {
+                  throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
+                }
+                autoScalerManifestFound = true;
+              }
+              break;
+            case TAS_AUTOSCALER:
+              if (autoScalerManifestFound) {
+                throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
+              }
+              autoScalerManifestFound = true;
+            case TAS_VARS:
+              break;
+            default:
+              throw new InvalidYamlException(format("Invalid manifest type: %s, supported types: %s",
+                  manifestConfigWrapper.getManifest().getType(), Set.of(TAS_MANIFEST, TAS_AUTOSCALER, TAS_VARS)));
+          }
+        }
+      } catch (Exception e) {
+        throw new InvalidYamlException(
+            format("Invalid service yaml for Tanzu Application Service: %s", e.getMessage()));
+      }
+    }
   }
 }

@@ -65,4 +65,5 @@ public class OutcomeExpressionConstants {
   public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
   public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
+  public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
 }

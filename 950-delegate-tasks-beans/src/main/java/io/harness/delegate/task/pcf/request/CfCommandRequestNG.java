@@ -41,6 +41,12 @@ public interface CfCommandRequestNG extends TaskParameters, ExecutionCapabilityD
             infraConfigEncryptionDataDetails, maskingEvaluator));
     TasConnectorDTO tasConnectorDTO = tasInfraConfig.getTasConnectorDTO();
     capabilities.addAll(TasCapabilityHelper.fetchRequiredExecutionCapabilities(tasConnectorDTO, maskingEvaluator));
+    populateRequestCapabilities(capabilities, maskingEvaluator);
     return capabilities;
+  }
+
+  default void populateRequestCapabilities(
+      List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    // used for request specific additional capabilities
   }
 }

@@ -78,6 +78,7 @@ import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
 import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.CfRequestConfig.CfRequestConfigBuilder;
 import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.pcf.model.PcfConstants;
 
@@ -135,11 +136,11 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     File workingDirectory = null;
     List<ApplicationSummary> previousReleases =
         cfDeploymentManager.getPreviousReleases(cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix());
-
-    TasApplicationInfo currentProdInfo = getCurrentProdInfo(previousReleases);
-
+    TasApplicationInfo currentProdInfo = null;
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(basicSetupRequestNG);
+      currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
+          workingDirectory, ((CfBasicSetupRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
           CfAppAutoscalarRequestData.builder()
@@ -163,8 +164,10 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       boolean varsYmlPresent = checkIfVarsFilePresent(basicSetupRequestNG);
       CfCreateApplicationRequestData requestData =
           CfCreateApplicationRequestData.builder()
-              .cfRequestConfig(updatePcfRequestConfig(
-                  basicSetupRequestNG, cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix()))
+              .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
+                                   .applicationName(basicSetupRequestNG.getReleaseNamePrefix())
+                                   .routeMaps(basicSetupRequestNG.getRouteMaps())
+                                   .build())
               .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
               .configPathVar(workingDirectory.getAbsolutePath())
               .newReleaseName(basicSetupRequestNG.getReleaseNamePrefix())
@@ -221,8 +224,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private CfRequestConfig updatePcfRequestConfig(
-      CfBasicSetupRequestNG cfBasicSetupRequestNG, CfRequestConfig cfRequestConfig, String newReleaseName) {
+  private CfRequestConfigBuilder clonePcfRequestConfig(CfRequestConfig cfRequestConfig) {
     return CfRequestConfig.builder()
         .orgName(cfRequestConfig.getOrgName())
         .spaceName(cfRequestConfig.getSpaceName())
@@ -239,9 +241,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
         .loggedin(cfRequestConfig.isLoggedin())
         .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
         .useNumbering(cfRequestConfig.isUseNumbering())
-        .applicationName(newReleaseName)
-        .routeMaps(cfBasicSetupRequestNG.getRouteMaps())
-        .build();
+        .applicationName(cfRequestConfig.getApplicationName())
+        .routeMaps(cfRequestConfig.getRouteMaps());
   }
 
   void prepareManifestYamlFile(CfCreateApplicationRequestData requestData) throws IOException {
@@ -340,18 +341,33 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
     return currentActiveApplication;
   }
-  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases) {
+  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases,
+      CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) {
     ApplicationSummary currentActiveApplication = getCurrentProdApplicationSummary(previousReleases);
     if (currentActiveApplication == null) {
       return null;
     }
-
+    CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
+                                                                .cfRequestConfig(cfRequestConfig)
+                                                                .configPathVar(workingDirectory.getAbsolutePath())
+                                                                .timeoutInMins(timeoutInMins)
+                                                                .applicationName(currentActiveApplication.getName())
+                                                                .applicationGuid(currentActiveApplication.getId())
+                                                                .build();
+    boolean isAutoScalarEnabled = false;
+    try {
+      isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
+    } catch (PivotalClientApiException e) {
+      logCallback.saveExecutionLog(
+          "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+    }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())
         .oldName(currentActiveApplication.getName())
         .applicationGuid(currentActiveApplication.getId())
         .attachedRoutes(currentActiveApplication.getUrls())
         .runningCount(currentActiveApplication.getRunningInstances())
+        .isAutoScalarEnabled(isAutoScalarEnabled)
         .build();
   }
   private CfRequestConfig getCfRequestConfig(CfBasicSetupRequestNG basicSetupRequestNG, CloudFoundryConfig cfConfig) {
@@ -551,7 +567,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
     applicationToBeUpdated.put(NAME_MANIFEST_YML_ELEMENT, requestData.getNewReleaseName());
 
-    // TODO - verify how this can be done
     updateArtifactDetails(requestData, cfCommandSetupRequest, applicationToBeUpdated);
 
     applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
@@ -597,7 +612,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfBasicSetupRequestNG cfCommandSetupRequest,
       TreeMap<String, Object> applicationToBeUpdated) {
     if (isPackageArtifact(cfCommandSetupRequest.getTasArtifactConfig())) {
-      applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
+      if (!isNull(requestData.getArtifactPath())) {
+        applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
+      }
     } else {
       TasContainerArtifactConfig tasContainerArtifactConfig =
           ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig());

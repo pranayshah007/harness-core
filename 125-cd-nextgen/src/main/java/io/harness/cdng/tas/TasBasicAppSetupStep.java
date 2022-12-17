@@ -24,10 +24,11 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -163,9 +164,25 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());
+      TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
+          TasSetupVariablesOutcome.builder()
+              .newAppName(response.getNewApplicationInfo().getApplicationName())
+              .newAppGuid(response.getNewApplicationInfo().getApplicationGuid())
+              .newAppRoutes(response.getNewApplicationInfo().getAttachedRoutes())
+              .finalRoutes(response.getNewApplicationInfo().getAttachedRoutes());
+      if (!isNull(response.getCurrentProdInfo())) {
+        tasSetupVariablesOutcome.oldAppName(response.getCurrentProdInfo().getApplicationName())
+            .oldAppGuid(response.getCurrentProdInfo().getApplicationGuid())
+            .oldAppRoutes(response.getCurrentProdInfo().getAttachedRoutes());
+      }
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .outcome(tasSetupVariablesOutcome.build())
+                           .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
+                           .group(StepCategory.STAGE.name())
+                           .build())
           .build();
     } finally {
       tasStepHelper.closeLogStream(ambiance);
