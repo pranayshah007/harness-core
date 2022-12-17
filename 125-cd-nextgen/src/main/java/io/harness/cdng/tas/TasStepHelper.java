@@ -76,6 +76,7 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
@@ -257,31 +258,37 @@ public class TasStepHelper {
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
-    HarnessStore storeConfig;
-    if (ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
-      storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
-    } else {
-      throw new InvalidRequestException("Harness Store is only supported for TAS Command Scripts", USER);
-    }
-
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
-                                            .setStartTime(System.currentTimeMillis())
-                                            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
-
+            .setStartTime(System.currentTimeMillis())
+            .setUnitName(CfCommandUnitConstants.FetchCommandScript);
     logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
-    List<TasManifestFileContents> tasManifestFileContents =
-        getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
-            "TasCommandScript", "TasCommandScript", logCallback);
-
-    if (isEmpty(tasManifestFileContents) || tasManifestFileContents.size() > 1) {
-      throw new InvalidRequestException("No or Multiple script found", USER);
+    if (ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
+      HarnessStore storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
+      List<TasManifestFileContents> tasManifestFileContents =
+              getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
+                      "TasCommandScript", "TasCommandScript", logCallback);
+      if (isEmpty(tasManifestFileContents) || tasManifestFileContents.size() > 1) {
+        logCallback.saveExecutionLog("Failed", INFO, FAILURE);
+        throw new InvalidRequestException("No or Multiple script found", USER);
+      }
+      scriptString = tasManifestFileContents.get(0).getFileContent();
+      logCallback.saveExecutionLog("Done", INFO, SUCCESS);
+    } else if (ManifestStoreType.INLINE.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
+      InlineStoreConfig storeConfig = (InlineStoreConfig) tasCommandStepParameters.getScript().getStore().getSpec();
+      scriptString = storeConfig.extractContent();
+      logCallback.saveExecutionLog("Done", INFO, SUCCESS);
+    } else {
+      logCallback.saveExecutionLog("Failed", INFO, FAILURE);
+      throw new InvalidRequestException("Only Inline and Harness Store supported for TAS Command Scripts", USER);
     }
-    scriptString = tasManifestFileContents.get(0).getFileContent();
-    logCallback.saveExecutionLog("Done", INFO, SUCCESS);
 
     // Resolving expressions
     scriptString = engineExpressionService.renderExpression(ambiance, scriptString);
+    CDExpressionResolveFunctor cdExpressionResolveFunctor =
+            new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+    scriptString = (String) ExpressionEvaluatorUtils.updateExpressions(
+            scriptString, cdExpressionResolveFunctor);
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
@@ -466,11 +473,11 @@ public class TasStepHelper {
           FileStoreNodeDTO fileStoreNodeDTO = varsFile.get();
           if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
             FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-
+            // remove account from paths in files fetched from harness store
             manifestContents.add(TasManifestFileContents.builder()
                                      .manifestType(manifestType)
                                      .fileContent(file.getContent())
-                                     .filePath(scopedFilePath)
+                                     .filePath(scopedFilePath.replaceFirst("^account:", ""))
                                      .build());
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {

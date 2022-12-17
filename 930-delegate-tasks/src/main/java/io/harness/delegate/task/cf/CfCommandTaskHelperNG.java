@@ -718,7 +718,7 @@ public class CfCommandTaskHelperNG {
 
   void unmapRoutesIfAppDownsizedToZero(CfDeployCommandRequestNG cfCommandDeployRequest, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (cfCommandDeployRequest.getDownsizeAppDetail() == null
+    if (cfCommandDeployRequest.isStandardBlueGreen() || cfCommandDeployRequest.getDownsizeAppDetail() == null
         || isBlank(cfCommandDeployRequest.getDownsizeAppDetail().getApplicationName())) {
       return;
     }
@@ -814,16 +814,6 @@ public class CfCommandTaskHelperNG {
       throws PivotalClientApiException {
     List<ApplicationSummary> previousReleases =
         cfDeploymentManager.getPreviousReleasesBasicAndCanaryNG(cfRequestConfig, cfAppNamePrefix);
-    return previousReleases.stream()
-        .filter(app -> app.getId().equalsIgnoreCase(appGuid))
-        .map(ApplicationSummary::getName)
-        .collect(toList());
-  }
-
-  public List<String> getAppNameBasedOnGuidForBlueGreen(
-      CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
-    List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
     return previousReleases.stream()
         .filter(app -> app.getId().equalsIgnoreCase(appGuid))
         .map(ApplicationSummary::getName)
