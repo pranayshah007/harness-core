@@ -423,7 +423,16 @@ public enum TaskType {
   CONTAINER_LE_STATUS(TaskGroup.CONTAINER_PMS, "Get lite engine status"),
   CONTAINER_CLEANUP(TaskGroup.CONTAINER_PMS, "Cleanup container for run task"),
   CONTAINER_EXECUTE_STEP(TaskGroup.CONTAINER_PMS, "Run step on a container spawned"),
-  AWS_ASG_CANARY_DELETE_TASK_NG(TaskGroup.ASG, "AWS Asg Canary Delete");
+  AWS_ASG_CANARY_DELETE_TASK_NG(TaskGroup.ASG, "AWS Asg Canary Delete"),
+
+  TAS_APP_RESIZE(TaskGroup.TAS, "Tas App resize task"),
+  TAS_ROLLBACK(TaskGroup.TAS, "Tas Rollback task"),
+  TAS_SWAP_ROUTES(TaskGroup.TAS, "Tas Swap Routes task"),
+  TANZU_COMMAND(TaskGroup.TAS, "Tas Command task"),
+  TAS_BASIC_SETUP(TaskGroup.TAS, "Tas Basic Setup task"),
+  TAS_BG_SETUP(TaskGroup.TAS, "Tas BG Setup task"),
+  TAS_SWAP_ROLLBACK(TaskGroup.TAS, "Tas Swap Rollback task"),
+  TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

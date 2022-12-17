@@ -219,7 +219,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {taskParameters})
-                            .taskType(TaskType.CF_COMMAND_TASK_NG.name())
+                            .taskType(TaskType.TAS_BASIC_SETUP.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();

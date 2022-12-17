@@ -21,6 +21,8 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 
@@ -38,17 +40,15 @@ public class TasResourceServiceImpl implements TasResourceService {
         tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, baseNGAccess);
     TasInfraConfig tasInfraConfig =
         TasInfraConfig.builder().tasConnectorDTO(tasConnectorDTO).encryptionDataDetails(encryptionDetails).build();
-    //todo: change cfcli version
     CfInfraMappingDataRequestNG taskParamas = CfInfraMappingDataRequestNG.builder()
                                                   .accountId(accountIdentifier)
                                                   .actionType(FETCH_ORG)
                                                   .timeoutIntervalInMin(2)
                                                   .cfCommandTypeNG(CfCommandTypeNG.DATA_FETCH)
-                                                  .cfCliVersion(CfCliVersion.V7)
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
-        taskParamas, baseNGAccess, "Tas list organization task failure due to error");
+        taskParamas, baseNGAccess, "Tas list organization task failure due to error", TaskType.TAS_DATA_FETCH);
     return delegateResponse.getCfInfraMappingDataResult().getOrganizations();
   }
 
@@ -71,11 +71,10 @@ public class TasResourceServiceImpl implements TasResourceService {
                                                   .actionType(FETCH_SPACE)
                                                   .timeoutIntervalInMin(2)
                                                   .cfCommandTypeNG(CfCommandTypeNG.DATA_FETCH)
-                                                  .cfCliVersion(CfCliVersion.V7)
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
-        taskParamas, baseNGAccess, "Tas list spaces task failure due to error");
+        taskParamas, baseNGAccess, "Tas list spaces task failure due to error", TaskType.TAS_DATA_FETCH);
     return delegateResponse.getCfInfraMappingDataResult().getSpaces();
   }
 }
