@@ -518,6 +518,13 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    appAutoscalarRequestData.setExpectedEnabled(true);
+    return cfCliClient.checkIfAppHasAutoscalerWithExpectedState(appAutoscalarRequestData, executionLogCallback);
+  }
+
+  @Override
   public void performConfigureAutoscalar(CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     boolean autoscalarAttached =

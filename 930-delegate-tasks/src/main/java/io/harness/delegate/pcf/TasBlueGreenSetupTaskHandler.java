@@ -42,7 +42,6 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
-import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -64,7 +63,6 @@ import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.exception.InvalidPcfStateException;
-import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfBlueGreenSetupResponseNG;
@@ -144,12 +142,16 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     List<ApplicationSummary> previousReleases =
         cfDeploymentManager.getPreviousReleases(cfRequestConfig, blueGreenSetupRequestNG.getReleaseNamePrefix());
 
-    TasApplicationInfo activeApplicationInfo = getActiveApplicationInfo(previousReleases, cfRequestConfig, logCallback);
-    TasApplicationInfo inActiveApplicationInfo =
-        getInActiveApplicationInfo(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
+    TasApplicationInfo activeApplicationInfo = null;
+    TasApplicationInfo inActiveApplicationInfo = null;
 
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(blueGreenSetupRequestNG);
+      activeApplicationInfo = getActiveApplicationInfo(previousReleases, cfRequestConfig, logCallback, workingDirectory,
+          blueGreenSetupRequestNG.getTimeoutIntervalInMin());
+      inActiveApplicationInfo = getInActiveApplicationInfo(activeApplicationInfo, previousReleases, cfRequestConfig,
+          logCallback, workingDirectory, blueGreenSetupRequestNG.getTimeoutIntervalInMin());
+
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
           CfAppAutoscalarRequestData.builder()
               .cfRequestConfig(cfRequestConfig)
@@ -273,36 +275,65 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   }
 
   private TasApplicationInfo getActiveApplicationInfo(List<ApplicationSummary> previousReleases,
-      CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException {
+      CfRequestConfig cfRequestConfig, LogCallback logCallback, File workingDirectory, int timeoutInMins)
+      throws PivotalClientApiException {
     ApplicationSummary currentActiveApplication =
         pcfCommandTaskBaseHelper.findCurrentActiveApplication(previousReleases, cfRequestConfig, logCallback);
     if (currentActiveApplication == null) {
       return null;
     }
-
+    CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
+                                                                .cfRequestConfig(cfRequestConfig)
+                                                                .configPathVar(workingDirectory.getAbsolutePath())
+                                                                .timeoutInMins(timeoutInMins)
+                                                                .applicationName(currentActiveApplication.getName())
+                                                                .applicationGuid(currentActiveApplication.getId())
+                                                                .build();
+    boolean isAutoScalarEnabled = false;
+    try {
+      isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
+    } catch (PivotalClientApiException e) {
+      logCallback.saveExecutionLog(
+          "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+    }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())
         .applicationGuid(currentActiveApplication.getId())
         .attachedRoutes(currentActiveApplication.getUrls())
         .runningCount(currentActiveApplication.getRunningInstances())
         .oldName(currentActiveApplication.getName())
+        .isAutoScalarEnabled(isAutoScalarEnabled)
         .build();
   }
 
   private TasApplicationInfo getInActiveApplicationInfo(TasApplicationInfo activeApplicationInfo,
-      List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, LogCallback logCallback)
-      throws PivotalClientApiException {
+      List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, LogCallback logCallback,
+      File workingDirectory, int timeoutInMins) throws PivotalClientApiException {
     ApplicationSummary inActiveApplication =
         findCurrentInActiveApplication(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
     if (inActiveApplication == null) {
       return null;
     }
-
+    CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
+                                                                .cfRequestConfig(cfRequestConfig)
+                                                                .configPathVar(workingDirectory.getAbsolutePath())
+                                                                .timeoutInMins(timeoutInMins)
+                                                                .applicationName(inActiveApplication.getName())
+                                                                .applicationGuid(inActiveApplication.getId())
+                                                                .build();
+    boolean isAutoScalarEnabled = false;
+    try {
+      isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
+    } catch (PivotalClientApiException e) {
+      logCallback.saveExecutionLog(
+          "Failed while fetching autoscalar state: " + encodeColor(inActiveApplication.getName()), LogLevel.ERROR);
+    }
     return TasApplicationInfo.builder()
         .applicationName(inActiveApplication.getName())
         .applicationGuid(inActiveApplication.getId())
         .attachedRoutes(inActiveApplication.getUrls())
         .runningCount(inActiveApplication.getRunningInstances())
+        .isAutoScalarEnabled(isAutoScalarEnabled)
         .build();
   }
 

@@ -23,6 +23,7 @@ public class TasApplicationInfo {
   String oldName;
   String applicationGuid;
   List<String> attachedRoutes;
+  boolean isAutoScalarEnabled;
 
   public CfAppSetupTimeDetails toCfAppSetupTimeDetails() {
     return CfAppSetupTimeDetails.builder()
@@ -36,11 +37,11 @@ public class TasApplicationInfo {
 
   public TasApplicationInfo cloneObject() {
     return TasApplicationInfo.builder()
-            .applicationGuid(applicationGuid)
-            .applicationName(applicationName)
-            .oldName(oldName)
-            .runningCount(runningCount)
-            .attachedRoutes(attachedRoutes)
-            .build();
+        .applicationGuid(applicationGuid)
+        .applicationName(applicationName)
+        .oldName(oldName)
+        .runningCount(runningCount)
+        .attachedRoutes(attachedRoutes)
+        .build();
   }
 }

@@ -90,6 +90,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
   @Inject private TasEntityHelper tasEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   public static final String COMMAND_UNIT = "Tas App resize";
@@ -133,6 +134,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME, tasAppResizeDataOutcome, StepCategory.STEP.name());
+    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
 
     builder.stepOutcome(stepOutcome);
     builder.stepOutcome(StepResponse.StepOutcome.builder()

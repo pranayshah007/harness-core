@@ -9,15 +9,20 @@ package io.harness.delegate.task.pcf.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.PcfAutoScalarCapability;
+import io.harness.delegate.beans.executioncapability.PcfInstallationCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfServiceData;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
@@ -65,5 +70,22 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
     this.resizeStrategy = resizeStrategy;
     this.isStandardBlueGreen = isStandardBlueGreen;
     this.useAppAutoScalar = useAppAutoScalar;
+  }
+
+  @Override
+  public void populateRequestCapabilities(
+      List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    if (useCfCLI || useAppAutoScalar) {
+      capabilities.add(PcfInstallationCapability.builder()
+                           .criteria(format("Checking that CF CLI version: %s is installed", cfCliVersion))
+                           .version(cfCliVersion)
+                           .build());
+    }
+    if (useAppAutoScalar) {
+      capabilities.add(PcfAutoScalarCapability.builder()
+                           .version(cfCliVersion)
+                           .criteria("Checking that App Autoscaler plugin is installed")
+                           .build());
+    }
   }
 }

@@ -23,6 +23,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.tas.TasEntityHelper;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -116,6 +118,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  @Inject private TasEntityHelper tasEntityHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -146,6 +149,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+      if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
+        tasEntityHelper.validateServiceEntity(serviceEntity);
+      }
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.save(serviceEntity);
@@ -187,12 +193,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
-
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
-          && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+      if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
+        tasEntityHelper.validateServiceEntity(requestService);
       }
-
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
@@ -229,20 +232,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
-
-    Optional<ServiceEntity> serviceEntityOptional =
-        get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
-            requestService.getIdentifier(), false);
-
-    if (serviceEntityOptional.isPresent()) {
-      ServiceEntity oldService = serviceEntityOptional.get();
-
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
-          && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
-      }
+    if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
+      tasEntityHelper.validateServiceEntity(requestService);
     }
-
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           ServiceEntity result = serviceRepository.upsert(criteria, requestService);

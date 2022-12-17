@@ -31,7 +31,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.TasExecutionPassThroughData")
 public class TasExecutionPassThroughData implements PassThroughData {
   String applicationName;
-  @NonFinal Integer maxCount;
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;

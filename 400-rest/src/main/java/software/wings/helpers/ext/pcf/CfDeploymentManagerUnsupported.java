@@ -143,6 +143,12 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
+  public boolean checkIfAppHasAutoscalarEnabled(
+      CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
   public ApplicationDetail upsizeApplicationWithSteadyStateCheck(
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");

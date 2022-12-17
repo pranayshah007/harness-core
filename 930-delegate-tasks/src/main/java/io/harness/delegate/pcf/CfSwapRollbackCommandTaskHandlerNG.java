@@ -21,6 +21,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -188,9 +189,15 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           cfRequestConfig, upsizeList, cfInstanceElements);
 
       // Enable autoscalar for older app, if it was disabled during deploy
-      if (cfRollbackCommandRequestNG.isUseAppAutoScalar()) {
+      if (!isNull(cfRollbackCommandRequestNG.getActiveApplicationDetails())
+          && cfRollbackCommandRequestNG.getActiveApplicationDetails().isAutoScalarEnabled()) {
         cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
             cfRollbackCommandRequestNG.getActiveApplicationDetails(), autoscalarRequestData, executionLogCallback);
+      }
+      if (!isNull(cfRollbackCommandRequestNG.getInActiveApplicationDetails())
+          && cfRollbackCommandRequestNG.getInActiveApplicationDetails().isAutoScalarEnabled()) {
+        cfCommandTaskHelperNG.enableAutoscalerIfNeeded(
+            cfRollbackCommandRequestNG.getInActiveApplicationDetails(), autoscalarRequestData, executionLogCallback);
       }
 
       executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);

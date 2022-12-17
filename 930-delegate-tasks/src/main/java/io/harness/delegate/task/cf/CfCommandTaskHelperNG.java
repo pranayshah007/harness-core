@@ -176,7 +176,7 @@ public class CfCommandTaskHelperNG {
       TasArtifactDownloadContext artifactDownloadContext, LogCallback logCallback) {
     TasArtifactDownloadResponseBuilder artifactResponseBuilder =
         TasArtifactDownloadResponse.builder().artifactType(ArtifactType.ZIP);
-    InputStream artifactStream;
+    InputStream artifactStream = null;
     TasPackageArtifactConfig artifactConfig = artifactDownloadContext.getArtifactConfig();
 
     try {
@@ -196,19 +196,23 @@ public class CfCommandTaskHelperNG {
         case AZURE_ARTIFACTS:
           artifactStream = downloadFromAzureArtifacts(artifactConfig, artifactResponseBuilder, logCallback);
           break;
+        case CUSTOM_ARTIFACT:
+          break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
               format("Registry of type '%s' is not supported yet", artifactConfig.getSourceType().getDisplayName()),
               new InvalidArgumentsException(Pair.of("sourceType", "Unsupported artifact source type")));
       }
-
-      File artifactFile = copyArtifactStreamToWorkingDirectory(artifactDownloadContext, artifactStream, logCallback);
+      if (!isNull(artifactStream)) {
+        File artifactFile = copyArtifactStreamToWorkingDirectory(artifactDownloadContext, artifactStream, logCallback);
+        artifactResponseBuilder.artifactFile(artifactFile);
+      }
       logCallback.saveExecutionLog("" /* Empty line */);
       logCallback.saveExecutionLog(
           color(format("Successfully downloaded artifact '%s'", artifactConfig.getArtifactDetails().getArtifactName()),
               LogColor.White, LogWeight.Bold));
 
-      return artifactResponseBuilder.artifactFile(artifactFile).build();
+      return artifactResponseBuilder.build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(
           format("Failed to download artifact '%s' due to: %s", artifactConfig.getArtifactDetails().getArtifactName(),

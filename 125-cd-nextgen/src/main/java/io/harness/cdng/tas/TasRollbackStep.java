@@ -19,6 +19,7 @@ import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -180,12 +181,35 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
           .build();
     }
+    TasRollbackStepParameters tasRollbackStepParameters = (TasRollbackStepParameters) stepElementParameters.getSpec();
+
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
+
+    OptionalSweepingOutput tasSetupVariablesOutcomeOptional =
+        tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
+            tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME, executionSweepingOutputService);
+    if (!tasSetupVariablesOutcomeOptional.isFound()) {
+      TasSetupVariablesOutcome tasSetupVariablesOutcome =
+          (TasSetupVariablesOutcome) tasSetupVariablesOutcomeOptional.getOutput();
+      tasSetupVariablesOutcome.setNewAppName(null);
+      tasSetupVariablesOutcome.setNewAppGuid(null);
+      tasSetupVariablesOutcome.setNewAppRoutes(null);
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .outcome(tasSetupVariablesOutcome)
+                           .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
+                           .group(StepCategory.STAGE.name())
+                           .build())
+          .build();
+    }
     return builder.build();
   }
 
