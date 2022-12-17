@@ -467,8 +467,11 @@ public class TasStepHelper {
           if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
             FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
 
-            manifestContents.add(
-                TasManifestFileContents.builder().fileContent(file.getContent()).filePath(scopedFilePath).build());
+            manifestContents.add(TasManifestFileContents.builder()
+                                     .manifestType(manifestType)
+                                     .fileContent(file.getContent())
+                                     .filePath(scopedFilePath)
+                                     .build());
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {
             throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");

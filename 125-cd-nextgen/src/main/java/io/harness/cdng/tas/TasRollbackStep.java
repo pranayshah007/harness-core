@@ -19,6 +19,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -111,22 +112,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .build();
     }
 
-    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
-    List<CfServiceData> instanceData = new ArrayList<>();
-    if (tasAppResizeDataOptional.isFound()) {
-      TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
-      if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
-        tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
-          int temp = cfServiceData.getDesiredCount();
-          cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
-          cfServiceData.setPreviousCount(temp);
-          instanceData.add(cfServiceData);
-        });
-      }
-    }
-
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
@@ -144,7 +129,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
-            .instanceData(instanceData)
             .build();
 
     final TaskData taskData = TaskData.builder()

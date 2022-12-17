@@ -10946,6 +10946,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AppResize"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasAppResizeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AppRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AsgCanaryDelete"
               }
             }
@@ -11746,6 +11778,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SwapRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasSwapRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SwapRoutes"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasSwapRoutesStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "TanzuCommand"
               }
             }
@@ -12473,6 +12537,43 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasAppResizeStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "newAppInstances"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "newAppInstances": {
+              "$ref": "#/definitions/TasInstanceSelectionWrapper"
+            },
+            "oldAppInstances": {
+              "$ref": "#/definitions/TasInstanceSelectionWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasBGAppSetupStepInfo": {
       "allOf": [
         {
@@ -12482,7 +12583,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount",
+            "tasInstanceCountType",
             "tempRoutes"
           ],
           "properties": {
@@ -12520,7 +12621,7 @@
                 }
               ]
             },
-            "instanceCount": {
+            "tasInstanceCountType": {
               "type": "string",
               "enum": [
                 "FromManifest",
@@ -12556,7 +12657,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount"
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -12593,7 +12694,7 @@
                 }
               ]
             },
-            "instanceCount": {
+            "tasInstanceCountType": {
               "type": "string",
               "enum": [
                 "FromManifest",
@@ -12614,8 +12715,8 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount",
-            "resizeStrategy"
+            "resizeStrategy",
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -12652,18 +12753,18 @@
                 }
               ]
             },
-            "instanceCount": {
-              "type": "string",
-              "enum": [
-                "FromManifest",
-                "MatchRunningInstances"
-              ]
-            },
             "resizeStrategy": {
               "type": "string",
               "enum": [
                 "UpScaleNewFirst",
                 "DownScaleOldFirst"
+              ]
+            },
+            "tasInstanceCountType": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
               ]
             }
           }
@@ -12735,6 +12836,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasInstanceSelectionWrapper": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TasInstanceValue"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Percentage",
+            "Count"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasInstanceValue": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasManifest": {
       "allOf": [
         {
@@ -12777,6 +12916,112 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasSwapRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "upsizeInActiveApp": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasSwapRoutesStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downSizeOldApplication": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string",

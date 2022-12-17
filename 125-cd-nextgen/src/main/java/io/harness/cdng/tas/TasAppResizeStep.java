@@ -21,6 +21,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -116,10 +117,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     }
     if (!CommandExecutionStatus.SUCCESS.equals(response.getCommandExecutionStatus())) {
       return StepResponse.builder()
-              .status(Status.FAILED)
-              .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-              .build();
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
     }
     TasAppResizeDataOutcome tasAppResizeDataOutcome =
         TasAppResizeDataOutcome.builder()
@@ -238,7 +239,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .resizeStrategy(tasSetupDataOutcome.getResizeStrategy())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
-            .pcfManifestsPackage(tasSetupDataOutcome.getPcfManifestsPackage())
+            .pcfManifestsPackage(tasSetupDataOutcome.getManifestsPackage())
             .maxCount(tasSetupDataOutcome.getMaxCount())
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())

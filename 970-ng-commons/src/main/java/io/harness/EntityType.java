@@ -465,6 +465,18 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE_STEP(
       ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROUTES_STEP)
+  TAS_SWAP_ROUTES_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROUTES_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROUTES_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP)
+  TAS_SWAP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_APP_RESIZE_STEP)
+  TAS_APP_RESIZE_STEP(ModuleType.CD, EntityTypeConstants.TAS_APP_RESIZE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_APP_RESIZE_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_ROLLBACK_STEP)
+  TAS_ROLLBACK_STEP(
+      ModuleType.CD, EntityTypeConstants.TAS_ROLLBACK_STEP, IdentifierRef.class, EntityYamlRootNames.TAS_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP)
   TAS_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP, IdentifierRef.class,
       EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),

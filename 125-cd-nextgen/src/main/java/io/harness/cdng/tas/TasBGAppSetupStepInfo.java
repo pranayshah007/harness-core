@@ -80,7 +80,7 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
   @Override
   public SpecParameters getSpecParameters() {
     return TasBGAppSetupStepParameters.infoBuilder()
-        .tasInstanceCountType(this.instanceCount)
+        .tasInstanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .tempRoutes(this.tempRoutes)

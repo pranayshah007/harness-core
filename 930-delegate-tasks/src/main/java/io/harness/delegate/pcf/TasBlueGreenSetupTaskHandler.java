@@ -347,7 +347,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   private File generateWorkingDirectoryOnDelegate(CfBlueGreenSetupRequestNG cfCommandSetupRequest)
       throws PivotalClientApiException, IOException {
     File workingDirectory = pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
-    if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoscalar()) {
+    if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoScalar()) {
       if (workingDirectory == null) {
         throw new PivotalClientApiException("Failed to generate CF-CLI Working directory");
       }
@@ -429,7 +429,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    if (setupRequestNG.isUseAppAutoscalar()) {
+    if (setupRequestNG.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
       appAutoscalarRequestData.setExpectedEnabled(true);
@@ -540,7 +540,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       TasApplicationInfo activeApplicationInfo, TasApplicationInfo inActiveApplicationInfo)
       throws PivotalClientApiException {
     if (inActiveApplicationInfo == null || isEmpty(inActiveApplicationInfo.getApplicationGuid())
-            || previousReleases.size() == 1) {
+        || previousReleases.size() == 1) {
       return;
     }
     ApplicationSummary inActiveApplication =

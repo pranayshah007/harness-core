@@ -14,6 +14,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -37,7 +38,7 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
   PcfManifestsPackage pcfManifestsPackage;
   Integer maxCount;
   List<CfServiceData> instanceData;
-  ResizeStrategy resizeStrategy;
+  TasResizeStrategyType resizeStrategy;
   boolean isStandardBlueGreen;
   boolean useAppAutoScalar;
 
@@ -48,7 +49,7 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
 
       Integer upsizeCount, Integer downSizeCount, Integer totalPreviousInstanceCount,
       TasApplicationInfo downsizeAppDetail, PcfManifestsPackage pcfManifestsPackage, Integer maxCount,
-      List<CfServiceData> instanceData, ResizeStrategy resizeStrategy, boolean isStandardBlueGreen,
+      List<CfServiceData> instanceData, TasResizeStrategyType resizeStrategy, boolean isStandardBlueGreen,
       boolean useAppAutoScalar) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);

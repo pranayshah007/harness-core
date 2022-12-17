@@ -19,6 +19,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.common.ParameterFieldHelper;
@@ -184,10 +185,10 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
     List<String> existingAppNames = new ArrayList<>();
-    if (!isNull(tasSetupDataOutcome.getExistingApplicationDetails())
-        && !isNull(tasSetupDataOutcome.getExistingApplicationDetails().getApplicationName())) {
+    if (!isNull(tasSetupDataOutcome.getActiveApplicationDetails())
+        && !isNull(tasSetupDataOutcome.getActiveApplicationDetails().getApplicationName())) {
       existingAppNames =
-          Collections.singletonList(tasSetupDataOutcome.getExistingApplicationDetails().getApplicationName());
+          Collections.singletonList(tasSetupDataOutcome.getActiveApplicationDetails().getApplicationName());
     }
 
     boolean downSizeOldApplication = tasSwapRoutesStepParameters.getDownSizeOldApplication().getValue();

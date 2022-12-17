@@ -7846,7 +7846,13 @@
         "type": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "repository",
+                "container",
+                "instance",
+                "configuration"
+              ]
             },
             {
               "type": "string",

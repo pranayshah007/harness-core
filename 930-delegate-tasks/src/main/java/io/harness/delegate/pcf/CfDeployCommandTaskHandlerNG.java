@@ -17,8 +17,8 @@ import static io.harness.pcf.CfCommandUnitConstants.Downsize;
 import static io.harness.pcf.CfCommandUnitConstants.Upsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
-
 import static io.harness.pcf.model.CfConstants.CLOUD_FOUNDRY_LOG_PREFIX;
+
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -34,6 +34,7 @@ import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
@@ -83,7 +84,8 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           Pair.of("cfCommandRequestNG", "Must be instance of CfDeployCommandRequestNG"));
     }
     CfDeployCommandRequestNG cfDeployCommandRequestNG = (CfDeployCommandRequestNG) cfCommandRequestNG;
-    String commandUnitType = (DOWNSIZE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) ? Downsize : Upsize;
+    String commandUnitType =
+        (TasResizeStrategyType.DOWNSCALE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) ? Downsize : Upsize;
     LogCallback executionLogCallback =
         tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, commandUnitType, true, commandUnitsProgress);
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
@@ -121,7 +123,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       // downsize previous apps with non zero instances by same count new app was upsized
       List<CfInternalInstanceElement> cfInstanceElementsForVerification = new ArrayList<>();
-      if (DOWNSIZE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) {
+      if (TasResizeStrategyType.DOWNSCALE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) {
         cfCommandTaskHelperNG.downsizePreviousReleases(cfDeployCommandRequestNG, cfRequestConfig, executionLogCallback,
             cfServiceDataUpdated, stepDecrease, cfInstanceElementsForVerification, cfAppAutoscalarRequestData);
         executionLogCallback.saveExecutionLog("Downsize Application Successfully Completed", INFO, SUCCESS);

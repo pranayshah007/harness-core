@@ -31,6 +31,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
@@ -135,7 +136,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
       TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
       TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
       Integer desiredCount = 0;
-      if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
+      if (tasBGAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
         if (isNull(response.getActiveApplicationInfo())) {
           desiredCount = 0;
         } else {
@@ -155,12 +156,12 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
               .tempRouteMap(response.getNewApplicationInfo().getAttachedRoutes())
               .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
-              .resizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST)
+              .resizeStrategy(TasResizeStrategyType.UPSCALE_NEW_FIRST)
               .maxCount(desiredCount)
               .useAppAutoScalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(desiredCount)
-              .pcfManifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
+              .manifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
               .newApplicationDetails(response.getNewApplicationInfo())
               .activeApplicationDetails(response.getActiveApplicationInfo())
@@ -198,7 +199,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     Integer maxCount = null;
-    if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
+    if (tasBGAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.FROM_MANIFEST)) {
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
     }
     Integer olderActiveVersionCountToKeep =
@@ -219,7 +220,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
             .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
             .maxCount(maxCount)
             .routeMaps(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()))
-            .useAppAutoscalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
+            .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
             .tempRoutes(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()))
             .build();
 

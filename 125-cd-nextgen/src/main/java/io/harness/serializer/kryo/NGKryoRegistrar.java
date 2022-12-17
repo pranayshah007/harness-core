@@ -98,6 +98,8 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepParameters;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepParameters;
 import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
@@ -106,6 +108,12 @@ import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
 import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasCommandStepParameters;
+import io.harness.cdng.tas.TasRollbackStepInfo;
+import io.harness.cdng.tas.TasRollbackStepParameters;
+import io.harness.cdng.tas.TasSwapRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRollbackStepParameters;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -231,6 +239,14 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TasBasicAppSetupStepParameters.class, 12633);
     kryo.register(TasCommandStepInfo.class, 12634);
     kryo.register(TasCommandStepParameters.class, 12635);
+    kryo.register(TasSwapRoutesStepInfo.class, 12636);
+    kryo.register(TasSwapRoutesStepParameters.class, 12637);
+    kryo.register(TasSwapRollbackStepInfo.class, 12638);
+    kryo.register(TasSwapRollbackStepParameters.class, 12639);
+    kryo.register(TasAppResizeStepInfo.class, 12640);
+    kryo.register(TasAppResizeStepParameters.class, 12641);
+    kryo.register(TasRollbackStepInfo.class, 12642);
+    kryo.register(TasRollbackStepParameters.class, 12643);
     kryo.register(ElastigroupBGStageSetupStepInfo.class, 12800);
     kryo.register(ElastigroupSwapRouteStepInfo.class, 12801);
   }

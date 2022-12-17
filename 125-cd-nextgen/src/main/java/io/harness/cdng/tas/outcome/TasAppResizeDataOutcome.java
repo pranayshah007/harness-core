@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.tas;
+package io.harness.cdng.tas.outcome;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("TasAppResizeDataOutcome")
 @JsonTypeName("TasAppResizeDataOutcome")
-@RecasterAlias("io.harness.cdng.tas.beans.TasAppResizeDataOutcome")
+@RecasterAlias("io.harness.cdng.tas.outcome.TasAppResizeDataOutcome")
 public class TasAppResizeDataOutcome implements Outcome, ExecutionSweepingOutput {
   List<CfServiceData> instanceData;
   List<CfInternalInstanceElement> cfInstanceElements;

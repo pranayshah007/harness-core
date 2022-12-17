@@ -100,10 +100,10 @@ import io.swagger.annotations.ApiModel;
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
         TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, AsgCanaryDeployStepInfo.class,
+        AsgCanaryDeleteStepInfo.class, TasSwapRoutesStepInfo.class, TasSwapRollbackStepInfo.class,
         AsgCanaryDeleteStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
         TasBasicAppSetupStepInfo.class, TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
-        ElastigroupSwapRouteStepInfo.class, TasSwapRoutesStepInfo.class, TasRollbackStepInfo.class,
-        TasAppResizeStepInfo.class, TasSwapRollbackStepInfo.class})
+        ElastigroupSwapRouteStepInfo.class, TasAppResizeStepInfo.class, TasRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

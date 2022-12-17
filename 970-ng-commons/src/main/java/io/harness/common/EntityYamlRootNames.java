@@ -194,6 +194,10 @@ public class EntityYamlRootNames {
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   public static final String ASG_CANARY_DELETE = "AsgCanaryDelete";
+  public static final String TAS_SWAP_ROUTES_STEP = "SwapRoutes";
+  public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  public static final String TAS_APP_RESIZE_STEP = "AppResize";
+  public static final String TAS_ROLLBACK_STEP = "AppRollback";
   public static final String TAS_CANARY_APP_SETUP_STEP = "CanaryAppSetup";
   public static final String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
   public static final String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";

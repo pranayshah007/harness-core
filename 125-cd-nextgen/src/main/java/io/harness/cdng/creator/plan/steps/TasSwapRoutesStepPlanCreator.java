@@ -15,7 +15,6 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.tas.TasAppResizeStepParameters;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;

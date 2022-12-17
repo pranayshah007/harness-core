@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
 import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
@@ -137,6 +138,7 @@ import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1120,20 +1122,27 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
     if (pageRequest == null) {
       PageRequestBuilder pageRequestBuilder = aPageRequest()
-                                                  .addFilter("appId", EQ, appId)
-                                                  .addFilter("workflowType", EQ, ORCHESTRATION)
-                                                  .addFilter("serviceIds", HAS, serviceId)
+                                                  .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+                                                  .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
+                                                  .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
                                                   .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
                                                   .withLimit("10");
 
       finalPageRequest = pageRequestBuilder.build();
     } else {
-      pageRequest.addFilter("appId", EQ, appId);
-      pageRequest.addFilter("workflowType", EQ, ORCHESTRATION);
-      pageRequest.addFilter("serviceIds", HAS, serviceId);
+      pageRequest.addFilter(WorkflowExecutionKeys.appId, EQ, appId);
+      pageRequest.addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION);
+      pageRequest.addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId);
       pageRequest.addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC);
       pageRequest.setLimit("10");
       finalPageRequest = pageRequest;
+    }
+
+    if (featureFlagService.isEnabled(SPG_DASHBOARD_PROJECTION, accountId)) {
+      List<String> fieldsExcluded = Arrays.asList(WorkflowExecutionKeys.breakdown, WorkflowExecutionKeys.stateMachine,
+          WorkflowExecutionKeys.rejectedByFreezeWindowIds, WorkflowExecutionKeys.rejectedByFreezeWindowNames,
+          WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
+      finalPageRequest.setFieldsExcluded(fieldsExcluded);
     }
 
     Optional<Integer> retentionPeriodInDays =

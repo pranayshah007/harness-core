@@ -28,6 +28,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
@@ -134,7 +135,8 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
       TasBasicAppSetupStepParameters tasBasicAppSetupStepParameters =
           (TasBasicAppSetupStepParameters) stepParameters.getSpec();
       Integer desiredCount = 0;
-      if (tasBasicAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
+      if (tasBasicAppSetupStepParameters.getTasInstanceCountType().equals(
+              TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
         if (isNull(response.getCurrentProdInfo())) {
           desiredCount = 0;
         } else {
@@ -149,7 +151,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .routeMaps(response.getNewApplicationInfo().getAttachedRoutes())
               .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
-              .resizeStrategy(ResizeStrategy.DOWNSIZE_OLD_FIRST)
+              .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
               .maxCount(desiredCount)
               .useAppAutoScalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
@@ -157,7 +159,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
               .activeApplicationDetails(isNull(response.getCurrentProdInfo()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
-              .pcfManifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
+              .manifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());

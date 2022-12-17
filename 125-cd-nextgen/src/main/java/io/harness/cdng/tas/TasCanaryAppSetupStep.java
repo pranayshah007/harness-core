@@ -133,7 +133,8 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
       TasCanaryAppSetupStepParameters tasCanaryAppSetupStepParameters =
           (TasCanaryAppSetupStepParameters) stepParameters.getSpec();
       Integer desiredCount = 0;
-      if (tasCanaryAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
+      if (tasCanaryAppSetupStepParameters.getTasInstanceCountType().equals(
+              TasInstanceCountType.MATCH_RUNNING_INSTANCES)) {
         if (isNull(response.getCurrentProdInfo())) {
           desiredCount = 0;
         } else {
@@ -157,7 +158,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
               .activeApplicationDetails(
                   isNull(response.getCurrentProdInfo().getApplicationName()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
-              .pcfManifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
+              .manifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());
