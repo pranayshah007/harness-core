@@ -218,7 +218,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {taskParameters})
-                            .taskType(TaskType.CF_COMMAND_TASK_NG.name())
+                            .taskType(TaskType.TAS_BASIC_SETUP.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
@@ -227,7 +227,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
     units.add(CfCommandUnitConstants.PcfSetup);
     units.add(CfCommandUnitConstants.Wrapup);
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units, TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units, TaskType.TAS_BASIC_SETUP.getDisplayName(),
             TaskSelectorYaml.toTaskSelector(tasCanaryAppSetupStepParameters.getDelegateSelectors()),
             stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

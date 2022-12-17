@@ -194,7 +194,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
         tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
             tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),
             OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME, executionSweepingOutputService);
-    if (!tasSetupVariablesOutcomeOptional.isFound()) {
+    if (tasSetupVariablesOutcomeOptional.isFound()) {
       TasSetupVariablesOutcome tasSetupVariablesOutcome =
           (TasSetupVariablesOutcome) tasSetupVariablesOutcomeOptional.getOutput();
       tasSetupVariablesOutcome.setNewAppName(null);
