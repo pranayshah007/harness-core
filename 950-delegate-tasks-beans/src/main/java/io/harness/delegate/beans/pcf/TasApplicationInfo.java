@@ -42,6 +42,7 @@ public class TasApplicationInfo {
         .oldName(oldName)
         .runningCount(runningCount)
         .attachedRoutes(attachedRoutes)
+        .isAutoScalarEnabled(isAutoScalarEnabled)
         .build();
   }
 }
