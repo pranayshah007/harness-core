@@ -820,16 +820,6 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
-  public List<String> getAppNameBasedOnGuidForBlueGreen(
-      CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
-    List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
-    return previousReleases.stream()
-        .filter(app -> app.getId().equalsIgnoreCase(appGuid))
-        .map(ApplicationSummary::getName)
-        .collect(toList());
-  }
-
   public List<String> getAppNameBasedOnGuidForBlueGreenDeployment(
       CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
     List<ApplicationSummary> previousReleases =

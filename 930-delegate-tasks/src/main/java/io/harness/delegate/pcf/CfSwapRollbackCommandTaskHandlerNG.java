@@ -456,7 +456,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void performRouteUpdateForStandardBlueGreen(CfRequestConfig cfRequestConfig,
       CfRouteUpdateRequestConfigData data, LogCallback executionLogCallback) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
-    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreen(
+    List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 
