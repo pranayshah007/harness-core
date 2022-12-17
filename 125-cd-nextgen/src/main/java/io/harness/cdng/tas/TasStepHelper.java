@@ -469,11 +469,11 @@ public class TasStepHelper {
           FileStoreNodeDTO fileStoreNodeDTO = varsFile.get();
           if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
             FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-
+            // remove account from paths in files fetched from harness store
             manifestContents.add(TasManifestFileContents.builder()
                                      .manifestType(manifestType)
                                      .fileContent(file.getContent())
-                                     .filePath(scopedFilePath)
+                                     .filePath(scopedFilePath.replaceFirst("^account:", ""))
                                      .build());
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {
