@@ -285,6 +285,10 @@ public class TasStepHelper {
 
     // Resolving expressions
     scriptString = engineExpressionService.renderExpression(ambiance, scriptString);
+    CDExpressionResolveFunctor cdExpressionResolveFunctor =
+            new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+    scriptString = (String) ExpressionEvaluatorUtils.updateExpressions(
+            scriptString, cdExpressionResolveFunctor);
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);

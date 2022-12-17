@@ -718,7 +718,7 @@ public class CfCommandTaskHelperNG {
 
   void unmapRoutesIfAppDownsizedToZero(CfDeployCommandRequestNG cfCommandDeployRequest, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (cfCommandDeployRequest.getDownsizeAppDetail() == null
+    if (cfCommandDeployRequest.isStandardBlueGreen() || cfCommandDeployRequest.getDownsizeAppDetail() == null
         || isBlank(cfCommandDeployRequest.getDownsizeAppDetail().getApplicationName())) {
       return;
     }
