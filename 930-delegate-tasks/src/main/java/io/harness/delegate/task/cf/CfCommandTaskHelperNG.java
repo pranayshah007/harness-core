@@ -61,7 +61,6 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
@@ -800,7 +799,8 @@ public class CfCommandTaskHelperNG {
                                    .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
-    restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
+    restoreRoutesForOldApplication(
+        cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
   }
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
@@ -808,16 +808,6 @@ public class CfCommandTaskHelperNG {
       List<CfInternalInstanceElement> cfInstanceElements) throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
         cfRequestConfig, upsizeList, cfInstanceElements);
-  }
-
-  public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
-      throws PivotalClientApiException {
-    List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleasesBasicAndCanaryNG(cfRequestConfig, cfAppNamePrefix);
-    return previousReleases.stream()
-        .filter(app -> app.getId().equalsIgnoreCase(appGuid))
-        .map(ApplicationSummary::getName)
-        .collect(toList());
   }
 
   public List<String> getAppNameBasedOnGuidForBlueGreen(
@@ -889,7 +879,8 @@ public class CfCommandTaskHelperNG {
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
-    unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
+    unmapRoutesFromNewAppAfterDownsize(
+        executionLogCallback, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig);
   }
 
   public ApplicationSummary findActiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow,
@@ -973,8 +964,8 @@ public class CfCommandTaskHelperNG {
         .collect(toList());
   }
 
-  public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo,
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+  public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo, CfRequestConfig cfRequestConfig,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     if (isNull(tasApplicationInfo)) {
       return;
     }
@@ -994,10 +985,8 @@ public class CfCommandTaskHelperNG {
   }
 
   public void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
-      TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig)
-      throws PivotalClientApiException {
-    if (newApplicationDetails == null
-        || isBlank(newApplicationDetails.getApplicationName())) {
+      TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    if (newApplicationDetails == null || isBlank(newApplicationDetails.getApplicationName())) {
       return;
     }
 

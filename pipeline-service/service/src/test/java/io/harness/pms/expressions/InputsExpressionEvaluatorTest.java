@@ -48,7 +48,7 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBind() throws IOException {
     String inputsYaml =
-        "{\"repo\":\"harness-core\",\"image\":\"nginx\",\"password\":\"dockerPass\",\"count\":5,\"version\":\"V1\"}";
+        "{\"inputs\":{\"repo\":\"harness-core\",\"image\":\"nginx\",\"password\":\"dockerPass\",\"count\":5,\"version\":\"V1\"}}";
 
     String pipelineYaml = readFile();
 

@@ -10,10 +10,12 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sApplyState;
 import software.wings.yaml.workflow.StepYaml;
@@ -38,7 +40,7 @@ public class K8sApplyStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     K8sApplyState state = (K8sApplyState) getState(stepYaml);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
     baseSetup(state, k8sApplyStepNode);

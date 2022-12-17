@@ -36,6 +36,8 @@ public class ElastigroupSetupStepParameters extends ElastigroupSetupBaseStepInfo
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(ElastigroupCommandUnitConstants.fetchStartupScript.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(),
+        ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_CONFIGURATION.toString(),
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString());
   }
 }

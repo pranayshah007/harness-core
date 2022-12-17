@@ -10,7 +10,6 @@ package io.harness.delegate.task.pcf.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -24,8 +23,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
-import org.jetbrains.annotations.NotNull;
 
 @Data
 @OwnedBy(CDP)
@@ -39,7 +36,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
   boolean useCurrentCount;
   @Expression(ALLOW_SECRETS) List<String> tempRoutes;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
-  boolean useAppAutoscalar;
+  boolean useAppAutoScalar;
   PcfManifestsPackage pcfManifestsPackage;
 
   @Builder
@@ -47,7 +44,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
       CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
       CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
       TasArtifactConfig tasArtifactConfig, Integer olderActiveVersionCountToKeep, Integer maxCount,
-      Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoscalar,
+      Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoScalar,
       PcfManifestsPackage pcfManifestsPackage, List<String> tempRoutes) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
@@ -58,7 +55,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
     this.currentRunningCount = currentRunningCount;
     this.useCurrentCount = useCurrentCount;
     this.routeMaps = routeMaps;
-    this.useAppAutoscalar = useAppAutoscalar;
+    this.useAppAutoScalar = useAppAutoScalar;
     this.pcfManifestsPackage = pcfManifestsPackage;
     this.tempRoutes = tempRoutes;
   }

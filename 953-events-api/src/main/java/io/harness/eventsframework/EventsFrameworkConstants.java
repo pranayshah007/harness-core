@@ -108,8 +108,15 @@ public final class EventsFrameworkConstants {
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String CD_DEPLOYMENT_EVENT = "cd_deployment_event";
+
   public static final int CD_DEPLOYMENT_EVENT_BATCH_SIZE = 1;
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
+
+  public static final String INTERNAL_CHANGE_EVENT_FF = "feature_flag_change_event";
+
+  public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
+
+  public static final int INTERNAL_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String SRM_STATEMACHINE_EVENT = "srm_statemachine_event";
   public static final int SRM_STATEMACHINE_EVENT_BATCH_SIZE = 1;
@@ -151,6 +158,8 @@ public final class EventsFrameworkConstants {
   public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(30);
   public static final Duration PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
+
+  public static final Duration INTERNAL_CHANGE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 
   public static final int DEFAULT_READ_BATCH_SIZE = 50;
   public static final int ENTITY_CRUD_READ_BATCH_SIZE = 50;

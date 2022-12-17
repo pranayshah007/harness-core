@@ -7,16 +7,21 @@
 
 package io.harness.ngsettings.settings;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngsettings.SettingCategory.CI;
 import static io.harness.rule.OwnerRule.TEJAS;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
+import io.harness.licensing.Edition;
 import io.harness.ngsettings.NgSettingsTestBase;
+import io.harness.ngsettings.SettingPlanConfig;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.entities.SettingsConfigurationState;
@@ -28,8 +33,10 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
@@ -137,9 +144,34 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
   private void validate(SettingsConfig settingsConfig) {
     Optional<SettingsConfigurationState> optional =
         configurationStateRepository.getByIdentifier(settingsConfig.getName());
+
     assertTrue(optional.isPresent());
     assertEquals(settingsConfig.getVersion(), optional.get().getConfigVersion());
+
     List<SettingConfiguration> currentSettingConfigurations = settingsService.listDefaultSettings();
-    assertEquals(new HashSet<>(currentSettingConfigurations), settingsConfig.getSettings());
+
+    if (currentSettingConfigurations.size() != settingsConfig.getSettings().size()) {
+      fail("The count of setting configurations does not match");
+    }
+
+    assertThat(currentSettingConfigurations)
+        .usingElementComparatorIgnoringFields("allowedPlans")
+        .containsAll(settingsConfig.getSettings());
+
+    Map<String, SettingConfiguration> settingConfigurationMap = new HashMap<>();
+    settingsConfig.getSettings().forEach(settingConfiguration
+        -> settingConfigurationMap.put(settingConfiguration.getIdentifier(), settingConfiguration));
+
+    currentSettingConfigurations.forEach(settingConfiguration -> {
+      if (isNotEmpty(settingConfiguration.getAllowedPlans())) {
+        Map<Edition, SettingPlanConfig> allowedPlansFromConfig =
+            settingConfigurationMap.get(settingConfiguration.getIdentifier()).getAllowedPlans();
+        Map<Edition, SettingPlanConfig> allowedPlansFromDB = settingConfiguration.getAllowedPlans();
+        allowedPlansFromConfig.forEach((edition, settingPlanConfig) -> {
+          assertEquals(settingPlanConfig.getEditable(), allowedPlansFromDB.get(edition).getEditable());
+          assertEquals(settingPlanConfig.getDefaultValue(), allowedPlansFromDB.get(edition).getDefaultValue());
+        });
+      }
+    });
   }
 }

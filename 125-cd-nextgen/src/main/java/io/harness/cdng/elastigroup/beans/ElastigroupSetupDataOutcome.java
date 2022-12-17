@@ -11,11 +11,13 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.spotinst.model.ElastiGroup;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
@@ -32,7 +34,11 @@ public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOu
   private Integer currentRunningInstanceCount;
   private ResizeStrategy resizeStrategy;
   private boolean isBlueGreen;
-  private ElastiGroup newElastiGroupOriginalConfig;
-  private ElastiGroup oldElastiGroupOriginalConfig;
-  private String elastiGroupNamePrefix;
+  private ElastiGroup newElastigroupOriginalConfig;
+  private ElastiGroup oldElastigroupOriginalConfig;
+  private String elastigroupNamePrefix;
+  private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
+  private String awsRegion;
+  private String awsConnectorRef;
+  private boolean successful;
 }

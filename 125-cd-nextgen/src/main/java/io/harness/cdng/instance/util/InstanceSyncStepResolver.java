@@ -20,6 +20,7 @@ import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -49,7 +50,7 @@ public class InstanceSyncStepResolver {
           AzureWebAppRollbackStep.STEP_TYPE.getType(), CommandStep.STEP_TYPE.getType(),
           EcsRollingDeployStep.STEP_TYPE.getType(), EcsRollingRollbackStep.STEP_TYPE.getType(),
           EcsCanaryDeployStep.STEP_TYPE.getType(), EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(),
-          EcsBlueGreenRollbackStep.STEP_TYPE.getType(), FetchInstanceScriptStep.STEP_TYPE.getType(),
+          EcsBlueGreenRollbackStep.STEP_TYPE.getType(), FetchInstanceScriptStep.STEP_TYPE.getType(), ElastigroupDeployStep.STEP_TYPE.getType(),
           TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {

@@ -8,6 +8,7 @@
 package io.harness.audit.api.streaming.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,10 +18,17 @@ import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestina
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
 import io.harness.audit.repositories.streaming.StreamingDestinationRepository;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NoResultFoundException;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 
 import com.google.inject.Inject;
+import java.util.Objects;
+import java.util.Optional;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +59,7 @@ public class StreamingServiceImpl implements StreamingService {
     } catch (DuplicateKeyException exception) {
       String message = String.format(
           "Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getSlug());
-      log.warn(message, exception);
+      log.error(message, exception);
       throw new DuplicateFieldException(message);
     }
   }
@@ -62,6 +70,49 @@ public class StreamingServiceImpl implements StreamingService {
     Criteria criteria = getCriteriaForStreamingDestinationList(accountIdentifier, filterProperties);
 
     return streamingDestinationRepository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public StreamingDestination getStreamingDestination(String accountIdentifier, String identifier) {
+    Optional<StreamingDestination> optionalStreamingDestination =
+        streamingDestinationRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+
+    if (optionalStreamingDestination.isEmpty()) {
+      String message = String.format("Streaming destination with identifier [%s] not found.", identifier);
+      log.error(message);
+      throw NoResultFoundException.newBuilder()
+          .code(ErrorCode.RESOURCE_NOT_FOUND)
+          .message(message)
+          .level(Level.ERROR)
+          .reportTargets(USER)
+          .build();
+    }
+
+    return optionalStreamingDestination.get();
+  }
+
+  @Override
+  public boolean delete(String accountIdentifier, String identifier) {
+    StreamingDestination streamingDestination = getStreamingDestination(accountIdentifier, identifier);
+    if (streamingDestination.getStatus().equals(StatusEnum.ACTIVE)) {
+      String message = String.format(
+          "Streaming destination with identifier [%s] cannot be deleted because it is active.", identifier);
+      log.error(message);
+      throw new InvalidRequestException(message);
+    }
+
+    return streamingDestinationRepository.deleteByCriteria(
+        getCriteriaForStreamingDestination(accountIdentifier, identifier));
+  }
+
+  @Override
+  public StreamingDestination update(String streamingDestinationIdentifier,
+      StreamingDestinationDTO streamingDestinationDTO, String accountIdentifier) {
+    StreamingDestination currentStreamingDestination =
+        getStreamingDestination(accountIdentifier, streamingDestinationIdentifier);
+    validateUpdateRequest(streamingDestinationIdentifier, streamingDestinationDTO, currentStreamingDestination);
+
+    return updateAndReturnStreamingDestination(streamingDestinationDTO, currentStreamingDestination, accountIdentifier);
   }
 
   private Criteria getCriteriaForStreamingDestinationList(
@@ -78,5 +129,53 @@ public class StreamingServiceImpl implements StreamingService {
               .regex(filterProperties.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     return criteria;
+  }
+
+  private Criteria getCriteriaForStreamingDestination(String accountIdentifier, String identifier) {
+    return Criteria.where(StreamingDestinationKeys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(StreamingDestinationKeys.identifier)
+        .is(identifier);
+  }
+
+  private StreamingDestination updateAndReturnStreamingDestination(StreamingDestinationDTO newStreamingDestinationDTO,
+      StreamingDestination currentStreamingDestination, String accountIdentifier) {
+    StreamingDestination newStreamingDestination =
+        streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, newStreamingDestinationDTO);
+    newStreamingDestination.setId(currentStreamingDestination.getId());
+    newStreamingDestination.setCreatedAt(currentStreamingDestination.getCreatedAt());
+    if (!currentStreamingDestination.getStatus().equals(newStreamingDestination.getStatus())) {
+      newStreamingDestination.setLastStatusChangedAt(System.currentTimeMillis());
+    } else {
+      newStreamingDestination.setLastStatusChangedAt(currentStreamingDestination.getLastStatusChangedAt());
+    }
+
+    try {
+      return streamingDestinationRepository.save(newStreamingDestination);
+    } catch (DuplicateKeyException exception) {
+      String message = String.format(
+          "Streaming destination with identifier [%s] already exists.", currentStreamingDestination.getIdentifier());
+      log.error(message, exception);
+      throw new DuplicateFieldException(message);
+    }
+  }
+
+  private void validateUpdateRequest(String streamingDestinationIdentifier,
+      StreamingDestinationDTO streamingDestinationDTO, StreamingDestination currentStreamingDestination) {
+    checkEqualityOrThrow(streamingDestinationIdentifier, streamingDestinationDTO.getSlug(), "identifier");
+    checkEqualityOrThrow(
+        currentStreamingDestination.getConnectorRef(), streamingDestinationDTO.getConnectorRef(), "connectorRef");
+    checkEqualityOrThrow(
+        currentStreamingDestination.getType().name(), streamingDestinationDTO.getSpec().getType().name(), "type");
+  }
+
+  private void checkEqualityOrThrow(Object str1, Object str2, Object str3) {
+    if (!Objects.equals(str1, str2)) {
+      String message =
+          String.format("Streaming destination with %s [%s] did not match with StreamingDestinationDTO %s [%s]", str3,
+              str1, str3, str2);
+      log.error(message);
+      throw new InvalidRequestException(message);
+    }
   }
 }

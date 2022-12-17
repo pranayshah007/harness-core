@@ -15,6 +15,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -28,9 +29,12 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,6 +76,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -622,5 +627,38 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
 
     assertThat(dockerRegistryService.getArtifactMetaInfo(dockerInternalConfig, "imageName", "tag"))
         .isEqualTo(artifactMetaInfo);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRetryFetchToken() {
+    Map<String, String> tokens = new HashMap<>();
+    tokens.put("realm", "realm-value");
+    tokens.put("service", "service-value");
+    tokens.put("scope", "scope-value");
+
+    final DockerRegistryRestClient restClient = Mockito.spy(dockerRegistryRestClient);
+    doThrow(RuntimeException.class)
+        .when(restClient)
+        .getToken("authHeader", "realm-value", "service-value", "scope-value");
+    try {
+      dockerRegistryService.fetchTokenWithRetry(restClient, "authHeader", tokens);
+    } catch (Exception e) {
+      verify(restClient, times(5)).getToken("authHeader", "realm-value", "service-value", "scope-value");
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRetryListImageTagsByUrl() {
+    final DockerRegistryRestClient restClient = Mockito.spy(dockerRegistryRestClient);
+    doThrow(RuntimeException.class).when(restClient).listImageTagsByUrl("authHeader", "nextPage");
+    try {
+      dockerRegistryService.listImageTagsByUrl(restClient, "authHeader", "nextPage");
+    } catch (Exception e) {
+      verify(restClient, times(5)).listImageTagsByUrl(anyString(), anyString());
+    }
   }
 }

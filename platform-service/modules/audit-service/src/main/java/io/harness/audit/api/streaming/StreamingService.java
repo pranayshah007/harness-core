@@ -16,6 +16,14 @@ import org.springframework.data.domain.Pageable;
 
 public interface StreamingService {
   StreamingDestination create(String accountIdentifier, StreamingDestinationDTO streamingDestinationDTO);
+
   Page<StreamingDestination> list(
       String accountIdentifier, Pageable pageable, StreamingDestinationFilterProperties filterProperties);
+
+  StreamingDestination getStreamingDestination(String accountIdentifier, String identifier);
+
+  boolean delete(String accountIdentifier, String identifier);
+
+  StreamingDestination update(
+      String streamingDestinationIdentifier, StreamingDestinationDTO streamingDestinationDTO, String accountIdentifier);
 }

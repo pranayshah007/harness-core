@@ -24,6 +24,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -75,16 +76,21 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
                                                       .build())
                                   .build();
 
-    log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
-    NodeExecution updatedNodeExecution = nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED,
-        ops -> setUnset(ops, NodeExecutionKeys.failureInfo, failureInfo), EnumSet.noneOf(Status.class));
+    // ProceedWithDefault FailureStrategy is not configured, then expire the nodeExecution.
+    if (node.getAdviserObtainments().stream().noneMatch(
+            o -> o.getType().getType().equals(ProceedWithDefaultValueAdviser.ADVISER_TYPE.getType()))) {
+      log.debug("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+      nodeExecution = nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED,
+          ops -> setUnset(ops, NodeExecutionKeys.failureInfo, failureInfo), EnumSet.noneOf(Status.class));
+    }
+
     // End nodeExecution if advisers are empty.
     if (CollectionUtils.isEmpty(node.getAdviserObtainments())) {
       engine.endNodeExecution(nodeExecution.getAmbiance());
       return;
     }
     // Queue advising event so that failure-strategies will be honored.
-    adviseHelper.queueAdvisingEvent(updatedNodeExecution, failureInfo, node, Status.EXPIRED);
+    adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.EXPIRED);
   }
 
   @Override

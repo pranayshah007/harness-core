@@ -12,8 +12,8 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
-    "//311-iacm-utilities:module",
     "//332-ci-manager/service:module",
+    "//332-iacm-common:module",
     "//440-connector-nextgen:module",
     "//870-cg-orchestration:module",
     "//940-primary-version-manager:module",
@@ -413,6 +413,17 @@ test_deps = [
     "@maven//:org_mockito_mockito_core",
     "@maven//:org_mongodb_morphia_morphia",
 ]
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = [
+        "//310-iacm-manager/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = test_deps + shared_dependencies,
+)
 
 run_tests()
 

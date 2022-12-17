@@ -187,6 +187,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
+
+      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+          && !oldService.getType().equals(requestService.getType())) {
+        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+      }
+
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
@@ -223,6 +229,20 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
+
+    Optional<ServiceEntity> serviceEntityOptional =
+        get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
+            requestService.getIdentifier(), false);
+
+    if (serviceEntityOptional.isPresent()) {
+      ServiceEntity oldService = serviceEntityOptional.get();
+
+      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+          && !oldService.getType().equals(requestService.getType())) {
+        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+      }
+    }
+
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           ServiceEntity result = serviceRepository.upsert(criteria, requestService);

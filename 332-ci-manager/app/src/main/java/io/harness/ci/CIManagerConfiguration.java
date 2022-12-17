@@ -22,6 +22,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.iacm.beans.entities.IACMServiceConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.redis.RedisConfig;
@@ -107,6 +108,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;
   private STOServiceConfig stoServiceConfig;
+  private IACMServiceConfig iacmServiceConfig;
 
   private String managerServiceSecret;
   private String jwtAuthSecret;

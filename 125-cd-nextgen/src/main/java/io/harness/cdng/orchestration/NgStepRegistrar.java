@@ -15,6 +15,8 @@ import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -36,8 +38,12 @@ import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRunTaskStep;
+import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.elastigroup.ElastigroupSetupStep;
+import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
+import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -94,8 +100,6 @@ import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV3;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
-import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasBGAppSetupStep;
@@ -214,12 +218,28 @@ public class NgStepRegistrar {
     engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
 
     engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
-    engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
     engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
     engineSteps.put(TerragruntPlanStep.STEP_TYPE, TerragruntPlanStep.class);
     engineSteps.put(TerragruntApplyStep.STEP_TYPE, TerragruntApplyStep.class);
     engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
+    engineSteps.put(ElastigroupBGStageSetupStep.STEP_TYPE, ElastigroupBGStageSetupStep.class);
+    engineSteps.put(ElastigroupSwapRouteStep.STEP_TYPE, ElastigroupSwapRouteStep.class);
+    engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
+
+    // Asg
+    engineSteps.put(AsgCanaryDeployStep.STEP_TYPE, AsgCanaryDeployStep.class);
+    engineSteps.put(AsgCanaryDeleteStep.STEP_TYPE, AsgCanaryDeleteStep.class);
+
+    // TAS
+    engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
+    engineSteps.put(TasBGAppSetupStep.STEP_TYPE, TasBGAppSetupStep.class);
+    engineSteps.put(TasBasicAppSetupStep.STEP_TYPE, TasBasicAppSetupStep.class);
+    engineSteps.put(TasCommandStep.STEP_TYPE, TasCommandStep.class);
+    engineSteps.put(TasSwapRoutesStep.STEP_TYPE, TasSwapRoutesStep.class);
+    engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
+    engineSteps.put(TasAppResizeStep.STEP_TYPE, TasAppResizeStep.class);
+    engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
 
     engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
     engineSteps.put(TasCommandStep.STEP_TYPE, TasCommandStep.class);

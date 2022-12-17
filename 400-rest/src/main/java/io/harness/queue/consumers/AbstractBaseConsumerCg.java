@@ -13,6 +13,7 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
 import io.harness.queue.RedisConsumerCg;
@@ -54,6 +55,11 @@ public abstract class AbstractBaseConsumerCg extends RedisTraceConsumer implemen
       while (!Thread.currentThread().isInterrupted() && !shouldStop.get()) {
         if (queueController.isNotPrimary()) {
           log.info("Setup usage consumer is not running on primary deployment, will try again after some time...");
+          TimeUnit.SECONDS.sleep(SLEEP_SECONDS);
+          continue;
+        }
+        if (MaintenanceController.getMaintenanceFlag()) {
+          log.info("We are under maintenance, will try again after {} seconds", SLEEP_SECONDS);
           TimeUnit.SECONDS.sleep(SLEEP_SECONDS);
           continue;
         }

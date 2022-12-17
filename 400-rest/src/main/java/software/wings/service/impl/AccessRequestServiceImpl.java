@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -161,6 +162,24 @@ public class AccessRequestServiceImpl implements AccessRequestService {
     query.filter("accessActive", true);
     query.order(Sort.descending(AccessRequestKeys.accessEndAt));
     return query.asList();
+  }
+
+  @Override
+  public List<String> getAccountsHavingActiveAccessRequestForUser(String userId) {
+    Query<HarnessUserGroup> harnessUserGroupQuery =
+        wingsPersistence.createQuery(HarnessUserGroup.class).field("memberIds").contains(userId).project("uuid", true);
+    Query<AccessRequest> query = wingsPersistence.createQuery(AccessRequest.class, excludeAuthority)
+                                     .filter(AccessRequestKeys.accessActive, true);
+    query.or(query.criteria(AccessRequestKeys.accessType)
+                 .equal(AccessRequest.AccessType.MEMBER_ACCESS)
+                 .criteria(AccessRequestKeys.memberIds)
+                 .contains(userId),
+        query.criteria(AccessRequestKeys.accessType)
+            .equal(AccessRequest.AccessType.GROUP_ACCESS)
+            .criteria(AccessRequestKeys.harnessUserGroupId)
+            .in(harnessUserGroupQuery.asList().stream().map(HarnessUserGroup::getUuid).collect(Collectors.toList())));
+    query.project(AccessRequestKeys.accountId, true);
+    return query.asList().stream().map(AccessRequest::getAccountId).collect(Collectors.toList());
   }
 
   @Override

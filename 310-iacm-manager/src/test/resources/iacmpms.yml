@@ -1,0 +1,41 @@
+# Copyright 2021 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+pipeline:
+  name: test
+  identifier: test
+  properties:
+    ci:
+      codebase:
+        repoName: repo.git
+        connectorRef: foobar
+        build: <+input>
+  stages:
+    - stage:
+        name: test
+        identifier: test
+        description: Test stage for testing
+        type: IACM
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Plugin
+                  name: Terraform Plan
+                  identifier: test
+                  spec:
+                    connectorRef: dockerreg
+                    image: sigilita/drone-terraform-nasser:latest
+                    entrypoint:
+                      - /bin/drone-terraform
+                    settings:
+                      root_dir: _infra
+                      aws_access_key_id: superkey
+                      aws_secret_access_key: supersecret
+                      role_arn_to_assume: arn:aws:iam::448640225317:role/nasserTest
+                      PLUGIN_ROLE_ARN_TO_ASSUME: arn:aws:iam::448640225317:role/nasserTest
+                      ROLE_ARN_TO_ASSUME: arn:aws:iam::448640225317:role/nasserTest
+                    imagePullPolicy: IfNotPresent
+                  description: Planning TF

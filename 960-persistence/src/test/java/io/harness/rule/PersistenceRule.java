@@ -23,6 +23,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.MongoQueueConsumer;
@@ -89,6 +90,7 @@ public class PersistenceRule implements MethodRule, InjectorRuleMixin, MongoRule
       }
     }
 
+    MaintenanceController.forceMaintenance(true);
     final QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
     queueListenerController.register(injector.getInstance(TestTopicQueuableObjectListener.class), 1);
     queueListenerController.register(injector.getInstance(TestNoTopicQueuableObjectListener.class), 1);

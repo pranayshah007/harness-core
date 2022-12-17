@@ -28,6 +28,7 @@ import io.harness.spec.server.ng.v1.OrganizationApi;
 import io.harness.spec.server.ng.v1.model.CreateOrganizationRequest;
 import io.harness.spec.server.ng.v1.model.OrganizationResponse;
 import io.harness.spec.server.ng.v1.model.UpdateOrganizationRequest;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -89,7 +90,7 @@ public class OrganizationApiImpl implements OrganizationApi {
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks =
-        organizationApiUtils.addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
 
     return responseBuilderWithLinks.entity(organizations).build();
   }

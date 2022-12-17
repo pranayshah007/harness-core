@@ -7,10 +7,14 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
+
+import java.util.Map;
 
 public class EmptyStepMapperImpl implements StepMapper {
   @Override
@@ -24,7 +28,7 @@ public class EmptyStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     return null;
   }
 

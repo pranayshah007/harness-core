@@ -34,6 +34,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.Service.ServiceKeys;
@@ -136,8 +137,8 @@ public abstract class AbstractServicesApiImpl {
       List<ServiceResponse> filterserviceList = filterByPermissionAndId(accessControlList, serviceList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterserviceList).build();
     } else {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
@@ -152,8 +153,8 @@ public abstract class AbstractServicesApiImpl {
 
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
 
       return responseBuilderWithLinks.entity(serviceList).build();
     }

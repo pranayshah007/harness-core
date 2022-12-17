@@ -13,7 +13,7 @@ spec:
           type: CanaryAppSetup
           timeout: 10m
           spec:
-            instanceCount: FromManifest
+            tasInstanceCountType: FromManifest
             resizeStrategy: DownScaleOldFirst
             existingVersionToKeep: 3
             additionalRoutes: []

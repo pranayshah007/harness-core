@@ -34,10 +34,14 @@ public class HelmExceptionConstants {
     public static final String HINT_NO_CHART_VERSION_FOUND = "Provide existing helm chart version";
     public static final String HINT_CHART_VERSION_IMPROPER_CONSTRAINT = "Provide existing and valid helm chart version";
     public static final String HINT_VALIDATE_ERROR = "Could not validate the .yaml file";
+    public static final String HINT_NO_RELEASES_ERROR =
+        "Try deleting the release or change the status of the helm-managed release secret manually";
     public static final String HINT_INVALID_YAML = "K8s yaml is invalid/incorrect.";
     public static final String HINT_RESOURCE_CONFLICT = "There is conflict due to existing resource(s)";
     public static final String DEFAULT_HINT_HELM_INSTALL =
         "Make sure that the helm chart can be installed successfully using the helm cli.";
+    public static final String DEFAULT_HINT_HELM_UPGRADE =
+        "Make sure that the helm chart can be upgraded successfully using the helm cli.";
     public static final String DEFAULT_HINT_HELM_HIST = "Helm history command has failed";
     public static final String DEFAULT_HINT_HELM_LIST_RELEASE = "Helm List releases command has failed";
     public static final String DEFAULT_HINT_HELM_RENDER_CHART = "Failed to render helm chart";
@@ -66,11 +70,14 @@ public class HelmExceptionConstants {
         "Provided chart version doesn't match helm expected version format (e.x. https://semver.org/)";
     public static final String EXPLAIN_VALIDATE_ERROR =
         "Given helm chart contains .yaml file with invalid/missing fields. Please check the .yaml file.";
+    public static final String EXPLAIN_NO_RELEASES_ERROR =
+        "There are no releases in the release history with 'Deployed' status";
     public static final String EXPLAIN_UNKNOWN_COMMAND_FLAG =
         "Provided Command flag is incorrect or invalid. Please check.";
     public static final String EXPLAIN_INVALID_YAML =
         "Error processing yaml manifest. Please check the indentation, any invalid/missing fields etc. For more details, please check logs.";
     public static final String DEFAULT_EXPLAIN_HELM_INSTALL = "Unable to install helm chart.";
+    public static final String DEFAULT_EXPLAIN_HELM_UPGRADE = "Unable to upgrade helm chart.";
     public static final String EXPLAIN_RESOURCE_CONFLICT =
         "Rendered manifests contain a resource which already exists. Try deleting these resources and re-run";
     public static final String DEFAULT_EXPLAIN_HELM_HIST = "Unable to execute release history command";
@@ -95,6 +102,7 @@ public class HelmExceptionConstants {
     public static final String INVALID_VALUE_TYPE = "error validating data";
     public static final String EXISTING_RESOURCE_CONFLICT = "existing resource conflict";
     public static final String UNKNOWN_COMMAND_FLAG = "unknown flag";
+    public static final String NO_DEPLOYED_RELEASES = "no deployed releases";
 
     public HelmCliErrorMessages() {
       throw new UnsupportedOperationException("not supported");
