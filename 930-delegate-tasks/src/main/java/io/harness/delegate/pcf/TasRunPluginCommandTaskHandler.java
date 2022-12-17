@@ -104,11 +104,6 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
       final String finalScriptString = prepareFinalScript(pluginCommandRequest.getRenderedScriptString(),
           workingDirCanonicalPath, StringUtils.defaultIfEmpty(pluginCommandRequest.getRepoRoot(), "/"));
 
-      // log all the files being saved and files being resolved in the script
-      executionLogCallback.saveExecutionLog("\n #  File paths identified in the Script :");
-      pcfCommandTaskBaseHelper.printFileNamesInExecutionLogs(
-          pluginCommandRequest.getFilePathsInScript(), executionLogCallback);
-
       executionLogCallback.saveExecutionLog(
           "\n #  Files saved in working directory [" + workingDirCanonicalPath + "]:");
       pcfCommandTaskBaseHelper.printFileNamesInExecutionLogs(

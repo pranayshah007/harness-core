@@ -285,10 +285,6 @@ public class TasStepHelper {
 
     // Resolving expressions
     scriptString = engineExpressionService.renderExpression(ambiance, scriptString);
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-            new CDExpressionResolveFunctor(engineExpressionService, ambiance);
-    scriptString = (String) ExpressionEvaluatorUtils.updateExpressions(
-            scriptString, cdExpressionResolveFunctor);
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
@@ -1341,7 +1337,8 @@ public class TasStepHelper {
 
   private TasArtifactConfig getTasContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     ConnectorInfoDTO connectorInfo;
-    TasContainerArtifactConfigBuilder artifactConfigBuilder = TasContainerArtifactConfig.builder();
+    TasContainerArtifactConfig.TasContainerArtifactConfigBuilder artifactConfigBuilder =
+        TasContainerArtifactConfig.builder();
 
     switch (artifactOutcome.getArtifactType()) {
       case DOCKER_REGISTRY_NAME:
