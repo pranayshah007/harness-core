@@ -11,7 +11,6 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -141,7 +140,7 @@ public class TasEntityHelper {
                 SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskParameters(params)
-            .taskType(taskType.getDisplayName())
+            .taskType(taskType.name())
             .taskSelectors(taskSelectors)
             .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
             .build();

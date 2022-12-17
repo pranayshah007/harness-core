@@ -7,7 +7,6 @@
 
 package io.harness.cdng.tas;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import static java.util.Objects.isNull;
 

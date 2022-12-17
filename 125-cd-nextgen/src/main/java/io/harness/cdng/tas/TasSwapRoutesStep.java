@@ -7,7 +7,6 @@
 
 package io.harness.cdng.tas;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import static java.util.Objects.isNull;
 
@@ -214,7 +213,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(CF_COMMAND_TASK_NG.name())
+                                  .taskType(TaskType.TAS_SWAP_ROUTES.name())
                                   .parameters(new Object[] {cfSwapRoutesRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,

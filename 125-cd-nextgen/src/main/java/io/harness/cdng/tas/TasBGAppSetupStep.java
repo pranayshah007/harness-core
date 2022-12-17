@@ -30,7 +30,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
@@ -232,7 +231,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                             .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        executionPassThroughData.getCommandUnits(), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
+        executionPassThroughData.getCommandUnits(), TaskType.TAS_BG_SETUP.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

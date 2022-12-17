@@ -7,11 +7,8 @@
 
 package io.harness.cdng.tas;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static java.util.Objects.isNull;
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -203,9 +200,9 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                             .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-            executionPassThroughData.getCommandUnits(), CF_COMMAND_TASK_NG.getDisplayName(),
-            TaskSelectorYaml.toTaskSelector(tasCommandStepParameters.getDelegateSelectors()),
-            stepHelper.getEnvironmentType(ambiance));
+        executionPassThroughData.getCommandUnits(), TaskType.TANZU_COMMAND.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(tasCommandStepParameters.getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
             .taskRequest(taskRequest)
             .chainEnd(true)

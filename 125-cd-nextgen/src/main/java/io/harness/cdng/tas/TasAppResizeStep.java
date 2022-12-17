@@ -9,7 +9,6 @@ package io.harness.cdng.tas;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import static java.util.Objects.isNull;
 
@@ -250,7 +249,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(CF_COMMAND_TASK_NG.name())
+                                  .taskType(TaskType.TAS_APP_RESIZE.name())
                                   .parameters(new Object[] {cfDeployCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
