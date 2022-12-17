@@ -27,11 +27,11 @@ import org.jetbrains.annotations.NotNull;
 @AllArgsConstructor
 public class AbstractTasTaskRequest implements CfCommandRequestNG {
   @Getter @Setter Integer timeoutIntervalInMin;
-  @Getter @Setter @NonNull public String accountId;
+  @Getter @Setter public String accountId;
   @Getter @Setter String commandName;
   @Getter @Setter CfCommandTypeNG cfCommandTypeNG;
   @Getter @Setter CommandUnitsProgress commandUnitsProgress;
   @Getter @Setter @NotNull TasInfraConfig tasInfraConfig;
   @Getter @Setter boolean useCfCLI;
-  @Getter @Setter @NotNull CfCliVersion cfCliVersion;
+  @Getter @Setter CfCliVersion cfCliVersion;
 }

@@ -19,7 +19,6 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -29,7 +28,6 @@ import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
-import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -65,6 +63,8 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,7 +87,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  public static final String TAS_ROLLBACK = "TasRollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
@@ -119,7 +118,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     CfRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfRollbackCommandRequestNG.builder()
             .accountId(accountId)
-            .commandName(TAS_ROLLBACK)
+            .commandName(CfCommandTypeNG.ROLLBACK.name())
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
@@ -139,7 +138,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Arrays.asList(CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
-        CF_COMMAND_TASK_NG.getDisplayName(),
+        TaskType.TAS_ROLLBACK.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

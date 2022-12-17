@@ -66,6 +66,8 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,7 +92,6 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  public static final String TAS_SWAP_ROLLBACK = "SwapRollback";
   public static final String COMMAND_UNIT = "Swap Rollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -155,7 +156,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
-            .commandName(TAS_SWAP_ROLLBACK)
+            .commandName(CfCommandTypeNG.SWAP_ROLLBACK.name())
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
@@ -178,13 +179,13 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(CF_COMMAND_TASK_NG.name())
+                                  .taskType(TaskType.TAS_SWAP_ROLLBACK.name())
                                   .parameters(new Object[] {cfRollbackCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Arrays.asList(CfCommandUnitConstants.SwapRollback, CfCommandUnitConstants.Upsize,
             CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
-        CF_COMMAND_TASK_NG.getDisplayName(),
+        TaskType.TAS_SWAP_ROLLBACK.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

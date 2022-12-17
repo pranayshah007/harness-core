@@ -180,27 +180,27 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
     int timeout = CDStepHelper.getTimeoutInMin(stepParameters);
 
     CfRunPluginCommandRequestNG cfRunPluginCommandRequestNG =
-            CfRunPluginCommandRequestNG.builder()
-                    .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(cfCliVersion))
-                    .cfCommandTypeNG(CfCommandTypeNG.TANZU_COMMAND)
-                    .fileDataList(fileDataList)
-                    .tasInfraConfig(tasInfraConfig)
-                    .accountId(accountId)
-                    .timeoutIntervalInMin(timeout)
-                    .commandName(TANZU_COMMAND)
-                    .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-                    .filePathsInScript(executionPassThroughData.getPathsFromScript())
-                    .repoRoot(executionPassThroughData.getRepoRoot())
-                    .renderedScriptString(executionPassThroughData.getRawScript())
-                    .useCfCLI(true)
-                    .build();
+        CfRunPluginCommandRequestNG.builder()
+            .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(cfCliVersion))
+            .cfCommandTypeNG(CfCommandTypeNG.TANZU_COMMAND)
+            .fileDataList(fileDataList)
+            .tasInfraConfig(tasInfraConfig)
+            .accountId(accountId)
+            .timeoutIntervalInMin(timeout)
+            .commandName(CfCommandTypeNG.TANZU_COMMAND.name())
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .filePathsInScript(executionPassThroughData.getPathsFromScript())
+            .repoRoot(executionPassThroughData.getRepoRoot())
+            .renderedScriptString(executionPassThroughData.getRawScript())
+            .useCfCLI(true)
+            .build();
 
     TaskData taskData = TaskData.builder()
-            .parameters(new Object[] {cfRunPluginCommandRequestNG})
-            .taskType(TaskType.CF_COMMAND_TASK_NG.name())
-            .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-            .async(true)
-            .build();
+                            .parameters(new Object[] {cfRunPluginCommandRequestNG})
+                            .taskType(TaskType.TANZU_COMMAND.getDisplayName())
+                            .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                            .async(true)
+                            .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
             executionPassThroughData.getCommandUnits(), CF_COMMAND_TASK_NG.getDisplayName(),

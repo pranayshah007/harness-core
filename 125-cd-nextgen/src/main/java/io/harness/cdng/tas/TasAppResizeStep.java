@@ -31,6 +31,7 @@ import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -67,6 +68,8 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -90,7 +93,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
   @Inject private StepHelper stepHelper;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-  public static final String TAS_APP_RESIZE = "TasAppResize";
   public static final String COMMAND_UNIT = "Tas App resize";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -226,7 +228,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     CfDeployCommandRequestNG cfDeployCommandRequestNG =
         CfDeployCommandRequestNG.builder()
             .accountId(accountId)
-            .commandName(TAS_APP_RESIZE)
+            .commandName(CfCommandTypeNG.APP_RESIZE.name())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .downsizeAppDetail(isNull(tasSetupDataOutcome.getActiveApplicationDetails())
@@ -252,10 +254,22 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
                                   .parameters(new Object[] {cfDeployCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Wrapup),
-        CF_COMMAND_TASK_NG.getDisplayName(),
+        getCommandUnitList(tasSetupDataOutcome.getResizeStrategy()), TaskType.TAS_APP_RESIZE.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasAppResizeStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
+  }
+
+  private List<String> getCommandUnitList(TasResizeStrategyType resizeStrategy) {
+    List<String> commandUnitList = new ArrayList<>();
+    if (TasResizeStrategyType.UPSCALE_NEW_FIRST.equals(resizeStrategy)) {
+      commandUnitList.add(CfCommandUnitConstants.Upsize);
+      commandUnitList.add(CfCommandUnitConstants.Downsize);
+    } else {
+      commandUnitList.add(CfCommandUnitConstants.Downsize);
+      commandUnitList.add(CfCommandUnitConstants.Upsize);
+    }
+    commandUnitList.add(CfCommandUnitConstants.Wrapup);
+    return commandUnitList;
   }
 
   private Integer getDownsizeCount(TasInstanceUnitType downsizeCountType, Integer downsizeInstanceCount,

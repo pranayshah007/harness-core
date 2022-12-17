@@ -49,6 +49,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.beans.TaskType;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -121,11 +123,12 @@ public class TasEntityHelper {
         .projectIdentifier(projectIdentifier)
         .build();
   }
-  public DelegateResponseData executeSyncTask(TaskParameters params, BaseNGAccess ngAccess, String ifFailedMessage) {
-    return getResponseData(null, ngAccess, params, Optional.empty());
+  public DelegateResponseData executeSyncTask(
+      TaskParameters params, BaseNGAccess ngAccess, String ifFailedMessage, TaskType taskType) {
+    return getResponseData(null, ngAccess, params, Optional.empty(), taskType);
   }
-  public DelegateResponseData getResponseData(
-      Ambiance ambiance, BaseNGAccess ngAccess, TaskParameters params, Optional<Integer> customTimeoutInSec) {
+  public DelegateResponseData getResponseData(Ambiance ambiance, BaseNGAccess ngAccess, TaskParameters params,
+      Optional<Integer> customTimeoutInSec, TaskType taskType) {
     Set<String> taskSelectors =
         ((CfInfraMappingDataRequestNG) params).getTasInfraConfig().getTasConnectorDTO().getDelegateSelectors();
     DelegateTaskRequest delegateTaskRequest =
@@ -138,7 +141,7 @@ public class TasEntityHelper {
                 SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .taskParameters(params)
-            .taskType(CF_COMMAND_TASK_NG.name())
+            .taskType(taskType.getDisplayName())
             .taskSelectors(taskSelectors)
             .logStreamingAbstractions(createLogStreamingAbstractions(ngAccess, ambiance))
             .build();

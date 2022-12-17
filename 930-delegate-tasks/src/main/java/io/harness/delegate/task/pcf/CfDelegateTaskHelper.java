@@ -24,19 +24,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CfDelegateTaskHelper {
-  @Inject private Map<String, CfCommandTaskNGHandler> CfTaskTypeToTaskHandlerMap;
-  public CfCommandResponseNG getCfCommandResponse(
+  public CfCommandResponseNG getCfCommandResponse(CfCommandTaskNGHandler cfCommandTaskNGHandler,
       CfCommandRequestNG cfCommandRequestNG, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = cfCommandRequestNG.getCommandUnitsProgress() != null
         ? cfCommandRequestNG.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
     log.info("Starting task execution for command: {}", cfCommandRequestNG.getCfCommandTypeNG().name());
 
-    CfCommandTaskNGHandler commandTaskHandler =
-        CfTaskTypeToTaskHandlerMap.get(cfCommandRequestNG.getCfCommandTypeNG().name());
     try {
       CfCommandResponseNG cfCommandResponseNG =
-          commandTaskHandler.executeTask(cfCommandRequestNG, iLogStreamingTaskClient, commandUnitsProgress);
+          cfCommandTaskNGHandler.executeTask(cfCommandRequestNG, iLogStreamingTaskClient, commandUnitsProgress);
       cfCommandResponseNG.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return cfCommandResponseNG;
     } catch (Exception e) {
