@@ -198,6 +198,7 @@ import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.scheduler.SchedulerConfig;
@@ -227,6 +228,7 @@ import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
+import io.harness.serializer.DelegateServiceCacheRegistrar;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.CgEventHelper;
 import io.harness.service.DelegateServiceDriverModule;
@@ -252,6 +254,7 @@ import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
+import org.redisson.api.RedissonClient;
 import software.wings.DataStorageMode;
 import software.wings.alerts.AlertModule;
 import software.wings.backgroundjobs.AccountBackgroundJobService;
@@ -1237,6 +1240,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
     install(new ManagerCacheRegistrar());
+    install(new DelegateServiceCacheRegistrar());
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());
@@ -1777,7 +1781,15 @@ public class WingsModule extends AbstractModule implements ServersModule {
     return new YamlUtils().read(featureRestrictions, FeatureRestrictions.class);
   }
 
-  @Override
+    @Provides
+    @Singleton
+    @Named("redissonClient")
+    RedissonClient redissonClient() {
+        return RedissonClientFactory.getClient(configuration.getRedisLockConfig());
+    }
+
+
+    @Override
   public List<Closeable> servers(Injector injector) {
     return Collections.singletonList(getPersistentLockerCloseable(injector));
   }
