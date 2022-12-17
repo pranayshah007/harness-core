@@ -7,7 +7,6 @@
 
 package io.harness.cdng.tas;
 
-
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,6 +19,7 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -166,9 +166,15 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .timeoutIntervalInMin(10)
             .swapRouteOccurred(swapRouteOccurred)
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null ? null : tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails() == null ? tasSetupDataOutcome.getNewApplicationDetails() : tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
-                .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails() == null ? null : tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
+            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null
+                    ? null
+                    : tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
+            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails() == null
+                    ? tasSetupDataOutcome.getNewApplicationDetails()
+                    : tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
+            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails() == null
+                    ? null
+                    : tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
             .instanceData(instanceData)
@@ -230,9 +236,28 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
                   .getUnitProgresses())
           .build();
     }
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        (TasSwapRollbackStepParameters) stepElementParameters.getSpec();
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+    OptionalSweepingOutput tasSetupVariablesOutcomeOptional =
+        tasEntityHelper.getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
+            tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME, executionSweepingOutputService);
+    if (!tasSetupVariablesOutcomeOptional.isFound()) {
+      TasSetupVariablesOutcome tasSetupVariablesOutcome =
+          (TasSetupVariablesOutcome) tasSetupVariablesOutcomeOptional.getOutput();
+      tasSetupVariablesOutcome.setNewAppName(null);
+      tasSetupVariablesOutcome.setNewAppGuid(null);
+      tasSetupVariablesOutcome.setNewAppRoutes(null);
+      builder.stepOutcome(StepResponse.StepOutcome.builder()
+                              .outcome(tasSetupVariablesOutcome)
+                              .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
+                              .group(StepCategory.STAGE.name())
+                              .build());
+    }
     builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);

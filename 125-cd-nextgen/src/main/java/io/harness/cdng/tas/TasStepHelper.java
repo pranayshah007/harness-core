@@ -1583,10 +1583,10 @@ public class TasStepHelper {
   public void saveInstancesOutcome(Ambiance ambiance, List<ServerInstanceInfo> serverInstanceInfoList) {
     InstancesOutcome instancesOutcome = buildInstancesOutcome(serverInstanceInfoList);
     executionSweepingOutputService.consume(
-        ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
+        ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STEP.name());
     Set<String> instances = getInstances(serverInstanceInfoList);
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
-        HostsOutput.builder().hosts(instances).build(), StepCategory.STAGE.name());
+        HostsOutput.builder().hosts(instances).build(), StepCategory.STEP.name());
   }
 
   private Set<String> getInstances(List<ServerInstanceInfo> instanceElements) {

@@ -9,7 +9,6 @@ package io.harness.cdng.tas;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
-
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -72,7 +71,6 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -294,7 +292,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     if (upsizeInstanceCountType == TasInstanceUnitType.PERCENTAGE) {
       int percent = Math.min(upsizeInstanceCount, 100);
       int count = (int) Math.round((percent * totalDesiredCount) / 100.0);
-      return Math.max(count, 1);
+      return Math.max(count, 0);
     } else {
       return Math.min(totalDesiredCount, upsizeInstanceCount);
     }
