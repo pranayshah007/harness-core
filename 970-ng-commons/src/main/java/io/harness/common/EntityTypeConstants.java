@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -16,6 +16,7 @@ public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -155,6 +156,7 @@ public interface EntityTypeConstants {
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
@@ -169,5 +171,15 @@ public interface EntityTypeConstants {
   String CHAOS_STEP = "Chaos";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  String IACM_STAGE = "IACMStage";
+  String IACM_STEPS = "IACMStep";
+  String IACM = "IACM";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  String TERRAGRUNT_PLAN = "TerragruntPlan";
+  String TERRAGRUNT_APPLY = "TerragruntApply";
+  String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  String CONTAINER_STEP = "Container";
+  String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

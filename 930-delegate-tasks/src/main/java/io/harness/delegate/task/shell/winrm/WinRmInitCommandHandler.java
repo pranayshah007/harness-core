@@ -11,8 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getStatus;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
-
-import static software.wings.common.Constants.WINDOWS_HOME_DIR;
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWorkingDir;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -118,7 +117,7 @@ public class WinRmInitCommandHandler implements CommandHandler {
         winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
             winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    return executor.executeCommandString(getInitCommand(WINDOWS_HOME_DIR), false);
+    return executor.executeCommandString(getInitCommand(getWorkingDir(commandUnit.getDestinationPath())), false, false);
   }
 
   private String getInitCommand(String workingDirectory) {

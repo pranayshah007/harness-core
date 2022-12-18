@@ -11,6 +11,7 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MILOS;
@@ -60,6 +61,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
 import io.harness.stream.BoundedInputStream;
 
@@ -459,6 +461,18 @@ public class ConfigServiceTest extends WingsBaseTest {
     EntityVersion entityVersion = entityVersionService.newEntityVersion(
         APP_ID, EntityType.ENVIRONMENT, ENTITY_ID, PARENT, EntityVersion.ChangeType.CREATED, "Data");
     assertThat(entityVersion.getAccountId()).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testShouldDeleteByAccountId() {
+    when(wingsPersistence.delete((Query<PersistentEntity>) any())).thenReturn(true);
+    Query<PersistentEntity> mockedQueryEntity = mock(Query.class);
+    when(wingsPersistence.createQuery(any())).thenReturn(mockedQueryEntity);
+    when(mockedQueryEntity.filter(anyString(), any())).thenReturn(mockedQueryEntity);
+    entityVersionService.deleteByAccountId(ACCOUNT_ID);
+    verify(wingsPersistence, times(1)).delete((Query<PersistentEntity>) any());
   }
 
   @Test(expected = InvalidRequestException.class)

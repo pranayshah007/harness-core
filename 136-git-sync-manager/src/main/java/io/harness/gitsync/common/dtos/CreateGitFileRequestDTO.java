@@ -29,4 +29,5 @@ public class CreateGitFileRequestDTO {
   String filePath;
   String commitMessage;
   ScmConnector scmConnector;
+  boolean useGitClient;
 }

@@ -19,6 +19,7 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.metrics.DelegateAgentMetricResource;
 import io.harness.delegate.metrics.DelegateAgentMetrics;
 import io.harness.delegate.service.DelegateAgentService;
+import io.harness.delegate.service.core.resource.TaskResource;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.serializer.YamlUtils;
@@ -162,5 +163,6 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
   private void registerResources(final Environment environment, final Injector injector) {
     environment.jersey().register(injector.getInstance(HealthResource.class));
     environment.jersey().register(injector.getInstance(DelegateAgentMetricResource.class));
+    environment.jersey().register(injector.getInstance(TaskResource.class));
   }
 }

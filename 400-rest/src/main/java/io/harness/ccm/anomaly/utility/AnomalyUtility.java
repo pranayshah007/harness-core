@@ -17,6 +17,7 @@ import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
 import io.harness.ccm.anomaly.url.HarnessNgUrl;
 import io.harness.ccm.anomaly.url.HarnessUrl;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.currency.Currency;
 
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
@@ -30,7 +31,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CE)
 @TargetModule(HarnessModule._375_CE_GRAPHQL)
 public class AnomalyUtility {
-  public Map<String, String> getEntityMap(AnomalyEntity anomaly) {
+  public Map<String, String> getEntityMap(AnomalyEntity anomaly, Currency currency) {
     Map<String, String> substitutes = new HashMap<>();
     substitutes.put(AnomalyEntityKeys.clusterName, anomaly.getClusterName());
     substitutes.put(AnomalyEntityKeys.namespace, anomaly.getNamespace());
@@ -41,9 +42,11 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.gcpSKUDescription, anomaly.getGcpSKUDescription());
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
-    substitutes.put(AnomalyEntityKeys.actualCost, "$" + getRoundedDoubleValue(anomaly.getActualCost()).toString());
-    substitutes.put(AnomalyEntityKeys.expectedCost, "$" + getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
-    substitutes.put("ANOMALY_COST", "$" + getAnomalousCost(anomaly).toString());
+    substitutes.put(
+        AnomalyEntityKeys.actualCost, currency.getSymbol() + getRoundedDoubleValue(anomaly.getActualCost()).toString());
+    substitutes.put(AnomalyEntityKeys.expectedCost,
+        currency.getSymbol() + getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
+    substitutes.put("ANOMALY_COST", currency.getSymbol() + getAnomalousCost(anomaly).toString());
     substitutes.put("ANOMALY_COST_PERCENTAGE",
         getPercentageRaise(anomaly.getActualCost(), anomaly.getExpectedCost(), true).toString() + "%");
     return substitutes;

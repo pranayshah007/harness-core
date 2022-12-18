@@ -124,10 +124,10 @@ import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -1020,6 +1020,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate.getDelegateType() != null) {
       setUnset(updateOperations, DelegateKeys.delegateType, delegate.getDelegateType());
     }
+    if (delegate.getDelegateName() != null) {
+      setUnset(updateOperations, DelegateKeys.delegateName, delegate.getDelegateName());
+    }
     setUnset(updateOperations, DelegateKeys.delegateProfileId, delegate.getDelegateProfileId());
     setUnset(updateOperations, DelegateKeys.polllingModeEnabled, delegate.isPolllingModeEnabled());
     setUnset(updateOperations, DelegateKeys.proxy, delegate.isProxy());
@@ -1322,7 +1325,7 @@ public class DelegateServiceImpl implements DelegateService {
             .version(version)
             .managerHost(managerHost)
             .verificationHost(verificationHost)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .build(),
@@ -1333,7 +1336,7 @@ public class DelegateServiceImpl implements DelegateService {
             .version(version)
             .managerHost(managerHost)
             .verificationHost(verificationHost)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .watcher(true)
@@ -1348,7 +1351,9 @@ public class DelegateServiceImpl implements DelegateService {
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
         doUpgrade = true;
       } else {
-        doUpgrade = !(Version.valueOf(version).equals(Version.valueOf(upgradeToVersion)));
+        final String delegateVersion = substringBefore(version, "-").trim();
+        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
+        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
       }
       delegateScripts.setDoUpgrade(doUpgrade);
       delegateScripts.setVersion(upgradeToVersion);
@@ -1370,7 +1375,7 @@ public class DelegateServiceImpl implements DelegateService {
             .version(version)
             .managerHost(managerHost)
             .verificationHost(verificationHost)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(delegateTokenName.orElse(null))
             .delegateName(StringUtils.defaultString(delegateName))
             .build(),
@@ -1381,7 +1386,7 @@ public class DelegateServiceImpl implements DelegateService {
             .version(version)
             .managerHost(managerHost)
             .verificationHost(verificationHost)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(delegateTokenName.orElse(null))
             .delegateName(StringUtils.defaultString(delegateName))
             .watcher(true)
@@ -1803,7 +1808,7 @@ public class DelegateServiceImpl implements DelegateService {
               .delegateName(delegateName)
               .delegateProfile(delegateProfile)
               .delegateType(SHELL_SCRIPT)
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
               .delegateTokenName(tokenName)
               .build(),
           false);
@@ -1818,7 +1823,7 @@ public class DelegateServiceImpl implements DelegateService {
               .delegateProfile(delegateProfile)
               .delegateType(SHELL_SCRIPT)
               .watcher(true)
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
               .delegateTokenName(tokenName)
               .build(),
           false);
@@ -1939,7 +1944,7 @@ public class DelegateServiceImpl implements DelegateService {
               .delegateName(delegateName)
               .delegateProfile(delegateProfile)
               .delegateType(DOCKER)
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
               .delegateTokenName(tokenName)
               .build(),
           false);
@@ -2022,7 +2027,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .delegateProfile(delegateProfile == null ? "" : delegateProfile)
                   .delegateType(KUBERNETES)
                   .ciEnabled(isCiEnabled)
-                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
                   .delegateTokenName(tokenName)
                   .delegateCpu(1)
                   .runAsRoot(runAsRoot)
@@ -2075,7 +2080,7 @@ public class DelegateServiceImpl implements DelegateService {
                 .delegateProfile(delegateProfile == null ? "" : delegateProfile)
                 .delegateType(CE_KUBERNETES)
                 .ceEnabled(true)
-                .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
                 .delegateTokenName(tokenName)
                 .ciEnabled(false)
                 .delegateCpu(1)
@@ -2121,7 +2126,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateName(delegateName)
             .delegateProfile(delegateProfile == null ? "" : delegateProfile)
             .delegateType(HELM_DELEGATE)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(tokenName)
             .build(),
         false);
@@ -2162,7 +2167,7 @@ public class DelegateServiceImpl implements DelegateService {
               .delegateProfile(delegateProfile == null ? "" : delegateProfile)
               .delegateType(ECS)
               .delegateGroupId(delegateGroup.getUuid())
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
               .delegateTokenName(tokenName)
               .delegateGroupName(delegateGroupName)
               .build(),
@@ -2397,11 +2402,11 @@ public class DelegateServiceImpl implements DelegateService {
         : null;
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
-            .delegateGroupId(delegateGroupId)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(DelegateSetupDetails.builder()
                                       .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
                                       .description(delegateGroup.getDescription())
@@ -2464,11 +2469,11 @@ public class DelegateServiceImpl implements DelegateService {
     log.info("Delegate group: {} and all belonging delegates have been deleted.", delegateGroupUuid);
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgId)
             .projectIdentifier(projectId)
-            .delegateGroupId(delegateGroupUuid)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(
                 DelegateSetupDetails.builder()
                     .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
@@ -2628,16 +2633,17 @@ public class DelegateServiceImpl implements DelegateService {
 
     String delegateGroupName = delegateParams.getDelegateGroupName();
 
+    Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
+
     // old ng delegates will be using accountKey as token, and hence we don't have org/project identifiers from the
     // global context thread
     String orgIdentifier = delegateParams.getOrgIdentifier() != null
         ? delegateParams.getOrgIdentifier()
-        : getOrgIdentifierUsingTokenFromGlobalContext(delegateParams.getAccountId()).orElse(null);
+        : getOrgIdentifierUsingTokenFromGlobalContext(delegateParams.getAccountId(), delegateTokenName).orElse(null);
     String projectIdentifier = delegateParams.getProjectIdentifier() != null
         ? delegateParams.getProjectIdentifier()
-        : getProjectIdentifierUsingTokenFromGlobalContext(delegateParams.getAccountId()).orElse(null);
-
-    Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
+        : getProjectIdentifierUsingTokenFromGlobalContext(delegateParams.getAccountId(), delegateTokenName)
+              .orElse(null);
 
     // tokenName here will be used for auditing the delegate register event
     DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
@@ -2668,10 +2674,13 @@ public class DelegateServiceImpl implements DelegateService {
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
 
     final String delegateProfileId = delegateParams.getDelegateProfileId();
-    try {
-      validateDelegateProfileId(delegateParams.getAccountId(), delegateProfileId);
-    } catch (InvalidRequestException e) {
-      log.warn("No delegate configuration (profile) with id {} exists: {}", delegateProfileId, e);
+
+    if (!delegateParams.isNg()) {
+      try {
+        validateDelegateProfileId(delegateParams.getAccountId(), delegateProfileId);
+      } catch (InvalidRequestException e) {
+        log.warn("No delegate configuration (profile) with id {} exists: {}", delegateProfileId, e);
+      }
     }
 
     DelegateBuilder delegateBuilder =
@@ -2962,10 +2971,11 @@ public class DelegateServiceImpl implements DelegateService {
       return null;
     }
 
-    log.info("Checking delegate profile. Previous profile [{}] updated at {}", profileId, lastUpdatedAt);
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
 
     if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
+      log.warn("Delegate was not found or is not enabled while checking for profile. Delegate status {}",
+          delegate.getStatus());
       return null;
     }
 
@@ -2976,6 +2986,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (isNotBlank(delegate.getDelegateProfileId())) {
       DelegateProfile profile = delegateProfileService.get(accountId, delegate.getDelegateProfileId());
       if (profile != null && (!profile.getUuid().equals(profileId) || profile.getLastUpdatedAt() > lastUpdatedAt)) {
+        log.debug("Checking delegate profile. Previous profile [{}] updated at {}", profileId, lastUpdatedAt);
         Map<String, Object> context = new HashMap<>();
         context.put("secrets",
             SecretFunctor.builder()
@@ -4116,8 +4127,18 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
+  }
+
+  @Override
   public String expireTask(String accountId, String delegateTaskId) {
     return delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
+  }
+
+  @Override
+  public String expireTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.expireTaskV2(accountId, delegateTaskId);
   }
 
   public DelegateSizeDetails fetchDefaultDockerDelegateSize() {
@@ -4216,11 +4237,6 @@ public class DelegateServiceImpl implements DelegateService {
                                             .findFirst()
                                             .orElse(null);
 
-      // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-      DelegateGroup delegateGroup =
-          upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-      sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
-
       ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
           this.finalizeTemplateParametersWithMtlsIfRequired(
               TemplateParameters.builder()
@@ -4243,7 +4259,7 @@ public class DelegateServiceImpl implements DelegateService {
                           : "")
                   .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
                   .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
-                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
                   .runAsRoot(delegateSetupDetails.getRunAsRoot() == null || delegateSetupDetails.getRunAsRoot())
                   .delegateTokenName(delegateSetupDetails.getTokenName())),
           true);
@@ -4299,10 +4315,6 @@ public class DelegateServiceImpl implements DelegateService {
                                           .findFirst()
                                           .orElse(null);
 
-    // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-    DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
-
     ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
         TemplateParameters.builder()
             .accountId(accountId)
@@ -4323,7 +4335,7 @@ public class DelegateServiceImpl implements DelegateService {
                 isNotEmpty(delegateSetupDetails.getTags()) ? String.join(",", delegateSetupDetails.getTags()) : "")
             .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
             .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .delegateTokenName(delegateSetupDetails.getTokenName())
             .runAsRoot(delegateSetupDetails.getRunAsRoot() == null || delegateSetupDetails.getRunAsRoot())
             .build(),
@@ -4363,7 +4375,7 @@ public class DelegateServiceImpl implements DelegateService {
             .managerHost(managerHost)
             .verificationHost(verificationServiceUrl)
             .delegateName(delegateName)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
             .ceEnabled(false)
             .delegateTokenName(delegateSetupDetails != null ? delegateSetupDetails.getTokenName() : null)
             .build();
@@ -4520,11 +4532,11 @@ public class DelegateServiceImpl implements DelegateService {
       DelegateSetupDetails delegateSetupDetails, DelegateGroup delegateGroup, String accountId) {
     if (delegateGroup.isNg()) {
       outboxService.save(
-          DelegateGroupUpsertEvent.builder()
+          DelegateUpsertEvent.builder()
               .accountIdentifier(accountId)
               .orgIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getOrgIdentifier() : null)
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
-              .delegateGroupId(delegateGroup.getUuid())
+              .delegateGroupIdentifier(delegateGroup.getIdentifier())
               .delegateSetupDetails(delegateSetupDetails)
               .build());
     } else {
@@ -4544,8 +4556,8 @@ public class DelegateServiceImpl implements DelegateService {
     return Optional.empty();
   }
 
-  private Optional<String> getOrgIdentifierUsingTokenFromGlobalContext(String accountId) {
-    Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
+  private Optional<String> getOrgIdentifierUsingTokenFromGlobalContext(
+      String accountId, Optional<String> delegateTokenName) {
     if (delegateTokenName.isPresent()) {
       DelegateTokenDetails delegateTokenDetails =
           delegateNgTokenService.getDelegateToken(accountId, delegateTokenName.get());
@@ -4556,8 +4568,8 @@ public class DelegateServiceImpl implements DelegateService {
     return Optional.empty();
   }
 
-  private Optional<String> getProjectIdentifierUsingTokenFromGlobalContext(String accountId) {
-    Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
+  private Optional<String> getProjectIdentifierUsingTokenFromGlobalContext(
+      String accountId, Optional<String> delegateTokenName) {
     if (delegateTokenName.isPresent()) {
       DelegateTokenDetails delegateTokenDetails =
           delegateNgTokenService.getDelegateToken(accountId, delegateTokenName.get());

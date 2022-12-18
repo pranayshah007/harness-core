@@ -55,7 +55,6 @@ func runCmd(ctx context.Context, cmd exec.Command, stepID string, commands []str
 		addonLogger.Errorw(
 			"timeout while executing the step",
 			"step_id", stepID,
-			"retry_count", retryCount,
 			"commands", commands,
 			"elapsed_time_ms", utils.TimeSince(startTime),
 			zap.Error(ctxErr))
@@ -66,7 +65,6 @@ func runCmd(ctx context.Context, cmd exec.Command, stepID string, commands []str
 		addonLogger.Errorw(
 			"error encountered while executing the step",
 			"step_id", stepID,
-			"retry_count", retryCount,
 			"commands", commands,
 			"elapsed_time_ms", utils.TimeSince(startTime),
 			zap.Error(err))

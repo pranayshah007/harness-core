@@ -14,6 +14,7 @@ import static io.harness.gitsync.common.beans.YamlChangeSet.MAX_RETRY_COUNT_EXCE
 import static io.harness.gitsync.common.beans.YamlChangeSetStatus.SKIPPED;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.beans.YamlChangeSet;
 import io.harness.gitsync.common.beans.YamlChangeSet.YamlChangeSetKeys;
@@ -26,7 +27,6 @@ import io.harness.gitsync.core.runnable.ChangeSetGroupingKey.ChangeSetGroupingKe
 import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.ExceptionLogger;
 import io.harness.repositories.yamlChangeSet.YamlChangeSetRepository;
 
 import com.google.inject.Inject;

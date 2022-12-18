@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.migration;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
@@ -35,6 +35,7 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -226,6 +227,7 @@ public class CopyTemplatesPermissionRoleUpdate implements NGMigration {
                                         .build();
               RoleResponseDTO response = getResponse(accessControlAdminClient.updateRole(
                   updatedRole.getIdentifier(), accountId, orgIdentifier, projectIdentifier, updatedRole));
+              TimeUnit.SECONDS.sleep(2);
               log.info(DEBUG_MESSAGE + response.toString());
               log.info(String.format("Updated %s role in account %s.", roleResponseDTO.getRole().getName(), accountId));
             } catch (Exception exception) {

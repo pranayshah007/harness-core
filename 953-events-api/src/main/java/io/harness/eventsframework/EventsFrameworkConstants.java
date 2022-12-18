@@ -87,6 +87,9 @@ public final class EventsFrameworkConstants {
   public static final String PIPELINE_NODE_RESUME_EVENT_TOPIC = "pipeline_node_resume";
   public static final int PIPELINE_NODE_RESUME_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_RESUME_MAX_TOPIC_SIZE = 5000;
+
+  public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER =
+      "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
   public static final String PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER = "PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER";
@@ -105,8 +108,15 @@ public final class EventsFrameworkConstants {
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String CD_DEPLOYMENT_EVENT = "cd_deployment_event";
+
   public static final int CD_DEPLOYMENT_EVENT_BATCH_SIZE = 1;
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
+
+  public static final String INTERNAL_CHANGE_EVENT_FF = "feature_flag_change_event";
+
+  public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
+
+  public static final int INTERNAL_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String SRM_STATEMACHINE_EVENT = "srm_statemachine_event";
   public static final int SRM_STATEMACHINE_EVENT_BATCH_SIZE = 1;
@@ -149,6 +159,8 @@ public final class EventsFrameworkConstants {
   public static final Duration PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 
+  public static final Duration INTERNAL_CHANGE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
+
   public static final int DEFAULT_READ_BATCH_SIZE = 50;
   public static final int ENTITY_CRUD_READ_BATCH_SIZE = 50;
   public static final int NG_ACCOUNT_SETUP_READ_BATCH_SIZE = 50;
@@ -168,4 +180,16 @@ public final class EventsFrameworkConstants {
   // Tracing Constants
   public static final String QUERY_ANALYSIS_TOPIC = "query_analysis";
   public static final int QUERY_ANALYSIS_TOPIC_SIZE = 100;
+
+  // CG WaitNotify constants
+
+  public static final String CG_NOTIFY_EVENT = "cg_notify_event";
+  public static final int CG_NOTIFY_EVENT_TOPIC_SIZE = 100000;
+  public static final int CG_NOTIFY_EVENT_BATCH_SIZE = 50;
+  public static final Duration CG_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
+
+  public static final String CG_GENERAL_EVENT = "cg_general_event";
+  public static final int CG_GENERAL_EVENT_TOPIC_SIZE = 100000;
+  public static final int CG_GENERAL_EVENT_BATCH_SIZE = 50;
+  public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
 }

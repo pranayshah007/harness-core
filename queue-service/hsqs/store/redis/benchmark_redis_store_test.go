@@ -8,11 +8,12 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/harness/harness-core/queue-service/hsqs/store"
 )
 
 const (
@@ -31,15 +32,12 @@ func BenchmarkEndToEndSimpleEnqueueWithGroupRegistration(b *testing.B) {
 	defer parentCancel()
 	//enqueue and register streams with consumer groups
 	for k := 0; k < queueCount; k++ {
-		if err := redisStore.Register(parent, store.RegisterTopicMetadata{Topic: topic}); err != nil {
-			b.Errorf("could not register consumer group to queue %v", err.Error())
-		}
 		for j := 0; j < count; j++ {
 			ctx, _ := context.WithTimeout(parent, 100*time.Millisecond)
 			if _, err := redisStore.Enqueue(ctx, store.EnqueueRequest{
 				Topic:        topic,
 				SubTopic:     "A" + strconv.Itoa(k),
-				Payload:      []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+				Payload:      "Payload",
 				ProducerName: producer,
 			}); err != nil {
 				b.Fatalf("could not enqueue a task: %v", err.Error())
@@ -80,7 +78,7 @@ func BenchmarkDequeueAllTheMessages(b *testing.B) {
 				}
 				dequeResponse, err := redisStore.Dequeue(ctx, deqRequest)
 				if err != nil {
-					b.Fatalf("could not dequeue tasks inside: %v", err.Error())
+					b.Errorf("could not dequeue tasks inside: %v", err.Error())
 				}
 				fmt.Printf("length is %d", len(processed))
 				if len(processed) == 10000 {

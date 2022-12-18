@@ -39,6 +39,7 @@ import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.persistence.AppContainer;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 import software.wings.utils.ArtifactType;
 import software.wings.yaml.BaseEntityYaml;
@@ -135,7 +136,7 @@ public class Service extends Base
   private boolean isPcfV2;
   private HelmVersion helmVersion;
   private CfCliVersion cfCliVersion;
-  @FdIndex private String accountId;
+  private String accountId;
   @FdIndex private List<String> artifactStreamIds;
   @Transient private List<ArtifactStreamBinding> artifactStreamBindings;
   private boolean sample;

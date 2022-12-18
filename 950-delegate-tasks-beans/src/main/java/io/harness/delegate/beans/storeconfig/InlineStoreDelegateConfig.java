@@ -12,7 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import lombok.Builder;
@@ -22,6 +22,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(CDP)
 public class InlineStoreDelegateConfig implements StoreDelegateConfig, NestedAnnotationResolver {
+  String identifier;
   @Expression(ALLOW_SECRETS) private List<InlineFileConfig> files;
 
   @Override

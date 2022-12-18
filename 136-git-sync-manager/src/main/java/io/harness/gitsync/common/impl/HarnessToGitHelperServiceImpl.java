@@ -30,6 +30,8 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.BranchDetails;
+import io.harness.gitsync.CacheResponseParams;
+import io.harness.gitsync.CacheState;
 import io.harness.gitsync.ChangeType;
 import io.harness.gitsync.CreateFileRequest;
 import io.harness.gitsync.CreatePRRequest;
@@ -56,6 +58,9 @@ import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitSyncDirection;
 import io.harness.gitsync.common.beans.InfoForGitPush;
+import io.harness.gitsync.common.beans.ScmCacheDetails;
+import io.harness.gitsync.common.beans.ScmCacheState;
+import io.harness.gitsync.common.dtos.GitErrorMetadata;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
@@ -394,19 +399,23 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                                                     .filePath(getFileRequest.getFilePath())
                                                     .repoName(getFileRequest.getRepoName())
                                                     .scope(scope)
+                                                    .useCache(getFileRequest.getCacheRequestParams().getUseCache())
                                                     .build());
       return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO, scope);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));
       if (scmException == null) {
         return GetFileResponse.newBuilder()
             .setStatusCode(ex.getCode().getStatus().getCode())
             .setError(prepareDefaultErrorDetails(ex))
+            .setGitMetaData(gitMetaData)
             .build();
       }
       return GetFileResponse.newBuilder()
           .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
           .setError(prepareErrorDetails(ex))
+          .setGitMetaData(gitMetaData)
           .build();
     }
   }
@@ -655,19 +664,31 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private GetFileResponse prepareGetFileResponse(
       GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope) {
     GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).build();
-    return GetFileResponse.newBuilder()
-        .setStatusCode(HTTP_200)
-        .setFileContent(scmGetFileResponseDTO.getFileContent())
-        .setGitMetaData(GitMetaData.newBuilder()
-                            .setRepoName(getFileRequest.getRepoName())
-                            .setBranchName(scmGetFileResponseDTO.getBranchName())
-                            .setCommitId(scmGetFileResponseDTO.getCommitId())
-                            .setBlobId(scmGetFileResponseDTO.getBlobId())
-                            .setFilePath(getFileRequest.getFilePath())
-                            .setFileUrl(gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(),
-                                scmGetFileResponseDTO.getBranchName(), getFileRequest.getFilePath(), gitRepositoryDTO))
-                            .build())
-        .build();
+    GetFileResponse.Builder getFileResponseOrBuilder =
+        GetFileResponse.newBuilder()
+            .setStatusCode(HTTP_200)
+            .setFileContent(scmGetFileResponseDTO.getFileContent())
+            .setGitMetaData(GitMetaData.newBuilder()
+                                .setRepoName(getFileRequest.getRepoName())
+                                .setBranchName(scmGetFileResponseDTO.getBranchName())
+                                .setCommitId(scmGetFileResponseDTO.getCommitId())
+                                .setBlobId(scmGetFileResponseDTO.getBlobId())
+                                .setFilePath(getFileRequest.getFilePath())
+                                .setFileUrl(getFileUrl(getFileRequest, scmGetFileResponseDTO, scope, gitRepositoryDTO))
+                                .build());
+    if (scmGetFileResponseDTO.getCacheDetails() != null) {
+      getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseDTO.getCacheDetails()));
+    }
+    return getFileResponseOrBuilder.build();
+  }
+
+  private String getFileUrl(GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope,
+      GitRepositoryDTO gitRepositoryDTO) {
+    if (isEmpty(scmGetFileResponseDTO.getBranchName())) {
+      return getFileRequest.getFilePath();
+    }
+    return gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(), scmGetFileResponseDTO.getBranchName(),
+        getFileRequest.getFilePath(), gitRepositoryDTO);
   }
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(
@@ -735,5 +756,35 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private boolean isEnabled(String accountId, FeatureName featureName) {
     return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+  }
+
+  private GitMetaData getGitMetadata(GitErrorMetadata gitErrorMetadata) {
+    GitMetaData.Builder gitMetaDataOrBuilder = GitMetaData.newBuilder();
+    if (gitErrorMetadata.getBranch() != null) {
+      gitMetaDataOrBuilder.setBranchName(gitErrorMetadata.getBranch());
+    }
+    if (gitErrorMetadata.getFilepath() != null) {
+      gitMetaDataOrBuilder.setFilePath(gitErrorMetadata.getFilepath());
+    }
+    return gitMetaDataOrBuilder.build();
+  }
+
+  private CacheResponseParams getCacheResponse(ScmCacheDetails cacheDetails) {
+    return CacheResponseParams.newBuilder()
+        .setCacheState(getCacheState(cacheDetails.getScmCacheState()))
+        .setLastUpdateAt(cacheDetails.getLastUpdatedAt())
+        .setTtlLeft(cacheDetails.getCacheExpiryTTL())
+        .build();
+  }
+
+  private CacheState getCacheState(ScmCacheState scmCacheState) {
+    switch (scmCacheState) {
+      case VALID_CACHE:
+        return CacheState.VALID_CACHE;
+      case STALE_CACHE:
+        return CacheState.STALE_CACHE;
+      default:
+        return CacheState.UNKNOWN_STATE;
+    }
   }
 }

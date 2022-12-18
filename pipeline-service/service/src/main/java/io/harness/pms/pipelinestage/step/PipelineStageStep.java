@@ -14,7 +14,10 @@ import io.harness.OrchestrationStepTypes;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.execution.PipelineStageResponseData;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -37,10 +40,12 @@ import io.harness.pms.security.PmsSecurityContextGuardUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,6 +63,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   @Inject private AccessControlClient client;
 
   @Inject private PMSExecutionService pmsExecutionService;
+  @Inject private NodeExecutionService nodeExecutionService;
 
   @Override
   public Class<PipelineStageStepParameters> getStepParametersClass() {
@@ -114,11 +120,12 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     return AsyncExecutableResponse.newBuilder().addCallbackIds(responseDto.getPlanExecution().getUuid()).build();
   }
 
-  private PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+  public PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
     return PipelineStageInfo.newBuilder()
         .setExecutionId(ambiance.getPlanExecutionId())
-        .setStageNodeExecutionId(ambiance.getStageExecutionId())
+        .setStageNodeId(stepParameters.getStageNodeId())
         .setHasParentPipeline(true)
+        .setRunSequence(ambiance.getMetadata().getRunSequence())
         .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
         .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))
@@ -137,9 +144,22 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     }
 
     PipelineStageSweepingOutput pipelineStageSweepingOutput = (PipelineStageSweepingOutput) sweepingOutput.getOutput();
+
+    NodeExecution nodeExecution =
+        nodeExecutionService
+            .getPipelineNodeExecutionWithProjections(
+                pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance))
+            .get();
+
     PipelineStageResponseData pipelineStageResponseData =
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
-    // TODO: need to publish outcomes
-    return StepResponse.builder().status(pipelineStageResponseData.getStatus()).build();
+    return StepResponse.builder()
+        .status(pipelineStageResponseData.getStatus())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutputExpressionConstants.OUTPUT)
+                         .outcome(pipelineStageHelper.resolveOutputVariables(
+                             stepParameters.getOutputs().getValue(), nodeExecution.getAmbiance()))
+                         .build())
+        .build();
   }
 }

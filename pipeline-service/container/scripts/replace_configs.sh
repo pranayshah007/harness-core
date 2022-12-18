@@ -54,6 +54,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
   export MAX_CONNECTION_IDLE_TIME; yq -i '.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
@@ -482,6 +486,7 @@ replace_key_value pipelineEventConsumersConfig.advise.threads "$ADVISE_EVENT_CON
 replace_key_value pipelineEventConsumersConfig.resume.threads "$RESUME_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.sdkResponse.threads "$SDK_RESPONSE_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.graphUpdate.threads "$GRAPH_UPDATE_EVENT_CONSUMER_THREAD_COUNT"
+replace_key_value pipelineEventConsumersConfig.pipelineExecutionEvent.threads "$PIPELINE_EXECUTION_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.partialPlanResponse.threads "$PARTIAL_PLAN_RESPONSE_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.createPlan.threads "$CREATE_PLAN_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.planNotify.threads "$PLAN_NOTIFY_EVENT_CONSUMER_THREAD_COUNT"

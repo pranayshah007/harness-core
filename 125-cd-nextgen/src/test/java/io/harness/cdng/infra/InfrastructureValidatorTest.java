@@ -8,6 +8,7 @@
 package io.harness.cdng.infra;
 
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -16,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AsgInfrastructure.AsgInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -234,6 +237,30 @@ public class InfrastructureValidatorTest extends CategoryTest {
           ElastigroupConfiguration.builder()
               .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
               .build());
+    }
+    return builder.build();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testAsgInfraMapper() {
+    assertThatThrownBy(() -> validator.validate(getAsgInfrastructure(true, false)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatThrownBy(() -> validator.validate(getAsgInfrastructure(true, true)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatThrownBy(() -> validator.validate(getAsgInfrastructure(false, true)))
+        .isInstanceOf(InvalidArgumentsException.class);
+    assertThatCode(() -> validator.validate(getAsgInfrastructure(false, false))).doesNotThrowAnyException();
+  }
+
+  private AsgInfrastructure getAsgInfrastructure(boolean emptyConnector, boolean emptyRegion) {
+    AsgInfrastructureBuilder builder = AsgInfrastructure.builder();
+    if (!emptyConnector) {
+      builder.connectorRef(ParameterField.createValueField("connector"));
+    }
+    if (!emptyRegion) {
+      builder.region(ParameterField.createValueField("region"));
     }
     return builder.build();
   }

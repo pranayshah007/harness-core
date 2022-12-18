@@ -12,14 +12,16 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionConfig;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,6 +59,9 @@ public class CustomArtifactDelegateRequest
   private long timeout;
   String accountId;
   List<String> delegateSelectors;
+  Map<String, EncryptionConfig> encryptionConfigs;
+  Map<String, SecretDetail> secretDetails;
+  int expressionFunctorToken;
 
   public Set<String> getDelegateSelectors() {
     Set<String> combinedDelegateSelectors = new HashSet<>();

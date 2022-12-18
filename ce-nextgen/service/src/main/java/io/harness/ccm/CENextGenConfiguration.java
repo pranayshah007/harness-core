@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.AwsGovCloudConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
+import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.configuration.DeployMode;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -28,6 +29,7 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
@@ -132,9 +134,12 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
 
   @JsonProperty("lightwingAutoCUDClientConfig") private ServiceHttpClientConfig lightwingAutoCUDClientConfig;
+  @JsonProperty("dkronClientConfig") private ServiceHttpClientConfig dkronClientConfig;
+  @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
   @JsonProperty(value = "enableLightwingAutoCUDDC") private boolean enableLightwingAutoCUDDC;
 
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+  @JsonProperty(value = "currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

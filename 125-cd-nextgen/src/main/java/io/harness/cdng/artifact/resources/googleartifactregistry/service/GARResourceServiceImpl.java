@@ -11,13 +11,13 @@ import static io.harness.cdng.artifact.resources.googleartifactregistry.mappers.
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -55,7 +55,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +63,6 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -190,16 +188,7 @@ public class GARResourceServiceImpl implements GARResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
-        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-    Map<String, String> abstractions = new HashMap<>(owner);
-    if (StringUtils.isNotBlank(ngAccess.getOrgIdentifier())) {
-      abstractions.put("orgIdentifier", ngAccess.getOrgIdentifier());
-    }
-    if (StringUtils.isNotBlank(ngAccess.getProjectIdentifier())
-        && StringUtils.isNotBlank(ngAccess.getOrgIdentifier())) {
-      abstractions.put("projectIdentifier", ngAccess.getProjectIdentifier());
-    }
+    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())

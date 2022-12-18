@@ -187,6 +187,7 @@ public class OwnerRule implements TestRule {
   public static final String SANDESH = "sandesh.katta";
   public static final String SANJA = "sanja.jokic";
   public static final String SANYASI_NAIDU = "sanyasi.naidu";
+  public static final String SATHISH = "sathish.soundarapandian";
   public static final String SEAN = "sean.dunne";
   public static final String SHALINI = "shalini.agrawal";
   public static final String SHASWAT = "shaswat.deep";
@@ -305,6 +306,9 @@ public class OwnerRule implements TestRule {
   public static final String XINGCHI_JIN = "xingchi.jin";
   public static final String RAGHAV_MURALI = "raghavendra.murali";
   public static final String KAPIL_GARG = "kapil.garg";
+  public static final String SAHIBA = "sahiba.khan";
+  public static final String ANMOL = "anmol.maheshwari";
+  public static final String MEENA = "meena.ravichandran";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -421,6 +425,7 @@ public class OwnerRule implements TestRule {
           .put(SANDESH, defaultUserInfo(SANDESH).slack("U015PLPSD47").team(CE).build())
           .put(SANJA, defaultUserInfo(SANJA).slack("U015Q24465T").team(DEL).build())
           .put(SANYASI_NAIDU, defaultUserInfo(SANYASI_NAIDU).slack("U012P5KH3RU").team(DX).build())
+          .put(SATHISH, defaultUserInfo(SATHISH).slack("U0497B0V0FK").team(CV).build())
           .put(SEAN, defaultUserInfo(SEAN).slack("U020VELFZNK").team(DEL).build())
           .put(SHALINI, defaultUserInfo(SHALINI).slack("U02TYJR6ZR6").build())
           .put(SHASWAT, UserInfo.builder().email("shaswat.deep@harness.io").slack("UL9J5EH7A").build())
@@ -539,6 +544,9 @@ public class OwnerRule implements TestRule {
           .put(ABHINAV3, defaultUserInfo(ABHINAV3).slack("U03RHN86V5L").team(CE).build())
           .put(RAGHAV_MURALI, defaultUserInfo(RAGHAV_MURALI).slack("U03SSLFQ295").team(PL).build())
           .put(KAPIL_GARG, defaultUserInfo(KAPIL_GARG).slack("U03TGHL3068").team(SMP).build())
+          .put(SAHIBA, defaultUserInfo(SAHIBA).slack("U04080DMQTT").team(CE).build())
+          .put(ANMOL, defaultUserInfo(ANMOL).slack("U03A6KZB9F0").team(CE).build())
+          .put(MEENA, defaultUserInfo(MEENA).slack("U03UJM1PY5T").team(CDP).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

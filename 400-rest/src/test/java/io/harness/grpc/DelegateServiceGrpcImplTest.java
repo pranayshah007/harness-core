@@ -286,6 +286,34 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
+  public void testCancelTaskV2() {
+    String accountId = generateUuid();
+    String taskId = generateUuid();
+    when(delegateTaskServiceClassic.abortTaskV2(accountId, taskId))
+        .thenReturn(null)
+        .thenReturn(DelegateTask.builder().status(Status.STARTED).build());
+
+    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.TYPE_UNSPECIFIED);
+
+    taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.EXECUTING);
+
+    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTaskV2(accountId, taskId);
+    assertThatThrownBy(()
+                           -> delegateServiceGrpcClient.cancelTaskV2(AccountId.newBuilder().setId(accountId).build(),
+                               TaskId.newBuilder().setId(taskId).build()))
+        .isInstanceOf(DelegateServiceDriverException.class)
+        .hasMessage("Unexpected error occurred while cancelling task.");
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
   public void testTaskProgress() {
     String accountId = generateUuid();
     String taskId = generateUuid();

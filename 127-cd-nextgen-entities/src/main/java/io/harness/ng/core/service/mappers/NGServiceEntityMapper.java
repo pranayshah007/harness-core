@@ -60,7 +60,8 @@ public class NGServiceEntityMapper {
 
   private void validateIdentifier(String fromYaml, String fromEntity) {
     if (isNotEmpty(fromYaml) && isNotEmpty(fromEntity) && !fromEntity.equals(fromYaml)) {
-      throw new InvalidRequestException("Requested service identifier doesn't match with identifier given in yaml");
+      throw new InvalidRequestException(String.format(
+          "Identifier : %s in service request doesn't match with identifier : %s given in yaml", fromEntity, fromYaml));
     }
   }
 }

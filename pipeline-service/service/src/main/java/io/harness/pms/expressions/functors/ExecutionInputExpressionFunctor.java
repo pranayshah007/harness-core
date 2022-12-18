@@ -46,7 +46,9 @@ public class ExecutionInputExpressionFunctor implements LateBindingValue {
     // Fetch all ExecutionInputInstance of the current node and all parents.
     List<ExecutionInputInstance> inputInstances = executionInputService.getExecutionInputInstances(nodeExecutionIds);
     for (ExecutionInputInstance instance : inputInstances) {
-      expressionValuesMap.putAll(instance.getMergedInputTemplate());
+      if (instance.getMergedInputTemplate() != null) {
+        expressionValuesMap.putAll(instance.getMergedInputTemplate());
+      }
     }
     return expressionValuesMap;
   }

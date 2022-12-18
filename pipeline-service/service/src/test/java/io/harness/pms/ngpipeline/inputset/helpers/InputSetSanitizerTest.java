@@ -71,6 +71,23 @@ public class InputSetSanitizerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testSanitizeInputSetsWithIncorrectVariableType() {
+    String filename = "pipeline-extensive.yml";
+    String yaml = readFile(filename);
+
+    String wrongRuntimeInputFile = "runtimeInputWrong2.yml";
+    String wrongRuntimeInput = readFile(wrongRuntimeInputFile);
+
+    String sanitizedYaml1 = sanitizeRuntimeInput(yaml, wrongRuntimeInput);
+
+    String correctFile = "runtimeInput2.yml";
+    String correctYaml = readFile(correctFile).replace("\"", "");
+    assertThat(sanitizedYaml1.replace("\"", "")).isEqualTo(correctYaml);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testSanitizeInputSetsWithAllWrongFields() {
     String filename = "pipeline-extensive.yml";
     String yaml = readFile(filename);

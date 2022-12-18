@@ -126,7 +126,7 @@ public class ArtifactoryArtifactTaskHelper {
                                                               .size()
                         != 0
                     ? artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0)
-                    : ArtifactoryArtifactDelegateResponse.builder().build());
+                    : ArtifactoryGenericArtifactDelegateResponse.builder().build());
         String buildMetadataUrl = artifactoryGenericArtifactDelegateResponse.getBuildDetails() != null
             ? artifactoryGenericArtifactDelegateResponse.getBuildDetails().getBuildUrl()
             : null;
@@ -194,7 +194,7 @@ public class ArtifactoryArtifactTaskHelper {
         .build();
   }
 
-  private void saveLogs(LogCallback executionLogCallback, String message) {
+  protected void saveLogs(LogCallback executionLogCallback, String message) {
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message);
     }

@@ -7,7 +7,7 @@
 
 package io.harness.enforcement.services.impl;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;

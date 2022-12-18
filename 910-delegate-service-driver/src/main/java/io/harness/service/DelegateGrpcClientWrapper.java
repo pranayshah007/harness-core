@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.delegate.AccountId;
+import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -44,8 +46,10 @@ public class DelegateGrpcClientWrapper {
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
-      delegateResponseData =
-          (DelegateResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (delegateResponseData instanceof ErrorNotifyResponseData) {
         WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
         // if task registered to error handling framework on delegate, then exception won't be null
@@ -69,8 +73,10 @@ public class DelegateGrpcClientWrapper {
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
-      delegateResponseData = (DelegateResponseData) referenceFalseKryoSerializer.asInflatedObject(
-          ((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (delegateResponseData instanceof ErrorNotifyResponseData) {
         WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
         // if task registered to error handling framework on delegate, then exception won't be null
@@ -96,5 +102,9 @@ public class DelegateGrpcClientWrapper {
   public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
     return delegateServiceGrpcClient.submitAsyncTaskV2(
         delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor);
+  }
+
+  public boolean isTaskTypeSupported(AccountId accountId, TaskType taskType) {
+    return delegateServiceGrpcClient.isTaskTypeSupported(accountId, taskType);
   }
 }

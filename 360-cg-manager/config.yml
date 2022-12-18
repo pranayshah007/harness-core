@@ -292,6 +292,7 @@ mongo:
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -310,6 +311,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -333,7 +335,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 91df8e76
+scmVersion: 9ddfb2b9
 
 ngAuthUIEnabled: false
 
@@ -663,6 +665,8 @@ eventListenersCountConfig:
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}
+  notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
+  generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
@@ -692,6 +696,14 @@ iteratorsConfig:
   gitSyncPollingIteratorConfig:
       threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
 
+executorsConfig:
+  dataReconciliationExecutorConfig:
+    corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+    maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+    idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+    timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+
 disableDelegateMgmtInManager: false
 
 secretsConfiguration:
@@ -710,3 +722,7 @@ cdTsDbRetentionPeriodMonths: 7
 enableOpentelemetry: false
 
 disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
+
+redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}

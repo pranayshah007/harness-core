@@ -27,7 +27,8 @@ public enum ChangeSourceType {
   @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY),
   @JsonProperty("K8sCluster") KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES),
   @JsonProperty("HarnessCD")
-  HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN);
+  HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN),
+  @JsonProperty HARNESS_FF("HarnessFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG);
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;

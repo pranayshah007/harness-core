@@ -23,6 +23,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.helpers.AbortHelper;
@@ -35,6 +36,7 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -49,6 +51,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.data.mapping.model.MappingInstantiationException;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InterruptMonitorTest extends OrchestrationTestBase {
@@ -157,9 +160,14 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, step));
+    when(planExecutionService.getPlanExecutionMetadata(planExecutionId)).thenReturn(planExecution);
+
+    List<NodeExecution> nodeExecutionList = Arrays.asList(pipeline, stages, stage, execution, step);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(execution.getUuid()), eq(Status.DISCONTINUING), any(), eq(EnumSet.noneOf(Status.class))))
@@ -334,9 +342,14 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(sg1.getUuid()), eq(Status.DISCONTINUING), any(), eq(EnumSet.noneOf(Status.class))))
@@ -531,9 +544,15 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     interruptMonitor.handle(interrupt);
 
@@ -712,9 +731,15 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(sg2.getUuid()), eq(Status.DISCONTINUING), any(), eq(EnumSet.noneOf(Status.class))))
@@ -885,9 +910,15 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(sg2.getUuid()), eq(Status.DISCONTINUING), any(), eq(EnumSet.noneOf(Status.class))))
@@ -1057,9 +1088,15 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
-        .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(sg2.getUuid()), eq(Status.DISCONTINUING), any(), eq(EnumSet.noneOf(Status.class))))

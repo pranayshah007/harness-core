@@ -56,12 +56,10 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
-import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
@@ -191,6 +189,9 @@ public class IntegrationStageUtils {
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
       } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
         return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException(
+            "CI stage cannot be triggered by trigger of type: " + executionTriggerInfo.getTriggerType());
       }
     } else {
       if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.MANUAL
@@ -205,10 +206,11 @@ public class IntegrationStageUtils {
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
       } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
         return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException("CI stage cannot be triggered by trigger of type: "
+            + executionTriggerInfo.getRerunInfo().getRootTriggerType());
       }
     }
-
-    return null;
   }
 
   /* In case codebase and trigger connectors are different then treat it as manual execution
@@ -786,29 +788,6 @@ public class IntegrationStageUtils {
         .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
         .scmHostType(connectorUtils.getScmHostType(connectorDetails))
         .build();
-  }
-
-  // assuming hosted VM infra for unscripted demo
-  public static Infrastructure getInfrastructureV2() {
-    return HostedVmInfraYaml.builder()
-        .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
-                  .platform(ParameterField.createValueField(Platform.builder()
-                                                                .arch(ParameterField.createValueField(ArchType.Amd64))
-                                                                .os(ParameterField.createValueField(OSType.Linux))
-                                                                .build()))
-                  .build())
-        .build();
-  }
-
-  public static ExecutionSource buildExecutionSourceV2(
-      PlanCreationContext ctx, CodeBase codeBase, ConnectorUtils connectorUtils, String identifier) {
-    if (codeBase == null) {
-      return null;
-    }
-    ExecutionTriggerInfo triggerInfo = ctx.getTriggerInfo();
-    TriggerPayload triggerPayload = ctx.getTriggerPayload();
-    return buildExecutionSource(triggerInfo, triggerPayload, identifier, codeBase.getBuild(),
-        codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {

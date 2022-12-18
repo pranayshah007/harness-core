@@ -16,6 +16,8 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -33,16 +35,20 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.LastTriggerExecutionDetails;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.WebhookDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
@@ -51,6 +57,7 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
+import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -60,15 +67,14 @@ import io.harness.utils.YamlPipelineUtils;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,6 +91,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 public class NGTriggerResourceImplTest extends CategoryTest {
   @Mock NGTriggerService ngTriggerService;
+  @Mock NGTriggerEventsService ngTriggerEventsService;
   @InjectMocks NGTriggerResourceImpl ngTriggerResource;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
 
@@ -409,7 +416,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetails() {
+  public void testGetTriggerDetails() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -417,8 +425,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
-
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
     when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
@@ -437,7 +445,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdated() {
+  public void testGetTriggerDetailsPipelineOutdated() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
         NGTriggerDetailsResponseDTO.builder()
             .name(NAME)
@@ -452,7 +461,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                              .build())
             .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
             .enabled(true)
-            .isPipelineInputOutdated(false)
+            .isPipelineInputOutdated(true)
             .build();
 
     doReturn(Optional.of(ngTriggerEntity))
@@ -462,10 +471,11 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, true))
         .thenReturn(ngTriggerDetailsResponse);
 
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
 
     doReturn(triggerDetails)
         .when(ngTriggerService)
@@ -484,13 +494,14 @@ public class NGTriggerResourceImplTest extends CategoryTest {
             .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
-    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(false);
+    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(true);
   }
 
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdatedFalse() {
+  public void testGetTriggerDetailsPipelineOutdatedFalse() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
         NGTriggerDetailsResponseDTO.builder()
             .name(NAME)
@@ -518,7 +529,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
         .thenReturn(ngTriggerDetailsResponse);
 
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
 
     doReturn(triggerDetails)
         .when(ngTriggerService)
@@ -820,7 +832,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalog() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.ECR);
     catalogTypes.add(TriggerCatalogType.ACR);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
@@ -840,7 +852,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalogScheduled() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.CRON);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
         TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
@@ -859,7 +871,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalogWebhook() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.GITHUB);
     catalogTypes.add(TriggerCatalogType.GITLAB);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
@@ -873,5 +885,103 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
     assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.WEBHOOK);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerEventHistoryException() {
+    doReturn(Optional.empty())
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+
+    ngTriggerResource.getTriggerEventHistory(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, "", 0, 10, new ArrayList<>());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerEventHistory() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+
+    TriggerEventHistory eventHistory = TriggerEventHistory.builder()
+                                           .triggerIdentifier(IDENTIFIER)
+                                           .accountId(ACCOUNT_ID)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJ_IDENTIFIER)
+                                           .targetIdentifier(PIPELINE_IDENTIFIER)
+                                           .eventCorrelationId("event_correlation_id")
+                                           .finalStatus("NO_MATCHING_TRIGGER_FOR_REPO")
+                                           .build();
+
+    Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(Collections.singletonList(eventHistory), pageable, 1);
+
+    Criteria criteria = Criteria.where("a").is("b");
+    doReturn(criteria)
+        .when(ngTriggerEventsService)
+        .formCriteria(eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+            anyString(), anyList());
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(criteria, pageable);
+
+    Page<NGTriggerEventHistoryDTO> content = ngTriggerResource
+                                                 .getTriggerEventHistory(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                                                     PIPELINE_IDENTIFIER, IDENTIFIER, "", 0, 10, new ArrayList<>())
+                                                 .getData();
+
+    assertThat(content).isNotEmpty();
+    assertThat(content.getNumberOfElements()).isEqualTo(1);
+
+    NGTriggerEventHistoryDTO responseDto = content.toList().get(0);
+    assertThat(responseDto.getTriggerIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(responseDto.getFinalStatus())
+        .isEqualTo(TriggerEventResponse.FinalStatus.valueOf(eventHistory.getFinalStatus()));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetTriggerEventHistoryWrongFinalStatus() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+
+    TriggerEventHistory eventHistory = TriggerEventHistory.builder()
+                                           .triggerIdentifier(IDENTIFIER)
+                                           .accountId(ACCOUNT_ID)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJ_IDENTIFIER)
+                                           .targetIdentifier(PIPELINE_IDENTIFIER)
+                                           .eventCorrelationId("event_correlation_id")
+                                           .finalStatus("NOT_AVAILABLE")
+                                           .build();
+
+    Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(Collections.singletonList(eventHistory), pageable, 1);
+
+    Criteria criteria = Criteria.where("a").is("b");
+    doReturn(criteria)
+        .when(ngTriggerEventsService)
+        .formCriteria(eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+            anyString(), anyList());
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(criteria, pageable);
+
+    Page<NGTriggerEventHistoryDTO> content = ngTriggerResource
+                                                 .getTriggerEventHistory(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                                                     PIPELINE_IDENTIFIER, IDENTIFIER, "", 0, 10, new ArrayList<>())
+                                                 .getData();
+
+    assertThat(content).isNotEmpty();
+    assertThat(content.getNumberOfElements()).isEqualTo(1);
+
+    NGTriggerEventHistoryDTO responseDto = content.toList().get(0);
+    assertThat(responseDto.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(responseDto.getTargetIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+    assertThat(responseDto.getFinalStatus()).isNull();
   }
 }

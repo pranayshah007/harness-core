@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -157,7 +158,7 @@ public class RetryExecutionHelper {
     // if pipeline is having templates we need to use resolved yaml
     if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
       templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
-          accountId, orgIdentifier, projectIdentifier, updatedPipeline);
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline, BOOLEAN_FALSE_VALUE);
       if (templateMergeResponseDTO != null) {
         updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
             ? templateMergeResponseDTO.getMergedPipelineYaml()
@@ -367,11 +368,11 @@ public class RetryExecutionHelper {
   }
 
   public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId,
-      List<String> stageIdentifiersToRetrytWith) {
+      List<String> stageIdentifiersToRetryWith) {
     List<Node> planNodes = plan.getPlanNodes();
 
     List<String> stagesFqnToRetryWith =
-        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetrytWith);
+        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetryWith);
     List<NodeExecution> strategyNodeExecutions =
         nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
     List<Node> strategyNodes = new ArrayList<>();

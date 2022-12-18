@@ -29,7 +29,6 @@ import static io.harness.utils.Misc.generateSecretKey;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.NotificationGroup.NotificationGroupBuilder.aNotificationGroup;
@@ -39,6 +38,7 @@ import static software.wings.beans.RoleType.APPLICATION_ADMIN;
 import static software.wings.beans.RoleType.NON_PROD_SUPPORT;
 import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
@@ -61,6 +61,7 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
+import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -93,9 +94,11 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
+import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.outbox.OutboxEvent;
@@ -115,7 +118,6 @@ import software.wings.beans.AccountEvent;
 import software.wings.beans.AccountPreferences;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.NotificationGroup;
@@ -145,6 +147,7 @@ import software.wings.features.GovernanceFeature;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.helpers.ext.mail.EmailData;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.AppContainer;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
@@ -217,6 +220,7 @@ import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.mongodb.morphia.Morphia;
 import org.mongodb.morphia.mapping.Mapper;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
@@ -243,6 +247,8 @@ public class AccountServiceImpl implements AccountService {
   private static final String DEFAULT_EXPERIENCE = "defaultExperience";
   private static final String[] RESERVED_SUBDOMAIN_PREFIX_REGEXES = {
       "^agent$", "^app(-?\\d+)?$", "^pr$", "^qa$", "^stress$", "^prod(-?\\d+)?$"};
+
+  private static final String ON_PREM_IMMUTABLE_DELEGATE_ENABLED = "IMMUTABLE_DELEGATE_ENABLED";
 
   @Inject protected AuthService authService;
   @Inject protected HarnessCacheManager harnessCacheManager;
@@ -959,9 +965,14 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds) {
+  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded) {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
                                .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
+    if (isNotEmpty(fieldsToBeIncluded)) {
+      for (String field : fieldsToBeIncluded) {
+        query.project(field, true);
+      }
+    }
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
@@ -1099,12 +1110,25 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listAllAccounts() {
-    List<Account> accountList = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                                    .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                                    .asList();
-    decryptLicenseInfo(accountList);
-    return accountList;
+  public List<AccountDTO> getAllAccounts() {
+    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+                               .project(ID_KEY2, true)
+                               .project(AccountKeys.accountName, true)
+                               .project(AccountKeys.companyName, true)
+                               .project(AccountKeys.defaultExperience, true)
+                               .project(AccountKeys.authenticationMechanism, true)
+                               .project(AccountKeys.nextGenEnabled, true)
+                               .project(AccountKeys.serviceAccountConfig, true)
+                               .project(AccountKeys.isProductLed, true)
+                               .project(AccountKeys.twoFactorAdminEnforced, true)
+                               .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+    List<AccountDTO> accountDTOList = new ArrayList<>();
+    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
+      for (Account account : iterator) {
+        accountDTOList.add(AccountMapper.toAccountDTO(account));
+      }
+    }
+    return accountDTOList;
   }
 
   @Override
@@ -1128,7 +1152,16 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listAllAccountWithDefaultsWithoutLicenseInfo() {
+  public List<Account> getAccountsWithBasicInfo(boolean includeLicenseInfo) {
+    if (includeLicenseInfo) {
+      return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+          .project(ID_KEY2, true)
+          .project(AccountKeys.accountName, true)
+          .project(AccountKeys.companyName, true)
+          .project(AccountKeys.licenseInfo, true)
+          .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
+          .asList();
+    }
     return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
         .project(ID_KEY2, true)
         .project(AccountKeys.accountName, true)
@@ -1138,14 +1171,23 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listAllAccountWithDefaultsWithLicenseInfo() {
+  public Query<Account> getBasicAccountQuery() {
+    return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+        .project(ID_KEY2, true)
+        .project(AccountKeys.accountName, true)
+        .project(AccountKeys.companyName, true)
+        .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+  }
+
+  @Override
+  public Query<Account> getBasicAccountWithLicenseInfoQuery() {
     return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
         .project(ID_KEY2, true)
         .project(AccountKeys.accountName, true)
         .project(AccountKeys.companyName, true)
         .project(AccountKeys.licenseInfo, true)
-        .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-        .asList();
+        .project(AccountKeys.encryptedLicenseInfo, true)
+        .filter(ApplicationKeys.appId, GLOBAL_APP_ID);
   }
 
   public Set<String> getAccountsWithDisabledHarnessUserGroupAccess() {
@@ -1966,7 +2008,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public boolean isRestrictedAccessEnabled(String accountId) {
+  public boolean isHarnessSupportAccessDisabled(String accountId) {
     Account account = get(accountId);
     notNullCheck("Invalid Account for the given Id: " + accountId, account);
     if (account.isHarnessSupportAccessAllowed()) {
@@ -2036,7 +2078,30 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public boolean isImmutableDelegateEnabled(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
-    return account != null && account.isImmutableDelegateEnabled();
+    boolean immutableDelegateEnabledInDb = account != null && account.isImmutableDelegateEnabled();
+
+    // immutable delegate for ON-PREM is toggled using variable IMMUTABLE_DELEGATE_ENABLED in manager configMap
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      String immutableDelegateInConfigMap = System.getenv(ON_PREM_IMMUTABLE_DELEGATE_ENABLED);
+      if (isNotEmpty(immutableDelegateInConfigMap)) {
+        // update account collection variable in case of difference.
+        if (!String.valueOf(immutableDelegateEnabledInDb).equals(immutableDelegateInConfigMap)) {
+          wingsPersistence.updateField(
+              Account.class, accountId, AccountKeys.immutableDelegateEnabled, immutableDelegateInConfigMap);
+          dbCache.invalidate(Account.class, accountId);
+        }
+        return Boolean.parseBoolean(immutableDelegateInConfigMap);
+      }
+    }
+    return immutableDelegateEnabledInDb;
+  }
+
+  @Override
+  public boolean doMultipleAccountsExist() {
+    return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+               .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
+               .count(new CountOptions().limit(2))
+        > 1;
   }
 
   @Override

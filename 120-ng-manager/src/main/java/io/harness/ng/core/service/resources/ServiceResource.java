@@ -108,7 +108,7 @@ public class ServiceResource {
   @ApiOperation(value = "Create a Service", nickname = "createService")
   public ResponseDTO<ServiceResponseDTO> create(
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
-    ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
     return ResponseDTO.newResponse(
@@ -123,7 +123,7 @@ public class ServiceResource {
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> {
-              ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
+              ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
               return ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
             })
             .collect(Collectors.toList());
@@ -146,7 +146,7 @@ public class ServiceResource {
   @ApiOperation(value = "Update a service by identifier", nickname = "updateService")
   public ResponseDTO<ServiceResponseDTO> update(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
-    ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
@@ -159,7 +159,7 @@ public class ServiceResource {
   @ApiOperation(value = "Upsert a service by identifier", nickname = "upsertService")
   public ResponseDTO<ServiceResponseDTO> upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
-    ServiceResourceApiUtils.mustBeAtProjectLevel(serviceRequestDTO);
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);

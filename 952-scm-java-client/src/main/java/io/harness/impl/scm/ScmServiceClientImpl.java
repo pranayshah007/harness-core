@@ -129,9 +129,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderHelper scmGitProviderHelper;
 
   @Override
-  public CreateFileResponse createFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    FileModifyRequest fileModifyRequest = getFileModifyRequest(scmConnector, gitFileDetails).build();
+  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient) {
+    FileModifyRequest fileModifyRequest =
+        getFileModifyRequest(scmConnector, gitFileDetails).setUseGitClient(useGitClient).build();
     CreateFileResponse createFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
     if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
@@ -166,8 +167,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public UpdateFileResponse updateFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient) {
     Optional<UpdateFileResponse> preChecksStatus =
         runUpdateFileOpsPreChecks(scmConnector, scmBlockingStub, gitFileDetails);
     if (preChecksStatus.isPresent()) {
@@ -177,7 +178,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
     handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
-        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
+        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha()))
+            .setUseGitClient(useGitClient)
+            .build();
     UpdateFileResponse updateFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::updateFile, fileModifyRequest);
 

@@ -27,5 +27,6 @@ public class NGTemplateConstants {
   public static final String NAME = "name";
   public static final String STABLE_VERSION = "__STABLE__";
   public static final String TYPE = "type";
+  public static final String STAGE_TYPE = "stageType";
   public static final String STAGES = "stages";
 }

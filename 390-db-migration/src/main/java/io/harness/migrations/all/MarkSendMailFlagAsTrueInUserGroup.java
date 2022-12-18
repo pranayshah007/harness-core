@@ -8,6 +8,7 @@
 package io.harness.migrations.all;
 
 import io.harness.migrations.Migration;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.beans.notification.NotificationSettings;
@@ -19,6 +20,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class MarkSendMailFlagAsTrueInUserGroup implements Migration {
@@ -30,26 +32,28 @@ public class MarkSendMailFlagAsTrueInUserGroup implements Migration {
     try {
       log.info("Running Migration: {}", MarkSendMailFlagAsTrueInUserGroup.class.getSimpleName());
 
-      List<Account> accounts = accountService.listAllAccounts();
+      Query<Account> query = accountService.getBasicAccountQuery();
 
-      for (Account account : accounts) {
-        List<UserGroup> userGroups = getAllUserGroups(account.getUuid());
-        for (UserGroup userGroup : userGroups) {
-          NotificationSettings existing = userGroup.getNotificationSettings();
-          NotificationSettings updatedSetting;
+      try (HIterator<Account> accounts = new HIterator<>(query.fetch())) {
+        for (Account account : accounts) {
+          List<UserGroup> userGroups = getAllUserGroups(account.getUuid());
+          for (UserGroup userGroup : userGroups) {
+            NotificationSettings existing = userGroup.getNotificationSettings();
+            NotificationSettings updatedSetting;
 
-          if (null == existing) {
-            log.info(
-                "Existing notification settings are null. Creating default notifications settings for userGroup {}",
-                userGroup.getUuid());
-            updatedSetting = new NotificationSettings(false, true, Collections.emptyList(), null, "", "");
-          } else {
-            log.info("Overriding original notification settings for userGroup {}", userGroup.getUuid());
-            updatedSetting = new NotificationSettings(existing.isUseIndividualEmails(), true,
-                existing.getEmailAddresses(), existing.getSlackConfig(), "", existing.getMicrosoftTeamsWebhookUrl());
+            if (null == existing) {
+              log.info(
+                  "Existing notification settings are null. Creating default notifications settings for userGroup {}",
+                  userGroup.getUuid());
+              updatedSetting = new NotificationSettings(false, true, Collections.emptyList(), null, "", "");
+            } else {
+              log.info("Overriding original notification settings for userGroup {}", userGroup.getUuid());
+              updatedSetting = new NotificationSettings(existing.isUseIndividualEmails(), true,
+                  existing.getEmailAddresses(), existing.getSlackConfig(), "", existing.getMicrosoftTeamsWebhookUrl());
+            }
+            wingsPersistence.updateField(
+                UserGroup.class, userGroup.getUuid(), UserGroup.NOTIFICATION_SETTINGS_KEY, updatedSetting);
           }
-          wingsPersistence.updateField(
-              UserGroup.class, userGroup.getUuid(), UserGroup.NOTIFICATION_SETTINGS_KEY, updatedSetting);
         }
       }
 

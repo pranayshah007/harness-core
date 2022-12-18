@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -56,12 +57,12 @@ import io.harness.beans.SortOrder.OrderType;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.ExceptionLogger;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
@@ -79,7 +80,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.SyncStatus;
 import software.wings.beans.instance.dashboard.ArtifactSummary;
@@ -103,6 +103,7 @@ import software.wings.beans.instance.dashboard.service.ServiceInstanceDashboard;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.instance.CompareEnvironmentAggregationInfo.CompareEnvironmentAggregationInfoKeys;
@@ -404,17 +405,22 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
     Set<Instance> instanceSet = new HashSet<>();
-    query.field("accountId").equal(accountId);
+    query.field(InstanceKeys.accountId).equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
       Query<Instance> clonedQuery_1 = query.cloneQuery();
       Query<Instance> clonedQuery_2 = query.cloneQuery();
-      clonedQuery_1.field("isDeleted").equal(false);
-      clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
+      clonedQuery_1.field(InstanceKeys.isDeleted).equal(false);
+      clonedQuery_2.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions2 = wingsPersistence.analyticNodePreferenceOptions();
+      if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
+        findOptions2.modifier("$hint", "instance_index7");
+      }
       instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
-      instanceSet.addAll(clonedQuery_2.asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(clonedQuery_2.asList(findOptions2));
     } else {
-      instanceSet.addAll(query.filter("isDeleted", false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(
+          query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
     }
 
     int counter = instanceSet.size();
@@ -1079,7 +1085,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .greaterThanOrEq(fromTimestamp)
                                         .field(Instance.CREATED_AT_KEY)
                                         .lessThanOrEq(rhsCreatedAt)
-                                        .project("appId", true);
+                                        .project(InstanceKeys.appId, true);
+
+    if (featureFlagService.isEnabled(SPG_INSTANCE_OPTIMIZE_DELETED_APPS, accountId)) {
+      instanceQuery.project(InstanceKeys.uuid, false);
+    }
 
     Set<String> appIdsFromInstances = new HashSet<>();
     try (HIterator<Instance> iterator =

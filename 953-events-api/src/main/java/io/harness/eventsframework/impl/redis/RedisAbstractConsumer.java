@@ -117,7 +117,7 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     try {
       return stream.listPending(getGroupName(), StreamMessageId.MIN, StreamMessageId.MAX, batchSize);
     } catch (Exception ex) {
-      log.error("Exception occurred while listing pending entries", ex);
+      log.warn("Exception occurred while listing pending entries", ex);
       throw ex;
     }
   }
@@ -152,7 +152,7 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
         return RedisUtils.getMessageObject(messages);
       }
     } catch (Exception ex) {
-      log.error("Exception occurred while claiming entries", ex);
+      log.warn("Exception occurred while claiming entries", ex);
       throw ex;
     }
   }
@@ -187,15 +187,10 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
 
   private List<Message> getNewMessagesInternal(Duration maxWaitTime) {
     try {
-      Map<StreamMessageId, Map<String, String>> result =
-          stream.readGroup(getGroupName(), getName(), batchSize, maxWaitTime.toMillis(), TimeUnit.MILLISECONDS);
-      List<Message> messages = RedisUtils.getMessageObject(result);
-      for (Message message : messages) {
-        addMonitoring(message);
-      }
-      return messages;
+      return RedisUtils.getMessageObject(
+          stream.readGroup(getGroupName(), getName(), batchSize, maxWaitTime.toMillis(), TimeUnit.MILLISECONDS));
     } catch (Exception ex) {
-      log.error("Exception occurred while getting new messages", ex);
+      log.warn("Exception occurred while getting new messages", ex);
       throw ex;
     }
   }

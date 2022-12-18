@@ -7,6 +7,8 @@
 
 package io.harness.pms.template.service;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -20,8 +22,7 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
-import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
-import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.template.utils.PipelineTemplateUtils;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
@@ -38,26 +39,21 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public boolean refreshTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, BOOLEAN_FALSE_VALUE);
     RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
     if (refreshResponseDTO != null) {
-      updatePipelineWithYaml(pipelineEntity, refreshResponseDTO.getRefreshedYaml());
+      pmsPipelineService.validateAndUpdatePipeline(
+          pipelineEntity.withYaml(refreshResponseDTO.getRefreshedYaml()), ChangeType.MODIFY, true);
     }
     return true;
   }
 
-  private void updatePipelineWithYaml(PipelineEntity pipelineEntity, String refreshedYaml) {
-    PipelineEntity updatedPipelineEntity = pipelineEntity.withYaml(refreshedYaml);
-    PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(updatedPipelineEntity, ChangeType.MODIFY);
-    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
-  }
-
   @Override
   public ValidateTemplateInputsResponseDTO validateTemplateInputsInPipeline(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache) {
+    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, loadFromCache);
 
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         pmsPipelineTemplateHelper.validateTemplateInputsForGivenYaml(
@@ -71,9 +67,9 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   }
 
   private PipelineEntity getPipelineEntity(
-      String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineIdentifier, false, false);
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache) {
+    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId,
+        pipelineIdentifier, false, false, false, PipelineTemplateUtils.parseLoadFromCache(loadFromCache));
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Pipeline with the given id: %s does not exist or has been deleted", pipelineIdentifier));
@@ -83,7 +79,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
 
   @Override
   public YamlDiffResponseDTO getYamlDiff(String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, BOOLEAN_FALSE_VALUE);
 
     String pipelineYaml = pipelineEntity.getYaml();
     RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
@@ -97,11 +94,13 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public boolean recursivelyRefreshAllTemplateInputsInPipeline(String accountId, String orgId, String projectId,
       String pipelineIdentifier, GitEntityUpdateInfoDTO gitEntityBasicInfo) {
-    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+    PipelineEntity pipelineEntity =
+        getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, BOOLEAN_FALSE_VALUE);
     YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
     if (refreshResponse != null && refreshResponse.isShouldRefreshYaml()) {
-      updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
+      pmsPipelineService.validateAndUpdatePipeline(
+          pipelineEntity.withYaml(refreshResponse.getRefreshedYaml()), ChangeType.MODIFY, true);
     }
     return true;
   }

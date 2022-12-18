@@ -13,8 +13,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;

@@ -36,7 +36,6 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -88,7 +87,6 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private WorkflowService workflowService;
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private StepMapperFactory stepMapperFactory;
   @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
@@ -145,44 +143,11 @@ public class WorkflowMigrationService extends NgMigrationService {
                                     .build();
 
     Set<CgEntityId> children = new HashSet<>();
-    //    if (EmptyPredicate.isNotEmpty(workflow.getServices())) {
-    //      Set<CgEntityId> set = new HashSet<>();
-    //      for (Service service : workflow.getServices()) {
-    //        CgEntityId build = CgEntityId.builder().type(SERVICE).id(service.getUuid()).build();
-    //        set.add(build);
-    //        List<ApplicationManifest> applicationManifests =
-    //            applicationManifestService.listAppManifests(workflow.getAppId(), service.getUuid());
-    //        if (isNotEmpty(applicationManifests)) {
-    //          applicationManifests.stream()
-    //              .map(applicationManifest ->
-    //              CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build())
-    //              .forEach(children::add);
-    //        }
-    //      }
-    //      children.addAll(set);
-    //    }
-    //
-    //    if (EmptyPredicate.isNotEmpty(workflow.getEnvId())) {
-    //      children.add(CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
-    //      List<ApplicationManifest> applicationManifests =
-    //          applicationManifestService.getAllByEnvId(workflow.getAppId(), workflow.getEnvId());
-    //      if (isNotEmpty(applicationManifests)) {
-    //        Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
-    //                                     .stream()
-    //                                     .map(Service::getUuid)
-    //                                     .collect(Collectors.toSet());
-    //        for (ApplicationManifest applicationManifest : applicationManifests) {
-    //          if (applicationManifest.getServiceId() == null ||
-    //          serviceIds.contains(applicationManifest.getServiceId())) {
-    //            CgEntityId build = CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build();
-    //            children.add(build);
-    //          }
-    //        }
-    //      }
-    //    }
-    //    if (EmptyPredicate.isNotEmpty(workflow.getInfraDefinitionId())) {
-    //      children.add(CgEntityId.builder().type(INFRA).id(workflow.getInfraDefinitionId()).build());
-    //    }
+    List<CgEntityId> referencedEntities =
+        workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(workflow);
+    if (EmptyPredicate.isNotEmpty(referencedEntities)) {
+      children.addAll(referencedEntities);
+    }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
   }
 
@@ -250,7 +215,7 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
 
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(workflow);
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(migratedEntities, workflow);
     if (templateSpec == null) {
       return Collections.emptyList();
     }
@@ -264,7 +229,6 @@ public class WorkflowMigrationService extends NgMigrationService {
                       .templateInfoConfig(NGTemplateInfoConfig.builder()
                                               .type(workflowHandler.getTemplateType(workflow))
                                               .identifier(identifier)
-                                              .variables(workflowHandler.getVariables(workflow))
                                               .name(name)
                                               .description(ParameterField.createValueField(description))
                                               .projectIdentifier(projectIdentifier)
@@ -296,13 +260,16 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+    String yaml = YamlUtils.write(yamlFile.getYaml());
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
         templateClient
             .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
             .execute();
     log.info("Workflow creation Response details {} {}", resp.code(), resp.message());
+    if (resp.code() >= 400) {
+      log.info("The WF template is \n - {}", yaml);
+    }
     return handleResp(yamlFile, resp);
   }
 

@@ -7,9 +7,9 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
@@ -92,6 +92,7 @@ import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
 import io.harness.pms.jira.JiraStepHelperServiceImpl;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiImpl;
 import io.harness.pms.ngpipeline.inputset.resources.InputSetResourcePMS;
 import io.harness.pms.ngpipeline.inputset.resources.InputSetResourcePMSImpl;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
@@ -126,6 +127,8 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaServiceImpl;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationServiceImpl;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationServiceImpl;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
@@ -169,6 +172,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
@@ -336,8 +340,8 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new DelegateSelectionLogHttpClientModule(configuration.getManagerClientConfig(),
         configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
-    install(new PipelineServiceEventsFrameworkModule(
-        configuration.getEventsFrameworkConfiguration(), configuration.getPipelineRedisEventsConfig()));
+    install(new PipelineServiceEventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
+        configuration.getPipelineRedisEventsConfig(), configuration.getDebeziumConsumerConfigs()));
     install(new EntitySetupUsageClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new LogStreamingModule(configuration.getLogStreamingServiceConfig().getBaseUrl()));
@@ -365,6 +369,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineMetadataService.class).to(PipelineMetadataServiceImpl.class);
 
     bind(PMSPipelineService.class).to(PMSPipelineServiceImpl.class);
+    bind(PipelineAsyncValidationService.class).to(PipelineAsyncValidationServiceImpl.class);
     bind(PmsExecutionSummaryService.class).to(PmsExecutionSummaryServiceImpl.class);
     bind(PipelineGovernanceService.class).to(PipelineGovernanceServiceImpl.class);
     bind(PipelineValidationService.class).to(PipelineValidationServiceImpl.class);
@@ -412,6 +417,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ApprovalResourceService.class).to(ApprovalResourceServiceImpl.class);
     bind(PipelineResource.class).to(PipelineResourceImpl.class);
     bind(PipelinesApi.class).to(PipelinesApiImpl.class);
+    bind(InputSetsApi.class).to(InputSetsApiImpl.class);
     bind(PipelineDashboardOverviewResource.class).to(PipelineDashboardOverviewResourceImpl.class);
     bind(PipelineDashboardOverviewResourceV2.class).to(PipelineDashboardOverviewResourceV2Impl.class);
     bind(PMSLandingDashboardResource.class).to(PMSLandingDashboardResourceImpl.class);

@@ -89,6 +89,7 @@ mongo:
   uri: mongodb://localhost:27017/ng-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -135,7 +136,7 @@ ciManagerClientConfig:
   readTimeOutSeconds: 15
 
 cvngClientConfig:
-  baseUrl: http://localhost:6060/cv/api/
+  baseUrl: http://localhost:6457/cv/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -202,6 +203,11 @@ gitSyncServerConfig:
       keyFilePath: key.pem
       certFilePath: cert.pem
     - port: 13002
+
+gitService:
+  caching:
+    validCacheDurationInMillis: ${GIT_SERVICE_CACHING_VALID_CACHE_DURATION:-600000}
+    maxCacheDurationInMillis: ${GIT_SERVICE_CACHING_MAX_CACHE_DURATION:-86400000}
 
 shouldDeployWithGitSync: true
 
@@ -291,6 +297,7 @@ notificationClient:
     uri: mongodb://localhost:27017/notification
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
@@ -369,7 +376,7 @@ gitSdkConfiguration:
 
 baseUrls:
   currentGenUiUrl: http://localhost:8181/#/
-  nextGenUiUrl: http://localhost:8181/ng/#/
+  nextGenUiUrl: https://localhost:8181/ng/#/
   nextGenAuthUiUrl: http://localhost:8181/auth/#/
   webhookBaseUrl: http://localhost:7457/
 

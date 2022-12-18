@@ -17,13 +17,13 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 
-import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.beans.PageResponse;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ExceptionUtils;
@@ -51,6 +51,7 @@ import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.PowerState;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.containerservice.models.OSType;
 import com.azure.resourcemanager.keyvault.models.Vault;
@@ -120,6 +121,8 @@ public class AzureHelperService {
       AzureResourceManager.Authenticated authenticated =
           AzureResourceManager.configure()
               .withLogLevel(HttpLogDetailLevel.NONE)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
               .authenticate(clientSecretCredential,
                   new AzureProfile(
                       azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
@@ -251,7 +254,7 @@ public class AzureHelperService {
   }
 
   private boolean isVmRunning(VirtualMachine vm) {
-    return vm.powerState().equals(RUNNING);
+    return vm.powerState().equals(PowerState.RUNNING);
   }
 
   public PageResponse<Host> listHosts(AzureInfrastructureMapping azureInfrastructureMapping,
@@ -344,6 +347,7 @@ public class AzureHelperService {
 
       return AzureResourceManager.configure()
           .withLogLevel(HttpLogDetailLevel.NONE)
+          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
           .authenticate(clientSecretCredential,
               new AzureProfile(
                   azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())))
@@ -409,6 +413,7 @@ public class AzureHelperService {
     AzureResourceManager.Authenticated authenticate =
         AzureResourceManager.configure()
             .withLogLevel(HttpLogDetailLevel.NONE)
+            .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
             .authenticate(clientSecretCredential,
                 new AzureProfile(azureVaultConfig.getTenantId(), subscriptionId,
                     getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType())));

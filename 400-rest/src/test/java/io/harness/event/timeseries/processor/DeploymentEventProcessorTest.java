@@ -15,6 +15,8 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_DEFINITION_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static software.wings.utils.WingsTestConstants.ORIGINAL_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
@@ -274,6 +276,8 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
       listData.put(EventProcessor.ENV_LIST, asList(ENV_ID));
       listData.put(EventProcessor.ARTIFACT_LIST, asList(ARTIFACT_ID));
       listData.put(EventProcessor.ENVTYPES, asList(EnvironmentType.PROD.name()));
+      listData.put(EventProcessor.INFRA_DEFINITIONS, asList(INFRA_DEFINITION_ID));
+      listData.put(EventProcessor.INFRA_MAPPINGS, asList(INFRA_MAPPING_ID));
     }
   }
 

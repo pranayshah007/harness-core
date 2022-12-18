@@ -27,7 +27,6 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
 import static software.wings.beans.VariableType.TEXT;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STOPPED;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.UNSTABLE;
 import static software.wings.beans.artifact.ArtifactStreamType.AMAZON_S3;
@@ -47,6 +46,7 @@ import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_REG
 import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_REPOSITORY_NAME_KEY;
 import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_USER_NAME_KEY;
 import static software.wings.beans.template.artifactsource.CustomRepositoryMapping.AttributeMapping.builder;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
@@ -99,8 +99,6 @@ import software.wings.beans.Variable;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -122,6 +120,8 @@ import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.template.artifactsource.CustomRepositoryMapping;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.scheduler.BackgroundJobScheduler;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.AlertService;
@@ -4086,7 +4086,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
         .isEqualTo("io.harness.test");
     assertThat(savedArtifactSteam.fetchArtifactStreamAttributes(featureFlagService).getArtifactName())
         .isEqualTo("${path}");
-    assertThat(savedArtifactSteam.getCollectionStatus()).isEqualTo(UNSTABLE.name());
+    assertThat(savedArtifactSteam.getCollectionStatus()).isEqualTo(STOPPED.name());
     return savedArtifactSteam;
   }
 
@@ -4121,7 +4121,6 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
     verify(appService, times(2)).getAccountIdByAppId(APP_ID);
     verify(yamlPushService, times(2))
         .pushYamlChangeSet(any(String.class), any(), any(ArtifactStream.class), any(), anyBoolean(), anyBoolean());
-    verify(artifactService).deleteByArtifactStreamId(APP_ID, savedArtifactSteam.getUuid());
     verify(triggerService).updateByArtifactStream(savedArtifactSteam.getUuid());
   }
 
@@ -4143,7 +4142,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
     assertThat(updatedArtifactStream).isInstanceOf(NexusArtifactStream.class);
     assertThat(updatedArtifactStream.fetchArtifactStreamAttributes(featureFlagService).getArtifactStreamType())
         .isEqualTo(NEXUS.name());
-    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(UNSTABLE.name());
+    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(STOPPED.name());
     assertThat(updatedArtifactStream.isArtifactStreamParameterized()).isEqualTo(true);
     NexusArtifactStream updatedNexusArtifactStream = savedArtifactSteam;
     assertThat(updatedNexusArtifactStream.getArtifactPaths()).contains("${folder}/${path}");

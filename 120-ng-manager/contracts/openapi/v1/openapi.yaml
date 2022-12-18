@@ -1,0 +1,2623 @@
+openapi: 3.0.3
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1'
+  description: This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
+  contact:
+    email: contact@harness.io
+servers:
+  - url: 'http://api.harness.io'
+    description: Harness host url
+tags:
+  - name: Organization
+    description: Everything about organization
+  - name: Org Project
+    description: Everything about org scoped project
+  - name: Account Secret
+    description: Everything about account scoped secret
+  - name: Org Secret
+    description: Everything about org scoped secret
+  - name: Project Secret
+    description: Everything about project scoped secret
+  - name: Project Services
+    description: This contains APIs for performing CRUD operations on Services.
+  - name: Org Services
+    description: This contains APIs for performing CRUD operations on org scoped Services.
+  - name: Account Services
+    description: This contains APIs for performing CRUD operations on account scoped Services.
+paths:
+  '/v1/orgs/{org}/projects/{project}/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: 'Retrieves the specified service'
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Project Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update Service
+      operationId: update-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+    delete:
+      summary: Delete a Service
+      operationId: delete-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the requested service
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+  '/v1/orgs/{org}/projects/{project}/services':
+    get:
+      summary: List Services
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceListResponse'
+      operationId: get-services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/ServiceIdentifiers'
+        - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: boolean
+          in: query
+          name: is_access_list
+          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+        - schema:
+            type: string
+            enum:
+              - Kubernetes
+              - NativeHelm
+              - Ssh
+              - WinRm
+              - ServerlessAwsLambda
+              - AzureWebApp
+          name: type
+          in: query
+          description: Service Definition type
+        - schema:
+            type: boolean
+          name: git_ops_enabled
+          in: query
+          description: Enables use of this service in Harness GitOps PR Pipelines
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: Returns all services that the current user has view permissions for given project.
+      tags:
+        - Project Services
+    post:
+      summary: Create a Service
+      operationId: create-service
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Creates a service
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+  '/v1/orgs/{org}/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-org-scoped-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: 'Retrieves the specified service'
+      security:
+        - x-api-key: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Org Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update Service
+      operationId: update-org-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+    delete:
+      summary: Delete a service
+      operationId: delete-org-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the requested service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+  '/v1/orgs/{org}/services':
+    get:
+      summary: List Services
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceListResponse'
+      operationId: get-org-scoped-services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/ServiceIdentifiers'
+        - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: boolean
+          in: query
+          name: is_access_list
+          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+        - schema:
+            type: string
+            enum:
+              - Kubernetes
+              - NativeHelm
+              - Ssh
+              - WinRm
+              - ServerlessAwsLambda
+              - AzureWebApp
+          name: type
+          in: query
+          description: Service Definition type
+        - schema:
+            type: boolean
+          name: git_ops_enabled
+          in: query
+          description: Enables use of this service in Harness GitOps PR Pipelines
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: [ ]
+      description: Returns all services that the current user has view permissions for given project.
+      tags:
+        - Org Services
+    post:
+      summary: Create a service
+      operationId: create-org-scoped-service
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Creates a service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+  '/v1/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-account-scoped-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: 'Retrieves the specified service'
+      security:
+        - x-api-key: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Account Services
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update service
+      operationId: update-account-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+    delete:
+      summary: Delete a service
+      operationId: delete-account-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the requested service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+  '/v1/services':
+    get:
+      summary: List services
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceListResponse'
+      operationId: get-account-scoped-services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/ServiceIdentifiers'
+        - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: boolean
+          in: query
+          name: is_access_list
+          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+        - schema:
+            type: string
+            enum:
+              - Kubernetes
+              - NativeHelm
+              - Ssh
+              - WinRm
+              - ServerlessAwsLambda
+              - AzureWebApp
+          name: type
+          in: query
+          description: Service Definition type
+        - schema:
+            type: boolean
+          name: git_ops_enabled
+          in: query
+          description: Enables use of this service in Harness GitOps PR Pipelines
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: [ ]
+      description: Returns all services that the current user has view permissions for given project.
+      tags:
+        - Account Services
+    post:
+      summary: Create a service
+      operationId: create-account-scoped-service
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Creates a service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+    parameters: []
+  /v1/orgs:
+    post:
+      summary: Create an organization
+      operationId: create-organization
+      responses:
+        '201':
+          $ref: '#/components/responses/OrganizationResponse'
+      description: Creates a new organization.
+      security:
+        - x-api-key: []
+      tags:
+        - Organization
+      requestBody:
+        $ref: '#/components/requestBodies/CreateOrganizationRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    get:
+      summary: List organizations
+      operationId: get-organizations
+      responses:
+        '200':
+          $ref: '#/components/responses/OrganizationListResponse'
+      description: Retrieves the information of the organizations.
+      security:
+        - x-api-key: []
+      tags:
+        - Organization
+      parameters:
+        - $ref: '#/components/parameters/OrgsQueryParam'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+    parameters: []
+  '/v1/orgs/{org}':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Organization slug
+    get:
+      summary: Retrieve an organization
+      responses:
+        '200':
+          $ref: '#/components/responses/OrganizationResponse'
+      operationId: get-organization
+      description: Retrieves the information of the organization with the matching organization slug.
+      security:
+        - x-api-key: []
+      tags:
+        - Organization
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    put:
+      summary: Update an organization
+      operationId: update-organization
+      responses:
+        '200':
+          $ref: '#/components/responses/OrganizationResponse'
+      description: Updates the information of the organization with the matching organization slug.
+      security:
+        - x-api-key: []
+      tags:
+        - Organization
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateOrganizationRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    delete:
+      summary: Delete an organization
+      operationId: delete-organization
+      responses:
+        '200':
+          $ref: '#/components/responses/OrganizationResponse'
+      description: Deletes the information of the organization with the matching organization slug.
+      security:
+        - x-api-key: []
+      tags:
+        - Organization
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/orgs/{org}/projects':
+    post:
+      summary: Creates a project
+      responses:
+        '201':
+          $ref: '#/components/responses/ProjectResponse'
+      operationId: create-org-scoped-project
+      security:
+        - x-api-key: []
+      description: Creates a new project
+      requestBody:
+        $ref: '#/components/requestBodies/CreateProjectRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Project
+    get:
+      summary: List projects
+      responses:
+        '200':
+          $ref: '#/components/responses/ProjectListResponse'
+      operationId: get-org-scoped-projects
+      description: Retrieves the information of the projects.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectsQueryParam'
+        - schema:
+            type: boolean
+            default: true
+          in: query
+          name: has_module
+          description: This boolean specifies whether to filter projects which has the module of type passed in the moduleType parameter or not
+        - schema:
+            type: string
+          in: query
+          name: module_type
+          description: Project's module type
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      tags:
+        - Org Project
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+  '/v1/orgs/{org}/projects/{project}':
+    get:
+      summary: Retrieve a project
+      responses:
+        '200':
+          $ref: '#/components/responses/ProjectResponse'
+      operationId: get-org-scoped-project
+      description: Retrieves the information of the project with the matching project slug.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Project
+    put:
+      summary: Update a project
+      responses:
+        '200':
+          $ref: '#/components/responses/ProjectResponse'
+      operationId: update-org-scoped-project
+      description: Updates the information of the project with the matching project slug.
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateProjectRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Project
+    delete:
+      summary: Delete a project
+      responses:
+        '200':
+          $ref: '#/components/responses/ProjectResponse'
+      operationId: delete-org-scoped-project
+      description: Deletes the information of the project with the matching project slug.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Project
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+  /v1/secrets:
+    post:
+      summary: Create a secret
+      operationId: create-account-scoped-secret
+      responses:
+        '201':
+          $ref: '#/components/responses/SecretResponse'
+      description: Creates a new secret
+      parameters:
+        - $ref: '#/components/parameters/PrivateSecret'
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      tags:
+        - Account Secret
+    get:
+      summary: List secrets
+      operationId: get-account-scoped-secrets
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretListResponse'
+      description: Retrieves the information of the secrets.
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: secret
+          description: Slug field of secrets
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SSHKeyPath
+                - SSHKeyReference
+                - SSHPassword
+                - SSHKerberosTGTKeyTabFile
+                - SSHKerberosTGTPassword
+                - SecretFile
+                - SecretText
+                - WinRmTGTKeyTabFile
+                - WinRmTGTPassword
+                - WinRmNTLM
+          in: query
+          name: type
+          description: Secret types on which the filter will be applied
+        - schema:
+            type: boolean
+            default: false
+          in: query
+          name: recursive
+          description: 'Expand current scope to include all child scopes '
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Secret
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/secrets':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    post:
+      summary: Create a secret
+      operationId: create-org-scoped-secret
+      responses:
+        '201':
+          $ref: '#/components/responses/SecretResponse'
+      description: Creates a new secret
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      parameters:
+        - $ref: '#/components/parameters/PrivateSecret'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Secret
+      security:
+        - x-api-key: []
+    get:
+      summary: List secrets
+      operationId: get-org-scoped-secrets
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretListResponse'
+      description: Retrieves the information of the secrets.
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: secret
+          description: Slug field of secrets
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SSHKeyPath
+                - SSHKeyReference
+                - SSHPassword
+                - SSHKerberosTGTKeyTabFile
+                - SSHKerberosTGTPassword
+                - SecretFile
+                - SecretText
+                - WinRmTGTKeyTabFile
+                - WinRmTGTPassword
+                - WinRmNTLM
+          in: query
+          name: type
+          description: Secret types on which the filter will be applied
+        - schema:
+            type: boolean
+            default: false
+          in: query
+          name: recursive
+          description: 'Expand current scope to include all child scopes '
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Org Secret
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/secrets':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    post:
+      summary: Create a secret
+      operationId: create-project-scoped-secret
+      responses:
+        '201':
+          $ref: '#/components/responses/SecretResponse'
+      description: Creates a new secret
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      parameters:
+        - $ref: '#/components/parameters/PrivateSecret'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Project Secret
+      security:
+        - x-api-key: []
+    get:
+      summary: List secrets
+      operationId: get-project-scoped-secrets
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretListResponse'
+      description: Retrieves the information of the secrets.
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: secret
+          description: Slug field of secrets
+        - schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - SSHKeyPath
+                - SSHKeyReference
+                - SSHPassword
+                - SSHKerberosTGTKeyTabFile
+                - SSHKerberosTGTPassword
+                - SecretFile
+                - SecretText
+                - WinRmTGTKeyTabFile
+                - WinRmTGTPassword
+                - WinRmNTLM
+          in: query
+          name: type
+          description: Secret types on which the filter will be applied
+        - schema:
+            type: boolean
+            default: false
+          in: query
+          name: recursive
+          description: 'Expand current scope to include all child scopes '
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Project Secret
+      security:
+        - x-api-key: []
+  '/v1/secrets/{secret}':
+    parameters:
+      - schema:
+          type: string
+        name: secret
+        in: path
+        required: true
+        description: Slug field of the secret
+    get:
+      summary: Retrieve a secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      operationId: get-account-scoped-secret
+      description: Retrieves the information of the secret.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Secret
+      security:
+        - x-api-key: []
+    delete:
+      summary: Deletes a secret
+      tags:
+        - Account Secret
+      operationId: delete-account-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Deletes the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    put:
+      summary: Update a secret
+      operationId: update-account-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Updates the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Account Secret
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/secrets/{secret}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - schema:
+          type: string
+        name: secret
+        in: path
+        required: true
+        description: Slug field of the secret
+    get:
+      summary: Retrieve a secret
+      tags:
+        - Org Secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      operationId: get-org-scoped-secret
+      description: Retrieves the information of the secret.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    delete:
+      summary: Delete a secret
+      tags:
+        - Org Secret
+      operationId: delete-org-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Deletes the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    put:
+      summary: Update a secret
+      operationId: update-org-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Updates the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      tags:
+        - Org Secret
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/secrets/{secret}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - schema:
+          type: string
+        name: secret
+        in: path
+        required: true
+        description: Slug field of the secret
+    get:
+      summary: Retrieve a secret
+      tags:
+        - Project Secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      operationId: get-project-scoped-secret
+      description: Retrieves the information of the secret.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    delete:
+      summary: Delete a secret
+      tags:
+        - Project Secret
+      operationId: delete-project-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Deletes the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    put:
+      summary: Update a secret
+      operationId: update-project-scoped-secret
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretResponse'
+      description: Updates the information of the secret with the matching secret slug.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/SecretRequest'
+      tags:
+        - Project Secret
+      security:
+        - x-api-key: []
+components:
+  schemas:
+    Service:
+      type: object
+      x-examples:
+        example-1:
+          account: sample_account
+          slug: example_service
+          org: sample_organization
+          project: sample_project
+          name: Example_service
+          description: This is a example service
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          yaml: |
+            service:
+              name: "Example_service"
+              identifier: "example_service"
+              tags: {}
+      description: This is the Service entity defined in Harness
+      title: Service
+      properties:
+        account:
+          type: string
+          description: Account Identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        slug:
+          type: string
+          description: Identifier of the Service Request.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        org:
+          type: string
+          description: Organization Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        project:
+          type: string
+          description: Project Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          description: Name of the Service Request.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        description:
+          type: string
+          description: Description of the entity
+          maxLength: 1024
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Service tags
+          maxProperties: 128
+        yaml:
+          type: string
+          description: Yaml related to service
+      required:
+        - slug
+        - name
+    ServiceResponse:
+      type: object
+      x-examples:
+        example-1:
+          service:
+            account: sample_account
+            slug: example_service
+            org: sample_organization
+            project: sample_project
+            name: Example_service
+            description: This is a example service
+            tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
+            yaml: |
+              service:
+                name: "Example_service"
+                identifier: "example_service"
+                tags: {}
+          created: 1234567890
+          updated: 1234567890
+      description: Default response when a service is returned
+      title: ServiceResponse
+      properties:
+        service:
+          $ref: '#/components/schemas/Service'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for Service.
+        updated:
+          type: integer
+          format: int64
+          description: Last modification timestamp for Service.
+    ServiceRequest:
+      type: object
+      x-examples:
+        example-1:
+          slug: example_service
+          name: Example_service
+          description: This is a example service
+          tags:
+            example-tag-1: example-tag-1-value
+            example-tag-2: example-tag-2-value
+          yaml: |
+            service:
+              name: "Example_service"
+              identifier: "example_service"
+              tags: {}
+      title: ServiceRequest
+      description: 'Service Request Body '
+      properties:
+        slug:
+          type: string
+          description: Identifier of the Service
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          description: Name of the Service
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          minLength: 1
+          maxLength: 64
+        description:
+          type: string
+          description: Description of the entity
+          maxLength: 1024
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Service tags
+          maxProperties: 128
+        yaml:
+          type: string
+          description: YAML for the Service Request
+      required:
+        - slug
+        - name
+    CreateOrganizationRequest:
+      type: object
+      properties:
+        org:
+          $ref: '#/components/schemas/Organization'
+      required:
+        - org
+    Organization:
+      description: Organization model
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          description: Organization slug
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          description: Organization name
+          maxLength: 64
+        description:
+          type: string
+          maxLength: 1024
+          description: Organization description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Organization tags
+      required:
+        - slug
+        - name
+    ModuleType:
+      type: string
+      description: Type of Modules
+      enum:
+        - CD
+        - CI
+        - CV
+        - CF
+        - CE
+        - STO
+        - CORE
+        - PMS
+        - TEMPLATESERVICE
+        - GOVERNANCE
+        - CHAOS
+    CreateProjectRequest:
+      description: Create project request
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/Project'
+      required:
+        - project
+    Project:
+      description: Project model
+      type: object
+      x-examples:
+        example-1:
+          slug: example_project_slug
+          name: example-project-name
+          color: '#0063F7'
+          modules:
+            - CD
+          description: This is a example project
+          tags:
+            property1: value1
+            property2: value2
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          description: Project slug
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          description: Project name
+          maxLength: 64
+        org:
+          type: string
+          description: Organization slug for the project
+        color:
+          type: string
+          description: Project color
+        modules:
+          type: array
+          maxItems: 1024
+          description: List of modules for project
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        description:
+          type: string
+          maxLength: 1024
+          description: Project description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Project tags
+      required:
+        - slug
+        - name
+    ProjectResponse:
+      description: Project response model
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/Project'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for the project
+        updated:
+          type: integer
+          format: int64
+          description: Updated timestamp for the project
+    OrganizationResponse:
+      title: OrganizationResponse
+      type: object
+      description: Organization response Model
+      x-examples:
+        example-1:
+          org:
+            slug: example_organization
+            name: Example Organization
+            description: This is an Example Organization
+            tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
+          created: 1234567890
+          updated: 1234567890
+          harness_managed: true
+      properties:
+        org:
+          $ref: '#/components/schemas/Organization'
+        created:
+          type: integer
+          description: Creation timestamp for organization
+          format: int64
+        updated:
+          type: integer
+          format: int64
+          description: Updated timestamp for organization
+        harness_managed:
+          type: boolean
+          description: 'This indicates if this organization is managed by Harness or not. If true, Harness can manage and modify this organization.'
+    UpdateOrganizationRequest:
+      description: Update oganization request
+      type: object
+      properties:
+        org:
+          $ref: '#/components/schemas/Organization'
+      required:
+        - org
+    UpdateProjectRequest:
+      description: Update project request
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/Project'
+      required:
+        - project
+    SecretSpec:
+      title: SecretSpec
+      type: object
+      description: Details of the secret defined in Harness
+      required:
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          SSHKeyPath: '#/components/schemas/SSHKeyPathSpec'
+          SSHKeyReference: '#/components/schemas/SSHKeyReferenceSpec'
+          SSHPassword: '#/components/schemas/SSHPasswordSpec'
+          SSHKerberosTGTKeyTabFile: '#/components/schemas/SSHKerberosTGTKeyTabFileSpec'
+          SSHKerberosTGTPassword: '#/components/schemas/SSHKerberosTGTPasswordSpec'
+          SecretFile: '#/components/schemas/SecretFileSpec'
+          SecretText: '#/components/schemas/SecretTextSpec'
+          WinRmTGTKeyTabFile: '#/components/schemas/WinRmTGTKeyTabFileSpec'
+          WinRmTGTPassword: '#/components/schemas/WinRmTGTPasswordSpec'
+          WinRmNTLM: '#/components/schemas/WinRmNTLMSpec'
+      properties:
+        type:
+          type: string
+          enum:
+            - SSHKeyPath
+            - SSHKeyReference
+            - SSHPassword
+            - SSHKerberosTGTKeyTabFile
+            - SSHKerberosTGTPassword
+            - SecretFile
+            - SecretText
+            - WinRmTGTKeyTabFile
+            - WinRmTGTPassword
+            - WinRmNTLM
+          description: This specifies the type of secret
+    SSHKeyPathSpec:
+      title: SSHKeyPath
+      x-discriminator-value: SSHKeyPath
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SSHKeyPath
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              description: SSH port
+            username:
+              type: string
+              description: SSH username
+            key_path:
+              type: string
+              description: Path of the key file
+            encrypted_passphrase:
+              type: string
+              description: This is the passphrase provided while creating the SSH key for local encryption
+          required:
+            - type
+            - username
+            - key_path
+    SSHKeyReferenceSpec:
+      title: SSHKeyReference
+      x-discriminator-value: SSHKeyReference
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SSHKeyReference
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              description: SSH port
+            username:
+              type: string
+              description: SSH username
+            key:
+              type: string
+              description: SSH key
+            encrypted_passphrase:
+              type: string
+              description: This is the passphrase provided while creating the SSH key for local encryption
+          required:
+            - type
+            - username
+    SSHPasswordSpec:
+      title: SSHPassword
+      x-discriminator-value: SSHPassword
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SSHPassword
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              description: SSH port
+            username:
+              type: string
+              description: SSH username
+            password:
+              type: string
+              description: SSH password
+          required:
+            - type
+            - username
+            - password
+    SSHKerberosTGTKeyTabFileSpec:
+      title: SSHKerberosTGTKeyTabFile
+      x-discriminator-value: SSHKerberosTGTKeyTabFile
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SSHKerberosTGTKeyTabFile
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              description: SSH port
+            principal:
+              type: string
+              description: Kerberos principal
+            realm:
+              type: string
+              description: Kerberos realm
+            key_path:
+              type: string
+              description: Kerberos keytab file path
+          required:
+            - type
+    SSHKerberosTGTPasswordSpec:
+      title: SSHKerberosTGTPassword
+      x-discriminator-value: SSHKerberosTGTPassword
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SSHKerberosTGTPassword
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              description: SSH port
+            principal:
+              type: string
+              description: Kerberos principal
+            realm:
+              type: string
+              description: Kerberos realm
+            password:
+              type: string
+              description: Kerberos password
+          required:
+            - type
+    SecretFileSpec:
+      title: SecretFile
+      x-discriminator-value: SecretFile
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SecretFile
+              description: This specifies the type of secret
+            secret_manager_slug:
+              type: string
+              description: Slug of the secret manager used to manage the secret
+          required:
+            - type
+            - secret_manager_slug
+    SecretTextSpec:
+      title: SecretText
+      x-discriminator-value: SecretText
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SecretText
+              description: This specifies the type of secret
+            secret_manager_slug:
+              type: string
+              description: Slug of the secret manager used to manage the secret
+            value_type:
+              type: string
+              enum:
+                - Inline
+                - Reference
+              description: This has details to specify if the secret value is inline or referenced
+            value:
+              type: string
+              description: Value of the Secret
+          required:
+            - type
+            - secret_manager_slug
+            - value_type
+    WinRmTGTKeyTabFileSpec:
+      title: WinRmTGTKeyTabFile
+      x-discriminator-value: WinRmTGTKeyTabFile
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - WinRmTGTKeyTabFile
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              default: 5986
+              description: WinRm port
+            principal:
+              type: string
+              description: Kerberos principal
+            realm:
+              type: string
+              description: Kerberos realm
+            key_path:
+              type: string
+              description: Keytab file path
+            use_ssl:
+              type: boolean
+              default: true
+              description: This is the Kerberos either to use SSL/https
+            skip_cert_checks:
+              type: boolean
+              default: true
+              description: This is the Kerberos either to skip certificate checks
+            use_no_profile:
+              type: boolean
+              description: This is the Kerberos powershell runs without loading profile
+          required:
+            - type
+    WinRmTGTPasswordSpec:
+      title: WinRmTGTPassword
+      x-discriminator-value: WinRmTGTPassword
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - WinRmTGTPassword
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              default: 5986
+              description: WinRm port
+            principal:
+              type: string
+              description: Kerberos principal
+            realm:
+              type: string
+              description: Kerberos realm
+            password:
+              type: string
+              description: Kerberos password
+            use_ssl:
+              type: boolean
+              default: true
+              description: This is the Kerberos either to use SSL/https
+            skip_cert_checks:
+              type: boolean
+              default: true
+              description: This is the Kerberos either to skip certificate checks
+            use_no_profile:
+              type: boolean
+              description: This is the Kerberos powershell runs without loading profile
+          required:
+            - type
+    WinRmNTLMSpec:
+      title: WinRmNTLM
+      x-discriminator-value: WinRmNTLM
+      description: This is the SSH key authentication details defined in Harness.
+      allOf:
+        - $ref: '#/components/schemas/SecretSpec'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - WinRmNTLM
+              description: This specifies the type of secret
+            port:
+              type: integer
+              format: int32
+              default: 5986
+              description: WinRm port
+            domain:
+              type: string
+              description: This is the NTLM domain name
+            username:
+              type: string
+              description: This is the NTLM user name
+            password:
+              type: string
+              description: This is the NTLM password
+            use_ssl:
+              type: boolean
+              default: true
+              description: This is the NTLM either to use SSL/https
+            skip_cert_checks:
+              type: boolean
+              default: true
+              description: This is the Kerberos either to skip certificate checks
+            use_no_profile:
+              type: boolean
+              description: This is the Kerberos powershell runs without loading profile
+          required:
+            - type
+            - domain
+            - username
+            - password
+    SecretRequest:
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/Secret'
+      required:
+        - secret
+    Secret:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Secret name
+          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+        slug:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          description: Secret slug
+          maxLength: 64
+        org:
+          type: string
+          description: Organization slug for secret
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+        project:
+          type: string
+          description: Project slug for secret
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Secret tags
+        description:
+          type: string
+          description: Secret description
+        spec:
+          $ref: '#/components/schemas/SecretSpec'
+      required:
+        - name
+        - slug
+        - spec
+    SecretResponse:
+      title: SecretResponse
+      type: object
+      properties:
+        secret:
+          $ref: '#/components/schemas/Secret'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for the secret
+        updated:
+          type: integer
+          format: int64
+          description: Updated timestamp for the secret
+        draft:
+          type: boolean
+        governance_metadata:
+          type: object
+          description: Governance metadata information
+      description: Secret response model
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+  responses:
+    ServiceListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceResponse'
+          examples:
+            example-1:
+              value:
+                - service:
+                    account: sample_account
+                    slug: example_service
+                    org: sample_organization
+                    project: sample_project
+                    name: Example_service
+                    description: This is a example service
+                    tags:
+                      example-tag-1: example-tag-1-value
+                      example-tag-2: example-tag-2-value
+                    yaml: |
+                      service:
+                        name: "Example_service"
+                        identifier: "example_service"
+                        tags: {}
+                  created: 1234567890
+                  updated: 1234567890
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceResponse'
+          examples:
+            example-1:
+              value: |
+                - service:
+                    account: sample_account
+                    slug: example_service
+                    org: sample_organization
+                    project: sample_project
+                    name: Example_service
+                    description: This is a example service
+                    tags:
+                      example-tag-1: example-tag-1-value
+                      example-tag-2: example-tag-2-value
+                    yaml: |
+                      service:
+                        name: "Example_service"
+                        identifier: "example_service"
+                        tags: {}
+                  created: 1234567890
+                  updated: 1234567890
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+    ServiceResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceResponse'
+          examples:
+            example-1:
+              value:
+                service:
+                  account: sample_account
+                  slug: example_service
+                  org: sample_organization
+                  project: sample_project
+                  name: Example_service
+                  description: This is a example service
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  yaml: |
+                    service:
+                      name: "Example_service"
+                      identifier: "example_service"
+                      tags: {}
+                created: 1234567890
+                updated: 1234567890
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ServiceResponse'
+          examples:
+            example-1:
+              value: |
+                service:
+                  account: sample_account
+                  slug: example_service
+                  org: sample_organization
+                  project: sample_project
+                  name: Example_service
+                  description: This is a example service
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                  yaml: |
+                    service:
+                      name: "Example_service"
+                      identifier: "example_service"
+                      tags: {}
+                created: 1234567890
+                updated: 1234567890
+    OrganizationResponse:
+      description: Organization response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrganizationResponse'
+          examples:
+            example-organization-response-json:
+              value:
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                created: 1234567890
+                updated: 1234567890
+                harness_managed: true
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/OrganizationResponse'
+          examples:
+            example-organization-response-yaml:
+              value: |
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+                created: 1234567890
+                updated: 1234567890
+                harness_managed: true
+    ProjectResponse:
+      description: Project response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProjectResponse'
+          examples:
+            example-project-response-json:
+              value:
+                project:
+                  org: example_org_slug
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+                created: 1234567890
+                updated: 1234567890
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ProjectResponse'
+          examples:
+            example-project-response-yaml:
+              value: |
+                project:
+                  org: example_org_slug
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+                created: 1234567890
+                updated: 1234567890
+    ProjectListResponse:
+      description: Project list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProjectResponse'
+          examples:
+            example-project-list-response-json:
+              value:
+                - project:
+                    org: example_org_slug
+                    slug: example_project_slug
+                    name: example-project-name
+                    color: '#0063F7'
+                    modules:
+                      - CD
+                    description: This is a example project
+                    tags:
+                      property1: value1
+                      property2: value2
+                  created: 1234567890
+                  updated: 1234567890
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProjectResponse'
+          examples:
+            example-project-list-response-yaml:
+              value: |
+                - project:
+                    org: example_org_slug
+                    slug: example_project_slug
+                    name: example-project-name
+                    color: '#0063F7'
+                    modules:
+                      - CD
+                    description: This is a example project
+                    tags:
+                      property1: value1
+                      property2: value2
+                  created: 1234567890
+                  updated: 1234567890
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.Link'
+          examples:
+            sample:
+              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+    OrganizationListResponse:
+      description: Organization list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/OrganizationResponse'
+          examples:
+            example-organizations-list-response-json:
+              value:
+                - org:
+                    slug: example_organization
+                    name: Example Organization
+                    description: This is an example organization
+                    tags:
+                      example-tag-1: example-tag-1-value
+                      example-tag-2: example-tag-2-value
+                  created: 1234567890
+                  updated: 1234567890
+                  harness_managed: true
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/OrganizationResponse'
+          examples:
+            example-organizations-list-response-yaml:
+              value: |
+                - org:
+                    slug: example_organization
+                    name: Example Organization
+                    description: This is an example organization
+                    tags:
+                      example-tag-1: example-tag-1-value
+                      example-tag-2: example-tag-2-value
+                  created: 1234567890
+                  updated: 1234567890
+                  harness_managed: true
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
+          examples:
+            sample:
+              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+    SecretResponse:
+      description: Secret response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretResponse'
+          examples:
+            example-secret-response-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyPath
+                    port: 80
+                    username: example_secret
+                    key_path: example_secret
+                    encrypted_passphrase: account.example_secret
+                created: 1234567890
+                updated: 1234567890
+                draft: false
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/SecretResponse'
+          examples:
+            example-secret-response-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyPath
+                    port: 80
+                    username: example_secret
+                    key_path: example_secret
+                    encrypted_passphrase: account.example_secret
+                created: 1234567890
+                updated: 1234567890
+                draft: false
+    SecretListResponse:
+      description: Secret list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SecretResponse'
+          examples:
+            example-list-secret-response-json:
+              value:
+                - secret:
+                    name: example_secret
+                    slug: example_secret
+                    org: default
+                    project: example_project
+                    tags:
+                      property1: example_secret
+                    description: example_secret
+                    spec:
+                      type: SSHKeyPath
+                      port: 80
+                      username: example_secret
+                      key_path: example_secret
+                      encrypted_passphrase: account.example_secret
+                  created: 1234567890
+                  updated: 1234567890
+                  draft: false
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SecretResponse'
+          examples:
+            example-list-secret-response-yaml:
+              value: |
+                - secret:
+                    name: example_secret
+                    slug: example_secret
+                    org: default
+                    project: example_project
+                    tags:
+                      property1: example_secret
+                    description: example_secret
+                    spec:
+                      type: SSHKeyPath
+                      port: 80
+                      username: example_secret
+                      key_path: example_secret
+                      encrypted_passphrase: account.example_secret
+                  created: 1234567890
+                  updated: 1234567890
+                  draft: false
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.Link'
+          examples:
+            sample:
+              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+  requestBodies:
+    ServiceRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceRequest'
+          examples:
+            example-1:
+              value:
+                slug: example_service
+                name: Example_service
+                description: This is a example service
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                yaml: |
+                  service:
+                    name: "Example_service"
+                    identifier: "example_service"
+                    tags: {}
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ServiceRequest'
+          examples:
+            example-1:
+              value: |
+                slug: example_service
+                name: Example_service
+                description: This is a example service
+                tags:
+                  example-tag-1: example-tag-1-value
+                  example-tag-2: example-tag-2-value
+                yaml: |
+                  service:
+                    name: "Example_service"
+                    identifier: "example_service"
+                    tags: {}
+      description: Create Service request body
+      required: true
+    UpdateProjectRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateProjectRequest'
+          examples:
+            example-project-update-request-json:
+              value:
+                project:
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UpdateProjectRequest'
+          examples:
+            example-project-update-request-yaml:
+              value: |
+                project:
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+      description: Put the necessary fields for the API to update a Project.
+      required: true
+    CreateOrganizationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateOrganizationRequest'
+          examples:
+            example-create-organization-request-json:
+              value:
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an Example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CreateOrganizationRequest'
+          examples:
+            example-create-organization-request-yaml:
+              value: |
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an Example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+      description: Post the necessary fields for the API to create an organization.
+      required: true
+    UpdateOrganizationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateOrganizationRequest'
+          examples:
+            example-organization-update-request-json:
+              value:
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UpdateOrganizationRequest'
+          examples:
+            example-organization-update-request-json:
+              value: |
+                org:
+                  slug: example_organization
+                  name: Example Organization
+                  description: This is an example organization
+                  tags:
+                    example-tag-1: example-tag-1-value
+                    example-tag-2: example-tag-2-value
+      description: Put the necessary fields for the API to update a organization.
+      required: true
+    CreateProjectRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateProjectRequest'
+          examples:
+            example-create-project-request-json:
+              value:
+                project:
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CreateProjectRequest'
+          examples:
+            example-create-project-request-yaml:
+              value: |
+                project:
+                  slug: example_project_slug
+                  name: example-project-name
+                  color: '#0063F7'
+                  modules:
+                    - CD
+                  description: This is a example project
+                  tags:
+                    property1: value1
+                    property2: value2
+      description: Post the necessary fields for the API to create a project.
+      required: true
+    SecretRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretRequest'
+          examples:
+            example-ssh-kerberos-tgt-key-tab-file-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKerberosTGTKeyTabFile
+                    port: 22
+                    principal: example-principal
+                    realm: example-realm
+                    key_path: key/file/path
+            example-ssh-kerberos-tgt-password-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKerberosTGTPassword
+                    port: 22
+                    principal: example-principal
+                    realm: example-realm
+                    password: account.example-password
+            example-secret-file-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SecretFile
+                    secret_manager_slug: example_secret_manager_slug
+            example-secret-text-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SecretText
+                    secret_manager_slug: example_secret_manager_slug
+                    value_type: Inline
+                    value: example_secret_text_value
+            example-ssh-key-path-file-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyPath
+                    port: 22
+                    username: example_username
+                    key_path: ssh/key/path
+                    encrypted_passphrase: account.example_passphrase
+            example-ssh-key-reference-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyReference
+                    port: 22
+                    username: example_username
+                    key: example/secret/key/path
+                    encrypted_passphrase: account.example_passphrase
+            example-ssh-password-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHPassword
+                    port: 22
+                    username: example_username
+                    password: account.example_password
+            example-winrm-ntlm-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmNTLM
+                    port: 5986
+                    domain: example-domain
+                    username: example-username
+                    password: example-password
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+            example-winrm-tgt-key-file-tab-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmTGTKeyTabFile
+                    port: 5986
+                    principal: example-principal
+                    realm: example-realm
+                    key_path: key/file/path
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+            example-winrm-tgt-password-secret-request-json:
+              value:
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmTGTPassword
+                    port: 5986
+                    principal: example-principal
+                    realm: example-realm
+                    password: example-password
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/SecretRequest'
+          examples:
+            example-ssh-kerberos-tgt-key-tab-file-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKerberosTGTKeyTabFile
+                    port: 22
+                    principal: example-principal
+                    realm: example-realm
+                    key_path: key/file/path
+            example-ssh-kerberos-tgt-password-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKerberosTGTPassword
+                    port: 22
+                    principal: example-principal
+                    realm: example-realm
+                    password: account.example-password
+            example-secret-file-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SecretFile
+                    secret_manager_slug: example_secret_manager_slug
+            example-secret-text-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SecretText
+                    secret_manager_slug: example_secret_manager_slug
+                    value_type: Inline
+                    value: example_secret_text_value
+            example-ssh-key-path-file-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyPath
+                    port: 22
+                    username: example_username
+                    key_path: ssh/key/path
+                    encrypted_passphrase: account.example_passphrase
+            example-ssh-key-reference-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHKeyReference
+                    port: 22
+                    username: example_username
+                    key: example/secret/key/path
+                    encrypted_passphrase: account.example_passphrase
+            example-ssh-password-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: SSHPassword
+                    port: 22
+                    username: example_username
+                    password: account.example_password
+            example-winrm-ntlm-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmNTLM
+                    port: 5986
+                    domain: example-domain
+                    username: example-username
+                    password: example-password
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+            example-winrm-tgt-key-file-tab-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmTGTKeyTabFile
+                    port: 5986
+                    principal: example-principal
+                    realm: example-realm
+                    key_path: key/file/path
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+            example-winrm-tgt-password-secret-request-yaml:
+              value: |
+                secret:
+                  name: example_secret
+                  slug: example_secret
+                  org: default
+                  project: example_project
+                  tags:
+                    property1: example_secret
+                  description: example_secret
+                  spec:
+                    type: WinRmTGTPassword
+                    port: 5986
+                    principal: example-principal
+                    realm: example-realm
+                    password: example-password
+                    use_ssl: true
+                    skip_cert_checks: true
+                    use_no_profile: true
+        multipart/form-data:
+          schema:
+            properties:
+              spec:
+                $ref: '#/components/schemas/SecretRequest'
+              file:
+                type: string
+                format: binary
+            required:
+              - file
+              - spec
+      required: true
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 30
+      description: 'Pagination: Number of items to return'
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching with search term.
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    OrgsQueryParam:
+      name: org
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      description: Slug field of the organizations the resource is scoped to
+    ProjectsQueryParam:
+      name: project
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+      description: Slug field of the projects the resource is scoped to
+    OrgPathParam:
+      name: org
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Slug field of the organization the resource is scoped to
+    PrivateSecret:
+      name: private_secret
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: This would be used to define secret as private.
+    ProjectPathParam:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Slug field of the project the resource is scoped to
+    ServicePathParam:
+      name: service
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Slug field of the service the resource is scoped to
+    ServiceIdentifiers:
+      name: service_ids
+      in: query
+      required: false
+      schema:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+      description: List of Service Identifiers
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - name
+          - slug
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.

@@ -10,10 +10,15 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
+
+import java.util.Map;
 
 public class K8sRollingRollbackStepMapperImpl implements StepMapper {
   @Override
@@ -22,13 +27,21 @@ public class K8sRollingRollbackStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
+    return null;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     K8sRollingRollbackStepNode k8sRollingStepNode = new K8sRollingRollbackStepNode();
     baseSetup(stepYaml, k8sRollingStepNode);
-    k8sRollingStepNode.setK8sRollingRollbackStepInfo(K8sRollingRollbackStepInfo.infoBuilder()
-                                                         .skipDryRun(ParameterField.createValueField(false))
-                                                         .pruningEnabled(ParameterField.createValueField(false))
-                                                         .build());
+    k8sRollingStepNode.setK8sRollingRollbackStepInfo(
+        K8sRollingRollbackStepInfo.infoBuilder().pruningEnabled(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

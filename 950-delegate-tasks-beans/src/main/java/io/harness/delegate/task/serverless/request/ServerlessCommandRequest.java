@@ -7,8 +7,6 @@
 
 package io.harness.delegate.task.serverless.request;
 
-import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
@@ -77,7 +75,7 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
       if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {
         ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig;
-        if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig().getType() == GIT) {
+        if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig() != null) {
           GitStoreDelegateConfig gitStoreDelegateConfig = serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig();
           capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
               ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),

@@ -7,7 +7,7 @@
 
 package io.harness.cdng;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;

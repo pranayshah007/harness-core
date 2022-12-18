@@ -7,8 +7,8 @@
 
 package io.harness.delegate.beans.ci.pod;
 
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.k8s.model.ImageDetails;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.validation.constraints.NotNull;

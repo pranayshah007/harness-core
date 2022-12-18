@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.cdng.gitops.steps.GitopsClustersStep.GITOPS_ENV_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
@@ -19,16 +20,21 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.cdng.NgExpressionHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
+import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -37,6 +43,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
+import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -58,10 +65,12 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -72,6 +81,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.rbac.CDNGRbacUtility;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
@@ -111,6 +121,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String SERVICE_MANIFESTS_SWEEPING_OUTPUT = "serviceManifestsSweepingOutput";
   public static final String SERVICE_CONFIG_FILES_SWEEPING_OUTPUT = "serviceConfigFilesSweepingOutput";
+  public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
@@ -121,6 +132,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private NotificationHelper notificationHelper;
+  @Inject private EngineExpressionService engineExpressionService;
+  @Inject NgExpressionHelper ngExpressionHelper;
+  @Inject private EnvironmentGroupService environmentGroupService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
@@ -140,11 +155,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
+      saveExecutionLog(logCallback,
+          "Service Name: " + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getName()
+              + " , Identifier: "
+              + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getIdentifier());
+
       // Support GitOps Flow
       // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
       if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
           && stepParameters.getGitOpsMultiSvcEnvEnabled().getValue()) {
-        executeGitOpsEnvironmentPart(ambiance, servicePartResponse, logCallback);
+        handleMultipleEnvironmentsPart(ambiance, stepParameters, servicePartResponse, logCallback);
       } else {
         executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
       }
@@ -169,17 +189,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
   }
 
-  private void executeGitOpsEnvironmentPart(
-      Ambiance ambiance, ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
-    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
-
-    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
-        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
-
-    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
-        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
-  }
-
   private void validate(ServiceStepV3Parameters stepParameters) {
     if (ParameterField.isNull(stepParameters.getServiceRef())) {
       throw new InvalidRequestException("service ref not provided");
@@ -189,9 +198,94 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new UnresolvedExpressionsException(Arrays.asList(stepParameters.getServiceRef().getExpressionValue()));
     }
 
-    if (ParameterField.isNull(stepParameters.getEnvRef())) {
-      throw new InvalidRequestException("environment ref not provided");
+    if (ParameterField.isNull(stepParameters.getEnvRef()) && isEmpty(stepParameters.getEnvRefs())) {
+      throw new InvalidRequestException("environment ref or environment refs not provided");
     }
+  }
+
+  /**
+   * Function handles processing envInputs and serviceInputs for multiple environments. Currently,
+   * the flow is being used for GitOps Flows deploying to multiple environments.
+   */
+  private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+    Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
+    Map<String, Map<String, Object>> envToSvcVariables = new HashMap<>();
+    List<NGVariable> svcOverrideVariables;
+
+    if (isEmpty(parameters.getEnvRefs())) {
+      throw new InvalidRequestException("No environments are found while handling deployment to multiple environments");
+    }
+
+    List<Environment> environments = getEnvironmentsFromEnvRef(ambiance, parameters.getEnvRefs());
+
+    log.info("Starting execution for Environments: [{}]", Arrays.toString(environments.toArray()));
+    for (Environment environment : environments) {
+      NGEnvironmentConfig ngEnvironmentConfig;
+      // handle old environments
+      if (isEmpty(environment.getYaml())) {
+        getNGEnvironmentConfig(environment);
+      }
+      try {
+        if (isNotEmpty(parameters.getEnvToEnvInputs())) {
+          ngEnvironmentConfig = mergeEnvironmentInputs(
+              environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.getIdentifier()));
+        } else {
+          ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(), null);
+        }
+      } catch (IOException ex) {
+        throw new InvalidRequestException("Unable to read yaml for environment: " + environment.getIdentifier(), ex);
+      }
+      List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
+      envToEnvVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(variables));
+
+      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
+          serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), environment.getIdentifier(),
+              parameters.getServiceRef().getValue());
+      NGServiceOverrideConfig ngServiceOverrides;
+      if (ngServiceOverridesEntity.isPresent()) {
+        ngServiceOverrides = mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(),
+            parameters.getEnvToSvcOverrideInputs().get(environment.getIdentifier()));
+
+        svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
+        envToSvcVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
+      }
+    }
+
+    resolve(ambiance, envToEnvVariables, envToSvcVariables);
+
+    GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
+
+    sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
+
+    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+  }
+
+  private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {
+    List<String> envRefsIds = envRefs.stream().map(e -> e.getValue()).collect(Collectors.toList());
+
+    List<Environment> environments =
+        environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), envRefsIds);
+
+    if (environments.isEmpty()) {
+      throw new InvalidRequestException(
+          "Unable to fetch environments from environment identifiers. Please verify if referred environments still exist");
+    }
+    return environments;
+  }
+
+  private NGEnvironmentConfig getNGEnvironmentConfig(Environment environment) {
+    NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+    environment.setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
+    return ngEnvironmentConfig;
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
@@ -212,13 +306,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
+      NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
-        environment.get().setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
+        getNGEnvironmentConfig(environment.get());
       }
 
-      NGEnvironmentConfig ngEnvironmentConfig;
       try {
         ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
       } catch (IOException ex) {
@@ -240,8 +333,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environment.get().getIdentifier()));
       entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
 
-      final EnvironmentOutcome environmentOutcome =
-          EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
+      Optional<EnvironmentGroupEntity> envGroupOpt = Optional.empty();
+      if (ParameterField.isNotNull(parameters.getEnvGroupRef())
+          && EmptyPredicate.isNotEmpty(parameters.getEnvGroupRef().getValue())) {
+        envGroupOpt =
+            environmentGroupService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance), parameters.getEnvGroupRef().getValue(), false);
+      }
+      final EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(
+          environment.get(), ngEnvironmentConfig, ngServiceOverrides, envGroupOpt.orElse(null));
 
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
@@ -389,7 +489,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
-      throw new InvalidRequestException(format("service with identifier %s not found", stepParameters.getServiceRef()));
+      throw new InvalidRequestException(
+          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
@@ -524,14 +625,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-              ngFeatureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(ngFeatureFlagHelperService, accountId, orgId, projectId,
+              accessControlClient, CDNGRbacUtility.constructPrincipalFromAmbiance(ambiance))) {
         return null;
       }
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;
       List<FreezeSummaryResponseDTO> manualFreezeConfigs;
       globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
-      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
+      manualFreezeConfigs = freezeEvaluateService.getActiveManualFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
         log.info("Deployment Freeze is Active for the given service.");
         sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
@@ -542,6 +643,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                 .build(),
             "");
         log.info("Adding Children as empty.");
+        String executionUrl = engineExpressionService.renderExpression(
+            ambiance, PIPELINE_EXECUTION_EXPRESSION, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
+        notificationHelper.sendNotificationForFreezeConfigs(
+            manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
         return ChildrenExecutableResponse.newBuilder()
             .addAllLogKeys(CollectionUtils.emptyIfNull(
                 StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))

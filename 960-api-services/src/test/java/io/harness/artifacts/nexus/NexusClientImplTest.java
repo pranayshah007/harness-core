@@ -18,6 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,6 +32,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.NexusRegistryException;
 import io.harness.nexus.NexusClientImpl;
 import io.harness.nexus.NexusRequest;
 import io.harness.nexus.NexusThreeClientImpl;
@@ -41,6 +43,7 @@ import software.wings.utils.RepositoryFormat;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -127,8 +130,8 @@ public class NexusClientImplTest extends CategoryTest {
       Map<String, String> response = nexusClient.getRepositories(nexusConfig1);
       assertThat(response).isNotNull();
       assertThat(response).size().isEqualTo(3);
-    } catch (Exception e) {
-      fail("This point should not have been reached!", e);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Nexus 3.x requires that a repository format is correct");
     }
 
     /** nexus 2.x connector with docker repo format */
@@ -204,6 +207,117 @@ public class NexusClientImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesException() {
+    Map<String, String> mockResponse = new HashMap<>();
+    mockResponse.put("repo1", "repo1");
+    mockResponse.put("repo2", "repo2");
+    mockResponse.put("repo3", "repo3");
+
+    /** nexus 2.x connector with unknown repo format */
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
+      when(nexusTwoClient.getRepositories(nexusConfig, "maven")).thenThrow(IOException.class);
+      Map<String, String> response = nexusClient.getRepositories(nexusConfig1);
+      assertThat(response).isNotNull();
+      assertThat(response).size().isEqualTo(3);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Nexus 3.x requires that a repository format is correct");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesForInvalidFormat() {
+    Map<String, String> mockResponse = new HashMap<>();
+    mockResponse.put("repo1", "repo1");
+    mockResponse.put("repo2", "repo2");
+    mockResponse.put("repo3", "repo3");
+
+    /** nexus 2.x connector with unknown repo format */
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
+      nexusClient.getRepositories(nexusConfig1, RepositoryFormat.docker.name());
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Nexus 2.x does not support Docker artifacts");
+    }
+
+    nexusConfig1 = NexusRequest.builder()
+                       .nexusUrl(url)
+                       .username("username")
+                       .password("password".toCharArray())
+                       .hasCredentials(true)
+                       .artifactRepositoryUrl(url)
+                       .version("3.x")
+                       .build();
+
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
+      nexusClient.getRepositories(nexusConfig1, null);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Nexus 3.x requires that a repository format is correct");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetRepositoriesExceptionForNexus3() {
+    Map<String, String> mockResponse = new HashMap<>();
+    mockResponse.put("repo1", "repo1");
+    mockResponse.put("repo2", "repo2");
+    mockResponse.put("repo3", "repo3");
+
+    /** nexus 3.x connector with unknown repo format */
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
+      hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
+          .thenReturn(mockResponse);
+      when(nexusThreeService.getRepositories(nexusConfig1, "maven")).thenThrow(IOException.class);
+      Map<String, String> response = nexusClient.getRepositories(nexusConfig1);
+      assertThat(response).isNotNull();
+      assertThat(response).size().isEqualTo(3);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Nexus 3.x requires that a repository format is correct");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testIsRunning() {
@@ -224,6 +338,73 @@ public class NexusClientImplTest extends CategoryTest {
 
     boolean response = nexusClient.isRunning(nexusConfig);
     assertThat(response).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testIsRunningException() {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(url)
+                                   .version("3.x")
+                                   .build();
+
+    try {
+      when(nexusThreeService.isServerValid(nexusConfig)).thenThrow(UnknownHostException.class);
+    } catch (HintException | IOException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Check if the Nexus URL & version are correct");
+    }
+    try {
+      boolean response = nexusClient.isRunning(nexusConfig);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Check if the Nexus URL & version are correct");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testIsRunningInvalidException() {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(url)
+                                   .version("3.x")
+                                   .build();
+
+    try {
+      when(nexusThreeService.isServerValid(nexusConfig)).thenThrow(InvalidArtifactServerException.class);
+      nexusClient.isRunning(nexusConfig);
+    } catch (io.harness.exception.InvalidArtifactServerException | IOException exception) {
+      assertThat(exception).isInstanceOf(InvalidArtifactServerException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testIsRunningHintException() {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(url)
+                                   .version("3.x")
+                                   .build();
+
+    try {
+      when(nexusThreeService.isServerValid(nexusConfig)).thenThrow(Exception.class);
+      nexusClient.isRunning(nexusConfig);
+    } catch (Exception exception) {
+      assertThat(exception).isInstanceOf(Exception.class);
+    }
   }
 
   @Test
@@ -261,6 +442,66 @@ public class NexusClientImplTest extends CategoryTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetArtifactsVersionsException() {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    assertThatThrownBy(
+        () -> nexusClient.getArtifactsVersions(nexusConfig1, "test1", null, "superApp", RepositoryFormat.docker.name()))
+        .isInstanceOf(HintException.class);
+
+    NexusRequest nexusConfig2 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    when(
+        nexusThreeService.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name()))
+        .thenThrow(NexusRegistryException.class);
+
+    try {
+      List<BuildDetailsInternal> response =
+          nexusClient.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+    } catch (NexusRegistryException | HintException ex) {
+      assertThat(ex).isInstanceOf(NexusRegistryException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetArtifactsVersionsHintException() throws IOException {
+    NexusRequest nexusConfig2 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("3.x")
+                                    .build();
+
+    when(nexusThreeService.getPackageVersions(nexusConfig2, "test1", null)).thenThrow(NexusRegistryException.class);
+
+    try {
+      nexusClient.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+    } catch (NexusRegistryException | HintException ex) {
+      assertThat(ex).isInstanceOf(NexusRegistryException.class);
+    }
   }
 
   @Test
@@ -415,6 +656,46 @@ public class NexusClientImplTest extends CategoryTest {
     response = nexusClient.getArtifactsVersions(nexusConfig2, "npm", "npm", "");
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageName() {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+
+    assertThatThrownBy(() -> nexusClient.getPackageNames(nexusConfig1, "RAW", "test"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageNameException() throws IOException {
+    NexusRequest nexusConfig1 = NexusRequest.builder()
+                                    .nexusUrl(url)
+                                    .username("username")
+                                    .password("password".toCharArray())
+                                    .hasCredentials(true)
+                                    .artifactRepositoryUrl(url)
+                                    .version("2.x")
+                                    .build();
+    when(nexusThreeService.getPackageNamesBuildDetails(nexusConfig, "RAW", "test"))
+        .thenThrow(NexusRegistryException.class);
+    try {
+      nexusClient.getPackageNames(nexusConfig1, "RAW", "test");
+    } catch (HintException exception) {
+      assertThat(exception.getMessage())
+          .isEqualTo(
+              "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.");
+    }
   }
 
   private BuildDetailsInternal createBuildDetails(String repoUrl, String port, String imageName, String tag) {

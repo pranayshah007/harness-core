@@ -35,7 +35,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
-@Schema(name = "UserGroupRequestV2", description = "User Group details defined in Harness.")
+@Schema(name = "UserGroupResponseV2", description = "User Group details defined in Harness.")
 public class UserGroupResponseV2DTO {
   @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountIdentifier;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)

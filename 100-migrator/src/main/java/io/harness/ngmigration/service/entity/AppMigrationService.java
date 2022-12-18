@@ -45,6 +45,8 @@ import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
+import software.wings.beans.Workflow;
+import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
@@ -82,8 +84,6 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
 
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
-
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     return null;
@@ -108,6 +108,17 @@ public class AppMigrationService extends NgMigrationService {
                         .map(Pipeline::getUuid)
                         .distinct()
                         .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
+                        .collect(Collectors.toSet()));
+
+    List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
+                                   .filter(WorkflowKeys.accountId, application.getAccountId())
+                                   .filter(WorkflowKeys.appId, appId)
+                                   .project(WorkflowKeys.uuid, true)
+                                   .asList();
+    children.addAll(workflows.stream()
+                        .map(Workflow::getUuid)
+                        .distinct()
+                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.WORKFLOW).build())
                         .collect(Collectors.toSet()));
 
     List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
@@ -210,7 +221,7 @@ public class AppMigrationService extends NgMigrationService {
       Map<String, String> variableSpec =
           ImmutableMap.<String, String>builder()
               .put("valueType", "FIXED")
-              .put("fixedValue", (String) migratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
+              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
               .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()

@@ -20,10 +20,10 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.limits.checker.rate.MongoSlidingWindowRateLimitChecker;
 import io.harness.limits.checker.rate.RateLimitVicinityChecker;
+import io.harness.limits.checkers.RateLimitChecker;
 import io.harness.limits.configuration.NoLimitConfiguredException;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.lib.DeploymentErrorType;
-import io.harness.limits.lib.RateLimitChecker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 

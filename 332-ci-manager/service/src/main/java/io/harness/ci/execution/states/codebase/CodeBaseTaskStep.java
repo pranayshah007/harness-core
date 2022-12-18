@@ -146,6 +146,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   public StepResponse executeSync(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ExecutionSource executionSource = stepParameters.getExecutionSource();
+    CodebaseSweepingOutput codebaseSweepingOutput = null;
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails =
@@ -170,12 +171,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
               .failureInfo(FailureInfo.newBuilder().setErrorMessage(emptyIfNull(ex.getMessage())).build())
               .build();
         }
+      } else {
+        String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, stepParameters.getRepoName());
+        codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource, repoUrl);
       }
-    }
-
-    CodebaseSweepingOutput codebaseSweepingOutput = null;
-    if (executionSource.getType() == MANUAL) {
-      codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource);
     } else if (executionSource.getType() == WEBHOOK) {
       codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);
     }
@@ -359,7 +358,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   }
 
   @VisibleForTesting
-  CodebaseSweepingOutput buildManualCodebaseSweepingOutput(ManualExecutionSource manualExecutionSource) {
+  CodebaseSweepingOutput buildManualCodebaseSweepingOutput(
+      ManualExecutionSource manualExecutionSource, String repoUrl) {
     Build build = new Build("branch");
     if (isNotEmpty(manualExecutionSource.getTag())) {
       build = new Build("tag");
@@ -374,6 +374,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         .tag(manualExecutionSource.getTag())
         .commitSha(commitSha)
         .shortCommitSha(shortCommitSha)
+        .repoUrl(repoUrl)
         .build();
   }
 

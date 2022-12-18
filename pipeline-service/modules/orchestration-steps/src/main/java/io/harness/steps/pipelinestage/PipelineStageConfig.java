@@ -53,8 +53,15 @@ public class PipelineStageConfig implements StageInfoConfig {
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
   @YamlSchemaTypes(runtime)
+  private ParameterField<Map<String, Object>> inputs;
+
+  // TODO: this field should be deleted after ui changes
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
+  @YamlSchemaTypes(runtime)
   private ParameterField<Map<String, Object>> pipelineInputs;
 
+  // Outputs
+  private List<PipelineStageOutputs> outputs;
   private List<String> inputSetReferences;
 
   // For StageInfoConfig Framework Execution
@@ -63,5 +70,9 @@ public class PipelineStageConfig implements StageInfoConfig {
   @Override
   public ExecutionElementConfig getExecution() {
     return null;
+  }
+
+  public ParameterField<Map<String, Object>> getInputs() {
+    return inputs != null ? inputs : pipelineInputs;
   }
 }

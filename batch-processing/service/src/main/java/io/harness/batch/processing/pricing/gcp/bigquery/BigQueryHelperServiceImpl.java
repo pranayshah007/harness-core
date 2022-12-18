@@ -53,6 +53,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class BigQueryHelperServiceImpl implements BigQueryHelperService {
+  private static final String CONTENT_STACK_ACCOUNTID = "CYVS6BRkSPKdIE5FZThNRQ";
   private BatchMainConfig mainConfig;
   private CloudBillingHelper cloudBillingHelper;
   private int clusterDetailsCount;
@@ -358,11 +359,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   @Override
-  public Map<String, VMInstanceBillingData> getAwsBillingData(Instant startTime, Instant endTime, String dataSetId) {
+  public Map<String, VMInstanceBillingData> getAwsBillingData(
+      Instant startTime, Instant endTime, String dataSetId, String accountId) {
     String query = BQConst.AWS_BILLING_DATA;
     String projectTableName = getAwsProjectTableName(startTime, dataSetId);
     String formattedQuery = format(query, projectTableName, startTime, endTime);
-    return query(formattedQuery, "AWS", null);
+    return query(formattedQuery, "AWS", accountId);
   }
 
   @Override
@@ -516,7 +518,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         boolean netAmortisedCostCalculationEnabled =
             featureFlagService.isEnabled(FeatureName.CE_NET_AMORTISED_COST_ENABLED, accountId);
 
-        if ((netAmortisedCostCalculationEnabled || accountId.equals("CYVS6BRkSPKdIE5FZThNRQ"))
+        if ((netAmortisedCostCalculationEnabled || CONTENT_STACK_ACCOUNTID.equals(accountId))
             && null != vmInstanceServiceBillingData.getNetAmortisedCost()) {
           cost = vmInstanceServiceBillingData.getNetAmortisedCost();
           log.info("accountId: {} - net amortisedCost: {}", accountId, cost);

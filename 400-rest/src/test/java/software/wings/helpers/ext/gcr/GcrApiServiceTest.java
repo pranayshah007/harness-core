@@ -24,6 +24,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
@@ -114,8 +115,8 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetBuildFailure() {
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "noImage", 100))
-        .extracting(ex -> ((WingsException) ex).getParams().get("args"))
-        .isEqualTo("Image name [noImage] does not exist in Google Container Registry.");
+        .isInstanceOf(HintException.class)
+        .hasMessage("Image name [noImage] does not exist in Google Container Registry.");
 
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "invalidProject", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))

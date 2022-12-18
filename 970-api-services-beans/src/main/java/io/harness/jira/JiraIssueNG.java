@@ -179,6 +179,8 @@ public class JiraIssueNG implements TicketNG {
         return convertOptionToFinalValue(type, valueNode);
       case TIME_TRACKING:
         return JsonUtils.treeToValue(valueNode, JiraTimeTrackingFieldNG.class);
+      case ISSUE_LINK:
+        return JsonNodeUtils.mustGetString(valueNode, "key");
       default:
         return null;
     }

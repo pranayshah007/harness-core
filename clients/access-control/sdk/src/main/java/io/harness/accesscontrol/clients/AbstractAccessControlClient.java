@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.clients;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
@@ -55,25 +55,6 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
   @Override
   public AccessCheckResponseDTO checkForAccess(List<PermissionCheckDTO> permissionCheckDTOList) {
     return checkForAccess(null, permissionCheckDTOList);
-  }
-
-  @Override
-  public AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList) {
-    List<AccessCheckResponseDTO> accessCheckResponseDTOs =
-        Streams.stream(Iterables.partition(permissionCheckDTOList, 1000))
-            .map(this::checkForAccess)
-            .collect(Collectors.toList());
-    List<AccessControlDTO> accessControlList = new ArrayList<>();
-    accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
-    if (isNotEmpty(accessControlList) && accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
-      String message = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
-          accessControlList.get(0).getResourceType().toLowerCase());
-      throw new NGAccessDeniedException(message, USER, emptyList());
-    }
-    return AccessCheckResponseDTO.builder()
-        .principal(accessCheckResponseDTOs.get(0).getPrincipal())
-        .accessControlList(accessControlList)
-        .build();
   }
 
   @Override
@@ -132,6 +113,29 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
   public void checkForAccessOrThrow(
       Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage) {
     checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, exceptionMessage);
+  }
+
+  @Override
+  public AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList) {
+    List<AccessControlDTO> accessControlList = new ArrayList<>();
+    if (isEmpty(permissionCheckDTOList)) {
+      return AccessCheckResponseDTO.builder().accessControlList(accessControlList).build();
+    }
+    List<AccessCheckResponseDTO> accessCheckResponseDTOs =
+        Streams.stream(Iterables.partition(permissionCheckDTOList, 1000))
+            .map(this::checkForAccess)
+            .collect(Collectors.toList());
+
+    accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
+    if (accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
+      String message = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
+          accessControlList.get(0).getResourceType().toLowerCase());
+      throw new NGAccessDeniedException(message, USER, emptyList());
+    }
+    return AccessCheckResponseDTO.builder()
+        .principal(accessCheckResponseDTOs.get(0).getPrincipal())
+        .accessControlList(accessControlList)
+        .build();
   }
 
   private void checkForAccessOrThrowInternal(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -10,12 +10,14 @@ package io.harness.ci.plan.creator.steps;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.InitializeStepPlanCreatorV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -32,7 +34,6 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
@@ -79,22 +80,17 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
-    List<YamlField> stages = getStepYamlFields(config);
-    List<ExecutionWrapperConfig> executionWrapperConfigs = stages.stream()
-                                                               .map(stage
-                                                                   -> ExecutionWrapperConfig.builder()
-                                                                          .uuid(stage.getUuid())
-                                                                          .step(stage.getNode().getCurrJsonNode())
-                                                                          .build())
-                                                               .collect(Collectors.toList());
+    List<YamlField> steps = CIPlanCreatorUtils.getStepYamlFields(config);
+    List<ExecutionWrapperConfig> executionWrapperConfigs =
+        steps.stream().map(CIPlanCreatorUtils::getExecutionConfig).collect(Collectors.toList());
 
-    if (EmptyPredicate.isEmpty(stages)) {
+    if (EmptyPredicate.isEmpty(steps)) {
       return responseMap;
     }
-    createPlanCreators(ctx, responseMap, executionWrapperConfigs, stages.get(0).getUuid());
+    createPlanCreators(ctx, responseMap, executionWrapperConfigs, steps.get(0).getUuid());
     // TODO : Figure out corresponding failure stages and put that here as well
-    IntStream.range(0, stages.size() - 1).forEach(i -> {
-      YamlField curr = stages.get(i);
+    IntStream.range(0, steps.size() - 1).forEach(i -> {
+      YamlField curr = steps.get(i);
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
               .dependencies(Dependencies.newBuilder()
@@ -102,13 +98,13 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
                                 .putDependencyMetadata(curr.getUuid(),
                                     Dependency.newBuilder()
                                         .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
+                                            ByteString.copyFrom(kryoSerializer.asBytes(steps.get(i + 1).getUuid())))
                                         .build())
                                 .build())
               .build());
     });
 
-    YamlField curr = stages.get(stages.size() - 1);
+    YamlField curr = steps.get(steps.size() - 1);
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
             .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
@@ -120,19 +116,35 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       List<ExecutionWrapperConfig> executionWrapperConfigs, String childNodeID) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
+    Optional<Object> optionalInfrastructure =
+        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "infrastructure");
+    if (optionalInfrastructure.isEmpty()) {
+      throw new InvalidRequestException("Infrastructure cannot be empty");
+    }
+    Infrastructure infrastructure = (Infrastructure) optionalInfrastructure.get();
     // do in reverse order
-    // inject git clone plan creator
-    CodeBase codeBase = getCodebase(ctx.getDependency());
+    // inject codebase plugin plan creator
+    Optional<Object> optionalCodebase =
+        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "codebase");
+    CodeBase codeBase = null;
+    if (optionalCodebase.isPresent()) {
+      codeBase = (CodeBase) optionalCodebase.get();
+    }
     ExecutionSource executionSource =
-        IntegrationStageUtils.buildExecutionSourceV2(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
-    String codeBasePluginChildNodeID =
+        CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
+    String gitCloneChildNodeID =
         createGitClonePlanCreator(ctx, responseMap, executionWrapperConfigs, codeBase, childNodeID);
-    childNodeID = codeBasePluginChildNodeID != null ? codeBasePluginChildNodeID : childNodeID;
+    childNodeID = gitCloneChildNodeID != null ? gitCloneChildNodeID : childNodeID;
 
     // inject initialise plan creator
-    IntegrationStageNodeV1 stageNode = getIntegrationStageNode(ctx.getDependency());
+    Optional<Object> optionalStageNode =
+        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "stageNode");
+    if (optionalStageNode.isEmpty()) {
+      throw new InvalidRequestException("IntegrationStageNode cannot be empty");
+    }
+    IntegrationStageNodeV1 stageNode = (IntegrationStageNodeV1) optionalStageNode.get();
     PlanCreationResponse planCreationResponse = initializeStepPlanCreatorV1.createPlan(
-        ctx, stageNode, codeBase, executionSource, executionWrapperConfigs, childNodeID);
+        ctx, stageNode, codeBase, executionSource, infrastructure, executionWrapperConfigs, childNodeID);
     planCreationResponseMap.put(planCreationResponse.getPlanNode().getUuid(), planCreationResponse);
     planCreationResponseMap.putAll(responseMap);
   }
@@ -164,28 +176,5 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V1);
-  }
-
-  private List<YamlField> getStepYamlFields(YamlField yamlField) {
-    List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
-    return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
-  }
-
-  private CodeBase getCodebase(Dependency dependency) {
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("codebase")) {
-      return null;
-    }
-    byte[] codebaseBytes = dependency.getMetadataMap().get("codebase").toByteArray();
-    return EmptyPredicate.isEmpty(codebaseBytes) ? null : (CodeBase) kryoSerializer.asObject(codebaseBytes);
-  }
-
-  private IntegrationStageNodeV1 getIntegrationStageNode(Dependency dependency) {
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("stageNode")) {
-      return null;
-    }
-    byte[] bytes = dependency.getMetadataMap().get("stageNode").toByteArray();
-    return EmptyPredicate.isEmpty(bytes) ? null : (IntegrationStageNodeV1) kryoSerializer.asObject(bytes);
   }
 }

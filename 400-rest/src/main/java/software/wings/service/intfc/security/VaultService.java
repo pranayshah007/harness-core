@@ -20,6 +20,7 @@ import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.KmsSetupAlert;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import java.util.List;
 
@@ -40,6 +41,8 @@ public interface VaultService {
   VaultConfig getVaultConfigByName(String accountId, String name);
 
   void renewToken(BaseVaultConfig baseVaultConfig);
+
+  VaultTokenLookupResult tokenLookup(BaseVaultConfig baseVaultConfig);
 
   void renewAppRoleClientToken(BaseVaultConfig baseVaultConfig);
 

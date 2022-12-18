@@ -12,9 +12,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.utils.TemplateDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -62,5 +63,13 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public List<TemplateDetails> getTemplateDetails() {
+    return Collections.singletonList(TemplateDetails.builder()
+                                         .templateRef(template.getTemplateRef())
+                                         .versionLabel(template.getVersionLabel())
+                                         .build());
   }
 }

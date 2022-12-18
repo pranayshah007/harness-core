@@ -8,23 +8,15 @@
 package io.harness.ng.core.artifacts.resources.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
-import io.harness.data.algorithm.HashGenerator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -75,49 +67,9 @@ public class CustomArtifactResource {
       CustomScriptInfo customScriptInfo, @NotNull @QueryParam("versionPath") String versionPath,
       @NotNull @QueryParam("arrayPath") String arrayPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
-    String script = customScriptInfo.getScript();
-    List<NGVariable> inputs = customScriptInfo.getInputs();
-    int secretFunctor = HashGenerator.generateIntegerHash();
-    if (isNotEmpty(serviceRef)) {
-      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
-      CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactSpecFromService;
-      if (isEmpty(customScriptInfo.getScript())) {
-        CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) customArtifactConfig.getScripts()
-                                                                .getFetchAllArtifacts()
-                                                                .getShellScriptBaseStepInfo()
-                                                                .getSource()
-                                                                .getSpec();
-        script = customScriptInlineSource.getScript().fetchFinalValue().toString();
-      }
-      if (isEmpty(customScriptInfo.getInputs())) {
-        inputs = customArtifactConfig.getInputs();
-      }
-      if (isEmpty(arrayPath)) {
-        arrayPath = customArtifactConfig.getScripts()
-                        .getFetchAllArtifacts()
-                        .getArtifactsArrayPath()
-                        .fetchFinalValue()
-                        .toString();
-      }
-      if (isEmpty(versionPath)) {
-        versionPath =
-            customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().fetchFinalValue().toString();
-      }
-    }
-    if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
-      script =
-          artifactResourceUtils.getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-              customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
-      arrayPath =
-          artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-              customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo, serviceRef);
-      versionPath =
-          artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-              customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
-    }
-    List<BuildDetails> buildDetails = customResourceService.getBuilds(script, versionPath, arrayPath,
-        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor);
+    List<BuildDetails> buildDetails =
+        artifactResourceUtils.getCustomGetBuildDetails(arrayPath, versionPath, customScriptInfo, serviceRef, accountId,
+            orgIdentifier, projectIdentifier, fqnPath, pipelineIdentifier, gitEntityBasicInfo);
     return ResponseDTO.newResponse(buildDetails);
   }
 }

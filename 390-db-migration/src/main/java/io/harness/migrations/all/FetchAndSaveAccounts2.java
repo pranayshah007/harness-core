@@ -7,18 +7,26 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.persistence.HQuery.excludeAuthorityCount;
+
+import static software.wings.beans.Application.ApplicationKeys;
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+
 import io.harness.migrations.Migration;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class FetchAndSaveAccounts2 implements Migration {
   @Inject private AccountService accountService;
+  @Inject private WingsPersistence wingsPersistence;
 
   /**
    * licenseInfo was previously marked with @Transient in {@link Account} model.
@@ -30,17 +38,21 @@ public class FetchAndSaveAccounts2 implements Migration {
    */
   @Override
   public void migrate() {
-    List<Account> allAccounts = accountService.listAllAccounts();
-    for (Account account : allAccounts) {
-      try {
-        log.info("Updating account. accountId={}", account.getUuid());
-        if (null == account.getLicenseInfo()) {
-          log.info("license info is null. accountId={}", account.getUuid());
-        } else {
-          accountService.update(account);
+    Query<Account> query =
+        wingsPersistence.createQuery(Account.class, excludeAuthorityCount).filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+
+    try (HIterator<Account> allAccounts = new HIterator<>(query.fetch())) {
+      for (Account account : allAccounts) {
+        try {
+          log.info("Updating account. accountId={}", account.getUuid());
+          if (null == account.getLicenseInfo()) {
+            log.info("license info is null. accountId={}", account.getUuid());
+          } else {
+            accountService.update(account);
+          }
+        } catch (Exception e) {
+          log.error("Error updating account", e);
         }
-      } catch (Exception e) {
-        log.error("Error updating account", e);
       }
     }
   }

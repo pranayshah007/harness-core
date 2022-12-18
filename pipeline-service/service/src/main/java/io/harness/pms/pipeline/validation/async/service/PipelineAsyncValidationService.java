@@ -11,22 +11,20 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
-import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 
-import com.mongodb.client.model.ValidationAction;
 import java.util.Optional;
 
 @OwnedBy(PIPELINE)
 public interface PipelineAsyncValidationService {
-  PipelineValidationEvent startEvent(
-      PipelineEntity entity, String branch, ValidationAction action, ValidationParams params);
+  PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action);
 
   PipelineValidationEvent updateEvent(String uuid, ValidationStatus status, ValidationResult result);
 
-  Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, ValidationAction action);
+  Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, Action action);
 
   Optional<PipelineValidationEvent> getEventByUuid(String uuid);
 }

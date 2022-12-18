@@ -10,7 +10,6 @@ package io.harness.text.resolver;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.text.StringReplacer;
 
 import java.util.ArrayList;
 import java.util.List;

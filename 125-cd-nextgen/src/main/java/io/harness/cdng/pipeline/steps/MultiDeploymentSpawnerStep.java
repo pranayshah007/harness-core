@@ -9,7 +9,6 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
-import io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
@@ -176,10 +175,6 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     return metadata != null && metadata.getParallel() != null && metadata.getParallel();
   }
 
-  private boolean shouldDeployInParallel(EnvironmentGroupMetadata metadata) {
-    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
-  }
-
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,
       int totalIterations, Map<String, String> serviceMap, Map<String, String> environmentMap) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
@@ -232,6 +227,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
             environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue()));
       } else {
+        if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
+          throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
+        }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
           environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra));
         }

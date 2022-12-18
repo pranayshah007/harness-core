@@ -13,7 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.shell.ScriptType;
 
 import java.util.List;

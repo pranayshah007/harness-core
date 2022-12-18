@@ -12,7 +12,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.utils.NGYamlUtils;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -36,16 +38,19 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import retrofit2.Response;
 
 @Slf4j
 public abstract class NgMigrationService {
+  private static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
+
   @Inject MigratorMappingService migratorMappingService;
 
   public abstract MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile);
@@ -84,13 +89,9 @@ public abstract class NgMigrationService {
     return canMigrateAll;
   }
 
-  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
-      return new ArrayList<>();
-    }
+  public NGYamlFile getExistingYaml(
+      MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities, CgEntityId entityId) {
     CgEntityNode cgEntityNode = entities.get(entityId);
-    // TODO: CG Basic Info should be part of CGEntityNode
     CgBasicInfo cgBasicInfo = cgEntityNode.getEntity().getCgBasicInfo();
     NgEntityDetail ngEntityDetail = getNGEntityDetail(inputDTO, entities, entityId);
     boolean mappingExist = migratorMappingService.doesMappingExist(cgBasicInfo, ngEntityDetail);
@@ -102,24 +103,30 @@ public abstract class NgMigrationService {
             .type(entityId.getType())
             .build();
     if (mappingExist) {
-      YamlDTO yamlDTO = null;
       try {
-        yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        if (yamlDTO == null) {
+          return null;
+        }
+        ngYamlFile.setExists(true);
+        ngYamlFile.setYaml(yamlDTO);
+        return ngYamlFile;
       } catch (Exception ex) {
         log.error("Failed to retrieve NG Entity. ", ex);
       }
-      if (yamlDTO == null) {
-        // Deleted
-        return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
-      } else {
-        ngYamlFile.setExists(true);
-        ngYamlFile.setYaml(yamlDTO);
-        migratedEntities.put(entityId, ngYamlFile);
-        return Arrays.asList(ngYamlFile);
-      }
-    } else {
-      return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
     }
+    return null;
+  }
+
+  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
+      return new ArrayList<>();
+    }
+    if (migratedEntities.containsKey(entityId)) {
+      return new ArrayList<>();
+    }
+    return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
   }
 
   private NgEntityDetail getNGEntityDetail(
@@ -150,6 +157,7 @@ public abstract class NgMigrationService {
     if (resp.code() >= 200 && resp.code() < 300) {
       return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     }
+    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
     Map<String, Object> error = JsonUtils.asObject(
         resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
     log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",
@@ -163,5 +171,37 @@ public abstract class NgMigrationService {
                 .entity(yamlFile.getCgBasicInfo())
                 .build()))
         .build();
+  }
+
+  protected MigrationImportSummaryDTO migrateFile(
+      String auth, NGClient ngClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
+    RequestBody identifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getIdentifier());
+    RequestBody name = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getName());
+    RequestBody fileUsage = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getFileUsage());
+    RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
+    RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, "Root");
+    RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
+    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+
+    Response<ResponseDTO<FileDTO>> resp;
+    try {
+      resp = ngClient
+                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
+                     mimeType)
+                 .execute();
+      log.info("File store creation Response details {} {}", resp.code(), resp.message());
+    } catch (IOException e) {
+      log.error("Failed to create file", e);
+      return MigrationImportSummaryDTO.builder()
+          .errors(
+              Collections.singletonList(ImportError.builder()
+                                            .message("There was an error creating the inline manifest in file store")
+                                            .entity(yamlFile.getCgBasicInfo())
+                                            .build()))
+          .build();
+    }
+    return handleResp(yamlFile, resp);
   }
 }

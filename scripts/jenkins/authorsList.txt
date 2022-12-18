@@ -173,6 +173,7 @@ Samarth Singhal samarth.singhal@harness.io
 Sandesh Katta katta.sandesh@harness.io
 Sanja Jokic sanja.jokic@harness.io
 Sanyasi Naidu Annepu sanyasi.naidu@harness.io
+Sathish sathish.soundarapandian@harness.io
 Satyam Shanker satyam.shanker@harness.io
 Seán Dunne sean.dunne@harness.io
 Shalini Agrawal shalini.agarwal@harness.io
@@ -297,3 +298,4 @@ Varsha Lalwani varsha.lalwani@harness.io
 Divyanshu Chaubisa divyanshu.chaubisa@harness.io
 Ansuman Satapathy ansuman.satapathy@harness.io
 Sahiba Khan sahiba.khan@harness.io
+Raison Dsouza raison.dsouza@harness.io

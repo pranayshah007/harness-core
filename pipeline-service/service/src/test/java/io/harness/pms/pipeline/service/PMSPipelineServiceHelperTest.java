@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -41,10 +42,12 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -72,6 +75,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock PMSPipelineRepository pmsPipelineRepository;
   @Mock PipelineValidationService pipelineValidationService;
   @Mock PipelineGovernanceService pipelineGovernanceService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
@@ -260,12 +264,31 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                             .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, false);
+        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
 
-    Mockito.when(pipelineGovernanceService.validateGovernanceRules(any(), any(), any(), any()))
-        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
+    Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
+        .thenReturn(PipelineValidationResponse.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
     GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.validatePipelineYamlInternal(pipelineEntity, false);
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
+    assertThat(governanceMetadata.getDeny()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testValidatePipelineYamlInternalForV1Pipeline() {
+    String yaml = "yaml";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .yaml(yaml)
+                                        .harnessVersion(PipelineVersion.V1)
+                                        .build();
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
     assertThat(governanceMetadata.getDeny()).isFalse();
   }
 

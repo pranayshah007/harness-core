@@ -134,7 +134,6 @@ import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.grpc.util.RestartableServiceManager;
 import io.harness.logging.AutoLogContext;
@@ -148,6 +147,7 @@ import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.perpetualtask.PerpetualTaskWorker;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.rest.RestResponse;
 import io.harness.security.TokenGenerator;
 import io.harness.security.encryption.DelegateDecryptionService;
@@ -173,7 +173,6 @@ import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.GenericLogSanitizer;
 import software.wings.delegatetasks.LogSanitizer;
 import software.wings.delegatetasks.delegatecapability.CapabilityCheckController;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.core.DelegateValidateTask;
 import software.wings.misc.MemoryHelper;
 import software.wings.service.intfc.security.EncryptionService;
@@ -279,6 +278,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int LOCAL_HEARTBEAT_INTERVAL = 10;
   private static final String TOKEN = "[TOKEN]";
   private static final String SEQ = "[SEQ]";
+  private static final String WATCHER_EXPRESSION = "Dwatchersourcedir";
 
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
@@ -491,7 +491,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         messageService.writeMessage(DELEGATE_STARTED);
         startInputCheck();
         log.info("[New] Waiting for go ahead from watcher");
-        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5), false);
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
         messageService.removeData(DELEGATE_DASH + getProcessId(), DELEGATE_IS_NEW);
@@ -1578,7 +1578,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           return;
         }
 
-        ProcessControl.ensureKilled(watcherProcess, Duration.ofSeconds(120));
+        ProcessControl.ensureKilledForExpression(WATCHER_EXPRESSION);
         messageService.closeChannel(WATCHER, watcherProcess);
         sleep(ofSeconds(2));
         // Prevent a second restart attempt right away at next heartbeat by writing the watcher heartbeat and
@@ -2006,21 +2006,22 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private DelegateValidateTask getDelegateValidateTask(
       DelegateTaskEvent delegateTaskEvent, DelegateTaskPackage delegateTaskPackage) {
-    Consumer<List<DelegateConnectionResult>> postValidationFunction =
+    Consumer<List<DelegateConnectionResultDetail>> postValidationFunction =
         getPostValidationFunction(delegateTaskEvent, delegateTaskPackage.getDelegateTaskId());
 
     return new CapabilityCheckController(delegateId, delegateTaskPackage, postValidationFunction);
   }
 
-  private Consumer<List<DelegateConnectionResult>> getPostValidationFunction(
+  private Consumer<List<DelegateConnectionResultDetail>> getPostValidationFunction(
       DelegateTaskEvent delegateTaskEvent, String taskId) {
     return delegateConnectionResults -> {
       try (AutoLogContext ignored = new TaskLogContext(taskId, OVERRIDE_ERROR)) {
         // Tools might be installed asynchronously, so get the flag early on
         currentlyValidatingTasks.remove(taskId);
         log.info("Removed from validating futures on post validation");
-        List<DelegateConnectionResult> results = Optional.ofNullable(delegateConnectionResults).orElse(emptyList());
-        boolean validated = results.stream().allMatch(DelegateConnectionResult::isValidated);
+        List<DelegateConnectionResultDetail> results =
+            Optional.ofNullable(delegateConnectionResults).orElse(emptyList());
+        boolean validated = results.stream().allMatch(DelegateConnectionResultDetail::isValidated);
         log.info("Validation {} for task", validated ? "succeeded" : "failed");
         try {
           DelegateTaskPackage delegateTaskPackage = execute(
@@ -2045,9 +2046,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private List<DelegateConnectionResultDetail> getDelegateConnectionResultDetails(
-      List<DelegateConnectionResult> results) {
+      List<DelegateConnectionResultDetail> results) {
     List<DelegateConnectionResultDetail> delegateConnectionResultDetails = new ArrayList<>();
-    for (DelegateConnectionResult source : results) {
+    for (DelegateConnectionResultDetail source : results) {
       DelegateConnectionResultDetail target = DelegateConnectionResultDetail.builder().build();
       target.setAccountId(source.getAccountId());
       target.setCriteria(source.getCriteria());

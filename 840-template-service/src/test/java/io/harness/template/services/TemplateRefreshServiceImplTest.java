@@ -84,7 +84,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testRefreshAndUpdateTemplateWhenTemplateDoesnotExist() {
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(
@@ -102,7 +102,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String yaml = "Some yaml, as actual yaml not required for test";
     String updatedYaml = readFile("stage-template.yaml");
     String stageTemplateIdentifier = "stageTemplate";
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(TemplateEntity.builder().yaml(yaml).build()));
     when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml)).thenReturn(updatedYaml);
 
@@ -124,7 +124,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String yaml = "Some yaml, as actual yaml not required for test";
     String stageTemplateIdentifier = "stageTemplate";
     TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build())))
@@ -154,7 +154,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
             .templateInfo(TemplateInfo.builder().templateIdentifier(stageTemplateIdentifier).build())
             .childrenErrorNodes(new ArrayList<>())
             .build();
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build())))
@@ -177,7 +177,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String updatedYaml = "updatedYaml";
     String stageTemplateIdentifier = "stageTemplate";
     TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml)).thenReturn(updatedYaml);
 
@@ -202,7 +202,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
             .templateInfo(TemplateInfo.builder().templateIdentifier(stageTemplateIdentifier).build())
             .childrenErrorNodes(new ArrayList<>())
             .build();
-    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false)))
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build())))
@@ -210,7 +210,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
             ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build());
 
     templateRefreshService.recursivelyRefreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
-    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
+    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false, false);
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
             new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build()));
@@ -254,10 +254,10 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
                 stageTemplateErrorNodeSummary, stageTemplateErrorNodeSummary, stageTemplateErrorNodeSummary))
             .build();
     when(templateService.get(
-             anyString(), anyString(), anyString(), eq(pipelineTemplateIdentifier), anyString(), eq(false)))
+             anyString(), anyString(), anyString(), eq(pipelineTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(pipelineTemplateEntity));
-    when(
-        templateService.get(anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false)))
+    when(templateService.get(
+             anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
     when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
         .thenReturn(updatedPipelineTemplateYaml);
@@ -340,12 +340,13 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
                 stageTemplateErrorNodeSummary))
             .build();
     when(templateService.get(
-             anyString(), anyString(), anyString(), eq(pipelineTemplateIdentifier), anyString(), eq(false)))
+             anyString(), anyString(), anyString(), eq(pipelineTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(pipelineTemplateEntity));
-    when(
-        templateService.get(anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false)))
+    when(templateService.get(
+             anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateService.get(anyString(), eq(null), eq(null), eq(stageTemplateIdentifier), anyString(), eq(false)))
+    when(templateService.get(
+             anyString(), eq(null), eq(null), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
     when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml))
         .thenReturn(updatedPipelineTemplateYaml);

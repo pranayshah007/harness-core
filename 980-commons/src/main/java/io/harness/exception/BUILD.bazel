@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/configuration:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/metadata:module",
+        "//980-commons/src/main/java/io/harness/exception/runtime/hashicorp:module",
+        "//980-commons/src/main/java/io/harness/govern:module",
+        "//980-commons/src/main/java/io/harness/k8s:module",
+        "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/rest:module",
+        "//980-commons/src/main/java/io/harness/utils/constraintviolation:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+run_analysis_per_module()

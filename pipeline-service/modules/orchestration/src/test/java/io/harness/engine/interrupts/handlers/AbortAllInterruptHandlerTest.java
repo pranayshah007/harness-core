@@ -8,6 +8,7 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -18,23 +19,28 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.execution.PlanExecution;
+import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.EnumSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
@@ -108,8 +114,7 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
-    when(planExecutionService.getStatus(planExecutionId))
-        .thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     Interrupt handledInterrupt = abortAllInterruptHandler.registerInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
@@ -130,6 +135,12 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+             interruptWithNodeExecutionId.getPlanExecutionId(), StatusUtils.abortAndExpireStatuses(),
+             NodeProjectionUtils.fieldsForInterruptPropagatorHandler))
+        .thenReturn(iterator);
     handledInterrupt = abortAllInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
@@ -174,6 +185,11 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.abortAndExpireStatuses()))
         .thenReturn(1L);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
+             planExecutionId, EnumSet.of(DISCONTINUING), NodeProjectionUtils.fieldsForDiscontinuingNodes))
+        .thenReturn(iterator);
     handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);

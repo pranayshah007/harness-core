@@ -15,10 +15,13 @@ import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
+import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sDelete;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -34,15 +37,20 @@ public class K8sDeleteStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sDelete state = new K8sDelete(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
+    K8sDelete state = (K8sDelete) getState(stepYaml);
     K8sDeleteStepNode k8sDeleteStepNode = new K8sDeleteStepNode();
     baseSetup(stepYaml, k8sDeleteStepNode);
     K8sDeleteStepInfo k8sDeleteStepInfo =
         K8sDeleteStepInfo.infoBuilder()
-            .skipDryRun(ParameterField.createValueField(false))
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build();
 
@@ -68,5 +76,21 @@ public class K8sDeleteStepMapperImpl implements StepMapper {
 
     k8sDeleteStepNode.setK8sDeleteStepInfo(k8sDeleteStepInfo);
     return k8sDeleteStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    K8sDelete state1 = (K8sDelete) getState(stepYaml1);
+    K8sDelete state2 = (K8sDelete) getState(stepYaml2);
+
+    if (!StringUtils.equals(state1.getFilePaths(), state2.getFilePaths())) {
+      return false;
+    }
+
+    if (!StringUtils.equals(state1.getResources(), state2.getResources())) {
+      return false;
+    }
+
+    return true;
   }
 }

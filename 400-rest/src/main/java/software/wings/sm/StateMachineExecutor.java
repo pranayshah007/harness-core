@@ -90,13 +90,13 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.reflection.ReflectionUtils;
@@ -717,7 +717,13 @@ public class StateMachineExecutor implements StateInspectionListener {
     log.info("startStateExecution for State {} of type {}", currentState.getName(), currentState.getStateType());
 
     if (stateExecutionInstance.getStateParams() != null) {
-      MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      } catch (org.modelmapper.MappingException e) {
+        log.error(String.format("Got model mapping exception during mapping the stateParams %s [currentState=%s]",
+                      stateExecutionInstance.getStateParams(), currentState),
+            e);
+      }
     }
     injector.injectMembers(currentState);
     return currentState;
@@ -1750,7 +1756,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
         }
       } catch (org.modelmapper.MappingException e) {
-        log.error("Got model mapping exception during mapping the stateparams {}",
+        log.error("Got model mapping exception during mapping the stateParams {}",
             stateExecutionInstance.getStateParams(), e);
       }
 

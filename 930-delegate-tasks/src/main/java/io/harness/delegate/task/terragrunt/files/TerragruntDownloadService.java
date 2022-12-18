@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -35,13 +34,13 @@ public class TerragruntDownloadService {
   @Inject private GitStoreDownloadService gitStoreDownloadService;
   @Inject private InlineStoreDownloadService inlineStoreDownloadService;
 
-  public void download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+  public DownloadResult download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException {
     FileStoreDownloadService downloadService = getDownloadService(storeConfig);
-    downloadService.download(storeConfig, accountId, outputDirectory, logCallback);
+    return downloadService.download(storeConfig, accountId, outputDirectory, logCallback);
   }
 
-  public List<String> fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+  public FetchFilesResult fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException {
     FileStoreDownloadService downloadService = getDownloadService(storeConfig);
     return downloadService.fetchFiles(storeConfig, accountId, outputDirectory, logCallback);

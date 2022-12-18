@@ -11,6 +11,7 @@ import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
+import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
@@ -59,6 +60,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.events.ConnectorCreateEvent;
 import io.harness.connector.events.ConnectorDeleteEvent;
+import io.harness.connector.events.ConnectorForceDeleteEvent;
 import io.harness.connector.events.ConnectorUpdateEvent;
 import io.harness.connector.helper.CatalogueHelper;
 import io.harness.connector.helper.ConnectorRbacHelper;
@@ -531,6 +533,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
       connectorEntityReferenceHelper.createSetupUsageForSecret(
           connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(
+          connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
       log.info("[SecretManagerCreate] Created secret Manager {}", savedConnectorEntity);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(format("Connector [%s] already exists", connectorEntity.getIdentifier()));
@@ -637,6 +641,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
       Connector updatedConnector = connectorRepository.save(newConnector, connectorRequest, gitChangeType, supplier);
       connectorEntityReferenceHelper.createSetupUsageForSecret(connector, accountIdentifier, true);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(connector, accountIdentifier, true);
       return getResponse(accountIdentifier, updatedConnector.getOrgIdentifier(),
           updatedConnector.getProjectIdentifier(), updatedConnector);
 
@@ -786,12 +791,19 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     Connector existingConnector = existingConnectorOptional.get();
     ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
+    if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+      throw new InvalidRequestException(
+          format(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountIdentifier),
+          USER);
+    }
+
     if (!forceDelete) {
       checkThatTheConnectorIsNotUsedByOthers(existingConnector);
     }
     try {
-      connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-          connectorDTO.getConnector(), accountIdentifier);
+      connectorEntityReferenceHelper.deleteExistingSetupUsages(
+          accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     } catch (Exception e) {
       if (forceDelete) {
         log.warn(
@@ -804,9 +816,15 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     existingConnector.setDeleted(true);
     Supplier<OutboxEvent> supplier = null;
     if (!gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      supplier = ()
-          -> outboxService.save(
-              new ConnectorDeleteEvent(accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      if (forceDelete) {
+        supplier = ()
+            -> outboxService.save(new ConnectorForceDeleteEvent(
+                accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      } else {
+        supplier = ()
+            -> outboxService.save(new ConnectorDeleteEvent(
+                accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      }
     }
 
     connectorRepository.delete(existingConnector, null, changeType, supplier);
@@ -1231,9 +1249,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
     Boolean isBuiltInSMDisabled = false;
-    boolean isNgSettingsEnabled =
-        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-    if (isNgSettingsEnabled) {
+
+    if (isNgSettingsFFEnabled(accountIdentifier)) {
       isBuiltInSMDisabled = parseBoolean(
           NGRestUtils
               .getResponse(settingsClient.getSetting(
@@ -1241,5 +1258,31 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               .getValue());
     }
     return isBuiltInSMDisabled;
+  }
+
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(PL_FORCE_DELETE_CONNECTOR_SECRET.name(), accountIdentifier));
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }

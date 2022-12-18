@@ -57,7 +57,7 @@ public class InstrumentationHelperTest {
       mocked.when(SecurityContextBuilder::getPrincipal)
           .thenReturn(new UserPrincipal("dummy", EMAIL, "dummy", ACCOUNT_ID));
       Mockito.when(SecurityContextBuilder.getPrincipal())
-          .thenReturn(new ServiceAccountPrincipal("dummy", EMAIL, "dummy"));
+          .thenReturn(new ServiceAccountPrincipal("dummy", EMAIL, "dummy", "dummy"));
       assertEquals(instrumentationHelper.getUserId(), EMAIL);
     }
   }

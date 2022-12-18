@@ -161,7 +161,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   private Long serviceGuardDataAnalysisIteration;
   @FdIndex private Long workflowDataCollectionIteration;
   @FdIndex private Long usageMetricsTaskIteration;
-  @FdIndex private Long licenseExpiryCheckIteration;
+  private Long licenseExpiryCheckIteration;
   @FdIndex private Long accountBackgroundJobCheckIteration;
   @FdIndex private Long accountDeletionIteration;
   @FdIndex private Long gitSyncExpiryCheckIteration;

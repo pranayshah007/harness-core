@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -38,6 +39,8 @@ import io.harness.yaml.core.timeout.Timeout;
 import software.wings.beans.approval.JiraApprovalParams;
 import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.approval.ShellScriptApprovalParams;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.sm.State;
 import software.wings.sm.states.ApprovalState;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -49,9 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ApprovalStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
-    ApprovalState state = new ApprovalState(stepYaml.getName());
-    state.parseProperties(properties);
+    ApprovalState state = (ApprovalState) getState(stepYaml);
     switch (state.getApprovalStateType()) {
       case JIRA:
         return StepSpecTypeConstants.JIRA_APPROVAL;
@@ -67,10 +68,16 @@ public class ApprovalStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     ApprovalState state = new ApprovalState(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
+    ApprovalState state = (ApprovalState) getState(stepYaml);
 
     switch (state.getApprovalStateType()) {
       case JIRA:
@@ -86,11 +93,20 @@ public class ApprovalStepMapperImpl implements StepMapper {
     }
   }
 
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    ApprovalState state1 = (ApprovalState) getState(stepYaml1);
+    ApprovalState state2 = (ApprovalState) getState(stepYaml2);
+    // As long as the types match we can call them similar. Because it is easy to create step templates & customize
+    return state1.getApprovalStateType() == state2.getApprovalStateType();
+  }
+
   private HarnessApprovalStepNode buildHarnessApproval(ApprovalState state) {
     HarnessApprovalStepNode harnessApprovalStepNode = new HarnessApprovalStepNode();
     baseSetup(state, harnessApprovalStepNode);
 
-    HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder = HarnessApprovalStepInfo.builder();
+    HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
+        HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
 
     harnessApprovalStepInfoBuilder.approvers(
         Approvers.builder()

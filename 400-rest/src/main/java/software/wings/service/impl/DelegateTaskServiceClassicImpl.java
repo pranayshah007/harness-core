@@ -105,7 +105,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
@@ -118,6 +117,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -141,8 +141,8 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitValidationParameters;
 import software.wings.beans.HostValidationTaskParameters;
 import software.wings.beans.SerializationFormat;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
@@ -227,11 +227,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final String STREAM_DELEGATE = "/stream/delegate/";
   public static final String TASK_SELECTORS = "Task Selectors";
   public static final String TASK_CATEGORY_MAP = "Task Category Map";
-  private static final int SECRET_CACHE_TTL_MINUTES = 3;
-  private static final int SECRET_CACHE_MAXIMUM_SIZE = 1000;
-  private static final long CAPABILITIES_CHECK_TASK_TIMEOUT_IN_MINUTES = 1L;
-
-  private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
   @Inject private HPersistence persistence;
   @Inject ObjectMapper objectMapper;
@@ -265,6 +260,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
   @Inject private SettingsService settingsService;
@@ -521,7 +517,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Override
   public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) {
     scheduleSyncTaskV2(task);
-    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescription(),
+    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescriptionV2(),
         Duration.ofMillis(task.getTaskDataV2().getTimeout()), task.getExecutionCapabilities());
   }
 
@@ -959,7 +955,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting(settingAttribute.toDTO())
+                                             .connectionSetting(settingAttribute)
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1010,7 +1006,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting(settingAttribute.toDTO())
+                                             .connectionSetting(settingAttribute)
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1128,7 +1124,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   void setValidationStarted(String delegateId, DelegateTask delegateTask) {
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_VALIDATION);
-    log.info("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    log.debug("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
                                                           .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
     Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
@@ -1197,7 +1193,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return null;
   }
 
-  private void copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
+  private DelegateTask copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
     if (delegateTask != null && delegateTask.getTaskDataV2() != null) {
       TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
       if (taskDataV2 != null) {
@@ -1216,6 +1212,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTask.setData(taskData);
       }
     }
+    return delegateTask;
   }
 
   private DelegateTaskPackage resolvePreAssignmentExpressions(DelegateTask delegateTask, SecretManagerMode mode) {
@@ -1530,7 +1527,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       String delegateId, String taskId, DelegateTask delegateTask, String delegateInstanceId) {
     // Clear pending validations. No longer need to track since we're assigning.
     clearFromValidationCache(delegateTask);
-    log.info("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    // QUESTION? Do we need a metric for this
+    log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)
@@ -1639,6 +1637,44 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
+  public String expireTaskV2(String accountId, String delegateTaskId) {
+    String errorMessage = null;
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (delegateTaskId == null) {
+        log.warn("Delegate task id was null", new IllegalArgumentException());
+        return errorMessage;
+      }
+      log.info("Expiring delegate task");
+      Query<DelegateTask> delegateTaskQuery = getRunningTaskQueryV2(accountId, delegateTaskId);
+
+      DelegateTask delegateTask =
+          delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
+      if (delegateTask != null) {
+        try (AutoLogContext ignore3 = new TaskLogContext(delegateTaskId, delegateTask.getData().getTaskType(),
+                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+          errorMessage =
+              "Task expired. " + assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+          delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_EXPIRED);
+          log.info("Marking task as expired: {}", errorMessage);
+
+          if (isNotBlank(delegateTask.getWaitId())) {
+            waitNotifyEngine.doneWith(delegateTask.getWaitId(),
+                ErrorNotifyResponseData.builder()
+                    .errorMessage(errorMessage)
+                    .expired(true)
+                    .exception(new DelegateTaskExpiredException(delegateTaskId))
+                    .build());
+          }
+        }
+      }
+
+      endTaskV2(accountId, delegateTaskId, delegateTaskQuery, ERROR);
+    }
+    return errorMessage;
+  }
+
+  @Override
   public DelegateTask abortTask(String accountId, String delegateTaskId) {
     try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -1658,6 +1694,26 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  @Override
+  public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (delegateTaskId == null) {
+        log.warn("Delegate task id was null", new IllegalArgumentException());
+        return null;
+      }
+      log.info("Aborting delegate task");
+
+      persistence.save(DelegateSyncTaskResponse.builder()
+                           .uuid(delegateTaskId)
+                           .responseData(kryoSerializer.asDeflatedBytes(
+                               ErrorNotifyResponseData.builder().errorMessage("Delegate task was aborted").build()))
+                           .build());
+
+      return endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+    }
+  }
+
   private DelegateTask endTask(
       String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
     UpdateOperations updateOperations =
@@ -1672,11 +1728,37 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return oldTask;
   }
 
+  private DelegateTask endTaskV2(
+      String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
+    UpdateOperations updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class).set(DelegateTaskKeys.status, status);
+
+    DelegateTask oldTask =
+        delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
+    if (oldTask != null) {
+      persistence.update(oldTask, updateOperations);
+    }
+    broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
+        .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
+
+    return oldTask;
+  }
+
   private Query<DelegateTask> getRunningTaskQuery(String accountId, String delegateTaskId) {
     return persistence.createQuery(DelegateTask.class)
         .filter(DelegateTaskKeys.uuid, delegateTaskId)
         .filter(DelegateTaskKeys.accountId, accountId)
         .filter(DelegateTaskKeys.data_async, Boolean.TRUE)
+        .field(DelegateTaskKeys.status)
+        .in(runningStatuses());
+  }
+
+  private Query<DelegateTask> getRunningTaskQueryV2(String accountId, String delegateTaskId) {
+    return persistence.createQuery(DelegateTask.class)
+        .filter(DelegateTaskKeys.uuid, delegateTaskId)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .field(DelegateTaskKeys.taskDataV2)
+        .exists()
         .field(DelegateTaskKeys.status)
         .in(runningStatuses());
   }
@@ -1701,7 +1783,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Query<DelegateTask> delegateTaskQuery = persistence.createQuery(DelegateTask.class)
                                                 .filter(DelegateTaskKeys.accountId, accountId)
                                                 .filter(DelegateTaskKeys.status, QUEUED)
-                                                .filter(DelegateTaskKeys.data_async, !sync)
                                                 .field(DelegateTaskKeys.delegateId)
                                                 .doesNotExist()
                                                 .field(DelegateTaskKeys.expiry)
@@ -1709,6 +1790,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     List<DelegateTask> delegateTasks =
         delegateTaskQuery.asList()
             .stream()
+            .map(this::copyTaskDataV2ToTaskData)
+            .filter(delegateTask -> !sync == delegateTask.getData().isAsync())
             .filter(delegateTask -> delegateTask.getEligibleToExecuteDelegateIds().contains(delegateId))
             .collect(toList());
     return delegateTasks.stream()
@@ -1726,16 +1809,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Query<DelegateTask> abortedQuery = persistence.createQuery(DelegateTask.class)
                                            .filter(DelegateTaskKeys.accountId, accountId)
                                            .filter(DelegateTaskKeys.status, ABORTED)
-                                           .filter(DelegateTaskKeys.data_async, Boolean.TRUE)
                                            .filter(DelegateTaskKeys.delegateId, delegateId);
 
-    // Send abort event only once by clearing delegateId
-    persistence.update(
-        abortedQuery, persistence.createUpdateOperations(DelegateTask.class).unset(DelegateTaskKeys.delegateId));
+    UpdateOperations<DelegateTask> updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class).unset(DelegateTaskKeys.delegateId);
 
-    return abortedQuery.project(DelegateTaskKeys.accountId, true)
-        .asList()
-        .stream()
+    List<DelegateTask> delegateTasks = abortedQuery.asList()
+                                           .stream()
+                                           .map(this::copyTaskDataV2ToTaskData)
+                                           .filter(delegateTask -> delegateTask.getData().isAsync())
+                                           .collect(Collectors.toList());
+
+    // Send abort event only once by clearing delegateId
+    delegateTasks.stream().forEach(delegateTask -> persistence.update(delegateTask, updateOperations));
+
+    return delegateTasks.stream()
         .map(delegateTask
             -> aDelegateTaskAbortEvent()
                    .withAccountId(delegateTask.getAccountId())

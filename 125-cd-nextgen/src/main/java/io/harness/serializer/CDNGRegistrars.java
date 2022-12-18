@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
@@ -31,6 +32,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
+import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
@@ -55,6 +57,10 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
+import io.harness.cdng.provision.terragrunt.TerragruntApplyStepNode;
+import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepNode;
+import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
+import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode;
@@ -177,6 +183,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(UpdateReleaseRepoStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_FETCH_LINKED_APPS)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(FetchLinkedAppsStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
@@ -693,6 +711,66 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(ElastigroupRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TERRAGRUNT_PLAN_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TerragruntPlanStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TERRAGRUNT_APPLY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TerragruntApplyStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TERRAGRUNT_DESTROY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TerragruntDestroyStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TERRAGRUNT_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TerragruntRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ASG_CANARY_DEPLOY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AsgCanaryDeployStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))

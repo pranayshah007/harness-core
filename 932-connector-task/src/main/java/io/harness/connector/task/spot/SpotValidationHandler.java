@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
@@ -72,7 +73,10 @@ public class SpotValidationHandler implements ConnectorValidationHandler {
     } catch (Exception e) {
       builder.status(ConnectivityStatus.FAILURE);
       builder.errorSummary(INVALID_CREDS);
-      builder.errors(Lists.newArrayList(ErrorDetail.builder().reason(INVALID_CREDS).message(e.getMessage()).build()));
+      builder.errors(Lists.newArrayList(ErrorDetail.builder()
+                                            .reason(INVALID_CREDS)
+                                            .message(ExceptionMessageSanitizer.sanitizeMessage(e.getMessage()))
+                                            .build()));
     }
 
     return builder.testedAt(System.currentTimeMillis()).build();

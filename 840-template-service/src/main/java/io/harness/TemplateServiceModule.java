@@ -7,8 +7,8 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
@@ -20,6 +20,7 @@ import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
 import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.account.AccountClientModule;
@@ -71,6 +72,7 @@ import io.harness.template.eventsframework.TemplateEventsFrameworkModule;
 import io.harness.template.handler.CustomDeploymentYamlConversionHandler;
 import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
 import io.harness.template.handler.SecretManagerTemplateYamlConversionHandler;
+import io.harness.template.handler.StepGroupTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
@@ -332,6 +334,8 @@ public class TemplateServiceModule extends AbstractModule {
         SECRET_MANAGER, injector.getInstance(SecretManagerTemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
         ARTIFACT_SOURCE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        STEP_GROUP, injector.getInstance(StepGroupTemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

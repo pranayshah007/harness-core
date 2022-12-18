@@ -7,14 +7,17 @@
 
 package io.harness.ccm;
 
-import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE;
+import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT;
+import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET;
 import static io.harness.audit.ResourceTypeConstants.COST_CATEGORY;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
+import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -38,6 +41,9 @@ import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveFolderEventHandler;
 import io.harness.ccm.audittrails.eventhandler.ReportEventHandler;
+import io.harness.ccm.audittrails.eventhandler.RuleEnforcementEventHandler;
+import io.harness.ccm.audittrails.eventhandler.RuleEventHandler;
+import io.harness.ccm.audittrails.eventhandler.RuleSetEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
@@ -52,11 +58,15 @@ import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
+import io.harness.ccm.remote.mapper.governance.ExecutionFilterPropertyMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
+import io.harness.ccm.scheduler.SchedulerClientModule;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
@@ -91,11 +101,19 @@ import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.ccm.views.service.RuleEnforcementService;
+import io.harness.ccm.views.service.RuleExecutionService;
+import io.harness.ccm.views.service.RuleSetService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
+import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
+import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
+import io.harness.ccm.views.service.impl.RuleSetServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -267,6 +285,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new LightwingClientModule(configuration.getLightwingAutoCUDClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
+    install(new SchedulerClientModule(configuration.getDkronClientConfig(), configuration.getNgManagerServiceSecret(),
+        CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new K8sWatchTaskResourceClientModule(
         configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new TokenClientModule(configuration.getNgManagerClientConfig(), configuration.getNgManagerServiceSecret(),
@@ -302,6 +322,7 @@ public class CENextGenModule extends AbstractModule {
         configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -329,7 +350,12 @@ public class CENextGenModule extends AbstractModule {
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
     bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
+    bind(GovernanceRuleService.class).to(GovernanceRuleServiceImpl.class);
+    bind(RuleSetService.class).to(RuleSetServiceImpl.class);
+    bind(RuleEnforcementService.class).to(RuleEnforcementServiceImpl.class);
+    bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
+    bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
 
     registerEventsFrameworkMessageListeners();
 
@@ -344,6 +370,7 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
         .to(CCMRecommendationFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.POLICYEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {
@@ -361,6 +388,10 @@ public class CENextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_FOLDER).to(PerspectiveFolderEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_REPORT).to(ReportEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(COST_CATEGORY).to(CostCategoryEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE).to(RuleEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_SET).to(RuleSetEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT)
+        .to(RuleEnforcementEventHandler.class);
   }
 
   private void registerDelegateTaskService() {

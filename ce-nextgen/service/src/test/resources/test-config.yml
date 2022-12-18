@@ -27,6 +27,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -119,6 +120,7 @@ notificationClient:
     uri: mongodb://localhost:27017/notificationChannel
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
@@ -151,3 +153,11 @@ lightwingAutoCUDClientConfig:
   baseUrl: http://localhost:9090/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+dkronClientConfig:
+  baseUrl: http://localhost:8080/
+  connectTimeOutSeconds: 50
+  readTimeOutSeconds: 50
+
+currencyPreferences:
+  historicalUpdateMonthsCount: 6

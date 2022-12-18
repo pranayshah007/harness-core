@@ -175,6 +175,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Override
   public ScimListResponse<ScimUser> searchUser(String accountId, String filter, Integer count, Integer startIndex) {
     startIndex = startIndex == null ? 0 : startIndex;
+    Integer tempStartIndex = startIndex == 0 ? 0 : startIndex - 1;
     count = count == null ? MAX_RESULT_COUNT : count;
 
     log.info("SCIM: Searching users in account {} with filter: {}", accountId, filter);
@@ -194,7 +195,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
     List<ScimUser> scimUsers = new ArrayList<>();
     try {
-      scimUsers = searchUserByUserName(accountId, searchQuery, count, startIndex);
+      scimUsers = searchUserByUserName(accountId, searchQuery, count, tempStartIndex);
       log.info("SCIM: Scim users in account {} found from query {}", accountId, scimUsers);
       scimUsers.forEach(userResponse::resource);
     } catch (WingsException ex) {
@@ -230,7 +231,12 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
-    log.info("SCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
+    String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
+    String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
+    log.info(
+        "SCIM: Updating user: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for userId: {}, accountId {}",
+        operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
+
     patchRequest.getOperations().forEach(patchOperation -> {
       try {
         applyUserUpdateOperation(accountId, userId, patchOperation);

@@ -42,9 +42,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("pipelineMetadataV2")
 @TypeAlias("pipelineMetadataV2")
 @HarnessEntity(exportable = true)
+/*
+  Do not Delete PipelineMetadata, as runSequence is used for CI execution, and if deleted pipeline is created again, we
+  don't want artifacts to be overridden without customer knowing.
+ */
 public class PipelineMetadataV2 {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        // Unique index because pipeline metadata like runSequence and RecentExecutionSummaryInfo belong to
+        // pipelineIdentifier and not git details
         .add(CompoundMongoIndex.builder()
                  .name("account_org_project_pipeline")
                  .unique(true)

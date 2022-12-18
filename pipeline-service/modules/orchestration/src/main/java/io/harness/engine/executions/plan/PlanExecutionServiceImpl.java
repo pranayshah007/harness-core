@@ -10,6 +10,7 @@ package io.harness.engine.executions.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
+import static io.harness.pms.contracts.execution.Status.ERRORED;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -22,7 +23,6 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.EntityNotFoundException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
@@ -52,15 +52,13 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Field;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 @Slf4j
@@ -108,8 +106,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     if (ops != null) {
       ops.accept(updateOps);
     }
-    PlanExecution updated = mongoTemplate.findAndModify(
-        query, updateOps, new FindAndModifyOptions().upsert(false).returnNew(true), PlanExecution.class);
+    PlanExecution updated = planExecutionRepository.updatePlanExecution(query, updateOps, false);
     if (updated == null) {
       log.warn("Cannot update execution status for the PlanExecution {} with {}", planExecutionId, status);
     } else {
@@ -128,15 +125,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public PlanExecution update(@NonNull String planExecutionId, @NonNull Consumer<Update> ops) {
-    Query query = query(where(PlanExecutionKeys.uuid).is(planExecutionId));
-    Update updateOps = new Update().set(PlanExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    PlanExecution updated = mongoTemplate.findAndModify(query, updateOps, PlanExecution.class);
-    if (updated == null) {
-      throw new InvalidRequestException("Node Execution Cannot be updated with provided operations" + planExecutionId);
-    }
-    return updated;
+  public PlanExecution markPlanExecutionErrored(String planExecutionId) {
+    return updateStatus(planExecutionId, ERRORED, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
   }
 
   @Override
@@ -146,9 +136,34 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public PlanExecution getStatus(String planExecutionId) {
-    return planExecutionRepository.getWithProjectionsWithoutUuid(
+  public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
+        Lists.newArrayList(PlanExecutionKeys.metadata, PlanExecutionKeys.governanceMetadata,
+            PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.ambiance));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution;
+  }
+
+  @Override
+  public ExecutionMetadata getExecutionMetadataFromPlanExecution(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithIncludedProjections(
+        planExecutionId, Lists.newArrayList(PlanExecutionKeys.metadata));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution.getMetadata();
+  }
+
+  @Override
+  public Status getStatus(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getWithProjectionsWithoutUuid(
         planExecutionId, Lists.newArrayList(PlanExecutionKeys.status));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution.getStatus();
   }
 
   @Override
@@ -183,27 +198,19 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 
   @Override
   public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    int currentPage = 0;
-    int totalPages = 0;
-
     List<NodeExecution> nodeExecutions = new LinkedList<>();
-    do {
-      Page<NodeExecution> paginatedNodeExecutions =
-          nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class),
-              NodeProjectionUtils.withStatus, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             planExecutionId, NodeProjectionUtils.withStatus)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      nodeExecutions.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-      currentPage++;
-    } while (currentPage < totalPages);
+    }
 
     List<Status> filtered = nodeExecutions.stream()
                                 .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))

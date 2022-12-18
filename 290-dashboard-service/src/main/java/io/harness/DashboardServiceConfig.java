@@ -44,6 +44,7 @@ public class DashboardServiceConfig extends Configuration {
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
+  @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("cdServiceClientConfig") private ServiceHttpClientConfig cdServiceClientConfig;
   @JsonProperty("ciServiceClientConfig") private ServiceHttpClientConfig ciServiceClientConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;

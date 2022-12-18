@@ -21,6 +21,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 
 @UtilityClass
 @Slf4j
@@ -53,6 +54,26 @@ public class ProcessControl {
         throw new GeneralException("Error killing process " + pid, e);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  public static void ensureKilledForExpression(final String expression) {
+    if (StringUtils.isNotBlank(expression)) {
+      try {
+        final String killCommand = "pkill -f " + expression;
+        new ProcessExecutor().command("/bin/bash", "-c", killCommand).execute();
+      } catch (Exception e) {
+        try {
+          final String killCommand = "ps -ef | grep java";
+          ProcessResult result =
+              new ProcessExecutor().command("/bin/bash", "-c", killCommand).readOutput(true).execute();
+          log.info("Currently running processes {}", result.getOutput().getString());
+        } catch (Exception innerEx) {
+          log.error("Unable to fetch process list");
+        }
+        log.error("Error killing process with expression {}", expression, e);
+        throw new GeneralException("Error killing process with " + expression, e);
       }
     }
   }

@@ -7,32 +7,23 @@ package java
 
 import (
 	"fmt"
+
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
-	"github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 )
 
 var (
+	getFiles     = utils.GetFiles
 	getWorkspace = external.GetWrkspcPath
 	javaAgentArg = "-javaagent:/addon/bin/java-agent.jar=%s"
 )
 
-// get list of all file paths matching a provided regex
-func getFiles(path string) ([]string, error) {
-	fmt.Println("path: ", path)
-	matches, err := zglob.Glob(path)
-	if err != nil {
-		return []string{}, err
-	}
-	return matches, err
-}
-
 // GetJavaTests returns list of RunnableTests in the workspace with java extension.
 // In case of errors, return empty list
-func GetJavaTests() ([]types.RunnableTest, error) {
+func GetJavaTests(testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
 	wp, err := getWorkspace()
 	if err != nil {
@@ -44,7 +35,7 @@ func GetJavaTests() ([]types.RunnableTest, error) {
 		if path == "" {
 			continue
 		}
-		node, _ := utils.ParseJavaNodeFromPath(path)
+		node, _ := utils.ParseJavaNodeFromPath(path, testGlobs)
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
@@ -59,7 +50,7 @@ func GetJavaTests() ([]types.RunnableTest, error) {
 
 // GetScalaTests returns list of RunnableTests in the workspace with scala extension.
 // In case of errors, return empty list
-func GetScalaTests() ([]types.RunnableTest, error) {
+func GetScalaTests(testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
 	wp, err := getWorkspace()
 	if err != nil {
@@ -71,7 +62,7 @@ func GetScalaTests() ([]types.RunnableTest, error) {
 		if path == "" {
 			continue
 		}
-		node, _ := utils.ParseJavaNodeFromPath(path)
+		node, _ := utils.ParseJavaNodeFromPath(path, testGlobs)
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
@@ -86,7 +77,7 @@ func GetScalaTests() ([]types.RunnableTest, error) {
 
 // GetKotlinTests returns list of RunnableTests in the workspace with kotlin extension.
 // In case of errors, return empty list
-func GetKotlinTests() ([]types.RunnableTest, error) {
+func GetKotlinTests(testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
 	wp, err := getWorkspace()
 	if err != nil {
@@ -98,7 +89,7 @@ func GetKotlinTests() ([]types.RunnableTest, error) {
 		if path == "" {
 			continue
 		}
-		node, _ := utils.ParseJavaNodeFromPath(path)
+		node, _ := utils.ParseJavaNodeFromPath(path, testGlobs)
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
@@ -148,4 +139,3 @@ func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, err
 	}
 	return plist, nil
 }
-

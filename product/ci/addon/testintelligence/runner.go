@@ -28,5 +28,5 @@ type TestRunner interface {
 
 	// AutoDetectTests detects the list of tests in the workspace
 	// Return an error if we could not detect or if it's unimplemented
-	AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error)
+	AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error)
 }

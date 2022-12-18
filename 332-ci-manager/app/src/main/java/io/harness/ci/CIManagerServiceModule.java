@@ -7,8 +7,8 @@
 
 package io.harness.app;
 
-import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -29,6 +29,8 @@ import io.harness.callback.MongoDatabase;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.app.intfc.CIYamlSchemaService;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.enforcement.CIBuildEnforcerImpl;
 import io.harness.ci.execution.DelegateTaskEventListener;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
@@ -220,6 +222,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+    bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
@@ -229,6 +232,13 @@ public class CIManagerServiceModule extends AbstractModule {
         .toInstance(new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryBuilder()
                 .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("pluginMetadataPublishExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("plugin-metadata-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);

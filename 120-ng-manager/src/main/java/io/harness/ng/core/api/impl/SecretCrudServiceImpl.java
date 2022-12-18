@@ -15,6 +15,7 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
@@ -26,6 +27,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.NgAutoLogContext;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -35,14 +37,18 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
@@ -219,7 +225,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
-        log.info(format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
+        log.info(format("Secret [%s] does not have any path for custom secret manager: [%s]", dto.getIdentifier(),
             ((SecretTextSpecDTO) dto.getSpec()).getSecretManagerIdentifier()));
       } else {
         throw new InvalidRequestException("value cannot be empty for a secret text.");
@@ -235,7 +241,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     Boolean isBuiltInSMDisabled = false;
 
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (isNgSettingsFFEnabled(accountIdentifier)) {
       isBuiltInSMDisabled = parseBoolean(
           NGRestUtils
               .getResponse(settingsClient.getSetting(
@@ -442,42 +448,57 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
       boolean forceDelete) {
-    Optional<SecretResponseWrapper> optionalSecret =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    if (optionalSecret.isPresent()) {
-      if (!forceDelete) {
-        secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
-            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    try (AutoLogContext ignore1 =
+             new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
+      if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+        throw new InvalidRequestException(
+            format(
+                "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
+                accountIdentifier),
+            USER);
       }
-    } else {
-      return false;
-    }
 
-    NGEncryptedData encryptedData =
-        encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      Optional<SecretResponseWrapper> optionalSecret =
+          get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (optionalSecret.isPresent()) {
+        if (!forceDelete) {
+          secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
+              accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        }
+      } else {
+        log.error(format("Secret with identifier [%s] could not be deleted as it does not exist", identifier));
+        throw new EntityNotFoundException(
+            format("Secret with identifier [%s] does not exist in the specified scope", identifier));
+      }
 
-    boolean remoteDeletionSuccess = true;
-    boolean localDeletionSuccess = false;
-    if (encryptedData != null) {
-      remoteDeletionSuccess =
-          encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
-    }
+      NGEncryptedData encryptedData =
+          encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
 
-    if (remoteDeletionSuccess) {
-      localDeletionSuccess = ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    }
-    if (remoteDeletionSuccess && localDeletionSuccess) {
-      secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-          projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+      boolean remoteDeletionSuccess = true;
+      boolean localDeletionSuccess = false;
+      if (encryptedData != null) {
+        remoteDeletionSuccess =
+            encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
+      }
 
-      publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
-          EventsFrameworkMetadataConstants.DELETE_ACTION);
-      return true;
-    }
-    if (!remoteDeletionSuccess) {
-      throw new InvalidRequestException("Unable to delete secret remotely.", USER);
-    } else {
-      throw new InvalidRequestException("Unable to delete secret locally, data might be inconsistent", USER);
+      if (remoteDeletionSuccess) {
+        localDeletionSuccess =
+            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
+      }
+      if (remoteDeletionSuccess && localDeletionSuccess) {
+        secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
+            projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+
+        publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
+            EventsFrameworkMetadataConstants.DELETE_ACTION);
+        return true;
+      }
+      if (!remoteDeletionSuccess) {
+        throw new InvalidRequestException(format("Unable to delete secret: [%s] remotely.", identifier), USER);
+      } else {
+        throw new InvalidRequestException(
+            format("Unable to delete secret: [%s] locally, data might be inconsistent", identifier), USER);
+      }
     }
   }
 
@@ -488,7 +509,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
           get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (optionalSecret.isPresent()) {
         boolean deletionSuccess =
-            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
         if (deletionSuccess) {
           secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
               projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
@@ -755,12 +776,38 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       return;
     }
 
-    Optional<Secret> secretOptional =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
+    BaseNGAccess secretRefScopeInfo =
+        SecretRefHelper.getScopeIdentifierForSecretRef(secretRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    Optional<Secret> secretOptional = ngSecretService.get(accountIdentifier, secretRefScopeInfo.getOrgIdentifier(),
+        secretRefScopeInfo.getProjectIdentifier(), secretRef.getIdentifier());
 
     if (!secretOptional.isPresent()) {
-      throw new InvalidRequestException(
-          format("No such secret found '%s', please check identifier/scope and try again.", secretRef.getIdentifier()));
+      throw new EntityNotFoundException(
+          format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
     }
+  }
+
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledViaSettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledViaSettings;
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
   }
 }

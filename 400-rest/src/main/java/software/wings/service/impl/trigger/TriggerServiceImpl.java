@@ -68,19 +68,20 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
+import io.harness.data.parser.CsvParser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.idempotence.IdempotentId;
 import io.harness.distribution.idempotence.IdempotentLock;
 import io.harness.distribution.idempotence.IdempotentResult;
 import io.harness.distribution.idempotence.UnableToRegisterIdempotentOperationException;
 import io.harness.exception.DeploymentFreezeException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Application;
@@ -100,7 +101,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
@@ -131,6 +131,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.trigger.response.TriggerDeploymentNeededResponse;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.AppLogContext;
@@ -1451,7 +1452,7 @@ public class TriggerServiceImpl implements TriggerService {
       List<String> allowedValues = variable.getAllowedList();
       if (isNotEmpty(allowedValues)) {
         String variableValue = nameToVariableValueMap.get(variable.getName());
-        if (isNotEmpty(variableValue) && !allowedValues.contains(variableValue)) {
+        if (isNotEmpty(variableValue) && !allowedValues.containsAll(CsvParser.parse(variableValue))) {
           throw new InvalidRequestException(String.format(
               "Trigger rejected because passed workflow variable value %s was not present in allowed values list [%s]",
               variableValue, String.join(",", allowedValues)));

@@ -50,10 +50,13 @@ import io.harness.serializer.KryoSerializer;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -68,7 +71,7 @@ public class ServiceAllInOnePlanCreatorUtils {
    */
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
-      ServiceDefinitionType serviceType) {
+      ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
@@ -86,6 +89,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .childrenNodeIds(childrenNodeIds)
             .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
             .deploymentType(serviceType)
+            .envGroupRef(envGroupRef)
             .build();
 
     return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
@@ -107,6 +111,13 @@ public class ServiceAllInOnePlanCreatorUtils {
             .serviceRef(finalServiceYaml.getServiceRef())
             .inputs(finalServiceYaml.getServiceInputs())
             .envGroupRef(environmentGroupYaml.getEnvGroupRef())
+            .envRefs(environmentGroupYaml.getEnvironments()
+                         .getValue()
+                         .stream()
+                         .map(e -> e.getEnvironmentRef())
+                         .collect(Collectors.toList()))
+            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
+            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()))
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
@@ -134,6 +145,8 @@ public class ServiceAllInOnePlanCreatorUtils {
                          .stream()
                          .map(e -> e.getEnvironmentRef())
                          .collect(Collectors.toList()))
+            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
+            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()))
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -278,6 +291,31 @@ public class ServiceAllInOnePlanCreatorUtils {
     return nodeIds;
   }
 
+  private Map<String, ParameterField<Map<String, Object>>> getMergedEnvironmentRuntimeInputs(
+      List<EnvironmentYamlV2> envYamlV2List) {
+    Map<String, ParameterField<Map<String, Object>>> mergedEnvironmentInputs = new HashMap<>();
+    for (EnvironmentYamlV2 environmentYamlV2 : envYamlV2List) {
+      ParameterField<Map<String, Object>> environmentInputs = environmentYamlV2.getEnvironmentInputs();
+      if (environmentInputs != null) {
+        mergedEnvironmentInputs.put(environmentYamlV2.getEnvironmentRef().getValue(), environmentInputs);
+      }
+    }
+    return mergedEnvironmentInputs;
+  }
+
+  private Map<String, ParameterField<Map<String, Object>>> getMergedServiceOverrideInputs(
+      List<EnvironmentYamlV2> envYamlV2List) {
+    Map<String, ParameterField<Map<String, Object>>> mergedServiceOverrideInputs = new HashMap<>();
+    for (EnvironmentYamlV2 environmentYamlV2 : envYamlV2List) {
+      ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+      if (serviceOverrideInputs != null) {
+        mergedServiceOverrideInputs.put(environmentYamlV2.getEnvironmentRef().getValue(), serviceOverrideInputs);
+      }
+    }
+    return mergedServiceOverrideInputs;
+  }
+
+  @NonNull
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
@@ -286,11 +324,23 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
 
     try {
-      //  Add validation for not chaining of stages
       DeploymentStageNode stageElementConfig = YamlUtils.read(
           PlanCreatorUtils.getStageConfig(serviceField, stage).getNode().toString(), DeploymentStageNode.class);
       DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
       if (deploymentStage != null) {
+        if (deploymentStage.getService() != null && useFromStage(deploymentStage.getService())) {
+          throw new InvalidArgumentsException("Invalid identifier [" + stage
+              + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        }
+
+        if (deploymentStage.getService() == null) {
+          if (deploymentStage.getServices() != null) {
+            throw new InvalidRequestException(
+                "Propagate from stage is not supported with multi service deployments, hence not possible to propagate service from that stage");
+          }
+          throw new InvalidRequestException(String.format(
+              "Could not find service in stage [%s], hence not possible to propagate service from that stage", stage));
+        }
         return deploymentStage.getService();
       } else {
         throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");

@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
@@ -16,12 +17,14 @@ import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 import software.wings.yaml.workflow.MultiServiceWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
@@ -40,6 +43,11 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    return areSimilar(stepMapperFactory, workflow1, workflow2);
+  }
+
+  @Override
   public List<GraphNode> getSteps(Workflow workflow) {
     MultiServiceOrchestrationWorkflow orchestrationWorkflow =
         (MultiServiceOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
@@ -47,21 +55,34 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
         orchestrationWorkflow.getPostDeploymentSteps());
   }
 
-  @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
+  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
     MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
     CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    PhaseStep.Yaml prePhase = PhaseStep.Yaml.builder()
-                                  .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-                                  .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
-                                  .steps(workflowYaml.getPreDeploymentSteps())
-                                  .build();
-    PhaseStep.Yaml postPhase = PhaseStep.Yaml.builder()
-                                   .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-                                   .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
-                                   .steps(workflowYaml.getPostDeploymentSteps())
-                                   .build();
-    return buildMultiStagePipelineTemplate(
-        stepMapperFactory, prePhase, workflowYaml.getPhases(), postPhase, workflowYaml.getRollbackPhases());
+    return PhaseStep.Yaml.builder()
+        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
+        .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
+        .steps(workflowYaml.getPreDeploymentSteps())
+        .build();
+  }
+
+  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
+    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
+    return PhaseStep.Yaml.builder()
+        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
+        .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
+        .steps(workflowYaml.getPostDeploymentSteps())
+        .build();
+  }
+
+  @Override
+  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
+  }
+
+  @Override
+  List<Yaml> getRollbackPhases(Workflow workflow) {
+    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return workflowYaml.getRollbackPhases();
   }
 }

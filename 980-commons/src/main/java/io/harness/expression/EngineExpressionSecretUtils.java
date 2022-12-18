@@ -9,8 +9,10 @@ package io.harness.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.text.StringReplacer;
+import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.text.resolver.ExpressionResolver;
+import io.harness.text.resolver.StringReplacer;
 
 import lombok.experimental.UtilityClass;
 import org.apache.commons.jexl3.JexlBuilder;
@@ -70,7 +72,7 @@ public class EngineExpressionSecretUtils {
         JexlExpression jexlExpression = engine.createExpression(expression);
         Object value = jexlExpression.evaluate(ctx);
         if (value == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
-          return EngineExpressionEvaluator.EXPR_START + expression + EngineExpressionEvaluator.EXPR_END;
+          return ExpressionConstants.EXPR_START + expression + ExpressionConstants.EXPR_END;
         }
         return String.valueOf(value);
       } catch (Exception ex) {

@@ -14,9 +14,10 @@ import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactoryRegistryException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.expression.RegexFunctor;
 
 import software.wings.utils.RepositoryFormat;
 
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,23 +52,23 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactName, String repositoryFormat, String tagRegex) {
-    try {
-      Pattern.compile(tagRegex);
-    } catch (PatternSyntaxException e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check tagRegex field in Artifactory artifact configuration.",
-          String.format("TagRegex field contains an invalid regex value '%s'.", tagRegex),
-          new ArtifactoryRegistryException(e.getMessage()));
-    }
-
     List<BuildDetailsInternal> builds =
         getBuilds(artifactoryConfig, repositoryName, artifactName, repositoryFormat, MAX_NO_OF_TAGS_PER_ARTIFACT);
-    builds = builds.stream()
-                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
-                 .sorted(new BuildDetailsInternalComparatorDescending())
-                 .collect(Collectors.toList());
 
-    if (builds.isEmpty()) {
+    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    if (EmptyPredicate.isEmpty(builds)) {
+      throw new InvalidRequestException("There are no builds for this repositoryName: [" + repositoryName
+          + "], artifactName: [" + artifactName + "], and tagRegex: [" + tagRegex + "].");
+    }
+
+    List<BuildDetailsInternal> buildsResponse =
+        builds.stream()
+            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+            .sorted(new BuildDetailsInternalComparatorDescending())
+            .collect(Collectors.toList());
+
+    if (buildsResponse.isEmpty()) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check tagRegex field in Artifactory artifact configuration.",
           String.format(
@@ -77,7 +77,8 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
           new ArtifactoryRegistryException(
               String.format("Could not find an artifact tag that matches tagRegex '%s'", tagRegex)));
     }
-    return builds.get(0);
+
+    return buildsResponse.get(0);
   }
 
   @Override

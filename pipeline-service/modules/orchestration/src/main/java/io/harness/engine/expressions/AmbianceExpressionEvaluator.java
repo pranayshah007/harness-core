@@ -26,11 +26,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.expression.ExpressionMode;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.expression.XmlFunctor;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ProcessorResult;
@@ -116,7 +116,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
               .build());
     }
 
-    PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
     if (planExecution == null) {
       return;
     }

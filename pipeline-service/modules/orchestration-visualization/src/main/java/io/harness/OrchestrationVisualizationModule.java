@@ -7,8 +7,8 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ORCHESTRATION_LOG;
 
 import io.harness.annotations.dev.OwnedBy;

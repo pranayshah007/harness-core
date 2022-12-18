@@ -24,10 +24,12 @@ import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.batch.processing.tasklet.support.HarnessEntitiesService.HarnessEntities;
 import io.harness.batch.processing.tasklet.support.HarnessTagService;
 import io.harness.batch.processing.tasklet.support.K8SWorkloadService;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.ff.FeatureFlagService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -73,6 +75,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   @Autowired private HarnessTagService harnessTagService;
   @Autowired private HarnessEntitiesService harnessEntitiesService;
   @Autowired private WorkloadRepository workloadRepository;
+  @Autowired private FeatureFlagService featureFlagService;
 
   private static final String defaultParentWorkingDirectory = "./avro/";
   private static final String defaultBillingDataFileNameDaily = "billing_data_%s_%s_%s.avro";
@@ -175,34 +178,6 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     return getClusterBillingDataForBatchWorkloadUid(instanceBillingDataList, instanceIdToLabelMapping);
   }
 
-  public List<ClusterBillingData> getClusterBillingDataForBatchWorkloadName(String accountId, BatchJobType batchJobType,
-      List<InstanceBillingData> instanceBillingDataList, Map<String, Map<String, String>> instanceIdToLabelMapping) {
-    List<ClusterBillingData> clusterBillingDataList = new ArrayList<>();
-    Map<Key, List<InstanceBillingData>> instanceBillingDataGrouped =
-        instanceBillingDataList.stream().collect(Collectors.groupingBy(Key::getKeyFromInstanceData));
-
-    log.info("Started Querying data {}", instanceBillingDataGrouped.size());
-    for (Key key : instanceBillingDataGrouped.keySet()) {
-      List<InstanceBillingData> instances = instanceBillingDataGrouped.get(key);
-      Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = new HashMap<>();
-      if (!(batchJobType == BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY
-              && accountId.equals("fuWKs4a9RXqvFrsjdKTl-w"))) {
-        labelMap = getLabelMapForGroup(instances, key);
-      }
-      for (InstanceBillingData instanceBillingData : instances) {
-        Map<String, String> labels = labelMap.get(
-            new K8SWorkloadService.CacheKey(instanceBillingData.getAccountId(), instanceBillingData.getClusterId(),
-                instanceBillingData.getNamespace(), instanceBillingData.getWorkloadName()));
-        ClusterBillingData clusterBillingData = convertInstanceBillingDataToAVROObjects(
-            instanceBillingData, labels, instanceIdToLabelMapping.get(instanceBillingData.getInstanceId()));
-        clusterBillingDataList.add(clusterBillingData);
-      }
-    }
-    log.info("Finished Querying data");
-
-    return clusterBillingDataList;
-  }
-
   public List<ClusterBillingData> getClusterBillingDataForBatchWorkloadUid(
       List<InstanceBillingData> instanceBillingDataList, Map<String, Map<String, String>> instanceIdToLabelMapping) {
     List<ClusterBillingData> clusterBillingDataList = new ArrayList<>();
@@ -230,28 +205,6 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   }
 
   @VisibleForTesting
-  public Map<K8SWorkloadService.CacheKey, Map<String, String>> getLabelMapForGroup(
-      List<InstanceBillingData> instanceBillingDataList, Key key) {
-    String accountId = key.getAccountId();
-    String clusterId = key.getClusterId();
-    String namespace = key.getNamespace();
-    Set<String> workloadNames =
-        instanceBillingDataList.stream().map(InstanceBillingData::getWorkloadName).collect(Collectors.toSet());
-
-    List<K8sWorkload> workloads;
-    if (accountId.equals("hW63Ny6rQaaGsKkVjE0pJA")) {
-      workloads = workloadRepository.getWorkloadWithoutSorting(accountId, clusterId, namespace, workloadNames);
-    } else {
-      workloads = workloadRepository.getWorkload(accountId, clusterId, namespace, workloadNames);
-    }
-    Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = new HashMap<>();
-    workloads.forEach(workload
-        -> labelMap.put(new K8SWorkloadService.CacheKey(accountId, clusterId, namespace, workload.getName()),
-            workload.getLabels()));
-    return labelMap;
-  }
-
-  @VisibleForTesting
   public Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> getLabelMapForClusterGroup(
       List<InstanceBillingData> instanceBillingDataList, AccountClusterKey accountClusterKey) {
     String accountId = accountClusterKey.getAccountId();
@@ -265,8 +218,12 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
             .collect(Collectors.toSet());
 
     List<K8sWorkload> workloads = new ArrayList<>();
-    if (!workloadUids.isEmpty()) {
-      workloads = workloadRepository.getWorkloadByWorkloadUid(accountId, clusterId, workloadUids);
+    if (featureFlagService.isNotEnabled(FeatureName.CCM_WORKLOAD_LABELS_OPTIMISATION, accountId)) {
+      if (!workloadUids.isEmpty()) {
+        workloads = workloadRepository.getWorkloadByWorkloadUid(accountId, clusterId, workloadUids);
+      }
+    } else {
+      log.info("CCM_WORKLOAD_LABELS_OPTIMISATION is enabled for this account");
     }
 
     Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap = new HashMap<>();

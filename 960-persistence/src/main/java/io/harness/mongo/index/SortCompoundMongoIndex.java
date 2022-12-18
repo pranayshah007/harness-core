@@ -9,6 +9,7 @@ package io.harness.mongo.index;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
 import static org.atmosphere.annotation.AnnotationUtil.logger;
 
 import io.harness.mongo.IndexCreator;
@@ -24,6 +25,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 
 @Value
 @Builder
@@ -84,6 +86,30 @@ public class SortCompoundMongoIndex implements MongoIndex {
       }
     }
     return IndexCreator.builder().keys(keys).options(options);
+  }
+
+  @Override
+  public void checks(Logger log) {
+    if ((getFields().size() + getSortFields().size() + getRangeFields().size() == 1)
+        && !getFields().get(0).contains(".")) {
+      log.error("Composite Sort index with only one field {}", getFields().get(0));
+    }
+
+    getFields().forEach(a -> {
+      if (getFields().stream().filter(a::equals).count() > 1) {
+        throw new Error(format("Index %s has field %s more than once", getName(), a));
+      }
+    });
+    getSortFields().forEach(a -> {
+      if (getFields().stream().filter(a::equals).count() > 1) {
+        throw new Error(format("Index %s has field %s more than once", getName(), a));
+      }
+    });
+    getRangeFields().forEach(a -> {
+      if (getFields().stream().filter(a::equals).count() > 1) {
+        throw new Error(format("Index %s has field %s more than once", getName(), a));
+      }
+    });
   }
 
   public static class SortCompoundMongoIndexBuilder {

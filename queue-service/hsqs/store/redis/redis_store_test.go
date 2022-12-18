@@ -9,15 +9,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"reflect"
+	"testing"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/go-redis/redismock/v8"
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/harness/harness-core/queue-service/hsqs/utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"reflect"
-	"testing"
 )
 
 func TestNewRedisStore(t *testing.T) {
@@ -208,14 +209,14 @@ func TestEnqueue(t *testing.T) {
 			name: "Enqueue Task - No error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 		},
 		{
 			name: "Enqueue Task - SAdd error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 			mockErr:     errors.New("SAdd error"),
 			wantSAddErr: true,
@@ -224,7 +225,7 @@ func TestEnqueue(t *testing.T) {
 			name: "Enqueue Task - XAdd error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 			wantErr: true,
 			mockErr: errors.New("XAdd error"),
@@ -243,7 +244,7 @@ func TestEnqueue(t *testing.T) {
 				if tt.wantSAddErr {
 					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetErr(tt.mockErr)
 				} else if tt.wantErr {
-					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(int64(1))
 					mock.ExpectXAdd(&redis.XAddArgs{
 						Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 						ID:     "*",
@@ -251,12 +252,15 @@ func TestEnqueue(t *testing.T) {
 					}).SetErr(tt.mockErr)
 				}
 			} else {
-				mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+				mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(int64(1))
 				mock.ExpectXAdd(&redis.XAddArgs{
 					Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 					ID:     "*",
 					Values: []interface{}{"payload", tt.args.req.Payload, "producer", tt.args.req.ProducerName},
 				}).SetVal("item1")
+				mock.ExpectXGroupCreate(utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
+					utils.GetConsumerGroupKeyForTopic(tt.args.req.ProducerName),
+					"0").SetVal("OK")
 			}
 			response, err := r.Enqueue(tt.args.ctx, tt.args.req)
 			if tt.wantSAddErr || tt.wantErr {

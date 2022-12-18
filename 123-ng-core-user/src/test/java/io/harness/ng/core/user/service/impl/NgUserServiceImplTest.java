@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -74,6 +75,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -155,6 +157,44 @@ public class NgUserServiceImplTest extends CategoryTest {
     assertEquals(3, userMembershipCriteria.getCriteriaObject().size());
 
     assertUserMetadataCriteria(userMetadataCriteriaArgumentCaptor, userId);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void listUserWithEmailFilter() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    Scope scope = Scope.builder().accountIdentifier(accountIdentifier).build();
+    List<String> userIds = Arrays.asList("ug1", "ug2", "ug3");
+    List<UserMetadata> userMetadata = List.of(UserMetadata.builder().userId("ug1").build(),
+        UserMetadata.builder().userId("ug2").build(), UserMetadata.builder().userId("ug3").build());
+
+    final ArgumentCaptor<Criteria> userMembershipCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    final ArgumentCaptor<Criteria> userMetadataCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(userMembershipRepository.findAllUserIds(any(), any())).thenReturn(PageTestUtils.getPage(userIds, 1));
+    when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(userMetadata, 1));
+
+    UserFilter userFilter = UserFilter.builder()
+                                .emails(Sets.newHashSet("ug3@harness.io"))
+                                .identifiers(Sets.newHashSet("ug1", "ug2"))
+                                .build();
+    ngUserService.listUsers(scope, pageRequest, userFilter);
+
+    verify(userMembershipRepository, times(1)).findAllUserIds(userMembershipCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(2)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+
+    Criteria userMembershipCriteria = userMembershipCriteriaArgumentCaptor.getValue();
+    assertNotNull(userMembershipCriteria);
+    String userMembershipCriteriaAccount =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY);
+    String userMembershipCriteriaOrg =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.ORG_IDENTIFIER_KEY);
+    String userMembershipCriteriaProject =
+        (String) userMembershipCriteria.getCriteriaObject().get(UserMembershipKeys.PROJECT_IDENTIFIER_KEY);
+    assertEquals(accountIdentifier, userMembershipCriteriaAccount);
+    assertNull(userMembershipCriteriaOrg);
+    assertNull(userMembershipCriteriaProject);
+    assertEquals(4, userMembershipCriteria.getCriteriaObject().size());
   }
 
   @Test

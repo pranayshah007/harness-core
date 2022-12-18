@@ -79,23 +79,24 @@ public class NGTemplateServiceHelper {
   private TemplateGitXService templateGitXService;
 
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean loadFromCache) {
     return getOrThrowExceptionIfInvalid(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache);
   }
 
   public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
     return getOrThrowExceptionIfInvalid(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true);
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true, false);
   }
 
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache) {
     try {
-      Optional<TemplateEntity> optionalTemplate = getTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
+      Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
+          templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -428,41 +429,45 @@ public class NGTemplateServiceHelper {
   }
 
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
+      return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted,
+          getMetadataOnly, loadFromCache, loadFromFallbackBranch);
 
     } else {
-      return getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
+      return getTemplateWithVersionLabel(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel,
+          deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
               accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
     } else {
       return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(accountId,
+              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
+              loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
               accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted);
     } else {
       return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(accountId,
+              orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
+              loadFromCache, loadFromFallbackBranch);
     }
   }
 

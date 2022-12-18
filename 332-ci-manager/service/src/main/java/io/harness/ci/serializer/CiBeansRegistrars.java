@@ -37,6 +37,7 @@ import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.kryo.CIBeansKryoRegistrar;
 import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
@@ -71,6 +72,7 @@ public class CiBeansRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
+          .addAll(ContainerRegistrars.kryoRegistrars)
           .add(NgPersistenceKryoRegistrar.class)
           .add(CIBeansKryoRegistrar.class)
           .add(CIContractsKryoRegistrar.class)
@@ -94,6 +96,7 @@ public class CiBeansRegistrars {
           .addAll(LicenseManagerRegistrars.morphiaRegistrars)
           .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
           .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
+          .addAll(ContainerRegistrars.morphiaRegistrars)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(CIBeansMorphiaRegistrar.class)
           .add(CIContractsMorphiaRegistrar.class)

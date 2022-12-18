@@ -30,7 +30,10 @@ public class NGCommonEntityConstants {
   public static final String ENVIRONMENT_KEY = "envId";
   public static final String INFRA_DEFINITION_KEY = "infraDefinitionId";
 
+  public static final String SUBSCRIPTION_ID = "subscriptionId";
+
   public static final String BUILDS_KEY = "buildIds";
+  public static final String BUILD_KEY = "buildId";
   public static final String TIMESTAMP = "timestamp";
   public static final String IDENTIFIER_KEY = "identifier";
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
@@ -42,6 +45,8 @@ public class NGCommonEntityConstants {
   public static final String DESCRIPTION_KEY = "description";
   public static final String DELETED_KEY = "deleted";
   public static final String PIPELINE_KEY = "pipelineIdentifier";
+  public static final String PIPELINE_EXECUTION_ID = "pipelineExecutionId";
+  public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
   public static final String STATUS = "status";
@@ -76,6 +81,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_IDENTIFIER_KEY = "fileIdentifier";
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
+  public static final String SORT = "sort";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -124,6 +130,8 @@ public class NGCommonEntityConstants {
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
+  public static final String RESOURCE = "Resource it targets (For icons)";
+  public static final String POLICY = "Get YAML of the policy";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
@@ -138,6 +146,9 @@ public class NGCommonEntityConstants {
   // Infrastructures
   public static final String DEPLOY_TO_ALL = "deployToAll";
   public static final String INFRA_IDENTIFIERS = "infraIdentifiers";
+  public static final String INFRA_IDENTIFIER = "infraIdentifier";
+
+  public static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
 
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";

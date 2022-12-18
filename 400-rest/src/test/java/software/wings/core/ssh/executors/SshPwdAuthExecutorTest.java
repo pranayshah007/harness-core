@@ -177,6 +177,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Repeat(times = 3, successes = 1)
   @Category(UnitTests.class)
+  @Ignore(value = "TODO")
   public void shouldThrowExceptionForInvalidCredential() {
     executor = new ScriptSshExecutor(
         logCallback, true, configBuilder.but().withPassword("INVALID_PASSWORD".toCharArray()).build());
@@ -208,6 +209,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Repeat(times = 3, successes = 1)
   @Category(UnitTests.class)
+  @Ignore(value = "TODO")
   public void shouldReturnFailureForFailedCommandExecution() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());
     CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"));

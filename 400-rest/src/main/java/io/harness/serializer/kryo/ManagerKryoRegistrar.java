@@ -219,6 +219,8 @@ import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.infra.RancherKubernetesInfrastructure;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
@@ -289,6 +291,8 @@ import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -296,6 +300,8 @@ import com.esotericsoftware.kryo.Kryo;
 public class ManagerKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(BasicDBList.class, 2015);
+    kryo.register(BasicDBObject.class, 2016);
     kryo.register(AmiStepExecutionSummary.class, 5219);
     kryo.register(ApprovalStateExecutionData.class, 5087);
     kryo.register(ArtifactCollectionExecutionData.class, 5252);
@@ -606,5 +612,9 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
+    kryo.register(ArtifactFile.class, 50028);
+    kryo.register(Artifact.class, 50029);
+    kryo.register(Artifact.ContentStatus.class, 50030);
+    kryo.register(Artifact.Status.class, 50031);
   }
 }

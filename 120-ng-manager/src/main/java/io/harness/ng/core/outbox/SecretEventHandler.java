@@ -8,6 +8,7 @@
 package io.harness.ng.core.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.events.SecretForceDeleteEvent.SECRET_FORCE_DELETED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -23,6 +24,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.events.SecretCreateEvent;
 import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.events.SecretUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
@@ -54,12 +56,31 @@ public class SecretEventHandler implements OutboxEventHandler {
           return handleSecretUpdateEvent(outboxEvent);
         case "SecretDeleted":
           return handleSecretDeleteEvent(outboxEvent);
+        case SECRET_FORCE_DELETED:
+          return handleSecretForceDeleteEvent(outboxEvent);
         default:
           throw new InvalidArgumentsException(String.format("Not supported event type %s", outboxEvent.getEventType()));
       }
     } catch (IOException exception) {
       return false;
     }
+  }
+
+  private boolean handleSecretForceDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    SecretForceDeleteEvent secretDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), SecretForceDeleteEvent.class);
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.FORCE_DELETE)
+                                .module(ModuleType.CORE)
+                                .oldYaml(NGYamlUtils.getYamlString(
+                                    SecretRequestWrapper.builder().secret(secretDeleteEvent.getSecret()).build()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
   private boolean handleSecretCreateEvent(OutboxEvent outboxEvent) throws IOException {

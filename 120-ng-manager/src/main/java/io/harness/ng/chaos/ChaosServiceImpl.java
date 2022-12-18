@@ -60,8 +60,8 @@ public class ChaosServiceImpl implements ChaosService {
     DelegateTaskRequestBuilder requestBuilder =
         DelegateTaskRequest.builder()
             .accountId(chaosK8sRequest.getAccountId())
-            .taskParameters(getTaskParams(
-                chaosK8sRequest.getAccountId(), chaosK8sRequest.getK8sConnectorId(), chaosK8sRequest.getK8sManifest()))
+            .taskParameters(getTaskParams(chaosK8sRequest.getAccountId(), chaosK8sRequest.getOrgId(),
+                chaosK8sRequest.getProjectId(), chaosK8sRequest.getK8sConnectorId(), chaosK8sRequest.getK8sManifest()))
             .taskType(TaskType.K8S_COMMAND_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(15))
             .taskSetupAbstraction("ng", "true")
@@ -85,8 +85,13 @@ public class ChaosServiceImpl implements ChaosService {
     return logAbstractions;
   }
 
-  private TaskParameters getTaskParams(String accountIdentifier, String connectorIdentifier, String manifestContent) {
-    BaseNGAccess ngAccess = BaseNGAccess.builder().accountIdentifier(accountIdentifier).build();
+  private TaskParameters getTaskParams(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, String manifestContent) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(accountIdentifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build();
     ConnectorInfoDTO responseDTO = k8sEntityHelper.getConnectorInfoDTO(connectorIdentifier, ngAccess);
 
     LocalFileStoreDelegateConfig storeDelegateConfig =

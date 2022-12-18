@@ -85,11 +85,6 @@ public class ServiceVariable implements EncryptableSetting, PersistentEntity, Uu
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("app_entityId")
-                 .field(ServiceVariableKeys.appId)
-                 .field(ServiceVariableKeys.entityId)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("app_env_templateId")
                  .field(ServiceVariableKeys.appId)
                  .field(ServiceVariableKeys.envId)
@@ -123,7 +118,7 @@ public class ServiceVariable implements EncryptableSetting, PersistentEntity, Uu
   private String templateId = DEFAULT_TEMPLATE_ID;
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 

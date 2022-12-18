@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -20,7 +21,7 @@ import static io.harness.rule.OwnerRule.YUVRAJ;
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.alert.AlertType.DEPLOYMENT_FREEZE_EVENT;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -79,8 +80,8 @@ import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.intfc.ArtifactService;
@@ -90,6 +91,7 @@ import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -399,7 +401,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, deploymentFreezeIds, "", false, false));
+            ACCOUNT_ID, deploymentFreezeIds, Collections.singletonList(""), "", false, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());
@@ -429,7 +431,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, Collections.emptyList(), "", true, false));
+            ACCOUNT_ID, Collections.emptyList(), Collections.emptyList(), "", true, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());
@@ -458,7 +460,7 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${secrets.getValue('value')}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(0)).renderExpression(any());
+    verify(context, times(0)).renderExpression(any(String.class), any(StateExecutionContext.class));
   }
 
   @Test
@@ -471,6 +473,25 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${workflow.variable.var1}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(1)).renderExpression(any());
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testRenderWorkflowExpression3() {
+    List<String> workflowVariableWithExpressionValue = new ArrayList<>();
+    workflowVariableWithExpressionValue.add("var1");
+    Map<String, String> variableMap = new HashMap<>();
+    variableMap.put("var1", "${workflow.variable.var1}");
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class)))
+        .thenReturn("${secretManager.obtain(\"test\", 1234)}");
+    ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
+    envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
   }
 }

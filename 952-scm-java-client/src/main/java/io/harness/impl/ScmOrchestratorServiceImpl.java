@@ -63,13 +63,13 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   private SCMServiceGitClientImpl scmServiceGitClient;
 
   @Override
-  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    return scmServiceGitClient.createFile(scmConnector, gitFileDetails);
+  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient) {
+    return scmServiceGitClient.createFile(scmConnector, gitFileDetails, useGitClient);
   }
 
   @Override
-  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    return scmServiceGitClient.updateFile(scmConnector, gitFileDetails);
+  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient) {
+    return scmServiceGitClient.updateFile(scmConnector, gitFileDetails, useGitClient);
   }
 
   @Override

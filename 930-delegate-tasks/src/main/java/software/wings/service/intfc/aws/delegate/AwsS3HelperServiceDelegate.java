@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import java.io.File;
 import java.util.List;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -34,4 +35,8 @@ public interface AwsS3HelperServiceDelegate {
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String key);
   S3Object getObjectFromS3(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String key);
+  boolean downloadS3Directory(AwsConfig awsConfig, String bucketName, String key, File destinationDirectory)
+      throws InterruptedException;
+  boolean downloadS3DirectoryUsingS3URI(AwsConfig awsConfig, String s3URI, File destinationDirectory)
+      throws InterruptedException;
 }

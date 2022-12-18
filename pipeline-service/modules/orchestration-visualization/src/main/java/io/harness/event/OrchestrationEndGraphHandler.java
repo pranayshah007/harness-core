@@ -18,7 +18,6 @@ import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
 
 import com.google.inject.Inject;
@@ -34,22 +33,20 @@ public class OrchestrationEndGraphHandler implements AsyncInformObserver, Orches
   private final ExecutorService executorService;
   private final PlanExecutionService planExecutionService;
   private final GraphGenerationService graphGenerationService;
-  private final OrchestrationEventLogRepository orchestrationEventLogRepository;
 
   @Inject
-  public OrchestrationEndGraphHandler(@Named("OrchestrationVisualizationExecutorService")
-                                      ExecutorService executorService, PlanExecutionService planExecutionService,
-      GraphGenerationService graphGenerationService, OrchestrationEventLogRepository orchestrationEventLogRepository) {
+  public OrchestrationEndGraphHandler(
+      @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService,
+      PlanExecutionService planExecutionService, GraphGenerationService graphGenerationService) {
     this.executorService = executorService;
     this.planExecutionService = planExecutionService;
     this.graphGenerationService = graphGenerationService;
-    this.orchestrationEventLogRepository = orchestrationEventLogRepository;
   }
 
   @Override
   public void onEnd(Ambiance ambiance) {
     try (AutoLogContext autoLogContext = AmbianceUtils.autoLogContext(ambiance)) {
-      PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
+      PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
       // One last time try to update the graph to process any unprocessed logs
       graphGenerationService.updateGraphWithWaitLock(planExecution.getUuid());
       // Todo: Check if this is required

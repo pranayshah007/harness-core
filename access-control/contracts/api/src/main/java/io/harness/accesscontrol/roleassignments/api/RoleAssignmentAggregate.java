@@ -10,10 +10,10 @@ package io.harness.accesscontrol.roleassignments.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.PrincipalDTOV2;
-import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.scopes.ScopeResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
