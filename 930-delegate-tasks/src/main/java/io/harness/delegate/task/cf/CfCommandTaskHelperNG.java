@@ -652,7 +652,7 @@ public class CfCommandTaskHelperNG {
 
   public void downsizePreviousReleases(CfDeployCommandRequestNG cfDeployCommandRequestNG,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
-      Integer updateCount, List<CfInternalInstanceElement> pcfInstanceElements,
+      Integer updateCount, List<CfInternalInstanceElement> oldAppInstances,
       CfAppAutoscalarRequestData appAutoscalarRequestData) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 
@@ -698,12 +698,12 @@ public class CfCommandTaskHelperNG {
     // Application that is downsized
     if (EmptyPredicate.isNotEmpty(applicationDetailAfterResize.getInstanceDetails())) {
       applicationDetailAfterResize.getInstanceDetails().forEach(instance
-          -> pcfInstanceElements.add(CfInternalInstanceElement.builder()
-                                         .applicationId(applicationDetailAfterResize.getId())
-                                         .displayName(applicationDetailAfterResize.getName())
-                                         .instanceIndex(instance.getIndex())
-                                         .isUpsize(false)
-                                         .build()));
+          -> oldAppInstances.add(CfInternalInstanceElement.builder()
+                                     .applicationId(applicationDetailAfterResize.getId())
+                                     .displayName(applicationDetailAfterResize.getName())
+                                     .instanceIndex(instance.getIndex())
+                                     .isUpsize(false)
+                                     .build()));
     }
     unmapRoutesIfAppDownsizedToZero(cfDeployCommandRequestNG, cfRequestConfig, executionLogCallback);
   }
@@ -738,7 +738,7 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeNewApplication(LogCallback executionLogCallback, CfDeployCommandRequestNG cfCommandDeployRequest,
       List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, ApplicationDetail details,
-      List<CfInternalInstanceElement> pcfInstanceElements, CfAppAutoscalarRequestData cfAppAutoscalarRequestData)
+      List<CfInternalInstanceElement> newAppInstances, CfAppAutoscalarRequestData cfAppAutoscalarRequestData)
       throws PivotalClientApiException, IOException {
     executionLogCallback.saveExecutionLog(color("# Upsizing new application:", White, Bold));
 
@@ -751,7 +751,7 @@ public class CfCommandTaskHelperNG {
 
     // perform upsize
     pcfCommandTaskBaseHelper.upsizeInstance(
-        cfRequestConfig, cfDeploymentManager, executionLogCallback, cfServiceDataUpdated, pcfInstanceElements);
+        cfRequestConfig, cfDeploymentManager, executionLogCallback, cfServiceDataUpdated, newAppInstances);
     configureAutoscalarIfNeeded(cfCommandDeployRequest, details, cfAppAutoscalarRequestData, executionLogCallback);
   }
 

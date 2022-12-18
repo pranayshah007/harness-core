@@ -120,36 +120,36 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       Integer stepDecrease = cfDeployCommandRequestNG.getDownSizeCount();
 
       // downsize previous apps with non zero instances by same count new app was upsized
-      List<CfInternalInstanceElement> cfInstanceElementsForVerification = new ArrayList<>();
+      List<CfInternalInstanceElement> oldAppInstances = new ArrayList<>();
+      List<CfInternalInstanceElement> newAppInstances = new ArrayList<>();
       if (TasResizeStrategyType.DOWNSCALE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) {
         cfCommandTaskHelperNG.downsizePreviousReleases(cfDeployCommandRequestNG, cfRequestConfig, executionLogCallback,
-            cfServiceDataUpdated, stepDecrease, cfInstanceElementsForVerification, cfAppAutoscalarRequestData);
+            cfServiceDataUpdated, stepDecrease, oldAppInstances, cfAppAutoscalarRequestData);
         executionLogCallback.saveExecutionLog("Downsize Application Successfully Completed", INFO, SUCCESS);
         executionLogCallback =
             tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Upsize, true, commandUnitsProgress);
         cfCommandTaskHelperNG.upsizeNewApplication(executionLogCallback, cfDeployCommandRequestNG, cfServiceDataUpdated,
-            cfRequestConfig, details, cfInstanceElementsForVerification, cfAppAutoscalarRequestData);
+            cfRequestConfig, details, newAppInstances, cfAppAutoscalarRequestData);
         executionLogCallback.saveExecutionLog("Upsize Application Successfully Completed", INFO, SUCCESS);
       } else {
         cfCommandTaskHelperNG.upsizeNewApplication(executionLogCallback, cfDeployCommandRequestNG, cfServiceDataUpdated,
-            cfRequestConfig, details, cfInstanceElementsForVerification, cfAppAutoscalarRequestData);
+            cfRequestConfig, details, oldAppInstances, cfAppAutoscalarRequestData);
         executionLogCallback.saveExecutionLog("Upsize Application Successfully Completed", INFO, SUCCESS);
         executionLogCallback =
             tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
         cfCommandTaskHelperNG.downsizePreviousReleases(cfDeployCommandRequestNG, cfRequestConfig, executionLogCallback,
-            cfServiceDataUpdated, stepDecrease, cfInstanceElementsForVerification, cfAppAutoscalarRequestData);
+            cfServiceDataUpdated, stepDecrease, newAppInstances, cfAppAutoscalarRequestData);
         executionLogCallback.saveExecutionLog("Downsize Application Successfully Completed", INFO, SUCCESS);
       }
 
       // This data will be used by verification phase for analysis
       executionLogCallback =
           tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
-      generateCfInstancesElementsForExistingApp(
-          cfInstanceElementsForVerification, cfRequestConfig, cfDeployCommandRequestNG, executionLogCallback);
 
       // generate response to be sent back to Manager
       cfDeployCommandResponseNG.setCommandExecutionStatus(SUCCESS);
-      cfDeployCommandResult.setCfInstanceElements(cfInstanceElementsForVerification);
+      cfDeployCommandResult.setOldAppInstances(oldAppInstances);
+      cfDeployCommandResult.setNewAppInstances(newAppInstances);
       cfDeployCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
 
     } catch (Exception e) {
@@ -199,29 +199,4 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     Misc.logAllMessages(exception, executionLogCallback);
   }
 
-  @VisibleForTesting
-  void generateCfInstancesElementsForExistingApp(List<CfInternalInstanceElement> pcfInstanceElementsForVerification,
-      CfRequestConfig cfRequestConfig, CfDeployCommandRequestNG cfDeployCommandRequestNG,
-      LogCallback executionLogCallback) {
-    TasApplicationInfo downsizeAppDetail = cfDeployCommandRequestNG.getDownsizeAppDetail();
-    if (downsizeAppDetail == null || isBlank(downsizeAppDetail.getApplicationName())) {
-      return;
-    }
-
-    try {
-      cfRequestConfig.setApplicationName(downsizeAppDetail.getApplicationName());
-      ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
-      applicationDetail.getInstanceDetails().forEach(instanceDetail
-          -> pcfInstanceElementsForVerification.add(CfInternalInstanceElement.builder()
-                                                        .applicationId(applicationDetail.getId())
-                                                        .displayName(applicationDetail.getName())
-                                                        .instanceIndex(instanceDetail.getIndex())
-                                                        .isUpsize(false)
-                                                        .build()));
-    } catch (Exception e) {
-      executionLogCallback.saveExecutionLog("# Failed to fetch InstanceDetails for existing Application: "
-          + encodeColor(downsizeAppDetail.getApplicationName())
-          + ", Verification may be able to use older instances to compare data");
-    }
-  }
 }
