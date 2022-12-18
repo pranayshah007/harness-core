@@ -465,7 +465,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     cfRequestConfig.setDesiredCount(0);
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    unsetEnvVariables(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 
@@ -494,25 +493,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void unsetEnvVariables(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
-    // TODO this only for BG
-    // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .finalErrorMessage(String.format(
-                "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .retry(3)
-            .build();
-
-    retryAbleTaskExecutor.execute(
-        ()
-            -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy);
-  }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
