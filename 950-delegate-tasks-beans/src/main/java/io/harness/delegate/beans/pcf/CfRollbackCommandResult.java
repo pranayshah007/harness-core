@@ -21,4 +21,6 @@ public class CfRollbackCommandResult {
   private List<CfServiceData> instanceDataUpdated;
   private List<CfInternalInstanceElement> cfInstanceElements;
   private CfInBuiltVariablesUpdateValues updatedValues;
+  private List<String> inActiveAppAttachedRoutes;
+  private List<String> activeAppAttachedRoutes;
 }

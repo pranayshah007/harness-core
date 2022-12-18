@@ -114,7 +114,7 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         renameOldApp(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
         cfCommandTaskHelperNG.upsizeListOfInstancesAndRestoreRoutes(executionLogCallback, cfDeploymentManager,
             cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, cfRollbackCommandRequestNG,
-            oldAppInstances);
+            oldAppInstances, cfRollbackCommandResult);
         // Enable autoscalar for older app, if it was disabled during deploy
         if (cfRollbackCommandRequestNG.getActiveApplicationDetails().isAutoScalarEnabled()) {
           cfCommandTaskHelperNG.enableAutoscalerIfNeeded(

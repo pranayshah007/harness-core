@@ -187,7 +187,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+    //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
     OptionalSweepingOutput tasSetupVariablesOutcomeOptional =
         tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
             tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),

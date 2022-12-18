@@ -153,10 +153,11 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         updateValues = restoreAppsDuringRollback(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig,
             pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath());
         // Swap routes
-        performRouteUpdateForStandardBlueGreen(cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback);
+        performRouteUpdateForStandardBlueGreen(
+            cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback, cfRollbackCommandResult);
       } else {
         updateValues = handleFailureHappenedBeforeSwapRoute(executionLogCallback, workingDirectory,
-            cfRollbackCommandRequestNG, cfRequestConfig, pcfRouteUpdateConfigData);
+            cfRollbackCommandRequestNG, cfRequestConfig, pcfRouteUpdateConfigData, cfRollbackCommandResult);
       }
 
       // Will be used if app autoscalar is configured
@@ -271,23 +272,26 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
   private CfInBuiltVariablesUpdateValues handleFailureHappenedBeforeSwapRoute(LogCallback executionLogCallback,
       File workingDirectory, CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG, CfRequestConfig cfRequestConfig,
-      CfRouteUpdateRequestConfigData cfRouteUpdateRequestConfigData) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData cfRouteUpdateRequestConfigData, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     CfInBuiltVariablesUpdateValues updateValues =
         performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateRequestConfigData, cfRequestConfig, executionLogCallback);
     executionLogCallback.saveExecutionLog(color("# No Route Update Required for Active app", White, Bold));
     restoreInActiveAppForFailureBeforeSwapRouteStep(executionLogCallback, cfRollbackCommandRequestNG,
-        cfRouteUpdateRequestConfigData, cfRequestConfig, workingDirectory.getAbsolutePath());
+        cfRouteUpdateRequestConfigData, cfRequestConfig, workingDirectory.getAbsolutePath(), cfRollbackCommandResult);
     executionLogCallback.saveExecutionLog("#---------- Successfully Completed", INFO, SUCCESS);
     return updateValues;
   }
 
   private void restoreInActiveAppForFailureBeforeSwapRouteStep(LogCallback executionLogCallback,
       CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG, CfRouteUpdateRequestConfigData routeUpdateConfigData,
-      CfRequestConfig cfRequestConfig, String configVarPath) throws PivotalClientApiException {
+      CfRequestConfig cfRequestConfig, String configVarPath, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     if (routeUpdateConfigData.isUpSizeInActiveApp()) {
       upSizeInActiveApp(
           cfRollbackCommandRequestNG, cfRequestConfig, routeUpdateConfigData, executionLogCallback, configVarPath);
-      updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, routeUpdateConfigData);
+      updateRoutesForInActiveApplication(
+          cfRequestConfig, executionLogCallback, routeUpdateConfigData, cfRollbackCommandResult);
     }
     CfAppSetupTimeDetails newApplicationDetails = routeUpdateConfigData.getNewApplicationDetails();
     List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -460,15 +464,16 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   private void performRouteUpdateForStandardBlueGreen(CfRequestConfig cfRequestConfig,
-      CfRouteUpdateRequestConfigData data, LogCallback executionLogCallback) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData data, LogCallback executionLogCallback,
+      CfRollbackCommandResult cfRollbackCommandResult) throws PivotalClientApiException {
     CfAppSetupTimeDetails newApplicationDetails = data.getNewApplicationDetails();
     List<String> newApps = cfCommandTaskHelperNG.getAppNameBasedOnGuidForBlueGreenDeployment(
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 
-    updateRoutesForExistingApplication(cfRequestConfig, executionLogCallback, data);
+    updateRoutesForExistingApplication(cfRequestConfig, executionLogCallback, data, cfRollbackCommandResult);
     if (data.isUpSizeInActiveApp()) {
-      updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, data);
+      updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, data, cfRollbackCommandResult);
     }
     clearRoutesAndEnvVariablesForNewApplication(
         cfRequestConfig, executionLogCallback, data.getNewApplicationName(), data.getFinalRoutes());
@@ -483,7 +488,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
-      CfRouteUpdateRequestConfigData data) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData data, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     CfAppSetupTimeDetails inActiveApplicationDetails = data.getExistingInActiveApplicationDetails();
     if (inActiveApplicationDetails == null || isEmpty(inActiveApplicationDetails.getApplicationGuid())) {
       executionLogCallback.saveExecutionLog(
@@ -498,7 +504,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               Bold));
       return;
     }
-
+    cfRollbackCommandResult.setInActiveAppAttachedRoutes(inActiveApplicationDetails.getUrls());
     if (isNotEmpty(inActiveApplicationDetails.getUrls())) {
       executionLogCallback.saveExecutionLog(
           String.format("%nUpdating routes for In Active application - [%s]", encodeColor(inActiveAppName)));
@@ -515,10 +521,12 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   private void updateRoutesForExistingApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
-      CfRouteUpdateRequestConfigData data) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData data, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     if (isNotEmpty(data.getExistingApplicationNames())) {
       List<String> mapRouteForExistingApp = data.getFinalRoutes();
       List<String> unmapRouteForExistingApp = data.getTempRoutes();
+      cfRollbackCommandResult.setActiveAppAttachedRoutes(mapRouteForExistingApp);
       for (String existingAppName : data.getExistingApplicationNames()) {
         if (isNotEmpty(existingAppName)) {
           cfCommandTaskHelperNG.mapRouteMaps(

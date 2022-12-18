@@ -862,6 +862,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                 throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
               }
               autoScalerManifestFound = true;
+              break;
             case TAS_VARS:
               break;
             default:

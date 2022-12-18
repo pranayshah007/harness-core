@@ -242,12 +242,12 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+    //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
     OptionalSweepingOutput tasSetupVariablesOutcomeOptional =
         tasEntityHelper.getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
             tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
             OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME, executionSweepingOutputService);
-    if (!tasSetupVariablesOutcomeOptional.isFound()) {
+    if (tasSetupVariablesOutcomeOptional.isFound()) {
       TasSetupVariablesOutcome tasSetupVariablesOutcome =
           (TasSetupVariablesOutcome) tasSetupVariablesOutcomeOptional.getOutput();
       tasSetupVariablesOutcome.setNewAppName(null);
