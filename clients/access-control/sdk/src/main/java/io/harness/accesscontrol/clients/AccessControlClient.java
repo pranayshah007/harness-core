@@ -23,8 +23,6 @@ public interface AccessControlClient {
 
   AccessCheckResponseDTO checkForAccess(List<PermissionCheckDTO> permissionCheckDTOList);
 
-  AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList);
-
   boolean hasAccess(Principal principal, ResourceScope resourceScope, Resource resource, String permission);
 
   boolean hasAccess(ResourceScope resourceScope, Resource resource, String permission);
