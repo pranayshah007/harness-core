@@ -142,6 +142,38 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
+  @Description("Verify delegate with least number of currently task assigned, comes first in the list. Five delegates")
+  public void testSortOrderByTotalNumberOfTaskAssignedCriteria_fiveDelegates() {
+    String accountId = generateUuid();
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
+    Delegate delegate2 = createDelegate(accountId, "delegate2");
+    Delegate delegate3 = createDelegate(accountId, "delegate3");
+    Delegate delegate4 = createDelegate(accountId, "delegate3");
+    Delegate delegate5 = createDelegate(accountId, "delegate3");
+
+    List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
+    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
+    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
+
+    createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid());
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid()));
+    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate4.getUuid()));
+    IntStream.range(5, 9).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate3.getUuid()));
+    IntStream.range(9, 14).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate5.getUuid()));
+
+    List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
+            eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
+    assertThat(delegateList.size() == 5);
+    assertThat(delegateList).containsExactly(delegate2, delegate1, delegate4, delegate3, delegate5);
+  }
+
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
   public void testOrderByTotalNumberOfTaskAssignedCriteria_NoDelegate() {
     String accountId = generateUuid();
     List<Delegate> eligibleDelegateIds = Collections.emptyList();
