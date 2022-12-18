@@ -15,14 +15,10 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.pcf.CfCommandUnitConstants.Downsize;
 import static io.harness.pcf.CfCommandUnitConstants.Upsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static io.harness.pcf.model.CfConstants.CLOUD_FOUNDRY_LOG_PREFIX;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
@@ -31,7 +27,6 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfServiceData;
-import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
@@ -53,7 +48,6 @@ import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -198,5 +192,4 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
     Misc.logAllMessages(exception, executionLogCallback);
   }
-
 }
