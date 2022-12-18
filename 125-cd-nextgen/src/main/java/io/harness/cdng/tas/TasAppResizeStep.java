@@ -125,7 +125,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     TasAppResizeDataOutcome tasAppResizeDataOutcome =
         TasAppResizeDataOutcome.builder()
             .instanceData(response.getCfDeployCommandResult().getInstanceDataUpdated())
-            .cfInstanceElements(response.getCfDeployCommandResult().getCfInstanceElements())
+            .cfInstanceElements(response.getCfDeployCommandResult().getNewAppInstances())
             .build();
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
@@ -153,7 +153,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
       log.error("Could not generate server instance info for app resize step");
       return Collections.emptyList();
     }
-    List<CfInternalInstanceElement> instances = cfDeployCommandResult.getCfInstanceElements();
+    List<CfInternalInstanceElement> instances = cfDeployCommandResult.getNewAppInstances();
     if (!isNull(instances)) {
       return instances.stream()
           .map(instance -> getServerInstance(instance, infrastructureOutcome))

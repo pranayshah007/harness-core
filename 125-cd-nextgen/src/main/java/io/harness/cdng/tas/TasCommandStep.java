@@ -186,7 +186,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {cfRunPluginCommandRequestNG})
-                            .taskType(TaskType.TANZU_COMMAND.getDisplayName())
+                            .taskType(TaskType.TANZU_COMMAND.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
