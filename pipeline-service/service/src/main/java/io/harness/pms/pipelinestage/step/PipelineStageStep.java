@@ -158,7 +158,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutputExpressionConstants.OUTPUT)
                          .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), nodeExecution))
+                             stepParameters.getOutputs().getValue(), nodeExecution.getAmbiance()))
                          .build())
         .build();
   }

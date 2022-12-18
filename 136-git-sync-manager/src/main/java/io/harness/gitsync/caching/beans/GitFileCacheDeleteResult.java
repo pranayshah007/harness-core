@@ -10,14 +10,11 @@ package io.harness.gitsync.caching.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.experimental.FieldDefaults;
+import lombok.Value;
 
-@Getter
+@Value
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheDeleteResult {
   long count;

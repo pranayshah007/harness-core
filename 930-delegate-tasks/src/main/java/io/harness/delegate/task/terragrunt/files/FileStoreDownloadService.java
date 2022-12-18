@@ -14,22 +14,12 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.logging.LogCallback;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @OwnedBy(CDP)
 public interface FileStoreDownloadService {
-  int MAX_LOGGABLE_PATH_DEPTH = 4;
-
   DownloadResult download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException;
 
   FetchFilesResult fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException;
-
-  default String getLoggablePath(String basePath) {
-    Path path = Paths.get(basePath);
-    int maxPathDepth = Math.min(path.getNameCount(), MAX_LOGGABLE_PATH_DEPTH);
-    return path.subpath(path.getNameCount() - maxPathDepth, path.getNameCount() - 1).toString();
-  }
 }

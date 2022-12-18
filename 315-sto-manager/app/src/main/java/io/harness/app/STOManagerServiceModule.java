@@ -51,6 +51,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
+import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -274,6 +275,7 @@ public class STOManagerServiceModule extends AbstractModule {
         stoManagerConfiguration.getManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(new TIServiceClientModule(stoManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(stoManagerConfiguration.getStoServiceConfig()));
+    install(new IACMServiceClientModule(stoManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(stoManagerConfiguration.getManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.toString()));
     install(EnforcementClientModule.getInstance(stoManagerConfiguration.getManagerClientConfig(),

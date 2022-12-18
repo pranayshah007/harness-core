@@ -1,0 +1,150 @@
+pipeline:
+  name: My Deployment Pipeline
+  identifier: myPipeline1
+  description: This is my first pipeline. It is really concrete
+  variables:
+    - name: pipelineN1
+      type: String
+      value: stringValue1
+    - name: pipelineN2
+      type: Number
+      value: 11
+  stages:
+    - stage:
+        name: dev
+        identifier: stage0
+        type: Deployment
+        spec:
+          services:
+            values:
+              - serviceRef: service1
+          environment:
+            environmentRef: my_env_dev
+            infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        name: qa
+        identifier: stage1
+        type: Deployment
+        spec:
+          service:
+            useFromStage:
+              stage: stage1
+            environment:
+              environmentRef: my_env_prod
+              infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: prod
+        name: Prod stage
+        type: Deployment
+        spec:
+          service:
+            useFromStage:
+              stage: stage1
+            environment:
+              environmentRef: my_env_prod
+              infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: adhoc
+        name: Adhoc
+        type: Deployment
+        spec:
+          serviceConfig:
+            service:
+              name: ManagerService
+              identifier: ManagerService
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:   # {k8s |  values | pcf |  helmSourceRepo | helmSourceRepo | kustomize | openShift}
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          # Git|Local
+                          spec:
+                            connectorRef: VWjzrm4KRZOJvIJGtQ6Wbw
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+          infrastructure:
+            environment:
+              name:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                cloud: GCP
+                team: cdp
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                # Spec for Infrastructure Type kubernetes-direct
+                connectorRef: userNameAuth
+                # namespace
+                namespace: harness
+                # release name
+                releaseName: testingqa
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: http step 1
+                      identifier: httpStep1
+                      type: Http
+                      spec:
+                        timeout: 100s
+                        method: GET
+                        url: http://httpstat.us/200
+                  - stepGroup:
+                      name: StepGroup1
+                      identifier: StepGroup1
+                      steps:
+                        - step:
+                            name: http step 21
+                            identifier: httpStep21
+                            type: Http
+                            spec:
+                              timeout: 100s
+                              method: GET
+                              url: http://httpstat.us/200
+                  - stepGroup:
+                      name: StepGroup2
+                      identifier: StepGroup2
+                      steps:
+                        - step:
+                            name: http step 21
+                            identifier: httpStep21
+                            type: Http
+                            spec:
+                              timeout: 100s
+                              method: GET
+                              url: http://httpstat.us/200

@@ -108,6 +108,43 @@ public class RoleAssignmentDTOMapper {
     return roleAssignmentBuilder.build();
   }
 
+  public static RoleAssignmentFilter fromV2(RoleAssignmentFilterV2 object) {
+    RoleAssignmentFilter roleAssignmentFilter =
+        RoleAssignmentFilter.builder()
+            .scopeFilters(object.getScopeFilters() == null
+                    ? new HashSet()
+                    : object.getScopeFilters()
+                          .stream()
+                          .map(filter
+                              -> ScopeFilter.builder()
+                                     .scope(ScopeMapper
+                                                .fromDTO(ScopeDTO.builder()
+                                                             .accountIdentifier(filter.getAccountIdentifier())
+                                                             .orgIdentifier(filter.getOrgIdentifier())
+                                                             .projectIdentifier(filter.getProjectIdentifier())
+                                                             .build())
+                                                .toString()
+
+                                             )
+                                     .includeChildScopes(
+                                         ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(filter.getFilter()))
+                                     .build())
+                          .collect(Collectors.toSet()))
+            .roleFilter(object.getRoleFilter() == null ? new HashSet<>() : object.getRoleFilter())
+            .resourceGroupFilter(
+                object.getResourceGroupFilter() == null ? new HashSet<>() : object.getResourceGroupFilter())
+            .build();
+    if (object.getPrincipalFilter() != null) {
+      roleAssignmentFilter.setPrincipalFilter(
+          new HashSet<>(List.of(Principal.builder()
+                                    .principalType(object.getPrincipalFilter().getType())
+                                    .principalIdentifier(object.getPrincipalFilter().getIdentifier())
+                                    .principalScopeLevel(object.getPrincipalFilter().getScopeLevel())
+                                    .build())));
+    }
+    return roleAssignmentFilter;
+  }
+
   public RoleAssignmentFilter fromDTO(String identifier, List<UserGroup> userGroups, RoleAssignmentFilterV2 object) {
     Set<Principal> principalFilter = new HashSet<>();
     principalFilter.add(Principal.builder().principalType(PrincipalType.USER).principalIdentifier(identifier).build());
@@ -120,30 +157,9 @@ public class RoleAssignmentDTOMapper {
               .principalIdentifier(userGroup.getIdentifier())
               .build());
     });
-    return RoleAssignmentFilter.builder()
-        .scopeFilters(object.getScopeFilters() == null
-                ? new HashSet()
-                : object.getScopeFilters()
-                      .stream()
-                      .map(filter
-                          -> ScopeFilter.builder()
-                                 .scope(ScopeMapper
-                                            .fromDTO(ScopeDTO.builder()
-                                                         .accountIdentifier(filter.getAccountIdentifier())
-                                                         .orgIdentifier(filter.getOrgIdentifier())
-                                                         .projectIdentifier(filter.getProjectIdentifier())
-                                                         .build())
-                                            .toString()
-
-                                         )
-                                 .includeChildScopes(ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(filter.getFilter()))
-                                 .build())
-                      .collect(Collectors.toSet()))
-        .roleFilter(object.getRoleFilter() == null ? new HashSet<>() : object.getRoleFilter())
-        .resourceGroupFilter(
-            object.getResourceGroupFilter() == null ? new HashSet<>() : object.getResourceGroupFilter())
-        .principalFilter(principalFilter)
-        .build();
+    RoleAssignmentFilter roleAssignmentFilter = fromV2(object);
+    roleAssignmentFilter.setPrincipalFilter(principalFilter);
+    return roleAssignmentFilter;
   }
 
   public static RoleAssignmentFilter fromDTO(String scopeIdentifier, RoleAssignmentFilterDTO object) {

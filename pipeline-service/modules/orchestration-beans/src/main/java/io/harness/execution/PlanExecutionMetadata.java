@@ -52,9 +52,6 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   // Merged input set given by the customer
   private String inputSetYaml;
 
-  // PipelineInputs for the yaml version V1.
-  private String inputsForSimplification;
-
   // Final yaml after merging input sets to given yaml, given to plan creation
   private String yaml;
 

@@ -39,6 +39,7 @@ import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSIO
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
+import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -1213,6 +1214,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                   .addOrder(WorkflowExecutionKeys.endTs, OrderType.DESC)
                                   .withLimit("5")
                                   .build();
+
+    if (featureFlagService.isEnabled(SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES, workflowExecution.getAccountId())) {
+      pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
+    }
+
     List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);
     // Adding check for pse.getStateUuid() == null for backward compatibility. Can be removed later
     Map<String, LongSummaryStatistics> stateEstimatesSum =
@@ -3592,12 +3598,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private List<WorkflowExecution> getRunningWorkflowExecutions(
       WorkflowType workflowType, String appId, String workflowId) {
-    PageRequest<WorkflowExecution> pageRequest = aPageRequest()
-                                                     .addFilter("appId", EQ, appId)
-                                                     .addFilter("workflowId", EQ, workflowId)
-                                                     .addFilter("workflowType", EQ, workflowType)
-                                                     .addFilter("status", IN, NEW, QUEUED, RUNNING, PAUSED)
-                                                     .build();
+    PageRequest<WorkflowExecution> pageRequest =
+        aPageRequest()
+            .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+            .addFilter(WorkflowExecutionKeys.workflowId, EQ, workflowId)
+            .addFilter(WorkflowExecutionKeys.workflowType, EQ, workflowType)
+            .addFilter(WorkflowExecutionKeys.status, IN, NEW, QUEUED, RUNNING, PAUSED)
+            .addFieldsIncluded(WorkflowExecutionKeys.status)
+            .build();
 
     PageResponse<WorkflowExecution> pageResponse = wingsPersistence.query(WorkflowExecution.class, pageRequest);
     if (pageResponse == null) {

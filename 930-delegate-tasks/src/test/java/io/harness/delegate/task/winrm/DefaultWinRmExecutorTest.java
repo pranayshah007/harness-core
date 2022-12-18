@@ -114,22 +114,23 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
-  public void testConstructCommandsListWithCommands() {
-    List<String> result1 = WinRmExecutorHelper.constructCommandsList(
+  public void testSplitCommandForCopyingToRemoteFile() {
+    List<String> result1 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
         simpleCommand, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
     assertThat(result1.size()).isEqualTo(1);
 
-    List<String> result2 = WinRmExecutorHelper.constructCommandsList(
+    List<String> result2 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
         reallyLongCommand, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
     assertThat(result2.size()).isEqualTo(1);
 
-    String commandOver4KB = "";
-    for (int i = 0; i < 500; i++) {
-      commandOver4KB += "0123456789";
+    String commandOver6KB = "";
+    for (int i = 0; i < 700; i++) {
+      commandOver6KB += "0123456789";
     }
 
-    List<String> result3 = WinRmExecutorHelper.constructCommandsList(
-        commandOver4KB, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
+    // command is over 6KB, but when we encode, it will be double the amount because we are using UTF-16LE
+    List<String> result3 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
+        commandOver6KB, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
     assertThat(result3.size()).isEqualTo(2);
     verify(config, times(1)).isUseNoProfile();
     assertThat(config.getCommandParameters()).isEmpty();
@@ -140,11 +141,12 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCharacterEscaping() {
     String command = "a!a@a#a$a%a^a&a*a(a)a_a+a-a=a[a]a{a}a;a'a\\a:a\"a|a,a.a/a<a>a?a\r\na";
-    String commandWithEscapedCharacters =
-        "a!a@a#a`$a%a^a^&a*a(a)a_a+a-a=a[a]a{a}a;a'a\\a:a`\\\"a`\"|`\"a,a.a/a<a>a?a`r`na";
-    List<String> result1 =
-        WinRmExecutorHelper.constructCommandsList(command, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
-    assertThat(result1.get(0)).contains(commandWithEscapedCharacters);
+    String scriptExecutionCommand =
+        "Powershell  Invoke-Command  -command {[IO.File]::AppendAllText(\\\"tempPSScript.ps1\\\", "
+        + "\\\"JEVycm9yQWN0aW9uUHJlZmVyZW5jZT0nU3RvcCcKYSFhQGEjYSRhJWFeYSZhKmEoYSlhX2ErYS1hPWFbYV1he2F9YTthJ2FcYTphImF8YSxhLmEvYTxhPmE/YQ0KYQ==\\\" ) }";
+    List<String> result1 = WinRmExecutorHelper.splitCommandForCopyingToRemoteFile(
+        command, "tempPSScript.ps1", DefaultWinRmExecutor.POWERSHELL, null);
+    assertThat(result1.get(0)).contains(scriptExecutionCommand);
   }
 
   @Test

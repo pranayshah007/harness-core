@@ -8,32 +8,6 @@ load("//:tools/bazel/harness.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 java_library(
-    name = "module",
-    srcs = glob(["src/main/java/**/*.java"]),
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:lombok",
-        "//942-enforcement-sdk:module",
-        "//960-ng-core-beans:module",
-        "//960-persistence:module",
-        "//970-ng-commons:module",
-        "//980-commons:module",
-        "//999-annotations:module",
-        "//clients/access-control/sdk:module",
-        "//platform-service/modules/resource-group-service/contracts/openapi/v1:resource-group-server-spec-module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:io_swagger_swagger_annotations",
-        "@maven//:javax_validation_validation_api",
-        "@maven//:org_hibernate_validator_hibernate_validator",
-        "@maven//:org_mongodb_morphia_morphia",
-        "@maven//:org_springframework_data_spring_data_commons",
-        "@maven//:org_springframework_data_spring_data_mongodb",
-    ],
-)
-
-java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/java/**/*.java"]),
@@ -41,7 +15,6 @@ java_library(
     resources = ["//platform-service/modules/resource-group-service/contracts/src/test/resources:resource"],
     visibility = ["//visibility:public"],
     deps = [
-        ":module",
         "//942-enforcement-sdk:module",
         "//960-ng-core-beans:module",
         "//970-ng-commons:module",
@@ -49,6 +22,11 @@ java_library(
         "//990-commons-test:module",
         "//999-annotations:module",
         "//clients/access-control/sdk:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/resource:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto:module",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/resource:module",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",
@@ -58,4 +36,6 @@ java_library(
 
 run_tests()
 
-run_analysis()
+run_analysis(
+    run_pmd = False,
+)

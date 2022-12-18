@@ -21,6 +21,7 @@ import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,8 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(DX)
 public class GetFilesInFolderForkTask extends RecursiveTask<List<FileChange>> {
+  private static final int STASH_PROVIDER_DEFAULT_PAGE_SIZE = 25;
+
   SCMGrpc.SCMBlockingStub scmBlockingStub;
   private String folderPath;
   private Provider provider;
@@ -174,18 +177,31 @@ public class GetFilesInFolderForkTask extends RecursiveTask<List<FileChange>> {
   }
 
   private FindFilesInBranchRequest.Builder prepareRequestBuilder(String path) {
+    PageRequest.Builder pageRequestBuilder = PageRequest.newBuilder().setPage(getInitialPageNum());
+
+    if (provider.hasBitbucketServer()) {
+      pageRequestBuilder.setSize(STASH_PROVIDER_DEFAULT_PAGE_SIZE);
+    }
+
     return FindFilesInBranchRequest.newBuilder()
         .setRef(ref)
         .setSlug(slug)
         .setProvider(provider)
         .setPath(path)
-        .setPagination(PageRequest.newBuilder().setPage(getInitialPageNum()).build());
+        .setPagination(pageRequestBuilder.build());
   }
 
-  private void setNextPage(FindFilesInBranchRequest.Builder requestBuilder, FindFilesInBranchResponse response) {
-    requestBuilder.setPagination(PageRequest.newBuilder().setPage(response.getPagination().getNext()).build());
+  @VisibleForTesting
+  void setNextPage(FindFilesInBranchRequest.Builder requestBuilder, FindFilesInBranchResponse response) {
     if (provider.hasBitbucketCloud()) {
       requestBuilder.setPagination(PageRequest.newBuilder().setUrl(response.getPagination().getNextUrl()).build());
+    } else {
+      PageRequest.Builder pageRequestBuilder = PageRequest.newBuilder().setPage(response.getPagination().getNext());
+      if (provider.hasBitbucketServer()) {
+        pageRequestBuilder.setSize(STASH_PROVIDER_DEFAULT_PAGE_SIZE);
+      }
+
+      requestBuilder.setPagination(pageRequestBuilder.build());
     }
   }
 

@@ -73,6 +73,9 @@ public interface YamlTypes {
   String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
   String FETCH_INSTANCE_SCRIPT = StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
 
+  String ASG_CANARY_DEPLOY = StepSpecTypeConstants.ASG_CANARY_DEPLOY;
+  String ASG_CANARY_DELETE = StepSpecTypeConstants.ASG_CANARY_DELETE;
+
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;
@@ -170,4 +173,16 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
+
+  String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
+  String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
+
+  String TAS_CANARY_APP_SETUP = StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+  String TAS_BG_APP_SETUP = StepSpecTypeConstants.TAS_BG_APP_SETUP;
+  String TAS_BASIC_APP_SETUP = StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
+  String TAS_APP_RESIZE = StepSpecTypeConstants.TAS_APP_RESIZE;
+  String TAS_SWAP_ROUTES = StepSpecTypeConstants.TAS_SWAP_ROUTES;
+  String TAS_ROLLBACK = StepSpecTypeConstants.TAS_ROLLBACK;
+  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 }

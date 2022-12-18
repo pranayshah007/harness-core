@@ -11,10 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
-@Getter
+@Value
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheClearCacheRequest {

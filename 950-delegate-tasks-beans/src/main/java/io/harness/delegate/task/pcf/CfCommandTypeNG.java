@@ -6,4 +6,4 @@
  */
 package io.harness.delegate.task.pcf;
 
-public enum CfCommandTypeNG { DATA_FETCH }
+public enum CfCommandTypeNG { SWAP_ROUTES, SWAP_ROLLBACK, DATA_FETCH }

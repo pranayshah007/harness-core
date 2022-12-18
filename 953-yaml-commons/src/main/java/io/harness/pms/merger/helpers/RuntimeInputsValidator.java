@@ -142,7 +142,7 @@ public class RuntimeInputsValidator {
       String fqnExp = entry.getKey().getExpressionFqn();
       if (isNotEmpty(fqnExp) && skipValidationIfExtraKeySet.stream().anyMatch(fqnExp::endsWith)) {
         Object value = entry.getValue();
-        if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())) {
+        if (value instanceof TextNode) {
           toRemoveKeySet.add(entry.getKey());
         }
       }

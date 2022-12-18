@@ -227,6 +227,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
             environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue()));
       } else {
+        if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
+          throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
+        }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
           environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra));
         }

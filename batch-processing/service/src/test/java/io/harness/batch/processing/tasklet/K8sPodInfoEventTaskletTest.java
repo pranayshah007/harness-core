@@ -114,8 +114,11 @@ public class K8sPodInfoEventTaskletTest extends BaseTaskletTest {
   private static final String WORKLOAD_TYPE = "workload_type";
   private static final String WORKLOAD_ID = "workload_id";
   private static final String MAP_KEY_WITH_DOT = "harness.io/created.by";
+  private static final String MAP_KEY_WITHOUT_DOT = "harness~io/created~by";
   private static final String MAP_VALUE = "harness.io/created.by";
   Map<String, String> SAMPLE_MAP = ImmutableMap.of(MAP_KEY_WITH_DOT, MAP_VALUE);
+
+  Map<String, String> SAMPLE_MAP_ENCODED = ImmutableMap.of(MAP_KEY_WITHOUT_DOT, MAP_VALUE);
 
   private final Instant NOW = Instant.now();
   private final Timestamp START_TIMESTAMP = HTimestamps.fromInstant(NOW.minus(1, ChronoUnit.DAYS));
@@ -173,7 +176,7 @@ public class K8sPodInfoEventTaskletTest extends BaseTaskletTest {
   public void testPodMetadataAnnotation() {
     PublishedMessage k8sPodInfoMessage = getK8sPodInfoMessageWithAnnotations(SAMPLE_MAP);
     InstanceInfo instanceInfo = k8sPodInfoTasklet.process(k8sPodInfoMessage);
-    assertThat(instanceInfo.getMetadataAnnotations()).isEqualTo(SAMPLE_MAP);
+    assertThat(instanceInfo.getMetadataAnnotations()).isEqualTo(SAMPLE_MAP_ENCODED);
   }
 
   @Test

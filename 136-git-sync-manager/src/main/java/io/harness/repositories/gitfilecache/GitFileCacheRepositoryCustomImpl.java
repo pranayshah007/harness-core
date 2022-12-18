@@ -13,6 +13,7 @@ import io.harness.gitsync.caching.entity.GitFileCache;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -34,5 +35,10 @@ public class GitFileCacheRepositoryCustomImpl implements GitFileCacheRepositoryC
   public DeleteResult delete(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, GitFileCache.class);
+  }
+
+  public UpdateResult update(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    return mongoTemplate.updateMulti(query, update, GitFileCache.class);
   }
 }

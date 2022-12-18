@@ -24,11 +24,13 @@ import javax.validation.constraints.Max;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 @OwnedBy(HarnessTeam.PL)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
   private final StreamingService streamingService;
   private final StreamingDestinationsApiUtils streamingDestinationsApiUtils;
@@ -36,7 +38,29 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
   @Override
   public Response createStreamingDestinations(@Valid StreamingDestinationDTO body, String harnessAccount) {
     StreamingDestination streamingDestination = streamingService.create(harnessAccount, body);
+
+    log.info(String.format(
+        "Streaming destination with identifier [%s] is successfully created", streamingDestination.getIdentifier()));
     return Response.status(Response.Status.CREATED)
+        .entity(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
+        .build();
+  }
+
+  @Override
+  public Response deleteDisabledStreamingDestination(String streamingDestinationIdentifier, String harnessAccount) {
+    streamingService.delete(harnessAccount, streamingDestinationIdentifier);
+
+    log.info(String.format(
+        "Streaming destination with identifier [%s] is successfully deleted", streamingDestinationIdentifier));
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @Override
+  public Response getStreamingDestination(String streamingDestinationIdentifier, String harnessAccount) {
+    StreamingDestination streamingDestination =
+        streamingService.getStreamingDestination(harnessAccount, streamingDestinationIdentifier);
+
+    return Response.status(Response.Status.OK)
         .entity(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
         .build();
   }
@@ -55,6 +79,20 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, "v1/streaming-destinations", streamingDestinations.size(), page, limit);
+
     return responseBuilderWithLinks.entity(streamingDestinations).build();
+  }
+
+  @Override
+  public Response updateStreamingDestination(String streamingDestinationIdentifier,
+      @Valid StreamingDestinationDTO streamingDestinationDTO, String harnessAccount) {
+    StreamingDestination streamingDestination =
+        streamingService.update(streamingDestinationIdentifier, streamingDestinationDTO, harnessAccount);
+
+    log.info(String.format(
+        "Streaming destination with identifier [%s] is successfully updated", streamingDestinationIdentifier));
+    return Response.status(Response.Status.OK)
+        .entity(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
+        .build();
   }
 }

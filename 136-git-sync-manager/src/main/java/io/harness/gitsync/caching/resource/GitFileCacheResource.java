@@ -17,12 +17,18 @@ import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.AccessDeniedException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestKey;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestValues;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateResult;
 import io.harness.gitsync.caching.beans.GitProvider;
 import io.harness.gitsync.caching.dtos.GitFileCacheClearCacheRequest;
 import io.harness.gitsync.caching.dtos.GitFileCacheClearCacheResponse;
+import io.harness.gitsync.caching.dtos.GitFileCacheUpdateRequest;
+import io.harness.gitsync.caching.dtos.GitFileCacheUpdateResponse;
 import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -43,6 +49,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -75,6 +82,7 @@ ApiResponse(responseCode = INTERNAL_SERVER_ERROR_CODE, description = INTERNAL_SE
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheResource {
+  private static final String USER_ID_PLACEHOLDER = "{{USER}}";
   private final GitFileCacheService gitFileCacheService;
   private final UserHelperService userHelperService;
 
@@ -89,12 +97,8 @@ public class GitFileCacheResource {
   public ResponseDTO<GitFileCacheClearCacheResponse> clearCache(
       @QueryParam("accountIdentifier") String accountIdentifier,
       @RequestBody(required = true) @NotNull @Valid GitFileCacheClearCacheRequest request) {
-    UserPrincipal userPrincipal = userHelperService.getUserPrincipalOrThrow();
-    String userId = userPrincipal.getName();
-    if (!userHelperService.isHarnessSupportUser(userId)) {
-      log.error("User : {} not allowed to clear git-service cache for request {}", userId, request);
-      throw new AccessDeniedException("Not Authorized", WingsException.USER);
-    }
+    checkUserAuthorization(
+        String.format("User : %s not allowed to clear git-service cache for request %s", USER_ID_PLACEHOLDER, request));
 
     GitProvider gitProvider = null;
     if (request.getGitProvider() != null) {
@@ -110,5 +114,40 @@ public class GitFileCacheResource {
                                                 .build());
     return ResponseDTO.newResponse(
         GitFileCacheClearCacheResponse.builder().count(gitFileCacheDeleteResult.getCount()).build());
+  }
+
+  @PUT
+  @Hidden
+  public ResponseDTO<GitFileCacheUpdateResponse> updateCache(@QueryParam("accountIdentifier") String accountIdentifier,
+      @RequestBody(required = true) @NotNull @Valid GitFileCacheUpdateRequest request) {
+    checkUserAuthorization(String.format(
+        "User : %s not allowed to update git-service cache for request %s", USER_ID_PLACEHOLDER, request));
+    if (request.getKey() == null || request.getValues() == null) {
+      throw new InvalidRequestException("Either of key or value in the request is null");
+    }
+    GitProvider gitProvider = null;
+    if (request.getKey().getGitProvider() != null) {
+      gitProvider = GitProvider.getByName(request.getKey().getGitProvider());
+    }
+    GitFileCacheUpdateResult gitFileCacheUpdateResult =
+        gitFileCacheService.updateCache(GitFileCacheUpdateRequestKey.builder()
+                                            .accountIdentifier(request.getKey().getAccountIdentifier())
+                                            .ref(request.getKey().getRef())
+                                            .gitProvider(gitProvider)
+                                            .filepath(request.getKey().getFilepath())
+                                            .repoName(request.getKey().getRepoName())
+                                            .build(),
+            GitFileCacheUpdateRequestValues.builder().build());
+    return ResponseDTO.newResponse(
+        GitFileCacheUpdateResponse.builder().count(gitFileCacheUpdateResult.getCount()).build());
+  }
+
+  private void checkUserAuthorization(String errorMessageIfAuthorizationFailed) {
+    UserPrincipal userPrincipal = userHelperService.getUserPrincipalOrThrow();
+    String userId = userPrincipal.getName();
+    if (!userHelperService.isHarnessSupportUser(userId)) {
+      log.error(errorMessageIfAuthorizationFailed.replace(USER_ID_PLACEHOLDER, userId));
+      throw new AccessDeniedException("Not Authorized", WingsException.USER);
+    }
   }
 }

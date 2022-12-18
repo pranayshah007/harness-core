@@ -14,6 +14,10 @@ import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
 import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
+import io.harness.gitsync.caching.beans.GitFileCacheResponseMetadata;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestKey;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestValues;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateResult;
 import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.caching.entity.GitFileCache.GitFileCacheKeys;
 import io.harness.gitsync.caching.helper.GitFileCacheTTLHelper;
@@ -23,12 +27,14 @@ import io.harness.repositories.gitfilecache.GitFileCacheRepository;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheServiceImpl implements GitFileCacheService {
   @Inject GitFileCacheRepository gitFileCacheRepository;
+  @Inject GitFileCacheTTLHelper gitFileCacheTTLHelper;
 
   @Override
   public GitFileCacheResponse fetchFromCache(GitFileCacheKey gitFileCacheKey) {
@@ -48,7 +54,7 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     }
 
     CacheDetails cacheDetails =
-        GitFileCacheTTLHelper.getCacheDetails(gitFileCache.getLastUpdatedAt(), gitFileCache.getValidUntil().getTime());
+        gitFileCacheTTLHelper.getCacheDetails(gitFileCache.getLastUpdatedAt(), gitFileCache.getValidUntil().getTime());
     if (cacheDetails == null) {
       return null;
     }
@@ -56,6 +62,7 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     return GitFileCacheResponse.builder()
         .cacheDetails(cacheDetails)
         .gitFileCacheObject(GitFileCacheObjectMapper.fromEntity(gitFileCache.getGitFileObject()))
+        .gitFileCacheResponseMetadata(GitFileCacheResponseMetadata.builder().ref(gitFileCache.getRef()).build())
         .build();
   }
 
@@ -66,10 +73,11 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     GitFileCache gitFileCache = gitFileCacheRepository.upsert(criteria, update);
 
     CacheDetails cacheDetails =
-        GitFileCacheTTLHelper.getCacheDetails(gitFileCache.getLastUpdatedAt(), gitFileCache.getValidUntil().getTime());
+        gitFileCacheTTLHelper.getCacheDetails(gitFileCache.getLastUpdatedAt(), gitFileCache.getValidUntil().getTime());
     return GitFileCacheResponse.builder()
         .cacheDetails(cacheDetails)
         .gitFileCacheObject(GitFileCacheObjectMapper.fromEntity(gitFileCache.getGitFileObject()))
+        .gitFileCacheResponseMetadata(GitFileCacheResponseMetadata.builder().ref(gitFileCache.getRef()).build())
         .build();
   }
 
@@ -80,6 +88,22 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     return GitFileCacheDeleteResult.builder().count(deleteResult.getDeletedCount()).build();
   }
 
+  public GitFileCacheUpdateResult updateCache(
+      GitFileCacheUpdateRequestKey key, GitFileCacheUpdateRequestValues values) {
+    Criteria criteria = getOptionalCriteria(GitFileCacheKey.builder()
+                                                .repoName(key.getRepoName())
+                                                .completeFilePath(key.getFilepath())
+                                                .ref(key.getRef())
+                                                .accountIdentifier(key.getAccountIdentifier())
+                                                .gitProvider(key.getGitProvider())
+                                                .build());
+    Update update = new Update();
+    update.set(GitFileCacheKeys.lastUpdatedAt, values.getUpdatedAt());
+    update.set(GitFileCacheKeys.validUntil, gitFileCacheTTLHelper.getFormattedValidUntilTime(values.getValidUntil()));
+    UpdateResult updateResult = gitFileCacheRepository.update(criteria, update);
+    return GitFileCacheUpdateResult.builder().count(updateResult.getModifiedCount()).build();
+  }
+
   private Update getUpsertOperationUpdates(GitFileCacheKey gitFileCacheKey, GitFileCacheObject gitFileCacheObject) {
     long currentTime = System.currentTimeMillis();
     Update update = new Update();
@@ -88,9 +112,9 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     update.setOnInsert(GitFileCacheKeys.repoName, gitFileCacheKey.getRepoName());
     update.setOnInsert(GitFileCacheKeys.ref, gitFileCacheKey.getRef());
     update.setOnInsert(GitFileCacheKeys.completeFilepath, gitFileCacheKey.getCompleteFilePath());
-    update.setOnInsert(GitFileCacheKeys.gitFileObject, GitFileCacheObjectMapper.toEntity(gitFileCacheObject));
     update.setOnInsert(GitFileCacheKeys.createdAt, currentTime);
-    update.set(GitFileCacheKeys.validUntil, GitFileCacheTTLHelper.getValidUntilTime(currentTime));
+    update.set(GitFileCacheKeys.gitFileObject, GitFileCacheObjectMapper.toEntity(gitFileCacheObject));
+    update.set(GitFileCacheKeys.validUntil, gitFileCacheTTLHelper.getValidUntilTime(currentTime));
     update.set(GitFileCacheKeys.lastUpdatedAt, currentTime);
     if (gitFileCacheKey.isDefaultBranch()) {
       update.set(GitFileCacheKeys.isDefaultBranch, true);

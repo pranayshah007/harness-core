@@ -73,6 +73,10 @@ stoServiceConfig:
   baseUrl: http://localhost:4000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
+iacmServiceConfig:
+  baseUrl: http://localhost:4000
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
 managerTarget: localhost:9880
 managerAuthority: localhost
 managerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
@@ -90,6 +94,16 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 ciExecutionServiceConfig:
+  miningPatternConfig:
+    gcsCreds: null
+    projectId: null
+    bucketName: null
+  queueServiceClient:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -100,6 +114,21 @@ ciExecutionServiceConfig:
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
+  hostedVmConfig:
+    splitLinuxAmd64Pool: false
+  stoStepConfig:
+    defaultTag: dev
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: bandit_default
+        image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
+      - product: snyk_default
+        image: harness/snyk-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

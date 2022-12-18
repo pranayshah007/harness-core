@@ -23,14 +23,10 @@ public class InvalidYamlException extends WingsException {
   private static final String MESSAGE_ARG = "message";
   @Getter @Setter String yaml;
 
-  public InvalidYamlException(String message, YamlSchemaErrorWrapperDTO errorResponseDTO) {
+  public InvalidYamlException(String message, YamlSchemaErrorWrapperDTO errorResponseDTO, String invalidYaml) {
     super(message, null, SCHEMA_VALIDATION_FAILED, Level.ERROR, null, null, errorResponseDTO);
     super.param(MESSAGE_ARG, message);
-  }
-
-  public InvalidYamlException(String message, Throwable cause, YamlSchemaErrorWrapperDTO errorResponseDTO) {
-    super(message, cause, SCHEMA_VALIDATION_FAILED, Level.ERROR, null, null, errorResponseDTO);
-    super.param(MESSAGE_ARG, message);
+    yaml = invalidYaml;
   }
 
   public InvalidYamlException(

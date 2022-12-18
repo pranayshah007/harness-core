@@ -1,0 +1,33 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.eventsframework.schemas.cv;
+
+option java_multiple_files = true;
+option go_package = "953_events_api";
+
+message InternalChangeEventDTO {
+  string accountId = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
+  repeated string serviceIdentifier = 4;
+  repeated string environmentIdentifier = 5;
+  EventDetails eventDetails = 6;
+  int64 executionTime = 7;
+  string type = 8;
+  int64 executionEndTime = 9;
+}
+
+message EventDetails {
+  string name = 1;
+  string identifier = 2;
+  string EventType = 3;
+  repeated string eventDetails = 4;
+  string changeEventDetailsLink = 5;
+  string internalLinkToEntity = 6;
+  string user = 7;
+}

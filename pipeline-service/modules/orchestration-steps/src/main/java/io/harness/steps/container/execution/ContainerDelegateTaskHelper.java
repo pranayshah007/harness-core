@@ -9,8 +9,8 @@ package io.harness.steps.container.execution;
 
 import static io.harness.steps.StepUtils.buildAbstractions;
 
-import static software.wings.beans.TaskType.CI_EXECUTE_STEP;
-import static software.wings.beans.TaskType.CI_LE_STATUS;
+import static software.wings.beans.TaskType.CONTAINER_EXECUTE_STEP;
+import static software.wings.beans.TaskType.CONTAINER_LE_STATUS;
 
 import static java.lang.String.format;
 
@@ -67,7 +67,7 @@ public class ContainerDelegateTaskHelper {
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .parked(true)
-                                  .taskType(CI_LE_STATUS.name())
+                                  .taskType(CONTAINER_LE_STATUS.name())
                                   .parameters(new Object[] {StepStatusTaskParameters.builder().build()})
                                   .timeout(timeout)
                                   .build();
@@ -130,7 +130,7 @@ public class ContainerDelegateTaskHelper {
 
   public TaskData getDelegateTaskDataForExecuteStep(
       Ambiance ambiance, long timeout, CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams) {
-    String taskType = CI_EXECUTE_STEP.name();
+    String taskType = CONTAINER_EXECUTE_STEP.name();
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
 
     return TaskData.builder()

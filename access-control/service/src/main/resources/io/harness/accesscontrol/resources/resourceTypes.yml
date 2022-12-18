@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 20
+version: 21
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -104,6 +104,8 @@ resourceTypes:
     permissionKey: autoStoppingRule
   - identifier: CCM_LOADBALANCER
     permissionKey: loadBalancer
+  - identifier: CCM_CURRENCYPREFERENCE
+    permissionKey: currencyPreference
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING

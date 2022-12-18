@@ -20,6 +20,7 @@ import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.ReferenceK8sPodInfoDTO;
 import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.SpotDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.TasDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
@@ -32,6 +33,7 @@ import io.harness.entities.deploymentinfo.NativeHelmDeploymentInfo;
 import io.harness.entities.deploymentinfo.PdcDeploymentInfo;
 import io.harness.entities.deploymentinfo.ReferenceK8sPodInfo;
 import io.harness.entities.deploymentinfo.ServerlessAwsLambdaDeploymentInfo;
+import io.harness.entities.deploymentinfo.SpotDeploymentInfo;
 import io.harness.entities.deploymentinfo.TasDeploymentInfo;
 import io.harness.exception.InvalidRequestException;
 
@@ -63,6 +65,8 @@ public class DeploymentInfoMapper {
       return CustomDeploymentNGDeploymentInfoMapper.toDTO((CustomDeploymentNGDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof TasDeploymentInfo) {
       return TasDeploymentInfoMapper.toDTO((TasDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof SpotDeploymentInfo) {
+      return SpotDeploymentInfoMapper.toDTO((SpotDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -90,6 +94,8 @@ public class DeploymentInfoMapper {
       return CustomDeploymentNGDeploymentInfoMapper.toEntity((CustomDeploymentNGDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof TasDeploymentInfoDTO) {
       return TasDeploymentInfoMapper.toEntity((TasDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof SpotDeploymentInfoDTO) {
+      return SpotDeploymentInfoMapper.toEntity((SpotDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

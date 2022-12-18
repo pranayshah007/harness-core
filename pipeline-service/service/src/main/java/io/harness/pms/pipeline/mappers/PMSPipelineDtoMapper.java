@@ -361,7 +361,7 @@ public class PMSPipelineDtoMapper {
   }
 
   private List<Integer> getNumberOfErrorsLast7Days(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
+    if (pipeline.getExecutionSummaryInfo() == null || pipeline.getExecutionSummaryInfo().getNumOfErrors() == null) {
       return new ArrayList<>();
     }
     Calendar cal = Calendar.getInstance();
@@ -376,7 +376,7 @@ public class PMSPipelineDtoMapper {
   }
 
   private List<Integer> getNumberOfDeployments(PipelineEntity pipeline) {
-    if (pipeline.getExecutionSummaryInfo() == null) {
+    if (pipeline.getExecutionSummaryInfo() == null || pipeline.getExecutionSummaryInfo().getDeployments() == null) {
       return new ArrayList<>();
     }
     Calendar cal = Calendar.getInstance();

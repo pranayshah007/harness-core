@@ -158,7 +158,6 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
   AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
-
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE("ECS Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
@@ -194,7 +193,42 @@ public enum NGStepType {
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_DESTROY),
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
+  // asg steps
+  @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
+  ASG_CANARY_DEPLOY(
+      "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
+
+  @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
+  ASG_CANARY_DELETE(
+      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
+  @JsonProperty(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+  TAS_BASIC_APP_SETUP(
+      "Basic App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BASIC_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+  TAS_BG_APP_SETUP(
+      "BG App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BG_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+  TAS_CANARY_APP_SETUP(
+      "Canary App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_CANARY_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
+  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TANZU_COMMAND),
+  @JsonProperty(StepSpecTypeConstants.SWAP_ROLLBACK)
+  SWAP_ROLLBACK("Swap Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.SWAP_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+  TAS_SWAP_ROUTES(
+      "Swap Routes", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_SWAP_ROUTES),
+  @JsonProperty(StepSpecTypeConstants.TAS_APP_RESIZE)
+  TAS_APP_RESIZE("App Resize", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_APP_RESIZE),
+  @JsonProperty(StepSpecTypeConstants.TAS_ROLLBACK)
+  TAS_ROLLBACK("App Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+  ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
+      "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),
+
+  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+  ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -226,7 +260,6 @@ public enum NGStepType {
   public static String getDisplayName(NGStepType ngStepType) {
     return ngStepType.displayName;
   }
-
   public static String getCategory(NGStepType ngStepType) {
     return ngStepType.category;
   }

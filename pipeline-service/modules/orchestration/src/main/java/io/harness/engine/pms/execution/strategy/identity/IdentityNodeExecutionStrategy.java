@@ -73,8 +73,7 @@ public class IdentityNodeExecutionStrategy
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
-    return identityNodeExecutionStrategyHelper.createNodeExecution(
-        ambiance, node, metadata, notifyId, parentId, previousId);
+    return identityNodeExecutionStrategyHelper.createNodeExecution(ambiance, node, notifyId, parentId, previousId);
   }
 
   @Override
