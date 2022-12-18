@@ -125,6 +125,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .tasInfraConfig(tasInfraConfig)
+            .useCfCLI(true)
             .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())

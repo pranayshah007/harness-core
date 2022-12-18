@@ -170,7 +170,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
         }
       } catch (IOException e) {
-        log.warn("Failed to delete temp directory created for CF CLI login", e);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.warn("Failed to delete temp directory created for CF CLI login", sanitizedException);
       } finally {
         logCallback.saveExecutionLog("Cleaning up temporary files completed", INFO, SUCCESS);
       }
@@ -266,7 +267,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           executionLogCallback.saveExecutionLog("Nothing to Downsize", INFO, SUCCESS);
         }
       } catch (Exception e) {
-        log.error("Failed to downsize PCF application: " + appNameBeingDownsized, e);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.error("Failed to downsize PCF application: " + appNameBeingDownsized, sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized), INFO, FAILURE);
         throw e;

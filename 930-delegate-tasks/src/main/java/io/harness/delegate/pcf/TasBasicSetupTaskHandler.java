@@ -530,7 +530,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       map = (Map<String, Object>) mapper.readValue(manifestYaml, Map.class);
     } catch (Exception e) {
-      throw new UnexpectedException("Failed to get Yaml Map", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new UnexpectedException("Failed to get Yaml Map", sanitizedException);
     }
 
     List<Map> applicationMaps = (List<Map>) map.get(APPLICATION_YML_ELEMENT);
@@ -580,11 +581,12 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       return yaml.dump(map);
     } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       throw new PivotalClientApiException(new StringBuilder()
                                               .append("Failed to generate final version of  Manifest.yml file. ")
                                               .append(manifestYaml)
                                               .toString(),
-          e);
+          sanitizedException);
     }
   }
 
@@ -671,7 +673,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
         FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
       }
     } catch (Exception e) {
-      log.warn("Failed to remove temp files created", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.warn("Failed to remove temp files created", sanitizedException);
     }
   }
 }

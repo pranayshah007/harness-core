@@ -244,6 +244,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .maxCount(tasSetupDataOutcome.getMaxCount())
             .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
+            .useCfCLI(true)
             .totalPreviousInstanceCount(tasSetupDataOutcome.getTotalPreviousInstanceCount())
             .build();
     final TaskData taskData = TaskData.builder()

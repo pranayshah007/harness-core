@@ -39,6 +39,7 @@ import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -141,10 +142,10 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       }
 
     } catch (Exception e) {
-      exception = e;
-      logExceptionMessage(executionLogCallback, cfRollbackCommandRequestNG, exception);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      logExceptionMessage(executionLogCallback, cfRollbackCommandRequestNG, sanitizedException);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(FAILURE);
-      cfRollbackCommandResponseNG.setErrorMessage(ExceptionUtils.getMessage(exception));
+      cfRollbackCommandResponseNG.setErrorMessage(ExceptionUtils.getMessage(sanitizedException));
 
     } finally {
       executionLogCallback =
@@ -155,7 +156,8 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
           executionLogCallback.saveExecutionLog("Temporary Files Successfully deleted", INFO, SUCCESS);
         } catch (IOException e) {
-          log.warn("Failed to delete temp cf home folder", e);
+          Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+          log.warn("Failed to delete temp cf home folder", sanitizedException);
         }
       }
     }

@@ -242,7 +242,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           executionLogCallback.saveExecutionLog("Temporary Files Successfully deleted", INFO, SUCCESS);
         }
       } catch (IOException e) {
-        log.warn("Failed to delete temp directory created for CF CLI login", e);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.warn("Failed to delete temp directory created for CF CLI login", sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed to delete temp directory created for CF CLI login", INFO, FAILURE);
       }
@@ -357,7 +358,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
       enableAutoScalar(cfRollbackCommandRequestNG, cfRequestConfig, executionLogCallback, configVarPath);
     } catch (Exception exception) {
-      log.error("Failed to up size PCF application: " + inActiveAppName, exception);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.error("Failed to up size PCF application: " + inActiveAppName, sanitizedException);
       executionLogCallback.saveExecutionLog(
           "Failed while up sizing In Active application: " + encodeColor(inActiveAppName));
     }
@@ -435,7 +437,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           cfDeploymentManager.changeAutoscalarState(appAutoscalarRequestData, executionLogCallback, true);
         }
       } catch (Exception e) {
-        log.error("Failed to downsize PCF application: " + appNameBeingDownsized, e);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.error("Failed to downsize PCF application: " + appNameBeingDownsized, sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized));
       }

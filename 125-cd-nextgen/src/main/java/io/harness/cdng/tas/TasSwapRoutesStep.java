@@ -195,6 +195,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
     CfSwapRoutesRequestNG cfSwapRoutesRequestNG =
         CfSwapRoutesRequestNG.builder()
             .finalRoutes(tasSetupDataOutcome.getRouteMaps())
+            .useCfCLI(true)
             .downsizeOldApplication(downSizeOldApplication)
             .existingApplicationNames(existingAppNames)
             .accountId(accountId)

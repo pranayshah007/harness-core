@@ -562,7 +562,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
       }
     } catch (Exception e) {
-      log.warn("Failed to remove temp files created", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.warn("Failed to remove temp files created", sanitizedException);
     }
   }
 
@@ -617,7 +618,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       map = (Map<String, Object>) mapper.readValue(manifestYaml, Map.class);
     } catch (Exception e) {
-      throw new UnexpectedException("Failed to get Yaml Map", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new UnexpectedException("Failed to get Yaml Map", sanitizedException);
     }
 
     List<Map> applicationMaps = (List<Map>) map.get(APPLICATION_YML_ELEMENT);
@@ -665,7 +667,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       return yaml.dump(map);
     } catch (Exception e) {
-      throw new PivotalClientApiException("Failed to generate final version of  Manifest.yml file. " + manifestYaml, e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new PivotalClientApiException(
+          "Failed to generate final version of  Manifest.yml file. " + manifestYaml, sanitizedException);
     }
   }
 

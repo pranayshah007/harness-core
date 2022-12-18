@@ -162,7 +162,8 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
         FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
       }
     } catch (Exception e) {
-      log.warn("Failed to remove temp files created", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.warn("Failed to remove temp files created", sanitizedException);
     }
   }
 

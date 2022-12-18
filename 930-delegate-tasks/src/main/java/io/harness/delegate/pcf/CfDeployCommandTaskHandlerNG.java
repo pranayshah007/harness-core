@@ -160,7 +160,8 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
         }
       } catch (IOException e) {
-        log.warn("Failed to delete Temp Directory created for CF CLI login", e);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.warn("Failed to delete Temp Directory created for CF CLI login", sanitizedException);
       }
     }
     if (noExceptionOccured) {
