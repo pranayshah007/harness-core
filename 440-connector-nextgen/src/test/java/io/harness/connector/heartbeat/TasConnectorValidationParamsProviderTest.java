@@ -67,8 +67,6 @@ public class TasConnectorValidationParamsProviderTest extends CategoryTest {
 
     assertThat(executionCapabilityList).isNotNull();
     assertThat(executionCapabilityList)
-        .contains(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(URL, null));
-    assertThat(executionCapabilityList)
         .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("connector").build());
   }
 
