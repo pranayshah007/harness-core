@@ -7,11 +7,6 @@
 
 package io.harness.accesscontrol.roleassignments.migration;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
@@ -41,15 +36,19 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.core.query.Criteria;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @Singleton
@@ -67,7 +66,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagHelperService = featureFlagHelperService;
     this.accountClient = accountClient;
-    this.scopeService =  scopeService;
+    this.scopeService = scopeService;
   }
 
   @Override
@@ -196,8 +195,8 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
 
   private List<String> filterAccounts(HashSet<String> accountIds) {
     return Streams.stream(Iterables.partition(accountIds, 1))
-            .flatMap(list -> filterAccountsPaginated(list).stream())
-            .collect(Collectors.toList());
+        .flatMap(list -> filterAccountsPaginated(list).stream())
+        .collect(Collectors.toList());
   }
 
   private List<String> filterAccountsPaginated(List<String> accountIds) {
@@ -207,35 +206,35 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
       String scopeIdentifier = "/ACCOUNT/" + accountId;
       scopeIdentifiers.add(scopeIdentifier);
     }
-      try {
-        Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
-                                .in(scopeIdentifiers)
-                                .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
-                                .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                                .and(RoleAssignmentDBOKeys.roleIdentifier)
-                                .in(NGConstants.ACCOUNT_VIEWER_ROLE)
-                                .and(RoleAssignmentDBOKeys.principalIdentifier)
-                                .is(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
-                                .and(RoleAssignmentDBOKeys.principalScopeLevel)
-                                .is(HarnessScopeLevel.ACCOUNT.getName())
-                                .and(RoleAssignmentDBOKeys.principalType)
-                                .is(USER_GROUP)
-                                .and(RoleAssignmentDBOKeys.scopeLevel)
-                                .is(HarnessScopeLevel.ACCOUNT.getName());
+    try {
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
+                              .in(scopeIdentifiers)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
+                              .and(RoleAssignmentDBOKeys.roleIdentifier)
+                              .in(NGConstants.ACCOUNT_VIEWER_ROLE)
+                              .and(RoleAssignmentDBOKeys.principalIdentifier)
+                              .is(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
+                              .and(RoleAssignmentDBOKeys.principalScopeLevel)
+                              .is(HarnessScopeLevel.ACCOUNT.getName())
+                              .and(RoleAssignmentDBOKeys.principalType)
+                              .is(USER_GROUP)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
+                              .is(HarnessScopeLevel.ACCOUNT.getName());
 
-        Pageable pageable = Pageable.unpaged();
-        List<RoleAssignmentDBO> roleAssignmentDBOList = roleAssignmentRepository.findAll(criteria, pageable).getContent();
-        // If role assignment doesn't exist on Default User Group at account then skip removing User assigned role
-        // assignment. So this list will contain AccountIds only having Default User Group.
-        for(RoleAssignmentDBO roleAssignmentDBO: roleAssignmentDBOList) {
-          Scope accountScope = scopeService.buildScopeFromScopeIdentifier(roleAssignmentDBO.getScopeIdentifier());
-          filteredAccounts.add(accountScope.getInstanceId());
-        }
-        log.info(DEBUG_MESSAGE + String.format("Account Ids for which to remove role assignments %s", filteredAccounts));
-      } catch (Exception ex) {
-        log.error(DEBUG_MESSAGE
-            + String.format("Failed to query role assignments of default user group for accounts %s", accountIds));
+      Pageable pageable = Pageable.unpaged();
+      List<RoleAssignmentDBO> roleAssignmentDBOList = roleAssignmentRepository.findAll(criteria, pageable).getContent();
+      // If role assignment doesn't exist on Default User Group at account then skip removing User assigned role
+      // assignment. So this list will contain AccountIds only having Default User Group.
+      for (RoleAssignmentDBO roleAssignmentDBO : roleAssignmentDBOList) {
+        Scope accountScope = scopeService.buildScopeFromScopeIdentifier(roleAssignmentDBO.getScopeIdentifier());
+        filteredAccounts.add(accountScope.getInstanceId());
       }
+      log.info(DEBUG_MESSAGE + String.format("Account Ids for which to remove role assignments %s", filteredAccounts));
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE
+          + String.format("Failed to query role assignments of default user group for accounts %s", accountIds));
+    }
     return filteredAccounts;
   }
 }
