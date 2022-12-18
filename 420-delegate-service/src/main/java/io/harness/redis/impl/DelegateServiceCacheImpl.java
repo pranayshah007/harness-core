@@ -4,49 +4,57 @@ import static io.harness.serializer.DelegateServiceCacheRegistrar.TASK_CACHE;
 
 import io.harness.cache.DelegateRedissonCacheManager;
 import io.harness.delegate.beans.Delegate;
+import io.harness.redis.intfc.DelegateServiceCache;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.List;
-
-import io.harness.redis.intfc.DelegateServiceCache;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RAtomicLong;
 import org.redisson.api.RLocalCachedMap;
 
 @Slf4j
 public class DelegateServiceCacheImpl implements DelegateServiceCache {
   @Inject DelegateRedissonCacheManager delegateRedissonCacheManager;
 
-  @Inject @Named(TASK_CACHE) RLocalCachedMap<String, RAtomicLong> taskCache;
+  @Inject @Named(TASK_CACHE) RLocalCachedMap<String, AtomicInteger> taskCache;
+
+  public enum UpdateOperation { INCREMENT, DECREMENT }
+  ;
 
   @Override
-  public RAtomicLong getDelegateTaskCache(String delegateId) {
+  public AtomicInteger getDelegateTaskCache(String delegateId) {
     return taskCache.getCachedMap().get(delegateId);
   }
-
-  @Override
   @Synchronized
-  public void updateDelegateTaskCache(String delegateId, boolean increment) {
-    if (taskCache.getCachedMap() == null) {
+  @Override
+  public void updateDelegateTaskCache(String delegateId, UpdateOperation updateOperation) {
+    if (taskCache.getCachedMap() == null || delegateId == null) {
       return;
     }
-    //taskCache.getCachedMap().putIfAbsent(delegateId,0l)
-    long l = increment ? taskCache.getCachedMap().get(delegateId).incrementAndGet()
-                       : taskCache.getCachedMap().get(delegateId).decrementAndGet();
-    log.info("updated value {} , Cache values: {}", l, taskCache.getCachedMap());
+    taskCache.fastPutIfAbsent(delegateId, new AtomicInteger(0));
+    if (taskCache.get(delegateId).get() <= 0 && updateOperation.equals(UpdateOperation.DECREMENT)) {
+      // should never come here
+      return;
+    }
+    if (updateOperation.equals(UpdateOperation.INCREMENT)) {
+      taskCache.get(delegateId).getAndIncrement();
+    }
+    if (updateOperation.equals(UpdateOperation.DECREMENT)) {
+      taskCache.get(delegateId).getAndDecrement();
+    }
   }
 
   @Override
   public Delegate getDelegateCache(String delegateId) {
-    // redis cache implementation, TBD
+    // redis delegate cache implementation, TBD
     return null;
   }
 
   @Override
   public List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId) {
-    // redis cache implementation, TBD
+    // redis delegate group cache implementation, TBD
     return null;
   }
 }

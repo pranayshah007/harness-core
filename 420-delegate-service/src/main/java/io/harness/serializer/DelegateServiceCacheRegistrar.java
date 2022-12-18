@@ -12,6 +12,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import org.redisson.api.RLocalCachedMap;
 
@@ -21,9 +22,9 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   @Provides
   @Named(TASK_CACHE)
   @Singleton
-  public RLocalCachedMap<String, Integer> getTaskCache(DelegateRedissonCacheManager cacheManager) {
+  public RLocalCachedMap<String, AtomicInteger> getTaskCache(DelegateRedissonCacheManager cacheManager) {
     return cacheManager.getCache(
-        TASK_CACHE, String.class, Integer.class, CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES));
+        TASK_CACHE, String.class, AtomicInteger.class, CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES));
   }
 
   @Override
@@ -34,7 +35,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   private void bindCaches() {
     MapBinder<String, RLocalCachedMap<?, ?>> rmapBinder =
         MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<RLocalCachedMap<?, ?>>() {});
-    rmapBinder.addBinding(TASK_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, Integer>>() {
+    rmapBinder.addBinding(TASK_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, AtomicInteger>>() {
     }, Names.named(TASK_CACHE)));
   }
 
