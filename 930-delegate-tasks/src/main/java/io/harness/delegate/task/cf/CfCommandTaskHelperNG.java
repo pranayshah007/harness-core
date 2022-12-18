@@ -63,6 +63,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
@@ -784,8 +785,8 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
       CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo, CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances)
-      throws PivotalClientApiException {
+      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances,
+      CfRollbackCommandResult cfRollbackCommandResult) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(oldApplicationInfo.getApplicationName());
     cfRequestConfig.setDesiredCount(oldApplicationInfo.getRunningCount());
     executionLogCallback.saveExecutionLog(color("# Upsizing application:", White, Bold));
@@ -803,8 +804,8 @@ public class CfCommandTaskHelperNG {
                                    .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
-    restoreRoutesForOldApplication(
-        cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
+    restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig,
+        executionLogCallback, cfRollbackCommandResult);
   }
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
@@ -969,14 +970,15 @@ public class CfCommandTaskHelperNG {
   }
 
   public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo, CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     if (isNull(tasApplicationInfo)) {
       return;
     }
 
     cfRequestConfig.setApplicationName(tasApplicationInfo.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
-
+    cfRollbackCommandResult.setActiveAppAttachedRoutes(tasApplicationInfo.getAttachedRoutes());
     if (EmptyPredicate.isEmpty(tasApplicationInfo.getAttachedRoutes())) {
       return;
     }

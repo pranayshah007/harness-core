@@ -493,7 +493,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
     RetryPolicy retryPolicy =

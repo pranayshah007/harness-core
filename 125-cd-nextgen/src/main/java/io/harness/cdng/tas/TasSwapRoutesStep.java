@@ -159,7 +159,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
 
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+    //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
 
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
