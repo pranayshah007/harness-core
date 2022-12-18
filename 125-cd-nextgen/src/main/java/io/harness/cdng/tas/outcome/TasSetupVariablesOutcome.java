@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("TasSetupVariablesOutcome")
 @JsonTypeName("TasSetupVariablesOutcome")
-@RecasterAlias("io.harness.cdng.tas.beans.TasSetupVariablesOutcome")
+@RecasterAlias("io.harness.cdng.tas.outcome.TasSetupVariablesOutcome")
 public class TasSetupVariablesOutcome implements Outcome, ExecutionSweepingOutput {
   @Setter @NonFinal String newAppName;
   @Setter @NonFinal String newAppGuid;
