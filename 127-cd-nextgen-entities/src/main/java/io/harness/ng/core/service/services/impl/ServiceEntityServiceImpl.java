@@ -160,7 +160,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
-      if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
+      if (ServiceDefinitionType.TAS.equals(serviceEntity.getType())) {
         validateTasServiceEntity(serviceEntity);
       }
       ServiceEntity createdService =
@@ -209,7 +209,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           && !oldService.getType().equals(requestService.getType())) {
         throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
       }
-      if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
+
+      if (ServiceDefinitionType.TAS.equals(requestService.getType())) {
         validateTasServiceEntity(requestService);
       }
       ServiceEntity updatedService =
@@ -261,7 +262,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
       }
     }
-    if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
+    if (ServiceDefinitionType.TAS.equals(requestService.getType())) {
       validateTasServiceEntity(requestService);
     }
     ServiceEntity upsertedService =
@@ -848,7 +849,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   public void validateTasServiceEntity(@NotNull @Valid ServiceEntity serviceEntity) {
-    if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
+    if (ServiceDefinitionType.TAS.equals(serviceEntity.getType())) {
       try {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
         TanzuApplicationServiceSpec tanzuApplicationServiceSpec =
