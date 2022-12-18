@@ -7,6 +7,8 @@
 
 package io.harness.accesscontrol.roleassignments.migration;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -28,6 +30,8 @@ import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
+import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
@@ -38,7 +42,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -55,24 +58,25 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagHelperService featureFlagHelperService;
   private final AccountClient accountClient;
+  private final ScopeService scopeService;
   private static final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalMigration: ";
 
   @Inject
   public UserRoleAssignmentRemovalMigration(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagHelperService featureFlagHelperService, AccountClient accountClient) {
+      FeatureFlagHelperService featureFlagHelperService, AccountClient accountClient, ScopeService scopeService) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagHelperService = featureFlagHelperService;
     this.accountClient = accountClient;
+    this.scopeService =  scopeService;
   }
 
   @Override
   public void migrate() {
     log.info(DEBUG_MESSAGE + "started...");
-
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(ACCESS_CONTROL_SERVICE.getServiceId()));
-      doMigration();
       log.info(DEBUG_MESSAGE + "Setting SecurityContext completed.");
+      doMigration();
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + " unexpected error occurred while Setting SecurityContext", ex);
     } finally {
@@ -91,7 +95,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     }
     List<AccountDTO> ngEnabledAccounts =
         accountDTOS.stream().filter(AccountDTO::isNextGenEnabled).collect(Collectors.toList());
-    log.info(DEBUG_MESSAGE + String.format("%s accounts fetch", ngEnabledAccounts.size()));
+    log.info(DEBUG_MESSAGE + String.format("%s accounts fetched", ngEnabledAccounts.size()));
     HashSet<String> targetAccounts = new HashSet<>();
     HashSet<String> targetAccountsWithOrganizationAndProject = new HashSet<>();
     for (AccountDTO accountDTO : ngEnabledAccounts) {
@@ -104,9 +108,9 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
       }
       targetAccountsWithOrganizationAndProject.add(accountDTO.getIdentifier());
     }
-    filterAccounts(targetAccounts);
-    if (isNotEmpty(targetAccounts)) {
-      deleteAccountScopeRoleAssignments(targetAccounts);
+    List<String> filteredAccounts = filterAccounts(targetAccounts);
+    if (isNotEmpty(filteredAccounts)) {
+      deleteAccountScopeRoleAssignments(filteredAccounts);
     }
     if (isNotEmpty(targetAccountsWithOrganizationAndProject)) {
       deleteOrganizationScopeRoleAssignments(targetAccountsWithOrganizationAndProject);
@@ -114,7 +118,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     }
   }
 
-  private void deleteAccountScopeRoleAssignments(HashSet<String> accountIds) {
+  private void deleteAccountScopeRoleAssignments(List<String> accountIds) {
     try {
       List<String> scopeIdentifiers =
           accountIds.stream().map(accId -> "/ACCOUNT/" + accId).collect(Collectors.toList());
@@ -190,12 +194,22 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     }
   }
 
-  private void filterAccounts(HashSet<String> accountIds) {
+  private List<String> filterAccounts(HashSet<String> accountIds) {
+    return Streams.stream(Iterables.partition(accountIds, 1))
+            .flatMap(list -> filterAccountsPaginated(list).stream())
+            .collect(Collectors.toList());
+  }
+
+  private List<String> filterAccountsPaginated(List<String> accountIds) {
+    List<String> filteredAccounts = new ArrayList<>();
+    List<String> scopeIdentifiers = new ArrayList<>();
     for (String accountId : accountIds) {
+      String scopeIdentifier = "/ACCOUNT/" + accountId;
+      scopeIdentifiers.add(scopeIdentifier);
+    }
       try {
-        String scopeIdentifier = "/ACCOUNT/" + accountId;
         Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
-                                .is(scopeIdentifier)
+                                .in(scopeIdentifiers)
                                 .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                                 .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
                                 .and(RoleAssignmentDBOKeys.roleIdentifier)
@@ -210,16 +224,18 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
                                 .is(HarnessScopeLevel.ACCOUNT.getName());
 
         Pageable pageable = Pageable.unpaged();
-        Page<RoleAssignmentDBO> roleAssignmentDBOPage = roleAssignmentRepository.findAll(criteria, pageable);
+        List<RoleAssignmentDBO> roleAssignmentDBOList = roleAssignmentRepository.findAll(criteria, pageable).getContent();
         // If role assignment doesn't exist on Default User Group at account then skip removing User assigned role
-        // assignment.
-        if (roleAssignmentDBOPage == null || roleAssignmentDBOPage.isEmpty()) {
-          accountIds.remove(accountId);
+        // assignment. So this list will contain AccountIds only having Default User Group.
+        for(RoleAssignmentDBO roleAssignmentDBO: roleAssignmentDBOList) {
+          Scope accountScope = scopeService.buildScopeFromScopeIdentifier(roleAssignmentDBO.getScopeIdentifier());
+          filteredAccounts.add(accountScope.getInstanceId());
         }
+        log.info(DEBUG_MESSAGE + String.format("Account Ids for which to remove role assignments %s", filteredAccounts));
       } catch (Exception ex) {
         log.error(DEBUG_MESSAGE
-            + String.format("Failed to query role assignments of default user group for account %s", accountId));
+            + String.format("Failed to query role assignments of default user group for accounts %s", accountIds));
       }
-    }
+    return filteredAccounts;
   }
 }
