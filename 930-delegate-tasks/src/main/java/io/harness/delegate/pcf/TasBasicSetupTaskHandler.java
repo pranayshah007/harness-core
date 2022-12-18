@@ -597,7 +597,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       }
     } else {
       TasContainerArtifactConfig tasContainerArtifactConfig =
-          ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig());
+          (TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig();
       TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
       String dockerImagePath = tasContainerArtifactConfig.getImage();

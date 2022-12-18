@@ -70,7 +70,6 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
-import io.harness.cdng.instance.outcome.HostOutcome;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.instance.outcome.TasOutcome;
@@ -88,7 +87,6 @@ import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -1364,8 +1362,7 @@ public class TasStepHelper {
 
   private TasArtifactConfig getTasContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     ConnectorInfoDTO connectorInfo;
-    TasContainerArtifactConfig.TasContainerArtifactConfigBuilder artifactConfigBuilder =
-        TasContainerArtifactConfig.builder();
+    TasContainerArtifactConfigBuilder artifactConfigBuilder = TasContainerArtifactConfig.builder();
 
     switch (artifactOutcome.getArtifactType()) {
       case DOCKER_REGISTRY_NAME:

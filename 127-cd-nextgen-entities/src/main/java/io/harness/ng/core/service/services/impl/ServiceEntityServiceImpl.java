@@ -8,6 +8,10 @@
 package io.harness.ng.core.service.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.cdng.manifest.ManifestType.TAS_AUTOSCALER;
+import static io.harness.cdng.manifest.ManifestType.TAS_MANIFEST;
+import static io.harness.cdng.manifest.ManifestType.TAS_VARS;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -18,13 +22,16 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.kinds.TasManifest;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.tas.TasEntityHelper;
+import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -35,6 +42,7 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
@@ -51,8 +59,10 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
@@ -86,6 +96,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -95,6 +106,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.ObjectUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -118,7 +130,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
-  @Inject private TasEntityHelper tasEntityHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -150,7 +161,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
       if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
-        tasEntityHelper.validateServiceEntity(serviceEntity);
+        validateTasServiceEntity(serviceEntity);
       }
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -194,7 +205,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
       if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
-        tasEntityHelper.validateServiceEntity(requestService);
+        validateTasServiceEntity(requestService);
       }
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -233,7 +244,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     if (requestService.getType().equals(ServiceDefinitionType.TAS)) {
-      tasEntityHelper.validateServiceEntity(requestService);
+      validateTasServiceEntity(requestService);
     }
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -816,5 +827,52 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
+
+  public void validateTasServiceEntity(@NotNull @Valid ServiceEntity serviceEntity) {
+    if (serviceEntity.getType().equals(ServiceDefinitionType.TAS)) {
+      try {
+        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+        TanzuApplicationServiceSpec tanzuApplicationServiceSpec =
+            (TanzuApplicationServiceSpec) ngServiceConfig.getNgServiceV2InfoConfig()
+                .getServiceDefinition()
+                .getServiceSpec();
+        if (isNull(tanzuApplicationServiceSpec.getManifests())) {
+          throw new InvalidYamlException("Atleast one manifest is required for TAS");
+        }
+        boolean tasManifestFound = false;
+        boolean autoScalerManifestFound = false;
+        for (ManifestConfigWrapper manifestConfigWrapper : tanzuApplicationServiceSpec.getManifests()) {
+          switch (manifestConfigWrapper.getManifest().getType()) {
+            case TAS_MANIFEST:
+              TasManifest tasManifest = (TasManifest) manifestConfigWrapper.getManifest().getSpec();
+              if (tasManifestFound) {
+                throw new InvalidYamlException("Only one TAS Manifest is supported");
+              }
+              tasManifestFound = true;
+              if (ObjectUtils.isNotEmpty(getParameterFieldValue(tasManifest.getAutoScalerPath()))) {
+                if (autoScalerManifestFound || getParameterFieldValue(tasManifest.getAutoScalerPath()).size() > 1) {
+                  throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
+                }
+                autoScalerManifestFound = true;
+              }
+              break;
+            case TAS_AUTOSCALER:
+              if (autoScalerManifestFound) {
+                throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
+              }
+              autoScalerManifestFound = true;
+            case TAS_VARS:
+              break;
+            default:
+              throw new InvalidYamlException(format("Invalid manifest type: %s, supported types: %s",
+                  manifestConfigWrapper.getManifest().getType(), Set.of(TAS_MANIFEST, TAS_AUTOSCALER, TAS_VARS)));
+          }
+        }
+      } catch (Exception e) {
+        throw new InvalidYamlException(
+            format("Invalid service yaml for Tanzu Application Service: %s", e.getMessage()));
+      }
+    }
   }
 }

@@ -241,6 +241,10 @@ public class PcfCommandTaskBaseHelper {
       LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated, Integer updateCount,
       List<CfInternalInstanceElement> pcfInstanceElements, CfAppAutoscalarRequestData appAutoscalarRequestData)
       throws PivotalClientApiException {
+    if (cfCommandDeployRequest.isStandardBlueGreen()) {
+      executionLogCallback.saveExecutionLog("# BG Deployment. Old Application will not be downsized.");
+      return;
+    }
 
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 

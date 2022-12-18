@@ -675,7 +675,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
     } else {
       TasContainerArtifactConfig tasContainerArtifactConfig =
-          ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig());
+          (TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig();
       TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
       String dockerImagePath = tasContainerArtifactConfig.getImage();

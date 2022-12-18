@@ -39,7 +39,7 @@ public class TasTaskHelperBase {
   @Inject protected CfDeploymentManager pcfDeploymentManager;
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
-                                    boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
+      boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 
