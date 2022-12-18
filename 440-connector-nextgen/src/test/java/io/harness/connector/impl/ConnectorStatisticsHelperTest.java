@@ -41,6 +41,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ import retrofit2.Response;
 @OwnedBy(DX)
 public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
   @Inject ConnectorRepository connectorRepository;
-  @Inject NGSettingsClient settingsClient;
+  @Inject @Named("PRIVILEGED") NGSettingsClient settingsClient;
   @Inject ConnectorStatisticsHelper connectorStatisticsHelper;
   @Inject OutboxService outboxService;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
