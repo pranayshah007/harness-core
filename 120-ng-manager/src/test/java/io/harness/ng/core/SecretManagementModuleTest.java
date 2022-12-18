@@ -278,6 +278,7 @@ public class SecretManagementModuleTest extends CategoryTest {
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
+      @Named("PRIVILEGED")
       NGSettingsClient getNGSettingsClient() {
         return mock(NGSettingsClient.class);
       }
