@@ -194,7 +194,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   }
 
   private List<String> filterAccounts(HashSet<String> accountIds) {
-    return Streams.stream(Iterables.partition(accountIds, 1))
+    return Streams.stream(Iterables.partition(accountIds, 100))
         .flatMap(list -> filterAccountsPaginated(list).stream())
         .collect(Collectors.toList());
   }
