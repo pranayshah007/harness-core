@@ -20,5 +20,4 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 public class LocalStoreFetchFilesResult implements Serializable {
   List<String> LocalStoreFileContents;
-  List<String> LocalStoreFilePaths;
 }
