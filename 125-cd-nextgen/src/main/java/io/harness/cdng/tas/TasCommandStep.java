@@ -9,7 +9,6 @@ package io.harness.cdng.tas;
 
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -20,16 +19,11 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
-import io.harness.delegate.task.pcf.response.CfBlueGreenSetupResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
 import io.harness.eraro.ErrorCode;
@@ -38,10 +32,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.UnitProgress;
-import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -63,11 +54,9 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import io.harness.tasks.Task;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -77,9 +66,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-          .setType(ExecutionNodeType.TANZU_COMMAND.getYamlType())
-          .setStepCategory(StepCategory.STEP)
-          .build();
+                                               .setType(ExecutionNodeType.TANZU_COMMAND.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
   @Inject private TasStepHelper tasStepHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -95,30 +84,30 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
       throw new AccessDeniedException(
-              "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+          "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-                                                              StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-          throws Exception {
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception {
     return tasStepHelper.executeNextLink(this, ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-                                                           PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     try {
       if (passThroughData instanceof StepExceptionPassThroughData) {
         StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
         return StepResponse.builder()
-                .status(Status.FAILED)
-                .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
-                .failureInfo(
-                        FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMessage()).build())
-                .build();
+            .status(Status.FAILED)
+            .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
+            .failureInfo(
+                FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMessage()).build())
+            .build();
       }
       TasRunPluginResponse response;
       try {
@@ -129,16 +118,19 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
       }
       if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
         return StepResponse.builder()
-                .status(Status.FAILED)
-                .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-                .unitProgressList(tasStepHelper.completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage()).getUnitProgresses())
-                .build();
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+            .unitProgressList(
+                tasStepHelper
+                    .completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage())
+                    .getUnitProgresses())
+            .build();
       }
 
       return StepResponse.builder()
-              .status(Status.SUCCEEDED)
-              .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-              .build();
+          .status(Status.SUCCEEDED)
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
     } finally {
       tasStepHelper.closeLogStream(ambiance);
     }
@@ -146,7 +138,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-          Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     return tasStepHelper.startChainLinkForCommandStep(this, ambiance, stepParameters);
   }
 
@@ -157,15 +149,15 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
   private List<FileData> prepareFilesForTransfer(Map<String, String> allFiles) {
     return allFiles.entrySet()
-            .stream()
-            .map(entry -> FileData.builder().filePath(entry.getKey()).fileContent(entry.getValue()).build())
-            .collect(Collectors.toList());
+        .stream()
+        .map(entry -> FileData.builder().filePath(entry.getKey()).fileContent(entry.getValue()).build())
+        .collect(Collectors.toList());
   }
 
   @Override
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
-                                          StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
-                                          boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
+      StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
+      boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepParameters.getSpec();
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
@@ -204,9 +196,9 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
         TaskSelectorYaml.toTaskSelector(tasCommandStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
-            .taskRequest(taskRequest)
-            .chainEnd(true)
-            .passThroughData(executionPassThroughData)
-            .build();
+        .taskRequest(taskRequest)
+        .chainEnd(true)
+        .passThroughData(executionPassThroughData)
+        .build();
   }
 }

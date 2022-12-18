@@ -18,7 +18,6 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.ng.core.BaseNGAccess;
-import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.TaskType;

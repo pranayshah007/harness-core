@@ -125,7 +125,9 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                       : null)
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getReleaseNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
-              .existingApplicationNames(activeApplicationDetails == null ? Collections.emptyList() : Collections.singletonList(activeApplicationDetails.getApplicationName()))
+              .existingApplicationNames(activeApplicationDetails == null
+                      ? Collections.emptyList()
+                      : Collections.singletonList(activeApplicationDetails.getApplicationName()))
               .tempRoutes(cfSwapRoutesRequestNG.getTempRoutes())
               .skipRollback(false)
               .isStandardBlueGreen(true)

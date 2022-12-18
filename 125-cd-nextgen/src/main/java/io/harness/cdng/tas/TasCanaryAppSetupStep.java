@@ -25,6 +25,7 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -162,7 +163,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());
-      TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
+      TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
           TasSetupVariablesOutcome.builder()
               .newAppName(response.getNewApplicationInfo().getApplicationName())
               .newAppGuid(response.getNewApplicationInfo().getApplicationGuid())

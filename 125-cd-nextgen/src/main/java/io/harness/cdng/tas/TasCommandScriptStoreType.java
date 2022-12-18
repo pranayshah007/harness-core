@@ -8,7 +8,6 @@
 package io.harness.cdng.tas;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.harness.cdng.elastigroup.ElastigroupInstancesKind;
 
 public enum TasCommandScriptStoreType {
   @JsonProperty(TasCommandScriptStoreKind.HARNESS) HARNESS(TasCommandScriptStoreKind.HARNESS);
