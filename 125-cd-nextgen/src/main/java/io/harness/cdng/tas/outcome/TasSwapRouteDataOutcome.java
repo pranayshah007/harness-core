@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("TasSwapRouteDataOutcome")
 @JsonTypeName("TasSwapRouteDataOutcome")
-@RecasterAlias("io.harness.cdng.tas.beans.TasSwapRouteDataOutcome")
+@RecasterAlias("io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome")
 public class TasSwapRouteDataOutcome implements Outcome, ExecutionSweepingOutput {
   boolean swapRouteOccurred;
   boolean downsizeOldApplication;

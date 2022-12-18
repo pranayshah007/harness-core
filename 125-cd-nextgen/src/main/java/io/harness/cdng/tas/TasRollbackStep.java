@@ -19,6 +19,7 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
+import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -188,23 +189,25 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
-    OptionalSweepingOutput tasSetupVariablesOutcomeOptional =
-        tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
-            tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),
-            OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME, executionSweepingOutputService);
-    if (tasSetupVariablesOutcomeOptional.isFound()) {
-      TasSetupVariablesOutcome tasSetupVariablesOutcome =
-          (TasSetupVariablesOutcome) tasSetupVariablesOutcomeOptional.getOutput();
-      tasSetupVariablesOutcome.setNewAppName(null);
-      tasSetupVariablesOutcome.setNewAppGuid(null);
-      tasSetupVariablesOutcome.setNewAppRoutes(null);
-      builder.stepOutcome(StepResponse.StepOutcome.builder()
-                              .outcome(tasSetupVariablesOutcome)
-                              .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
-                              .group(StepCategory.STAGE.name())
-                              .build());
+    TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
+        TasSetupVariablesOutcome.builder().newAppName(null).newAppGuid(null).newAppRoutes(null);
+    if (!isNull(response.getCfRollbackCommandResult())) {
+      if (!isNull(response.getCfRollbackCommandResult().getUpdatedValues())) {
+        tasSetupVariablesOutcome
+            .activeAppName(response.getCfRollbackCommandResult().getUpdatedValues().getActiveAppName())
+            .oldAppName(response.getCfRollbackCommandResult().getUpdatedValues().getOldAppName())
+            .oldAppGuid(response.getCfRollbackCommandResult().getUpdatedValues().getOldAppGuid());
+      }
+      tasSetupVariablesOutcome.finalRoutes(response.getCfRollbackCommandResult().getActiveAppAttachedRoutes())
+          .tempRoutes(response.getCfRollbackCommandResult().getInActiveAppAttachedRoutes())
+          .oldAppRoutes(response.getCfRollbackCommandResult().getActiveAppAttachedRoutes());
     }
     builder.stepOutcome(stepOutcome);
+    builder.stepOutcome(StepResponse.StepOutcome.builder()
+                            .outcome(tasSetupVariablesOutcome.build())
+                            .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
+                            .group(StepCategory.STAGE.name())
+                            .build());
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
