@@ -27,6 +27,7 @@ import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
+import io.harness.serializer.kryo.SecretConfigKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
@@ -43,6 +44,7 @@ public class ResourceGroupSerializer {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .add(DelegateTasksKryoRegistrar.class)
+          .add(SecretConfigKryoRegistrar.class)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .add(DelegateServiceBeansKryoRegistrar.class)
           .add(YamlKryoRegistrar.class)

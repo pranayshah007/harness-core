@@ -18,6 +18,7 @@ import io.harness.serializer.kryo.DelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
+import io.harness.serializer.kryo.SecretConfigKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationRegistrar;
@@ -43,6 +44,7 @@ public class NotificationRegistrars {
           .add(YamlKryoRegistrar.class)
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
+          .add(SecretConfigKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
           .build();
 
