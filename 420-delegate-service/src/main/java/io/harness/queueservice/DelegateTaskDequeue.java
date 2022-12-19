@@ -10,11 +10,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 
-import lombok.Data;
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
+import lombok.Value;
 
-@Data
-@SuperBuilder
+@Value
+@Builder
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateTaskDequeue {
   private String payload;

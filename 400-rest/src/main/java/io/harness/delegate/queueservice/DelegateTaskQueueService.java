@@ -7,6 +7,7 @@
 
 package io.harness.delegate.queueservice;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import static java.util.stream.Collectors.toList;
@@ -15,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
@@ -22,6 +24,7 @@ import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.logging.AutoLogContext;
 import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
@@ -56,9 +59,14 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     this.hsqsServiceClient = hsqsServiceClient;
   }
 
+  /**
+   *
+   * This function provides enqueues delegate task to queue service
+   */
   @Override
   public void enqueue(DelegateTask delegateTask) {
-    try {
+    try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
+             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = java.util.Base64.getEncoder().encodeToString(referenceFalseKryoSerializer.asBytes(delegateTask));
 
@@ -77,6 +85,11 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     }
   }
 
+  /**
+   *
+   * This function provides dequeues delegate taskk from queue service, max 100 per back.
+   * return list of delegate tasks
+   */
   @Override
   public <T> Object dequeue() {
     try {
@@ -106,6 +119,10 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     }
   }
 
+  /**
+   *
+   * Once the object is dequeued, acknowledge will confirm the item is removed from the queue
+   */
   @Override
   public String acknowledge(String itemId, String accountId) {
     try {

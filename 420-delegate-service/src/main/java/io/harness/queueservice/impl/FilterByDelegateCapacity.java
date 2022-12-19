@@ -6,12 +6,9 @@
  */
 package io.harness.queueservice.impl;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.TaskGroup;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
 
 import software.wings.beans.TaskType;
@@ -33,11 +30,7 @@ public class FilterByDelegateCapacity implements DelegateResourceCriteria {
 
   private boolean delegateHasCapacityToAssignTask(Delegate delegate, TaskType taskType) {
     if (delegate.hasCapacityRegistered()) {
-      TaskGroup taskGroup =
-          taskType != null && isNotBlank(taskType.name()) ? TaskType.valueOf(taskType.name()).getTaskGroup() : null;
-      if (taskGroup == TaskGroup.CI) {
-        return delegate.getDelegateCapacity().getMaximumNumberOfBuilds() >= delegate.getNumberOfTaskAssigned();
-      }
+      return delegate.getDelegateCapacity().getMaximumNumberOfBuilds() >= delegate.getNumberOfTaskAssigned();
     }
     return true;
   }
