@@ -14,5 +14,6 @@ import java.util.List;
 
 public interface ErrorTrackingService {
   ErrorTrackingNotificationData getNotificationData(String orgIdentifier, String accountId, String projectIdentifier,
-      String serviceIdentifier, String environmentIdentifier, List<ErrorTrackingEventType> eventTypes);
+      String serviceIdentifier, String environmentIdentifier, List<ErrorTrackingEventType> eventTypes,
+      String notificationId);
 }

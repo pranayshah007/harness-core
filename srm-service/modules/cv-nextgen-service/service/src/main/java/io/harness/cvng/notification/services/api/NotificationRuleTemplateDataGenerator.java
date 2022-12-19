@@ -24,7 +24,9 @@ import io.harness.account.AccountClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.NotificationRuleConditionEntity;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -95,15 +97,15 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
   protected abstract String getAnomalousMetrics(
       ProjectParams projectParams, String identifier, long startTime, T condition);
 
-  private String getPortalUrl() {
+  protected String getPortalUrl() {
     return portalUrl.concat("ng/#");
   }
 
-  private String getVanityUrl(String accountIdentifier) {
+  protected String getVanityUrl(String accountIdentifier) {
     return CGRestUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
   }
 
-  private static String getBaseUrl(String defaultBaseUrl, String vanityUrl) {
+  protected static String getBaseUrl(String defaultBaseUrl, String vanityUrl) {
     // e.g Prod Default Base URL - 'https://app.harness.io/ng/#'
     if (EmptyPredicate.isEmpty(vanityUrl)) {
       return defaultBaseUrl;
@@ -119,6 +121,11 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
     } catch (Exception ex) {
       throw new IllegalStateException("There was error while generating vanity URL", ex);
     }
+  }
+
+  public String getTemplateId(
+      NotificationRuleType notificationRuleType, CVNGNotificationChannelType notificationChannelType) {
+    return NotificationRuleCommonUtils.getNotificationTemplateId(notificationRuleType, notificationChannelType);
   }
 
   @Value

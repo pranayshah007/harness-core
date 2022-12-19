@@ -2670,7 +2670,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getNotificationData(monitoredService, condition, "uuid", notificationRuleDTO.getName())
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2697,7 +2697,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getNotificationData(monitoredService, condition, "uuid", notificationRuleDTO.getName())
                    .shouldSendNotification())
         .isFalse();
   }
@@ -2728,7 +2728,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
 
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getNotificationData(monitoredService, condition, "uuid", notificationRuleDTO.getName())
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2762,14 +2762,14 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .period(600000)
             .build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getNotificationData(monitoredService, condition, "uuid", notificationRuleDTO.getName())
                    .shouldSendNotification())
         .isTrue();
 
     clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getNotificationData(monitoredService, condition, "uuid", notificationRuleDTO.getName())
                    .shouldSendNotification())
         .isFalse();
   }
