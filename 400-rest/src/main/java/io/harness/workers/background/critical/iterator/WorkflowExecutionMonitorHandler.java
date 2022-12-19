@@ -161,6 +161,9 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
                     .executionUuid(stateExecutionInstance.getExecutionUuid())
                     .stateExecutionInstanceId(stateExecutionInstance.getUuid())
                     .build();
+          } else if (stateExecutionInstance.isManualInterventionCandidate()) {
+            // should add some threshold here to expire?
+            continue;
           } else {
             executionInterrupt = anExecutionInterrupt()
                                      .executionInterruptType(MARK_EXPIRED)
