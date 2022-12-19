@@ -1964,6 +1964,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public boolean saveAndBroadcastDelegateTaskV2(DelegateTask delegateTask) {
+    //@Todo: Add check if delegate task ia already saved in DB
     persistence.save(delegateTask);
     if (delegateTask.getTaskDataV2().isAsync()) {
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
