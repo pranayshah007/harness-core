@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
@@ -27,8 +26,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -49,10 +46,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                                                .build();
 
   private static final String ASG_ROLLING_DEPLOY_COMMAND_NAME = "AsgRollingDeploy";
-  private final String ASG_PREPARE_ROLLBACK_COMMAND_NAME = "AsgPrepareRollback";
+  private static final String ASG_PREPARE_ROLLBACK_COMMAND_NAME = "AsgPrepareRollback";
 
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private InstanceInfoService instanceInfoService;
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
 
   @Override
@@ -93,10 +88,10 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(asgSpecParameters.getSkipMatching().getValue().booleanValue())
-            .useAlreadyRunningInstances(asgSpecParameters.getUseAlreadyRunningInstances().getValue().booleanValue())
-            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue().intValue())
-            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue().doubleValue())
+            .skipMatching(asgSpecParameters.getSkipMatching().getValue())
+            .useAlreadyRunningInstances(asgSpecParameters.getUseAlreadyRunningInstances().getValue())
+            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
+            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgRollingDeployRequest, ambiance,

@@ -38,7 +38,7 @@ public class AsgRollingDeployTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    return AsgCanaryDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    return AsgRollingDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
   }
 
   @Override
