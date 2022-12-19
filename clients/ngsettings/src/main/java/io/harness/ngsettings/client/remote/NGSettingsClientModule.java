@@ -40,7 +40,6 @@ public class NGSettingsClientModule extends AbstractModule {
   }
 
   @Provides
-  @Named("PRIVILEGED")
   @Singleton
   private NGSettingsClientFactory privilegedNgSettingsClientFactory() {
     return new NGSettingsClientFactory(
@@ -50,11 +49,13 @@ public class NGSettingsClientModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(NGSettingsClient.class)
-        .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
-        .toProvider(Key.get(NGSettingsClientFactory.class, Names.named(ClientMode.PRIVILEGED.name())))
-        .in(Scopes.SINGLETON);
-    bind(NGSettingsClient.class)
+        .annotatedWith(Names.named(ClientMode.NON_PRIVILEGED.name()))
         .toProvider(Key.get(NGSettingsClientFactory.class, Names.named(ClientMode.NON_PRIVILEGED.name())))
         .in(Scopes.SINGLETON);
+    bind(NGSettingsClient.class)
+        .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+        .toProvider(NGSettingsClientFactory.class)
+        .in(Scopes.SINGLETON);
+    bind(NGSettingsClient.class).toProvider(NGSettingsClientFactory.class).in(Scopes.SINGLETON);
   }
 }
