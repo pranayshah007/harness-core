@@ -52,8 +52,8 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @JsonTypeName(InfrastructureKind.PDC)
-@OneOfSet(fields = {"hosts", "connectorRef", "hostObjectArrayPath"},
-    requiredFieldNames = {"hosts", "connectorRef", "hostObjectArrayPath"})
+@OneOfSet(fields = {"hosts", "connectorRef", "hostObjectArray"},
+    requiredFieldNames = {"hosts", "connectorRef", "hostObjectArray"})
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
@@ -81,10 +81,7 @@ public class PdcInfrastructure
   @Wither
   ParameterField<Boolean> dynamicallyProvisioned;
 
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> hostObjectArray;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> hostObjectArray;
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
