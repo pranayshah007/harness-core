@@ -155,8 +155,8 @@ public class AwsHelperResource {
   @ApiOperation(value = "Get all the vpcs", nickname = "vpcs")
   public ResponseDTO<List<AwsVPC>> getVpcs(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -168,8 +168,8 @@ public class AwsHelperResource {
   @ApiOperation(value = "Get all the tags", nickname = "tags")
   public ResponseDTO<Set<String>> getTags(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
