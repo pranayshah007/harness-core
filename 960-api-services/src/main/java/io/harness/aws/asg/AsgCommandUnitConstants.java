@@ -26,4 +26,10 @@ public enum AsgCommandUnitConstants {
       return "Delete Service";
     }
   },
+  prepareRollbackData {
+    @Override
+    public String toString() {
+      return "Prepare Rollback Data";
+    }
+  },
 }
