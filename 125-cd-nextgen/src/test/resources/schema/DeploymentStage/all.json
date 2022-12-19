@@ -735,6 +735,50 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "useAlreadyRunningInstances"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "skipMatching": {
+              "type": "boolean"
+            },
+            "useAlreadyRunningInstances": {
+              "type": "boolean"
+            },
+            "instanceWarmup": {
+              "type": "integer"
+            },
+            "minimumHealthyPercentage": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgCanaryDeleteStepInfo": {
       "allOf": [
         {
@@ -10992,6 +11036,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgRollingDeployStepInfo"
               }
             }
           }

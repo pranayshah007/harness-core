@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("AsgCanaryBaseStepInfo")
+@TypeAlias("AsgRollingDeployBaseStepInfo")
 public class AsgRollingDeployBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
