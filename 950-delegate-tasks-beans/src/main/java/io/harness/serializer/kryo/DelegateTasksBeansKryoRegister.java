@@ -7,8 +7,9 @@
 
 package io.harness.serializer.kryo;
 
-import static io.harness.annotations.dev.HarnessTeam.DEL;
-
+import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.esotericsoftware.kryo.Kryo;
+import com.google.protobuf.UnknownFieldSet;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
@@ -441,6 +442,11 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
@@ -895,7 +901,10 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.serializer.KryoRegistrar;
-
+import lombok.SneakyThrows;
+import org.eclipse.jgit.api.GitCommand;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.APMValidateCollectorConfig;
@@ -1033,14 +1042,9 @@ import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
 import software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec;
 import software.wings.yaml.gitSync.YamlGitConfig;
 
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.esotericsoftware.kryo.Kryo;
-import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.SneakyThrows;
-import org.eclipse.jgit.api.GitCommand;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
+import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 @OwnedBy(DEL)
 public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
@@ -2032,6 +2036,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgNGException.class, 573580);
     kryo.register(AutoScalingGroupContainer.class, 573581);
     kryo.register(AutoScalingGroupInstance.class, 573582);
+    kryo.register(AsgPrepareRollbackDataRequest.class, 573583);
+    kryo.register(AsgPrepareRollbackDataResponse.class, 573584);
+    kryo.register(AsgPrepareRollbackDataResult.class, 573585);
+    kryo.register(AsgRollingDeployRequest.class, 573586);
+    kryo.register(AsgRollingDeployResponse.class, 573587);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

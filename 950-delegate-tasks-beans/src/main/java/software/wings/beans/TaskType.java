@@ -7,8 +7,6 @@
 
 package software.wings.beans;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -20,6 +18,8 @@ import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -432,7 +432,8 @@ public enum TaskType {
   TAS_BG_SETUP(TaskGroup.TAS, "Tas BG Setup task"),
   TAS_SWAP_ROLLBACK(TaskGroup.TAS, "Tas Swap Rollback task"),
   TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task"),
-  AWS_ASG_ROLLING_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Deploy");
+  AWS_ASG_ROLLING_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Deploy"),
+  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Prepare Rollback Data");
 
   private final TaskGroup taskGroup;
   private final String displayName;
