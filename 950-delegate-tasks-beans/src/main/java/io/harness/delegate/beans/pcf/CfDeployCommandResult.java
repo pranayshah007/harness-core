@@ -24,6 +24,7 @@ public class CfDeployCommandResult {
    * Rollback will use this data but will reverse counts
    */
   private List<CfServiceData> instanceDataUpdated;
-  private List<CfInternalInstanceElement> cfInstanceElements;
+  private List<CfInternalInstanceElement> oldAppInstances;
   private CfInBuiltVariablesUpdateValues updatedValues;
+  private List<CfInternalInstanceElement> newAppInstances;
 }

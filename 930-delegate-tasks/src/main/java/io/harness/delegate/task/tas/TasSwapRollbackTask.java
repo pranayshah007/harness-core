@@ -1,18 +1,21 @@
 /*
  * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.delegate.task.pcf;
+
+package io.harness.delegate.task.tas;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.pcf.CfSwapRollbackCommandTaskHandlerNG;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.pcf.CfDelegateTaskHelper;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.secret.SecretSanitizerThreadLocal;
@@ -23,10 +26,11 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
-public class CfCommandTaskNG extends AbstractDelegateRunnableTask {
+public class TasSwapRollbackTask extends AbstractDelegateRunnableTask {
   @Inject private CfDelegateTaskHelper cfDelegateTaskHelper;
+  @Inject CfSwapRollbackCommandTaskHandlerNG cfSwapRollbackCommandTaskHandlerNG;
 
-  public CfCommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+  public TasSwapRollbackTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
@@ -41,7 +45,8 @@ public class CfCommandTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public CfCommandResponseNG run(TaskParameters parameters) {
     CfCommandRequestNG cfCommandRequestNG = (CfCommandRequestNG) parameters;
-    return cfDelegateTaskHelper.getCfCommandResponse(cfCommandRequestNG, getLogStreamingTaskClient());
+    return cfDelegateTaskHelper.getCfCommandResponse(
+        cfSwapRollbackCommandTaskHandlerNG, cfCommandRequestNG, getLogStreamingTaskClient());
   }
 
   @Override

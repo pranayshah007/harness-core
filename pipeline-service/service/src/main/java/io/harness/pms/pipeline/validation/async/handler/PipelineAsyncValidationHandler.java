@@ -54,13 +54,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
     }
 
     // Evaluate Policies
-    ValidationResult governanceValidationResult =
-        evaluatePoliciesAndUpdateResult(pipelineEntity, templateMergeResponse, templateValidationResult);
-    if (governanceValidationResult.getGovernanceResponse().isDeny()) {
-      return;
-    }
-
-    // todo: filter creation
+    evaluatePoliciesAndUpdateResult(pipelineEntity, templateMergeResponse, templateValidationResult);
   }
 
   Pair<ValidationResult, TemplateMergeResponseDTO> validateTemplatesAndUpdateResult(PipelineEntity pipelineEntity) {
@@ -85,8 +79,8 @@ public class PipelineAsyncValidationHandler implements Runnable {
     }
   }
 
-  ValidationResult evaluatePoliciesAndUpdateResult(PipelineEntity pipelineEntity,
-      TemplateMergeResponseDTO templateMergeResponse, ValidationResult templateValidationResult) {
+  void evaluatePoliciesAndUpdateResult(PipelineEntity pipelineEntity, TemplateMergeResponseDTO templateMergeResponse,
+      ValidationResult templateValidationResult) {
     // policy evaluation will be done on the pipeline yaml which has both the template refs and the resolved template
     String mergedPipelineYamlWithTemplateRefs = templateMergeResponse.getMergedPipelineYamlWithTemplateRef();
     io.harness.governance.GovernanceMetadata protoMetadata = pipelineGovernanceService.validateGovernanceRules(
@@ -97,7 +91,6 @@ public class PipelineAsyncValidationHandler implements Runnable {
     if (protoMetadata.getDeny()) {
       validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, governanceValidationResult);
     }
-    validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.IN_PROGRESS, governanceValidationResult);
-    return governanceValidationResult;
+    validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.SUCCESS, governanceValidationResult);
   }
 }

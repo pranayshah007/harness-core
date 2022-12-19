@@ -301,7 +301,8 @@ public class AccountResource {
   @Path("{accountId}/is-product-led")
   @Timed
   @ExceptionMetered
-  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId,
       @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
     User existingUser = UserThreadLocal.get();
     if (existingUser == null) {
@@ -309,7 +310,7 @@ public class AccountResource {
     }
 
     if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
-      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+      return new RestResponse<>(accountService.updateIsProductLed(clientAccountId, isProductLed));
     } else {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(Lists.newArrayList(

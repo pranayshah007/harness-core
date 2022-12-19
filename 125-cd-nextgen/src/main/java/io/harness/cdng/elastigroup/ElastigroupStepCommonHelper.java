@@ -204,9 +204,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     if (isNotEmpty(startupScript)) {
       passThroughData.setBase64EncodedStartupScript(getBase64EncodedStartupScript(ambiance, startupScript));
-      passThroughData.setInfrastructure(infrastructureOutcome);
     }
-
+    passThroughData.setInfrastructure(infrastructureOutcome);
     return fetchElastigroupConfiguration(ambiance, stepElementParameters, unitProgressData, passThroughData);
   }
 

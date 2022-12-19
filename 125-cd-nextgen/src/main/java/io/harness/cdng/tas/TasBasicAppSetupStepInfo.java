@@ -70,7 +70,7 @@ public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements
   @Override
   public SpecParameters getSpecParameters() {
     return TasBasicAppSetupStepParameters.infoBuilder()
-        .instanceCountType(this.instanceCount)
+        .instanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .delegateSelectors(this.getDelegateSelectors())

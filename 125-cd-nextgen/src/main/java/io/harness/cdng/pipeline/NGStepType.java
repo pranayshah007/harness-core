@@ -213,7 +213,15 @@ public enum NGStepType {
       "Canary App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_CANARY_APP_SETUP),
   @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
   TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TANZU_COMMAND),
-
+  @JsonProperty(StepSpecTypeConstants.SWAP_ROLLBACK)
+  SWAP_ROLLBACK("Swap Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.SWAP_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+  TAS_SWAP_ROUTES(
+      "Swap Routes", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_SWAP_ROUTES),
+  @JsonProperty(StepSpecTypeConstants.TAS_APP_RESIZE)
+  TAS_APP_RESIZE("App Resize", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_APP_RESIZE),
+  @JsonProperty(StepSpecTypeConstants.TAS_ROLLBACK)
+  TAS_ROLLBACK("App Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
       "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),

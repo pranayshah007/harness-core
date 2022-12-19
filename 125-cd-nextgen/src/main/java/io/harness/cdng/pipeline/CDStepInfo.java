@@ -64,10 +64,14 @@ import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -96,9 +100,10 @@ import io.swagger.annotations.ApiModel;
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
         TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, AsgCanaryDeployStepInfo.class,
+        AsgCanaryDeleteStepInfo.class, TasSwapRoutesStepInfo.class, TasSwapRollbackStepInfo.class,
         AsgCanaryDeleteStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
         TasBasicAppSetupStepInfo.class, TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
-        ElastigroupSwapRouteStepInfo.class})
+        ElastigroupSwapRouteStepInfo.class, TasAppResizeStepInfo.class, TasRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

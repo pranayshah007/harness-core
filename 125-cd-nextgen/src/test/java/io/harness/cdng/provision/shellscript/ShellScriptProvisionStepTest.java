@@ -7,13 +7,11 @@
 
 package io.harness.cdng.provision.shellscript;
 
-import static io.harness.beans.FeatureName.SHELL_SCRIPT_PROVISION_NG;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
@@ -67,17 +65,6 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private SshCommandStepHelper sshCommandStepHelper;
   @InjectMocks private ShellScriptProvisionStep shellScriptProvisionStep;
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
-  public void testValidateResources() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(SHELL_SCRIPT_PROVISION_NG));
-    assertThatThrownBy(
-        () -> shellScriptProvisionStep.validateResources(getAmbiance(), StepElementParameters.builder().build()))
-        .hasMessageContaining(
-            "Shell Script Provisioner is not enabled for this account. Please contact harness customer care.");
-  }
 
   @Test
   @Owner(developers = TMACARI)

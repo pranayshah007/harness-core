@@ -11,7 +11,10 @@ java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
     resources = [],
-    visibility = ["//platform-service/service:__subpackages__"],
+    visibility = [
+        "//audit-event-streaming/service:__subpackages__",
+        "//platform-service/service:__subpackages__",
+    ],
     deps = [
         "//:lombok",
         "//955-filters-sdk:module",

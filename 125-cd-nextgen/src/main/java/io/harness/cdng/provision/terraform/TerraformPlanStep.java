@@ -10,7 +10,6 @@ package io.harness.cdng.provision.terraform;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
@@ -166,8 +165,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
                 planStepParameters.getProvisionerIdentifier().getValue()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =

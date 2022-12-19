@@ -1005,6 +1005,9 @@
         "type"
       ],
       "properties": {
+        "spec": {
+          "$ref": "#/definitions/CloudProviderSpec"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -1012,25 +1015,7 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "AWS"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/AwsCloudProviderBasicConfig"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CloudProviderSpec": {
       "type": "object",
@@ -2395,19 +2380,10 @@
               "$ref": "#/definitions/CloudProvider"
             },
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "instances": {
               "$ref": "#/definitions/ElastigroupInstances"
@@ -2670,29 +2646,13 @@
           ],
           "properties": {
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "downsizeOldElastigroup": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             }
           }
         }
@@ -4110,6 +4070,9 @@
         "type"
       ],
       "properties": {
+        "spec": {
+          "$ref": "#/definitions/LoadBalancerSpec"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -4117,25 +4080,7 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "AWSLoadBalancerConfig"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/AwsLoadBalancerConfigYaml"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "LoadBalancerSpec": {
       "type": "object",
@@ -5897,6 +5842,34 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasAppResizeStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "newAppInstances"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "newAppInstances": {
+              "$ref": "#/definitions/TasInstanceSelectionWrapper"
+            },
+            "oldAppInstances": {
+              "$ref": "#/definitions/TasInstanceSelectionWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasBGAppSetupStepInfo": {
       "allOf": [
         {
@@ -5906,7 +5879,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount",
+            "tasInstanceCountType",
             "tempRoutes"
           ],
           "properties": {
@@ -5917,34 +5890,16 @@
               }
             },
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "existingVersionToKeep": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
-            "instanceCount": {
+            "tasInstanceCountType": {
               "type": "string",
               "enum": [
                 "FromManifest",
@@ -5952,19 +5907,10 @@
               ]
             },
             "tempRoutes": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
@@ -5980,7 +5926,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount"
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -5990,34 +5936,16 @@
               }
             },
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "existingVersionToKeep": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
-            "instanceCount": {
+            "tasInstanceCountType": {
               "type": "string",
               "enum": [
                 "FromManifest",
@@ -6038,8 +5966,8 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "instanceCount",
-            "resizeStrategy"
+            "resizeStrategy",
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -6049,45 +5977,27 @@
               }
             },
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "existingVersionToKeep": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
-            },
-            "instanceCount": {
-              "type": "string",
-              "enum": [
-                "FromManifest",
-                "MatchRunningInstances"
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "resizeStrategy": {
               "type": "string",
               "enum": [
                 "UpScaleNewFirst",
                 "DownScaleOldFirst"
+              ]
+            },
+            "tasInstanceCountType": {
+              "type": "string",
+              "enum": [
+                "FromManifest",
+                "MatchRunningInstances"
               ]
             }
           }
@@ -6102,16 +6012,7 @@
       ],
       "properties": {
         "store": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/StoreConfigWrapper"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "$ref": "#/definitions/StoreConfigWrapper"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6128,35 +6029,46 @@
           ],
           "properties": {
             "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "script": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/TasCommandScript"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/TasCommandScript"
             }
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasInstanceSelectionWrapper": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TasInstanceValue"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Percentage",
+            "Count"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasInstanceValue": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TasManifest": {
@@ -6201,6 +6113,103 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasSwapRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "upsizeInActiveApp": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasSwapRoutesStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downSizeOldApplication": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string",

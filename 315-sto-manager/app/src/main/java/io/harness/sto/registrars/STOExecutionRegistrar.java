@@ -9,6 +9,7 @@ package io.harness.sto.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.states.BackgroundStep;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.InitializeTaskStep;
 import io.harness.ci.states.RunStep;
@@ -42,6 +43,7 @@ public class STOExecutionRegistrar {
     engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
+    engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
     engineSteps.putAll(addSTOEngineSteps());
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
     engineSteps.put(STOSpecStep.STEP_TYPE, STOSpecStep.class);

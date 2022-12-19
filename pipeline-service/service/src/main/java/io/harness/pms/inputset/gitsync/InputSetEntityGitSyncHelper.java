@@ -84,7 +84,7 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
     InputSetEntity initEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     InputSetEntity savedEntity =
-        pmsInputSetService.create(initEntity, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
+        pmsInputSetService.create(initEntity, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), false);
     return InputSetYamlDTOMapper.toDTO(savedEntity);
   }
 
@@ -93,7 +93,7 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
     InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     InputSetEntity updatedEntity = pmsInputSetService.update(
-        inputSetEntity, changeType, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
+        changeType, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), inputSetEntity, false);
     return InputSetYamlDTOMapper.toDTO(updatedEntity);
   }
 

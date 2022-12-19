@@ -110,10 +110,14 @@ import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasAppResizeStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasBGAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasBasicAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasCanaryAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasCommandStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasSwapRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
@@ -176,10 +180,14 @@ import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
+import io.harness.cdng.creator.variables.TasAppResizeStepVariableCreator;
 import io.harness.cdng.creator.variables.TasBGAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasBasicAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCanaryAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -395,6 +403,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasBGAppSetupStepPlanCreator());
     planCreators.add(new TasBasicAppSetupStepPlanCreator());
     planCreators.add(new TasCommandStepPlanCreator());
+    planCreators.add(new TasSwapRoutesStepPlanCreator());
+    planCreators.add(new TasSwapRollbackStepPlanCreator());
+    planCreators.add(new TasAppResizeStepPlanCreator());
+    planCreators.add(new TasRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -508,6 +520,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasBGAppSetupStepVariableCreator());
     variableCreators.add(new TasBasicAppSetupStepVariableCreator());
     variableCreators.add(new TasCommandStepVariableCreator());
+    variableCreators.add(new TasSwapRoutesStepVariableCreator());
+    variableCreators.add(new TasSwapRollbackStepVariableCreator());
+    variableCreators.add(new TasAppResizeStepVariableCreator());
+    variableCreators.add(new TasRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -847,7 +863,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo azureCreateBPResources =
@@ -859,7 +874,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo azureARMRollback =
@@ -871,7 +885,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo fetchInstanceScript =
@@ -890,7 +903,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                              .addAllCategory(SHELL_SCRIPT_PROVISIONER_CATEGORY)
                                                              .addFolderPaths(SHELL_SCRIPT_PROVISIONER_STEM_METADATA)
                                                              .build())
-                                        .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
                                         .build();
 
     StepInfo chaosStep =
@@ -1022,6 +1034,33 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
+    StepInfo tasAppResize = StepInfo.newBuilder()
+                                .setName("App Resize")
+                                .setType(StepSpecTypeConstants.TAS_APP_RESIZE)
+                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .build();
+    StepInfo tasSwapRoutes =
+        StepInfo.newBuilder()
+            .setName("Swap Routes")
+            .setType(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+    StepInfo tasRollback = StepInfo.newBuilder()
+                               .setName("App Rollback")
+                               .setType(StepSpecTypeConstants.TAS_ROLLBACK)
+                               .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                               .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                               .build();
+    StepInfo tasSwapRollback =
+        StepInfo.newBuilder()
+            .setName("Swap Rollback")
+            .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
     StepInfo tanzuCommand = StepInfo.newBuilder()
                                 .setName("Tanzu Command")
                                 .setType(StepSpecTypeConstants.TANZU_COMMAND)
@@ -1088,6 +1127,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(tasBGAppSetup);
     stepInfos.add(tasBasicAppSetup);
     stepInfos.add(tanzuCommand);
+    stepInfos.add(tasSwapRoutes);
+    stepInfos.add(tasSwapRollback);
+    stepInfos.add(tasAppResize);
+    stepInfos.add(tasRollback);
     stepInfos.add(elastigroupBGStageSetup);
     stepInfos.add(elastigroupSwapRoute);
     return stepInfos;
