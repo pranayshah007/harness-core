@@ -254,7 +254,6 @@ import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
-import org.redisson.api.RedissonClient;
 import software.wings.DataStorageMode;
 import software.wings.alerts.AlertModule;
 import software.wings.backgroundjobs.AccountBackgroundJobService;
@@ -827,6 +826,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.redisson.api.RedissonClient;
 
 /**
  * Guice Module for initializing all beans.
@@ -1781,15 +1781,14 @@ public class WingsModule extends AbstractModule implements ServersModule {
     return new YamlUtils().read(featureRestrictions, FeatureRestrictions.class);
   }
 
-    @Provides
-    @Singleton
-    @Named("redissonClient")
-    RedissonClient redissonClient() {
-        return RedissonClientFactory.getClient(configuration.getRedisLockConfig());
-    }
+  @Provides
+  @Singleton
+  @Named("redissonClient")
+  RedissonClient redissonClient() {
+    return RedissonClientFactory.getClient(configuration.getDelegateServiceRedisConfig());
+  }
 
-
-    @Override
+  @Override
   public List<Closeable> servers(Injector injector) {
     return Collections.singletonList(getPersistentLockerCloseable(injector));
   }

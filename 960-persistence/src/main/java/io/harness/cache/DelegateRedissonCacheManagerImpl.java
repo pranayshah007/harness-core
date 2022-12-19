@@ -17,9 +17,9 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
   RedisConfig redisConfig;
 
   LocalCachedMapOptions<Object, Object> options = LocalCachedMapOptions.defaults()
-          .evictionPolicy(LocalCachedMapOptions.EvictionPolicy.LFU)
-          .timeToLive(48, TimeUnit.MINUTES)
-          .maxIdle(24, TimeUnit.MINUTES);
+          .evictionPolicy(LocalCachedMapOptions.EvictionPolicy.LRU)
+          .timeToLive(30, TimeUnit.MINUTES)
+          .maxIdle(25, TimeUnit.MINUTES);
 
   @Inject
   public DelegateRedissonCacheManagerImpl(

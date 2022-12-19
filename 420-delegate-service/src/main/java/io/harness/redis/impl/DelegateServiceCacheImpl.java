@@ -17,9 +17,7 @@ import org.redisson.api.RLocalCachedMap;
 @Slf4j
 public class DelegateServiceCacheImpl implements DelegateServiceCache {
   @Inject DelegateRedissonCacheManager delegateRedissonCacheManager;
-
   @Inject @Named(TASK_CACHE) RLocalCachedMap<String, AtomicInteger> taskCache;
-
   public enum UpdateOperation { INCREMENT, DECREMENT }
   ;
 
@@ -27,7 +25,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   public AtomicInteger getDelegateTaskCache(String delegateId) {
     return taskCache.getCachedMap().get(delegateId);
   }
-  @Synchronized
+
   @Override
   public void updateDelegateTaskCache(String delegateId, UpdateOperation updateOperation) {
     if (taskCache.getCachedMap() == null || delegateId == null) {
@@ -38,12 +36,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
       // should never come here
       return;
     }
-    if (updateOperation.equals(UpdateOperation.INCREMENT)) {
-      taskCache.get(delegateId).getAndIncrement();
-    }
-    if (updateOperation.equals(UpdateOperation.DECREMENT)) {
-      taskCache.get(delegateId).getAndDecrement();
-    }
+    updateCache(delegateId, updateOperation);
   }
 
   @Override
@@ -56,5 +49,15 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   public List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId) {
     // redis delegate group cache implementation, TBD
     return null;
+  }
+
+  @Synchronized
+  private void updateCache(String delegateId, UpdateOperation updateOperation) {
+    if (updateOperation.equals(UpdateOperation.INCREMENT)) {
+      taskCache.get(delegateId).getAndIncrement();
+    }
+    if (updateOperation.equals(UpdateOperation.DECREMENT)) {
+      taskCache.get(delegateId).getAndDecrement();
+    }
   }
 }

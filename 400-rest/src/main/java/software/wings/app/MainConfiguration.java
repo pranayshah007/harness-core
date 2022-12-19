@@ -175,6 +175,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   private SalesforceConfig salesforceConfig = SalesforceConfig.builder().build();
   @JsonProperty("datadogConfig") @ConfigSecret private DatadogConfig datadogConfig;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+  @JsonProperty("redisConfig") @ConfigSecret private RedisConfig delegateServiceRedisConfig;
   @JsonProperty("redisAtmosphereConfig") @ConfigSecret private RedisConfig redisAtmosphereConfig;
   @JsonProperty("defaultSalesContacts") private DefaultSalesContacts defaultSalesContacts;
   @JsonProperty("githubConfig") private GithubConfig githubConfig;
