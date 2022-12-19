@@ -488,7 +488,10 @@ public enum EntityType {
       EntityYamlRootNames.TAS_BASIC_APP_SETUP_STEP),
   @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
   TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
-      EntityYamlRootNames.TANZU_COMMAND_STEP);
+      EntityYamlRootNames.TANZU_COMMAND_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_ROLLING_DEPLOY)
+  ASG_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ASG_ROLLING_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;
