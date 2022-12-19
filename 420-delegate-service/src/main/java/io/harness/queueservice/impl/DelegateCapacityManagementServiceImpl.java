@@ -15,6 +15,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
 
 import com.google.inject.Inject;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -33,7 +34,8 @@ public class DelegateCapacityManagementServiceImpl implements DelegateCapacityMa
   }
 
   @Override
-  public void registerDelegateCapacity(String accountId, String delegateId, DelegateCapacity delegateCapacity) {
+  public void registerDelegateCapacity(
+      String accountId, String delegateId, @NotNull DelegateCapacity delegateCapacity) {
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
                                 .filter(DelegateKeys.uuid, delegateId);
