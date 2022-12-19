@@ -87,7 +87,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
 
   /**
    *
-   * This function provides dequeues delegate taskk from queue service, max 100 per back.
+   * This function provides dequeues delegate task from queue service, max 100 per back.
    * return list of delegate tasks
    */
   @Override
