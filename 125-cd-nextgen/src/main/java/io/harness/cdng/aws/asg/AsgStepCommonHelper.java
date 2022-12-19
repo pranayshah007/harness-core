@@ -7,20 +7,11 @@
 
 package io.harness.cdng.aws.asg;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-
-import static java.lang.String.format;
-
+import com.google.inject.Inject;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.beans.DelegateTask;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.aws.asg.AsgRollingRollbackDataOutcome.AsgRollingRollbackDataOutcomeBuilder;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -37,6 +28,8 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.exception.ExceptionUtils;
@@ -59,15 +52,18 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-
+import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
+import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.TaskType;
 
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -76,7 +72,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+import static java.lang.String.format;
 
 @Slf4j
 public class AsgStepCommonHelper extends CDStepHelper {
@@ -84,6 +89,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private AsgEntityHelper asgEntityHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -271,6 +277,14 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
       taskChainResponse = asgStepExecutor.executeAsgTask(
           ambiance, stepElementParameters, executionPassThroughData, unitProgressData, asgStepExecutorParams);
+    } else if (asgStepExecutor instanceof AsgRollingDeployStep) {
+      AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
+          AsgPrepareRollbackDataPassThroughData.builder()
+              .infrastructureOutcome(infrastructureOutcome)
+              .asgStoreManifestsContent(asgStoreManifestsContent)
+              .build();
+      taskChainResponse = asgStepExecutor.executeAsgPrepareRollbackTask(
+          ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
     } else {
       // TODO
       throw new RuntimeException("Not implemented yet");
@@ -343,5 +357,77 @@ public class AsgStepCommonHelper extends CDStepHelper {
   public AsgInfraConfig getAsgInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return asgEntityHelper.getAsgInfraConfig(infrastructure, ngAccess);
+  }
+
+  public TaskChainResponse executeNextLinkRolling(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier, AsgStepHelper asgStepHelper) throws Exception {
+    ResponseData responseData = responseDataSupplier.get();
+    UnitProgressData unitProgressData = null;
+    TaskChainResponse taskChainResponse = null;
+    try {
+      AsgPrepareRollbackDataResponse asgPrepareRollbackDataResponse = (AsgPrepareRollbackDataResponse) responseData;
+      AsgPrepareRollbackDataPassThroughData asgStepPassThroughData =
+          (AsgPrepareRollbackDataPassThroughData) passThroughData;
+
+      taskChainResponse = handleAsgPrepareRollbackDataResponseRolling(
+          asgPrepareRollbackDataResponse, asgStepExecutor, ambiance, stepElementParameters, asgStepPassThroughData);
+    } catch (Exception e) {
+      taskChainResponse =
+          TaskChainResponse.builder()
+              .chainEnd(true)
+              .passThroughData(
+                  AsgStepExceptionPassThroughData.builder()
+                      .errorMessage(ExceptionUtils.getMessage(e))
+                      .unitProgressData(completeUnitProgressData(unitProgressData, ambiance, e.getMessage()))
+                      .build())
+              .build();
+    }
+
+    return taskChainResponse;
+  }
+
+  private TaskChainResponse handleAsgPrepareRollbackDataResponseRolling(
+      AsgPrepareRollbackDataResponse asgPrepareRollbackDataResponse, AsgStepExecutor asgStepExecutor, Ambiance ambiance,
+      StepElementParameters stepElementParameters, AsgPrepareRollbackDataPassThroughData asgStepPassThroughData) {
+    if (asgPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      AsgStepExceptionPassThroughData asgStepExceptionPassThroughData =
+          AsgStepExceptionPassThroughData.builder()
+              .errorMessage(asgPrepareRollbackDataResponse.getErrorMessage())
+              .unitProgressData(asgPrepareRollbackDataResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().passThroughData(asgStepExceptionPassThroughData).chainEnd(true).build();
+    }
+
+    if (asgStepExecutor instanceof AsgRollingDeployStep) {
+      AsgPrepareRollbackDataResult asgPrepareRollbackDataResult =
+          asgPrepareRollbackDataResponse.getAsgPrepareRollbackDataResult();
+
+      AsgRollingRollbackDataOutcomeBuilder asgRollbackDataOutcomeBuilder = AsgRollingRollbackDataOutcome.builder();
+
+      asgRollbackDataOutcomeBuilder.asgName(asgPrepareRollbackDataResult.getAsgName());
+      asgRollbackDataOutcomeBuilder.asgStoreManifestsContent(
+          asgPrepareRollbackDataResult.getAsgStoreManifestsContent());
+      asgRollbackDataOutcomeBuilder.isFirstDeployment(asgPrepareRollbackDataResult.isFirstDeployment());
+
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_ROLLBACK_OUTCOME,
+          asgRollbackDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+    }
+
+    AsgExecutionPassThroughData asgExecutionPassThroughData =
+        AsgExecutionPassThroughData.builder()
+            .infrastructure(asgStepPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(asgPrepareRollbackDataResponse.getUnitProgressData())
+            .build();
+
+    Map<String, List<String>> asgStoreManifestsContent = asgStepPassThroughData.getAsgStoreManifestsContent();
+
+    AsgStepExecutorParams asgStepExecutorParams = AsgStepExecutorParams.builder()
+                                                      .shouldOpenFetchFilesLogStream(false)
+                                                      .asgStoreManifestsContent(asgStoreManifestsContent)
+                                                      .build();
+
+    return asgStepExecutor.executeAsgTask(ambiance, stepElementParameters, asgExecutionPassThroughData,
+        asgPrepareRollbackDataResponse.getUnitProgressData(), asgStepExecutorParams);
   }
 }

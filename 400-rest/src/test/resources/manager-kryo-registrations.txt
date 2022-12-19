@@ -2765,6 +2765,11 @@
 573580:io.harness.delegate.exception.AsgNGException
 573581:io.harness.delegate.task.aws.asg.AutoScalingGroupContainer
 573582:io.harness.delegate.task.aws.asg.AutoScalingGroupInstance
+573583:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest
+573584:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse
+573585:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult
+573586:io.harness.delegate.task.aws.asg.AsgRollingDeployRequest
+573587:io.harness.delegate.task.aws.asg.AsgRollingDeployResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse

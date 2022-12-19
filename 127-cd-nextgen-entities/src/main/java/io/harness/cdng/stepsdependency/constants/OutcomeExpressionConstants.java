@@ -7,11 +7,10 @@
 
 package io.harness.cdng.stepsdependency.constants;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.experimental.UtilityClass;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 @UtilityClass
@@ -62,6 +61,7 @@ public class OutcomeExpressionConstants {
   public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
   public final String ASG_CANARY_DELETE_OUTCOME = "asgCanaryDeleteOutcome";
   public final String ASG_CANARY_DEPLOY_OUTCOME = "asgCanaryDeployOutcome";
+  public final String ASG_ROLLING_ROLLBACK_OUTCOME = "asgRollingRollbackOutcome";
   public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
   public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";

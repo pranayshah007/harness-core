@@ -7,14 +7,14 @@
 
 package io.harness.cdng.aws.asg;
 
-import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -33,9 +33,10 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-
-import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+
+import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -49,6 +50,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   private static final String ASG_PREPARE_ROLLBACK_COMMAND_NAME = "AsgPrepareRollback";
 
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
+  @Inject private AsgStepHelper asgStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -66,9 +68,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
-
-    // TODO
-    return null;
+    return asgStepCommonHelper.executeNextLinkRolling(
+            this, ambiance, stepParameters, passThroughData, responseSupplier, asgStepHelper);
   }
 
   @Override
@@ -99,10 +100,21 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   }
 
   @Override
-  public TaskChainResponse executeAsgPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AsgPrepareRollbackDataPassThroughData asgStepPassThroughData, UnitProgressData unitProgressData) {
-    // TODO
-    return null;
+  public TaskChainResponse executeAsgPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+                                                         AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData, UnitProgressData unitProgressData) {
+    InfrastructureOutcome infrastructureOutcome = asgPrepareRollbackDataPassThroughData.getInfrastructureOutcome();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    AsgPrepareRollbackDataRequest asgPrepareRollbackDataRequest =
+            AsgPrepareRollbackDataRequest.builder()
+                    .commandName(ASG_PREPARE_ROLLBACK_COMMAND_NAME)
+                    .accountId(accountId)
+                    .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+                    .asgStoreManifestsContent(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent())
+                    .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+                    .build();
+    return asgStepCommonHelper.queueAsgTask(
+            stepElementParameters, asgPrepareRollbackDataRequest, ambiance, asgPrepareRollbackDataPassThroughData, false, AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
   }
 
   @Override

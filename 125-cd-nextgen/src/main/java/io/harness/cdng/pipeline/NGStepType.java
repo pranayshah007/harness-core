@@ -7,19 +7,19 @@
 
 package io.harness.cdng.pipeline;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.List;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
 /*
    Todo: Change StepSpecTypeConstants.PLACEHOLDER to their respective type once the StepInfo for those is implemented.
@@ -230,7 +230,6 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
   ASG_ROLLING_DEPLOY(
       "Asg Rolling Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_ROLLING_DEPLOY);
-
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
