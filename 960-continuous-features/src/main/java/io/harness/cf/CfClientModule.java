@@ -17,11 +17,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.github.resilience4j.core.IntervalFunction;
-import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
-import io.github.resilience4j.retry.RetryRegistry;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -40,49 +35,26 @@ public class CfClientModule extends AbstractModule {
   @Provides
   @Singleton
   CfClient provideCfClient(CfClientConfig cfClientConfig) {
-    log.info("Using CF API key {}", cfClientConfig.getApiKey());
     String apiKey = cfClientConfig.getApiKey();
+    log.info("Using CF API key {}", apiKey);
     if (isEmpty(apiKey)) {
       apiKey = "fake";
     }
 
-    final Config config = Config.builder()
-                              .analyticsEnabled(cfClientConfig.isAnalyticsEnabled())
-                              .configUrl(cfClientConfig.getConfigUrl())
-                              .eventUrl(cfClientConfig.getEventUrl())
-                              .readTimeout(cfClientConfig.getReadTimeout())
-                              .connectionTimeout(cfClientConfig.getConnectionTimeout())
-                              .streamEnabled(cfClientConfig.isStreamEnabled())
-                              .sseReadTimeout(cfClientConfig.getSseReadTimeout())
-                              .build();
-
-    final CfClient client = new CfClient(apiKey, config);
-
-    final IntervalFunction function = IntervalFunction.ofExponentialBackoff(
-
-        cfClientConfig.getSleepInterval(), 2);
-
-    final RetryConfig retryConfig = RetryConfig.custom()
-                                        .maxAttempts(cfClientConfig.getRetries())
-                                        .intervalFunction(function)
-                                        .retryOnResult(
-
-                                            r -> !((Boolean) r))
-                                        .build();
-
-    final RetryRegistry registry = RetryRegistry.of(retryConfig);
-    final Retry retry = registry.retry("cfClientInit", retryConfig);
-
-    final Supplier<Boolean> retrySupplier = Retry.decorateSupplier(
-
-        retry, client::isInitialized);
-
-    if (retrySupplier.get()) {
-      log.info("CF client has been initialized");
-    } else {
-      log.error("CF client has not been initialized");
+    log.info("Creating Feature Flag Client");
+    CfClient client = CfClient.getInstance();
+    client.initialize(apiKey,
+        Config.builder()
+            .configUrl(cfClientConfig.getConfigUrl())
+            .eventUrl(cfClientConfig.getEventUrl())
+            .streamEnabled(cfClientConfig.isStreamEnabled())
+            .analyticsEnabled(cfClientConfig.isAnalyticsEnabled())
+            .build());
+    try {
+      client.waitForInitialization();
+    } catch (Exception e) {
+      log.info(String.format("Unable to initialize SDK: %s%n", e.getMessage()));
     }
-
     return client;
   }
 
