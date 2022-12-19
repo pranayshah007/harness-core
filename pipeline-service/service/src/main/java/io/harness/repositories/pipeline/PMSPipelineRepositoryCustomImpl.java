@@ -249,6 +249,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
+        setGitEntityBranchWithFallbackBranch(fallBackBranch);
         savedEntity = fetchRemoteEntity(
             accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
       } else {
@@ -256,6 +257,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       }
     }
     return savedEntity;
+  }
+
+  private void setGitEntityBranchWithFallbackBranch(String fallBackBranch) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      gitEntityInfo.setBranch(fallBackBranch);
+      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+    }
   }
 
   private String getFallBackBranch(PipelineEntity savedEntity) {
