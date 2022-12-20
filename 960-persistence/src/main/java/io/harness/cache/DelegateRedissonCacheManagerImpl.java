@@ -1,25 +1,26 @@
 package io.harness.cache;
 
+import static io.harness.annotations.dev.HarnessTeam.DEL;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import javax.cache.configuration.Factory;
-import javax.cache.expiry.ExpiryPolicy;
+import java.util.concurrent.TimeUnit;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RedissonClient;
 
-import java.util.concurrent.TimeUnit;
-
+@OwnedBy(DEL)
 public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheManager {
   @Inject @Named("redissonClient") RedissonClient redissonClient;
   RedisConfig redisConfig;
-
-  LocalCachedMapOptions<Object, Object> options = LocalCachedMapOptions.defaults()
-          .evictionPolicy(LocalCachedMapOptions.EvictionPolicy.LRU)
-          .timeToLive(30, TimeUnit.MINUTES)
-          .maxIdle(25, TimeUnit.MINUTES);
+  LocalCachedMapOptions options = LocalCachedMapOptions.defaults()
+                                      .cacheSize(10000)
+                                      .evictionPolicy(LocalCachedMapOptions.EvictionPolicy.LRU)
+                                      .maxIdle(10, TimeUnit.SECONDS)
+                                      .timeToLive(60, TimeUnit.SECONDS);
 
   @Inject
   public DelegateRedissonCacheManagerImpl(
@@ -29,15 +30,13 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
   }
 
   @Override
-  public <K, V> RLocalCachedMap<K, V> getCache(
-      String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy) {
-    return redissonClient.getLocalCachedMap(cacheName, LocalCachedMapOptions.defaults());
+  public <K, V> RLocalCachedMap<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
+    return redissonClient.getLocalCachedMap(cacheName, options);
   }
 
   @Override
   public <K, V> RLocalCachedMap<K, V> getCache(
-      String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyPrefix) {
+      String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix) {
     return null;
   }
-
 }
