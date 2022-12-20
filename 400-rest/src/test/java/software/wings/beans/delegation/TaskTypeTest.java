@@ -7,26 +7,25 @@
 
 package software.wings.beans.delegation;
 
-import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
-
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-
+import org.assertj.core.api.Assertions;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
 @TargetModule(_950_DELEGATE_TASKS_BEANS)
 @OwnedBy(PL)
@@ -430,6 +429,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(390, "TAS_SWAP_ROLLBACK");
     taskTypeOrdinalMapping.put(391, "TAS_DATA_FETCH");
     taskTypeOrdinalMapping.put(392, "AWS_ASG_ROLLING_DEPLOY_TASK_NG");
+    taskTypeOrdinalMapping.put(393, "AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

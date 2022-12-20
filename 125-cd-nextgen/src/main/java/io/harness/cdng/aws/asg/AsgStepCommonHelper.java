@@ -361,7 +361,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public TaskChainResponse executeNextLinkRolling(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
-      ThrowingSupplier<ResponseData> responseDataSupplier, AsgStepHelper asgStepHelper) throws Exception {
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
@@ -373,6 +373,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       taskChainResponse = handleAsgPrepareRollbackDataResponseRolling(
           asgPrepareRollbackDataResponse, asgStepExecutor, ambiance, stepElementParameters, asgStepPassThroughData);
     } catch (Exception e) {
+      log.error("Error while processing asg task: {}", e.getMessage(), e);
       taskChainResponse =
           TaskChainResponse.builder()
               .chainEnd(true)
@@ -429,5 +430,23 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
     return asgStepExecutor.executeAsgTask(ambiance, stepElementParameters, asgExecutionPassThroughData,
         asgPrepareRollbackDataResponse.getUnitProgressData(), asgStepExecutorParams);
+  }
+
+  public StepResponse handleStepExceptionFailure(AsgStepExceptionPassThroughData stepException) {
+    FailureData failureData = FailureData.newBuilder()
+            .addFailureTypes(FailureType.APPLICATION_FAILURE)
+            .setLevel(io.harness.eraro.Level.ERROR.name())
+            .setCode(GENERAL_ERROR.name())
+            .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMessage()))
+            .build();
+    return StepResponse.builder()
+            .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder()
+                    .addAllFailureTypes(failureData.getFailureTypesList())
+                    .setErrorMessage(failureData.getMessage())
+                    .addFailureData(failureData)
+                    .build())
+            .build();
   }
 }
