@@ -14,6 +14,7 @@ import static io.harness.beans.ExecutionStatus.ERROR;
 import static io.harness.beans.ExecutionStatus.EXPIRED;
 import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.flowingStatuses;
+import static io.harness.beans.FeatureName.SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE;
 import static io.harness.beans.RepairActionCode.CONTINUE_WITH_DEFAULTS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
@@ -117,6 +118,8 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
         updateStartStatusAndUnsetMessage(entity.getAppId(), entity.getUuid(), EXPIRED);
         return;
       }
+      boolean disableExpiringManualInterventionFF =
+          featureFlagService.isEnabled(SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE, entity.getAccountId());
 
       boolean hasActiveStates = false;
       try (HIterator<StateExecutionInstance> stateExecutionInstances =
@@ -161,7 +164,7 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
                     .executionUuid(stateExecutionInstance.getExecutionUuid())
                     .stateExecutionInstanceId(stateExecutionInstance.getUuid())
                     .build();
-          } else if (stateExecutionInstance.isManualInterventionCandidate()) {
+          } else if (stateExecutionInstance.isManualInterventionCandidate() && disableExpiringManualInterventionFF) {
             // should add some threshold here to expire?
             continue;
           } else {
