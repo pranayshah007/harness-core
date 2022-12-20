@@ -216,7 +216,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public SubscriptionDetailDTO createSubscription(
       String accountIdentifier, SubscriptionCreateParams subscriptionCreateParams) {
     sendTelemetryEvent(
-        "Subscription Creation Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+        "Subscription Creation Initiated", null, accountIdentifier, subscriptionCreateParams.getModuleType().toString());
 
     isSelfServiceEnable();
 
