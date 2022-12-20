@@ -103,12 +103,7 @@ public class CgInstanceSyncV2TaskExecutorTest extends DelegateTestBase {
     doReturn(retrofit2.Response.success("success")).when(call).execute();
     List<K8sPodInfo> runningK8sPods = Collections.singletonList(K8sPodInfo.builder().podName("podName").build());
 
-    doReturn(InstanceSyncData.newBuilder()
-                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
-                 .addAllInstanceData(runningK8sPods.parallelStream()
-                                         .map(pod -> ByteString.copyFrom(kryoSerializer.asBytes(pod)))
-                                         .collect(toList()))
-                 .build())
+    doReturn(InstanceSyncData.newBuilder().setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build())
         .when(instanceDetailsFetcher)
         .fetchRunningInstanceDetails(anyString(), any(CgDeploymentReleaseDetails.class));
     doReturn(instanceDetailsFetcher).when(instanceDetailsFetcherFactory).getFetcher(anyString());
@@ -126,7 +121,6 @@ public class CgInstanceSyncV2TaskExecutorTest extends DelegateTestBase {
     CgInstanceSyncResponse cgInstanceSyncResponse = captor.getValue();
     assertThat(cgInstanceSyncResponse.getInstanceData(0).getExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS.name());
-    assertThat(cgInstanceSyncResponse.getInstanceData(0).getInstanceDataCount()).isEqualTo(1);
   }
 
   @Test
@@ -145,12 +139,7 @@ public class CgInstanceSyncV2TaskExecutorTest extends DelegateTestBase {
     doReturn(retrofit2.Response.success("success")).when(call).execute();
     List<K8sPodInfo> runningK8sPods = Collections.singletonList(K8sPodInfo.builder().podName("podName").build());
 
-    doReturn(InstanceSyncData.newBuilder()
-                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
-                 .addAllInstanceData(runningK8sPods.parallelStream()
-                                         .map(pod -> ByteString.copyFrom(kryoSerializer.asBytes(pod)))
-                                         .collect(toList()))
-                 .build())
+    doReturn(InstanceSyncData.newBuilder().setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build())
         .when(instanceDetailsFetcher)
         .fetchRunningInstanceDetails(anyString(), any(CgDeploymentReleaseDetails.class));
     doReturn(instanceDetailsFetcher).when(instanceDetailsFetcherFactory).getFetcher(anyString());
@@ -178,12 +167,7 @@ public class CgInstanceSyncV2TaskExecutorTest extends DelegateTestBase {
     doReturn(retrofit2.Response.success("success")).when(call).execute();
     List<K8sPodInfo> runningK8sPods = listOfDeploymentInstances(501);
 
-    doReturn(InstanceSyncData.newBuilder()
-                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
-                 .addAllInstanceData(runningK8sPods.parallelStream()
-                                         .map(pod -> ByteString.copyFrom(kryoSerializer.asBytes(pod)))
-                                         .collect(toList()))
-                 .build())
+    doReturn(InstanceSyncData.newBuilder().setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build())
         .when(instanceDetailsFetcher)
         .fetchRunningInstanceDetails(anyString(), any(CgDeploymentReleaseDetails.class));
 
