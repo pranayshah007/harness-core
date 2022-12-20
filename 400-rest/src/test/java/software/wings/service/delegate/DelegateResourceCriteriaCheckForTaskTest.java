@@ -165,11 +165,10 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     IntStream.range(9, 14).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate5.getUuid()));
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
-            eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
+        eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
     assertThat(delegateList.size() == 5);
     assertThat(delegateList).containsExactly(delegate2, delegate1, delegate4, delegate3, delegate5);
   }
-
 
   @Test
   @Owner(developers = JENNY)
