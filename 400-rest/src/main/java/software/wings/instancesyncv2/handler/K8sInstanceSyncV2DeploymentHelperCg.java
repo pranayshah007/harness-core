@@ -203,7 +203,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
                                     .filter(EmptyPredicate::isNotEmpty)
                                     .collect(Collectors.toSet());
       if (isNotEmpty(controllers)) {
-        return controllers.parallelStream()
+        return controllers.stream()
             .map(controller
                 -> CgK8sReleaseIdentifier.builder()
                        .containerServiceName(controller)

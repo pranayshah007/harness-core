@@ -92,7 +92,7 @@ public class CgInstanceSyncServiceV2 {
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(200), Duration.ofSeconds(220))) {
       event.getDeploymentSummaries()
-          .parallelStream()
+          .stream()
           .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
           .filter(this::hasDeploymentKey)
           .forEach(deploymentSummary -> {
