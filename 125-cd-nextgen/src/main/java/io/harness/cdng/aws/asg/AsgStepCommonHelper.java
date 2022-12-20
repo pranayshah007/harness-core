@@ -7,7 +7,17 @@
 
 package io.harness.cdng.aws.asg;
 
-import com.google.inject.Inject;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+
+import static java.lang.String.format;
+
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.beans.DelegateTask;
 import io.harness.cdng.CDStepHelper;
@@ -61,9 +71,10 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
+
 import software.wings.beans.TaskType;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,16 +83,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-import static java.lang.String.format;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AsgStepCommonHelper extends CDStepHelper {
@@ -434,19 +436,19 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public StepResponse handleStepExceptionFailure(AsgStepExceptionPassThroughData stepException) {
     FailureData failureData = FailureData.newBuilder()
-            .addFailureTypes(FailureType.APPLICATION_FAILURE)
-            .setLevel(io.harness.eraro.Level.ERROR.name())
-            .setCode(GENERAL_ERROR.name())
-            .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMessage()))
-            .build();
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(io.harness.eraro.Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMessage()))
+                                  .build();
     return StepResponse.builder()
-            .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
-            .status(Status.FAILED)
-            .failureInfo(FailureInfo.newBuilder()
-                    .addAllFailureTypes(failureData.getFailureTypesList())
-                    .setErrorMessage(failureData.getMessage())
-                    .addFailureData(failureData)
-                    .build())
-            .build();
+        .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
   }
 }

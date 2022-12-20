@@ -7,25 +7,26 @@
 
 package software.wings.beans.delegation;
 
+import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
 import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import org.assertj.core.api.Assertions;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @TargetModule(_950_DELEGATE_TASKS_BEANS)
 @OwnedBy(PL)
