@@ -11,6 +11,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.StartupMode;
@@ -21,6 +22,7 @@ import io.harness.threading.ThreadPool;
 import software.wings.app.InspectCommand;
 import software.wings.app.MainConfiguration.AssetsConfigurationMixin;
 import software.wings.app.WingsApplication;
+import software.wings.beans.User;
 import software.wings.jersey.JsonViews;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -47,6 +49,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.security.AuthResponseFilter;
+import software.wings.security.AuthRuleFilter;
+import software.wings.security.AuthenticationFilter;
+import software.wings.security.LoginRateLimitFilter;
 
 @OwnedBy(HarnessTeam.DEL)
 @Slf4j
@@ -64,11 +70,37 @@ public class DelegateServiceApplication extends Application<DelegateServiceConfi
     List<Module> modules = new ArrayList<>();
     modules.add(new DelegateServiceModule(delegateServiceConfig));
 
-    WingsApplication wingsApplication = new WingsApplication(StartupMode.DELEGATE_SERVICE);
-    wingsApplication.addModules(delegateServiceConfig, modules);
     Injector injector = Guice.createInjector(modules);
-    wingsApplication.initializeManagerSvc(injector, environment, delegateServiceConfig);
+    initializeDelegateSvc(injector, environment, delegateServiceConfig);
     log.info("Starting Delegate Service App done");
+  }
+
+  private void initializeDelegateSvc(Injector injector, Environment environment, DelegateServiceConfig delegateServiceConfig) {
+    // copied below from WingsApplication corresponding to dms flag, will uncomment as applicable
+//    registerAtmosphereStreams(environment, injector);
+//    initializeFeatureFlags(configuration, injector);
+//    registerHealthChecksDelegateService(environment, injector);
+//    registerStores(configuration, injector);
+//    registerDataStores(injector);
+//    registerResources(configuration, environment, injector);
+//    registerInprocPerpetualTaskServiceClients(injector);
+//    registerCorsFilter(configuration, environment);
+//    registerAuditResponseFilter(environment, injector);
+//    registerJerseyProviders(environment, injector);
+//    registerCharsetResponseFilter(environment, injector);
+    // Authentication/Authorization filters
+    registerAuthFilters(delegateServiceConfig, environment, injector);
+//    registerCorrelationFilter(environment, injector);
+//    registerRequestContextFilter(environment);
+  }
+
+  private void registerAuthFilters(DelegateServiceConfig delegateServiceConfig, Environment environment, Injector injector) {
+    // commented changes which I think are not required as now.
+    environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
+    //environment.jersey().register(injector.getInstance(LoginRateLimitFilter.class));
+    environment.jersey().register(injector.getInstance(AuthRuleFilter.class));
+    //environment.jersey().register(injector.getInstance(AuthResponseFilter.class));
+    environment.jersey().register(injector.getInstance(AuthenticationFilter.class));
   }
 
   @Override
