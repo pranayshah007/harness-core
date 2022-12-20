@@ -123,6 +123,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
   private boolean waitingForManualIntervention;
   private ExecutionInterruptType actionAfterManualInterventionTimeout;
   private boolean isRollbackProvisionerAfterPhases;
+  private boolean manualInterventionCandidate;
 
   /**
    * @deprecated {@link software.wings.service.intfc.StateExecutionService#appendDelegateTaskDetails(String,

@@ -16,7 +16,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
@@ -155,6 +155,6 @@ public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
   }
 
   private String readDSL(String fileName) throws IOException {
-    return Resources.toString(SumologicLogCVConfig.class.getResource(fileName), StandardCharsets.UTF_8);
+    return Resources.toString(NextGenLogCVConfig.class.getResource(fileName), StandardCharsets.UTF_8);
   }
 }

@@ -84,6 +84,16 @@ public class PMSInputSetElementMapper {
       throw new InvalidRequestException(
           String.format("Expected Input Set name in YAML to be [%s], but was [%s]", name, yamlName));
     }
+    String yamlOrg = InputSetYamlHelper.getStringField(yaml, "orgIdentifier", topKey);
+    if (isNotEmpty(yamlOrg) && !yamlOrg.equals(orgIdentifier)) {
+      throw new InvalidRequestException(String.format(
+          "Expected Input Set Organization identifier in YAML to be [%s], but was [%s]", orgIdentifier, yamlOrg));
+    }
+    String yamlProject = InputSetYamlHelper.getStringField(yaml, "projectIdentifier", topKey);
+    if (isNotEmpty(yamlProject) && !yamlProject.equals(projectIdentifier)) {
+      throw new InvalidRequestException(String.format(
+          "Expected Input Set Project identifier in YAML to be [%s], but was [%s]", projectIdentifier, yamlProject));
+    }
     String yamlDescription = InputSetYamlHelper.getStringField(yaml, "description", topKey);
     if (isNotEmpty(yamlDescription) && isNotEmpty(requestInfoDTO.getDescription())
         && !yamlDescription.equals(requestInfoDTO.getDescription())) {

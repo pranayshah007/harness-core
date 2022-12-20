@@ -46,7 +46,8 @@ import org.hibernate.validator.constraints.NotEmpty;
       @JsonSubTypes.Type(value = SplunkMetricHealthSourceSpec.class, name = "SplunkMetric"),
       @JsonSubTypes.Type(value = ELKHealthSourceSpec.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = CloudWatchMetricsHealthSourceSpec.class, name = "CloudWatchMetrics"),
-      @JsonSubTypes.Type(value = AwsPrometheusHealthSourceSpec.class, name = "AwsPrometheus")
+      @JsonSubTypes.Type(value = AwsPrometheusHealthSourceSpec.class, name = "AwsPrometheus"),
+      @JsonSubTypes.Type(value = NextGenHealthSourceSpec.class, name = "NextGenHealthSource")
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 @Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")

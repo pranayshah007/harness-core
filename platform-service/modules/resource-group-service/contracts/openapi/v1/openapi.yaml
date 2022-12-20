@@ -8,15 +8,15 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Resource Groups
-    description: This contains APIs for performing CRUD operations on Account level Resource Groups.
+    description: This contains APIs for Account-scoped Resource Groups.
   - name: Organization Resource Groups
-    description: This contains APIs for performing CRUD operations on Organization level Resource Groups.
+    description: This contains APIs for Organization-scoped Resource Groups.
   - name: Project Resource Groups
-    description: This contains APIs for performing CRUD operations on Project level Resource Groups.
+    description: This contains APIs for Project-scoped Resource Groups.
   - name: Filter Resource Groups
     description: This contains the filter endpoint for Resource Groups.
 paths:
@@ -330,7 +330,7 @@ components:
         name:
           type: string
           description: Resource Group Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         color:
@@ -475,7 +475,7 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
           minLength: 1
           maxLength: 64
         org:
@@ -572,7 +572,7 @@ components:
         account:
           type: string
           description: Filter by Account identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
           minLength: 1
           maxLength: 64
         org:

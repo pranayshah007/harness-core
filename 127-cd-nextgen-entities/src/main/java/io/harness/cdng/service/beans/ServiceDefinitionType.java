@@ -70,7 +70,7 @@ public enum ServiceDefinitionType {
 
   @JsonProperty(ServiceSpecType.TAS)
   TAS(ServiceSpecType.TAS,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.TAS),
 

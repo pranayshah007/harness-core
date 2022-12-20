@@ -268,6 +268,78 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
   }
 
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_3() throws InvalidProtocolBufferException {
+    ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
+
+    // org level service
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("id")
+                               .name("my-service")
+                               .accountId("accountId")
+                               .orgIdentifier("orgId")
+                               .build();
+    entitySetupUsageHelper.updateSetupUsages(entity);
+
+    verify(producer, times(1)).send(msgCaptor.capture());
+
+    Message value = msgCaptor.getValue();
+    EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
+    Map<String, String> metadataMap = value.getMetadataMap();
+
+    assertThat(createV2DTO.getReferredEntitiesList()).isEmpty();
+    assertThat(createV2DTO.getReferredByEntity())
+        .isEqualTo(EntityDetailProtoDTO.newBuilder()
+                       .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                             .setIdentifier(StringValue.of(entity.getIdentifier()))
+                                             .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                             .setOrgIdentifier(StringValue.of(entity.getOrgIdentifier()))
+                                             .setScope(ScopeProtoEnum.ORG)
+                                             .build())
+                       .setType(EntityTypeProtoEnum.SERVICE)
+                       .setName(entity.getName())
+                       .build());
+
+    assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
+    assertThat(metadataMap.get("referredEntityType")).isNull();
+    assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_4() throws InvalidProtocolBufferException {
+    ArgumentCaptor<Message> msgCaptor = ArgumentCaptor.forClass(Message.class);
+
+    // org level service
+    ServiceEntity entity = ServiceEntity.builder().identifier("id").name("my-service").accountId("accountId").build();
+    entitySetupUsageHelper.updateSetupUsages(entity);
+
+    verify(producer, times(1)).send(msgCaptor.capture());
+
+    Message value = msgCaptor.getValue();
+    EntitySetupUsageCreateV2DTO createV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(value.getData());
+    Map<String, String> metadataMap = value.getMetadataMap();
+
+    assertThat(createV2DTO.getReferredEntitiesList()).isEmpty();
+    assertThat(createV2DTO.getReferredByEntity())
+        .isEqualTo(EntityDetailProtoDTO.newBuilder()
+                       .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                             .setIdentifier(StringValue.of(entity.getIdentifier()))
+                                             .setAccountIdentifier(StringValue.of(entity.getAccountId()))
+                                             .setScope(ScopeProtoEnum.ACCOUNT)
+                                             .build())
+                       .setType(EntityTypeProtoEnum.SERVICE)
+                       .setName(entity.getName())
+                       .build());
+
+    assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
+    assertThat(metadataMap.get("referredEntityType")).isNull();
+    assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

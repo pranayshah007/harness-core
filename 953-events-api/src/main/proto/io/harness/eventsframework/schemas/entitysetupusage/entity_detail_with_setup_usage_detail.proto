@@ -32,6 +32,7 @@ message EntityDetailWithSetupUsageDetailProtoDTO {
 
   message EntityReferredByInfraSetupUsageDetailProtoDTO {
     string environmentIdentifier = 1;
+    string environmentName = 2;
   }
 
   message TemplateReferredByConnectorSetupUsageDetailProtoDTO {

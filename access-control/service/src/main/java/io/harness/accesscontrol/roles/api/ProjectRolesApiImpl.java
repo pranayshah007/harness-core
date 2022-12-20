@@ -44,6 +44,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -147,10 +148,10 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    PageRequest pageRequest = RolesApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = RolesApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         format("/v1/orgs/%s/projects/%s/roles)", org, project), pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()

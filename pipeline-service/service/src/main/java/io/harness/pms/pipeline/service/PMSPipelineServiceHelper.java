@@ -265,6 +265,8 @@ public class PMSPipelineServiceHelper {
             GitSyncBranchContext.builder()
                 .gitBranchInfo(GitEntityInfo.builder()
                                    .branch(gitEntityInfo.getBaseBranch())
+                                   .connectorRef(gitEntityInfo.getConnectorRef())
+                                   .repoName(gitEntityInfo.getRepoName())
                                    .yamlGitConfigId(gitEntityInfo.getYamlGitConfigId())
                                    .build())
                 .build();

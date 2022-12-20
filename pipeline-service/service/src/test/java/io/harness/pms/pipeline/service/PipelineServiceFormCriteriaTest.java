@@ -14,7 +14,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
@@ -121,7 +120,6 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
-    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
 

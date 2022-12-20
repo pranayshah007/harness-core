@@ -7,6 +7,8 @@
 
 package io.harness.cdng.configfile.steps;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
@@ -18,11 +20,15 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -30,9 +36,12 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -44,6 +53,9 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
                                                .build();
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -63,6 +75,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
+
+    checkForAccessOrThrow(ambiance, configFiles);
 
     final ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
     for (int i = 0; i < configFiles.size(); i++) {
@@ -88,5 +102,22 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
     }
     return resolveOptional.isFound() ? (NgConfigFilesMetadataSweepingOutput) resolveOptional.getOutput()
                                      : NgConfigFilesMetadataSweepingOutput.builder().build();
+  }
+  void checkForAccessOrThrow(Ambiance ambiance, List<ConfigFileWrapper> configFiles) {
+    if (EmptyPredicate.isEmpty(configFiles)) {
+      return;
+    }
+    List<EntityDetail> entityDetails = new ArrayList<>();
+
+    for (ConfigFileWrapper configFile : configFiles) {
+      Set<EntityDetailProtoDTO> entityDetailsProto =
+          entityReferenceExtractorUtils.extractReferredEntities(ambiance, configFile);
+      List<EntityDetail> entityDetail =
+          entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+      if (EmptyPredicate.isNotEmpty(entityDetail)) {
+        entityDetails.addAll(entityDetail);
+      }
+    }
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 }

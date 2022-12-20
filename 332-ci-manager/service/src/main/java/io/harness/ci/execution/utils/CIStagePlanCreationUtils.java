@@ -8,6 +8,7 @@
 package io.harness.ci.utils;
 
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.execution.CIAccountExecutionMetadata;
 import io.harness.ci.license.CILicenseService;
 import io.harness.data.structure.CollectionUtils;
@@ -51,24 +52,31 @@ public class CIStagePlanCreationUtils {
     return stageBuilder;
   }
 
+  public static boolean isHostedInfra(Infrastructure infrastructure) {
+    return infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
+        || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
+  }
+
   public static void validateFreeAccountStageExecutionLimit(
       CIAccountExecutionMetadataRepository accountExecutionMetadataRepository, CILicenseService ciLicenseService,
-      String accountId) {
-    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
-      Optional<CIAccountExecutionMetadata> accountExecutionMetadata =
-          accountExecutionMetadataRepository.findByAccountId(accountId);
+      String accountId, Infrastructure infrastructure) {
+    if (isHostedInfra(infrastructure)) {
+      LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+      if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+        Optional<CIAccountExecutionMetadata> accountExecutionMetadata =
+            accountExecutionMetadataRepository.findByAccountId(accountId);
 
-      if (accountExecutionMetadata.isPresent()) {
-        LocalDate startDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
-        YearMonth yearMonth = YearMonth.of(startDate.getYear(), startDate.getMonth());
-        String day = yearMonth + "-" + startDate.getDayOfMonth();
-        Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
-        if (countPerDay != null) {
-          if (countPerDay.getOrDefault(day, 0L) >= 5) {
-            log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
-            throw new CIStageExecutionException(
-                "Execution limit has reached for the day, Please reach out to Harness support");
+        if (accountExecutionMetadata.isPresent()) {
+          LocalDate startDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate();
+          YearMonth yearMonth = YearMonth.of(startDate.getYear(), startDate.getMonth());
+          String day = yearMonth + "-" + startDate.getDayOfMonth();
+          Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
+          if (countPerDay != null) {
+            if (countPerDay.getOrDefault(day, 0L) >= 5) {
+              log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
+              throw new CIStageExecutionException(
+                  "Execution limit has reached for the day, Please reach out to Harness support");
+            }
           }
         }
       }

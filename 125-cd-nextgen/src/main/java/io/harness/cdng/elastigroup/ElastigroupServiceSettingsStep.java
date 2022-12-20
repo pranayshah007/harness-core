@@ -8,32 +8,40 @@
 package io.harness.cdng.elastigroup;
 
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -51,6 +59,9 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
   @Inject private ElastigroupHelperService elastigroupHelperService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver expressionResolver;
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -76,6 +87,8 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
 
     expressionResolver.updateExpressions(ambiance, serviceSpec);
 
+    checkForAccessOrThrow(ambiance, serviceSpec.getStartupScript());
+
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
@@ -100,7 +113,15 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
         .group(StepCategory.STAGE.name())
         .build();
   }
+  private void checkForAccessOrThrow(Ambiance ambiance, StartupScriptConfiguration startupScriptConfiguration) {
+    Set<EntityDetailProtoDTO> entityDetailsProto =
+        entityReferenceExtractorUtils.extractReferredEntities(ambiance, startupScriptConfiguration);
 
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
   private void saveExecutionLog(NGLogCallback logCallback, String line) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(line);

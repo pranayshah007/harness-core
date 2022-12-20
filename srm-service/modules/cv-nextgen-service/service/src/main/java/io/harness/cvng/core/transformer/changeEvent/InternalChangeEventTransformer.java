@@ -22,13 +22,14 @@ public class InternalChangeEventTransformer
     return InternalChangeActivity.builder()
         .type(internalChangeEventMetaData.getActivityType())
         .activityType(internalChangeEventMetaData.getActivityType())
-        .eventDetails(internalChangeEventMetaData.getEventDetails())
+        .internalChangeEvent(internalChangeEventMetaData.getInternalChangeEvent())
         .updatedBy(internalChangeEventMetaData.getUpdatedBy())
         .eventEndTime(internalChangeEventMetaData.getEventEndTime())
+        .eventTime(Instant.ofEpochMilli(changeEventDTO.getEventTime()))
+        .activityStartTime(Instant.ofEpochMilli(changeEventDTO.getEventTime()))
         .accountId(changeEventDTO.getAccountId())
         .orgIdentifier(changeEventDTO.getOrgIdentifier())
         .projectIdentifier(changeEventDTO.getProjectIdentifier())
-        .eventTime(Instant.ofEpochMilli(changeEventDTO.getEventTime()))
         .changeSourceIdentifier(changeEventDTO.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
         .build();
@@ -37,7 +38,7 @@ public class InternalChangeEventTransformer
   @Override
   protected InternalChangeEventMetaData getMetadata(InternalChangeActivity activity) {
     return InternalChangeEventMetaData.builder()
-        .eventDetails(activity.getEventDetails())
+        .internalChangeEvent(activity.getInternalChangeEvent())
         .updatedBy(activity.getUpdatedBy())
         .activityType(activity.getActivityType())
         .eventStartTime(activity.getEventTime().toEpochMilli())

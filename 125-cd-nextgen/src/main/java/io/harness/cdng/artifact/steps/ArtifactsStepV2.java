@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -39,6 +40,7 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -48,6 +50,8 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -63,6 +67,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -72,6 +77,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
@@ -117,6 +123,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -169,6 +178,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     resolveExpressions(ambiance, artifacts);
 
+    checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
@@ -220,7 +230,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   private boolean isSpecAndSourceTypePresent(ArtifactListConfig artifacts) {
     return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
   }
+  void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
+    Set<EntityDetailProtoDTO> entityDetailsProto =
+        entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
 
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
   public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";

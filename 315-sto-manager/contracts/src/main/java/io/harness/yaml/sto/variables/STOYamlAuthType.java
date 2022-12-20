@@ -17,10 +17,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stoYamlAuthType")
 @RecasterAlias("io.harness.yaml.sto.variables.STOYamlAuthType")
 public enum STOYamlAuthType {
-  @JsonProperty("repository") REPOSITORY("repository"),
-  @JsonProperty("container") CONTAINER("container"),
-  @JsonProperty("instance") INSTANCE("instance"),
-  @JsonProperty("configuration") CONFIGURATION("configuration");
+  @JsonProperty("apiKey") API_KEY("apiKey"),
+  @JsonProperty("usernamePassword") USERNAME_PASSWORD("usernamePassword");
   private final String yamlName;
 
   STOYamlAuthType(String yamlName) {

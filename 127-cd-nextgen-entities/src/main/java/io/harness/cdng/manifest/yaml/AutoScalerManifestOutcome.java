@@ -31,4 +31,5 @@ public class AutoScalerManifestOutcome implements ManifestOutcome {
   String identifier;
   String type = ManifestType.TAS_AUTOSCALER;
   StoreConfig store;
+  int order;
 }

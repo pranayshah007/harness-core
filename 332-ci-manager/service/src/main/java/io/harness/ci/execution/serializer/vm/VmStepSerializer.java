@@ -12,6 +12,7 @@ import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.BitriseStepInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -36,6 +37,7 @@ public class VmStepSerializer {
   @Inject VmBackgroundStepSerializer vmBackgroundStepSerializer;
   @Inject VmActionStepSerializer vmActionStepSerializer;
   @Inject VmBitriseStepSerializer vmBitriseStepSerializer;
+  @Inject VmIACMStepSerializer vmIACMPluginCompatibleStepSerializer;
 
   public Set<String> getStepSecrets(VmStepInfo vmStepInfo, Ambiance ambiance) {
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
@@ -73,6 +75,9 @@ public class VmStepSerializer {
       case GIT_CLONE:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
+      case IACM_TERRAFORM_PLAN:
+        return vmIACMPluginCompatibleStepSerializer.serialize(
+            ambiance, (IACMTerraformPlanInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout);
       case ACTION:
         return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
       case BITRISE:

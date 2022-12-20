@@ -30,6 +30,7 @@ import io.harness.cdng.usage.CDLicenseUsageDAL;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
 import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
@@ -637,6 +638,6 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     assertThatThrownBy(
         () -> cdLicenseUsage.listLicenseUsage(null, ModuleType.CD, System.currentTimeMillis(), usageRequestParam))
         .hasMessage("Account Identifier cannot be null or empty")
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(InvalidArgumentsException.class);
   }
 }

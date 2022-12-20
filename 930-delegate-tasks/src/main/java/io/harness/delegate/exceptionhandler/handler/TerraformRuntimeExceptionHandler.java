@@ -275,7 +275,7 @@ public class TerraformRuntimeExceptionHandler implements ExceptionHandler {
       return GENERIC_NO_TERRAFORM_ERROR;
     }
 
-    return getMessageWithLimit(error.replaceAll("\\[\\d{1,3}m", ""));
+    return getMessageWithLimit(error.replaceAll("\\[\\d{1,3}m|│|╵|╷", ""));
   }
 
   private String getMessageWithLimit(String message) {

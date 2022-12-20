@@ -7,22 +7,24 @@
 
 package io.harness.cvng.core.services.impl;
 
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 
 public class SumologicLogDataCollectionInfoMapper
-    implements DataCollectionInfoMapper<SumologicLogDataCollectionInfo, SumologicLogCVConfig> {
+    implements DataCollectionInfoMapper<SumologicLogDataCollectionInfo, NextGenLogCVConfig> {
   @Override
   public SumologicLogDataCollectionInfo toDataCollectionInfo(
-      SumologicLogCVConfig cvConfig, VerificationTask.TaskType taskType) {
+      NextGenLogCVConfig cvConfig, VerificationTask.TaskType taskType) {
+    // TODO make it null safe
     SumologicLogDataCollectionInfo sumologicLogDataCollectionInfo =
         SumologicLogDataCollectionInfo.builder()
             .query(cvConfig.getQuery())
-            .serviceInstanceIdentifier(cvConfig.getServiceInstanceIdentifier())
+            .serviceInstanceIdentifier(cvConfig.getQueryParams().getServiceInstanceField())
             .build();
-    sumologicLogDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+    sumologicLogDataCollectionInfo.setDataCollectionDsl(NextGenLogCVConfig.readLogDSL(DataSourceType.SUMOLOGIC_LOG));
     return sumologicLogDataCollectionInfo;
   }
 }

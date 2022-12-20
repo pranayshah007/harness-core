@@ -20,6 +20,7 @@ import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -91,6 +92,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.CUSTOM_DEPLOYMENT;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof TasInstanceInfoDTO) {
       return ServiceSpecType.TAS;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof SpotInstanceInfoDTO) {
+      return ServiceSpecType.ELASTIGROUP;
     }
     return null;
   }

@@ -16,7 +16,7 @@ import static io.harness.NGCommonEntityConstants.SORT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.TIMESTAMP;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_FILTER_PARAM_MESSAGE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_SORT_QUERY_PROPERTIES;
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_SORT_PROPERTY;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
 import static io.harness.licensing.usage.utils.PageableUtils.validateSort;
 
 import io.harness.ModuleType;
@@ -26,6 +26,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.cd.CDLicenseType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.usage.beans.LicenseUsageDTO;
+import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
 import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
@@ -170,23 +171,28 @@ public class LicenseUsageResource {
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns a list of active services") })
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
-  public ResponseDTO<Page<LicenseUsageDTO>>
+  public ResponseDTO<Page<ActiveServiceDTO>>
   listCDActiveServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                            ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
           "0") int page,
       @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("30")
       int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
-      @QueryParam(TIMESTAMP) long currentTS,
+      @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
       @NotNull @Valid @RequestBody(required = true,
           description = ACTIVE_SERVICES_FILTER_PARAM_MESSAGE) ActiveServicesFilterParams filterParams) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
     Pageable pageRequest =
-        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_SORT_PROPERTY));
+        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));
     validateSort(pageRequest.getSort(), ACTIVE_SERVICES_SORT_QUERY_PROPERTIES);
     DefaultPageableUsageRequestParams requestParams =
         DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
 
-    return ResponseDTO.newResponse((Page<LicenseUsageDTO>) licenseUsageInterface.listLicenseUsage(
-        accountIdentifier, ModuleType.CD, currentTS, requestParams));
+    return ResponseDTO.newResponse((Page<ActiveServiceDTO>) licenseUsageInterface.listLicenseUsage(
+        accountIdentifier, ModuleType.CD, currentTsInMs, requestParams));
+  }
+
+  private long fixOptionalCurrentTs(long currentTsMs) {
+    return currentTsMs == 0 ? System.currentTimeMillis() : currentTsMs;
   }
 }

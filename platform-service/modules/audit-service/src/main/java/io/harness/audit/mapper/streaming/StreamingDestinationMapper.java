@@ -23,6 +23,7 @@ public class StreamingDestinationMapper {
     streamingDestination.setStatus(streamingDestinationDTO.getStatus());
     streamingDestination.setConnectorRef(streamingDestinationDTO.getConnectorRef());
     streamingDestination.setType(streamingDestinationDTO.getSpec().getType());
+    streamingDestination.setLastStatusChangedAt(System.currentTimeMillis());
     return streamingDestination;
   }
 

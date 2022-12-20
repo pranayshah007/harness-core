@@ -577,6 +577,11 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getGitClone();
         }
         break;
+      case IACM_TERRAFORM_PLAN:
+        if (Strings.isNotBlank(vmImageConfig.getIacmTerraform())) {
+          image = vmImageConfig.getIacmTerraform();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -611,6 +616,8 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
+      case IACM_TERRAFORM_PLAN:
+        return vmImageConfig.getIacmTerraform();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }

@@ -892,13 +892,13 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden)
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden, boolean ignoreRunTimeUsage)
       throws IllegalAccessException {
     if (!listHidden) {
       addFilterHideFromListing(pageRequest);
     }
 
-    return listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest, details);
+    return listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest, details, ignoreRunTimeUsage);
   }
 
   private void addFilterHideFromListing(PageRequest<EncryptedData> pageRequest) {
@@ -916,22 +916,24 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details) throws IllegalAccessException {
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     PageResponse<EncryptedData> pageResponse =
         secretService.listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest);
     if (details) {
-      fillInDetails(accountId, pageResponse.getResponse());
+      fillInDetails(accountId, pageResponse.getResponse(), ignoreRunTimeUsage);
     }
     return pageResponse;
   }
 
-  private void fillInDetails(String accountId, List<EncryptedData> encryptedDataList) throws IllegalAccessException {
+  private void fillInDetails(String accountId, List<EncryptedData> encryptedDataList, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     if (isEmpty(encryptedDataList)) {
       return;
     }
 
     Set<String> encryptedDataIds = encryptedDataList.stream().map(EncryptedData::getUuid).collect(Collectors.toSet());
-    Map<String, Long> usageLogSizes = getUsageLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
+
     Map<String, Long> changeLogSizes = getChangeLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
 
     for (EncryptedData encryptedData : encryptedDataList) {
@@ -942,9 +944,16 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
       int secretUsageSize = encryptedData.getParents().size();
       encryptedData.setSetupUsage(secretUsageSize);
 
-      if (usageLogSizes.containsKey(entityId)) {
-        encryptedData.setRunTimeUsage(usageLogSizes.get(entityId).intValue());
+      if (ignoreRunTimeUsage) {
+        encryptedData.setRunTimeUsage(null);
+      } else {
+        Map<String, Long> usageLogSizes =
+            getUsageLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
+        if (usageLogSizes.containsKey(entityId)) {
+          encryptedData.setRunTimeUsage((long) usageLogSizes.get(entityId).intValue());
+        }
       }
+
       if (changeLogSizes.containsKey(entityId)) {
         encryptedData.setChangeLog(changeLogSizes.get(entityId).intValue());
       }
@@ -953,10 +962,11 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecretsMappedToAccount(
-      String accountId, PageRequest<EncryptedData> pageRequest, boolean details) throws IllegalAccessException {
+      String accountId, PageRequest<EncryptedData> pageRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     PageResponse<EncryptedData> pageResponse = secretService.listSecretsScopedToAccount(accountId, pageRequest);
     if (details) {
-      fillInDetails(accountId, pageResponse.getResponse());
+      fillInDetails(accountId, pageResponse.getResponse(), ignoreRunTimeUsage);
     }
     return pageResponse;
   }

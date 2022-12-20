@@ -7,6 +7,10 @@
 
 package io.harness.cvng.core.beans.params;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY;
+import static io.harness.cvng.core.services.CVNextGenConstants.ORG_IDENTIFIER_KEY;
+import static io.harness.cvng.core.services.CVNextGenConstants.PROJECT_IDENTIFIER_KEY;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -31,18 +35,18 @@ import lombok.experimental.SuperBuilder;
 public class ProjectPathParams {
   @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
   @AccountIdentifier
-  @PathParam("accountId")
+  @PathParam(ACCOUNT_IDENTIFIER_KEY)
   @NotNull
   @Valid
   String accountIdentifier;
   @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)
   @OrgIdentifier
-  @PathParam("orgIdentifier")
+  @PathParam(ORG_IDENTIFIER_KEY)
   @Valid
   String orgIdentifier;
   @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE)
   @ProjectIdentifier
-  @PathParam("projectIdentifier")
+  @PathParam(PROJECT_IDENTIFIER_KEY)
   @Valid
   String projectIdentifier;
 }

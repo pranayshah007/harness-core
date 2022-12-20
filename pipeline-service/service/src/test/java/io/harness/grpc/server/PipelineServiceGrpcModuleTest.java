@@ -9,8 +9,11 @@ package io.harness.grpc.server;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.NAMAN;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
@@ -38,6 +41,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import io.grpc.BindableService;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.services.HealthStatusManager;
 import java.util.Collections;
 import java.util.HashMap;
@@ -199,5 +203,33 @@ public class PipelineServiceGrpcModuleTest extends PipelineServiceTestBase {
         healthStatusManager, bindableServices, Sets.newHashSet(new PipelineServiceGrpcErrorHandler()));
     ServiceManager serviceManager = pipelineServiceGrpcModule.serviceManager(Sets.newHashSet(service));
     assertThat(serviceManager).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testShouldUsePlainTextNegotiationType_onPremDeployMode_returnsTrue() {
+    assertTrue(pipelineServiceGrpcModule.shouldUsePlainTextNegotiationType(NegotiationType.TLS, "ONPREM"));
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testShouldUsePlainTextNegotiationType_onPremKubDeployMode_returnsTrue() {
+    assertTrue(pipelineServiceGrpcModule.shouldUsePlainTextNegotiationType(NegotiationType.TLS, "KUBERNETES_ONPREM"));
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testShouldUsePlainTextNegotiationType_plainTextNegotiation_returnsTrue() {
+    assertTrue(pipelineServiceGrpcModule.shouldUsePlainTextNegotiationType(NegotiationType.PLAINTEXT, "xyz"));
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void testShouldUsePlainTextNegotiationType_tlsNegotiationAndNonOnPrem_returnsFalse() {
+    assertFalse(pipelineServiceGrpcModule.shouldUsePlainTextNegotiationType(NegotiationType.TLS, "xyz"));
   }
 }

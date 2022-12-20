@@ -36,6 +36,9 @@ public interface CfDeploymentManager {
   ApplicationDetail upsizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
       throws PivotalClientApiException;
 
+  List<ApplicationSummary> getPreviousReleasesBasicAndCanaryNG(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException;
+
   void deleteApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
   void renameApplication(CfRenameRequest cfRenameRequest, LogCallback logCallback) throws PivotalClientApiException;
@@ -70,6 +73,9 @@ public interface CfDeploymentManager {
       LogCallback logCallback, boolean enable) throws PivotalClientApiException;
 
   boolean checkIfAppHasAutoscalarAttached(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
+      throws PivotalClientApiException;
+
+  boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback)
       throws PivotalClientApiException;
 
   ApplicationDetail upsizeApplicationWithSteadyStateCheck(CfRequestConfig cfRequestConfig, LogCallback logCallback)

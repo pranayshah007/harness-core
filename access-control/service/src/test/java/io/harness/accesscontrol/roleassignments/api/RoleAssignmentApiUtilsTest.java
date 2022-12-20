@@ -133,13 +133,13 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
 
     assertThat(roleAssignmentResponse.getCreated()).isEqualTo(1234567890L);
     assertThat(roleAssignmentResponse.getUpdated()).isEqualTo(1234567890L);
-    assertThat(roleAssignmentResponse.getRoleassignment().getSlug()).isEqualTo(SLUG);
-    assertThat(roleAssignmentResponse.getRoleassignment().getRole()).isEqualTo(ROLE_SLUG);
-    assertThat(roleAssignmentResponse.getRoleassignment().getResourceGroup()).isEqualTo(RESOURCE_GROUP_SLUG);
-    assertThat(roleAssignmentResponse.getRoleassignment().isDisabled()).isEqualTo(true);
-    assertThat(roleAssignmentResponse.getRoleassignment().isManaged()).isEqualTo(true);
-    assertThat(roleAssignmentResponse.getRoleassignment().getPrincipal().getSlug()).isEqualTo(PRINCIPAL_SLUG);
-    assertThat(roleAssignmentResponse.getRoleassignment().getPrincipal().getType()).isEqualTo(Principal.TypeEnum.USER);
-    assertThat(roleAssignmentResponse.getRoleassignment().getPrincipal().getScopeLevel()).isEqualTo(SCOPE_LEVEL);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getSlug()).isEqualTo(SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getRole()).isEqualTo(ROLE_SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getResourceGroup()).isEqualTo(RESOURCE_GROUP_SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().isDisabled()).isEqualTo(true);
+    assertThat(roleAssignmentResponse.getRoleAssignment().isManaged()).isEqualTo(true);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getSlug()).isEqualTo(PRINCIPAL_SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getType()).isEqualTo(Principal.TypeEnum.USER);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getScopeLevel()).isEqualTo(SCOPE_LEVEL);
   }
 }

@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentifierRefHelper {
   public final String IDENTIFIER_REF_DELIMITER = "\\."; // check if this is the correct delimiter
-
+  public static final int MAX_RESULT_THRESHOLD_FOR_SPLIT = 2;
   public IdentifierRef createIdentifierRefWithUnknownScope(String accountId, String orgIdentifier,
       String projectIdentifier, String unknownIdentifier, Map<String, String> metadata) {
     return IdentifierRef.builder()
@@ -132,7 +132,7 @@ public class IdentifierRefHelper {
     }
 
     if (isEmpty(scopedIdentifierConfig)) {
-      throw new InvalidIdentifierRefException("Empty identifier ref cannot be given");
+      throw new InvalidIdentifierRefException("Empty identifier values are not supported");
     }
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 

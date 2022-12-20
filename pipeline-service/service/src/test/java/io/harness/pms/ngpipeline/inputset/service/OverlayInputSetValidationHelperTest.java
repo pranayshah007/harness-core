@@ -178,7 +178,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .build();
     MockedStatic<InputSetErrorsHelper> mockSettings = Mockito.mockStatic(InputSetErrorsHelper.class);
     when(InputSetErrorsHelper.getInvalidInputSetReferences(any(), any(), any())).thenCallRealMethod();
-    when(InputSetErrorsHelper.getErrorMap(any(), any())).thenReturn(null);
+    when(InputSetErrorsHelper.getErrorMap(any(), any(), any())).thenReturn(null);
     OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null);
 
     InputSetEntity inputSetEntityInvalid =
@@ -274,7 +274,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
 
     MockedStatic<InputSetErrorsHelper> mockSettings = Mockito.mockStatic(InputSetErrorsHelper.class);
     when(InputSetErrorsHelper.getInvalidInputSetReferences(any(), any(), any())).thenCallRealMethod();
-    when(InputSetErrorsHelper.getErrorMap("randomPipelineYaml", null)).thenReturn(null);
+    when(InputSetErrorsHelper.getErrorMap("randomPipelineYaml", null, null)).thenReturn(null);
     InputSetYamlDiffDTO yamlDiffForOverlayInputSet =
         OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(null, inputSetService,
             InputSetEntity.builder()

@@ -27,27 +27,28 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("SplunkMetric") SPLUNK_METRIC,
   @JsonProperty("ElasticSearch") ELASTICSEARCH,
   @JsonProperty("CloudWatchMetrics") CLOUDWATCH_METRICS,
-  @JsonProperty("AwsPrometheus") AWS_PROMETHEUS;
-
-  public static Map<DataSourceType, MonitoredServiceDataSourceType> dataSourceTypeMonitoredServiceDataSourceTypeMap =
-      new HashMap<DataSourceType, MonitoredServiceDataSourceType>() {
-        {
-          put(DataSourceType.APP_DYNAMICS, APP_DYNAMICS);
-          put(DataSourceType.NEW_RELIC, NEW_RELIC);
-          put(DataSourceType.STACKDRIVER_LOG, STACKDRIVER_LOG);
-          put(DataSourceType.STACKDRIVER, STACKDRIVER);
-          put(DataSourceType.PROMETHEUS, PROMETHEUS);
-          put(DataSourceType.SPLUNK, SPLUNK);
-          put(DataSourceType.DATADOG_METRICS, DATADOG_METRICS);
-          put(DataSourceType.DATADOG_LOG, DATADOG_LOG);
-          put(DataSourceType.DYNATRACE, DYNATRACE);
-          put(DataSourceType.CUSTOM_HEALTH_METRIC, CUSTOM_HEALTH_METRIC);
-          put(DataSourceType.CUSTOM_HEALTH_LOG, CUSTOM_HEALTH_LOG);
-          put(DataSourceType.ERROR_TRACKING, ERROR_TRACKING);
-          put(DataSourceType.SPLUNK_METRIC, SPLUNK_METRIC);
-          put(DataSourceType.ELASTICSEARCH, ELASTICSEARCH);
-          put(DataSourceType.CLOUDWATCH_METRICS, CLOUDWATCH_METRICS);
-          put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
-        }
-      };
+  @JsonProperty("AwsPrometheus") AWS_PROMETHEUS,
+  @JsonProperty("NextGenHealthSource") NEXT_GEN_HEALTH_SOURCE;
+  public static final Map<DataSourceType, MonitoredServiceDataSourceType>
+      dataSourceTypeMonitoredServiceDataSourceTypeMap = new HashMap<>();
+  static {
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.APP_DYNAMICS, APP_DYNAMICS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.NEW_RELIC, NEW_RELIC);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.STACKDRIVER_LOG, STACKDRIVER_LOG);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.STACKDRIVER, STACKDRIVER);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.PROMETHEUS, PROMETHEUS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SPLUNK, SPLUNK);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.DATADOG_METRICS, DATADOG_METRICS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.DATADOG_LOG, DATADOG_LOG);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.DYNATRACE, DYNATRACE);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.CUSTOM_HEALTH_METRIC, CUSTOM_HEALTH_METRIC);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.CUSTOM_HEALTH_LOG, CUSTOM_HEALTH_LOG);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.ERROR_TRACKING, ERROR_TRACKING);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SPLUNK_METRIC, SPLUNK_METRIC);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.ELASTICSEARCH, ELASTICSEARCH);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.CLOUDWATCH_METRICS, CLOUDWATCH_METRICS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_LOG, NEXT_GEN_HEALTH_SOURCE);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_METRICS, NEXT_GEN_HEALTH_SOURCE);
+  }
 }

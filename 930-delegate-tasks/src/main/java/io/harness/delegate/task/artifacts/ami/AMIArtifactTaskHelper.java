@@ -89,9 +89,11 @@ public class AMIArtifactTaskHelper {
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       }
 
-      ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
-          .getMap()
-          .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+      if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) != null) {
+        ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
+            .getMap()
+            .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+      }
 
       throw ex;
     }
@@ -106,7 +108,7 @@ public class AMIArtifactTaskHelper {
         .build();
   }
 
-  private void saveLogs(LogCallback executionLogCallback, String message) {
+  protected void saveLogs(LogCallback executionLogCallback, String message) {
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message);
     }

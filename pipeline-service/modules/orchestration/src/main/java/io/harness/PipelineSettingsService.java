@@ -11,8 +11,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PipelineSettingsService {
-  PlanExecutionSettingResponse shouldQueuePlanExecution(
-      String accountId, String orgId, String projectId, String pipelineIdentifier);
+  PlanExecutionSettingResponse shouldQueuePlanExecution(String accountId, String pipelineIdentifier);
 
   long getMaxPipelineCreationCount(String accountId);
 

@@ -11,6 +11,8 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -22,6 +24,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.rule.Owner;
@@ -31,6 +35,7 @@ import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisit
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,16 +48,22 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
   @Mock private SimpleVisitorFactory mockedFactory;
   @Mock private SetupUsageHelper setupUsageHelper;
   @Mock EntityReferenceExtractorVisitor mockedVisitor;
+  @Mock EnvironmentService environmentService;
   @InjectMocks @Inject private InfrastructureEntitySetupUsageHelper infraSetupUsageHelper;
 
   private static final String ACCOUNT = "ACCOUNT";
   private static final String ORG = "ORG";
   private static final String PROJECT = "PROJECT";
+  private static final String ENV_NAME = "ENV_NAME";
+
   private static final String INFRA_ROOT_NAME = "infrastructureDefinition";
 
   @Before
   public void setUp() {
     initMocks(this);
+    doReturn(Optional.of(Environment.builder().name(ENV_NAME).build()))
+        .when(environmentService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
   }
 
   @Test
@@ -130,6 +141,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     assertThat(infraDefRef.getOrgIdentifier().getValue()).isEqualTo(ORG);
     assertThat(infraDefRef.getProjectIdentifier().getValue()).isEqualTo(PROJECT);
     assertThat(infraDefRef.getEnvIdentifier().getValue()).isEqualTo(infrastructure.getEnvIdentifier());
+    assertThat(infraDefRef.getEnvName().getValue()).isEqualTo(ENV_NAME);
     assertThat(infraDefRef.getIdentifier().getValue()).isEqualTo(infrastructure.getIdentifier());
   }
 
