@@ -437,10 +437,7 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
-<<<<<<< HEAD
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
-=======
->>>>>>> 7256e7d8233 ([feat]: [CDS-47025] asg rolling deploy manager changes 4)
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
