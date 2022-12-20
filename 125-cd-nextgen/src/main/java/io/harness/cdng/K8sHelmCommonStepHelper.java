@@ -193,8 +193,7 @@ public class K8sHelmCommonStepHelper {
       }
     }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-      if ((ManifestType.K8Manifest.equals(k8sManifestOutcome.getType()) && hasOnlyOne(gitStoreConfig.getPaths()))
+      if (ManifestType.K8Manifest.equals(k8sManifestOutcome.getType())
           || ManifestType.HelmChart.equals(k8sManifestOutcome.getType())) {
         gitFetchFilesConfigs.addAll(
             mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
