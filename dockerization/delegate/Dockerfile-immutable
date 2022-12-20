@@ -47,7 +47,7 @@ RUN chmod +x /opt/harness-delegate/client-tools/kubectl/v1.24.3/kubectl
 RUN chmod +x /opt/harness-delegate/client-tools/go-template/v0.4.1/go-template
 RUN chmod +x /opt/harness-delegate/client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm
 RUN chmod +x /opt/harness-delegate/client-tools/helm/v3.9.2/helm
-RUN chmod +x /opt/harness-delegate/client-tools/chartmuseum/v0.15.0/chartmuseu
+RUN chmod +x /opt/harness-delegate/client-tools/chartmuseum/v0.15.0/chartmuseum
 RUN chmod +x /opt/harness-delegate/client-tools/tf-config-inspect/v1.1/terraform-config-inspect
 RUN chmod +x /opt/harness-delegate/client-tools/oc/v4.2.16/oc
 RUN chmod +x /opt/harness-delegate/client-tools/kustomize/v4.5.4/kustomize
