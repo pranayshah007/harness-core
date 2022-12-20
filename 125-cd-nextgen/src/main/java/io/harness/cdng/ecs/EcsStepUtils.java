@@ -68,6 +68,16 @@ public class EcsStepUtils extends CDStepHelper {
     return isGitManifest;
   }
 
+  public boolean isAnyS3Manifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    Boolean isS3Manifest = false;
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
+      if (ManifestStoreType.S3.equals(manifest.getStore().getKind())) {
+        isS3Manifest = true;
+      }
+    }
+    return isS3Manifest;
+  }
+
   public S3StoreDelegateConfig getS3StoreDelegateConfig(
       Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome) {
     String connectorId = s3StoreConfig.getConnectorRef().getValue();

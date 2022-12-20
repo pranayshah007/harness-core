@@ -20,6 +20,8 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 
@@ -45,7 +47,7 @@ public class TasResourceServiceImpl implements TasResourceService {
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
-        taskParamas, baseNGAccess, "Tas list organization task failure due to error");
+        taskParamas, baseNGAccess, "Tas list organization task failure due to error", TaskType.TAS_DATA_FETCH);
     return delegateResponse.getCfInfraMappingDataResult().getOrganizations();
   }
 
@@ -71,7 +73,7 @@ public class TasResourceServiceImpl implements TasResourceService {
                                                   .tasInfraConfig(tasInfraConfig)
                                                   .build();
     CfInfraMappingDataResponseNG delegateResponse = (CfInfraMappingDataResponseNG) tasEntityHelper.executeSyncTask(
-        taskParamas, baseNGAccess, "Tas list spaces task failure due to error");
+        taskParamas, baseNGAccess, "Tas list spaces task failure due to error", TaskType.TAS_DATA_FETCH);
     return delegateResponse.getCfInfraMappingDataResult().getSpaces();
   }
 }

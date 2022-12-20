@@ -31,6 +31,7 @@ public class STOCreatorUtils {
     SortedSet<String> steps = new TreeSet<>();
     steps.add("Security");
     steps.add("Run");
+    steps.add("Background");
 
     steps.addAll(Arrays.stream(STOStepType.values()).map(e -> e.getName()).collect(Collectors.toSet()));
 

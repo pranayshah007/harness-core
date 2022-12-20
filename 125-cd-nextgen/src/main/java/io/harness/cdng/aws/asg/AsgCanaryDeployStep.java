@@ -7,16 +7,20 @@
 
 package io.harness.cdng.aws.asg;
 
+import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -24,11 +28,13 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -92,8 +98,8 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
             .build();
 
-    return asgStepCommonHelper.queueAsgTask(
-        stepElementParameters, asgCanaryDeployRequest, ambiance, executionPassThroughData, true);
+    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,
+        executionPassThroughData, true, AWS_ASG_CANARY_DEPLOY_TASK_NG);
   }
 
   @Override
@@ -106,8 +112,31 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    AsgCanaryDeployResponse asgCanaryDeployResponse = (AsgCanaryDeployResponse) responseDataSupplier.get();
     // TODO
+
+    AsgExecutionPassThroughData asgExecutionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
+    InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();
+    AsgCanaryDeployResponse asgCanaryDeployResponse;
+    try {
+      asgCanaryDeployResponse = (AsgCanaryDeployResponse) responseDataSupplier.get();
+    } catch (Exception e) {
+      log.error("Error while processing asg task response: {}", e.getMessage(), e);
+      return asgStepCommonHelper.handleTaskException(ambiance, asgExecutionPassThroughData, e);
+    }
+    StepResponseBuilder stepResponseBuilder =
+        StepResponse.builder().unitProgressList(asgCanaryDeployResponse.getUnitProgressData().getUnitProgresses());
+    if (asgCanaryDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return AsgStepCommonHelper.getFailureResponseBuilder(asgCanaryDeployResponse, stepResponseBuilder).build();
+    }
+
+    AsgCanaryDeployOutcome asgCanaryDeployOutcome =
+        AsgCanaryDeployOutcome.builder()
+            .canaryAsgName(asgCanaryDeployResponse.getAsgCanaryDeployResult().getCanaryAsgName())
+            .build();
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DEPLOY_OUTCOME,
+        asgCanaryDeployOutcome, StepOutcomeGroup.STEP.name());
+
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 

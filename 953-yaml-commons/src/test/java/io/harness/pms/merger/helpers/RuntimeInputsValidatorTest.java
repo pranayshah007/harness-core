@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -140,6 +141,9 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
     assertThat(areInputsValidAgainstSourceNode(
                    convertYamlToJsonNode("field: <+input>"), convertYamlToJsonNode(yamlToValidate)))
         .isFalse();
+    assertThat(validateInputsAgainstSourceNode(
+                   "field: \"foo\" \nnewField: \"abc\"", "field: <+input>", Set.of(), Set.of("newField")))
+        .isTrue();
   }
 
   @Test

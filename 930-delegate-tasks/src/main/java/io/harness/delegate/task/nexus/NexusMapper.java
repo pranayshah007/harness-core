@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.delegate.task.azure.artifact.NexusAzureArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -93,6 +94,39 @@ public class NexusMapper {
 
   public NexusRequest toNexusRequest(
       NexusConnectorDTO nexusConnectorDTO, NexusAzureArtifactRequestDetails requestDetails) {
+    NexusAuthType authType = nexusConnectorDTO.getAuth().getAuthType();
+    if (NexusAuthType.USER_PASSWORD == authType) {
+      NexusUsernamePasswordAuthDTO credentials =
+          (NexusUsernamePasswordAuthDTO) nexusConnectorDTO.getAuth().getCredentials();
+
+      String username =
+          getSecretAsStringFromPlainTextOrSecretRef(credentials.getUsername(), credentials.getUsernameRef());
+      char[] decryptedValue = credentials.getPasswordRef().getDecryptedValue();
+
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .username(username)
+          .password(decryptedValue)
+          .hasCredentials(true)
+          .isCertValidationRequired(requestDetails.isCertValidationRequired())
+          .artifactRepositoryUrl(requestDetails.getArtifactUrl())
+          .build();
+    } else if (NexusAuthType.ANONYMOUS == authType) {
+      return NexusRequest.builder()
+          .nexusUrl(nexusConnectorDTO.getNexusServerUrl())
+          .version(nexusConnectorDTO.getVersion())
+          .hasCredentials(false)
+          .isCertValidationRequired(requestDetails.isCertValidationRequired())
+          .artifactRepositoryUrl(requestDetails.getArtifactUrl())
+          .build();
+    }
+
+    throw new InvalidRequestException(format("Unsupported Nexus auth type: %s", authType));
+  }
+
+  public NexusRequest toNexusRequest(
+      NexusConnectorDTO nexusConnectorDTO, NexusTasArtifactRequestDetails requestDetails) {
     NexusAuthType authType = nexusConnectorDTO.getAuth().getAuthType();
     if (NexusAuthType.USER_PASSWORD == authType) {
       NexusUsernamePasswordAuthDTO credentials =

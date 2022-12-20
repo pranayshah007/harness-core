@@ -74,13 +74,14 @@ public class ChangeEventResource {
   getSummary(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
+      @QueryParam("isMonitoredServiceIdentifierScoped") boolean isMonitoredServiceIdentifierScoped,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime) {
-    return new RestResponse<>(
-        changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier, monitoredServiceIdentifiers,
-            changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+    return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
+        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
   }
 
   @GET

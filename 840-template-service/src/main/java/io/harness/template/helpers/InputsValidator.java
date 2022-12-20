@@ -52,8 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class InputsValidator {
   private static final int MAX_DEPTH = 10;
-  private final Set<String> KEYS_TO_IGNORE =
-      Set.of("service.serviceInputs", "environment.environmentInputs", "environment.serviceOverrideInputs");
+  private final Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+      "environment.serviceOverrideInputs", "codebase.repoName");
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;

@@ -67,7 +67,7 @@ public class TerragruntClientImplTest extends CategoryTest {
     Path backendFilePath = Files.createFile(Paths.get("./backend-file"));
     try {
       FileIo.writeFile(backendFilePath, "backend config".getBytes(StandardCharsets.UTF_8));
-      testInit("./backend-file", TerragruntCommandUtils.init("./backend-file"));
+      testInit("./backend-file", TerragruntCommandUtils.init("./backend-file", TerragruntRunType.RUN_MODULE));
     } finally {
       FileIo.deleteFileIfExists(backendFilePath.toString());
     }
@@ -78,7 +78,7 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testInitBackendFileDoesntExist() {
-    testInit("./backend-file-2", TerragruntCommandUtils.init("./should-not-be-append"));
+    testInit("./backend-file-2", TerragruntCommandUtils.init("./should-not-be-append", TerragruntRunType.RUN_MODULE));
   }
 
   @Test

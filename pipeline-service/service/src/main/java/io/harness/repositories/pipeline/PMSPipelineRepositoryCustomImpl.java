@@ -249,6 +249,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
+        GitAwareContextHelper.updateGitEntityContextWithBranch(fallBackBranch);
         savedEntity = fetchRemoteEntity(
             accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
       } else {

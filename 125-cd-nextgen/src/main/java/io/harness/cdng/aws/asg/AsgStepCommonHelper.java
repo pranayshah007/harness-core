@@ -11,6 +11,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
@@ -29,20 +30,30 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
+import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -51,6 +62,8 @@ import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 
 import software.wings.beans.TaskType;
 
@@ -68,6 +81,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private AsgEntityHelper asgEntityHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private CDStepHelper cdStepHelper;
 
@@ -265,15 +279,15 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public TaskChainResponse queueAsgTask(StepElementParameters stepElementParameters, AsgCommandRequest commandRequest,
-      Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
+      Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {commandRequest})
-                            .taskType(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
 
-    String taskName = TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG.getDisplayName() + " : " + commandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + commandRequest.getCommandName();
 
     AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
 
@@ -286,5 +300,48 @@ public class AsgStepCommonHelper extends CDStepHelper {
         .chainEnd(isChainEnd)
         .passThroughData(passThroughData)
         .build();
+  }
+
+  public static String getErrorMessage(AsgCommandResponse asgCommandResponse) {
+    return asgCommandResponse.getErrorMessage() == null ? "" : asgCommandResponse.getErrorMessage();
+  }
+
+  public StepResponse handleTaskException(
+      Ambiance ambiance, AsgExecutionPassThroughData executionPassThroughData, Exception e) throws Exception {
+    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
+      throw e;
+    }
+
+    UnitProgressData unitProgressData =
+        completeUnitProgressData(executionPassThroughData.getLastActiveUnitProgressData(), ambiance, e.getMessage());
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(io.harness.eraro.Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(HarnessStringUtils.emptyIfNull(ExceptionUtils.getMessage(e)))
+                                  .build();
+
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  public static StepResponseBuilder getFailureResponseBuilder(
+      AsgCommandResponse asgCommandResponse, StepResponseBuilder stepResponseBuilder) {
+    stepResponseBuilder.status(Status.FAILED)
+        .failureInfo(
+            FailureInfo.newBuilder().setErrorMessage(AsgStepCommonHelper.getErrorMessage(asgCommandResponse)).build());
+    return stepResponseBuilder;
+  }
+
+  public AsgInfraConfig getAsgInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return asgEntityHelper.getAsgInfraConfig(infrastructure, ngAccess);
   }
 }
