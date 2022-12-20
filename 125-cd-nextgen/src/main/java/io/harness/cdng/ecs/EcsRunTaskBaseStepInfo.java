@@ -15,7 +15,6 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
