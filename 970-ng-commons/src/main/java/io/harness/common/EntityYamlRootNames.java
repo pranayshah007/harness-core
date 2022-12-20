@@ -203,4 +203,5 @@ public class EntityYamlRootNames {
   public static final String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
   public static final String TANZU_COMMAND_STEP = "TanzuCommand";
   public static final String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
+  public static final String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
 }

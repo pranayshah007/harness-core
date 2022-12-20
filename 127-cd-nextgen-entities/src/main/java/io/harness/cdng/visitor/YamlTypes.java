@@ -85,6 +85,7 @@ public interface YamlTypes {
   String ASG_CANARY_DEPLOY = StepSpecTypeConstants.ASG_CANARY_DEPLOY;
   String ASG_CANARY_DELETE = StepSpecTypeConstants.ASG_CANARY_DELETE;
   String ASG_ROLLING_DEPLOY = StepSpecTypeConstants.ASG_ROLLING_DEPLOY;
+  String ASG_ROLLING_ROLLBACK = StepSpecTypeConstants.ASG_ROLLING_ROLLBACK;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
