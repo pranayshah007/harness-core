@@ -404,6 +404,52 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
+  public void testImportPipelineWithoutNameAndIdentifierValidationChecks() {
+    String importedPipeline = "pipeline:\n"
+        + "  name: abcPipelineImport\n"
+        + "  identifier: abcPipelineImport\n"
+        + "  projectIdentifier: GitX_Remote\n"
+        + "  orgIdentifier: default\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: zd\n"
+        + "        identifier: zd\n"
+        + "        description: \"\"\n"
+        + "        type: Approval\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  name: dsf\n"
+        + "                  identifier: dsf\n"
+        + "                  type: HarnessApproval\n"
+        + "                  timeout: 1d\n"
+        + "                  spec:\n"
+        + "                    approvalMessage: |-\n"
+        + "                      Please review the following information\n"
+        + "                      and approve the pipeline progression\n"
+        + "                    includePipelineExecutionHistory: true\n"
+        + "                    approvers:\n"
+        + "                      minimumCount: 1\n"
+        + "                      disallowPipelineExecutor: false\n"
+        + "                      userGroups: <+input>\n"
+        + "                    approverInputs: []\n"
+        + "        tags: {}";
+    String orgIdentifier = "default";
+    String projectIdentifier = "GitX_Remote";
+    String pipelineIdentifier = "";
+    PipelineImportRequestDTO pipelineImportRequest =
+        PipelineImportRequestDTO.builder().pipelineDescription("junk pipeline description").build();
+    Assertions.assertDoesNotThrow(
+        ()
+            -> PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadataInternal(
+                orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipeline));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
   public void testResolveTemplatesAndValidatePipeline() {
     String yaml = "yaml";
     PipelineEntity pipelineEntity = PipelineEntity.builder()

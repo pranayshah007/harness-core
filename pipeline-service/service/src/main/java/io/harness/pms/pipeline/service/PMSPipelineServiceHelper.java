@@ -223,12 +223,13 @@ public class PMSPipelineServiceHelper {
     Map<String, String> changedFields = new HashMap<>();
 
     String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
-    if (!pipelineIdentifier.equals(identifierFromGit)) {
+    if (isNotEmpty(pipelineIdentifier) && !pipelineIdentifier.equals(identifierFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.IDENTIFIER, identifierFromGit);
     }
 
     String nameFromGit = pipelineInnerField.getNode().getName();
-    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
+    if (isNotEmpty(pipelineImportRequest.getPipelineName())
+        && !pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
     }
 
