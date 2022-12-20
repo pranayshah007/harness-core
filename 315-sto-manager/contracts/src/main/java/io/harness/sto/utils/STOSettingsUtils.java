@@ -133,15 +133,15 @@ public final class STOSettingsUtils {
       STOYamlAuthType authType = authData.getType();
 
       map.put(getSTOKey("product_auth_type"),
-          authType != null ? authType.getYamlName() : STOYamlAuthType.REPOSITORY.getYamlName());
+          authType != null ? authType.getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
       map.put(getSTOKey("product_domain"),
           resolveStringParameter("auth.domain", stepType, identifier, authData.getDomain(), false));
       map.put(getSTOKey("product_api_version"),
-          resolveStringParameter("image.region", stepType, identifier, authData.getVersion(), false));
+          resolveStringParameter("auth.version", stepType, identifier, authData.getVersion(), false));
       map.put(getSTOKey("product_access_id"),
-          resolveStringParameter("image.access_id", stepType, identifier, authData.getAccessId(), false));
+          resolveStringParameter("auth.accessId", stepType, identifier, authData.getAccessId(), false));
       map.put(getSTOKey("product_access_token"),
-          resolveStringParameter("image.access_token", stepType, identifier, authData.getAccessToken(), false));
+          resolveStringParameter("auth.accessToken", stepType, identifier, authData.getAccessToken(), false));
     }
 
     return map;
@@ -210,6 +210,9 @@ public final class STOSettingsUtils {
 
       String targetName = resolveStringParameter("target.name", stepType, identifier, target.getName(), true);
       String targetVariant = resolveStringParameter("target.variant", stepType, identifier, target.getVariant(), true);
+
+      map.put(getSTOKey("target_name"), targetName);
+      map.put(getSTOKey("target_variant"), targetVariant);
 
       switch (target.getType()) {
         case INSTANCE:

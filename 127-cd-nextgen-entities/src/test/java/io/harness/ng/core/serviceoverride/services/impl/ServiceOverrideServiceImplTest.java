@@ -39,12 +39,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
   @Inject ServiceOverrideServiceImpl serviceOverrideService;
-
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "orgIdentifier";
   private final String PROJECT_IDENTIFIER = "projectIdentifier";
   private final String ENV_REF = "envIdentifier";
   private final String SERVICE_REF = "serviceIdentifier";
+  private final String ORG_ENV_REF = "org.envIdentifier";
+  private final String ORG_SERVICE_REF = "org.serviceIdentifier";
+  private final String ACCOUNT_ENV_REF = "account.envIdentifier";
+  private final String ACCOUNT_SERVICE_REF = "account.serviceIdentifier";
 
   @Test
   @Owner(developers = HINGER)
@@ -368,6 +371,58 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         .hasMessageContaining(
             String.format("Empty variable name for 1 variable override in service ref: [%s]", SERVICE_REF));
   }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testOrgAccountLevelCRUD() {
+    // upsert
+    // org level env overriding account level service
+    NGServiceOverridesEntity serviceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .environmentRef(ORG_ENV_REF)
+            .serviceRef(ACCOUNT_SERVICE_REF)
+            .yaml(
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: org.envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+            .build();
+    NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
+    assertThat(upsertedServiceOverridesEntity).isNotNull();
+    assertThat(upsertedServiceOverridesEntity.getOrgIdentifier()).isEqualTo(serviceOverridesEntity.getOrgIdentifier());
+    assertThat(upsertedServiceOverridesEntity.getProjectIdentifier())
+        .isEqualTo(serviceOverridesEntity.getProjectIdentifier());
+    assertThat(upsertedServiceOverridesEntity.getServiceRef()).isEqualTo(serviceOverridesEntity.getServiceRef());
+    assertThat(upsertedServiceOverridesEntity.getEnvironmentRef())
+        .isEqualTo(serviceOverridesEntity.getEnvironmentRef());
+    assertThat(upsertedServiceOverridesEntity.getYaml()).isNotNull();
+
+    NGServiceOverridesEntity serviceOverridesEntity2 =
+        NGServiceOverridesEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .environmentRef(ORG_ENV_REF)
+            .serviceRef(ORG_SERVICE_REF)
+            .yaml(
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: org.envIdentifier\n  serviceRef: org.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+            .build();
+    serviceOverrideService.upsert(serviceOverridesEntity2);
+    // list
+    Criteria criteriaFromFilter = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_IDENTIFIER, null);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 100, null);
+    Page<NGServiceOverridesEntity> list = serviceOverrideService.list(criteriaFromFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+
+    // get
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isPresent();
+
+    // delete
+    assertThat(serviceOverrideService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, ORG_ENV_REF, ACCOUNT_SERVICE_REF))
+        .isTrue();
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

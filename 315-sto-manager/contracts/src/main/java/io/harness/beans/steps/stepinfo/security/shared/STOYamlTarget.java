@@ -27,7 +27,7 @@ import lombok.Data;
 public class STOYamlTarget {
   @NotNull
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlTargetType")
   protected STOYamlTargetType type;
 
   @NotNull

@@ -12,13 +12,14 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
 import io.harness.ci.creator.variables.RunStepVariableCreator;
 import io.harness.ci.creator.variables.STOCommonStepVariableCreator;
 import io.harness.ci.creator.variables.STOStageVariableCreator;
 import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.plancreator.BackgroundStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
@@ -78,6 +79,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
                             .collect(Collectors.toList()));
 
     planCreators.add(new RunStepPlanCreator());
+    planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
     planCreators.add(new NGStageStepsPlanCreator());
     planCreators.add(new ExecutionPmsPlanCreator());
@@ -109,6 +111,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
 
     variableCreators.add(new STOCommonStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
+    variableCreators.add(new BackgroundStepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(
@@ -135,7 +138,6 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     StepInfo securityStepInfo = StepInfo.newBuilder()
                                     .setName("Security")
                                     .setType(StepSpecTypeConstants.SECURITY)
-                                    .setFeatureFlag(FeatureName.SECURITY.name())
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
     StepInfo runStepInfo = StepInfo.newBuilder()
@@ -143,11 +145,17 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
                                .setType(StepSpecTypeConstants.RUN)
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
+    StepInfo backgroundStepInfo = StepInfo.newBuilder()
+                                      .setName("Background")
+                                      .setType(StepSpecTypeConstants.BACKGROUND)
+                                      .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                      .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(securityStepInfo);
     stepInfos.add(runStepInfo);
+    stepInfos.add(backgroundStepInfo);
     Arrays.asList(STOStepType.values())
         .forEach(e -> e.getStepCategories().forEach(category -> stepInfos.add(createStepInfo(e, category))));
 

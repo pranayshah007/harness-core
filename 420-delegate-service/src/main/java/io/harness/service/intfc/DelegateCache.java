@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
+import io.harness.delegate.beans.DelegateTaskRank;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 
@@ -30,4 +32,8 @@ public interface DelegateCache {
   List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 
   Set<String> getDelegateSupportedTaskTypes(@NotNull String accountId);
+
+  long getTasksCount(@NotNull String accountId, @NotNull DelegateTaskRank rank);
+
+  Map<String, Long> getTasksCountPerAccount(@NotNull DelegateTaskRank rank);
 }

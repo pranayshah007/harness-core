@@ -38,6 +38,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.iacm.beans.steps.StepSpecTypeConstants;
 import io.harness.iacm.stages.IACMStageNode;
 import io.harness.plancreator.execution.ExecutionElementConfig;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
@@ -67,11 +68,13 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -108,8 +111,11 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     String childNodeId = executionField.getNode().getUuid();
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
 
+    String stackId = parentNode.getField("stackID").getNode().getCurrJsonNode().asText();
+    String operation = parentNode.getField("operation").getNode().getCurrJsonNode().asText();
+
     // Because we are using a CI stage, the Stage if of type IntegrationStageConfig. From here we are only interested
-    // on 3 elements, cloneCodebase, Infastructure (to use the dlite delegates) and Execution. I think that if any of
+    // on 3 elements, cloneCodebase, Infrastructure (to use the dlite delegates) and Execution. I think that if any of
     // the other values are present we should fail the execution
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
     boolean cloneCodebase =
@@ -126,6 +132,11 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode);
 
+    modifiedExecutionPlan = addStackIdToIACMSteps(modifiedExecutionPlan, stackId);
+    // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
+    // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
+    // any step and that step will be available in the InitialTask step in the path:
+    // stageElementConfig -> Execution -> Steps -> InjectedSteps
     putNewExecutionYAMLInResponseMap(executionField, planCreationResponseMap, modifiedExecutionPlan, parentNode);
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
@@ -140,6 +151,25 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     return planCreationResponseMap;
   }
 
+  private ExecutionElementConfig addStackIdToIACMSteps(ExecutionElementConfig modifiedExecutionPlan, String stackID) {
+    List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
+    for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
+      switch (wrapperConfig.getStep().get("type").asText()) {
+        case StepSpecTypeConstants.IACM_TERRAFORM_PLAN:
+          ((ObjectNode) wrapperConfig.getStep().get("spec")).put("stackID", stackID);
+          break;
+        default:
+          break;
+      }
+      modifiedSteps.add(wrapperConfig);
+    }
+    return ExecutionElementConfig.builder()
+        .uuid(modifiedExecutionPlan.getUuid())
+        .rollbackSteps(modifiedExecutionPlan.getRollbackSteps())
+        .steps(modifiedSteps)
+        .build();
+  }
+
   @Override
   public Set<String> getSupportedStageTypes() {
     return ImmutableSet.of(StepSpecTypeConstants.IACM_STAGE);
@@ -151,8 +181,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   @Override
-  /**
-   * This function creates the spec parametes for the Stage. The stage is treated as if it were another step, so this
+  /*
+   * This function creates the spec parameters for the Stage. The stage is treated as if it were another step, so this
    * function basically identifies the spec under the stage and returns it as IntegrationStageStepParametersPMS
    * */
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
@@ -169,7 +199,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   @Override
-  /**
+  /*
    * This method creates a plan to follow for the Parent node, which is the stage. If I get this right, because the
    * stage is treated as another step, this follows the same procedure where stages are defined in what order need to be
    * executed and then for each step a Plan for the child nodes (steps?) will be executed
@@ -389,7 +419,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     return ciCodeBaseYamlField;
   }
   /**
-  This is the step that creates the integrationStageNode class from the stageNode yaml file
+  This is the step that creates the integrationStageNode class from the stageNode yaml file. Important note is that
+   we are using the IntegrationStageConfigImpl, which belongs to the CI module, we are NOT using the
+  IACMIntegrationStageConfig. If we want to use the code in CI we need to do that, which is the reason of why we are
+  injecting invisible steps to bypass this limitation
    */
   private IntegrationStageNode getIntegrationStageNode(IACMStageNode stageNode) {
     IntegrationStageConfig currentStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();

@@ -160,4 +160,4 @@ dkronClientConfig:
   readTimeOutSeconds: 50
 
 currencyPreferences:
-  historicalUpdateMonthsCount: 6
+  historicalUpdateMonthsCount: 3

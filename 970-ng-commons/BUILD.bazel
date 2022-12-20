@@ -16,6 +16,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//970-ng-commons/contracts/openapi/v1:commons-server-spec-module",
         "//970-ng-commons/src/main/proto:970_ng_java_contract_proto",
         "//979-recaster:module",
         "//980-commons:module",
@@ -24,7 +25,6 @@ java_library(
         "@maven//:com_squareup_okhttp3_logging_interceptor",
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:io_github_resilience4j_resilience4j_retrofit",
-        "@maven//:io_harness_common_models",
         "@maven//:io_opencensus_opencensus_exporter_stats_prometheus",
         "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
         "@maven//:io_opencensus_opencensus_impl",
@@ -53,7 +53,6 @@ java_library(
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
-        "@maven//:io_harness_common_models",
         "@maven//:javax_validation_validation_api",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",

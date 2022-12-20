@@ -507,3 +507,4 @@ orchestrationRestrictionConfiguration:
     team: ${MAX_STEP_TIMEOUT_TEAM:-0}
     enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
 
+grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}

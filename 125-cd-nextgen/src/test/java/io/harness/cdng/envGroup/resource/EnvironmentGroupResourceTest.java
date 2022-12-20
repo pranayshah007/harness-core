@@ -208,13 +208,13 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     // case1: without envGroupIds
     doReturn(criteria)
         .when(environmentGroupService)
-        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null);
+        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null, false);
     doReturn(new PageImpl<>(envGroupEntityList))
         .when(environmentGroupService)
         .list(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID);
     ResponseDTO<PageResponse<EnvironmentGroupResponse>> pageResponseResponseDTO =
         environmentGroupResource.listEnvironmentGroup(
-            ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null);
+            ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
     assertThat(pageResponseResponseDTO).isNotNull();
     assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(1L);
 
@@ -223,9 +223,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     criteria.and(EnvironmentGroupKeys.envIdentifiers).in(envGroupIds);
     doReturn(criteria)
         .when(environmentGroupService)
-        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null);
+        .formCriteria(ACC_ID, ORG_ID, PRO_ID, false, searchTerm, filterIdentifier, null, false);
     pageResponseResponseDTO = environmentGroupResource.listEnvironmentGroup(
-        ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null);
+        ACC_ID, ORG_ID, PRO_ID, null, searchTerm, 0, 1, null, filterIdentifier, null, null, false);
     assertThat(pageResponseResponseDTO).isNotNull();
     assertThat(pageResponseResponseDTO.getData().getPageItemCount()).isEqualTo(1L);
   }

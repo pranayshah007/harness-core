@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.beans.healthsource.QueryParams;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.rule.Owner;
 
@@ -31,16 +32,17 @@ public class SumologicLogDataCollectionInfoMapperTest extends CvNextGenTestBase 
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
-  public void testToDataCollectionInfo() {
-    SumologicLogCVConfig sumologicLogCVConfig = SumologicLogCVConfig.builder()
-                                                    .query(MOCKED_QUERY)
-                                                    .queryName(MOCKED_QUERY_NAME)
-                                                    .serviceInstanceIdentifier(MOCKED_INSTANCE_IDENTIFIER)
-                                                    .build();
+  public void testToSumologicDataCollectionInfo() {
+    NextGenLogCVConfig nextGenLogCVConfig =
+        NextGenLogCVConfig.builder()
+            .query(MOCKED_QUERY)
+            .queryName(MOCKED_QUERY_NAME)
+            .queryParams(QueryParams.builder().serviceInstanceField(MOCKED_INSTANCE_IDENTIFIER).build())
+            .build();
 
     SumologicLogDataCollectionInfo sumologicLogDataCollectionInfo =
         sumologicLogDataCollectionInfoMapper.toDataCollectionInfo(
-            sumologicLogCVConfig, VerificationTask.TaskType.DEPLOYMENT);
+            nextGenLogCVConfig, VerificationTask.TaskType.DEPLOYMENT);
     assertThat(sumologicLogDataCollectionInfo).isNotNull();
     assertThat(sumologicLogDataCollectionInfo.getQuery()).isEqualTo(MOCKED_QUERY);
     assertThat(sumologicLogDataCollectionInfo.getServiceInstanceIdentifier()).isEqualTo(MOCKED_INSTANCE_IDENTIFIER);

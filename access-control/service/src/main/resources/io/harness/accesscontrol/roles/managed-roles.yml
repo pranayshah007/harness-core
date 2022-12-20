@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 39
+version: 40
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -744,6 +744,24 @@ roles:
       internal: true
       allowedScopeLevels:
         - account
+    - identifier: _organization_basic
+      name: Organization Basic
+      description: Organization Basic
+      permissions:
+        - core_organization_view
+      managed: true
+      internal: true
+      allowedScopeLevels:
+        - organization
+    - identifier: _project_basic
+      name: Project Basic
+      description: Project Basic
+      permissions:
+        - core_project_view
+      managed: true
+      internal: true
+      allowedScopeLevels:
+        - project
     - identifier: _billing_admin
       name: Billing Admin
       description: Billing Admin

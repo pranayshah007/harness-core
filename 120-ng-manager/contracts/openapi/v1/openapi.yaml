@@ -2,29 +2,34 @@ openapi: 3.0.3
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1'
-  description: This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
+  description: This is the Open Api Spec 3 for NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Organization
-    description: Everything about organization
+    description: This contains APIs for Organizations.
   - name: Org Project
-    description: Everything about org scoped project
+    description: This contains APIs for Projects.
+    x-displayName: Project
   - name: Account Secret
-    description: Everything about account scoped secret
+    description: This contains APIs for Account-scoped Secrets.
+    x-displayName: Account Secrets
   - name: Org Secret
-    description: Everything about org scoped secret
+    description: This contains APIs for Organization-scoped Secrets.
+    x-displayName: Organization Secrets
   - name: Project Secret
-    description: Everything about project scoped secret
-  - name: Project Services
-    description: This contains APIs for performing CRUD operations on Services.
-  - name: Org Services
-    description: This contains APIs for performing CRUD operations on org scoped Services.
+    description: This contains APIs for Project-scoped Secrets.
+    x-displayName: Project Secrets
   - name: Account Services
-    description: This contains APIs for performing CRUD operations on account scoped Services.
+    description: This contains APIs for Account-scoped Services.
+  - name: Org Services
+    description: This contains APIs for Organization-scoped Services.
+    x-displayName: Organization Services
+  - name: Project Services
+    description: This contains APIs for Project-scoped Services.
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -89,7 +94,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -106,12 +111,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: []
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Project Services
     post:
@@ -194,7 +199,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -211,12 +216,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: [ ]
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Org Services
     post:
@@ -297,7 +302,7 @@ paths:
             type: boolean
           in: query
           name: is_access_list
-          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+          description: Specifies whether the list is an access list. An access list is a list of services that you are permitted to use in a pipeline.
         - schema:
             type: string
             enum:
@@ -314,12 +319,12 @@ paths:
             type: boolean
           name: git_ops_enabled
           in: query
-          description: Enables use of this service in Harness GitOps PR Pipelines
+          description: Enables you to use the service in Harness GitOps PR pipelines.
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: [ ]
-      description: Returns all services that the current user has view permissions for given project.
+      description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Account Services
     post:
@@ -889,7 +894,7 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
           minLength: 1
           maxLength: 64
         slug:
@@ -913,7 +918,7 @@ components:
         name:
           type: string
           description: Name of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:
@@ -993,7 +998,7 @@ components:
         name:
           type: string
           description: Name of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         description:

@@ -317,9 +317,8 @@ public class EnvironmentInfraFilterHelper {
 
   public Set<InfrastructureEntity> getInfrastructureForEnvironmentList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
-    List<InfrastructureEntity> infrastructureEntityList =
-        infrastructureEntityService.getAllInfrastructureFromEnvIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+    List<InfrastructureEntity> infrastructureEntityList = infrastructureEntityService.getAllInfrastructureFromEnvRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
     return new HashSet<>(infrastructureEntityList);
   }
 

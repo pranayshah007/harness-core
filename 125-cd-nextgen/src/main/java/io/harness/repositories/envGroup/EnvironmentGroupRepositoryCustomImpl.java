@@ -146,6 +146,7 @@ public class EnvironmentGroupRepositoryCustomImpl implements EnvironmentGroupRep
   }
 
   private void validateNotExistentEnvIdentifiers(EnvironmentGroupEntity environmentGroupEntity) {
+    // all env identifiers will be at the same scope
     List<String> exitsEnvIdentifiers = environmentService.fetchesNonDeletedEnvIdentifiersFromList(
         environmentGroupEntity.getAccountId(), environmentGroupEntity.getOrgIdentifier(),
         environmentGroupEntity.getProjectIdentifier(), environmentGroupEntity.getEnvIdentifiers());

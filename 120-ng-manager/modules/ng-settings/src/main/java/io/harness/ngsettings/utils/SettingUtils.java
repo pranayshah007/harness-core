@@ -11,16 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
+import io.harness.ngsettings.SettingPlanConfig;
 import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.SettingConfiguration;
 
+import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -118,5 +123,36 @@ public class SettingUtils {
     } else {
       return null;
     }
+  }
+
+  public static String getDefaultValue(Edition edition, SettingConfiguration settingConfiguration) {
+    if (isEmpty(settingConfiguration.getAllowedPlans())) {
+      return settingConfiguration.getDefaultValue();
+    }
+
+    if (isNull(settingConfiguration.getAllowedPlans().get(edition))) {
+      throw new InvalidRequestException("Setting is not allowed for the account plan");
+    }
+
+    String planDefaultValue = settingConfiguration.getAllowedPlans().get(edition).getDefaultValue();
+    if (isNull(planDefaultValue)) {
+      return settingConfiguration.getDefaultValue();
+    }
+
+    return planDefaultValue;
+  }
+
+  public boolean isSettingEditableForAccountEdition(Edition edition, SettingConfiguration settingConfiguration) {
+    Map<Edition, SettingPlanConfig> allowedPlans = settingConfiguration.getAllowedPlans();
+    if (isNotEmpty(allowedPlans)) {
+      if (isNull(allowedPlans.get(edition))) {
+        throw new InvalidRequestException("Setting is not available for the account plan");
+      }
+      if (isNull(allowedPlans.get(edition).getEditable())) {
+        return true;
+      }
+      return allowedPlans.get(edition).getEditable();
+    }
+    return true;
   }
 }

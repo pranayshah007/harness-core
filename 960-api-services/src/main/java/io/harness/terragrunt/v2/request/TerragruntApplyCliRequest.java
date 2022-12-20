@@ -18,4 +18,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
-public class TerragruntApplyCliRequest extends AbstractTerragruntCliRequest {}
+public class TerragruntApplyCliRequest extends AbstractTerragruntCliRequest {
+  String terraformPlanName;
+}

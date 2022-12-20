@@ -12,8 +12,8 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
-    "//311-iacm-utilities:module",
     "//332-ci-manager/service:module",
+    "//332-iacm-common:module",
     "//440-connector-nextgen:module",
     "//870-cg-orchestration:module",
     "//940-primary-version-manager:module",

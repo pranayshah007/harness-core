@@ -16,11 +16,13 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskParams;
 import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.ConnectorValidationException;
+import io.harness.network.Http;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
@@ -56,21 +58,16 @@ public class TasValidationHandler implements ConnectorValidationHandler {
   private ConnectorValidationResult validateInternal(
       TasConnectorDTO tasConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     CloudFoundryConfig cfConfig = ngConfigMapper.mapTasConfigWithDecryption(tasConnectorDTO, encryptedDataDetails);
-    reformatEndpointURL(cfConfig);
-    return handleValidateTask(cfConfig);
+    TasManualDetailsDTO tasManualDetailsDTO = (TasManualDetailsDTO) tasConnectorDTO.getCredential().getSpec();
+    return handleValidateTask(cfConfig, tasManualDetailsDTO.getEndpointUrl());
   }
 
-  private void reformatEndpointURL(CloudFoundryConfig cfConfig) {
-    String endpointUrl = cfConfig.getEndpointUrl();
-    String httpPrefix = "https://";
-    if (endpointUrl.length() >= 8 && httpPrefix.equals(endpointUrl.substring(0, 8))) {
-      cfConfig.setEndpointUrl(endpointUrl.substring(httpPrefix.length()));
-    }
-  }
-
-  private ConnectorValidationResult handleValidateTask(CloudFoundryConfig cfConfig) {
+  private ConnectorValidationResult handleValidateTask(CloudFoundryConfig cfConfig, String endpointUrl) {
     try {
-      // todo: ask about limit pcf threads FF
+      boolean valid = Http.connectableHttpUrlWithoutFollowingRedirect(endpointUrl);
+      if (!valid) {
+        throw new IllegalArgumentException("EndPoint is not valid");
+      }
       cfDeploymentManager.getOrganizations(CfRequestConfig.builder()
                                                .userName(String.valueOf(cfConfig.getUserName()))
                                                .password(String.valueOf(cfConfig.getPassword()))

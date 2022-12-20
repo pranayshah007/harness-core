@@ -30,4 +30,5 @@ public class InstanceOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull String name;
   @NotNull String hostName;
   HostOutcome host;
+  TasOutcome pcfElement;
 }

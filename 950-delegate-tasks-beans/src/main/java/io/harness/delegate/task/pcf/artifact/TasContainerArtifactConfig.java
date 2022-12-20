@@ -10,8 +10,8 @@ package io.harness.delegate.task.pcf.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -23,7 +23,7 @@ import lombok.Data;
 @OwnedBy(CDP)
 public class TasContainerArtifactConfig implements TasArtifactConfig {
   private ConnectorConfigDTO connectorConfig;
-  private AzureRegistryType registryType;
+  private TasArtifactRegistryType registryType;
   private String image;
   private String tag;
   private List<EncryptedDataDetail> encryptedDataDetails;

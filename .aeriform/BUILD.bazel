@@ -87,8 +87,6 @@ aeriform("//300-cv-nextgen:tests")
 
 aeriform("//310-iacm-manager:module")
 
-aeriform("//311-iacm-utilities:module")
-
 aeriform("//315-sto-manager/app:module")
 
 aeriform("//315-sto-manager/app:tests")
@@ -112,6 +110,8 @@ aeriform("//332-ci-manager/service:tests")
 aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
+
+aeriform("//332-iacm-common:module")
 
 aeriform("//ce-nextgen:module")
 

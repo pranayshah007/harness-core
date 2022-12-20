@@ -10,6 +10,7 @@ package io.harness.plancreator.steps.internal;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
@@ -113,7 +114,11 @@ public class PmsStepPlanCreatorUtils {
       }
 
       YamlField siblingField;
+      // IF Pipeline Stage is in Parallel Stage, adviser obtainment will be null for individual stages
       if (isPipelineStage) {
+        if (currentField.checkIfParentIsParallel(STAGES)) {
+          return null;
+        }
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(currentField);
       } else {
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);

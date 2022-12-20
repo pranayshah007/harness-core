@@ -10,8 +10,6 @@ package io.harness.pms.pipeline.api;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -35,10 +33,10 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
-import io.harness.spec.server.commons.model.GovernanceMetadata;
-import io.harness.spec.server.commons.model.GovernanceStatus;
-import io.harness.spec.server.commons.model.Policy;
-import io.harness.spec.server.commons.model.PolicySet;
+import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
+import io.harness.spec.server.commons.v1.model.GovernanceStatus;
+import io.harness.spec.server.commons.v1.model.Policy;
+import io.harness.spec.server.commons.v1.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
@@ -56,6 +54,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
+import io.harness.utils.ApiUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,8 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.bson.Document;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -126,7 +123,7 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
     pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
-    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
+    pipelineGetResponseBody.setTags(ApiUtils.getTags(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
     pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
@@ -147,17 +144,6 @@ public class PipelinesApiUtils {
     cacheResponseMetadataDTO.setTtlLeft(cacheResponseMetadata.getTtlLeft());
     cacheResponseMetadataDTO.setLastUpdatedAt(cacheResponseMetadata.getLastUpdatedAt());
     return cacheResponseMetadataDTO;
-  }
-
-  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
-    if (isEmpty(ngTags)) {
-      return null;
-    }
-    Map<String, String> tags = new HashMap<>();
-    for (NGTag ngTag : ngTags) {
-      tags.put(ngTag.getKey(), ngTag.getValue());
-    }
-    return tags;
   }
 
   public static List<String> getModules(Set<String> modules) {
@@ -238,36 +224,6 @@ public class PipelinesApiUtils {
       map.put("cd", cd);
     }
     return (map.isEmpty()) ? null : new Document(map);
-  }
-
-  public static ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList();
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam("page", new Object[] {page})
-                               .queryParam("page_size", new Object[] {limit})
-                               .build(new Object[0]))
-                  .rel("self")
-                  .build(new Object[0]));
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page - 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("previous")
-                    .build(new Object[0]));
-    }
-
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page + 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("next")
-                    .build(new Object[0]));
-    }
-
-    return responseBuilder.links((Link[]) links.toArray(new Link[links.size()]));
   }
 
   public static PipelineListResponseBody getPipelines(PMSPipelineSummaryResponseDTO pipelineDTO) {

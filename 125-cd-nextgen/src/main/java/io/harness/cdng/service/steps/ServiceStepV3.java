@@ -303,7 +303,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           environmentService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), false);
       if (environment.isEmpty()) {
-        throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
+        throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", envRef.getValue()));
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -488,9 +488,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+
     if (serviceOpt.isEmpty()) {
       throw new InvalidRequestException(
-          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
+          format("service with ref: [%s] not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
@@ -529,6 +530,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
+    // serviceRef instead of identifier to be passed here
     entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
 
     // Add the reason in serviceOutcome;

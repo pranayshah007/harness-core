@@ -30,6 +30,7 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.OrgSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.io.InputStream;
@@ -173,7 +174,7 @@ public class OrgSecretApiImpl implements OrgSecretApi {
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = secretApiUtils.addLinksHeader(
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, format("/v1/orgs/%s/secrets", org), secretResponse.size(), page, limit);
 
     return responseBuilderWithLinks.entity(secretResponse).build();

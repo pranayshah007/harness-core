@@ -31,8 +31,9 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String queueServiceToken;
   QueueServiceClient queueServiceClient;
   HostedVmConfig hostedVmConfig;
-
   STOStepConfig stoStepConfig;
+  // Base 64 encoded credentials for gcp
+  MiningPatternConfig miningPatternConfig;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,

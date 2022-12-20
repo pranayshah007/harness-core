@@ -12,7 +12,6 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -167,8 +166,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =
@@ -220,8 +218,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
                     : inheritOutput.getEnvironmentVariables())
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =

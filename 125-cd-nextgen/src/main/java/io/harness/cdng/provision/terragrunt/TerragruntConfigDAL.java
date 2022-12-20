@@ -12,10 +12,12 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 
 import com.google.inject.Inject;
@@ -48,5 +50,13 @@ public class TerragruntConfigDAL {
         terragruntConfig, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     return terragruntConfig;
+  }
+
+  public void clearTerragruntConfig(@Nonnull Ambiance ambiance, @Nonnull String entityId) {
+    persistence.delete(persistence.createQuery(TerragruntConfig.class)
+                           .filter(TerragruntConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+                           .filter(TerragruntConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+                           .filter(TerragruntConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+                           .filter(TerragruntConfigKeys.entityId, entityId));
   }
 }

@@ -16,6 +16,8 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
@@ -25,14 +27,17 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class InfrastructureEntitySetupUsageHelper {
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject private SetupUsageHelper setupUsageHelper;
+  @Inject private EnvironmentService environmentService;
 
   /**
    * Update setup usages for the current infrastructure entity
@@ -58,9 +63,12 @@ public class InfrastructureEntitySetupUsageHelper {
   }
 
   private EntityDetailProtoDTO buildInfraDefRefBasedEntityDetailProtoDTO(@NonNull InfrastructureEntity entity) {
+    Optional<Environment> environment = environmentService.get(entity.getAccountId(), entity.getOrgIdentifier(),
+        entity.getProjectIdentifier(), entity.getEnvIdentifier(), false);
     return EntityDetailProtoDTO.newBuilder()
         .setInfraDefRef(createInfraDefinitionReferenceProtoDTO(entity.getAccountId(), entity.getOrgIdentifier(),
-            entity.getProjectIdentifier(), entity.getEnvIdentifier(), entity.getIdentifier()))
+            entity.getProjectIdentifier(), entity.getEnvIdentifier(), entity.getIdentifier(),
+            environment.isPresent() ? environment.get().getName() : StringUtils.EMPTY))
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
         .setName(entity.getName())
         .build();

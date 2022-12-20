@@ -53,6 +53,7 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rest.RestResponse;
@@ -446,6 +447,14 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
                                               .url("dummy_url")
                                               .certValidationRequired(false)
                                               .build());
+    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
+                                            .queueServiceConfig(ServiceHttpClientConfig.builder()
+                                                                    .baseUrl("http://localhost:9091/")
+                                                                    .readTimeOutSeconds(15)
+                                                                    .connectTimeOutSeconds(15)
+                                                                    .build())
+                                            .topic("delegate-service")
+                                            .build());
     return configuration;
   }
 

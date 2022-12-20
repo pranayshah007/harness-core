@@ -19,6 +19,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,6 +33,12 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo")
 public class BlackDuckStepInfo extends STOGenericStepInfo {
+  private static final String PRODUCT_NAME = "blackduckhub";
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
+
   @NotNull @JsonProperty protected STOYamlAuth auth;
 
   @JsonProperty protected STOYamlImage image;

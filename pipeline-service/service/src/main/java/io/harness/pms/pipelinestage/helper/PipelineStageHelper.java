@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.accesscontrol.acl.api.Resource;
@@ -45,11 +46,14 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +72,8 @@ public class PipelineStageHelper {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
+  private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
+      NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
@@ -190,7 +196,7 @@ public class PipelineStageHelper {
     return childGraphBuilder.build();
   }
 
-  public boolean validateGraphToGenerate(Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTO, String stageNodeId) {
+  public boolean validateChildGraphToGenerate(Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTO, String stageNodeId) {
     // Validates nodeType which should be Pipeline
     return graphLayoutNodeDTO.containsKey(stageNodeId)
         && graphLayoutNodeDTO.get(stageNodeId).getNodeType().equals(StepSpecTypeConstants.PIPELINE_STAGE);
@@ -213,5 +219,16 @@ public class PipelineStageHelper {
 
     return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
         ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  public void validateFailureStrategy(List<FailureStrategyConfig> failureStrategies) {
+    if (isNotEmpty(failureStrategies)) {
+      for (FailureStrategyConfig failureStrategyConfig : failureStrategies) {
+        if (actionTypeNotSupported.contains(failureStrategyConfig.getOnFailure().getAction().getType().getYamlName())) {
+          throw new InvalidRequestException(String.format("Action %s is not supported in pipeline stage",
+              failureStrategyConfig.getOnFailure().getAction().getType()));
+        }
+      }
+    }
   }
 }
