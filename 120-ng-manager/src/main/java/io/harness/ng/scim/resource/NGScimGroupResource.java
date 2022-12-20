@@ -7,6 +7,13 @@
 
 package io.harness.ng.scim.resource;
 
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
@@ -42,7 +49,9 @@ public class NGScimGroupResource extends ScimResource {
   @POST
   @Path("Groups")
   @ApiOperation(value = "Create a new group and return uuid in response", nickname = "createScimGroup")
-  public Response createGroup(ScimGroup groupQuery, @PathParam("accountIdentifier") String accountIdentifier) {
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = MANAGE_USERGROUP_PERMISSION)
+  public Response createGroup(
+      ScimGroup groupQuery, @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier) {
     try {
       return Response.status(Response.Status.CREATED)
           .entity(scimGroupService.createGroup(groupQuery, accountIdentifier))
@@ -56,8 +65,9 @@ public class NGScimGroupResource extends ScimResource {
   @GET
   @Path("Groups/{groupIdentifier}")
   @ApiOperation(value = "Fetch an existing user by uuid", nickname = "getScimGroup")
-  public Response getGroup(
-      @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = VIEW_USERGROUP_PERMISSION)
+  public Response getGroup(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @PathParam("groupIdentifier") @ResourceIdentifier String groupIdentifier) {
     try {
       return Response.status(Response.Status.OK)
           .entity(scimGroupService.getGroup(groupIdentifier, accountIdentifier))
@@ -72,8 +82,9 @@ public class NGScimGroupResource extends ScimResource {
   @DELETE
   @Path("Groups/{groupIdentifier}")
   @ApiOperation(value = "Delete an existing user by uuid", nickname = "deleteScimGroup")
-  public Response deleteGroup(
-      @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = MANAGE_USERGROUP_PERMISSION)
+  public Response deleteGroup(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @PathParam("groupIdentifier") @ResourceIdentifier String groupIdentifier) {
     scimGroupService.deleteGroup(groupIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -84,9 +95,11 @@ public class NGScimGroupResource extends ScimResource {
       value =
           "Search groups by their name. Supports pagination. If nothing is passed in filter, all results will be returned.",
       nickname = "searchScimGroup")
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = VIEW_USERGROUP_PERMISSION)
   public Response
-  searchGroup(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
-      @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
+  searchGroup(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @QueryParam("filter") String filter, @QueryParam("count") Integer count,
+      @QueryParam("startIndex") Integer startIndex) {
     try {
       ScimListResponse<ScimGroup> groupResources =
           scimGroupService.searchGroup(filter, accountIdentifier, count, startIndex);
@@ -101,16 +114,18 @@ public class NGScimGroupResource extends ScimResource {
   @PATCH
   @Path("Groups/{groupIdentifier}")
   @ApiOperation(value = "Update some fields of a groups by uuid. Can update members/name", nickname = "patchScimGroup")
-  public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
-      @PathParam("groupIdentifier") String groupIdentifier, PatchRequest patchRequest) {
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = MANAGE_USERGROUP_PERMISSION)
+  public Response updateGroup(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @PathParam("groupIdentifier") @ResourceIdentifier String groupIdentifier, PatchRequest patchRequest) {
     return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, patchRequest);
   }
 
   @PUT
   @Path("Groups/{groupIdentifier}")
   @ApiOperation(value = "Update a group", nickname = "updateScimGroup")
-  public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
-      @PathParam("groupIdentifier") String groupIdentifier, ScimGroup groupQuery) {
+  @NGAccessControlCheck(resourceType = USERGROUP, permission = MANAGE_USERGROUP_PERMISSION)
+  public Response updateGroup(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @PathParam("groupIdentifier") @ResourceIdentifier String groupIdentifier, ScimGroup groupQuery) {
     try {
       return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, groupQuery);
     } catch (Exception ex) {

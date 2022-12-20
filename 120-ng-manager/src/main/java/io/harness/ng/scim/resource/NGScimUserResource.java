@@ -7,6 +7,12 @@
 
 package io.harness.ng.scim.resource;
 
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.scim.PatchRequest;
@@ -76,8 +82,9 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created user")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = MANAGE_USER_PERMISSION)
   public Response
-  createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
+  createUser(ScimUser userQuery, @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier) {
     try {
       return scimUserService.createUser(userQuery, accountIdentifier);
     } catch (Exception ex) {
@@ -96,9 +103,10 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the updated user")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = MANAGE_USER_PERMISSION)
   public Response
   updateUser(@PathParam("userIdentifier") String userIdentifier,
-      @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
+      @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier, ScimUser userQuery) {
     try {
       return scimUserService.updateUser(userIdentifier, accountIdentifier, userQuery);
     } catch (Exception ex) {
@@ -118,9 +126,10 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns the user with the requested accountIdentifier and connectorIdentifier")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = VIEW_USER_PERMISSION)
   public Response
-  getUser(
-      @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
+  getUser(@PathParam("userIdentifier") String userIdentifier,
+      @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier) {
     try {
       return Response.status(Response.Status.OK)
           .entity(scimUserService.getUser(userIdentifier, accountIdentifier))
@@ -146,9 +155,11 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Returns the user with the requested accountIdentifier and filter")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = VIEW_USER_PERMISSION)
   public Response
-  searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
-      @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
+  searchUser(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @QueryParam("filter") String filter, @QueryParam("count") Integer count,
+      @QueryParam("startIndex") Integer startIndex) {
     try {
       ScimListResponse<ScimUser> searchUserResponse =
           scimUserService.searchUser(accountIdentifier, filter, count, startIndex);
@@ -170,9 +181,10 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "It does not return any content")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = MANAGE_USER_PERMISSION)
   public Response
-  deleteUser(
-      @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
+  deleteUser(@PathParam("userIdentifier") String userIdentifier,
+      @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier) {
     scimUserService.deleteUser(userIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -187,8 +199,9 @@ public class NGScimUserResource extends ScimResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the updated User")
       })
+  @NGAccessControlCheck(resourceType = USER, permission = MANAGE_USER_PERMISSION)
   public ScimUser
-  updateUser(@PathParam("accountIdentifier") String accountIdentifier,
+  updateUser(@PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
     return scimUserService.updateUser(accountIdentifier, userIdentifier, patchRequest);
   }
