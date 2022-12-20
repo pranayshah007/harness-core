@@ -275,7 +275,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(mainConfiguration.getLogStreamingServiceConfig()).thenReturn(logSteamingServiceConfig);
 
     PortalConfig portalConfig = new PortalConfig();
-    portalConfig.setCriticalDelegateTaskRejectAtLimit(100000);
+    portalConfig.setImportantDelegateTaskRejectAtLimit(1000);
     portalConfig.setJwtNextGenManagerSecret("**********");
     when(mainConfiguration.getPortal()).thenReturn(portalConfig);
     when(delegateGrpcConfig.getPort()).thenReturn(8080);
@@ -283,6 +283,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     when(accountService.getDelegateConfiguration(anyString()))
         .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList("0.0.0")).build());
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.getFromCacheWithFallback(anyString())).thenReturn(account);
     when(infraDownloadService.getDownloadUrlForDelegate(anyString(), any()))
         .thenReturn("http://localhost:" + port + "/builds/9/delegate.jar");
     when(infraDownloadService.getCdnWatcherBaseUrl()).thenReturn("http://localhost:9500/builds");

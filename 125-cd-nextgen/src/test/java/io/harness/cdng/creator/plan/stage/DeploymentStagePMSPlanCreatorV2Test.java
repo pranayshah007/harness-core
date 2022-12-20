@@ -71,6 +71,7 @@ import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -509,5 +510,39 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     node.setUuid("nodeuuid");
     node.setDeploymentStageConfig(config);
     return node;
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testGetIdentifierWithExpressionForGitOps() {
+    // Gitops with single service, single env.
+    DeploymentStageNode node = DeploymentStageNode.builder()
+                                   .deploymentStageConfig(DeploymentStageConfig.builder().gitOpsEnabled(true).build())
+                                   .build();
+    PlanCreationContext context =
+        PlanCreationContext.builder().currentField(new YamlField("node", new YamlNode(new TextNode("abcc")))).build();
+
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1")).isEqualTo("id1");
+
+    // Gitops with single service, multi env.
+    node = DeploymentStageNode.builder()
+               .deploymentStageConfig(DeploymentStageConfig.builder()
+                                          .gitOpsEnabled(true)
+                                          .environments(EnvironmentsYaml.builder().build())
+                                          .build())
+               .build();
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1")).isEqualTo("id1");
+
+    // Gitops with multi service, multi env.
+    node = DeploymentStageNode.builder()
+               .deploymentStageConfig(DeploymentStageConfig.builder()
+                                          .gitOpsEnabled(true)
+                                          .services(ServicesYaml.builder().build())
+                                          .environments(EnvironmentsYaml.builder().build())
+                                          .build())
+               .build();
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1"))
+        .isEqualTo("id1<+strategy.identifierPostFix>");
   }
 }

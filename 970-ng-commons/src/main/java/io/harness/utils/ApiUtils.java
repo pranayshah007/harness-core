@@ -17,11 +17,20 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageRequest;
+import io.harness.ng.core.common.beans.NGTag;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.collections.CollectionUtils;
 
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
@@ -44,5 +53,43 @@ public class ApiUtils {
                     .build());
     }
     return responseBuilder.links(links.toArray(new Link[0]));
+  }
+
+  public static Map<String, String> getTags(List<NGTag> tags) {
+    if (CollectionUtils.isEmpty(tags)) {
+      return Collections.emptyMap();
+    }
+    return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
+  }
+
+  public static PageRequest getPageRequest(Integer page, Integer limit, String field, String order) {
+    if (field == null && order == null) {
+      return PageRequest.builder().pageIndex(page).pageSize(limit).build();
+    }
+    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
+      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
+    }
+    List<SortOrder> sortOrders = null;
+    if (field != null) {
+      switch (field) {
+        case "slug":
+          field = "identifier";
+          break;
+        case "name":
+          break;
+        case "created":
+          field = "createdAt";
+          break;
+        case "updated":
+          field = "lastUpdatedAt";
+          break;
+        default:
+          throw new InvalidRequestException(
+              "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+      }
+      SortOrder sortOrder = new SortOrder(field + "," + order);
+      sortOrders = Collections.singletonList(sortOrder);
+    }
+    return PageRequest.builder().pageIndex(page).pageSize(limit).sortOrders(sortOrders).build();
   }
 }

@@ -101,7 +101,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList1() {
     Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null);
+        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -113,7 +113,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -125,7 +125,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList3() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(

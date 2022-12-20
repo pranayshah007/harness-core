@@ -146,7 +146,6 @@ public class PluginSettingUtils {
   public static final String PLUGIN_ARTIFACT_FILE = "PLUGIN_ARTIFACT_FILE";
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
-
   @Inject private CodebaseUtils codebaseUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(
@@ -235,6 +234,17 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
         return map;
       case GIT_CLONE:
+        return map;
+      case IACM_TERRAFORM_PLAN:
+        map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
+        map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
+        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
+        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
+        map.put(EnvVariableEnum.AZURE_APP_SECRET, CLIENT_SECRET);
+        map.put(EnvVariableEnum.AZURE_APP_ID, CLIENT_ID);
+        map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
+        map.put(EnvVariableEnum.AZURE_CERT, CLIENT_CERTIFICATE);
+        map.put(EnvVariableEnum.GCP_KEY, PLUGIN_JSON_KEY);
         return map;
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfoType);

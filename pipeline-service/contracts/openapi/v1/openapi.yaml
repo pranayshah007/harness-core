@@ -8,13 +8,13 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
   - name: Input Sets
-    description: This contains APIs for performing CRUD operations on Input Sets.
+    description: This contains APIs for Input Sets.
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -173,6 +173,12 @@ paths:
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: validate_async
+          description: Flag to tell whether to start an asynchronous validation process or not
       tags:
         - Pipelines
       responses:
@@ -608,6 +614,9 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+        validation_uuid:
+          type: string
+          description: 'UUID of the asynchronous validation event started, if any'
     PipelineValidationResponseBody:
       title: Pipeline Validation Response Body
       description: Pipeline Validation Response Body

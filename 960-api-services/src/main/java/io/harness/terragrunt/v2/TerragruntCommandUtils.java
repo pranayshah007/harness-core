@@ -8,7 +8,8 @@
 package io.harness.terragrunt.v2;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.provision.TerragruntConstants.TERRAGRUNT_APPLY_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_APPLY_COMMAND_FORMAT_WITH_PLAN_INPUT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_INFO_COMMAND;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_INIT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_OUTPUT_COMMAND_FORMAT;
@@ -16,6 +17,7 @@ import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_COMMAND_F
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_REFRESH_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT;
@@ -44,7 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 public class TerragruntCommandUtils {
   public String init(String backendConfigFilePath, TerragruntRunType runType) {
     File backendConfigFile = null;
-    if (!StringUtils.isNotBlank(backendConfigFilePath)) {
+    if (StringUtils.isNotBlank(backendConfigFilePath)) {
       backendConfigFile = new File(backendConfigFilePath);
     }
 
@@ -73,12 +75,20 @@ public class TerragruntCommandUtils {
         targetArgs.trim(), varParams.trim());
   }
 
-  public String apply() {
-    return TERRAGRUNT_APPLY_COMMAND_FORMAT;
+  public String apply(String terraformPlanName) {
+    return format(TERRAGRUNT_APPLY_COMMAND_FORMAT_WITH_PLAN_INPUT, terraformPlanName);
   }
 
   public String runAllApply(String targetArgs, String varParams) {
     return format(TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT, targetArgs, varParams);
+  }
+
+  public String destroy(String autoApproveArg, String targetArgs, String varParams) {
+    return format(TERRAGRUNT_DESTROY_COMMAND_FORMAT, autoApproveArg, targetArgs, varParams);
+  }
+
+  public String runAllDestroy(String autoApproveArg, String targetArgs, String varParams) {
+    return format(TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT, autoApproveArg, targetArgs, varParams);
   }
 
   public String output(String outputFilePath) {

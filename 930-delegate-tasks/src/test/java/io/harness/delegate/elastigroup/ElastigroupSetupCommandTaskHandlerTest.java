@@ -26,10 +26,12 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -61,6 +63,17 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
   @Mock private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
 
   @InjectMocks private ElastigroupSetupCommandTaskHandler elastigroupSetupCommandTaskHandler;
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeTaskInternalNotElastigroupSetupRequestTest() throws Exception {
+    ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
+        ElastigroupSwapRouteCommandRequest.builder().build();
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    elastigroupSetupCommandTaskHandler.executeTaskInternal(
+        elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)

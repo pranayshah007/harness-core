@@ -208,6 +208,9 @@ public class TerragruntTaskService {
         handleFetchFilesException(backendFilesDirectory, "backend file", logCallback, e);
       }
     }
+
+    cleanupTerragruntLocalFiles(scriptDirectory);
+
     if (isNotEmpty(parameters.getStateFileId())
         && TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       log.info("Downloading harness terraform state file: {}", parameters.getStateFileId());
@@ -243,10 +246,11 @@ public class TerragruntTaskService {
     }
   }
 
-  public String uploadStateFile(
-      String scripDirectory, String workspace, String accountId, String entityId, String delegateId, String taskId) {
+  public String uploadStateFile(String scripDirectory, String workspace, String accountId, String entityId,
+      String delegateId, String taskId, LogCallback logCallback) {
     File terraformStateFile = getTerraformStateFile(scripDirectory, workspace);
     if (terraformStateFile == null) {
+      logCallback.saveExecutionLog("Terraform state file was not found and not uploaded.\n");
       return null;
     }
 
@@ -261,6 +265,7 @@ public class TerragruntTaskService {
 
     try (InputStream initialStream = new FileInputStream(terraformStateFile)) {
       delegateFileManager.upload(delegateFile, initialStream);
+      logCallback.saveExecutionLog("Terraform state file successfully uploaded.\n");
     } catch (FileNotFoundException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Unable to find terraform state file, probably it was deleted before uploading it",

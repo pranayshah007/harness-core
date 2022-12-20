@@ -13,6 +13,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.nodes.security.DockerContentTrustScanNode;
 import io.harness.beans.steps.nodes.security.ExternalScanNode;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
@@ -57,15 +58,16 @@ import io.swagger.annotations.ApiModel;
 import java.time.Duration;
 import java.util.List;
 
-@ApiModel(subTypes = {RunStepInfo.class, AquaTrivyStepInfo.class, AwsEcrStepInfo.class, BanditStepInfo.class,
-              BlackDuckStepInfo.class, BrakemanStepInfo.class, BurpStepInfo.class, CheckmarxStepInfo.class,
-              DataTheoremStepInfo.class, DockerContentTrustScanNode.class, ExternalScanNode.class,
-              FortifyOnDemandStepInfo.class, GrypeStepInfo.class, MendStepInfo.class, MetasploitStepInfo.class,
-              NmapStepInfo.class, NiktoStepInfo.class, NessusStepInfo.class, NexusIQStepInfo.class,
-              OpenvasStepInfo.class, OwaspStepInfo.class, ProwlerStepInfo.class, QualysStepInfo.class,
-              ReapsawStepInfo.class, ShiftLeftStepInfo.class, SnykStepInfo.class, SniperStepInfo.class,
-              SysdigStepInfo.class, SonarqubeStepInfo.class, TenableStepInfo.class, PrismaCloudStepInfo.class,
-              VeracodeStepInfo.class, JfrogXrayStepInfo.class, ZapStepInfo.class, SecurityStepInfo.class})
+@ApiModel(
+    subTypes = {RunStepInfo.class, BackgroundStepInfo.class, AquaTrivyStepInfo.class, AwsEcrStepInfo.class,
+        BanditStepInfo.class, BlackDuckStepInfo.class, BrakemanStepInfo.class, BurpStepInfo.class,
+        CheckmarxStepInfo.class, DataTheoremStepInfo.class, DockerContentTrustScanNode.class, ExternalScanNode.class,
+        FortifyOnDemandStepInfo.class, GrypeStepInfo.class, MendStepInfo.class, MetasploitStepInfo.class,
+        NmapStepInfo.class, NiktoStepInfo.class, NessusStepInfo.class, NexusIQStepInfo.class, OpenvasStepInfo.class,
+        OwaspStepInfo.class, ProwlerStepInfo.class, QualysStepInfo.class, ReapsawStepInfo.class,
+        ShiftLeftStepInfo.class, SnykStepInfo.class, SniperStepInfo.class, SysdigStepInfo.class,
+        SonarqubeStepInfo.class, TenableStepInfo.class, PrismaCloudStepInfo.class, VeracodeStepInfo.class,
+        JfrogXrayStepInfo.class, ZapStepInfo.class, SecurityStepInfo.class})
 @OwnedBy(STO)
 public interface STOStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

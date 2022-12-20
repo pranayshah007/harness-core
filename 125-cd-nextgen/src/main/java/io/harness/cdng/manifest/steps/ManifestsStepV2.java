@@ -13,6 +13,7 @@ import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.ENVIRONMEN
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE_OVERRIDES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -37,14 +38,18 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -53,6 +58,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -78,6 +84,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Named(ConnectorModule.DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -104,12 +113,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
     cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
+
     validateOverridesTypeAndUniqueness(finalSvcManifestsMap, ngManifestsMetadataSweepingOutput.getServiceIdentifier(),
         ngManifestsMetadataSweepingOutput.getEnvironmentIdentifier());
 
     validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
     validateConnectors(ambiance, manifestAttributes);
 
+    checkForAccessOrThrow(ambiance, manifestAttributes);
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     for (int i = 0; i < manifestAttributes.size(); i++) {
       ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i);
@@ -235,5 +246,24 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
           "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
           manifestIdType, deploymentType, String.join(", ", supported)));
     }
+  }
+  void checkForAccessOrThrow(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
+    if (EmptyPredicate.isEmpty(manifestAttributes)) {
+      return;
+    }
+    List<EntityDetail> entityDetails = new ArrayList<>();
+
+    for (ManifestAttributes manifestAttribute : manifestAttributes) {
+      Set<EntityDetailProtoDTO> entityDetailsProto =
+          entityReferenceExtractorUtils.extractReferredEntities(ambiance, manifestAttribute);
+
+      List<EntityDetail> entityDetail =
+          entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+      if (EmptyPredicate.isNotEmpty(entityDetail)) {
+        entityDetails.addAll(entityDetail);
+      }
+    }
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 }

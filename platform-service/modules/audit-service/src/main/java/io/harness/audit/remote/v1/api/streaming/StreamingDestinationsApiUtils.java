@@ -71,7 +71,8 @@ public class StreamingDestinationsApiUtils {
         .spec(getStreamingDestinationSpecDTO(streamingDestination));
     return streamingDestinationResponse.streamingDestination(streamingDestinationDTO)
         .created(streamingDestination.getCreatedAt())
-        .updated(streamingDestination.getLastModifiedDate());
+        .updated(streamingDestination.getLastModifiedDate())
+        .statusUpdated(streamingDestination.getLastStatusChangedAt());
   }
 
   private StreamingDestinationSpecDTO getStreamingDestinationSpecDTO(StreamingDestination streamingDestination) {

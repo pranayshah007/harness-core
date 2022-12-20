@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.beans.params;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_KEY;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.ResourceIdentifier;
 
@@ -30,7 +32,7 @@ import lombok.experimental.SuperBuilder;
 public class ResourcePathParams extends ProjectPathParams {
   @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE)
   @ResourceIdentifier
-  @PathParam("identifier")
+  @PathParam(RESOURCE_IDENTIFIER_KEY)
   @Valid
   String identifier;
 }

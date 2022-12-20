@@ -20,7 +20,9 @@ import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
@@ -28,8 +30,10 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -136,5 +140,173 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                       .setLocalName("localNamePrefix"
                           + ".startTs")
                       .build());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testAddVariablesForStepGroup() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineVariableCreatorUuidJson.yaml");
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+    YamlNode stepGroupNode = fullYamlField.getNode()
+                                 .getField("pipeline")
+                                 .getNode()
+                                 .getField("stages")
+                                 .getNode()
+                                 .asArray()
+                                 .get(0)
+                                 .getField("stage")
+                                 .getNode()
+                                 .getField("spec")
+                                 .getNode()
+                                 .getField("execution")
+                                 .getNode()
+                                 .getField("steps")
+                                 .getNode()
+                                 .asArray()
+                                 .get(1)
+                                 .getField("stepGroup")
+                                 .getNode();
+    Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
+    stepGroupVariableCreator.addVariablesForStepGroup(yamlPropertiesMap, stepGroupNode);
+    assertEquals(yamlPropertiesMap.size(), 1);
+    assertThat(yamlPropertiesMap.containsKey("sg1"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetStepYamlFields() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineVariableCreatorUuidJson.yaml");
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+    YamlField stepGroupField = fullYamlField.getNode()
+                                   .getField("pipeline")
+                                   .getNode()
+                                   .getField("stages")
+                                   .getNode()
+                                   .asArray()
+                                   .get(0)
+                                   .getField("stage")
+                                   .getNode()
+                                   .getField("spec")
+                                   .getNode()
+                                   .getField("execution")
+                                   .getNode()
+                                   .getField("steps")
+                                   .getNode()
+                                   .asArray()
+                                   .get(1)
+                                   .getField("stepGroup");
+    List<YamlField> yamlFields = stepGroupVariableCreator.getStepYamlFields(stepGroupField);
+    assertEquals(yamlFields.size(), 1);
+    assertThat(yamlFields.contains(stepGroupField.getNode()
+                                       .getField(YAMLFieldNameConstants.STEPS)
+                                       .getNode()
+                                       .asArray()
+                                       .get(0)
+                                       .getField(YAMLFieldNameConstants.STEP)));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testCreateVariablesForChildrenNodes() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineVariableCreatorUuidJson.yaml");
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+    YamlField stepGroupField = fullYamlField.getNode()
+                                   .getField("pipeline")
+                                   .getNode()
+                                   .getField("stages")
+                                   .getNode()
+                                   .asArray()
+                                   .get(0)
+                                   .getField("stage")
+                                   .getNode()
+                                   .getField("spec")
+                                   .getNode()
+                                   .getField("execution")
+                                   .getNode()
+                                   .getField("steps")
+                                   .getNode()
+                                   .asArray()
+                                   .get(1)
+                                   .getField("stepGroup");
+    LinkedHashMap<String, VariableCreationResponse> responseLinkedHashMap =
+        stepGroupVariableCreator.createVariablesForChildrenNodes(null, stepGroupField);
+    assertEquals(responseLinkedHashMap.size(), 1);
+    assertThat(responseLinkedHashMap.containsKey("xtkQAaoNRkCgtI5mU8KnEQ"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testCreateVariablesForChildrenNodesV2() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineVariableCreatorUuidJson.yaml");
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+    YamlField stepGroupField = fullYamlField.getNode()
+                                   .getField("pipeline")
+                                   .getNode()
+                                   .getField("stages")
+                                   .getNode()
+                                   .asArray()
+                                   .get(0)
+                                   .getField("stage")
+                                   .getNode()
+                                   .getField("spec")
+                                   .getNode()
+                                   .getField("execution")
+                                   .getNode()
+                                   .getField("steps")
+                                   .getNode()
+                                   .asArray()
+                                   .get(1)
+                                   .getField("stepGroup");
+    LinkedHashMap<String, VariableCreationResponse> responseLinkedHashMap =
+        stepGroupVariableCreator.createVariablesForChildrenNodesV2(
+            VariableCreationContext.builder().currentField(stepGroupField).build(), null);
+    assertEquals(responseLinkedHashMap.size(), 1);
+    assertThat(responseLinkedHashMap.containsKey("xtkQAaoNRkCgtI5mU8KnEQ"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testCreateVariablesForParentNode() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineVariableCreatorUuidJson.yaml");
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+    YamlField stepGroupField = fullYamlField.getNode()
+                                   .getField("pipeline")
+                                   .getNode()
+                                   .getField("stages")
+                                   .getNode()
+                                   .asArray()
+                                   .get(0)
+                                   .getField("stage")
+                                   .getNode()
+                                   .getField("spec")
+                                   .getNode()
+                                   .getField("execution")
+                                   .getNode()
+                                   .getField("steps")
+                                   .getNode()
+                                   .asArray()
+                                   .get(1)
+                                   .getField("stepGroup");
+    VariableCreationResponse creationResponse =
+        stepGroupVariableCreator.createVariablesForParentNode(null, stepGroupField);
+    Map<String, YamlProperties> yamlPropertiesMap = creationResponse.getYamlProperties();
+    assertEquals(yamlPropertiesMap.size(), 2);
+    assertThat(yamlPropertiesMap.containsKey("sg1"));
+    assertThat(yamlPropertiesMap.containsKey("xtkQAaoNRkCgtI5mU8KnEQ"));
   }
 }

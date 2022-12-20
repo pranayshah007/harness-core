@@ -40,4 +40,5 @@ public interface SwaggerConstants {
   String FILTERS_MATCHTYPE_ENUM_CLASSPATH = "io.harness.cdng.environment.filters.MatchType";
   String LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.elastigroup.LoadBalancer;";
   String CLOUD_PROVIDER_CONFIGURATION_CLASSPATH = "io.harness.cdng.elastigroup.CloudProvider";
+  String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
 }

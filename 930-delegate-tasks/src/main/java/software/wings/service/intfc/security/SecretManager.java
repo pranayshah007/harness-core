@@ -126,14 +126,15 @@ public interface SecretManager extends OwnedByAccount {
   byte[] getFileContents(String accountId, String uuId);
 
   PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden)
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden, boolean ignoreRunTimeUsage)
       throws IllegalAccessException;
 
   PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details) throws IllegalAccessException;
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException;
 
-  PageResponse<EncryptedData> listSecretsMappedToAccount(
-      String accountId, PageRequest<EncryptedData> pageRequest, boolean details) throws IllegalAccessException;
+  PageResponse<EncryptedData> listSecretsMappedToAccount(String accountId, PageRequest<EncryptedData> pageRequest,
+      boolean details, boolean ignoreRunTimeUsage) throws IllegalAccessException;
 
   String saveSecretUsingLocalMode(String accountId, SecretText secretText);
 

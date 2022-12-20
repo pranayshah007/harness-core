@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -35,6 +36,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.tasks.ResponseData;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -56,7 +58,7 @@ public class ServiceStepsHelper {
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
-  void validateResources(Ambiance ambiance, NGServiceConfig serviceConfig) {
+  void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     final String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {
@@ -66,13 +68,6 @@ public class ServiceStepsHelper {
     io.harness.accesscontrol.principals.PrincipalType principalType =
         PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
             executionPrincipalInfo.getPrincipalType());
-    ServiceDefinition serviceDefinition = serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition();
-    Set<EntityDetailProtoDTO> entityDetailsProto =
-        entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
-    List<EntityDetail> entityDetails =
-        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(entityDetailsProto));
-
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
 
     accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
         io.harness.accesscontrol.acl.api.ResourceScope.of(AmbianceUtils.getAccountId(ambiance),
@@ -80,9 +75,29 @@ public class ServiceStepsHelper {
         io.harness.accesscontrol.acl.api.Resource.of(
             NGResourceType.SERVICE, serviceConfig.getNgServiceV2InfoConfig().getIdentifier()),
         CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+
+    List<NGVariable> serviceVariables =
+        serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables();
+
+    if (EmptyPredicate.isEmpty(serviceVariables)) {
+      return;
+    }
+
+    List<EntityDetail> entityDetails = new ArrayList<>();
+
+    for (NGVariable ngVariable : serviceVariables) {
+      Set<EntityDetailProtoDTO> entityDetailsProto =
+          entityReferenceExtractorUtils.extractReferredEntities(ambiance, ngVariable);
+      List<EntityDetail> entityDetail =
+          entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+      if (EmptyPredicate.isNotEmpty(entityDetail)) {
+        entityDetails.addAll(entityDetail);
+      }
+    }
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
-  void validateResources(Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
+  void checkForVariablesAccessOrThrow(Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {

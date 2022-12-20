@@ -1073,7 +1073,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void checkForProfile() {
     if (shouldContactManager() && !executingProfile.get() && !isLocked(new File("profile")) && !frozen.get()) {
       try {
-        log.info("Checking for profile ...");
+        log.debug("Checking for profile ...");
         DelegateProfileParams profileParams = getProfile();
         boolean resultExists = new File("profile.result").exists();
         String profileId = profileParams == null ? "" : profileParams.getProfileId();
@@ -1504,8 +1504,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         switchStorageMsgSent = true;
       }
       if (sendJreInformationToWatcher) {
-        log.info("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
-            migrateToJreVersion);
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);
       }
@@ -1708,7 +1706,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
             getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));
-      } else {
+      } else if (log.isDebugEnabled()) {
         log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
             getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
       }
@@ -1823,7 +1821,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
-    log.info("Sending Keep Alive Request...");
     try {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =
@@ -1900,12 +1897,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     if (!shouldContactManager()) {
-      log.info("Dropping task, self destruct in progress: " + delegateTaskId);
+      log.info("Dropping task, self destruct in progress");
       return;
     }
 
     if (rejectRequest.get()) {
-      log.info("Delegate running out of resources, dropping this request [{}] " + delegateTaskId);
+      log.info("Delegate running out of resources, dropping this request");
       return;
     }
 
@@ -1917,7 +1914,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateTaskExecutionData taskExecutionData = DelegateTaskExecutionData.builder().build();
     if (currentlyExecutingFutures.putIfAbsent(delegateTaskId, taskExecutionData) == null) {
       final Future<?> taskFuture = taskExecutor.submit(() -> dispatchDelegateTask(delegateTaskEvent));
-      log.info("TaskId: {} submitted for execution", delegateTaskId);
       taskExecutionData.setTaskFuture(taskFuture);
       updateCounterIfLessThanCurrent(maxExecutingFuturesCount, currentlyExecutingFutures.size());
       return;
@@ -1928,7 +1924,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
-      log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
       try {
@@ -1966,16 +1961,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
-            log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
-                delegateTaskEvent.getAccountId());
+            log.warn("Delegate task package is null");
           } else {
-            log.info(
-                "Delegate task data not available for task: {} - accountId: {}. This is because the task has been already acquired, executed or timed out",
-                delegateTaskId, delegateTaskEvent.getAccountId());
+            log.info("task has been already acquired, executed or timed out");
           }
           return;
         } else {
-          log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
+          log.debug("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
         }
 
         if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
@@ -1990,8 +1982,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateValidateTask.validationResults();
         } else if (delegateInstanceId.equals(delegateTaskPackage.getDelegateInstanceId())) {
           applyDelegateSecretFunctor(delegateTaskPackage);
+
           // Whitelisted. Proceed immediately.
-          log.info("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
+          log.debug("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
           executeTask(delegateTaskPackage);
         }
 
@@ -2018,7 +2011,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try (AutoLogContext ignored = new TaskLogContext(taskId, OVERRIDE_ERROR)) {
         // Tools might be installed asynchronously, so get the flag early on
         currentlyValidatingTasks.remove(taskId);
-        log.info("Removed from validating futures on post validation");
         List<DelegateConnectionResultDetail> results =
             Optional.ofNullable(delegateConnectionResults).orElse(emptyList());
         boolean validated = results.stream().allMatch(DelegateConnectionResultDetail::isValidated);
@@ -2033,10 +2025,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             applyDelegateSecretFunctor(delegateTaskPackage);
             executeTask(delegateTaskPackage);
           } else {
-            log.info("Did not get the go-ahead to proceed for task");
-            if (validated) {
-              log.info("Task validated but was not assigned");
-            }
+            log.warn("Did not get the go-ahead to proceed for task");
           }
         } catch (IOException e) {
           log.error("Unable to report validation results for task", e);
@@ -2335,8 +2324,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     long timeout = taskData.getTimeout() + TimeUnit.SECONDS.toMillis(30L);
     Future<?> taskFuture = null;
     while (stillRunning && clock.millis() - startingTime < timeout) {
-      log.info("Task time remaining for {}, taskype {}: {} ms", taskId, taskData.getTaskType(),
-          startingTime + timeout - clock.millis());
+      if (log.isDebugEnabled()) {
+        log.debug("Task time remaining for {}, taskype {}: {} ms", taskId, taskData.getTaskType(),
+            startingTime + timeout - clock.millis());
+      }
       sleep(ofSeconds(5));
       taskFuture = currentlyExecutingFutures.get(taskId).getTaskFuture();
       if (taskFuture != null) {
@@ -2679,7 +2670,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       for (int attempt = 0; attempt < retries; attempt++) {
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
-          log.info("Task {} response sent to manager", taskId);
+          log.debug("Task {} response sent to manager", taskId);
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.configfile.steps;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,13 +37,17 @@ import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -50,13 +55,16 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,6 +81,9 @@ public class ConfigFilesStepV2Test {
   @Mock private ConnectorService connectorService;
   @Mock private ExecutionSweepingOutputService mockSweepingOutputService;
   @Mock private CDStepHelper cdStepHelper;
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private final ConfigFilesStepV2 step = new ConfigFilesStepV2();
   private AutoCloseable mocks;
   private static final String ACCOUNT_ID = "accountId";
@@ -137,12 +148,23 @@ public class ConfigFilesStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT)));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
 
+    listEntityDetail.add(EntityDetail.builder().name("configSecret1").build());
+    listEntityDetail.add(EntityDetail.builder().name("configSecret2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
     ArgumentCaptor<ConfigFilesOutcome> captor = ArgumentCaptor.forClass(ConfigFilesOutcome.class);
     verify(mockSweepingOutputService, times(1)).consume(any(), eq("configFiles"), captor.capture(), eq("STAGE"));
-
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
     ConfigFilesOutcome outcome = captor.getValue();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.keySet()).containsExactlyInAnyOrder("file1", "file2", "file3");

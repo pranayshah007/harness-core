@@ -61,6 +61,7 @@ public abstract class StreamingDestination {
   @Trimmed @NotBlank String accountIdentifier;
   @Trimmed @NotBlank @NGEntityName String name;
   @NotNull StatusEnum status;
+  Long lastStatusChangedAt;
   @NotBlank String connectorRef;
   @NotNull StreamingDestinationSpecDTO.TypeEnum type;
   @CreatedDate Long createdAt;

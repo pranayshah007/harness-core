@@ -17,5 +17,5 @@ import io.harness.annotations.dev.TargetModule;
 public enum DelegateTaskRank {
   OPTIONAL,
   IMPORTANT,
-  CRITICAL
+  @Deprecated CRITICAL // don't use it
 }

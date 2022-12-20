@@ -110,7 +110,6 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir);
-      taskService.cleanupTerragruntLocalFiles(terragruntContext.getScriptDirectory());
 
       TerragruntClient client = terragruntContext.getClient();
       LogCallback planLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), PLAN, commandUnitsProgress);
@@ -163,13 +162,12 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
         tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
             planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
-        planLogCallback.saveExecutionLog("Terraform plan successfully encrypted.\n");
+        planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
         planLogCallback.saveExecutionLog("Uploading terraform state file");
-        stateFileId =
-            taskService.uploadStateFile(terragruntContext.getScriptDirectory(), planTaskParameters.getWorkspace(),
-                planTaskParameters.getAccountId(), planTaskParameters.getEntityId(), getDelegateId(), getTaskId());
-        planLogCallback.saveExecutionLog("Terraform state file successfully uploaded.\n");
+        stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
+            planTaskParameters.getWorkspace(), planTaskParameters.getAccountId(), planTaskParameters.getEntityId(),
+            getDelegateId(), getTaskId(), planLogCallback);
 
         if (planTaskParameters.isExportJsonPlan()) {
           planLogCallback.saveExecutionLog(

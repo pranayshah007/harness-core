@@ -4,19 +4,22 @@ x-stoplight:
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1'
-  description: This is the Open Api Spec 3 for the Templates Validations and Refresh. This is under active development. Beware of the breaking change with respect to the generated code stub.
+  description: This is the Open Api Spec 3 for the Template Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Template
-    description: This contains APIs for performing CRUD operations on Templates at account scope.
+    description: This contains APIs for Account-scoped Templates.
+    x-displayName: Account Templates
   - name: Org Template
-    description: This contains APIs for performing CRUD operations on Templates at org scope.
+    description: This contains APIs for Organization-scoped Templates.
+    x-displayName: Organization Templates
   - name: Project Template
-    description: This contains APIs for performing CRUD operations on Templates at project scope.
+    description: This contains APIs for Project-scoped Templates.
+    x-displayName: Project Templates
 paths:
   /v1/templates:
     post:

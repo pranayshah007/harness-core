@@ -22,6 +22,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
+import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;
@@ -119,8 +120,8 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return;
     }
     String message_prefix = preAssigned ? PRE_ASSIGNED_ELIGIBLE_DELEGATES : ELIGIBLE_DELEGATES;
-    String message = String.format(
-        "%s : [%s]", message_prefix, String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
+    String message = String.format("%s : [%s]", message_prefix,
+        String.join(", ", getDelegateSelectionLogKeys(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
              .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
@@ -165,7 +166,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return;
     }
     String message = String.format("%s : [%s]", BROADCASTING_DELEGATES,
-        String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
+        String.join(", ", getDelegateSelectionLogKeys(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
              .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
@@ -301,13 +302,22 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
         .build();
   }
 
-  private Set<String> getDelegateHostNames(String accountId, Set<String> delegateIds) {
+  // for ng docker delegate the key is DELEGATE_NAME + HOSTNAME and for others the key is HOSTNAME
+  private Set<String> getDelegateSelectionLogKeys(String accountId, Set<String> delegateIds) {
     return delegateIds.stream()
-        .map(delegateId
-            -> Optional.ofNullable(delegateCache.get(accountId, delegateId, false))
-                   .map(Delegate::getHostName)
-                   .orElse(delegateId))
+        .map(delegateId -> getDelegateSelectionLogKey(accountId, delegateId))
         .collect(Collectors.toSet());
+  }
+
+  private String getDelegateSelectionLogKey(String accountId, String delegateId) {
+    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    if (delegate == null) {
+      return delegateId;
+    }
+    if (delegate.isNg() && DelegateType.DOCKER.equals(delegate.getDelegateType())) {
+      return delegate.getDelegateName() + "-" + delegate.getHostName();
+    }
+    return delegate.getHostName();
   }
 
   public String generateSelectionLogForSelectors(List<ExecutionCapability> executionCapabilities) {

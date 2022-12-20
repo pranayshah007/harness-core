@@ -186,6 +186,16 @@ public class PMSPipelineDtoMapper {
         throw new InvalidRequestException(String.format("Expected Pipeline name in YAML to be [%s], but was [%s]",
             requestInfoDTO.getName(), basicPipeline.getName()));
       }
+      if (isNotEmpty(basicPipeline.getOrgIdentifier()) && !basicPipeline.getOrgIdentifier().equals(orgId)) {
+        throw new InvalidRequestException(
+            String.format("Expected Pipeline Organization identifier in YAML to be [%s], but was [%s]", orgId,
+                basicPipeline.getOrgIdentifier()));
+      }
+      if (isNotEmpty(basicPipeline.getProjectIdentifier()) && !basicPipeline.getProjectIdentifier().equals(projectId)) {
+        throw new InvalidRequestException(
+            String.format("Expected Pipeline Project identifier in YAML to be [%s], but was [%s]", projectId,
+                basicPipeline.getProjectIdentifier()));
+      }
       if (isNotEmpty(basicPipeline.getDescription()) && isNotEmpty(requestInfoDTO.getDescription())
           && !basicPipeline.getDescription().equals(requestInfoDTO.getDescription())) {
         throw new InvalidRequestException(
