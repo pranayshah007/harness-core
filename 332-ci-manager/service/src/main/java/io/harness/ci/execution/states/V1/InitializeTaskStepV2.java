@@ -268,7 +268,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
         executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
-        ambiance.getExpressionFunctorToken());
+        ambiance.getExpressionFunctorToken(), true);
   }
 
   @Override
