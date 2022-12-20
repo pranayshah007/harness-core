@@ -124,7 +124,6 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .fetchForCloudProvider(anyString(), anyString());
 
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
 
     ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
@@ -185,8 +184,6 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .fetchForCloudProvider(anyString(), anyString());
 
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(false).when(k8sHandler).isDeploymentInfoTypeSupported(any());
-
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
   }
 
@@ -212,7 +209,6 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .get(anyString());
 
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
 
     InstanceSyncTrackedDeploymentDetails instanceSyncTrackedDeploymentDetails =
         cgInstanceSyncServiceV2.fetchTaskDetails("perpetualTaskId", "accountId");
@@ -255,7 +251,6 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .get(anyString());
 
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
     verify(taskDetailsService, times(1)).updateLastRun(captor.capture());

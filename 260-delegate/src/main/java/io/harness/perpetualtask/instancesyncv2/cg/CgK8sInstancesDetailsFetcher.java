@@ -42,7 +42,6 @@ import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
-import software.wings.service.intfc.ContainerService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -89,14 +88,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
           .setTaskResponse(ByteString.copyFrom(kryoSerializer.asBytes(taskResponseData)))
-          .setInstanceCount(instanceSyncTaskDetails.getIsHelm()
-                  ? ((ContainerSyncResponse) taskResponseData).getContainerInfoList().size()
-                  : ((K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse())
-                        .getK8sPodInfoList()
-                        .size())
-          .setExecutionStatus(instanceSyncTaskDetails.getIsHelm()
-                  ? ((ContainerSyncResponse) taskResponseData).getCommandExecutionStatus().name()
-                  : ((K8sTaskExecutionResponse) taskResponseData).getCommandExecutionStatus().name())
+          .setInstanceCount(getInstanceCount(instanceSyncTaskDetails.getIsHelm(), taskResponseData))
+          .setExecutionStatus(getExecutionStatus(instanceSyncTaskDetails.getIsHelm(), taskResponseData))
           .build();
     } catch (Exception e) {
       log.error(
@@ -108,6 +101,34 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
           .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
           .build();
+    }
+  }
+  private String getExecutionStatus(boolean isHelm, DelegateTaskNotifyResponseData taskResponseData) {
+    if (isHelm) {
+      ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) taskResponseData;
+      return containerSyncResponse.getCommandExecutionStatus() != null
+          ? containerSyncResponse.getCommandExecutionStatus().name()
+          : FAILURE.name();
+
+    } else {
+      K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) taskResponseData;
+      return k8sTaskExecutionResponse.getCommandExecutionStatus() != null
+          ? k8sTaskExecutionResponse.getCommandExecutionStatus().name()
+          : FAILURE.name();
+    }
+  }
+
+  private int getInstanceCount(boolean isHelm, DelegateTaskNotifyResponseData taskResponseData) {
+    if (isHelm) {
+      ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) taskResponseData;
+      return containerSyncResponse.getContainerInfoList() != null ? containerSyncResponse.getContainerInfoList().size()
+                                                                  : 0;
+
+    } else {
+      K8sInstanceSyncResponse k8sInstanceSyncResponse =
+          ((K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse());
+      return k8sInstanceSyncResponse.getK8sPodInfoList() != null ? k8sInstanceSyncResponse.getK8sPodInfoList().size()
+                                                                 : 0;
     }
   }
 
@@ -169,101 +190,86 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     String containerServiceName = k8sInstanceSyncTaskDetails.getContainerServiceName();
     String accountId = kubernetesConfig.getAccountId();
-    List<ContainerInfo> result = new ArrayList<>();
     try {
-      if (k8sInstanceSyncTaskDetails.getIsHelm()) {
-        log.info("Kubernetes cluster config for account {}, controller: {}", accountId, containerServiceName);
-        notNullCheck("KubernetesConfig", kubernetesConfig);
-        if (isNotEmpty(containerServiceName)) {
-          HasMetadata controller = kubernetesContainerService.getController(kubernetesConfig, containerServiceName);
-          if (controller != null) {
-            log.info("Got controller {} for account {}", controller.getMetadata().getName(), accountId);
-            Map<String, String> labels =
-                kubernetesContainerService.getPodTemplateSpec(controller).getMetadata().getLabels();
-            Map<String, String> serviceLabels = new HashMap<>(labels);
-            serviceLabels.remove(HARNESS_KUBERNETES_REVISION_LABEL_KEY);
-
-            List<io.fabric8.kubernetes.api.model.Service> services =
-                kubernetesContainerService.getServices(kubernetesConfig, serviceLabels);
-            String serviceName = services.isEmpty() ? "None" : services.get(0).getMetadata().getName();
-            log.info("Got Service {} for controller {} for account {}", serviceName, containerServiceName, accountId);
-            List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(
-                kubernetesConfig, k8sInstanceSyncTaskDetails.getNamespace(), labels);
-            log.info("Got {} pods for controller {} for account {}", pods != null ? pods.size() : 0,
-                containerServiceName, accountId);
-            if (isEmpty(pods)) {
-              return result;
-            }
-
-            for (V1Pod pod : pods) {
-              String phase = pod.getStatus().getPhase();
-              log.info("Phase: {} for pod {} for controller {} for account {}", pod.getStatus().getPhase(),
-                  pod.getMetadata().getName(), containerServiceName, accountId);
-              if ("Running".equals(phase)) {
-                result.add(KubernetesContainerInfo.builder()
-                               .clusterName(config.getClusterName())
-                               .podName(pod.getMetadata().getName())
-                               .ip(pod.getStatus().getPodIP())
-                               .controllerName(containerServiceName)
-                               .serviceName(serviceName)
-                               .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                               .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                               .build());
-              }
-            }
-          } else {
-            log.info("Could not get controller {} for account {}", containerServiceName, accountId);
-          }
-        } else {
-          if (isEmpty(k8sInstanceSyncTaskDetails.getReleaseName())) {
-            return Collections.emptyList();
-          }
-          final List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig,
-              k8sInstanceSyncTaskDetails.getNamespace(),
-              ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, k8sInstanceSyncTaskDetails.getReleaseName()));
-          return pods.stream()
-              .map(pod
-                  -> KubernetesContainerInfo.builder()
-                         .clusterName(config.getClusterName())
-                         .podName(pod.getMetadata().getName())
-                         .ip(pod.getStatus().getPodIP())
-                         .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                         .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                         .build())
-              .collect(toList());
-        }
-        return result;
+      log.info("Kubernetes cluster config for account {}, controller: {}", accountId, containerServiceName);
+      notNullCheck("KubernetesConfig", kubernetesConfig);
+      if (isNotEmpty(containerServiceName)) {
+        return fetchRunningK8sPodsForContainerServiceName(config, k8sInstanceSyncTaskDetails);
       } else {
-        long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);
-        List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
-            kubernetesConfig, config.getNamespace(), k8sInstanceSyncTaskDetails.getReleaseName(), timeoutMillis);
-        return k8sPodList.stream()
-            .map(pod -> {
-              List<K8sContainerInfo> k8sContainerInfos = pod.getContainerList()
-                                                             .stream()
-                                                             .map(container
-                                                                 -> K8sContainerInfo.builder()
-                                                                        .containerId(container.getContainerId())
-                                                                        .image(container.getImage())
-                                                                        .name(container.getName())
-                                                                        .build())
-                                                             .collect(toList());
-              return K8sPodInfo.builder()
-                  .containers(k8sContainerInfos)
-                  .clusterName(config.getClusterName())
-                  .podName(pod.getName())
-                  .ip(pod.getPodIP())
-                  .blueGreenColor(pod.getColor())
-                  .namespace(k8sInstanceSyncTaskDetails.getNamespace())
-                  .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
-                  .build();
-            })
-            .collect(toList());
+        return fetchRunningK8sPodsDefault(config, k8sInstanceSyncTaskDetails);
       }
     } catch (Exception exception) {
       throw new InvalidRequestException(String.format("Failed to fetch containers info for namespace: [%s] ",
                                             k8sInstanceSyncTaskDetails.getNamespace()),
           exception);
     }
+  }
+
+  private List<ContainerInfo> fetchRunningK8sPodsForContainerServiceName(
+      K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
+    String containerServiceName = k8sInstanceSyncTaskDetails.getContainerServiceName();
+    String accountId = kubernetesConfig.getAccountId();
+    List<ContainerInfo> result = new ArrayList<>();
+    HasMetadata controller = kubernetesContainerService.getController(kubernetesConfig, containerServiceName);
+    if (controller != null) {
+      log.info("Got controller {} for account {}", controller.getMetadata().getName(), accountId);
+      Map<String, String> labels = kubernetesContainerService.getPodTemplateSpec(controller).getMetadata().getLabels();
+      Map<String, String> serviceLabels = new HashMap<>(labels);
+      serviceLabels.remove(HARNESS_KUBERNETES_REVISION_LABEL_KEY);
+
+      List<io.fabric8.kubernetes.api.model.Service> services =
+          kubernetesContainerService.getServices(kubernetesConfig, serviceLabels);
+      String serviceName = services.isEmpty() ? "None" : services.get(0).getMetadata().getName();
+      log.info("Got Service {} for controller {} for account {}", serviceName, containerServiceName, accountId);
+      List<V1Pod> pods = kubernetesContainerService.getRunningPodsWithLabels(
+          kubernetesConfig, k8sInstanceSyncTaskDetails.getNamespace(), labels);
+      log.info("Got {} pods for controller {} for account {}", pods != null ? pods.size() : 0, containerServiceName,
+          accountId);
+      if (isEmpty(pods)) {
+        return result;
+      }
+
+      for (V1Pod pod : pods) {
+        String phase = pod.getStatus().getPhase();
+        log.info("Phase: {} for pod {} for controller {} for account {}", pod.getStatus().getPhase(),
+            pod.getMetadata().getName(), containerServiceName, accountId);
+        if ("Running".equals(phase)) {
+          result.add(KubernetesContainerInfo.builder()
+                         .clusterName(config.getClusterName())
+                         .podName(pod.getMetadata().getName())
+                         .ip(pod.getStatus().getPodIP())
+                         .controllerName(containerServiceName)
+                         .serviceName(serviceName)
+                         .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                         .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
+                         .build());
+        }
+      }
+    } else {
+      log.info("Could not get controller {} for account {}", containerServiceName, accountId);
+    }
+    return result;
+  }
+
+  private List<ContainerInfo> fetchRunningK8sPodsDefault(
+      K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
+    if (isEmpty(k8sInstanceSyncTaskDetails.getReleaseName())) {
+      return Collections.emptyList();
+    }
+    final List<V1Pod> pods =
+        kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, k8sInstanceSyncTaskDetails.getNamespace(),
+            ImmutableMap.of(HelmConstants.HELM_RELEASE_LABEL, k8sInstanceSyncTaskDetails.getReleaseName()));
+    return pods.stream()
+        .map(pod
+            -> KubernetesContainerInfo.builder()
+                   .clusterName(config.getClusterName())
+                   .podName(pod.getMetadata().getName())
+                   .ip(pod.getStatus().getPodIP())
+                   .namespace(k8sInstanceSyncTaskDetails.getNamespace())
+                   .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
+                   .build())
+        .collect(toList());
   }
 }
