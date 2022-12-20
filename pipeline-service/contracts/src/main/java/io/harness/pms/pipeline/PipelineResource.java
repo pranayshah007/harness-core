@@ -395,7 +395,7 @@ public interface PipelineResource {
           PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly);
 
   @POST
-  @Path("/import/{pipelineIdentifier}")
+  @Path("/import/{pipelineIdentifier: .*}")
   @Hidden
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
   @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
