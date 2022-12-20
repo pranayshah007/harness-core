@@ -29,13 +29,13 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.exception.GeneralException;
 import io.harness.govern.ProviderModule;
+import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
-import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
@@ -133,6 +133,7 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.mongodb.morphia.converters.TypeConverter;
 import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
@@ -425,7 +426,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   private void registerHealthCheck(Environment environment, Injector injector) {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("STO Service", healthService);
-    healthService.registerMonitor(injector.getInstance(HPersistence.class));
+    healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
   }
 
   private static void addGuiceValidationModule(List<Module> modules) {
