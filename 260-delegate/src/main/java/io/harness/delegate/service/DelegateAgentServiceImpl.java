@@ -1632,14 +1632,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private String findExpectedWatcherVersion() {
-    try {
-      RestResponse<String> restResponse =
-          executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
-      if (restResponse != null) {
-        return restResponse.getResource();
+    if (multiVersion) {
+      try {
+        RestResponse<String> restResponse =
+            executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      } catch (Exception e) {
+        log.warn("Encountered error while fetching watcher version from manager ", e);
       }
-    } catch (Exception e) {
-      log.warn("Encountered error while fetching watcher version from manager ", e);
     }
     try {
       // Try fetching watcher version from gcp
@@ -2000,8 +2002,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           executeTask(delegateTaskPackage);
         }
 
-      } catch (IOException e) {
-        log.error("Unable to get task for validation", e);
+      } catch (Exception e) {
+        log.error("Unable to execute task", e);
       } finally {
         currentlyAcquiringTasks.remove(delegateTaskId);
         currentlyExecutingFutures.remove(delegateTaskId);
@@ -2072,6 +2074,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
     log.debug("DelegateTask acquired - accountId: {}, taskType: {}", accountId, taskData.getTaskType());
     Pair<String, Set<String>> activitySecrets = obtainActivitySecrets(delegateTaskPackage);
+    log.info("secrets processed");
     Optional<LogSanitizer> sanitizer = getLogSanitizer(activitySecrets);
     ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient(activitySecrets, delegateTaskPackage);
     // At the moment used to download and render terraform json plan file and keep track of the download tf plans
@@ -2080,6 +2083,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
         injector, delegateTaskPackage.getAccountId(), delegateTaskPackage.getData().getExpressionFunctorToken());
     applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
+    log.info("expressions evaluated");
 
     DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
         TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
@@ -2093,15 +2097,18 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     currentlyExecutingFutures.get(delegateTaskPackage.getDelegateTaskId()).setExecutionStartTime(clock.millis());
 
     // Submit execution for watching this task execution.
+    log.info("ready to execute");
     timeoutEnforcement.submit(() -> enforceDelegateTaskTimeout(delegateTaskPackage.getDelegateTaskId(), taskData));
 
     // Start task execution in same thread and measure duration.
+    log.info("executing");
     if (isImmutableDelegate) {
       metricRegistry.recordGaugeDuration(
           TASK_EXECUTION_TIME, new String[] {DELEGATE_NAME, taskData.getTaskType()}, delegateRunnableTask);
     } else {
       delegateRunnableTask.run();
     }
+    log.info("finished");
   }
 
   private ILogStreamingTaskClient getLogStreamingTaskClient(
