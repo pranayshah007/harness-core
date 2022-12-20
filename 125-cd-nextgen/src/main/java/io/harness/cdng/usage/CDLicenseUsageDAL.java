@@ -157,7 +157,8 @@ public class CDLicenseUsageDAL {
       + "    AND t.projectidentifier = projects.identifier\n"
       + " LEFT JOIN organizations ON\n"
       + "    organizations.account_identifier = ?\n"
-      + "    AND t.orgidentifier = organizations.identifier";
+      + "    AND t.orgidentifier = organizations.identifier\n"
+      + "ORDER BY :sortCriteria";
 
   public long fetchServiceInstancesOver30Days(String accountId) {
     if (isEmpty(accountId)) {
@@ -276,7 +277,7 @@ public class CDLicenseUsageDAL {
   }
 
   public List<ActiveService> fetchActiveServicesNameOrgAndProjectName(
-      final String accountIdentifier, List<ActiveServiceBase> activeServiceBaseItems) {
+      final String accountIdentifier, List<ActiveServiceBase> activeServiceBaseItems, Sort sort) {
     if (isEmpty(accountIdentifier)) {
       throw new InvalidArgumentsException(
           "AccountIdentifier cannot be null or empty for fetching active services names, org and project names");
@@ -287,8 +288,9 @@ public class CDLicenseUsageDAL {
     }
 
     final String fetchActiveServicesNameOrgAndProjectNameFinalQuery =
-        FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY.replace(
-            ":constantTable", buildConstantTable(activeServiceBaseItems));
+        FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY
+            .replace(":constantTable", buildConstantTable(activeServiceBaseItems))
+            .replace(":sortCriteria", buildSortCriteria(sort));
     int retry = 0;
     boolean successfulOperation = false;
     List<ActiveService> activeServices = new ArrayList<>();
