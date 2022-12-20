@@ -103,14 +103,15 @@ public class YamlSchemaValidator {
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
     Set<ValidationMessage> validateMsg = schema.validate(jsonNode);
-    return processAndHandleValidationMessage(jsonNode, validateMsg);
+    return processAndHandleValidationMessage(jsonNode, validateMsg, yaml);
   }
 
-  public Set<String> processAndHandleValidationMessage(JsonNode yaml, Set<ValidationMessage> validateMsg) {
+  public Set<String> processAndHandleValidationMessage(
+      JsonNode jsonNode, Set<ValidationMessage> validateMsg, String yaml) {
     if (!validateMsg.isEmpty()) {
       log.error(validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\n")));
     }
-    Set<ValidationMessage> processValidationMessages = processValidationMessages(validateMsg, yaml);
+    Set<ValidationMessage> processValidationMessages = processValidationMessages(validateMsg, jsonNode);
     StringBuilder combinedValidationMessage = new StringBuilder();
     if (!processValidationMessages.isEmpty()) {
       List<YamlSchemaErrorDTO> errorDTOS = new ArrayList<>();
@@ -118,14 +119,14 @@ public class YamlSchemaValidator {
         errorDTOS.add(YamlSchemaErrorDTO.builder()
                           .messageWithFQN(validationMessage.getMessage())
                           .message(removeFqnFromErrorMessage(validationMessage.getMessage()))
-                          .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), yaml))
-                          .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), yaml))
+                          .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), jsonNode))
+                          .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), jsonNode))
                           .fqn(validationMessage.getPath())
                           .build());
         combinedValidationMessage.append(validationMessage.getMessage());
       }
       YamlSchemaErrorWrapperDTO errorWrapperDTO = YamlSchemaErrorWrapperDTO.builder().schemaErrors(errorDTOS).build();
-      throw new InvalidYamlException(combinedValidationMessage.toString(), errorWrapperDTO);
+      throw new InvalidYamlException(combinedValidationMessage.toString(), errorWrapperDTO, yaml);
     }
     return Collections.emptySet();
   }

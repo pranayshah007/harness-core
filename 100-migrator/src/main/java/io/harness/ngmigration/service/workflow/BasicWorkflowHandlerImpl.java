@@ -8,18 +8,21 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.BasicOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.BasicWorkflowYamlHandler;
 import software.wings.yaml.workflow.BasicWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
@@ -44,8 +47,8 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
-    return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getDeploymentStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
   }
 
   @Override

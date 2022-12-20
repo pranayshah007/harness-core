@@ -8,28 +8,49 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.beans.execution.QueueServiceClient;
+import io.harness.execution.ExecutionServiceConfig;
+import io.harness.sto.config.STOStepConfig;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
-@Builder
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @TypeAlias("ciExecutionServiceConfig")
 @RecasterAlias("io.harness.ci.config.CIExecutionServiceConfig")
-public class CIExecutionServiceConfig {
-  String addonImageTag; // Deprecated
-  String liteEngineImageTag; // Deprecated
-  String defaultInternalImageConnector;
-  String delegateServiceEndpointVariableValue;
-  Integer defaultMemoryLimit;
-  Integer defaultCPULimit;
-  Integer pvcDefaultStorageSize;
-  String addonImage;
-  String liteEngineImage;
+public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
-  boolean isLocal;
+  String queueServiceToken;
+  QueueServiceClient queueServiceClient;
+  HostedVmConfig hostedVmConfig;
+  STOStepConfig stoStepConfig;
+  // Base 64 encoded credentials for gcp
+  MiningPatternConfig miningPatternConfig;
+
+  @Builder
+  public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
+      String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
+      Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
+      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
+      String queueServiceToken, QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig,
+      STOStepConfig stoStepConfig) {
+    super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
+        defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
+    this.ciImageTag = ciImageTag;
+    this.stepConfig = stepConfig;
+    this.cacheIntelligenceConfig = cacheIntelligenceConfig;
+    this.executionLimits = executionLimits;
+    this.stoStepConfig = stoStepConfig;
+    this.queueServiceClient = queueServiceClient;
+    this.queueServiceToken = queueServiceToken;
+    this.hostedVmConfig = hostedVmConfig;
+  }
 }

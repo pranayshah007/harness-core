@@ -44,7 +44,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
@@ -162,7 +162,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(ArchType.class, 110140);
     kryo.register(OSType.class, 110141);
     kryo.register(BooleanNode.class, 110142);
-    kryo.register(NullNode.class, 110143);
-    kryo.register(DockerInfraSpec.class, 110144);
+    kryo.register(NullNode.class, 110145);
+    kryo.register(DockerInfraSpec.class, 110146);
   }
 }

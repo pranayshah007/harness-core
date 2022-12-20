@@ -82,14 +82,12 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
-import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
-import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.outbox.OutboxEvent;
@@ -102,11 +100,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,7 +132,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Mock SideKickService sideKickService;
   @Inject private OutboxService outboxService;
   @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
-  @Inject private SLIRecordServiceImpl sliRecordService;
+  @Inject private SLIRecordService sliRecordService;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -374,7 +370,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
             "compositeSloIdentifier1", projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -388,7 +384,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO.getIdentifier(), compositeSLODTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
             "compositeSloIdentifier", projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
 
@@ -397,7 +393,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveV2Service.update(projectParams, compositeSLODTO.getIdentifier(), compositeSLODTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+            "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
             "compositeSloIdentifier", projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -540,7 +536,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             "simpleslo1", projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -573,7 +569,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
+            "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is 75.0. It should sum up to 100.",
             sloDTO.getIdentifier()));
   }
 
@@ -653,7 +649,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveV2Service.delete(projectParams, simpleServiceLevelObjective1.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Can't delete SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
+            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
             simpleServiceLevelObjective1.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
             referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
@@ -702,7 +698,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Can't delete SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
+            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
             serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
             referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
@@ -733,7 +729,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }
@@ -860,13 +856,42 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                simpleServiceLevelObjective1.getIdentifier(), simpleServiceLevelObjectiveDTO1))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
+            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             simpleServiceLevelObjective1.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
             referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
+            String.join(", ", referencedCompositeSLOIdentifiers)));
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_SimpleSLO_AssociatedWith_CompositeSLO_Failure_BecauseOf_Duplicates() {
+    ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) compositeSLODTO1.getSpec();
+    compositeSLODTO1.setIdentifier("newCompositeSLO1");
+    compositeSLODTO1.setName("newCompositeSLO1");
+    compositeServiceLevelObjectiveSpec.setServiceLevelObjectivesDetails(
+        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                          .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                          .weightagePercentage(50.0)
+                          .accountId(simpleServiceLevelObjective1.getAccountId())
+                          .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                          .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                          .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                .weightagePercentage(50.0)
+                .accountId(simpleServiceLevelObjective1.getAccountId())
+                .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                .build()));
+    compositeSLODTO1.setSpec(compositeServiceLevelObjectiveSpec);
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("An SLO can't be referenced more than once"));
+  }
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
@@ -1303,15 +1328,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getStartTime())
-        .isEqualTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse("2020-07-20T12:00:00").toInstant());
   }
 
   @Test
@@ -1346,13 +1362,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO().getSloTarget())
         .isEqualTo(updatedSloTarget);
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(121);
   }
 
   @Test
@@ -1393,19 +1402,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    AbstractServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    Instant startTime = timePeriod.getStartTime(serviceLevelObjective.getZoneOffset());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getAnalysisStartTime()).isBefore(startTime);
   }
 
   @Test
@@ -1648,7 +1644,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }

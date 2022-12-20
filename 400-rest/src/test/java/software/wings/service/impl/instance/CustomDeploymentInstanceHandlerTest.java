@@ -55,7 +55,6 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
@@ -64,6 +63,7 @@ import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInf
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.deployment.CustomDeploymentKey;
 import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.CustomDeploymentInstanceSyncPTCreator;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;

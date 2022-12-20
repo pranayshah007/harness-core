@@ -13,13 +13,11 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(CDP)
 public final class TerragruntConstants {
-  private TerragruntConstants() {
-    throw new UnsupportedOperationException();
-  }
-
   public static final String TERRAGRUNT_INIT_COMMAND_FORMAT = "terragrunt init%s";
+  public static final String TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT = "terragrunt run-all init%s";
   public static final String TERRAGRUNT_REFRESH_COMMAND_FORMAT = "terragrunt refresh -input=false %s %s";
   public static final String TERRAGRUNT_APPLY_COMMAND_FORMAT = "terragrunt apply -input=false tfplan";
+  public static final String TERRAGRUNT_APPLY_COMMAND_FORMAT_WITH_PLAN_INPUT = "terragrunt apply -input=false %s";
   public static final String TERRAGRUNT_PLAN_COMMAND_FORMAT = "terragrunt plan -out=tfplan -input=false %s %s";
   public static final String TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT =
       "terragrunt plan -destroy -out=tfdestroyplan -input=false %s %s";
@@ -35,9 +33,16 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT =
       "terragrunt run-all destroy %s --terragrunt-non-interactive %s %s";
   public static final String TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT = "terragrunt workspace list";
+  public static final String TERRAGRUNT_WORKSPACE_NEW_COMMAND_FORMAT = "terragrunt workspace new %s";
+  public static final String TERRAGRUNT_WORKSPACE_RUN_ALL_NEW_COMMAND_FORMAT = "terragrunt run-all workspace new %s";
+  public static final String TERRAGRUNT_WORKSPACE_SELECT_COMMAND_FORMAT = "terragrunt workspace select %s";
+  public static final String TERRAGRUNT_WORKSPACE_RUN_ALL_SELECT_COMMAND_FORMAT =
+      "terragrunt run-all workspace select %s";
   public static final String TERRAGRUNT_RUN_ALL_REFRESH_COMMAND_FORMAT =
       "terragrunt run-all refresh -input=false %s %s";
   public static final String TERRAGRUNT_RUN_ALL_SHOW_COMMAND_FORMAT = "terragrunt run-all show %s";
+  public static final String TERRAGRUNT_INFO_COMMAND = "terragrunt terragrunt-info";
+  public static final String TERRAGRUNT_VERSION_COMMAND = "terragrunt --version";
 
   public static final String TG_BASE_DIR = "./terragrunt-working-dir/${ACCOUNT_ID}/${ENTITY_ID}";
   public static final String TG_SCRIPT_DIR = "terragrunt-script-repository";
@@ -62,4 +67,12 @@ public final class TerragruntConstants {
 
   public static final String FORCE_FLAG = "-force";
   public static final String TF_DEFAULT_BINARY_PATH = "terraform";
+
+  public static final String TERRAGRUNT_INFO_TF_BINARY_JSON_PATH = "TerraformBinary";
+  public static final String TERRAGRUNT_OUTPUT_COMMAND_FORMAT = "terragrunt output -json > %s";
+  public static final String TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT = "terragrunt run-all output --json > %s";
+
+  private TerragruntConstants() {
+    throw new UnsupportedOperationException();
+  }
 }

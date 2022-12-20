@@ -29,6 +29,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -95,6 +96,8 @@ public class GcrApiServiceImpl implements GcrApiService {
       throw ex;
     } catch (IOException e) {
       throw handleIOException(gcpConfig, e);
+    } catch (InvalidRequestException e) {
+      throw new HintException(e.getMessage());
     }
   }
 
@@ -103,6 +106,10 @@ public class GcrApiServiceImpl implements GcrApiService {
       if (response.code() == 404) {
         ErrorHandlingGlobalContextData globalContextData =
             GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
+        if (response.body() == null) {
+          throw new InvalidRequestException(
+              "Image name [" + imageName + "] does not exist in Google Container Registry.");
+        }
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
             && response.body().tags.size() == 0) {
           throw new GcrImageNotFoundRuntimeException(

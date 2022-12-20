@@ -28,4 +28,7 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/scm/3920e509/scm https://qa.harness.io/public/shared/tools/scm/release/3920e509/bin/linux/$ARCH/scm
 else
   echo "Client tools are disabled"
+  echo "Installing scm binary"
+  mkdir -m 777 -p client-tools/scm/5452b1a7 \
+  && curl -s -L -o client-tools/scm/5452b1a7/scm https://app.harness.io/public/shared/tools/scm/release/9ddfb2b9/bin/linux/$ARCH/scm
 fi

@@ -48,7 +48,7 @@ public class ServiceLevelIndicatorResource {
   @Path("/onboarding-graph")
   @ApiOperation(value = "get Sli graph for onboarding UI", nickname = "getSliGraph")
   @Deprecated
-  public RestResponse<TimeGraphResponse> getGraph(@BeanParam ProjectParams projectParams,
+  public RestResponse<TimeGraphResponse> getGraph(@Valid @BeanParam ProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
     return new RestResponse<>(sliService
@@ -61,7 +61,7 @@ public class ServiceLevelIndicatorResource {
   @Timed
   @ExceptionMetered
   @Path("/onboarding-graphs")
-  @ApiOperation(value = "get Sli and mertric graphs for onboarding UI", nickname = "getSliOnboardingGraphs")
+  @ApiOperation(value = "get Sli and metric graphs for onboarding UI", nickname = "getSliOnboardingGraphs")
   public RestResponse<SLIOnboardingGraphs> getGraphs(@BeanParam @Valid ProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {

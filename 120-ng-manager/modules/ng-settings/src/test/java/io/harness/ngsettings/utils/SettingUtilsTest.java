@@ -10,6 +10,8 @@ package io.harness.ngsettings.utils;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +20,8 @@ import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
+import io.harness.ngsettings.SettingPlanConfig;
 import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.dto.SettingDTO;
@@ -268,5 +272,78 @@ public class SettingUtilsTest extends CategoryTest {
     Scope scope = Scope.of(accId, orgId, randomAlphabetic(10));
     Scope parentScope = SettingUtils.getParentScope(scope);
     assertThat(parentScope).isEqualTo(Scope.builder().accountIdentifier(accId).orgIdentifier(orgId).build());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testIsSettingEditableForAccountEdition() {
+    Map<Edition, SettingPlanConfig> allowedPlans = new HashMap<>();
+    allowedPlans.put(Edition.FREE, SettingPlanConfig.builder().editable(false).build());
+    allowedPlans.put(Edition.ENTERPRISE, SettingPlanConfig.builder().editable(true).build());
+    allowedPlans.put(Edition.COMMUNITY, SettingPlanConfig.builder().build());
+
+    SettingConfiguration settingConfiguration = SettingConfiguration.builder().allowedPlans(allowedPlans).build();
+
+    boolean isSettingEditable_Free =
+        SettingUtils.isSettingEditableForAccountEdition(Edition.FREE, settingConfiguration);
+    assertEquals(isSettingEditable_Free, false);
+
+    boolean isSettingEditable_Enterprise =
+        SettingUtils.isSettingEditableForAccountEdition(Edition.ENTERPRISE, settingConfiguration);
+    assertTrue(isSettingEditable_Enterprise);
+
+    boolean isSettingEditable_Community =
+        SettingUtils.isSettingEditableForAccountEdition(Edition.COMMUNITY, settingConfiguration);
+    assertTrue(isSettingEditable_Community);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testIsSettingEditableForAccountEdition_shouldFail() {
+    Map<Edition, SettingPlanConfig> allowedPlans = new HashMap<>();
+    allowedPlans.put(Edition.FREE, SettingPlanConfig.builder().editable(false).build());
+
+    SettingConfiguration settingConfiguration = SettingConfiguration.builder().allowedPlans(allowedPlans).build();
+
+    SettingUtils.isSettingEditableForAccountEdition(Edition.ENTERPRISE, settingConfiguration);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetDefaultValue() {
+    String settingDefaultValue = randomAlphabetic(10);
+    String freeDefaultValue = randomAlphabetic(10);
+
+    Map<Edition, SettingPlanConfig> allowedPlans = new HashMap<>();
+    allowedPlans.put(Edition.FREE, SettingPlanConfig.builder().defaultValue(freeDefaultValue).build());
+    allowedPlans.put(Edition.ENTERPRISE, SettingPlanConfig.builder().build());
+
+    SettingConfiguration settingConfiguration =
+        SettingConfiguration.builder().defaultValue(settingDefaultValue).allowedPlans(allowedPlans).build();
+
+    String defaultValue = SettingUtils.getDefaultValue(Edition.FREE, settingConfiguration);
+    assertEquals(defaultValue, freeDefaultValue);
+
+    defaultValue = SettingUtils.getDefaultValue(Edition.ENTERPRISE, settingConfiguration);
+    assertEquals(defaultValue, settingDefaultValue);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetDefaultValue_shoulFail() {
+    String settingDefaultValue = randomAlphabetic(10);
+    String freeDefaultValue = randomAlphabetic(10);
+
+    Map<Edition, SettingPlanConfig> allowedPlans = new HashMap<>();
+    allowedPlans.put(Edition.FREE, SettingPlanConfig.builder().defaultValue(freeDefaultValue).build());
+
+    SettingConfiguration settingConfiguration =
+        SettingConfiguration.builder().defaultValue(settingDefaultValue).allowedPlans(allowedPlans).build();
+
+    SettingUtils.getDefaultValue(Edition.ENTERPRISE, settingConfiguration);
   }
 }

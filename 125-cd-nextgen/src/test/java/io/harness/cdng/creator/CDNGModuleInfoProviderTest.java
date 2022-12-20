@@ -483,6 +483,62 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
         .isFalse();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldPopulateGitOpsClustersInStageModuleInfo() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.GITOPS_CLUSTERS.getName())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(new GitopsClustersOutcome(new ArrayList<>())
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
+                                  new Metadata("c1", "c1name"))
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
+                                  new Metadata("c2", "c2name"))
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env2", "env2name"),
+                                  new Metadata("c3", "c3name")))
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
+
+    List<GitOpsExecutionSummary.Cluster> clusters = stageLevelModuleInfo.getGitopsExecutionSummary().getClusters();
+    assertThat(clusters).hasSize(3);
+    assertThat(clusters.get(0))
+        .isEqualTo(GitOpsExecutionSummary.Cluster.builder()
+                       .clusterId("c1")
+                       .clusterName("c1name")
+                       .envName("env1name")
+                       .envId("env1")
+                       .envGroupName("eg1name")
+                       .envGroupId("eg1")
+                       .build());
+    assertThat(clusters.get(1))
+        .isEqualTo(GitOpsExecutionSummary.Cluster.builder()
+                       .clusterId("c2")
+                       .clusterName("c2name")
+                       .envName("env1name")
+                       .envId("env1")
+                       .envGroupName("eg1name")
+                       .envGroupId("eg1")
+                       .build());
+    assertThat(clusters.get(2))
+        .isEqualTo(GitOpsExecutionSummary.Cluster.builder()
+                       .clusterId("c3")
+                       .clusterName("c3name")
+                       .envName("env2name")
+                       .envId("env2")
+                       .envGroupName("eg1name")
+                       .envGroupId("eg1")
+                       .build());
+  }
+
   public Ambiance buildAmbiance(StepType stepType) {
     final String PHASE_RUNTIME_ID = generateUuid();
     final String PHASE_SETUP_ID = generateUuid();

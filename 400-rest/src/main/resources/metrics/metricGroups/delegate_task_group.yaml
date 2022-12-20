@@ -2,3 +2,4 @@ name: DelegateTask
 identifier: delegate_task
 labels:
   - accountId
+  - rank

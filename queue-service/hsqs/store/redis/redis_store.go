@@ -95,7 +95,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
 	// add subtopic in subtopics set
-	_, err = s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
+	sAddResult, err := s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
 	if err != nil {
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
 	}
@@ -110,6 +110,14 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 
 	if err != nil {
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
+	}
+
+	// if subtopic does not exist, new queue has been created and consumer group needs to be registered
+	if sAddResult == int64(1) {
+		err = s.RegisterQueue(ctx, request.Topic, request.SubTopic, request.ProducerName)
+		if err != nil {
+			return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
+		}
 	}
 
 	return &store.EnqueueResponse{ItemID: val}, nil
@@ -214,6 +222,7 @@ type PendingEntriesRequest struct {
 	Group    string
 	Consumer string
 	Count    int
+	Idle     int
 }
 
 // ReadNewMessagesRequest Request Object for getting new entries from Redis Stream
@@ -237,7 +246,7 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 		Consumer: r.Consumer,
 		Streams:  []string{r.Stream, ">"},
 		Count:    int64(r.Count),
-		Block:    r.MaxWaitDuration,
+		Block:    r.MaxWaitDuration * time.Millisecond,
 	}
 	result, err := s.Client.XReadGroup(ctx, xReadGroupArgs).Result()
 
@@ -257,7 +266,8 @@ func (s *Store) GetPendingEntries(ctx context.Context, request *PendingEntriesRe
 	xPendingArgs := &redis.XPendingExtArgs{
 		Stream: request.Stream,
 		Group:  request.Group,
-		//Idle:     1000000000, // TODO Handle idle time passing
+		// todo: use RegisterTopicMetadata instead of hardcoding
+		Idle:     10000 * time.Millisecond,
 		Count:    int64(request.Count),
 		Start:    "-",
 		End:      "+",
@@ -353,7 +363,7 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
 	// acknowledging the processed method
-	if _, err := s.Client.XAck(ctx, topicKey, request.ConsumerName, ids...).Result(); err != nil {
+	if _, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.ConsumerName), ids...).Result(); err != nil {
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	//deleting the method from queue
@@ -361,7 +371,6 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	return &store.AckResponse{ItemID: request.ItemID}, nil
-
 }
 
 // UnAck Method will add a specific topic to blockList processing list
@@ -495,8 +504,25 @@ func (s *Store) Register(ctx context.Context, request store.RegisterTopicMetadat
 			utils.GetConsumerGroupKeyForTopic(request.Topic),
 			"0",
 		).Result()
-		fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
-			request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+		if err != nil {
+			return fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
+				request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+		}
+	}
+	return nil
+}
+
+// RegisterQueue method to add consumer group to the queue
+func (s *Store) RegisterQueue(ctx context.Context, topic, subtopic, producer string) error {
+	_, err := s.Client.XGroupCreate(
+		ctx,
+		utils.GetSubTopicStreamQueueKey(topic, subtopic),
+		utils.GetConsumerGroupKeyForTopic(producer),
+		"0",
+	).Result()
+	if err != nil {
+		return fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
+			topic, utils.GetSubTopicStreamQueueKey(topic, subtopic))
 	}
 	return nil
 }

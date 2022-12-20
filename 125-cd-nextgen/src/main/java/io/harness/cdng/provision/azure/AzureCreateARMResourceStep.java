@@ -28,7 +28,6 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureConstants;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
@@ -58,11 +57,8 @@ import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResp
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
@@ -120,11 +116,6 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_ARM_BP_NG)) {
-      throw new AccessDeniedException("The creation of resources using Azure ARM in NG is not enabled for this account."
-              + " Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -149,7 +140,6 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
       entityDetailList.add(entityDetail);
     } else if (ManifestStoreType.HARNESS.equals(azureTemplateFile.getStore().getSpec().getKind())) {
       HarnessStore harnessStore = (HarnessStore) azureTemplateFile.getStore().getSpec();
-      cdExpressionResolver.updateExpressions(ambiance, harnessStore);
 
       if (ParameterField.isNull(harnessStore.getFiles())) {
         if (ParameterField.isNull(harnessStore.getSecretFiles())
@@ -409,6 +399,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
         azureCreateStepParameters.getConfigurationParameters();
     AzureARMTaskNGParametersBuilder builder = AzureARMTaskNGParameters.builder();
+    azureCreatePassThroughData.getTemplateBody().setFileContent(
+        cdExpressionResolver.renderExpression(ambiance, azureCreatePassThroughData.getTemplateBody().getFileContent()));
+    azureCreatePassThroughData.getParametersBody().setFileContent(cdExpressionResolver.renderExpression(
+        ambiance, azureCreatePassThroughData.getParametersBody().getFileContent()));
+
     builder.accountId(AmbianceUtils.getAccountId(ambiance))
         .taskType(ARM_DEPLOYMENT)
         .templateBody(azureCreatePassThroughData.getTemplateBody())

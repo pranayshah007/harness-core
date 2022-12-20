@@ -68,7 +68,11 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   DelegateTask abortTask(String accountId, String delegateTaskId);
 
+  DelegateTask abortTaskV2(String accountId, String delegateTaskId);
+
   String expireTask(String accountId, String delegateTaskId);
+
+  String expireTaskV2(String accountId, String delegateTaskId);
 
   List<DelegateTaskEvent> getDelegateTaskEvents(String accountId, String delegateId, boolean syncOnly);
 
@@ -85,4 +89,6 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
   void addToTaskActivityLog(DelegateTask task, String message);
 
   List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities);
+
+  boolean saveAndBroadcastDelegateTaskV2(DelegateTask task);
 }

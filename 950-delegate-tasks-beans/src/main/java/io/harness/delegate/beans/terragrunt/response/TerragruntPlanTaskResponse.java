@@ -10,13 +10,24 @@ package io.harness.delegate.beans.terragrunt.response;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.security.encryption.EncryptedRecordData;
 
-import lombok.Builder;
+import java.util.Map;
+import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @Value
-@Builder
+@SuperBuilder
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
-public class TerragruntPlanTaskResponse extends AbstractTerragruntTaskResponse {}
+public class TerragruntPlanTaskResponse extends AbstractTerragruntTaskResponse {
+  @Nullable EncryptedRecordData encryptedPlan;
+  @Nullable String stateFileId;
+  @Nullable String planJsonFileId;
+
+  @Nullable String configFilesSourceReference;
+  @Nullable String backendFileSourceReference;
+  @Nullable Map<String, String> varFilesSourceReference;
+}

@@ -118,7 +118,7 @@ public class CEYamlResource {
       }
 
       final String serverName = getServerName(request);
-      final String harnessHost = request.getScheme() + "://" + serverName;
+      final String harnessHost = request.getHeader("x-forwarded-proto") + "://" + serverName;
 
       try {
         final String yamlFileContent =

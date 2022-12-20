@@ -160,6 +160,14 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
+      InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
+
+      if (oldInfrastructureEntity != null && oldInfrastructureEntity.getDeploymentType() != null
+          && requestInfra.getDeploymentType() != null
+          && !oldInfrastructureEntity.getDeploymentType().equals(requestInfra.getDeploymentType())) {
+        throw new InvalidRequestException(String.format("Infrastructure Deployment Type is not allowed to change."));
+      }
+
       InfrastructureEntity updatedInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
@@ -199,6 +207,20 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
+
+    Optional<InfrastructureEntity> infraEntityOptional =
+        get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
+            requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
+    if (infraEntityOptional.isPresent()) {
+      InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
+
+      if (oldInfrastructureEntity != null && oldInfrastructureEntity.getDeploymentType() != null
+          && requestInfra.getDeploymentType() != null
+          && !oldInfrastructureEntity.getDeploymentType().equals(requestInfra.getDeploymentType())) {
+        throw new InvalidRequestException(String.format("Infrastructure Deployment Type is not allowed to change."));
+      }
+    }
+
     InfrastructureEntity upsertedInfra =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           InfrastructureEntity result = infrastructureRepository.upsert(criteria, requestInfra);

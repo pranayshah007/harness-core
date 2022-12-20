@@ -17,12 +17,15 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.rule.Owner;
+import io.harness.spec.server.template.v1.model.GitCreateDetails;
+import io.harness.spec.server.template.v1.model.GitUpdateDetails;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateResponse;
 import io.harness.spec.server.template.v1.model.TemplateWithInputsResponse;
@@ -315,5 +318,66 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getRepoUrl(), templateResponse.getGitDetails().getRepoUrl());
     assertEquals(entityGitDetails.getObjectId(), templateResponse.getGitDetails().getObjectId());
     assertEquals(templateWithInputsResponse.getInputs(), "With Input Response");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingCreateGitDetailsInlineWhenNull() {
+    GitCreateDetails gitCreateDetails = new GitCreateDetails();
+    gitCreateDetails.setBaseBranch(null);
+    gitCreateDetails.setStoreType(null);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitCreateDetails(gitCreateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingCreateGitDetailsRemote() {
+    GitCreateDetails gitCreateDetails = new GitCreateDetails();
+    gitCreateDetails.setBaseBranch(null);
+    gitCreateDetails.setStoreType(GitCreateDetails.StoreTypeEnum.REMOTE);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitCreateDetails(gitCreateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.REMOTE);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingCreateGitDetailsInline() {
+    GitCreateDetails gitCreateDetails = new GitCreateDetails();
+    gitCreateDetails.setBaseBranch(null);
+    gitCreateDetails.setStoreType(GitCreateDetails.StoreTypeEnum.INLINE);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitCreateDetails(gitCreateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingUpdateGitDetailsInlineWhenNull() {
+    GitUpdateDetails gitUpdateDetails = new GitUpdateDetails();
+    gitUpdateDetails.setBaseBranch(null);
+    gitUpdateDetails.setStoreType(null);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(gitUpdateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingUpdateGitDetailsRemote() {
+    GitUpdateDetails gitUpdateDetails = new GitUpdateDetails();
+    gitUpdateDetails.setBaseBranch(null);
+    gitUpdateDetails.setStoreType(GitUpdateDetails.StoreTypeEnum.REMOTE);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(gitUpdateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.REMOTE);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulatingUpdateGitDetailsInline() {
+    GitUpdateDetails gitUpdateDetails = new GitUpdateDetails();
+    gitUpdateDetails.setBaseBranch(null);
+    gitUpdateDetails.setStoreType(GitUpdateDetails.StoreTypeEnum.INLINE);
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(gitUpdateDetails);
+    assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
   }
 }

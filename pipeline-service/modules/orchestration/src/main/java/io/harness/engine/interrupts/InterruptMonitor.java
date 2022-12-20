@@ -41,11 +41,13 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.mapping.model.MappingInstantiationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.util.CloseableIterator;
 
 /**
  * This monitor runs and try to clean up any stuck executions there are many edge cases which are not handled right now
@@ -122,8 +125,14 @@ public class InterruptMonitor implements Handler<Interrupt> {
         return;
       }
 
-      List<NodeExecution> nodeExecutions =
-          nodeExecutionService.findAllNodeExecutionsTrimmed(interrupt.getPlanExecutionId());
+      List<NodeExecution> nodeExecutions = new LinkedList<>();
+      try (
+          CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+              interrupt.getPlanExecutionId(), NodeProjectionUtils.fieldsForDiscontinuingNodes)) {
+        while (iterator.hasNext()) {
+          nodeExecutions.add(iterator.next());
+        }
+      }
       Set<NodeExecution> leaves = findAllLeaves(nodeExecutions);
 
       // There are no leaves in the execution then something weird happened
@@ -173,7 +182,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
     Set<NodeExecution> parents = findParentsForChildren(nodeExecutions, children);
     if (EmptyPredicate.isEmpty(parents)) {
       // If running parents are empty that means we have reached to the top and we did not find any running returning
-      // This means all the nodes are in correct stuses except the plan Execution
+      // This means all the nodes are in correct statuses except the plan Execution
       Status status = planExecutionService.calculateStatus(interrupt.getPlanExecutionId());
       PlanExecution planExecution =
           planExecutionService.updateStatusForceful(interrupt.getPlanExecutionId(), status, null, true);
@@ -217,7 +226,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
 
   private void discontinueNodeExecutions(Interrupt interrupt, Collection<NodeExecution> nodeExecutions) {
     for (NodeExecution runningNodeExecution : nodeExecutions) {
-      NodeExecution discontinuingNode = markDiscontinuingIfRequired(interrupt, runningNodeExecution);
+      NodeExecution discontinuingNode = markDiscontinuingIfRequired(runningNodeExecution);
       if (discontinuingNode == null) {
         // TODO: Think more cases can this happen if yes what we can do to improve
         log.error("Unable to unblock stuck execution InterruptId :{} NodeExecutionId: {}", interrupt.getUuid(),
@@ -242,7 +251,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
   }
 
   @Nullable
-  private NodeExecution markDiscontinuingIfRequired(Interrupt interrupt, NodeExecution parent) {
+  private NodeExecution markDiscontinuingIfRequired(NodeExecution parent) {
     NodeExecution discontinuingParent = parent;
     if (parent.getStatus() != Status.DISCONTINUING) {
       discontinuingParent = nodeExecutionService.updateStatusWithOps(

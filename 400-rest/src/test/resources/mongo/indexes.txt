@@ -84,8 +84,10 @@ audits {"name": "entityRecordIndex_1", "background": true} {"accountId": 1, "ent
 audits {"name": "entityRecordIndex_2", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "entityAuditRecords.affectedResourceId": 1, "entityAuditRecords.affectedResourceOperation": 1, "createdAt": -1}
 audits {"name": "entityRecordIndex_3", "background": true} {"accountId": 1, "entityAuditRecords.affectedResourceType": 1, "entityAuditRecords.affectedResourceOperation": 1, "createdAt": -1}
 audits {"name": "entityRecordIndex_4", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "createdAt": -1}
+authTokens {"name": "accountId_1", "background": true} {"accountId": 1}
 authTokens {"name": "appId_1", "background": true} {"appId": 1}
 authTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
+authTokens {"name": "userId_1", "background": true} {"userId": 1}
 authTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 barrierInstances {"name": "accountId_1", "background": true} {"accountId": 1}
 barrierInstances {"name": "appId_1", "background": true} {"appId": 1}
@@ -417,6 +419,7 @@ instanceChangeQueue {"name": "earliestGet_1", "background": true, "expireAfterSe
 instanceChangeQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 instanceEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 instanceEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
+instanceStats {"name": "account_timestamp_total", "unique": true} {"accountId": 1, "timestamp": 1, "total": 1}
 instanceStats {"name": "appId_1", "background": true} {"appId": 1}
 instanceStats {"name": "createdAt_1", "background": true} {"createdAt": 1}
 instanceStats {"name": "timestamp_1", "background": true} {"timestamp": 1}
@@ -651,6 +654,7 @@ services {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
 settingAttributes {"name": "accountIdNameIdx", "background": true} {"name": 1, "accountId": 1}
+settingAttributes {"name": "accountId_appId_type", "background": true} {"accountId": 1, "appId": 1, "value.type": 1}
 settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
 settingAttributes {"name": "acctValTypeIdx", "background": true} {"accountId": 1, "value.type": 1}
 settingAttributes {"name": "appId_1", "background": true} {"appId": 1}
@@ -847,6 +851,7 @@ workflowExecutionBaselines {"name": "appId_1", "background": true} {"appId": 1}
 workflowExecutionBaselines {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflowExecutionBaselines {"name": "unique_baseline", "unique": true} {"workflowId": 1, "envId": 1, "serviceId": 1}
 workflowExecutionBaselines {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
+workflowExecutions {"name": "accountId_1_createdAt_-1_rejectedByFreezeWindowIds_1", "background": true} {"accountId": 1, "createdAt": -1, "rejectedByFreezeWindowIds": 1}
 workflowExecutions {"name": "accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1", "background": true} {"accountId": 1, "deployedServices": 1, "createdAt": -1, "appId": 1, "status": 1}
 workflowExecutions {"name": "accountId_appId_cdPageCandidate_pipelineSummary.pipelineId_envIds_createdAt", "background": true} {"accountId": 1, "appId": 1, "cdPageCandidate": 1, "pipelineSummary.pipelineId": 1, "envIds": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_appId_onDemandRollback_createdAt", "background": true} {"accountId": 1, "appId": 1, "onDemandRollback": 1, "createdAt": -1}
@@ -855,8 +860,6 @@ workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_envIds_appId", 
 workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_serviceIds_appId", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1, "serviceIds": 1, "appId": 1}
 workflowExecutions {"name": "accountId_cdPageCandidate_keywords_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "keywords": "text", "createdAt": -1}
 workflowExecutions {"name": "accountId_cdPageCandidate_workflowId_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "workflowId": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_createdAt2", "background": true} {"accountId": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_endTs", "background": true} {"accountId": 1, "endTs": -1}
 workflowExecutions {"name": "accountId_endTs_status_pipelineExecutionId", "background": true} {"accountId": 1, "endTs": 1, "status": 1, "pipelineExecutionId": 1}
 workflowExecutions {"name": "accountId_pipExecutionId_createdAt", "background": true} {"accountId": 1, "pipelineExecutionId": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_startTs_serviceIds", "background": true} {"accountId": 1, "startTs": 1, "serviceIds": 1}

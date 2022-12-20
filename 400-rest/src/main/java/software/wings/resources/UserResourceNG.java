@@ -343,8 +343,8 @@ public class UserResourceNG {
       if (user != null && user.getAccounts() != null) {
         isUserInAccount = user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
       }
-      if (!isUserInAccount && user != null && user.getSupportAccounts() != null) {
-        isUserInAccount = user.getSupportAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
+      if (!isUserInAccount && user != null) {
+        isUserInAccount = userService.ifUserHasAccessToSupportAccount(userId, accountId);
       }
       if (!isUserInAccount) {
         log.error(String.format("User %s does not belong to account %s", userId, accountId));

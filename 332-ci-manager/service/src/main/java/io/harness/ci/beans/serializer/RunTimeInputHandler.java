@@ -8,6 +8,7 @@
 package io.harness.beans.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.common.NGExpressionUtils.matchesInputSetPattern;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -174,9 +175,50 @@ public class RunTimeInputHandler {
     }
   }
 
+  /**
+   * @deprecated  This method doesn't handle if the parameter field value is null or null string
+   */
+  @Deprecated
   public static String resolveStringParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<String> parameterField, boolean isMandatory) {
+    // Calling resolveStringParameterV2 under try catch to check if we see any functionality breaking
+    // with the new function. Added a log for tracking.
+    try {
+      resolveStringParameterV2(fieldName, stepType, stepIdentifier, parameterField, isMandatory);
+    } catch (Exception ex) {
+      log.warn(format("resolveStringParameterV2 failed with ex: %s", ex.getMessage()));
+    }
+
     if (parameterField == null) {
+      if (isMandatory) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      } else {
+        return null;
+      }
+    }
+
+    // It only checks input set pattern. Variable can be resolved on lite engine.
+    if (parameterField.isExpression() && matchesInputSetPattern(parameterField.getExpressionValue())) {
+      if (isMandatory) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      } else {
+        log.warn(format("Failed to resolve optional field %s in step type %s with identifier %s", fieldName, stepType,
+            stepIdentifier));
+        return null;
+      }
+    }
+
+    return (String) parameterField.fetchFinalValue();
+  }
+
+  public static String resolveStringParameterV2(String fieldName, String stepType, String stepIdentifier,
+      ParameterField<String> parameterField, boolean isMandatory) {
+    if (parameterField == null || (isEmpty((String) parameterField.fetchFinalValue()))
+        || parameterField.fetchFinalValue().equals(NULL_STR)) {
       if (isMandatory) {
         throw new CIStageExecutionUserException(
             format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,

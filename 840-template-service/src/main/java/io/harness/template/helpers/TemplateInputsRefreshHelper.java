@@ -79,7 +79,7 @@ public class TemplateInputsRefreshHelper {
     String resolvedTemplatesYaml = inputsRefreshYaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, false);
       resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
     }
     RefreshResponseDTO ngManagerRefreshResponseDto =
@@ -153,7 +153,7 @@ public class TemplateInputsRefreshHelper {
 
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
+        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, false);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 

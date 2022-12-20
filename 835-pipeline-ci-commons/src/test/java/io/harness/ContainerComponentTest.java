@@ -7,7 +7,7 @@
 
 package io.harness;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ABHINAV;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Slf4j
-@OwnedBy(CDC)
+@OwnedBy(PIPELINE)
 public class ContainerComponentTest extends io.harness.ContainerTestBase {
   @Inject private Map<String, TestExecution> tests;
 

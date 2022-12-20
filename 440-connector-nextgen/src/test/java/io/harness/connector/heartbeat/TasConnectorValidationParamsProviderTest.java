@@ -28,7 +28,6 @@ import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -46,8 +45,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class TasConnectorValidationParamsProviderTest extends CategoryTest {
   public static final HashSet<String> DELEGATE_SELECTORS = Sets.newHashSet("delegateGroup1, delegateGroup2");
-  private static final String accountId = "accountId";
-  private static final String apiTokenRef = "apiTokenRef";
   private static final String URL = "endpoint_url";
 
   @InjectMocks private TasConnectorValidationParamsProvider tasConnectorValidationParamsProvider;
@@ -68,8 +65,6 @@ public class TasConnectorValidationParamsProviderTest extends CategoryTest {
         connectorValidationParams.fetchRequiredExecutionCapabilities(null);
 
     assertThat(executionCapabilityList).isNotNull();
-    assertThat(executionCapabilityList)
-        .contains(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(URL, null));
     assertThat(executionCapabilityList)
         .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("connector").build());
   }

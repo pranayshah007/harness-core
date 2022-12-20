@@ -9,14 +9,19 @@ package software.wings.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_DELEGATES;
+
 import static java.util.Collections.emptyList;
 
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
 import io.harness.security.annotations.PublicApi;
 
+import software.wings.security.annotations.ApiKeyAuthorized;
+import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AccountService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -73,6 +78,25 @@ public class DelegateVersionInfoResource {
   @DelegateAuth2
   public RestResponse<List<String>> getDelegateVersion(@QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(accountService.getDelegateConfiguration(accountId).getDelegateVersions());
+  }
+
+  @GET
+  @Path("/supportedDelegate")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<SupportedDelegateVersion> getSupportedDelegateVersion(
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    String latestSupportedDelegateImage = delegateRingService.getDelegateImageTag(accountId);
+    String[] split = latestSupportedDelegateImage.split(":");
+    String latestVersion = split[1];
+    SupportedDelegateVersion supportedDelegateVersion =
+        SupportedDelegateVersion.builder()
+            .latestSupportedVersion(latestVersion)
+            .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
+            .build();
+    return new RestResponse<>(supportedDelegateVersion);
   }
 
   @GET

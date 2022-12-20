@@ -43,6 +43,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
@@ -105,12 +106,13 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   PageRequest pageRequest;
   Scope scope;
   ScmConnector scmConnector;
+  @Mock GitFileCacheService gitFileCacheService;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
-        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper);
+        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)

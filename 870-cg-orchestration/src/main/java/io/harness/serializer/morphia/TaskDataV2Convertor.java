@@ -30,7 +30,8 @@ public class TaskDataV2Convertor extends TypeConverter implements SimpleValueCon
       return null;
     }
     TaskDataV2 taskDataV2 = (TaskDataV2) value;
-    taskDataV2.setExpressions(new HashMap<>(taskDataV2.getExpressions()));
+    taskDataV2.setExpressions(
+        taskDataV2.getExpressions() != null ? new HashMap<>(taskDataV2.getExpressions()) : new HashMap<>());
     return referenceFalseKryoSerializer.asBytes(value);
   }
 

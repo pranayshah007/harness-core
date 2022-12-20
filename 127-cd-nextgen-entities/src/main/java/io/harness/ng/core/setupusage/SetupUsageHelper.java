@@ -98,6 +98,7 @@ public class SetupUsageHelper {
                           .newBuilder()
                           .setEnvironmentIdentifier(
                               referredByEntityDetail.getInfraDefRef().getEnvIdentifier().getValue())
+                          .setEnvironmentName(referredByEntityDetail.getInfraDefRef().getEnvName().getValue())
                           .build())
                   .build());
         }

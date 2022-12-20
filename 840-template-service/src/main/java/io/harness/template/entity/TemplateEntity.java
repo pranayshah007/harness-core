@@ -111,6 +111,7 @@ public class TemplateEntity
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
 
   // icon support for templates
   @Wither @Setter @NonFinal String icon;

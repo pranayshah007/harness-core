@@ -1142,8 +1142,8 @@ public class EcsCommandTaskNGHelper {
         "listener with arn:" + listenerArn + "is not present in load balancer: " + loadBalancer);
   }
 
-  private String getFirstTargetGroupFromListener(
-      AwsInternalConfig awsInternalConfig, EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn) {
+  List<Rule> getListenerRulesForListener(
+      AwsInternalConfig awsInternalConfig, EcsInfraConfig ecsInfraConfig, String listenerArn) {
     List<Rule> rules = newArrayList();
     String nextToken = null;
     do {
@@ -1154,6 +1154,48 @@ public class EcsCommandTaskNGHelper {
       rules.addAll(describeRulesResponse.rules());
       nextToken = describeRulesResponse.nextMarker();
     } while (nextToken != null);
+
+    return rules;
+  }
+
+  String getDefaultListenerRuleForListener(
+      AwsInternalConfig awsInternalConfig, EcsInfraConfig ecsInfraConfig, String listenerArn) {
+    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, ecsInfraConfig, listenerArn);
+    for (Rule rule : rules) {
+      if (rule.isDefault()) {
+        return rule.ruleArn();
+      }
+    }
+
+    // throw error if default listener rule not found
+    String errorMessage = format("Default listener rule not found for listener %s", listenerArn);
+    throw new InvalidRequestException(errorMessage);
+  }
+
+  public void updateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty(EcsLoadBalancerConfig ecsLoadBalancerConfig,
+      AwsInternalConfig awsInternalConfig, EcsInfraConfig ecsInfraConfig, LogCallback logCallback) {
+    if (StringUtils.isEmpty(ecsLoadBalancerConfig.getProdListenerRuleArn())) {
+      String defaultProdListenerRuleArn = getDefaultListenerRuleForListener(
+          awsInternalConfig, ecsInfraConfig, ecsLoadBalancerConfig.getProdListenerArn());
+      ecsLoadBalancerConfig.setProdListenerRuleArn(defaultProdListenerRuleArn);
+      String message =
+          format("Prod Listener Rule is not provided. Using default listener rule %s", defaultProdListenerRuleArn);
+      logCallback.saveExecutionLog(message, LogLevel.INFO);
+    }
+
+    if (StringUtils.isEmpty(ecsLoadBalancerConfig.getStageListenerRuleArn())) {
+      String defaultStageListenerRuleArn = getDefaultListenerRuleForListener(
+          awsInternalConfig, ecsInfraConfig, ecsLoadBalancerConfig.getStageListenerArn());
+      ecsLoadBalancerConfig.setStageListenerRuleArn(defaultStageListenerRuleArn);
+      String message =
+          format("Stage Listener Rule is not provided. Using default listener rule %s", defaultStageListenerRuleArn);
+      logCallback.saveExecutionLog(message, LogLevel.INFO);
+    }
+  }
+
+  private String getFirstTargetGroupFromListener(
+      AwsInternalConfig awsInternalConfig, EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn) {
+    List<Rule> rules = getListenerRulesForListener(awsInternalConfig, ecsInfraConfig, listenerArn);
 
     if (EmptyPredicate.isNotEmpty(rules)) {
       for (Rule rule : rules) {

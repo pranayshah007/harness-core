@@ -38,8 +38,6 @@ import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.Variable.ENTITY_TYPE;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
-import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.beans.trigger.ArtifactSelection.Type.ARTIFACT_SOURCE;
 import static software.wings.beans.trigger.ArtifactSelection.Type.LAST_COLLECTED;
 import static software.wings.beans.trigger.ArtifactSelection.Type.LAST_DEPLOYED;
@@ -51,6 +49,8 @@ import static software.wings.beans.trigger.WebhookEventType.PUSH;
 import static software.wings.beans.trigger.WebhookSource.BITBUCKET;
 import static software.wings.beans.trigger.WebhookSource.GITHUB;
 import static software.wings.beans.trigger.WebhookSource.GITLAB;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.service.impl.trigger.TriggerServiceTestHelper.artifact;
 import static software.wings.service.impl.trigger.TriggerServiceTestHelper.buildArtifactTrigger;
 import static software.wings.service.impl.trigger.TriggerServiceTestHelper.buildArtifactTriggerWithArtifactSelections;
@@ -155,7 +155,6 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
@@ -181,6 +180,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.scheduler.BackgroundJobScheduler;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.service.impl.AuditServiceHelper;
@@ -3755,7 +3755,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     Map<String, String> serviceManifestMapping = new HashMap<>();
     when(workflowExecutionService.triggerEnvExecution(eq(APP_ID), eq(null), any(), eq(trigger)))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, deploymentFreezeIds, "FREEZE_NAMES", false, false));
+            ACCOUNT_ID, deploymentFreezeIds, Collections.singletonList(""), "FREEZE_NAMES", false, false));
     when(appService.get(APP_ID)).thenReturn(Application.Builder.anApplication().name(APP_NAME).build());
     when(pipelineService.getPipeline(APP_ID, PIPELINE_ID)).thenReturn(Pipeline.builder().name(PIPELINE_NAME).build());
 
@@ -3785,7 +3785,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     Map<String, String> serviceManifestMapping = new HashMap<>();
     when(workflowExecutionService.triggerEnvExecution(eq(APP_ID), eq(ENV_ID), any(), eq(trigger)))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, deploymentFreezeIds, "FREEZE_NAMES", false, false));
+            ACCOUNT_ID, deploymentFreezeIds, Collections.singletonList(""), "FREEZE_NAMES", false, false));
     when(appService.get(APP_ID)).thenReturn(Application.Builder.anApplication().name(APP_NAME).build());
     when(workflowService.getWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(buildWorkflow());
 
@@ -3868,7 +3868,7 @@ public class TriggerServiceTest extends WingsBaseTest {
 
     when(workflowExecutionService.triggerEnvExecution(eq(APP_ID), eq(null), any(), eq(scheduledConditionTrigger)))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, Collections.emptyList(), null, true, false));
+            ACCOUNT_ID, Collections.emptyList(), Collections.emptyList(), null, true, false));
 
     TriggerServiceImpl triggerServiceImpl = (TriggerServiceImpl) triggerService;
     assertThatThrownBy(()

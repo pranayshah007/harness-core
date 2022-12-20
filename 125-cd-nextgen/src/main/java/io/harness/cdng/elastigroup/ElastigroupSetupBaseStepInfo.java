@@ -18,6 +18,7 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,10 +37,9 @@ public class ElastigroupSetupBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> name;
+  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> name;
 
   @NotNull
-  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
   ElastigroupInstances instances;
 }

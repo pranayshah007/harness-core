@@ -29,6 +29,8 @@ public interface AccessRequestService {
 
   List<AccessRequest> getActiveAccessRequestForAccount(String accountId);
 
+  List<String> getAccountsHavingActiveAccessRequestForUser(String userId);
+
   List<AccessRequest> getAllAccessRequestForAccount(String accountId);
 
   List<AccessRequest> getActiveAccessRequestForAccountAndUser(String accountId, String userId);

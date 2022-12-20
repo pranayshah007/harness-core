@@ -13,8 +13,12 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.pcf.mappers.TasInstanceIndexToServerInstanceInfoMapper;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.logging.LogCallback;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
@@ -33,6 +37,12 @@ import org.cloudfoundry.operations.applications.InstanceDetail;
 public class TasTaskHelperBase {
   @Inject private TasNgConfigMapper ngConfigMapper;
   @Inject protected CfDeploymentManager pcfDeploymentManager;
+
+  public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
+      boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
+    return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
+  }
+
   public List<ServerInstanceInfo> getTasServerInstanceInfos(TasDeploymentReleaseData deploymentReleaseData) {
     TasInfraConfig tasInfraConfig = deploymentReleaseData.getTasInfraConfig();
     CloudFoundryConfig cfConfig = ngConfigMapper.mapTasConfigWithDecryption(

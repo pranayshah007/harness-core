@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.Application.Builder.anApplication;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_NAME;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -28,10 +28,10 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import java.util.Arrays;

@@ -390,8 +390,8 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
     verify(accessControlClient, times(1)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).get(any(), any());
     RoleAssignmentResponse entity = (RoleAssignmentResponse) accountScopedRoleAssignments.getEntity();
-    assertNotNull(entity.getRoleassignment());
-    assertEquals(entity.getRoleassignment().getSlug(), roleAssignment.getIdentifier());
+    assertNotNull(entity.getRoleAssignment());
+    assertEquals(entity.getRoleAssignment().getSlug(), roleAssignment.getIdentifier());
   }
 
   @Test

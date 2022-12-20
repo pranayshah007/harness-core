@@ -36,7 +36,13 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,8 +73,8 @@ public class NexusArtifactResource {
       @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
       @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
       @QueryParam("group") String group, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -125,8 +131,8 @@ public class NexusArtifactResource {
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, NexusRequestDTO requestDTO) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, NexusRequestDTO requestDTO) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     NexusBuildDetailsDTO buildDetails =
@@ -140,8 +146,8 @@ public class NexusArtifactResource {
   @ApiOperation(value = "Validate nexus artifact server", nickname = "validateArtifactServerForNexus")
   public ResponseDTO<Boolean> validateArtifactServer(@QueryParam("connectorRef") String nexusConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     boolean isValidArtifactServer =

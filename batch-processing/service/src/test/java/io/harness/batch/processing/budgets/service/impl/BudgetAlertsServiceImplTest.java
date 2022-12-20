@@ -28,9 +28,11 @@ import io.harness.ccm.budget.AlertThresholdBase;
 import io.harness.ccm.budget.ApplicationBudgetScope;
 import io.harness.ccm.budget.EnvironmentType;
 import io.harness.ccm.budget.dao.BudgetDao;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
+import io.harness.ccm.currency.Currency;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
 import io.harness.rest.RestResponse;
@@ -73,6 +75,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private AccountShardService accountShardService;
   @Mock private CloudBillingHelper cloudBillingHelper;
   @Mock private BudgetDao budgetDao;
+  @Mock private CEMetadataRecordDao ceMetadataRecordDao;
   @InjectMocks private BudgetAlertsServiceImpl budgetAlertsService;
 
   @Mock Statement statement;
@@ -139,6 +142,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void shouldSendBudgetAlerts() {
+    when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
     budgetAlertsService.sendBudgetAlerts();
     verify(notificationResourceClient, times(1)).sendNotification(any(), any());
   }

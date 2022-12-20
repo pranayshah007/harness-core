@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
 import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
@@ -80,7 +81,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.SyncStatus;
 import software.wings.beans.instance.dashboard.ArtifactSummary;
@@ -104,6 +104,7 @@ import software.wings.beans.instance.dashboard.service.ServiceInstanceDashboard;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.instance.CompareEnvironmentAggregationInfo.CompareEnvironmentAggregationInfoKeys;
@@ -137,6 +138,7 @@ import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -405,17 +407,22 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
     Set<Instance> instanceSet = new HashSet<>();
-    query.field("accountId").equal(accountId);
+    query.field(InstanceKeys.accountId).equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
       Query<Instance> clonedQuery_1 = query.cloneQuery();
       Query<Instance> clonedQuery_2 = query.cloneQuery();
-      clonedQuery_1.field("isDeleted").equal(false);
-      clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
+      clonedQuery_1.field(InstanceKeys.isDeleted).equal(false);
+      clonedQuery_2.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions2 = wingsPersistence.analyticNodePreferenceOptions();
+      if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
+        findOptions2.modifier("$hint", "instance_index7");
+      }
       instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
-      instanceSet.addAll(clonedQuery_2.asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(clonedQuery_2.asList(findOptions2));
     } else {
-      instanceSet.addAll(query.filter("isDeleted", false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(
+          query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
     }
 
     int counter = instanceSet.size();
@@ -1115,20 +1122,27 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
     if (pageRequest == null) {
       PageRequestBuilder pageRequestBuilder = aPageRequest()
-                                                  .addFilter("appId", EQ, appId)
-                                                  .addFilter("workflowType", EQ, ORCHESTRATION)
-                                                  .addFilter("serviceIds", HAS, serviceId)
+                                                  .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+                                                  .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
+                                                  .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
                                                   .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
                                                   .withLimit("10");
 
       finalPageRequest = pageRequestBuilder.build();
     } else {
-      pageRequest.addFilter("appId", EQ, appId);
-      pageRequest.addFilter("workflowType", EQ, ORCHESTRATION);
-      pageRequest.addFilter("serviceIds", HAS, serviceId);
+      pageRequest.addFilter(WorkflowExecutionKeys.appId, EQ, appId);
+      pageRequest.addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION);
+      pageRequest.addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId);
       pageRequest.addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC);
       pageRequest.setLimit("10");
       finalPageRequest = pageRequest;
+    }
+
+    if (featureFlagService.isEnabled(SPG_DASHBOARD_PROJECTION, accountId)) {
+      List<String> fieldsExcluded = Arrays.asList(WorkflowExecutionKeys.breakdown, WorkflowExecutionKeys.stateMachine,
+          WorkflowExecutionKeys.rejectedByFreezeWindowIds, WorkflowExecutionKeys.rejectedByFreezeWindowNames,
+          WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
+      finalPageRequest.setFieldsExcluded(fieldsExcluded);
     }
 
     Optional<Integer> retentionPeriodInDays =

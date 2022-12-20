@@ -11,6 +11,7 @@ import io.harness.delegate.app.modules.common.DelegateHealthModule;
 import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
 import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
+import io.harness.delegate.app.modules.platform.k8s.K8SRunnerModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.metrics.MetricRegistryModule;
@@ -51,5 +52,7 @@ public class DelegatePlatformModule extends AbstractModule {
     install(
         new DelegateExecutorsModule(configuration.isDynamicHandlingOfRequestEnabled())); // Check if some can be removed
     install(new DelegateCommonModule(configuration));
+
+    install(new K8SRunnerModule());
   }
 }

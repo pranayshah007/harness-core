@@ -19,10 +19,10 @@ import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSwapSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.AzureWebAppCommandUnit;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateExecutionData;

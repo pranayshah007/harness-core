@@ -1,4 +1,11 @@
 /*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+/*
  * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
@@ -44,6 +51,7 @@ public class DelegateTaskPackage {
 
   @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
   @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  // Some tasks expect decrypted secrets here for log sanitization
   @Default private Set<String> secrets = new HashSet<>();
 
   private List<ExecutionCapability> executionCapabilities;

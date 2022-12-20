@@ -713,6 +713,10 @@ fi
 if [[ "" != "$AZURE_MARKETPLACE_SECRETKEY" ]]; then
   export AZURE_MARKETPLACE_SECRETKEY; yq -i '.mktPlaceConfig.azureMarketplaceSecretKey=env(AZURE_MARKETPLACE_SECRETKEY)' $CONFIG_FILE
 fi
+if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
+  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+fi
+
 
 if [[ "" != "$WORKERS" ]]; then
   IFS=',' read -ra WORKER_ITEMS <<< "$WORKERS"

@@ -13,8 +13,8 @@ import io.harness.testframework.framework.Retry;
 import io.harness.testframework.framework.Setup;
 import io.harness.testframework.framework.matchers.ArtifactMatcher;
 
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 
 import io.restassured.http.ContentType;
 import java.util.List;

@@ -20,6 +20,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.mappers.AcrResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -77,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -165,16 +167,12 @@ public class AzureHelperService {
       taskType = NGTaskType.ACR_ARTIFACT_TASK_NG.name();
       taskSelectors = acrArtifactDelegateRequest.getAzureConnectorDTO().getDelegateSelectors();
     }
-
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .executionTimeout(java.time.Duration.ofSeconds(customTimeoutInSec.orElse(defaultTimeoutInSecs)))
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
-            .taskSetupAbstraction(
-                SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(abstractions)
             .taskParameters(taskParameters)
             .taskType(taskType)
             .taskSelectors(taskSelectors)

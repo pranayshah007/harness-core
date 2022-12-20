@@ -161,7 +161,7 @@ public class PcfCommandTaskBaseHelper {
         cfRequestConfig, pcfDeploymentManager, executionLogCallback, cfServiceDataUpdated, pcfInstanceElements);
   }
 
-  private void upsizeInstance(CfRequestConfig cfRequestConfig, CfDeploymentManager pcfDeploymentManager,
+  public void upsizeInstance(CfRequestConfig cfRequestConfig, CfDeploymentManager pcfDeploymentManager,
       LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
       List<CfInternalInstanceElement> pcfInstanceElements) throws PivotalClientApiException {
     // Get application details before upsize

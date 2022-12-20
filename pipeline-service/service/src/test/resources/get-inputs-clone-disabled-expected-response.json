@@ -1,0 +1,33 @@
+{
+  "inputs": {
+    "image": {
+      "prompt": false,
+      "required": false,
+      "default": "golang",
+      "type": "string",
+      "desc": "image name"
+    },
+    "repo": {
+      "prompt": true,
+      "required": true,
+      "type": "string",
+      "desc": "repository name"
+    },
+    "count": {
+      "prompt": false,
+      "required": false,
+      "type": "number"
+    },
+    "password": {
+      "prompt": false,
+      "required": true,
+      "type": "secret",
+      "desc": "docker password",
+      "enums": [
+        "secret1",
+        "secret2"
+      ]
+    }
+  },
+  "repository": null
+}

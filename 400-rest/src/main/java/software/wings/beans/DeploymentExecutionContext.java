@@ -15,7 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.api.artifact.ServiceArtifactVariableElement;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.WorkflowStandardParams;
 

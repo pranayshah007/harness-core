@@ -911,6 +911,14 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.HelmSourceRepo))
         .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, UNINSTALL, UPGRADE, HISTORY);
 
+    assertThat(serviceResourceService.getHelmCommandFlags(V2, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, DELETE, UPGRADE, HISTORY, FETCH);
+    assertThat(serviceResourceService.getHelmCommandFlags(null, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, DELETE, UPGRADE, HISTORY, FETCH);
+    assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(
+            LIST, INSTALL, TEMPLATE, ROLLBACK, VERSION, UNINSTALL, UPGRADE, HISTORY, PULL, REPO_ADD, REPO_UPDATE);
+
     service.setDeploymentType(KUBERNETES);
     service.setHelmVersion(V3);
     persistence.save(service);
@@ -927,6 +935,13 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
         .containsExactlyInAnyOrder(VERSION, TEMPLATE);
     assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.HelmSourceRepo))
         .containsExactlyInAnyOrder(VERSION, TEMPLATE);
+
+    assertThat(serviceResourceService.getHelmCommandFlags(V2, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(FETCH, VERSION, TEMPLATE);
+    assertThat(serviceResourceService.getHelmCommandFlags(null, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE, REPO_UPDATE, REPO_ADD);
+    assertThat(serviceResourceService.getHelmCommandFlags(V3, APP_ID, SERVICE_ID, StoreType.CUSTOM))
+        .containsExactlyInAnyOrder(PULL, VERSION, TEMPLATE, REPO_UPDATE, REPO_ADD);
   }
 
   @Test
