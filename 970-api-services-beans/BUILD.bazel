@@ -13,6 +13,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption/setting:module",
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-ng-commons:module",
         "//970-rbac-core:module",

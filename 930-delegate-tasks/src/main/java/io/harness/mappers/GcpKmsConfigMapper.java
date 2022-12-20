@@ -9,6 +9,7 @@ package io.harness.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mappers.NgSecretConfigMapperHelper.ngMetaDataFromDto;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.mapper.TagMapper;
@@ -28,7 +29,7 @@ public class GcpKmsConfigMapper {
     GcpKmsConfig gcpKmsConfig = new GcpKmsConfig(gcpKmsConfigDTO.getName(), gcpKmsConfigDTO.getProjectId(),
         gcpKmsConfigDTO.getRegion(), gcpKmsConfigDTO.getKeyRing(), gcpKmsConfigDTO.getKeyName(),
         gcpKmsConfigDTO.getCredentials(), gcpKmsConfigDTO.getDelegateSelectors());
-    gcpKmsConfig.setNgMetadata(SecretManagerConfigMapper.ngMetaDataFromDto(gcpKmsConfigDTO));
+    gcpKmsConfig.setNgMetadata(ngMetaDataFromDto(gcpKmsConfigDTO));
     gcpKmsConfig.setAccountId(gcpKmsConfigDTO.getAccountIdentifier());
     gcpKmsConfig.setEncryptionType(gcpKmsConfigDTO.getEncryptionType());
     gcpKmsConfig.setDefault(gcpKmsConfigDTO.isDefault());

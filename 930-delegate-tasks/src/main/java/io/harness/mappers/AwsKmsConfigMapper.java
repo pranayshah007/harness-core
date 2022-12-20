@@ -8,6 +8,7 @@
 package io.harness.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mappers.NgSecretConfigMapperHelper.ngMetaDataFromDto;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialType;
@@ -35,7 +36,7 @@ public class AwsKmsConfigMapper {
     kmsConfig.setName(awsKmsConfigDTO.getName());
     populateKmsConfig(kmsConfig, awsKmsConfigDTO.getBaseAwsKmsConfigDTO());
 
-    kmsConfig.setNgMetadata(SecretManagerConfigMapper.ngMetaDataFromDto(awsKmsConfigDTO));
+    kmsConfig.setNgMetadata(ngMetaDataFromDto(awsKmsConfigDTO));
     kmsConfig.setAccountId(awsKmsConfigDTO.getAccountIdentifier());
     kmsConfig.setEncryptionType(awsKmsConfigDTO.getEncryptionType());
     kmsConfig.setDefault(awsKmsConfigDTO.isDefault());

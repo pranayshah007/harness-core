@@ -9,6 +9,7 @@ package io.harness.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mappers.NgSecretConfigMapperHelper.ngMetaDataFromDto;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.mapper.TagMapper;
@@ -30,7 +31,7 @@ public class GcpSecretManagerConfigMapper {
                                                           .delegateSelectors(configDTO.getDelegateSelectors())
                                                           .credentials(configDTO.getCredentials())
                                                           .build();
-    gcpSecretsManagerConfig.setNgMetadata(SecretManagerConfigMapper.ngMetaDataFromDto(configDTO));
+    gcpSecretsManagerConfig.setNgMetadata(ngMetaDataFromDto(configDTO));
     gcpSecretsManagerConfig.setAccountId(configDTO.getAccountIdentifier());
     gcpSecretsManagerConfig.setEncryptionType(configDTO.getEncryptionType());
     gcpSecretsManagerConfig.setDefault(configDTO.isDefault());

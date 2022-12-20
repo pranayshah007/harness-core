@@ -8,7 +8,7 @@
 package io.harness.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.mappers.SecretManagerConfigMapper.ngMetaDataFromDto;
+import static io.harness.mappers.NgSecretConfigMapperHelper.ngMetaDataFromDto;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
