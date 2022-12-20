@@ -35,6 +35,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.eraro.ErrorCode;
@@ -43,6 +44,7 @@ import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HIterator;
 
@@ -106,6 +108,8 @@ public class AlertServiceImpl implements AlertService {
   @Inject private AppService appService;
   @Inject private SettingsService settingsService;
   @Inject private ArtifactStreamService artifactStreamService;
+
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public PageResponse<Alert> list(PageRequest<Alert> pageRequest) {
@@ -199,6 +203,11 @@ public class AlertServiceImpl implements AlertService {
 
   private void postProcessAlertAfterCreating(String accountId, Alert alert, AlertType alertType) {
     AlertStatus status = alert.getTriggerCount() >= alertType.getPendingCount() ? Open : Pending;
+    // Since alert jobs are delayed. Removing the barrier check.
+    if (featureFlagService.isEnabled(FeatureName.INSTANT_DELEGATE_DOWN_ALERT, accountId)
+        && alertType.equals(DelegatesDown)) {
+      status = Open;
+    }
 
     UpdateOperations<Alert> updateOperations = wingsPersistence.createUpdateOperations(Alert.class);
     updateOperations.inc(AlertKeys.triggerCount);

@@ -51,6 +51,7 @@ public class YAMLFieldNameConstants {
   public final String HEADERS = "headers";
   public final String OUTPUT = "output";
   public final String INPUT = "input";
+  public final String INPUTS = "inputs";
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
@@ -91,4 +92,7 @@ public class YAMLFieldNameConstants {
   public final String SERVICE_REF = "serviceRef";
   public final String ENVIRONMENT_REF = "environmentRef";
   public final String GROUP = "group";
+  public static final String OUTPUTS = "outputs";
+
+  public final String REPOSITORY = "repository";
 }

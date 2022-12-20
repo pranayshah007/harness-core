@@ -10,6 +10,8 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper.BOOLEAN_TRUE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -54,25 +56,26 @@ public class PMSPipelineTemplateHelper {
   private final TemplateResourceClient templateResourceClient;
   private final PipelineEnforcementService pipelineEnforcementService;
 
-  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(PipelineEntity pipelineEntity) {
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(PipelineEntity pipelineEntity, String loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), loadFromCache);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences) {
+      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences, boolean loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false,
-        getMergedTemplateWithTemplateReferences);
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false, getMergedTemplateWithTemplateReferences,
+        parseLoadFromCache(loadFromCache));
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      String accountId, String orgId, String projectId, String yaml) {
-    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false);
+      String accountId, String orgId, String projectId, String yaml, String loadFromCache) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false, loadFromCache);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
-      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
+      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
+      String loadFromCache) {
     if (TemplateRefHelper.hasTemplateRef(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
@@ -82,7 +85,7 @@ public class PMSPipelineTemplateHelper {
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId, false,
+              accountId, orgId, projectId, loadFromCache,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -90,7 +93,7 @@ public class PMSPipelineTemplateHelper {
                   .build()));
         }
         return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, false,
+            null, null, null, null, null, null, null, null, loadFromCache,
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(yaml)
                 .checkForAccess(checkForTemplateAccess)
@@ -217,5 +220,12 @@ public class PMSPipelineTemplateHelper {
       return gitEntityInfo.getRepoName();
     }
     return gitEntityInfo.getParentEntityRepoName();
+  }
+
+  private String parseLoadFromCache(boolean loadFromCache) {
+    if (loadFromCache) {
+      return BOOLEAN_TRUE_VALUE;
+    }
+    return BOOLEAN_FALSE_VALUE;
   }
 }

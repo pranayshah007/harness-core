@@ -20,7 +20,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
-import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -50,15 +49,23 @@ import org.hibernate.validator.constraints.URL;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ServiceNowConnector")
-@OneOfField(fields = {"username", "usernameRef"}) // TODO: to be removed while migration
 @Schema(name = "ServiceNowConnector", description = "ServiceNow Connector details.")
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @URL @NotNull @NotBlank String serviceNowUrl;
-  String username;
-  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication") String username;
+  /** @deprecated */
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
+  SecretRefData usernameRef;
+  /** @deprecated */
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
+  SecretRefData passwordRef;
   Set<String> delegateSelectors;
-  @Valid ServiceNowAuthenticationDTO auth;
+  @Valid @NotNull ServiceNowAuthenticationDTO auth;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

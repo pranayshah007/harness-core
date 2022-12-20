@@ -36,6 +36,7 @@ public class SetupUsageDetailProtoToRestMapper {
     if (ENTITY_REFERRED_BY_INFRA.toString().equals(setupUsageDetailProtoDTO.getType())) {
       return EntityReferredByInfraSetupUsageDetail.builder()
           .environmentIdentifier(setupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentIdentifier())
+          .environmentName(setupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentName())
           .build();
     }
 

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
@@ -23,9 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.NGTemplateReference;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
@@ -78,9 +77,13 @@ public class PipelineRbacHelper {
       return;
     }
     String principal = executionPrincipalInfo.getPrincipal();
+    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    for (EntityDetail entityDetail : entityDetails) {
+      permissionCheckDTOList.add(convertToPermissionCheckDTO(entityDetail));
+    }
     if (EmptyPredicate.isEmpty(principal)) {
-      throw new AccessDeniedException("Execution with empty principal found. Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+      throw new NGAccessDeniedException("Execution with empty principal found. Please contact harness customer care.",
+          WingsException.USER, permissionCheckDTOList);
     }
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -148,8 +151,12 @@ public class PipelineRbacHelper {
         }
       }
     }
+    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : nonPermittedResources) {
+      permissionCheckDTOList.add(convertToPermissionCheckDTO(accessControlDTO));
+    }
 
-    throw new AccessDeniedException(errors.toString(), ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    throw new NGAccessDeniedException(errors.toString(), WingsException.USER, permissionCheckDTOList);
   }
 
   public PermissionCheckDTO convertToPermissionCheckDTO(EntityDetail entityDetail) {
@@ -191,5 +198,15 @@ public class PipelineRbacHelper {
           .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
           .build();
     }
+  }
+
+  public static PermissionCheckDTO convertToPermissionCheckDTO(AccessControlDTO accessControlDTO) {
+    return PermissionCheckDTO.builder()
+        .permission(accessControlDTO.getPermission())
+        .resourceAttributes(accessControlDTO.getResourceAttributes())
+        .resourceIdentifier(accessControlDTO.getResourceIdentifier())
+        .resourceScope(accessControlDTO.getResourceScope())
+        .resourceType(accessControlDTO.getResourceType())
+        .build();
   }
 }

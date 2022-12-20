@@ -559,6 +559,10 @@ func getCustomListOptsFindFilesInBranch(ctx context.Context, fileRequest *pb.Fin
 		}
 	}
 
+	if fileRequest.GetPagination().GetSize() > 0 {
+		opts.Size = int(fileRequest.GetPagination().GetSize())
+	}
+
 	return *opts
 }
 
@@ -569,6 +573,10 @@ func getCustomListOptsFindFilesInCommit(ctx context.Context, fileRequest *pb.Fin
 		if fileRequest.GetPagination().GetUrl() != "" {
 			opts = &scm.ListOptions{URL: fileRequest.GetPagination().GetUrl()}
 		}
+	}
+
+	if fileRequest.GetPagination().GetSize() > 0 {
+		opts.Size = int(fileRequest.GetPagination().GetSize())
 	}
 
 	return *opts
@@ -621,7 +629,7 @@ func clonePush(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.
 	repo, err := gitCli.PlainClone(dir, false, &gitCli.CloneOptions{
 		RemoteName:    "origin",
 		Auth:          &http.TokenAuth{Token: fileRequest.GetProvider().GetBitbucketServer().GetPersonalAccessToken()},
-		URL:           fileRequest.Provider.Url,
+		URL:           parseUrl(fileRequest.Provider.Endpoint, fileRequest.Slug),
 		Depth:         1,
 		Progress:      os.Stdout,
 		ReferenceName: plumbing.ReferenceName("refs/heads/" + fileRequest.Branch),
@@ -638,7 +646,11 @@ func clonePush(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.
 	path := filepath.Join(dir, fileRequest.Path)
 	if isCreateAPI {
 		if _, err := os.Stat(path); err == nil {
-			return 409, "", fmt.Errorf("'%s' could not be created because it already exists. A previous commit ID must be provided when editing an existing file to prevent concurrent modifications.", fileRequest.Path)
+			return 409, "", fmt.Errorf("'%s' could not be created because it already exists.", fileRequest.Path)
+		}
+	} else {
+		if _, err := os.Stat(path); err != nil {
+			return 404, "", fmt.Errorf("'%s' could not be edited because it doesn't exist", fileRequest.Path)
 		}
 	}
 	// create the parent directory if necessary
@@ -672,4 +684,8 @@ func clonePush(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.
 		return 500, "", err
 	}
 	return 200, revision.String(), nil
+}
+
+func parseUrl(endpoint string, slug string) string {
+	return endpoint + "scm/" + slug + ".git"
 }

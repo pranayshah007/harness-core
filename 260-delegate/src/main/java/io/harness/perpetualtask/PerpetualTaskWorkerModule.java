@@ -42,6 +42,8 @@ import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParamsNg;
+import io.harness.perpetualtask.instancesync.TasInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesyncv2.cg.CgInstanceSyncV2TaskExecutor;
 import io.harness.perpetualtask.k8s.watch.K8SWatchTaskExecutor;
@@ -126,6 +128,8 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(CustomDeploymentNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(CustomDeploymentInstanceSyncPerpetualTaskExecuter.class);
+    mapBinder.addBinding(TasInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(TasInstanceSyncPerpetualTaskExecuter.class);
     mapBinder.addBinding(EcsInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(EcsInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(PdcPerpetualTaskParamsNg.class.getSimpleName()).to(PdcPerpetualTaskExecutorNg.class);
@@ -133,6 +137,8 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(AzureSshWinrmInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AwsSshInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
         .to(AwsSshWinrmPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(SpotinstAmiInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(SpotinstPerpetualTaskExecutorNg.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

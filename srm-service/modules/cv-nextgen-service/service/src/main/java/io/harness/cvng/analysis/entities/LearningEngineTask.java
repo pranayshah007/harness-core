@@ -115,6 +115,10 @@ public abstract class LearningEngineTask implements PersistentEntity, UuidAware,
     CANARY_DEPLOYMENT_TIME_SERIES,
     BEFORE_AFTER_DEPLOYMENT_TIME_SERIES,
     SERVICE_GUARD_FEEDBACK_ANALYSIS,
+    BEFORE_AFTER_DEPLOYMENT_LOG,
+    CANARY_DEPLOYMENT_LOG,
+
+    LOG_ANALYSIS,
     TIME_SERIES_LOAD_TEST;
 
     public static List<LearningEngineTaskType> getDeploymentTaskTypes() {

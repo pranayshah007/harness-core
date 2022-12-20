@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
 
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
@@ -34,7 +35,7 @@ public class WinRmUtils {
     WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
                                                   .accountId(winRmCommandTaskParameters.getAccountId())
                                                   .executionId(winRmCommandTaskParameters.getExecutionId())
-                                                  .workingDirectory(WINDOWS_HOME_DIR)
+                                                  .workingDirectory(getWorkingDir(commandUnit.getDestinationPath()))
                                                   .commandUnitName(commandUnit.getName())
                                                   .environment(winRmCommandTaskParameters.getEnvironmentVariables())
                                                   .hostname(winRmCommandTaskParameters.getHost())
@@ -70,5 +71,9 @@ public class WinRmUtils {
       return CommandExecutionStatus.FAILURE;
     }
     return executeCommandResponse.getStatus();
+  }
+
+  public static String getWorkingDir(String workingDirectory) {
+    return isNotEmpty(workingDirectory) ? workingDirectory : WINDOWS_HOME_DIR;
   }
 }

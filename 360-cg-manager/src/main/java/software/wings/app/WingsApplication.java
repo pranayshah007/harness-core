@@ -183,6 +183,7 @@ import io.harness.waiter.NotifierScheduledExecutorService;
 import io.harness.waiter.NotifyEvent;
 import io.harness.waiter.NotifyQueuePublisherRegister;
 import io.harness.waiter.NotifyResponseCleaner;
+import io.harness.waiter.NotifyResponseCleanerV2;
 import io.harness.waiter.OrchestrationNotifyEventListener;
 import io.harness.waiter.ProgressUpdateService;
 import io.harness.workers.background.critical.iterator.ArtifactCollectionHandler;
@@ -200,7 +201,6 @@ import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.alert.AlertReconciliationHandler;
 import software.wings.collect.ArtifactCollectEventListener;
-import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.GenericExceptionMapper;
 import software.wings.exception.JsonProcessingExceptionMapper;
@@ -489,10 +489,10 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
-    ExecutorService mainPoolExecutor = ThreadPool.create(configuration.getCommonPoolConfig().getCorePoolSize(),
-        configuration.getCommonPoolConfig().getMaxPoolSize(), configuration.getCommonPoolConfig().getIdleTime(),
-        configuration.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
+    ExecutorService mainPoolExecutor =
+        ThreadPool.create(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors() * 20,
+            configuration.getCommonPoolConfig().getIdleTime(), configuration.getCommonPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
     ExecutorModule.getInstance().setExecutorService(
         new InstrumentedExecutorService(mainPoolExecutor, threadPoolMetricRegistry, "main"));
 
@@ -1193,7 +1193,6 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void registerManagedBeansManager(
       MainConfiguration configuration, Environment environment, Injector injector) {
-    environment.lifecycle().manage(injector.getInstance(ConfigurationController.class));
     environment.lifecycle().manage(injector.getInstance(GcpMarketplaceSubscriberService.class));
     // Perpetual task
     environment.lifecycle().manage(injector.getInstance(ArtifactStreamPTaskMigrationJob.class));
@@ -1275,9 +1274,15 @@ public class WingsApplication extends Application<MainConfiguration> {
   private void scheduleJobsManager(
       Injector injector, MainConfiguration configuration, ScheduledExecutorService delegateExecutor) {
     log.info("Initializing scheduled jobs...");
-    injector.getInstance(NotifierScheduledExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
+    if (configuration.isLockNotifyResponseCleanup()) {
+      injector.getInstance(NotifierScheduledExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(NotifyResponseCleanerV2.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
+    } else {
+      injector.getInstance(NotifierScheduledExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
+    }
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);

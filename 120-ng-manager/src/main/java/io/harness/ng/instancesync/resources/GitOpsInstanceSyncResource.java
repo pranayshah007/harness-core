@@ -100,8 +100,8 @@ public class GitOpsInstanceSyncResource {
         DeleteInstancesRequest.builder().deletedCount(gitOpsInstanceRequestList.size()).status(true).build());
   }
 
-  private List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+  List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     List<GitOpsInstance> instanceDTOs = new ArrayList<>();
 
     final List<GitOpsInstance> gitOpsInstanceDTOs = gitOpsRequestDTOMapper.toGitOpsInstanceList(

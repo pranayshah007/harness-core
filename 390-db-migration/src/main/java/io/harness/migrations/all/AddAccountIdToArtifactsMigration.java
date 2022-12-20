@@ -13,8 +13,8 @@ import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Application;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;

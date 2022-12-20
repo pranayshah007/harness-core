@@ -541,13 +541,11 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}};
   }
   private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    // Case1
-    final URL testFile = classLoader.getResource("deployStageWithEnvironmentGroupAndFilters.yaml");
-    assertThat(testFile).isNotNull();
-    String stageYaml = Resources.toString(testFile, Charsets.UTF_8);
-    final DeploymentStageNode node1 = YamlPipelineUtils.read(stageYaml, DeploymentStageNode.class);
-    return new Object[][] {{node1}};
+    final DeploymentStageNode node1 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithEnvironmentGroupAndFilters.yaml");
+    final DeploymentStageNode node2 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithEnvironmentGroupAndFiltersRuntime.yaml");
+    return new Object[][] {{node1}, {node2}};
   }
 
   private Object[][] getDeploymentStageConfigEnvironments() throws IOException {
@@ -556,7 +554,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
     final DeploymentStageNode node2 =
         getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithMultiEnvironmentsAndFilters.yaml");
-    return new Object[][] {{node1}, {node2}};
+
+    final DeploymentStageNode node3 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithMultiEnvironmentsAndFilterAsRuntime.yaml");
+    return new Object[][] {{node1}, {node2}, {node3}};
   }
 
   private DeploymentStageNode getDeploymentStageNodeFromYaml(String filePath) throws IOException {

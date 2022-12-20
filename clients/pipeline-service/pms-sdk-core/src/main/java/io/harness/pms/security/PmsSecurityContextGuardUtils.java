@@ -7,7 +7,7 @@
 
 package io.harness.pms.security;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,7 +18,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
-import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.security.dto.ApiKeyPrincipal;
@@ -35,14 +35,14 @@ import org.jetbrains.annotations.NotNull;
 public class PmsSecurityContextGuardUtils {
   public Principal getPrincipalFromAmbiance(Ambiance ambiance) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
-    ExecutionTriggerInfo executionTriggerInfo = ambiance.getMetadata().getTriggerInfo();
+    TriggeredBy triggeredBy = ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
 
-    return getPrincipal(AmbianceUtils.getAccountId(ambiance), executionPrincipalInfo, executionTriggerInfo);
+    return getPrincipal(AmbianceUtils.getAccountId(ambiance), executionPrincipalInfo, triggeredBy);
   }
 
   @NotNull
-  private Principal getPrincipal(
-      String accountId, ExecutionPrincipalInfo executionPrincipalInfo, ExecutionTriggerInfo executionTriggerInfo) {
+  public Principal getPrincipal(
+      String accountId, ExecutionPrincipalInfo executionPrincipalInfo, TriggeredBy triggeredBy) {
     // NOTE: rbac should not be validated for triggers so all the resources should be validated with service principals
     if (!executionPrincipalInfo.getShouldValidateRbac()) {
       return new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
@@ -57,16 +57,15 @@ public class PmsSecurityContextGuardUtils {
         executionPrincipalInfo.getPrincipalType());
     switch (principalType) {
       case USER:
-        return new UserPrincipal(principal, executionTriggerInfo.getTriggeredBy().getExtraInfoMap().get("email"),
-            executionTriggerInfo.getTriggeredBy().getIdentifier(), accountId);
+        return new UserPrincipal(
+            principal, triggeredBy.getExtraInfoMap().get("email"), triggeredBy.getIdentifier(), accountId);
       case SERVICE:
         return new ServicePrincipal(principal);
       case API_KEY:
         return new ApiKeyPrincipal(principal);
       case SERVICE_ACCOUNT:
-        return new ServiceAccountPrincipal(principal,
-            executionTriggerInfo.getTriggeredBy().getExtraInfoMap().get("email"),
-            executionTriggerInfo.getTriggeredBy().getIdentifier(), accountId);
+        return new ServiceAccountPrincipal(
+            principal, triggeredBy.getExtraInfoMap().get("email"), triggeredBy.getIdentifier(), accountId);
       default:
         throw new AccessDeniedException("Unknown Principal Type", WingsException.USER);
     }

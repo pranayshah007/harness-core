@@ -335,7 +335,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 91df8e76
+scmVersion: 5452b1a7
 
 ngAuthUIEnabled: false
 
@@ -359,8 +359,8 @@ portal:
   delegateDockerImage: harness/delegate:latest
   externalGraphQLRateLimitPerMinute: 500
   customDashGraphQLRateLimitPerMinute: 1000
-  optionalDelegateTaskRejectAtLimit: 10000
-  importantDelegateTaskRejectAtLimit: 50000
+  optionalDelegateTaskRejectAtLimit: 5000
+  importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
 
 totp:
@@ -724,3 +724,5 @@ enableOpentelemetry: false
 disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}

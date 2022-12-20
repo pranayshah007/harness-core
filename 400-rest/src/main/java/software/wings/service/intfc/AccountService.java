@@ -23,6 +23,7 @@ import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
@@ -43,6 +44,7 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
+import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -108,7 +110,7 @@ public interface AccountService {
    */
   List<Account> list(@NotNull PageRequest<Account> request);
 
-  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds);
+  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
@@ -116,15 +118,15 @@ public interface AccountService {
 
   String getAccountPrimaryDelegateVersion(String accountId);
 
-  List<Account> listAllAccounts();
-
   List<Account> listAllAccountsWithoutTheGlobalAccount();
 
   List<Account> listAllActiveAccounts();
 
-  List<Account> listAllAccountWithDefaultsWithoutLicenseInfo();
+  List<Account> getAccountsWithBasicInfo(boolean includeLicenseInfo);
 
-  List<Account> listAllAccountWithDefaultsWithLicenseInfo();
+  Query<Account> getBasicAccountQuery();
+
+  Query<Account> getBasicAccountWithLicenseInfoQuery();
 
   PageResponse<Account> getAccounts(PageRequest<Account> pageRequest);
 
@@ -241,7 +243,7 @@ public interface AccountService {
 
   boolean disableHarnessUserGroupAccess(String accountId);
 
-  boolean isRestrictedAccessEnabled(String accountId);
+  boolean isHarnessSupportAccessDisabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
 
@@ -254,4 +256,8 @@ public interface AccountService {
   boolean isAccountActivelyUsed(String accountId);
 
   boolean isImmutableDelegateEnabled(String accountId);
+
+  boolean doMultipleAccountsExist();
+
+  List<AccountDTO> getAllAccounts();
 }

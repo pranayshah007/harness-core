@@ -17,6 +17,8 @@ import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityBuilder;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCurrentGenActivityBuilder;
+import io.harness.cvng.activity.entities.InternalChangeActivity;
+import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityBuilder;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityBuilder;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
@@ -34,11 +36,15 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
+import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOBuilder;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
+import io.harness.cvng.beans.change.InternalChangeEvent;
+import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.Action;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesResourceType;
@@ -124,6 +130,10 @@ import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
+import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.SumologicLogCVConfig.SumologicLogCVConfigBuilder;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig.SumologicMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
@@ -199,6 +209,8 @@ import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.eventsframework.schemas.cv.EventDetails;
+import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
 import io.harness.eventsframework.schemas.deployment.ArtifactDetails;
 import io.harness.eventsframework.schemas.deployment.DeploymentEventDTO;
 import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
@@ -506,6 +518,33 @@ public class BuilderFactory {
         .connectorIdentifier("connectorRef")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public SumologicMetricCVConfigBuilder sumologicMetricCVConfigBuilder() {
+    return SumologicMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE); // TODO Fix Typing.
+  }
+
+  public SumologicLogCVConfigBuilder sumologicLogCVConfigBuilder() {
+    return SumologicLogCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .queryName(randomAlphabetic(10))
+        .query(randomAlphabetic(10))
+        .serviceInstanceIdentifier("hostname")
+        .enabled(true)
+        .category(CVMonitoringCategory.ERRORS)
+        .connectorIdentifier("connectorRef")
+        .productName(generateUuid())
+        .createdAt(clock.millis());
   }
 
   public ErrorTrackingCVConfigBuilder errorTrackingCVConfigBuilder() {
@@ -862,6 +901,29 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
+  public InternalChangeActivityBuilder<?, ?> getInternalChangeActivity_FFBuilder() {
+    return InternalChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ActivityType.FEATURE_FLAG)
+        .activityType(ActivityType.FEATURE_FLAG)
+        .updatedBy("user")
+        .internalChangeEvent(
+            InternalChangeEvent.builder()
+                .changeEventDetailsLink(
+                    DeepLink.builder().action(DeepLink.Action.FETCH_DIFF_DATA).url("changeEventDetails").build())
+                .internalLinkToEntity(
+                    DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                .build())
+        .eventEndTime(clock.instant().toEpochMilli());
+  }
+
   public HarnessCDCurrentGenActivityBuilder getHarnessCDCurrentGenActivityBuilder() {
     return HarnessCDCurrentGenActivity.builder()
         .accountId(context.getAccountId())
@@ -988,6 +1050,26 @@ public class BuilderFactory {
                       .build());
   }
 
+  public ChangeEventDTOBuilder getInternalChangeEventDTO_FFBuilder() {
+    return getChangeEventDTOBuilder()
+        .type(ChangeSourceType.HARNESS_FF)
+        .metadata(InternalChangeEventMetaData.builder()
+                      .activityType(ActivityType.FEATURE_FLAG)
+                      .updatedBy("user")
+                      .eventStartTime(1000l)
+                      .internalChangeEvent(
+                          InternalChangeEvent.builder()
+                              .changeEventDetailsLink(DeepLink.builder()
+                                                          .action(DeepLink.Action.FETCH_DIFF_DATA)
+                                                          .url("changeEventDetails")
+                                                          .build())
+                              .internalLinkToEntity(
+                                  DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                              .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                              .build())
+                      .build());
+  }
+
   public ChangeEventDTOBuilder getChangeEventDTOBuilder() {
     return ChangeEventDTO.builder()
         .accountId(context.getAccountId())
@@ -1018,6 +1100,27 @@ public class BuilderFactory {
                                  .build())
         .setArtifactDetails(
             ArtifactDetails.newBuilder().setArtifactTag("artifactTag").setArtifactType("artifactType").build());
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventWithMultipleServiceEnvBuilder() {
+    return getInternalChangeEventBuilder().addServiceIdentifier("Service2").addEnvironmentIdentifier("Env2");
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilder() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("FEATURE_FLAG")
+        .setExecutionTime(1000l);
   }
 
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {

@@ -33,6 +33,8 @@ public interface LogClusterService {
       String baselineVerificationTaskId, String verificationTaskId, Instant startTime, Instant endTime);
   List<LogClusterDTO> getClusteredLogData(
       String cvConfigId, Instant startTime, Instant endTime, LogClusterLevel clusterLevel);
+  List<LogClusterDTO> getClusteredLogDataForDeploymentLog(
+      String cvConfigId, Instant startTime, Instant endTime, LogClusterLevel clusterLevel, Set<String> hostSet);
   void saveClusteredData(List<LogClusterDTO> logClusterDTO, String verificationTaskId, Instant timestamp, String taskId,
       LogClusterLevel clusterLevel);
   void logDeploymentVerificationProgress(

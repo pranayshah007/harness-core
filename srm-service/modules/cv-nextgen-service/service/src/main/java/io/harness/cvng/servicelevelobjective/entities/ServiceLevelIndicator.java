@@ -124,8 +124,7 @@ public abstract class ServiceLevelIndicator
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
       updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
-          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType())
-          .inc(ServiceLevelIndicatorKeys.version);
+          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
     }
   }
   @FdIndex Long createNextTaskIteration;

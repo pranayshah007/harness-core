@@ -18,14 +18,15 @@ import io.harness.persistence.PersistentEntity;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import java.time.Duration;
-import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 @OwnedBy(CE)
 @Slf4j
@@ -34,8 +35,9 @@ public class ChangeDataCaptureBulkMigrationHelper {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ChangeEventProcessor changeEventProcessor;
 
-  private <T extends PersistentEntity> void runBulkMigration(CDCEntity<T> cdcEntity) {
+  private <T extends PersistentEntity> int runBulkMigration(CDCEntity<T> cdcEntity, Bson filter) {
     Class<T> subscriptionEntity = cdcEntity.getSubscriptionEntity();
+    int counter = 0;
 
     MongoDatabase mongoDatabase =
         changeTracker.connectToMongoDatabase(changeTracker.getChangeDataCaptureDataStore(subscriptionEntity));
@@ -43,35 +45,67 @@ public class ChangeDataCaptureBulkMigrationHelper {
     MongoCollection<Document> collection =
         mongoDatabase.getCollection(changeTracker.getCollectionName(subscriptionEntity));
 
-    try (MongoCursor<Document> cursor = collection.find().iterator()) {
+    FindIterable<Document> documents;
+    if (filter == null) {
+      documents = collection.find();
+    } else {
+      documents = collection.find(filter);
+    }
+
+    try (MongoCursor<Document> cursor = documents.iterator()) {
       while (cursor.hasNext()) {
-        final Document document = cursor.next();
-        ChangeDataCapture[] dataCaptures = subscriptionEntity.getAnnotationsByType(ChangeDataCapture.class);
-        for (ChangeDataCapture changeDataCapture : dataCaptures) {
-          ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
-          if (changeHandler != null) {
-            changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document));
-          } else {
-            log.debug("ChangeHandler for {} is null", changeDataCapture.handler());
-          }
-        }
+        runSyncForEntity(cdcEntity, subscriptionEntity, cursor);
+        counter++;
+      }
+    }
+    return counter;
+  }
+
+  private <T extends PersistentEntity> void runSyncForEntity(
+      CDCEntity<T> cdcEntity, Class<T> subscriptionEntity, MongoCursor<Document> cursor) {
+    final Document document = cursor.next();
+    ChangeDataCapture[] dataCaptures = subscriptionEntity.getAnnotationsByType(ChangeDataCapture.class);
+    for (ChangeDataCapture changeDataCapture : dataCaptures) {
+      ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
+      if (changeHandler != null) {
+        changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document));
+      } else {
+        log.debug("ChangeHandler for {} is null", changeDataCapture.handler());
       }
     }
   }
 
-  void doBulkSync(Set<CDCEntity<?>> entitiesToBulkSync) {
+  public void doBulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync) {
+    bulkSync(entitiesToBulkSync, null);
+  }
+
+  public int doPartialSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter) {
+    return bulkSync(entitiesToBulkSync, filter);
+  }
+
+  public int bulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter) {
+    int counter = 0;
     changeEventProcessor.startProcessingChangeEvents();
     for (CDCEntity<?> cdcEntity : entitiesToBulkSync) {
-      CDCStateEntity cdcStateEntityState =
-          wingsPersistence.get(CDCStateEntity.class, cdcEntity.getSubscriptionEntity().getCanonicalName());
-      if (null == cdcStateEntityState) {
+      if (isPartialSync(filter) || isFirstSync(cdcEntity)) {
         log.info("Migrating {} to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
-        runBulkMigration(cdcEntity);
+        counter += runBulkMigration(cdcEntity, filter);
         log.info("{} migrated to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
       }
     }
     while (changeEventProcessor.isWorking()) {
       LockSupport.parkNanos(Duration.ofSeconds(1).toNanos());
     }
+    return counter;
+  }
+
+  private boolean isPartialSync(Bson filter) {
+    return filter != null;
+  }
+
+  private boolean isFirstSync(CDCEntity<?> cdcEntity) {
+    CDCStateEntity cdcStateEntityState =
+        wingsPersistence.get(CDCStateEntity.class, cdcEntity.getSubscriptionEntity().getCanonicalName());
+    return null == cdcStateEntityState;
   }
 }

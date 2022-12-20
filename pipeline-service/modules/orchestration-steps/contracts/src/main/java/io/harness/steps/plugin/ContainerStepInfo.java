@@ -18,6 +18,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -30,10 +31,12 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.variables.OutputNGVariable;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,23 +47,29 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
 @SimpleVisitorHelper(helperClass = ContainerStepInfoVisitorHelper.class)
 @TypeAlias("containerStepInfo")
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
-public class ContainerStepInfo
-    extends ContainerBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef {
+public class ContainerStepInfo extends ContainerBaseStepInfo
+    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -77,24 +86,38 @@ public class ContainerStepInfo
   private ParameterField<Map<String, JsonNode>> settings;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> uses;
-  private ContainerResource resources;
+  @NotNull @Valid private ContainerResource resources;
+
+  @NotNull @Valid private ContainerStepInfra infrastructure;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private Map<String, String> envVariables;
+  private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> privileged;
 
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.CIShellType")
+  private ParameterField<CIShellType> shell;
+
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> command;
+
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "[Lio.harness.yaml.core.variables.OutputNGVariable;")
+  @VariableExpression(skipVariableExpression = true)
+  private ParameterField<List<OutputNGVariable>> outputVariables;
 
   @Builder(builderMethodName = "infoBuilder")
   public ContainerStepInfo(String uuid, String identifier, String name, int retry,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ParameterField<String> uses, ContainerResource resources, ParameterField<List<String>> entrypoint,
-      Map<String, String> envVariables, ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<CIShellType> shellType, ParameterField<String> command,
+      ParameterField<List<OutputNGVariable>> outputVariables) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -109,6 +132,9 @@ public class ContainerStepInfo
     this.privileged = privileged;
     this.runAsUser = runAsUser;
     this.imagePullPolicy = imagePullPolicy;
+    this.shell = shellType;
+    this.command = command;
+    this.outputVariables = outputVariables;
   }
 
   @Override
@@ -125,12 +151,7 @@ public class ContainerStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ContainerStepParameters.infoBuilder()
-        .image(image)
-        .connectorRef(connectorRef)
-        .entrypoint(entrypoint)
-        .imagePullPolicy(imagePullPolicy)
-        .build();
+    return this;
   }
 
   @Override

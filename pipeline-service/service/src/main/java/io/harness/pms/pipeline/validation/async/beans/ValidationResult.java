@@ -7,11 +7,16 @@
 
 package io.harness.pms.pipeline.validation.async.beans;
 
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
+
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 @Value
 @Builder
 public class ValidationResult {
-  // empty for now
+  ValidateTemplateInputsResponseDTO templateInputsResponse;
+  @With GovernanceMetadata governanceResponse;
 }

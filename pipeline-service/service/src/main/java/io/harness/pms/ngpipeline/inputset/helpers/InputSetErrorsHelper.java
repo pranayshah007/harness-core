@@ -19,7 +19,6 @@ import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
-import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
@@ -40,7 +39,7 @@ public class InputSetErrorsHelper {
   public final String INVALID_INPUT_SET_MESSAGE = "Reference is an invalid Input Set";
   public final String OUTDATED_INPUT_SET_MESSAGE = "Reference is an outdated input set";
 
-  public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
+  public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml, String inputSetIdentifier) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
     Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, pipelineComp);
@@ -49,8 +48,8 @@ public class InputSetErrorsHelper {
     }
 
     String errorPipelineYaml = getErrorPipelineYaml(invalidFQNs.keySet(), pipelineYaml);
-    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap = getUuidToErrorResponseMap(
-        invalidFQNs, InputSetYamlHelper.getStringField(inputSetYaml, "identifier", "inputSet"));
+    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
+        getUuidToErrorResponseMap(invalidFQNs, inputSetIdentifier);
     return InputSetErrorWrapperDTOPMS.builder()
         .errorPipelineYaml(errorPipelineYaml)
         .uuidToErrorResponseMap(uuidToErrorResponseMap)
@@ -109,7 +108,7 @@ public class InputSetErrorsHelper {
         res.put(identifier, OUTDATED_INPUT_SET_MESSAGE);
       } else {
         String inputSetYaml = inputSetEntity.getYaml();
-        InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml);
+        InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml, inputSetEntity.getIdentifier());
         if (errorMap != null) {
           res.put(identifier, INVALID_INPUT_SET_MESSAGE);
         }
@@ -162,15 +161,27 @@ public class InputSetErrorsHelper {
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {
         Object templateValue = templateConfig.getFqnToValueMap().get(key);
-        Object value = inputSetConfig.getFqnToValueMap().get(key);
+        Object valueFromRuntimeInputYaml = inputSetConfig.getFqnToValueMap().get(key);
         if (key.isType() || key.isIdentifierOrVariableName()) {
-          if (!value.toString().equals(templateValue.toString())) {
-            errorMap.put(key,
-                "The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
-                    + "in the pipeline yaml, but the input set has it as " + value.toString());
+          if (!valueFromRuntimeInputYaml.toString().equals(templateValue.toString())) {
+            // if the type is wrong, this means that the whole field for which the type is, is potentially (and most
+            // probably) invalid. Hence, we need to mark all keys that are parallel to type as invalid. Same goes for
+            // name and identifier
+            FQN baseFQNOfCurrKey =
+                FQN.builder().fqnList(key.getFqnList().subList(0, key.getFqnList().size() - 1)).build();
+            // this sub map is of all the keys that are sibling of the `key` and their children. It also contains `key`
+            // as well. All these keys are being marked invalid
+            Map<FQN, Object> invalidSubMap =
+                YamlSubMapExtractor.getFQNToObjectSubMap(templateConfig.getFqnToValueMap(), baseFQNOfCurrKey);
+            // marking all the keys in the sub map as invalid
+            for (FQN subMapKey : invalidSubMap.keySet()) {
+              errorMap.put(subMapKey,
+                  "The value for " + key.getExpressionFqn() + " is " + templateValue
+                      + "in the pipeline yaml, but the input set has it as " + valueFromRuntimeInputYaml);
+            }
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, valueFromRuntimeInputYaml);
           if (EmptyPredicate.isNotEmpty(error)) {
             errorMap.put(key, error);
           }

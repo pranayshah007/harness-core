@@ -156,6 +156,11 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
+debeziumConsumerConfigs:
+  - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
@@ -267,6 +272,17 @@ orchestrationStepConfig:
   ffServerBaseUrl: http://127.0.0.1:3000/api/1.0
   ffServerApiKey: secret
   ffServerSSLVerify: false
+  containerStepConfig:
+    addonImageTag: releaseBuild-30
+    liteEngineImageTag: releaseBuild-29
+    defaultMemoryLimit: 500
+    defaultCPULimit: 400
+    defaultInternalImageConnector: 'account.harnessImage'
+    pvcDefaultStorageSize: 25600
+    delegateServiceEndpointVariableValue: "delegate-service:8080"
+    addonImage: harness/ci-addon:1.14.19
+    liteEngineImage: harness/ci-lite-engine:1.14.22
+    isLocal: false
 
 shouldDeployWithGitSync: true
 
@@ -347,6 +363,8 @@ pipelineEventConsumersConfig:
   sdkResponse:
     threads: 1
   graphUpdate:
+    threads: 1
+  pipelineExecutionEvent:
     threads: 1
   partialPlanResponse:
     threads: 1
@@ -456,18 +474,37 @@ orchestrationRestrictionConfiguration:
   useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
   planExecutionRestriction:
-     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-1}
-     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-5000}
-     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-10000}
+     free: ${PLAN_EXECUTION_RESTRICTION_FREE:-2}
+     team: ${PLAN_EXECUTION_RESTRICTION_TEAM:-200}
+     enterprise: ${PLAN_EXECUTION_RESTRICTION_ENTERPRISE:-500}
+  #remove below restriction
   pipelineCreationRestriction:
     free: ${PIPELINE_CREATION_RESTRICTION_FREE:-5}
     team: ${PIPELINE_CREATION_RESTRICTION_TEAM:-10000}
     enterprise: ${PIPELINE_CREATION_RESTRICTION_ENTERPRISE:-10000}
+  #remove below restriction
   maxConcurrencyRestriction:
     free: ${MAX_CONCURRENCY_RESTRICTION_FREE:-2}
     team: ${MAX_CONCURRENCY_RESTRICTION_TEAM:-50}
     enterprise: ${MAX_CONCURRENCY_RESTRICTION_ENTERPRISE:-100}
+  # Parallelism hard limit on number of nodes at any place
   totalParallelismStopRestriction:
     free: ${TOTAL_PARALLELISM_RESTRICTION_FREE:-2}
-    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-1000}
-    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-5000}
+    team: ${TOTAL_PARALLELISM_RESTRICTION_TEAM:-256}
+    enterprise: ${TOTAL_PARALLELISM_RESTRICTION_ENTERPRISE:-256}
+  #TODO(archit): Add passing timeout to all planCreators to adopt
+  maxPipelineTimeoutInHours:
+    free: ${MAX_PIPELINE_TIMEOUT_FREE:-1}
+    team: ${MAX_PIPELINE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_PIPELINE_TIMEOUT_ENTERPRISE:-840}
+  maxStageTimeoutInHours:
+    free: ${MAX_STAGE_TIMEOUT_FREE:-1}
+    team: ${MAX_STAGE_TIMEOUT_TEAM:-720}
+    enterprise: ${MAX_STAGE_TIMEOUT_ENTERPRISE:-840}
+  # 0 means no limit
+  maxStepTimeoutInHours:
+    free: ${MAX_STEP_TIMEOUT_FREE:-1}
+    team: ${MAX_STEP_TIMEOUT_TEAM:-0}
+    enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
+
+grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}

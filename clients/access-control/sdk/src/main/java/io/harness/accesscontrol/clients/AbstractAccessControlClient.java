@@ -7,7 +7,10 @@
 
 package io.harness.accesscontrol.clients;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
+
+import static java.util.Collections.emptyList;
 
 import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.AccessCheckRequestDTO;
@@ -22,8 +25,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.UnexpectedException;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
@@ -106,6 +113,29 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
   public void checkForAccessOrThrow(
       Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage) {
     checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, exceptionMessage);
+  }
+
+  @Override
+  public AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList) {
+    List<AccessControlDTO> accessControlList = new ArrayList<>();
+    if (isEmpty(permissionCheckDTOList)) {
+      return AccessCheckResponseDTO.builder().accessControlList(accessControlList).build();
+    }
+    List<AccessCheckResponseDTO> accessCheckResponseDTOs =
+        Streams.stream(Iterables.partition(permissionCheckDTOList, 1000))
+            .map(this::checkForAccess)
+            .collect(Collectors.toList());
+
+    accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
+    if (accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
+      String message = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
+          accessControlList.get(0).getResourceType().toLowerCase());
+      throw new NGAccessDeniedException(message, USER, emptyList());
+    }
+    return AccessCheckResponseDTO.builder()
+        .principal(accessCheckResponseDTOs.get(0).getPrincipal())
+        .accessControlList(accessControlList)
+        .build();
   }
 
   private void checkForAccessOrThrowInternal(

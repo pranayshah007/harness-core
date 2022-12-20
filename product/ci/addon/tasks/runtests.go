@@ -95,6 +95,7 @@ type runTestsTask struct {
 	cmdContextFactory    exec.CmdContextFactory
 	testSplitStrategy    string
 	parallelizeTests     bool
+	testGlobs            string
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -143,60 +144,41 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		addonLogger:          addonLogger,
 		testSplitStrategy:    testSplitStrategy,
 		parallelizeTests:     r.GetParallelizeTests(),
+		testGlobs:            r.GetTestGlobs(),
 	}
 }
 
-// Execute commands with timeout and retry handling
+// Run executes commands with timeout
 func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error) {
-	var err, errCg error
-	var o map[string]string
-	cgDir := filepath.Join(r.tmpFilePath, cgDir)
+	cgDirPath := filepath.Join(r.tmpFilePath, cgDir)
 	testSt := time.Now()
-	for i := int32(1); i <= r.numRetries; i++ {
-		if o, err = r.execute(ctx, i); err == nil {
-			cgSt := time.Now()
-			// even if the collectCg fails, try to collect reports. Both are parallel features and one should
-			// work even if the other one fails
-			errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, cgSt)
-			cgTime := time.Since(cgSt)
-			repoSt := time.Now()
-			err = collectTestReportsFn(ctx, r.reports, r.id, r.log)
-			repoTime := time.Since(repoSt)
-			if errCg != nil {
-				// If there's an error in collecting callgraph, we won't retry but
-				// the step will be marked as an error
-				r.log.Errorw(fmt.Sprintf("unable to collect callgraph. Time taken: %s", cgTime), zap.Error(errCg))
-				if err != nil {
-					r.log.Errorw(fmt.Sprintf("unable to collect tests reports. Time taken: %s", repoTime), zap.Error(err))
-				}
-				return nil, r.numRetries, errCg
-			}
-			if err != nil {
-				// If there's an error in collecting reports, we won't retry but
-				// the step will be marked as an error
-				r.log.Errorw(fmt.Sprintf("unable to collect test reports. Time taken: %s", repoTime), zap.Error(err))
-				return nil, r.numRetries, err
-			}
-			if len(r.reports) > 0 {
-				r.log.Infow(fmt.Sprintf("successfully collected test reports in %s time", repoTime))
-			}
-			return o, i, nil
-		}
+
+	stepOutput, err := r.execute(ctx)
+	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt)
+	if err == nil {
+		// Fail the step if run was successful but error during collection
+		err = collectionErr
 	}
-	if err != nil {
-		// Run step did not execute successfully
-		// Try and collect callgraph and reports, ignore any errors during collection steps itself
-		errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, time.Now())
-		errc := collectTestReportsFn(ctx, r.reports, r.id, r.log)
-		if errc != nil {
-			r.log.Errorw("error while collecting test reports", zap.Error(errc))
-		}
-		if errCg != nil {
-			r.log.Errorw("error while collecting callgraph", zap.Error(errCg))
-		}
-		return nil, r.numRetries, err
+	return stepOutput, r.numRetries, err
+}
+
+func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string, testSt time.Time) error {
+	cgStart := time.Now()
+	errCg := collectCgFn(ctx, r.id, cgDirPath, time.Since(testSt).Milliseconds(), r.log, cgStart)
+	if errCg != nil {
+		r.log.Errorw(fmt.Sprintf("Unable to collect callgraph. Time taken: %s", time.Since(cgStart)), zap.Error(errCg))
 	}
-	return nil, r.numRetries, err
+
+	crStart := time.Now()
+	errCr := collectTestReportsFn(ctx, r.reports, r.id, r.log, crStart)
+	if errCr != nil {
+		r.log.Errorw(fmt.Sprintf("Unable to collect tests reports. Time taken: %s", time.Since(crStart)), zap.Error(errCr))
+	}
+
+	if errCg != nil {
+		return errCg
+	}
+	return errCr
 }
 
 // createJavaAgentArg creates the ini file which is required as input to the java agent
@@ -394,7 +376,10 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.R
 func formatTests(tests []types.RunnableTest) string {
 	testStrings := make([]string, 0)
 	for _, t := range tests {
-		tString := fmt.Sprintf("%s.%s", t.Pkg, t.Class)
+		tString := t.Class
+		if t.Pkg != "" {
+			tString = fmt.Sprintf("%s.", t.Pkg) + tString
+		}
 		if t.Autodetect.Rule != "" {
 			tString += fmt.Sprintf(" %s", t.Autodetect.Rule)
 		}
@@ -403,7 +388,7 @@ func formatTests(tests []types.RunnableTest) string {
 	return strings.Join(testStrings, ", ")
 }
 
-func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr *bool) {
+func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp) {
 	if !r.parallelizeTests {
 		r.log.Info("Skipping test splitting as requested")
 		return
@@ -437,7 +422,8 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 		// For full runs, detect all the tests in the repo and split them
 		// If autodetect fails or detects no tests, we run all tests in step 0
 		var err error
-		tests, err = runner.AutoDetectTests(ctx)
+		testGlobs := strings.Split(r.testGlobs, ",")
+		tests, err = runner.AutoDetectTests(ctx, testGlobs)
 		if err != nil || len(tests) == 0 {
 			// AutoDetectTests output should be same across all the parallel steps. If one of the step
 			// receives error / no tests to run, all the other steps should have the same output
@@ -449,7 +435,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 				// Error while auto-detecting, no tests for other parallel steps
 				selection.Tests = []types.RunnableTest{}
 				r.runOnlySelectedTests = true
-				*ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
 				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests in parallel step 0")
 			}
 			return
@@ -473,7 +458,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 	// Modify runner input to run selected tests
 	selection.Tests = splitTests
 	r.runOnlySelectedTests = true
-	*ignoreInstr = false
 }
 
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
@@ -494,9 +478,11 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		}
 	}
 
-	// Test selection
+	// Ignore instrumentation when it's a manual run or user has unchecked RunOnlySelectedTests option
 	isManual := isManualFn()
 	ignoreInstr := isManual || !r.runOnlySelectedTests
+
+	// Test selection
 	selection = r.getTestSelection(ctx, files, isManual)
 
 	// Runner selection
@@ -564,7 +550,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test splitting: only when parallelism is enabled
 	if isParallelismEnabled() {
-		r.computeSelectedTests(ctx, runner, &selection, &ignoreInstr)
+		r.computeSelectedTests(ctx, runner, &selection)
 	}
 
 	// Test command
@@ -582,11 +568,15 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", err
 	}
 
+	if ignoreInstr {
+		r.log.Infow("Ignoring instrumentation and not attaching agent")
+	}
 	return resolvedCmd, nil
 }
 
-func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[string]string, error) {
+func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 	start := time.Now()
+	retryCount := int32(1)
 	ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(r.timeoutSecs))
 	defer cancel()
 

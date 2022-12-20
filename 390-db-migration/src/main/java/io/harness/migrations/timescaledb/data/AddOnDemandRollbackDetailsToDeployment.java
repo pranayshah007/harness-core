@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AddOnDemandRollbackDetailsToDeployment implements TimeScaleDBDataMigration {
   public static final int BATCH_LIMIT = 1000;
-  private static final String MIGRATION_NUMBER = "13";
+  private static final String MIGRATION_NUMBER = "16";
   private static final String MIGRATION_CLASS_NAME = "AddOnDemandRollbackDetailsToDeployment";
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject FeatureFlagService featureFlagService;

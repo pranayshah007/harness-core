@@ -9,9 +9,9 @@ package io.harness.eventframework.dms;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.consumer.AbstractRemoteObserverEventConsumer;

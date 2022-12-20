@@ -152,12 +152,21 @@ public class ServiceVariableMigrationService extends NgMigrationService {
     return handleResp(yamlFile, resp);
   }
 
+  public boolean doReferenceExists(Map<CgEntityId, NGYamlFile> migratedEntities, String envId, String serviceId) {
+    return migratedEntities.containsKey(CgEntityId.builder().type(ENVIRONMENT).id(envId).build())
+        && migratedEntities.containsKey(CgEntityId.builder().type(SERVICE).id(serviceId).build());
+  }
+
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ServiceVariable serviceVariable = (ServiceVariable) entities.get(entityId).getEntity();
     MigratorExpressionUtils.render(serviceVariable, inputDTO.getCustomExpressions());
     List<NGYamlFile> files = new ArrayList<>();
+
+    if (!doReferenceExists(migratedEntities, serviceVariable.getEnvId(), serviceVariable.getServiceId())) {
+      return files;
+    }
 
     NGYamlFile yamlFile = getBlankServiceOverride(inputDTO, migratedEntities, serviceVariable.getEnvId(),
         serviceVariable.getServiceId(), serviceVariable.getCgBasicInfo());

@@ -108,6 +108,10 @@ public class MultiDeploymentSpawnerUtils {
 
   public boolean hasMultiDeploymentConfigured(DeploymentStageNode node) {
     DeploymentStageConfig config = node.getDeploymentStageConfig();
+    return hasMultiDeploymentConfigured(config);
+  }
+
+  public boolean hasMultiDeploymentConfigured(DeploymentStageConfig config) {
     if (config.getGitOpsEnabled()) {
       return config.getServices() != null;
     }

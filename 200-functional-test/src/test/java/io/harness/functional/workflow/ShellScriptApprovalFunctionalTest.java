@@ -30,7 +30,7 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.approval.ApprovalStateParams;
 import software.wings.beans.approval.ShellScriptApprovalParams;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.StateType;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 

@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
+import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class LogClusterServiceImpl implements LogClusterService {
@@ -255,6 +256,25 @@ public class LogClusterServiceImpl implements LogClusterService {
                                            .field(ClusteredLogKeys.timestamp)
                                            .lessThan(endTime)
                                            .asList();
+    clusteredLogs.forEach(clusteredLog -> clusterData.add(clusteredLog.toDTO()));
+    return clusterData;
+  }
+
+  @Override
+  public List<LogClusterDTO> getClusteredLogDataForDeploymentLog(String verificationTaskId, Instant startTime,
+      Instant endTime, LogClusterLevel clusterLevel, Set<String> hostSet) {
+    List<LogClusterDTO> clusterData = new ArrayList<>();
+    Query<ClusteredLog> clusteredLogsQuery = hPersistence.createQuery(ClusteredLog.class, excludeAuthority)
+                                                 .filter(ClusteredLogKeys.verificationTaskId, verificationTaskId)
+                                                 .filter(ClusteredLogKeys.clusterLevel, clusterLevel)
+                                                 .field(ClusteredLogKeys.timestamp)
+                                                 .greaterThanOrEq(startTime)
+                                                 .field(ClusteredLogKeys.timestamp)
+                                                 .lessThan(endTime);
+    if (isNotEmpty(hostSet)) {
+      clusteredLogsQuery = clusteredLogsQuery.field(ClusteredLogKeys.host).hasAnyOf(hostSet);
+    }
+    List<ClusteredLog> clusteredLogs = clusteredLogsQuery.asList();
     clusteredLogs.forEach(clusteredLog -> clusterData.add(clusteredLog.toDTO()));
     return clusterData;
   }

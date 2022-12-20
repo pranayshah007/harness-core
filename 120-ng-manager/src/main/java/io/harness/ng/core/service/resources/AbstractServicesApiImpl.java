@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.service.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -27,6 +34,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.Service.ServiceKeys;
@@ -104,7 +112,7 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
     ServiceDefinitionType optionalType = ServiceDefinitionType.getServiceDefinitionType(type);
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        account, org, project, false, searchTerm, optionalType, gitOpsEnabled);
+        account, org, project, false, searchTerm, optionalType, gitOpsEnabled, false);
     Pageable pageRequest;
     if (isNotEmpty(services)) {
       criteria.and(ServiceEntityKeys.identifier).in(services);
@@ -129,8 +137,8 @@ public abstract class AbstractServicesApiImpl {
       List<ServiceResponse> filterserviceList = filterByPermissionAndId(accessControlList, serviceList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterserviceList).build();
     } else {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
@@ -145,8 +153,8 @@ public abstract class AbstractServicesApiImpl {
 
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
 
       return responseBuilderWithLinks.entity(serviceList).build();
     }

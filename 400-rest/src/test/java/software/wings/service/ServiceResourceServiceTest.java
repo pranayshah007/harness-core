@@ -34,7 +34,6 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static software.wings.api.DeploymentType.KUBERNETES;
 import static software.wings.api.DeploymentType.PCF;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.CommandCategory.Type.COMMANDS;
@@ -75,6 +74,7 @@ import static software.wings.beans.container.PcfServiceSpecification.PcfServiceS
 import static software.wings.beans.container.UserDataSpecification.UserDataSpecificationKeys;
 import static software.wings.common.TemplateConstants.HARNESS_GALLERY;
 import static software.wings.common.TemplateConstants.LATEST_TAG;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 import static software.wings.security.UserThreadLocal.userGuard;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 import static software.wings.stencils.StencilCategory.CONTAINERS;

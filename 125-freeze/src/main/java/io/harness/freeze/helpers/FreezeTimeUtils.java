@@ -30,14 +30,15 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FreezeTimeUtils {
-  DateTimeFormatter dtf = new DateTimeFormatterBuilder()
-                              .parseCaseInsensitive()
-                              .appendPattern("yyyy-MM-dd hh:mm a")
-                              .toFormatter(Locale.ENGLISH);
+  public DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+                                     .parseCaseInsensitive()
+                                     .appendPattern("yyyy-MM-dd hh:mm a")
+                                     .toFormatter(Locale.ENGLISH);
   LocalDateTime now = LocalDateTime.now();
 
   private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
   private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
+  private static final long MAX_FREEZE_START_TIME = 157680000000L;
 
   public CurrentOrUpcomingWindow fetchCurrentOrUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {
     List<CurrentOrUpcomingWindow> currentOrUpcomingWindows = new LinkedList<>();
@@ -181,11 +182,17 @@ public class FreezeTimeUtils {
       firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
     }
 
+    long timeDifferenceFromStartTime =
+        FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone) - getCurrentTime();
+    if (timeDifferenceFromStartTime > MAX_FREEZE_START_TIME) {
+      throw new InvalidRequestException("Freeze window start time should be less than 5 years");
+    }
+
     // Time difference in milliseconds.
     long timeDifferenceInMilliseconds = FreezeTimeUtils.getEpochValueFromDateString(firstWindowEndTime, timeZone)
         - FreezeTimeUtils.getEpochValueFromDateString(firstWindowStartTime, timeZone);
     if (timeDifferenceInMilliseconds < 0) {
-      throw new InvalidRequestException("Window Start time is less than Window end Time");
+      throw new InvalidRequestException("Window Start time is greater than Window end Time");
     }
     if (timeDifferenceInMilliseconds < MIN_FREEZE_WINDOW_TIME) {
       throw new InvalidRequestException("Freeze window time should be at least 30 minutes");

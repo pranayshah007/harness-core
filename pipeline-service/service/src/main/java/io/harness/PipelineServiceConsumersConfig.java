@@ -33,4 +33,5 @@ public class PipelineServiceConsumersConfig {
   PipelineServiceConsumerConfig webhookEvent;
   PipelineServiceConsumerConfig initiateNode;
   PipelineServiceConsumerConfig pollingEvent;
+  PipelineServiceConsumerConfig pipelineExecutionEvent;
 }

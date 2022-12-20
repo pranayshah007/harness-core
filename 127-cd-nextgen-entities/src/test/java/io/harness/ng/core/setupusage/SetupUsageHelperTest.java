@@ -94,6 +94,7 @@ public class SetupUsageHelperTest extends CDNGEntitiesTestBase {
             .setInfraDefRef(InfraDefinitionReferenceProtoDTO.newBuilder()
                                 .setIdentifier(StringValue.of("infraId"))
                                 .setEnvIdentifier(StringValue.of("envId"))
+                                .setEnvName(StringValue.of("envName"))
                                 .build())
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName("infraName")
@@ -150,6 +151,8 @@ public class SetupUsageHelperTest extends CDNGEntitiesTestBase {
         assertThat(entityDetailWithSetupUsageDetailProtoDTO.getEntityInInfraDetail()).isNotNull();
         assertThat(entityDetailWithSetupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentIdentifier())
             .isEqualTo("envId");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentName())
+            .isEqualTo("envName");
       }
     }
     assertThat(typesOfFields).isEqualTo(4);

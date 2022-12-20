@@ -13,14 +13,40 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.dto.SettingResponseDTO;
+import io.harness.serviceaccount.ServiceAccountDTO;
 
+import java.util.List;
+import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(PL)
 public interface TokenClient {
   @GET("token")
   Call<ResponseDTO<TokenDTO>> getToken(@Query(NGCommonEntityConstants.TOKEN_KEY) @NotEmpty String tokenId);
+
+  @GET("settings")
+  Call<ResponseDTO<List<SettingResponseDTO>>> listSettings(@Query(value = "accountIdentifier") String accountIdentifier,
+      @Query(value = "orgIdentifier") String orgIdentifier,
+      @Query(value = "projectIdentifier") String projectIdentifier, @Query(value = "category") SettingCategory category,
+      @Query(value = "group") String groupIdentifier);
+
+  @GET("serviceaccount/internal/{identifier}")
+  Call<ResponseDTO<ServiceAccountDTO>> getServiceAccount(
+      @Path(value = "identifier") String identifier, @Query(value = "accountIdentifier") String accountIdentifier);
+
+  // This API required POST data in text/plain format, but retrofit somehow adds a '"' around the String, so should wrap
+  // in another object
+  @Headers({"Content-Type: text/plain; charset=utf-8", "accept-language: en-US"})
+  @POST("token/validate")
+  Call<ResponseDTO<TokenDTO>> validateApiKey(
+      @Query(value = "accountIdentifier") String accountIdentifier, @Body RequestBody apiKey);
 }

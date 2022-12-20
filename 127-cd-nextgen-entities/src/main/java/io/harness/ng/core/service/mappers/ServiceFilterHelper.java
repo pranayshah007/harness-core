@@ -17,9 +17,10 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
-import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.YamlField;
 
 import java.util.ArrayList;
@@ -32,10 +33,16 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceFilterHelper {
+  private final String ACCOUNT_ID = "accountId";
+  private final String ORG_ID = "orgIdentifier";
+  private final String PROJECT_ID = "projectIdentifier";
+  private final String DELETED = "deleted";
+
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled) {
-    Criteria criteria =
-        CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, deleted);
+      boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled,
+      boolean includeAllServicesAccessibleAtScope) {
+    Criteria criteria = createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, deleted, includeAllServicesAccessibleAtScope);
     final List<Criteria> andCriterias = new ArrayList<>();
     if (isNotEmpty(searchTerm)) {
       Criteria searchCriteria = new Criteria().orOperator(
@@ -111,5 +118,56 @@ public class ServiceFilterHelper {
     }
 
     return artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
+  }
+
+  public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
+      boolean deleted, boolean includeAllServicesAccessibleAtScope) {
+    Criteria criteria = new Criteria();
+    if (isNotEmpty(accountId)) {
+      // accountId
+      criteria.and(ACCOUNT_ID).is(accountId);
+
+      // select services at levels accessible at that level
+      Criteria includeAllServicesCriteria = null;
+      if (includeAllServicesAccessibleAtScope) {
+        includeAllServicesCriteria = getCriteriaToReturnAllServicesAccessible(orgIdentifier, projectIdentifier);
+      } else {
+        criteria.and(ORG_ID).is(orgIdentifier);
+        criteria.and(PROJECT_ID).is(projectIdentifier);
+      }
+      List<Criteria> criteriaList = new ArrayList<>();
+      if (includeAllServicesCriteria != null) {
+        criteriaList.add(includeAllServicesCriteria);
+      }
+      if (criteriaList.size() != 0) {
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      }
+      criteria.and(DELETED).is(deleted);
+      return criteria;
+    } else {
+      throw new InvalidRequestException("Account identifier cannot be null");
+    }
+  }
+
+  private Criteria getCriteriaToReturnAllServicesAccessible(String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      return new Criteria().orOperator(Criteria.where(ServiceEntityKeys.projectIdentifier)
+                                           .is(projectIdentifier)
+                                           .and(ServiceEntityKeys.orgIdentifier)
+                                           .is(orgIdentifier),
+          Criteria.where(ServiceEntityKeys.orgIdentifier)
+              .is(orgIdentifier)
+              .and(ServiceEntityKeys.projectIdentifier)
+              .is(null),
+          Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null));
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      return new Criteria().orOperator(Criteria.where(ServiceEntityKeys.orgIdentifier)
+                                           .is(orgIdentifier)
+                                           .and(ServiceEntityKeys.projectIdentifier)
+                                           .is(null),
+          Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null));
+    } else {
+      return Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null);
+    }
   }
 }

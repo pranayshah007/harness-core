@@ -148,7 +148,6 @@ import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.ServiceInstance;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;
@@ -220,6 +219,8 @@ import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.infra.RancherKubernetesInfrastructure;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
@@ -611,8 +612,9 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
-
-    kryo.register(ServiceVariable.class, 5359);
-    kryo.register(ServiceVariable.OverrideType.class, 5361);
+    kryo.register(ArtifactFile.class, 50028);
+    kryo.register(Artifact.class, 50029);
+    kryo.register(Artifact.ContentStatus.class, 50030);
+    kryo.register(Artifact.Status.class, 50031);
   }
 }

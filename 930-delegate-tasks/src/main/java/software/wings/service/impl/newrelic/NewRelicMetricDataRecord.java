@@ -132,7 +132,7 @@ public class NewRelicMetricDataRecord
 
   private String serviceId;
 
-  @FdIndex private String cvConfigId;
+  private String cvConfigId;
 
   private String stateExecutionId;
 

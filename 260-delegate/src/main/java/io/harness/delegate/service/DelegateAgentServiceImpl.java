@@ -278,6 +278,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int LOCAL_HEARTBEAT_INTERVAL = 10;
   private static final String TOKEN = "[TOKEN]";
   private static final String SEQ = "[SEQ]";
+  private static final String WATCHER_EXPRESSION = "Dwatchersourcedir";
 
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
@@ -490,7 +491,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         messageService.writeMessage(DELEGATE_STARTED);
         startInputCheck();
         log.info("[New] Waiting for go ahead from watcher");
-        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5), false);
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
         messageService.removeData(DELEGATE_DASH + getProcessId(), DELEGATE_IS_NEW);
@@ -1577,7 +1578,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           return;
         }
 
-        ProcessControl.ensureKilled(watcherProcess, Duration.ofSeconds(120));
+        ProcessControl.ensureKilledForExpression(WATCHER_EXPRESSION);
         messageService.closeChannel(WATCHER, watcherProcess);
         sleep(ofSeconds(2));
         // Prevent a second restart attempt right away at next heartbeat by writing the watcher heartbeat and

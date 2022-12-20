@@ -92,7 +92,7 @@ public class ServerlessInstance implements PersistentEntity, UuidAware, CreatedA
 
   @Id @NotNull(groups = {Update.class}) private String uuid;
 
-  @FdIndex @NotNull protected String appId;
+  @NotNull protected String appId;
 
   private EmbeddedUser createdBy;
 
@@ -107,7 +107,7 @@ public class ServerlessInstance implements PersistentEntity, UuidAware, CreatedA
   private String envId;
   private String envName;
   private EnvironmentType envType;
-  @FdIndex private String accountId;
+  private String accountId;
   private String appName;
   private String serviceId;
   private String serviceName;

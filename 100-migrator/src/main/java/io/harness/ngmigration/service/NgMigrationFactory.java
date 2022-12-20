@@ -12,8 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
+import io.harness.ngmigration.service.entity.ConfigFileMigrationService;
 import io.harness.ngmigration.service.entity.ConnectorMigrationService;
+import io.harness.ngmigration.service.entity.ContainerTaskMigrationService;
 import io.harness.ngmigration.service.entity.DummyMigrationService;
+import io.harness.ngmigration.service.entity.EcsServiceSpecMigrationService;
 import io.harness.ngmigration.service.entity.EnvironmentMigrationService;
 import io.harness.ngmigration.service.entity.InfraMigrationService;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
@@ -46,6 +49,9 @@ public class NgMigrationFactory {
   @Inject AccountMigrationService accountMigrationService;
   @Inject TemplateMigrationService templateMigrationService;
   @Inject ServiceVariableMigrationService serviceVariableMigrationService;
+  @Inject ConfigFileMigrationService configFileMigrationService;
+  @Inject EcsServiceSpecMigrationService ecsServiceSpecMigrationService;
+  @Inject ContainerTaskMigrationService containerTaskMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -79,6 +85,12 @@ public class NgMigrationFactory {
         return manifestMigrationService;
       case SERVICE_VARIABLE:
         return serviceVariableMigrationService;
+      case CONFIG_FILE:
+        return configFileMigrationService;
+      case ECS_SERVICE_SPEC:
+        return ecsServiceSpecMigrationService;
+      case CONTAINER_TASK:
+        return containerTaskMigrationService;
       default:
         throw new IllegalStateException();
     }

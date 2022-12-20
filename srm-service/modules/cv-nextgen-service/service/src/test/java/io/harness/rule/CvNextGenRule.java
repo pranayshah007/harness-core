@@ -7,8 +7,8 @@
 
 package io.harness.rule;
 
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
+import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
@@ -24,6 +24,8 @@ import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.CVServiceModule;
 import io.harness.cvng.EventsFrameworkModule;
 import io.harness.cvng.VerificationConfiguration;
+import io.harness.cvng.client.ErrorTrackingClient;
+import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.FakeAccessControlClient;
 import io.harness.cvng.client.FakeAccountClient;
 import io.harness.cvng.client.FakeNextGenService;
@@ -187,6 +189,8 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(Clock.class).toInstance(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
       binder.bind(TemplateResourceClient.class).toInstance(getMockedTemplateResourceClient());
       binder.bind(NextGenService.class).to(FakeNextGenService.class);
+      binder.bind(ErrorTrackingService.class).toInstance(Mockito.mock(ErrorTrackingService.class));
+      binder.bind(ErrorTrackingClient.class).toInstance(Mockito.mock(ErrorTrackingClient.class));
       binder.bind(AccountClient.class).to(FakeAccountClient.class);
       binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
     }));
@@ -279,7 +283,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     TemplateResourceClient templateResourceClient = Mockito.mock(TemplateResourceClient.class);
     Mockito
         .when(templateResourceClient.applyTemplatesOnGivenYaml(Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()))
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
         .thenAnswer((Answer<Call<ResponseDTO<TemplateMergeResponseDTO>>>) invocation -> {
           TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[7];
           String yaml = templateApplyRequestDTO.getOriginalEntityYaml();

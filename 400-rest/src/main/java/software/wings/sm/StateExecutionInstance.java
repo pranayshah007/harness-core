@@ -108,7 +108,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
 
-  @FdIndex private String accountId;
+  private String accountId;
   private String childStateMachineId;
   private String displayName;
   private String stateName;
@@ -123,6 +123,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
   private boolean waitingForManualIntervention;
   private ExecutionInterruptType actionAfterManualInterventionTimeout;
   private boolean isRollbackProvisionerAfterPhases;
+  private boolean manualInterventionCandidate;
 
   /**
    * @deprecated {@link software.wings.service.intfc.StateExecutionService#appendDelegateTaskDetails(String,
@@ -155,7 +156,7 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
 
   private WorkflowType executionType;
 
-  @FdIndex private String executionUuid;
+  private String executionUuid;
 
   @FdIndex private String parentInstanceId;
 

@@ -29,7 +29,9 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
@@ -94,6 +96,8 @@ public class GcrApiServiceImpl implements GcrApiService {
       throw ex;
     } catch (IOException e) {
       throw handleIOException(gcpConfig, e);
+    } catch (InvalidRequestException e) {
+      throw new HintException(e.getMessage());
     }
   }
 
@@ -102,6 +106,10 @@ public class GcrApiServiceImpl implements GcrApiService {
       if (response.code() == 404) {
         ErrorHandlingGlobalContextData globalContextData =
             GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
+        if (response.body() == null) {
+          throw new InvalidRequestException(
+              "Image name [" + imageName + "] does not exist in Google Container Registry.");
+        }
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
             && response.body().tags.size() == 0) {
           throw new GcrImageNotFoundRuntimeException(
@@ -197,7 +205,11 @@ public class GcrApiServiceImpl implements GcrApiService {
           getGcrRestClient(gcrInternalConfig.getRegistryHostname())
               .getImageManifest(gcrInternalConfig.getBasicAuthHeader(), imageName, tag)
               .execute();
-      isSuccessful(response);
+
+      if (!isSuccessful(response)) {
+        throw new InvalidRequestException("Please provide a valid ImageName or Tag.");
+      }
+
       return getBuildDetailsInternal(gcrInternalConfig.getRegistryHostname(), imageName, tag);
     } catch (IOException e) {
       throw handleIOException(gcrInternalConfig, e);
@@ -225,6 +237,7 @@ public class GcrApiServiceImpl implements GcrApiService {
       case 200:
         return true;
       case 404:
+        return false;
       case 400:
         log.info("Response code {} received. Mostly with Image does not exist", code);
         return false;

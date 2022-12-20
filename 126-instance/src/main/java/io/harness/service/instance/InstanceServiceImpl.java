@@ -22,9 +22,7 @@ import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
-import io.harness.ng.core.entities.Project;
 import io.harness.repositories.instance.InstanceRepository;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -145,8 +143,10 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp) {
-    return instanceRepository.getActiveInstancesByServiceAndEnv(project, timestamp).getMappedResults();
+  public List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, long timestamp) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
   }
 
   /*
@@ -236,9 +236,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit) {
-    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
+      long lastDeployedAt) {
+    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId,
+        lastDeployedAt);
   }
 
   @Override

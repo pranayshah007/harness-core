@@ -42,3 +42,7 @@ metrics:
     metricDefinition: Delegate response
     type: Count
     unit: "1"
+  - metricName: active_delegate_task
+    metricDefinition: Active Delegate tasks count
+    type: LastValue
+    unit: count

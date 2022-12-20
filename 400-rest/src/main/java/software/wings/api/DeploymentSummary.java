@@ -15,7 +15,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -102,6 +101,12 @@ public class DeploymentSummary extends Base {
                  .descSortField(DeploymentSummaryKeys.CREATED_AT)
                  .build())
         .add(SortCompoundMongoIndex.builder()
+                 .name("inframappingId_spotInstAmiDeploymentElasticGroupId_createdAtDesc")
+                 .field(DeploymentSummaryKeys.infraMappingId)
+                 .field(DeploymentSummaryKeys.SPOT_INST_AMI_DEPLOYMENT_ELASTIC_GROUP_ID)
+                 .descSortField(DeploymentSummaryKeys.CREATED_AT)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
                  .name("inframappingId_awsAmiDeploymentKeyAsgName_createdAtDesc")
                  .field(DeploymentSummaryKeys.infraMappingId)
                  .field(DeploymentSummaryKeys.AWS_AMI_DEPLOYMENT_KEY_ASG_NAME)
@@ -118,7 +123,7 @@ public class DeploymentSummary extends Base {
   }
 
   private String accountId;
-  @FdIndex private String infraMappingId;
+  private String infraMappingId;
   private String workflowId;
   private String workflowExecutionId;
   private String workflowExecutionName;
@@ -204,5 +209,6 @@ public class DeploymentSummary extends Base {
     public static final String AWS_AMI_DEPLOYMENT_KEY_ASG_NAME = "awsAmiDeploymentKey.autoScalingGroupName";
     public static final String AWS_LAMBDA_DEPLOYMENT_FUNCTION_KEY_NAME = "awsLambdaDeploymentKey.functionName";
     public static final String AWS_LAMBDA_DEPLOYMENT_VERSION_KEY_NAME = "awsLambdaDeploymentKey.version";
+    public static final String SPOT_INST_AMI_DEPLOYMENT_ELASTIC_GROUP_ID = "spotinstAmiDeploymentKey.elastigroupId";
   }
 }

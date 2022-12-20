@@ -25,6 +25,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -82,7 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FreezeEvalutationResource {
   private final FreezeEvaluateService freezeEvaluateService;
-  private final AccessControlClient accessControlClient;
+  private final @Named("PRIVILEGED") AccessControlClient accessControlClient;
   private final NGFeatureFlagHelperService featureFlagHelperService;
 
   @GET

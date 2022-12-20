@@ -7,18 +7,25 @@
 
 package io.harness.steps.plugin;
 
+import static io.harness.steps.plugin.ContainerStepConstants.CONTAINER_STEP_OUTCOME;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.Outcome;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import org.springframework.data.annotation.TypeAlias;
 
-@Value
+@Data
 @Builder
+@TypeAlias(CONTAINER_STEP_OUTCOME)
+@JsonTypeName(CONTAINER_STEP_OUTCOME)
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepOutcome")
 public class ContainerStepOutcome implements Outcome {
-  // todo(abhinav): implement
+  Map<String, String> outputVariables;
 }

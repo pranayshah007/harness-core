@@ -8,12 +8,12 @@ package tasks
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"path/filepath"
-
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -399,11 +399,15 @@ func TestComputeSelected(t *testing.T) {
 		}
 		rts = append(rts, rt)
 	}
+	emptyTestGlobsString := ""
+	emptyTestGlobs := strings.Split(emptyTestGlobsString, ",")
+	testGlobsString := "path1/to/test*/*.cs,path2/to/test*/*.cs"
+	testGlobs := strings.Split(testGlobsString, ",")
+
 	tests := []struct {
 		name string
 		// Input
 		runOnlySelectedTestsBool      bool
-		IgnoreInstrBool               bool
 		parallelizeTestsBool          bool
 		isParallelismEnabledBool      bool
 		isStepParallelismEnabled      bool
@@ -420,50 +424,44 @@ func TestComputeSelected(t *testing.T) {
 		runnerAutodetectExpect        bool
 		runnerAutodetectTestsVal      []types.RunnableTest
 		runnerAutodetectTestsErr      error
+		testGlobsString               string
 		// Verify
 		runOnlySelectedTests     bool
 		selectTestsResponseTests []types.RunnableTest
-		ignoreInstrResp          bool
+		testGlobs                []string
 	}{
 		{
 			name: "SkipParallelization_Manual",
 			// Input
 			runOnlySelectedTestsBool: true,
-			IgnoreInstrBool:          false,
 			parallelizeTestsBool:     false,
 			// Expect
 			runOnlySelectedTests: true,
-			ignoreInstrResp:      false,
 		},
 		{
 			name: "SkipParallelization_TiSelection",
 			// Input
 			runOnlySelectedTestsBool: true,
-			IgnoreInstrBool:          false,
 			parallelizeTestsBool:     false,
 			runnableTests:            rts[:1],
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: rts[:1],
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "SkipTestSplitting_TiSelectionZeroTests",
 			// Input
 			runOnlySelectedTestsBool: true,
-			IgnoreInstrBool:          false,
 			parallelizeTestsBool:     true,
 			runnableTests:            []types.RunnableTest{}, // TI returned 0 tests to run
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{},
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "ManualAutodetectPass",
 			// Input
 			runOnlySelectedTestsBool:      false,
-			IgnoreInstrBool:               true,
 			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
@@ -480,16 +478,42 @@ func TestComputeSelected(t *testing.T) {
 			runnerAutodetectExpect:        true,
 			runnerAutodetectTestsVal:      []types.RunnableTest{rts[0], rts[1]},
 			runnerAutodetectTestsErr:      nil,
+			testGlobsString:               emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]},
-			ignoreInstrResp:          false,
+			testGlobs:                emptyTestGlobs,
+		},
+		{
+			name: "ManualAutodetectPass_TestGlobsProvided",
+			// Input
+			runOnlySelectedTestsBool:      false,
+			parallelizeTestsBool:          true,
+			isParallelismEnabledBool:      true,
+			isStepParallelismEnabled:      true,
+			isStageParallelismEnabled:     false,
+			getStepStrategyIterationInt:   0,
+			getStepStrategyIterationErr:   nil,
+			getStepStrategyIterationsInt:  2,
+			getStepStrategyIterationsErr:  nil,
+			getStageStrategyIterationInt:  -1,
+			getStageStrategyIterationErr:  fmt.Errorf("no stage parallelism"),
+			getStageStrategyIterationsInt: -1,
+			getStageStrategyIterationsErr: fmt.Errorf("no stage parallelism"),
+			runnableTests:                 []types.RunnableTest{}, // Manual run - No TI test selection
+			runnerAutodetectExpect:        true,
+			runnerAutodetectTestsVal:      []types.RunnableTest{rts[0], rts[1]},
+			runnerAutodetectTestsErr:      nil,
+			testGlobsString:               testGlobsString,
+			// Expect
+			runOnlySelectedTests:     true,
+			selectTestsResponseTests: []types.RunnableTest{rts[0]},
+			testGlobs:                testGlobs,
 		},
 		{
 			name: "ManualAutodetectFailStepZero",
 			// Input
 			runOnlySelectedTestsBool:      false,
-			IgnoreInstrBool:               true,
 			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
@@ -506,16 +530,16 @@ func TestComputeSelected(t *testing.T) {
 			runnerAutodetectExpect:        true,
 			runnerAutodetectTestsVal:      []types.RunnableTest{},
 			runnerAutodetectTestsErr:      fmt.Errorf("error in autodetection"),
+			testGlobsString:               emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     false,
 			selectTestsResponseTests: []types.RunnableTest{},
-			ignoreInstrResp:          true,
+			testGlobs:                emptyTestGlobs,
 		},
 		{
 			name: "ManualAutodetectFailStepNonZero",
 			// Input
 			runOnlySelectedTestsBool:      false,
-			IgnoreInstrBool:               true,
 			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
@@ -532,10 +556,11 @@ func TestComputeSelected(t *testing.T) {
 			runnerAutodetectExpect:        true,
 			runnerAutodetectTestsVal:      []types.RunnableTest{},
 			runnerAutodetectTestsErr:      fmt.Errorf("error in autodetection"),
+			testGlobsString:               emptyTestGlobsString,
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: make([]types.RunnableTest, 0),
-			ignoreInstrResp:          false,
+			testGlobs:                emptyTestGlobs,
 		},
 		{
 			name: "TestParallelism_StageParallelismOnly",
@@ -557,7 +582,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage 0, Step) - t1
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StepParallelismOnly",
@@ -579,7 +603,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage, Step 1) - t2
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v1",
@@ -601,7 +624,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[1]}, // (Stage 0, Step 1) - t2
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v2",
@@ -623,7 +645,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[3]}, // (Stage 1, Step 1) - t4
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v30",
@@ -645,7 +666,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[0]}, // (Stage 0, Step 0) - t1
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v31",
@@ -667,7 +687,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[1]}, // (Stage 0, Step 1) - t2
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v32",
@@ -689,7 +708,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[2]}, // (Stage 1, Step 0) - t3
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v33",
@@ -711,7 +729,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[3]}, // (Stage 1, Step 1) - t4
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v34",
@@ -733,7 +750,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[4]}, // (Stage 2, Step 0) - t5
-			ignoreInstrResp:          false,
 		},
 		{
 			name: "TestParallelism_StageStepParallelism_v35",
@@ -755,7 +771,6 @@ func TestComputeSelected(t *testing.T) {
 			// Expect
 			runOnlySelectedTests:     true,
 			selectTestsResponseTests: []types.RunnableTest{rts[5]}, // (Stage 2, Step 1) - t5
-			ignoreInstrResp:          false,
 		},
 	}
 	for _, tt := range tests {
@@ -766,7 +781,7 @@ func TestComputeSelected(t *testing.T) {
 			log, _ := logs.GetObservedLogger(zap.InfoLevel)
 			runner := mocks.NewMockTestRunner(ctrl)
 			if tt.runnerAutodetectExpect {
-				runner.EXPECT().AutoDetectTests(ctx).Return(tt.runnerAutodetectTestsVal, tt.runnerAutodetectTestsErr)
+				runner.EXPECT().AutoDetectTests(ctx, tt.testGlobs).Return(tt.runnerAutodetectTestsVal, tt.runnerAutodetectTestsErr)
 			}
 
 			oldGetStepStrategyIteration := getStepStrategyIteration
@@ -819,15 +834,14 @@ func TestComputeSelected(t *testing.T) {
 				addonLogger:          log.Sugar(),
 				testSplitStrategy:    countTestSplitStrategy,
 				parallelizeTests:     tt.parallelizeTestsBool,
+				testGlobs:            tt.testGlobsString,
 			}
 			selectTestsResponse := types.SelectTestsResp{}
 			selectTestsResponse.Tests = tt.runnableTests
 
-			ignoreInstr := tt.IgnoreInstrBool
-			r.computeSelectedTests(ctx, runner, &selectTestsResponse, &ignoreInstr)
+			r.computeSelectedTests(ctx, runner, &selectTestsResponse)
 			assert.Equal(t, r.runOnlySelectedTests, tt.runOnlySelectedTests)
 			assert.Equal(t, selectTestsResponse.Tests, tt.selectTestsResponseTests)
-			assert.Equal(t, ignoreInstr, tt.ignoreInstrResp)
 		})
 	}
 }
@@ -938,6 +952,9 @@ func TestNewRunTestsTask(t *testing.T) {
 	packages := "packages"
 	annotations := "annotations"
 	runOnlySelectedTests := false
+	parallelizeTests := true
+	testSplitStrategy := defaultTestSplitStrategy
+	testGlobsString := "path1/to/test*/*.cs,path2/to/test*/*.cs"
 
 	runTests := &pb.UnitStep_RunTests{RunTests: &pb.RunTestsStep{
 		Args:                 args,
@@ -949,6 +966,8 @@ func TestNewRunTestsTask(t *testing.T) {
 		DiffFiles:            diff,
 		Packages:             packages,
 		TestAnnotations:      annotations,
+		ParallelizeTests:     true,
+		TestGlobs:            testGlobsString,
 	}}
 	step := &pb.UnitStep{
 		Id: "id", Step: runTests}
@@ -963,6 +982,9 @@ func TestNewRunTestsTask(t *testing.T) {
 	assert.Equal(t, task.diffFiles, diff)
 	assert.Equal(t, task.packages, packages)
 	assert.Equal(t, task.annotations, annotations)
+	assert.Equal(t, task.parallelizeTests, parallelizeTests)
+	assert.Equal(t, task.testSplitStrategy, testSplitStrategy)
+	assert.Equal(t, task.testGlobs, testGlobsString)
 }
 
 func TestRun_Success(t *testing.T) {
@@ -1048,7 +1070,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1058,7 +1080,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1160,9 +1182,9 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
-		return nil
+		return errors.New("could not collect CG")
 	}
 
 	// Set isManual to false
@@ -1179,7 +1201,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
 	}
@@ -1193,8 +1215,8 @@ instrPackages: p1, p2, p3`
 	}
 
 	_, _, err := r.Run(ctx)
-	assert.Equal(t, err, expErr)
-	assert.Equal(t, called, 2) // makes ure both functions are called even on failure
+	assert.Equal(t, err, expErr) // make sure error returned is of RunCmd and not collectRunTestData
+	assert.Equal(t, called, 2)   // make sure both functions are called even on failure
 }
 
 func TestRun_Execution_Cg_Failure(t *testing.T) {
@@ -1280,7 +1302,7 @@ instrPackages: p1, p2, p3`
 		collectCgFn = oldCollectCg
 	}()
 	errCg := errors.New("could not collect CG")
-	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		return errCg
 	}
 
@@ -1298,7 +1320,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		return nil
 	}
 
@@ -1394,7 +1416,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectCgFn = oldCollectCg
 	}()
-	collectCgFn = func(ctx context.Context, stepID, collectcgDir string, timeTakenMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	collectCgFn = func(ctx context.Context, stepID, collectcgDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		return nil
 	}
 
@@ -1413,7 +1435,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		collectTestReportsFn = oldReports
 	}()
-	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 		return errReport
 	}
 
@@ -1427,4 +1449,88 @@ instrPackages: p1, p2, p3`
 
 	_, _, err := r.Run(ctx)
 	assert.Equal(t, err, errReport)
+}
+
+func Test_FormatTests(t *testing.T) {
+	tests := []types.RunnableTest{
+		{
+			Pkg:   "package",
+			Class: "class",
+		},
+		{
+			Pkg:   "package",
+			Class: "class",
+		},
+		{
+			Class: "dotnetClass",
+		},
+	}
+	tests[0].Autodetect.Rule = "//bazel-rule:package.class"
+
+	expectedTests := "package.class //bazel-rule:package.class, package.class, dotnetClass"
+	formattedTest := formatTests(tests)
+	assert.Equal(t, expectedTests, formattedTest)
+}
+
+func Test_CollectRunTestData(t *testing.T) {
+	ctx := context.Background()
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		preCommand:           "echo x",
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		logMetrics:           false,
+		numRetries:           1,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+	cgDirPath := "cg/dir"
+
+	tests := []struct {
+		name          string
+		cgErr         error
+		crErr         error
+		collectionErr error
+	}{
+		{
+			name:          "NoError",
+			cgErr:         nil,
+			crErr:         nil,
+			collectionErr: nil,
+		},
+		{
+			name:          "CallgraphUploadError",
+			cgErr:         fmt.Errorf("callgraph upload error"),
+			crErr:         nil,
+			collectionErr: fmt.Errorf("callgraph upload error"),
+		},
+		{
+			name:          "TestReportsUploadError",
+			cgErr:         nil,
+			crErr:         fmt.Errorf("test reports upload error"),
+			collectionErr: fmt.Errorf("test reports upload error"),
+		},
+	}
+
+	oldCollectCgFn := collectCgFn
+	defer func() { collectCgFn = oldCollectCgFn }()
+	oldCollectTestReportsFn := collectTestReportsFn
+	defer func() { collectTestReportsFn = oldCollectTestReportsFn }()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			collectCgFn = func(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger, start time.Time) error {
+				return tc.cgErr
+			}
+			collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
+				return tc.crErr
+			}
+			err := r.collectRunTestData(ctx, cgDirPath, time.Now())
+			assert.Equal(t, tc.collectionErr, err)
+		})
+	}
 }

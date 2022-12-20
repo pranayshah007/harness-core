@@ -224,10 +224,11 @@ func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) 
 	}
 
 	//Upload callgraph to TI server
-	encCg, err := h.getEncodedData(req)
+	encCg, msg, err := h.getEncodedData(req)
 	if err != nil {
 		return res, errors.Wrap(err, "failed to get avro encoded callgraph")
 	}
+	res.CgMsg = msg
 	err = client.UploadCg(ctx, org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs, encCg)
 	if err != nil {
 		return res, errors.Wrap(err, "failed to upload cg to ti server")
@@ -280,35 +281,36 @@ func (h *tiProxyHandler) DownloadLink(ctx context.Context, req *pb.DownloadLinkR
 }
 
 // getEncodedData reads all files of specified format from datadir folder and returns byte array of avro encoded format
-func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, error) {
+func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string, error) {
 	var parser cgp.Parser
 
 	visDir := req.GetDataDir()
 	if visDir == "" {
-		return nil, fmt.Errorf("dataDir not present in request")
+		return nil, "", fmt.Errorf("dataDir not present in request")
 	}
 	cgFiles, visFiles, err := h.getCgFiles(visDir, "json", "csv")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch files inside the directory")
+		return nil, "", errors.Wrap(err, "failed to fetch files inside the directory")
 	}
 	fs := fs.NewOSFileSystem(h.log)
 	parser = cgp.NewCallGraphParser(h.log, fs)
 	cg, err := parser.Parse(cgFiles, visFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse visgraph")
+		return nil, "", errors.Wrap(err, "failed to parse visgraph")
 	}
-	h.log.Infow(fmt.Sprintf("size of nodes: %d, testReln: %d, visReln %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations)))
+	msg := fmt.Sprintf("Size of Test nodes: %d, Test relations: %d, Vis Relations %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations))
+	h.log.Infow(msg)
 
 	cgMap := cg.ToStringMap()
 	cgSer, err := avro.NewCgphSerialzer(cgSchemaType, false)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create serializer")
+		return nil, "", errors.Wrap(err, "failed to create serializer")
 	}
 	encCg, err := cgSer.Serialize(cgMap)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode callgraph")
+		return nil, "", errors.Wrap(err, "failed to encode callgraph")
 	}
-	return encCg, nil
+	return encCg, msg, nil
 }
 
 // GetTestTimes gets the test timing data from the TI service

@@ -52,9 +52,13 @@ public class LogAnalysisResource {
   @ApiOperation(value = "get test log data for a verification job", nickname = "getTestLogData")
   public RestResponse<List<LogClusterDTO>> getTestData(@QueryParam("verificationTaskId") String verificationTaskId,
       @NotNull @QueryParam("analysisStartTime") Long analysisStartTime,
-      @NotNull @QueryParam("analysisEndTime") Long analysisEndTime) {
-    return new RestResponse<>(logAnalysisService.getTestData(
-        verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+      @NotNull @QueryParam("analysisEndTime") Long analysisEndTime, @QueryParam("hosts") String commaSeparatedHosts) {
+    if (commaSeparatedHosts == null) {
+      return new RestResponse<>(logAnalysisService.getTestData(
+          verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+    }
+    return new RestResponse<>(logAnalysisService.getTestDataForDeploymentLog(verificationTaskId,
+        Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime), commaSeparatedHosts));
   }
 
   @GET

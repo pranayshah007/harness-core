@@ -18,13 +18,13 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static java.util.Collections.singletonList;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
@@ -67,6 +67,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -309,6 +310,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(injector);
+
+    initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -559,5 +562,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private void initializeCiManagerMonitoring(Injector injector) {
     log.info("Initializing CI Manager Monitoring");
     injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializePluginPublisher(Injector injector) {
+    log.info("Initializing plugin metadata publishing job");
+    injector.getInstance(PluginMetadataRecordsJob.class).scheduleTasks();
   }
 }

@@ -40,6 +40,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * This step is used during retry-failed-pipeline for running any step/stage that is inside the strategy.
+ * In retry-failed-pipeline, we normally convert the PlanNode into IdentityNode.
+ * But in case of strategy, we have multiple executions for the same node. So some combinations might have failed in
+ * previous execution and some might have passed. But we can not convert the planNode into IdentityNode during plan
+ * creation because we might need the original planNode during the execution,(To run the failed combination) But we also
+ * want that successful matrix combinations should not run. And the above step comes into picture at this moment. This
+ * step will check the status from previous execution, if its positive status then it will create an IdentityNode for
+ * the provided planNode. And return the identityNode ids as child/children. And if status was negative, then simply
+ * return the planNode id as child/children ids.
+ */
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStrategyInternalStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {

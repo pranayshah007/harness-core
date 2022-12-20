@@ -151,7 +151,7 @@ public class NodeAndPodDetailsDataFetcher
     }
 
     if (costData != null && !(costData.getData().isEmpty() && costData.getPvData().isEmpty())) {
-      return getFieldsFromInstanceData(costData, filters);
+      return getFieldsFromInstanceData(costData, filters, accountId);
     }
 
     return null;
@@ -326,7 +326,7 @@ public class NodeAndPodDetailsDataFetcher
   }
 
   private QLNodeAndPodDetailsTableData getFieldsFromInstanceData(
-      QLNodeAndPodDetailsTableData costData, List<QLBillingDataFilter> filters) {
+      QLNodeAndPodDetailsTableData costData, List<QLBillingDataFilter> filters, String accountId) {
     Set<String> instanceIds = new HashSet<>();
     List<String> instanceIdWithCluster = new ArrayList<>();
 
@@ -359,7 +359,7 @@ public class NodeAndPodDetailsDataFetcher
 
     Map<String, InstanceData> instanceIdToInstanceData = new HashMap<>();
     List<InstanceData> instanceDataList =
-        instanceDataService.fetchInstanceDataForGivenInstances(new ArrayList<>(instanceIds));
+        instanceDataService.fetchInstanceDataForGivenInstances(accountId, new ArrayList<>(instanceIds));
 
     for (InstanceData instanceData : instanceDataList) {
       String key = instanceData.getInstanceId();

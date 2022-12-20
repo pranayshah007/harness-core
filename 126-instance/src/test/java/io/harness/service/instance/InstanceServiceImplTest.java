@@ -14,6 +14,7 @@
 
 package io.harness.service.instance;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -35,21 +36,23 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
+import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
-import io.harness.ng.core.entities.Project;
+import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
+import io.harness.service.instancedashboardservice.InstanceDashboardServiceImplTest;
 
+import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,12 +65,45 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
-  private static final String SERVICE_ID = "svc";
-  private static final String ENV_ID = "env";
   private final String INSTANCE_KEY = "instance_key";
   @Mock InstanceRepository instanceRepository;
   @InjectMocks InstanceServiceImpl instanceService;
   @Captor ArgumentCaptor<String> instanceIdCapture;
+  @Inject InstanceRepository instanceRepository1;
+  @Inject InstanceServiceImpl instanceService1;
+
+  public void activateInstances() {
+    for (Instance instance : InstanceDashboardServiceImplTest.getInstanceList()) {
+      instanceRepository1.save(instance);
+    }
+  }
+
+  public static boolean checkInstanceEquality(Instance instance1, Instance instance2) {
+    if (((instance1.getInfraIdentifier() == null && instance2.getInfraIdentifier() == null)
+            || instance1.getInfraIdentifier().equals(instance2.getInfraIdentifier()))
+        && instance1.getEnvIdentifier().equals(instance2.getEnvIdentifier())
+        && instance1.getServiceIdentifier().equals(instance2.getServiceIdentifier())
+        && instance1.getPrimaryArtifact().getTag().equals(instance2.getPrimaryArtifact().getTag())
+        && instance1.getLastPipelineExecutionId().equals(instance2.getLastPipelineExecutionId())) {
+      if (((instance1.getInstanceInfo() instanceof GitopsInstanceInfo)
+              && (instance1.getInstanceInfo() instanceof GitopsInstanceInfo))
+          || (!(instance1.getInstanceInfo() instanceof GitopsInstanceInfo)
+              && !(instance1.getInstanceInfo() instanceof GitopsInstanceInfo))) {
+        if (instance1.getInstanceInfo() instanceof GitopsInstanceInfo) {
+          GitopsInstanceInfo instanceInfo1 = (GitopsInstanceInfo) instance1.getInstanceInfo();
+          GitopsInstanceInfo instanceInfo2 = (GitopsInstanceInfo) instance2.getInstanceInfo();
+          if (!instanceInfo1.getClusterIdentifier().equals(instanceInfo2.getClusterIdentifier())
+              || !instanceInfo1.getAgentIdentifier().equals(instanceInfo2.getAgentIdentifier())) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -165,26 +201,22 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getActiveInstancesByEnvTest() {
+  public void getActiveInstancesByAccountTest() {
+    String accountIdentifier = "Acc";
+    String orgIdentifier = "Org";
+    String projectIdentifier = "Proj";
+    String serviceIdentifier = "Svc";
     long timestamp = 123L;
-    int count = 10;
-    Project mockProject = Project.builder().build();
-    Instance firstDocument = Instance.builder().envIdentifier(ENV_ID).build();
-    when(instanceRepository.getActiveInstancesByServiceAndEnv(mockProject, timestamp))
-        .thenReturn(new AggregationResults<>(Collections.singletonList(InstanceCountByServiceAndEnv.builder()
-                                                                           .serviceIdentifier(SERVICE_ID)
-                                                                           .envIdentifier(ENV_ID)
-                                                                           .count(count)
-                                                                           .firstDocument(firstDocument)
-                                                                           .build()),
-            new Document()));
-    List<InstanceCountByServiceAndEnv> instancesByEnv =
-        instanceService.getActiveInstancesByServiceAndEnv(mockProject, timestamp);
-    assertThat(instancesByEnv.size()).isEqualTo(1);
-    assertThat(instancesByEnv.get(0).getServiceIdentifier()).isEqualTo(SERVICE_ID);
-    assertThat(instancesByEnv.get(0).getEnvIdentifier()).isEqualTo(ENV_ID);
-    assertThat(instancesByEnv.get(0).getCount()).isEqualTo(count);
-    assertThat(instancesByEnv.get(0).getFirstDocument()).isEqualTo(firstDocument);
+    InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
+    Instance instance =
+        Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
+    when(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp))
+        .thenReturn(Arrays.asList(instance));
+    List<InstanceDTO> instanceDTOList = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp);
+    assertThat(instanceDTOList.size()).isEqualTo(1);
+    assertThat(instanceDTOList.get(0).getCreatedAt()).isEqualTo(123L);
   }
 
   @Test
@@ -296,16 +328,21 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     String projectIdentifier = "pro";
     String serviceId = "serviceId";
     String envId = "envId";
+    String clusterId = "clusterId";
+    String pipelineExecutionId = "pipelineExecutionId";
+    long lastDeployedAt = System.currentTimeMillis();
     int limit = 1;
     List<String> buildIds = Arrays.asList();
     InstancesByBuildId instancesByBuildId = new InstancesByBuildId("buildId", Arrays.asList());
     AggregationResults<InstancesByBuildId> idAggregationResults =
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
-    when(instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-             accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestamp, limit))
+    when(instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+             projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId, pipelineExecutionId,
+             lastDeployedAt))
         .thenReturn(idAggregationResults);
-    assertThat(instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-                   accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestamp, limit))
+    assertThat(instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+                   projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId,
+                   pipelineExecutionId, lastDeployedAt))
         .isEqualTo(idAggregationResults);
   }
 
@@ -388,5 +425,57 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     verify(instanceRepository, times(2))
         .updateInfrastructureMapping(instanceIdCapture.capture(), eq(infrastructureMappingId));
     assertThat(instanceIdCapture.getAllValues()).isEqualTo(instanceIds);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveInstanceDetails_infra() {
+    activateInstances();
+
+    List<Instance> instances =
+        InstanceDashboardServiceImplTest.getInstanceList()
+            .stream()
+            .filter(e
+                -> e.getInfraIdentifier() != null && e.getInfraIdentifier().equals("infra1")
+                    && e.getServiceIdentifier().equals("svc1") && e.getEnvIdentifier().equals("env1")
+                    && e.getPrimaryArtifact().getTag().equals("1") && e.getLastPipelineExecutionId().equals("1"))
+            .collect(Collectors.toList());
+
+    List<Instance> instances1 = instanceService1.getActiveInstanceDetails("accountId", "orgId", "projectId", "svc1",
+        "env1", "infra1", null, "1", "1", InstanceSyncConstants.INSTANCE_LIMIT);
+
+    assertThat(instances.size()).isEqualTo(instances1.size());
+
+    for (int i = 0; i < instances.size(); i++) {
+      assertThat(checkInstanceEquality(instances.get(i), instances1.get(i))).isEqualTo(true);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveInstanceDetails_cluster() {
+    activateInstances();
+
+    List<Instance> instances =
+        InstanceDashboardServiceImplTest.getInstanceList()
+            .stream()
+            .filter(e
+                -> (e.getInstanceInfo() instanceof GitopsInstanceInfo)
+                    && (((GitopsInstanceInfo) e.getInstanceInfo()).getClusterIdentifier() != null)
+                    && (((GitopsInstanceInfo) e.getInstanceInfo()).getClusterIdentifier().equals("infra1"))
+                    && e.getServiceIdentifier().equals("svc1") && e.getEnvIdentifier().equals("env1")
+                    && e.getPrimaryArtifact().getTag().equals("1") && e.getLastPipelineExecutionId().equals("1"))
+            .collect(Collectors.toList());
+
+    List<Instance> instances1 = instanceService1.getActiveInstanceDetails("accountId", "orgId", "projectId", "svc1",
+        "env1", null, "infra1", "1", "1", InstanceSyncConstants.INSTANCE_LIMIT);
+
+    assertThat(instances.size()).isEqualTo(instances1.size());
+
+    for (int i = 0; i < instances.size(); i++) {
+      assertThat(checkInstanceEquality(instances.get(i), instances1.get(i))).isEqualTo(true);
+    }
   }
 }

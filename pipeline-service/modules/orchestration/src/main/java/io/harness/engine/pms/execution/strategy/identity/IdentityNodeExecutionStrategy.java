@@ -10,6 +10,7 @@ package io.harness.engine.pms.execution.strategy.identity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
@@ -72,8 +73,7 @@ public class IdentityNodeExecutionStrategy
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
-    return identityNodeExecutionStrategyHelper.createNodeExecution(
-        ambiance, node, metadata, notifyId, parentId, previousId);
+    return identityNodeExecutionStrategyHelper.createNodeExecution(ambiance, node, notifyId, parentId, previousId);
   }
 
   @Override
@@ -130,6 +130,15 @@ public class IdentityNodeExecutionStrategy
       // then handle that here.
       identityNodeExecutionStrategyHelper.copyNodeExecutionsForRetriedNodes(
           nodeExecution, originalNodeExecution.getRetryIds());
+
+      // Pipeline Stage is a stage-leaf node. Need to set executable response which contains Child ExecutionId. This
+      // will be required to show child graph in retried stage.
+      if (originalNodeExecution.getNode().getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_STAGE)) {
+        return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
+            update
+            -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
+            EnumSet.noneOf(Status.class));
+      }
 
       return nodeExecutionService.updateStatusWithOps(
           nodeExecution.getUuid(), originalNodeExecution.getStatus(), null, EnumSet.noneOf(Status.class));

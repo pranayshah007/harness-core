@@ -7,20 +7,10 @@
 
 package io.harness.accesscontrol.roles.api;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-
-import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SortOrder;
-import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageRequest;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RoleScope;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
@@ -31,13 +21,10 @@ import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 @OwnedBy(PL)
 public class RolesApiUtils {
@@ -141,54 +128,5 @@ public class RolesApiUtils {
     roleScope.setOrg(scopeDTO.getOrgIdentifier());
     roleScope.setProject(scopeDTO.getProjectIdentifier());
     return roleScope;
-  }
-
-  public static PageRequest getPageRequest(Integer page, Integer limit, String field, String order) {
-    if (field == null && order == null) {
-      return PageRequest.builder().pageIndex(page).pageSize(limit).build();
-    }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
-    }
-    List<SortOrder> sortOrders = null;
-    if (field != null) {
-      switch (field) {
-        case "slug":
-          field = "identifier";
-          break;
-        case "name":
-          break;
-        case "created":
-          field = "createdAt";
-          break;
-        case "updated":
-          field = "lastUpdatedAt";
-          break;
-        default:
-          throw new InvalidRequestException(
-              "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
-      }
-      SortOrder sortOrder = new SortOrder(field + "," + order);
-      sortOrders = Collections.singletonList(sortOrder);
-    }
-    return PageRequest.builder().pageIndex(page).pageSize(limit).sortOrders(sortOrders).build();
-  }
-
-  public static ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }

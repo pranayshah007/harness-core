@@ -53,6 +53,7 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -100,6 +101,8 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private NextGenService nextGenService;
+
+  @Mock FeatureFlagService featureFlagService;
   private Instant instant;
   private String accountId;
   BuilderFactory builderFactory;
@@ -498,6 +501,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
             + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
   }
+
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
