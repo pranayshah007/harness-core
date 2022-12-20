@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
@@ -126,14 +127,13 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
     inputSetCreateRequestBody.setSlug(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
-    Response response =
-        inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account, null, null);
+    Response response = inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
@@ -157,7 +157,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   public void testGetInputSet() {
     doReturn(Optional.of(inputSetEntity))
         .when(pmsInputSetService)
-        .get(account, org, project, pipeline, inputSet, false, null, null);
+        .get(account, org, project, pipeline, inputSet, false, null, null, true);
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
     inputSetCreateRequestBody.setSlug(inputSet);
@@ -179,15 +179,15 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
     inputSetUpdateRequestBody.setSlug(inputSet);
     inputSetUpdateRequestBody.setName(inputSetName);
     inputSetUpdateRequestBody.setInputSetYaml(inputSetYaml);
 
-    Response response = inputSetsApiImpl.updateInputSet(
-        inputSetUpdateRequestBody, pipeline, org, project, inputSet, account, null, null);
+    Response response =
+        inputSetsApiImpl.updateInputSet(inputSetUpdateRequestBody, pipeline, org, project, inputSet, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);

@@ -49,7 +49,7 @@ public class VmBitriseStepSerializer {
     }
 
     return VmRunStep.builder()
-        .entrypoint(Arrays.asList("plugin", "-kind", "bitrise", "-repo"))
+        .entrypoint(Arrays.asList("plugin", "-kind", "bitrise", "-name"))
         .command(uses)
         .envVariables(env)
         .build();

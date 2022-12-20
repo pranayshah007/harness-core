@@ -143,44 +143,11 @@ public class WorkflowMigrationService extends NgMigrationService {
                                     .build();
 
     Set<CgEntityId> children = new HashSet<>();
-    //    if (EmptyPredicate.isNotEmpty(workflow.getServices())) {
-    //      Set<CgEntityId> set = new HashSet<>();
-    //      for (Service service : workflow.getServices()) {
-    //        CgEntityId build = CgEntityId.builder().type(SERVICE).id(service.getUuid()).build();
-    //        set.add(build);
-    //        List<ApplicationManifest> applicationManifests =
-    //            applicationManifestService.listAppManifests(workflow.getAppId(), service.getUuid());
-    //        if (isNotEmpty(applicationManifests)) {
-    //          applicationManifests.stream()
-    //              .map(applicationManifest ->
-    //              CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build())
-    //              .forEach(children::add);
-    //        }
-    //      }
-    //      children.addAll(set);
-    //    }
-    //
-    //    if (EmptyPredicate.isNotEmpty(workflow.getEnvId())) {
-    //      children.add(CgEntityId.builder().type(ENVIRONMENT).id(workflow.getEnvId()).build());
-    //      List<ApplicationManifest> applicationManifests =
-    //          applicationManifestService.getAllByEnvId(workflow.getAppId(), workflow.getEnvId());
-    //      if (isNotEmpty(applicationManifests)) {
-    //        Set<String> serviceIds = CollectionUtils.emptyIfNull(workflow.getServices())
-    //                                     .stream()
-    //                                     .map(Service::getUuid)
-    //                                     .collect(Collectors.toSet());
-    //        for (ApplicationManifest applicationManifest : applicationManifests) {
-    //          if (applicationManifest.getServiceId() == null ||
-    //          serviceIds.contains(applicationManifest.getServiceId())) {
-    //            CgEntityId build = CgEntityId.builder().id(applicationManifest.getUuid()).type(MANIFEST).build();
-    //            children.add(build);
-    //          }
-    //        }
-    //      }
-    //    }
-    //    if (EmptyPredicate.isNotEmpty(workflow.getInfraDefinitionId())) {
-    //      children.add(CgEntityId.builder().type(INFRA).id(workflow.getInfraDefinitionId()).build());
-    //    }
+    List<CgEntityId> referencedEntities =
+        workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(workflow);
+    if (EmptyPredicate.isNotEmpty(referencedEntities)) {
+      children.addAll(referencedEntities);
+    }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
   }
 
@@ -248,7 +215,7 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
 
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(workflow);
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(migratedEntities, workflow);
     if (templateSpec == null) {
       return Collections.emptyList();
     }

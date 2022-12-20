@@ -30,9 +30,6 @@ public class SumologicLogDataCollectionInfo extends LogDataCollectionInfo<SumoLo
     dslEnvVariables.put("query", query);
     dslEnvVariables.put("serviceInstanceIdentifier", serviceInstanceIdentifier);
     dslEnvVariables.put("limit", LOG_MAX_LIMIT);
-    // TODO Needs to be removed and use from runtime params to set the times.
-    dslEnvVariables.put("from", "2022-11-11T09:00:00");
-    dslEnvVariables.put("to", "2022-11-11T09:05:00");
     return dslEnvVariables;
   }
 

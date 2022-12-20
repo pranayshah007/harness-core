@@ -14,6 +14,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.nodes.PluginStepNode;
+import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.iacm.stages.IACMStageNode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -53,6 +54,18 @@ public class IACMBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(PluginStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.IACM_TERRAFORM_PLAN)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .featureRestrictions(ImmutableList.of(IACM_ENABLED.name()))
+                                           .modulesSupported(ImmutableList.of(ModuleType.IACM))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(IACMTerraformPlanInfo.class)
                    .build())
           .build();
 }

@@ -18,11 +18,13 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlZapToolData;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName("Zap")
 @JsonIgnoreProperties(ignoreUnknown = true)

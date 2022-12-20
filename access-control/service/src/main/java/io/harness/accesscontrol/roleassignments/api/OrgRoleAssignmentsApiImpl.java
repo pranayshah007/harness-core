@@ -42,6 +42,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignmentResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -216,8 +217,8 @@ public class OrgRoleAssignmentsApiImpl implements OrgRoleAssignmentsApi {
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = roleAssignmentApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/roleassignments", org), roleAssignmentResponses.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
+        String.format("/v1/orgs/%s/role-assignments", org), roleAssignmentResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(roleAssignmentResponses).build();
   }

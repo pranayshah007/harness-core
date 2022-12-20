@@ -158,7 +158,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          "SLO  with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
           serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
           projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
     }
@@ -186,7 +186,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
@@ -430,7 +430,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicatorIdentifier);
       if (serviceLevelObjectiveV2 == null) {
         throw new InvalidRequestException(String.format(
-            "SLO  with sli identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "SLO with sli identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present",
             serviceLevelIndicatorIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
       }
@@ -546,7 +546,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, sloIdentifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
           sloIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }

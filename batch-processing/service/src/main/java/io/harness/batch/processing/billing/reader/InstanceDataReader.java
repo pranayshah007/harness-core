@@ -24,32 +24,30 @@ public class InstanceDataReader {
   private Instant endTime;
   private int batchSize;
   private InstanceDataDao instanceDataDao;
-
-  public InstanceDataReader(InstanceDataDao instanceDataDao, String accountId, List<InstanceType> instanceTypes,
-      Instant activeInstanceIterator, Instant endTime, int batchSize) {
+  private String clusterId;
+  public InstanceDataReader(InstanceDataDao instanceDataDao, String accountId, String clusterId,
+      List<InstanceType> instanceTypes, Instant activeInstanceIterator, Instant endTime, int batchSize) {
     this.accountId = accountId;
     this.instanceTypes = instanceTypes;
     this.activeInstanceIterator = activeInstanceIterator;
     this.endTime = endTime;
     this.batchSize = batchSize;
     this.instanceDataDao = instanceDataDao;
+    this.clusterId = clusterId;
   }
 
   public List<InstanceData> getNext() {
-    List<InstanceData> instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
-        accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+    List<InstanceData> instanceDataLists;
+    if (clusterId == null) {
+      instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
+          accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+    } else {
+      instanceDataLists = instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
+          accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId);
+    }
+
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
-      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
-        Instant batchStartTime = instanceDataLists.get(0).getActiveInstanceIterator();
-        log.info("Instance details reader sec {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
-        int value = batchStartTime.compareTo(activeInstanceIterator);
-        if (value > 0) {
-          activeInstanceIterator = batchStartTime.plus(1, ChronoUnit.MILLIS);
-          log.info(
-              "Instance details reader val is greater {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
-        }
-      }
       if (instanceDataLists.get(0).getActiveInstanceIterator().equals(activeInstanceIterator)) {
         log.info("Incrementing lastActiveInstanceIterator by 1ms {} {} {} {}", instanceDataLists.size(),
             activeInstanceIterator, endTime, accountId);

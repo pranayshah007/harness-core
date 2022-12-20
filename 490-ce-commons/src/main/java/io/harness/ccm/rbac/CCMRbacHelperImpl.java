@@ -14,6 +14,8 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_CREATE_AND_ED
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_OVERVIEW_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.CURRENCY_PREFERENCE_SET_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.CURRENCY_PREFERENCE_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.FOLDER_VIEW;
@@ -22,6 +24,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
+import static io.harness.ccm.rbac.CCMResources.CURRENCY_PREFERENCE;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
 import static io.harness.ccm.rbac.CCMResources.PERSPECTIVE;
 
@@ -41,6 +44,7 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   private static final String RESOURCE_FOLDER = "Folders";
   private static final String RESOURCE_PERSPECTIVE = "Perspectives";
   private static final String RESOURCE_BUDGET = "Budgets";
+  private static final String RESOURCE_CURRENCY_PREFERENCES = "Currency Preferences";
 
   @Override
   public void checkFolderViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -157,5 +161,21 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(PERSPECTIVE, null), PERSPECTIVE_VIEW,
         String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
+  }
+
+  @Override
+  public void checkCurrencyPreferenceViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(CURRENCY_PREFERENCE, null), CURRENCY_PREFERENCE_VIEW,
+        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_CURRENCY_PREFERENCES));
+  }
+
+  @Override
+  public void checkCurrencyPreferenceEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(CURRENCY_PREFERENCE, null), CURRENCY_PREFERENCE_SET_AND_EDIT,
+        String.format(PERMISSION_MISSING_MESSAGE, EDIT_PERMISSION, RESOURCE_CURRENCY_PREFERENCES));
   }
 }

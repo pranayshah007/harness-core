@@ -8,7 +8,10 @@
 package io.harness.cdng.envGroup.services;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -38,12 +41,14 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.envGroup.EnvironmentGroupRepository;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -81,9 +86,26 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
 
   @Override
   public Optional<EnvironmentGroupEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String envGroupId, boolean deleted) {
-    return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-        accountId, orgIdentifier, projectIdentifier, envGroupId, !deleted);
+      String accountId, String orgIdentifier, String projectIdentifier, String envGroupRef, boolean deleted) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(envGroupRef), "environment group ref must be present");
+
+    return getEnvironmentGroupByRef(accountId, orgIdentifier, projectIdentifier, envGroupRef, deleted);
+  }
+
+  private Optional<EnvironmentGroupEntity> getEnvironmentGroupByRef(
+      String accountId, String orgIdentifier, String projectIdentifier, String envGroupRef, boolean deleted) {
+    String[] envGroupRefSplit = envGroupRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envGroupRefSplit.length == 1) {
+      return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+          accountId, orgIdentifier, projectIdentifier, envGroupRef, !deleted);
+    } else {
+      IdentifierRef envGroupIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(envGroupRef, accountId, orgIdentifier, projectIdentifier);
+      return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+          envGroupIdentifierRef.getAccountIdentifier(), envGroupIdentifierRef.getOrgIdentifier(),
+          envGroupIdentifierRef.getProjectIdentifier(), envGroupIdentifierRef.getIdentifier(), !deleted);
+    }
   }
 
   @Override
@@ -104,7 +126,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
       String accountId, String orgIdentifier, String projectIdentifier, String envGroupId, Long version) {
     Optional<EnvironmentGroupEntity> envGroupEntity =
         get(accountId, orgIdentifier, projectIdentifier, envGroupId, false);
-    if (!envGroupEntity.isPresent()) {
+    if (envGroupEntity.isEmpty()) {
       throw new InvalidRequestException(
           format("Environment Group [%s] under Project[%s], Organization [%s] doesn't exist.", envGroupId,
               projectIdentifier, orgIdentifier));
@@ -145,7 +167,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     String envGroupId = requestedEntity.getIdentifier();
 
     Optional<EnvironmentGroupEntity> optionalEnvGroupEntity = get(accountId, orgId, projectId, envGroupId, false);
-    if (!optionalEnvGroupEntity.isPresent()) {
+    if (optionalEnvGroupEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Environment Group %s in project %s in organization %s is either deleted or was not created",
               envGroupId, projectId, orgId));
@@ -165,6 +187,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
                                                .withEnvIdentifiers(requestedEntity.getEnvIdentifiers())
                                                .withTags(requestedEntity.getTags())
                                                .withYaml(requestedEntity.getYaml());
+    // originalEntity will have identifier, not ref
     final Criteria criteria = where(EnvironmentGroupKeys.accountId)
                                   .is(originalEntity.getAccountId())
                                   .and(EnvironmentGroupKeys.orgIdentifier)
@@ -198,16 +221,23 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
 
   @Override
   public Criteria formCriteria(String accountId, String orgIdentifier, String projectIdentifier, boolean deleted,
-      String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties) {
+      String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties,
+      boolean includeAllEnvGroupsAccessibleAtScope) {
     Criteria criteria = new Criteria();
+    List<Criteria> andCriteriaList = new ArrayList<>();
     if (isNotEmpty(accountId)) {
       criteria.and(EnvironmentGroupKeys.accountId).is(accountId);
-    }
-    if (isNotEmpty(orgIdentifier)) {
-      criteria.and(EnvironmentGroupKeys.orgIdentifier).is(orgIdentifier);
-    }
-    if (isNotEmpty(projectIdentifier)) {
-      criteria.and(EnvironmentGroupKeys.projectIdentifier).is(projectIdentifier);
+      Criteria includeAllEnvGroupsCriteria = null;
+      if (includeAllEnvGroupsAccessibleAtScope) {
+        includeAllEnvGroupsCriteria = getCriteriaToReturnAllAccessibleEnvGroups(orgIdentifier, projectIdentifier);
+      } else {
+        criteria.and(EnvironmentGroupKeys.orgIdentifier).is(orgIdentifier);
+        criteria.and(EnvironmentGroupKeys.projectIdentifier).is(projectIdentifier);
+      }
+
+      if (includeAllEnvGroupsCriteria != null) {
+        andCriteriaList.add(includeAllEnvGroupsCriteria);
+      }
     }
 
     criteria.and(EnvironmentGroupKeys.deleted).is(deleted);
@@ -237,9 +267,41 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
         throw new InvalidRequestException(pex.getMessage() + " Use \\\\ for special character", pex);
       }
     }
-
-    criteria.andOperator(filterCriteria, searchCriteria);
+    andCriteriaList.add(filterCriteria);
+    andCriteriaList.add(searchCriteria);
+    criteria.andOperator(andCriteriaList.toArray(new Criteria[0]));
     return criteria;
+  }
+
+  private Criteria getCriteriaToReturnAllAccessibleEnvGroups(String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      return new Criteria().orOperator(Criteria.where(EnvironmentGroupKeys.projectIdentifier)
+                                           .is(projectIdentifier)
+                                           .and(EnvironmentGroupKeys.orgIdentifier)
+                                           .is(orgIdentifier),
+          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+              .is(orgIdentifier)
+              .and(EnvironmentGroupKeys.projectIdentifier)
+              .is(null),
+          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+              .is(null)
+              .and(EnvironmentGroupKeys.projectIdentifier)
+              .is(null));
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      return new Criteria().orOperator(Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+                                           .is(orgIdentifier)
+                                           .and(EnvironmentGroupKeys.projectIdentifier)
+                                           .is(null),
+          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+              .is(null)
+              .and(EnvironmentGroupKeys.projectIdentifier)
+              .is(null));
+    } else {
+      return Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+          .is(null)
+          .and(EnvironmentGroupKeys.projectIdentifier)
+          .is(null);
+    }
   }
 
   public void setupUsagesForEnvironmentList(EnvironmentGroupEntity envGroupEntity) {
@@ -266,7 +328,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     setupUsagesEventProducer.send(
         Message.newBuilder()
             .putAllMetadata(ImmutableMap.of("accountId", envGroupEntity.getAccountId(),
-                EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT.name(),
+                EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, ENVIRONMENT.name(),
                 EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
             .setData(entityReferenceDTO.build().toByteString())
             .build());
@@ -276,16 +338,29 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     List<String> envIdentifiers = entity.getEnvIdentifiers();
     return envIdentifiers.stream()
         .map(env
-            -> EntityDetailProtoDTO.newBuilder()
-                   .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                         .setAccountIdentifier(StringValue.of(entity.getAccountId()))
-                                         .setOrgIdentifier(StringValue.of(entity.getOrgIdentifier()))
-                                         .setProjectIdentifier(StringValue.of(entity.getProjectIdentifier()))
-                                         .setIdentifier(StringValue.of(env))
-                                         .build())
-                   .setType(EntityTypeProtoEnum.ENVIRONMENT)
-                   .build())
+            -> buildEntityDetailProtoDtoForEnvGroup(
+                entity.getAccountId(), entity.getOrgIdentifier(), entity.getProjectIdentifier(), env))
         .collect(Collectors.toList());
+  }
+
+  private EntityDetailProtoDTO buildEntityDetailProtoDtoForEnvGroup(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    IdentifierRefProtoDTO.Builder identifierRefProtoDTO =
+        IdentifierRefProtoDTO.newBuilder().setAccountIdentifier(StringValue.of(accountId));
+    if (isNotEmpty(envIdentifier)) {
+      identifierRefProtoDTO.setIdentifier(StringValue.of(envIdentifier));
+    }
+    if (isNotEmpty(orgIdentifier)) {
+      identifierRefProtoDTO.setOrgIdentifier(StringValue.of(orgIdentifier));
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      identifierRefProtoDTO.setProjectIdentifier(StringValue.of(projectIdentifier));
+    }
+
+    return EntityDetailProtoDTO.newBuilder()
+        .setType(ENVIRONMENT)
+        .setIdentifierRef(identifierRefProtoDTO.build())
+        .build();
   }
 
   public void checkThatEnvironmentGroupIsNotReferredByOthers(EnvironmentGroupEntity envGroupEntity) {

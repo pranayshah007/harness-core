@@ -32,7 +32,9 @@ public class TraceFilter implements ContainerResponseFilter {
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
     try {
-      responseContext.getHeaders().add(TRACE_ID_HEADER, Span.current().getSpanContext().getTraceId());
+      if (!Span.getInvalid().equals(Span.current())) {
+        responseContext.getHeaders().add(TRACE_ID_HEADER, Span.current().getSpanContext().getTraceId());
+      }
     } catch (Exception e) {
       log.warn("Unable to add trace ID", e);
     }

@@ -20,12 +20,20 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Builder;
+import java.util.Map;
+import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @Value
-@Builder
+@SuperBuilder
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
-public class TerragruntApplyTaskResponse extends AbstractTerragruntTaskResponse {}
+public class TerragruntApplyTaskResponse extends AbstractTerragruntTaskResponse {
+  @Nullable String stateFileId;
+  @Nullable String configFilesSourceReference;
+  @Nullable String backendFileSourceReference;
+  @Nullable Map<String, String> varFilesSourceReference;
+  String outputs;
+}

@@ -163,7 +163,7 @@ public class TasResource {
     if (tasConnectorIdentifier == null) {
       throw new InvalidRequestException("Connector ref is null in Infrastructure for Infra Id");
     }
-    if (organization == null) {
+    if (isEmpty(organization)) {
       organization = infrastructure.getOrganization().getValue();
     }
     log.info("retrieving spaces for tas");

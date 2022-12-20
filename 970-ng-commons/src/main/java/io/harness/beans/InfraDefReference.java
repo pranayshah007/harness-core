@@ -11,8 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
 import io.harness.common.EntityReferenceHelper;
+import io.harness.data.structure.EmptyPredicate;
 
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,8 +34,18 @@ public class InfraDefReference implements EntityReference {
 
   @Override
   public String getFullyQualifiedName() {
-    return EntityReferenceHelper.createFQN(
-        Arrays.asList(accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, identifier));
+    List<String> fqnList = new LinkedList<>();
+    fqnList.add(accountIdentifier);
+    // scoped infra
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      fqnList.add(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      fqnList.add(projectIdentifier);
+    }
+    fqnList.add(envIdentifier);
+    fqnList.add(identifier);
+    return EntityReferenceHelper.createFQN(fqnList);
   }
 
   @Override

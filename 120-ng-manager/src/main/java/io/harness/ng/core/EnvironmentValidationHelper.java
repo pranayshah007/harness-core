@@ -7,26 +7,47 @@
 
 package io.harness.ng.core;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentValidationHelper {
   @Inject private EnvironmentService environmentService;
 
-  public boolean checkThatEnvExists(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier) {
-    Optional<Environment> environment =
-        environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, false);
-    if (!environment.isPresent()) {
-      throw new NotFoundException(String.format("environment [%s] not found.", envIdentifier));
+  public boolean checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotEmpty String environmentRef) {
+    checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
+    checkArgument(isNotEmpty(environmentRef), "environment ref must be present");
+
+    Optional<Environment> environment;
+    String[] envRefSplit = environmentRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+
+    if (envRefSplit.length == 1) {
+      environment = environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
+    } else {
+      // env ref for org/account level entity
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(environmentRef, accountIdentifier, orgIdentifier, projectIdentifier);
+      environment = environmentService.get(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
+    }
+
+    if (environment.isEmpty()) {
+      throw new NotFoundException(String.format("Environment with ref [%s] not found", environmentRef));
     }
     return true;
   }

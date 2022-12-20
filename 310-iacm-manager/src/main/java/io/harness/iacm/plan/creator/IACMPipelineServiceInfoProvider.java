@@ -22,6 +22,8 @@ import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreator;
 import io.harness.iacm.plan.creator.step.IACMStepFilterJsonCreatorV2;
 import io.harness.iacm.plan.creator.step.IACMStepPlanCreator;
+import io.harness.iacm.plan.creator.step.IACMTerraformPlanStepPlanCreator;
+import io.harness.iacm.plan.creator.step.IACMTerraformPlanStepVariableCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -56,6 +58,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     planCreators.add(new PluginStepPlanCreator()); // Plugin step
     planCreators.add(new NGStageStepsPlanCreator()); // Rollback steps related
     planCreators.add(new ExecutionPmsPlanCreator()); // I think that the execution step is treated as a step also
+    planCreators.add(new IACMTerraformPlanStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -79,6 +82,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new IACMStageVariableCreator()); // Variable creator for the stage
     variableCreators.add(new ExecutionVariableCreator()); // variable creator for the execution
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
+    variableCreators.add(new IACMTerraformPlanStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS))); // ??
 
     return variableCreators;
@@ -96,9 +100,16 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
 
+    StepInfo IACMTerraformStepInfo = StepInfo.newBuilder()
+                                         .setName("IACMTerraformPlan")
+                                         .setType(StepSpecTypeConstants.IACM_TERRAFORM_PLAN)
+                                         .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                         .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(pluginStepInfo);
+    stepInfos.add(IACMTerraformStepInfo);
 
     return stepInfos;
   }

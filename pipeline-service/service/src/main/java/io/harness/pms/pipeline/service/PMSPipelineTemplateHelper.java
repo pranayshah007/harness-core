@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper.BOOLEAN_TRUE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -61,10 +62,10 @@ public class PMSPipelineTemplateHelper {
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences) {
+      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences, boolean loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false, getMergedTemplateWithTemplateReferences,
-        BOOLEAN_FALSE_VALUE);
+        parseLoadFromCache(loadFromCache));
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
@@ -219,5 +220,12 @@ public class PMSPipelineTemplateHelper {
       return gitEntityInfo.getRepoName();
     }
     return gitEntityInfo.getParentEntityRepoName();
+  }
+
+  private String parseLoadFromCache(boolean loadFromCache) {
+    if (loadFromCache) {
+      return BOOLEAN_TRUE_VALUE;
+    }
+    return BOOLEAN_FALSE_VALUE;
   }
 }

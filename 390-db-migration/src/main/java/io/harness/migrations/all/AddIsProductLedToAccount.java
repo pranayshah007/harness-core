@@ -20,6 +20,7 @@ import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,9 +35,13 @@ public class AddIsProductLedToAccount implements Migration {
   public void migrate() {
     try (HIterator<Account> accounts = new HIterator<>(wingsPersistence.createQuery(Account.class).fetch())) {
       for (Account account : accounts) {
-        List<ModuleLicenseDTO> moduleLicenses =
-            NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(account.getUuid()));
+        List<ModuleLicenseDTO> moduleLicenses = Collections.emptyList();
         String accountID = account.getUuid();
+        try {
+          moduleLicenses = NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(accountID));
+        } catch (Exception ex) {
+          log.warn("Encountered exception while trying to get moduleLicenses for accountId= {}", accountID, ex);
+        }
         if (moduleLicenses == null || moduleLicenses.size() == 0) {
           wingsPersistence.updateField(Account.class, accountID, isProductLed, Boolean.TRUE);
         } else {

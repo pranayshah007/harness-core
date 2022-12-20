@@ -1,0 +1,100 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v1/search/jobs/"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.in.sumologic.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\"query\":\"*exception*\",\"from\":1604054628,\"to\":1604054688}"
+            }
+          ]
+        },
+        "response": {
+          "status": 202,
+          "body": "{\"id\":\"0BEE8BB090859B89\",\"link\":{\"rel\":\"self\",\"href\":\"https://api.in.sumologic.com/api/v1/search/jobs/0BEE8BB090859B89\"}}",
+          "encodedBody": false,
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Wed, 30 Nov 2022 12:51:31 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Location": [
+              "https://api.in.sumologic.com/api/v1/search/jobs/0BEE8BB090859B89"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "AWSALB=YztzOEELgq2YMUzmCDfPSlrsofXBR81jh9MBmtRkZ0jmfnmGn2S33BxvBl6zcwow4OZ8xUY5QV/KfcdCjxk+VwdWq9wYdDcV6o9MWzgV87xPcLshB08TZOtpCxVE; Expires=Wed, 07 Dec 2022 12:51:31 GMT; Path=/",
+              "AWSALBCORS=YztzOEELgq2YMUzmCDfPSlrsofXBR81jh9MBmtRkZ0jmfnmGn2S33BxvBl6zcwow4OZ8xUY5QV/KfcdCjxk+VwdWq9wYdDcV6o9MWzgV87xPcLshB08TZOtpCxVE; Expires=Wed, 07 Dec 2022 12:51:31 GMT; Path=/; SameSite=None; Secure"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15552000"
+            ],
+            "Vary": [
+              "Accept-Encoding, User-Agent"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "DENY"
+            ],
+            "X-Xss-Protection": [
+              "1; mode=block"
+            ]
+          },
+          "templated": false
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.4.0",
+    "timeExported": "2022-11-30T18:25:46+05:30"
+  }
+}

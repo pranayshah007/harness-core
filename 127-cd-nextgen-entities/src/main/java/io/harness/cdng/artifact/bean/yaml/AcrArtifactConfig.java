@@ -141,4 +141,9 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @ApiModelProperty(hidden = true)
+  public List<ParameterField<String>> getStringParameterFields() {
+    return Arrays.asList(connectorRef, subscriptionId, registry, repository, tag, tagRegex);
+  }
 }

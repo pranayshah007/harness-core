@@ -25,4 +25,5 @@ public interface InfrastructureKind {
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String ELASTIGROUP = "Elastigroup";
   String TAS = "TAS";
+  String ASG = "Asg";
 }

@@ -26,6 +26,7 @@ import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -139,7 +140,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
   public void shouldTestRegisterInterruptPlanEnded() {
     String planExecutionId = generateUuid();
     when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.ABORTED);
-    when(nodeExecutionService.getPipelineNodeExecution(planExecutionId))
+    when(nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withStatus))
         .thenReturn(Optional.of(NodeExecution.builder().status(Status.FAILED).build()));
     assertThatThrownBy(
         ()
@@ -175,7 +176,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
             String.format("NodeExecution not found for pipeline node for planExecutionId %s and interruptId %s",
                 planExecutionId, interruptId));
 
-    when(nodeExecutionService.getPipelineNodeExecution(planExecutionId))
+    when(nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withStatus))
         .thenReturn(Optional.of(NodeExecution.builder().status(Status.RUNNING).build()));
     Interrupt interrupt =
         expireAllInterruptHandler.registerInterrupt(Interrupt.builder()

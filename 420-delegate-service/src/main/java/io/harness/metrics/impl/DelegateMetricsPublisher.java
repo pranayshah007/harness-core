@@ -19,17 +19,22 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
+import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.metrics.beans.DelegateAccountMetricContext;
+import io.harness.metrics.beans.DelegateTaskRankMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.persistence.HPersistence;
+import io.harness.service.intfc.DelegateCache;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,23 +44,28 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateMetricsPublisher implements MetricsPublisher {
   private static final String ACTIVE_DELEGATES_COUNT = "active_delegate_count";
 
+  public static final String ACTIVE_DELEGATE_TASK = "active_delegate_task";
+
   private final MetricService metricService;
   private final HPersistence persistence;
 
+  private final DelegateCache delegateCache;
+
   @Override
   public void recordMetrics() {
-    sendActiveDelegateCountMetrics();
+    sendDelegateMetrics();
   }
 
   @VisibleForTesting
-  void sendActiveDelegateCountMetrics() {
+  void sendDelegateMetrics() {
     if (log.isDebugEnabled()) {
       log.debug("Starting getting delegate metrics.");
     }
     long startTime = Instant.now().toEpochMilli();
 
-    recordDelegateMetrics();
+    recordActiveDelegateMetrics();
     recordPerpetualTaskMetrics();
+    recordDelegateTasksByRankMetrics();
 
     if (log.isDebugEnabled()) {
       log.debug("Total time taken to collect metrics for active delegates count: {} (ms)",
@@ -63,67 +73,97 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
     }
   }
 
-  private void recordDelegateMetrics() {
-    long activeDelegatesCount = persistence.createQuery(Delegate.class, excludeAuthority)
-                                    .field(DelegateKeys.lastHeartBeat)
-                                    .greaterThan(Instant.now().minusSeconds(300).toEpochMilli())
-                                    .count();
+  private void recordActiveDelegateMetrics() {
+    try {
+      long activeDelegatesCount = persistence.createQuery(Delegate.class, excludeAuthority)
+                                      .field(DelegateKeys.lastHeartBeat)
+                                      .greaterThan(Instant.now().minusSeconds(300).toEpochMilli())
+                                      .count();
 
-    long immutableDelegatesCount = persistence.createQuery(Delegate.class, excludeAuthority)
-                                       .filter(DelegateKeys.immutable, true)
-                                       .field(DelegateKeys.lastHeartBeat)
-                                       .greaterThan(Instant.now().minusSeconds(300).toEpochMilli())
-                                       .count();
-    metricService.recordMetric(ACTIVE_DELEGATES_COUNT, activeDelegatesCount);
-    metricService.recordMetric(IMMUTABLE_DELEGATES, immutableDelegatesCount);
-    metricService.recordMetric(MUTABLE_DELEGATES, activeDelegatesCount - immutableDelegatesCount);
+      long immutableDelegatesCount = persistence.createQuery(Delegate.class, excludeAuthority)
+                                         .filter(DelegateKeys.immutable, true)
+                                         .field(DelegateKeys.lastHeartBeat)
+                                         .greaterThan(Instant.now().minusSeconds(300).toEpochMilli())
+                                         .count();
+      metricService.recordMetric(ACTIVE_DELEGATES_COUNT, activeDelegatesCount);
+      metricService.recordMetric(IMMUTABLE_DELEGATES, immutableDelegatesCount);
+      metricService.recordMetric(MUTABLE_DELEGATES, activeDelegatesCount - immutableDelegatesCount);
 
-    if (log.isDebugEnabled()) {
-      log.debug("recorded metrics, active delegates {}, immutable delegates {} mutable delegates {}",
-          activeDelegatesCount, immutableDelegatesCount, activeDelegatesCount - immutableDelegatesCount);
+      if (log.isDebugEnabled()) {
+        log.debug("recorded metrics, active delegates {}, immutable delegates {} mutable delegates {}",
+            activeDelegatesCount, immutableDelegatesCount, activeDelegatesCount - immutableDelegatesCount);
+      }
+    } catch (Exception e) {
+      log.warn("Exception occurred during publishing active delegate metrics.", e);
     }
   }
 
   private void recordPerpetualTaskMetrics() {
-    long perpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority).count();
+    try {
+      long perpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority).count();
 
-    long assignedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-                                          .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_ASSIGNED)
-                                          .count();
-
-    long unAssignedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
+      long assignedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_ASSIGNED)
                                             .count();
 
-    long toRebalancePerpetualTaskCount =
-        persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE)
-            .count();
+      long unAssignedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+                                              .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
+                                              .count();
 
-    long pausedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-                                        .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_PAUSED)
-                                        .count();
+      long pausedPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+                                          .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_PAUSED)
+                                          .count();
 
-    long nonAssignablePerpetualTaskCount =
-        persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_NON_ASSIGNABLE)
-            .count();
+      long nonAssignablePerpetualTaskCount =
+          persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+              .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_NON_ASSIGNABLE)
+              .count();
 
-    long invalidPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
-                                         .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_INVALID)
-                                         .count();
+      long invalidPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+                                           .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_INVALID)
+                                           .count();
 
-    metricService.recordMetric(PERPETUAL_TASKS, perpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_ASSIGNED, assignedPerpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_UNASSIGNED, unAssignedPerpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_NON_ASSIGNABLE, nonAssignablePerpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_INVALID, invalidPerpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_PAUSED, pausedPerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS, perpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS_ASSIGNED, assignedPerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS_UNASSIGNED, unAssignedPerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS_NON_ASSIGNABLE, nonAssignablePerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS_INVALID, invalidPerpetualTaskCount);
+      metricService.recordMetric(PERPETUAL_TASKS_PAUSED, pausedPerpetualTaskCount);
 
-    if (log.isDebugEnabled()) {
-      log.debug("PT metrics, all PTs {}, assigned {}, unassigned {}, non-assignable {}, invalid {}, paused {}",
-          perpetualTaskCount, assignedPerpetualTaskCount, unAssignedPerpetualTaskCount, nonAssignablePerpetualTaskCount,
-          invalidPerpetualTaskCount, pausedPerpetualTaskCount);
+      if (log.isDebugEnabled()) {
+        log.debug("PT metrics, all PTs {}, assigned {}, unassigned {}, non-assignable {}, invalid {}, paused {}",
+            perpetualTaskCount, assignedPerpetualTaskCount, unAssignedPerpetualTaskCount,
+            nonAssignablePerpetualTaskCount, invalidPerpetualTaskCount, pausedPerpetualTaskCount);
+      }
+    } catch (Exception e) {
+      log.warn("Exception occurred during publishing perpetual tasks metrics.", e);
+    }
+  }
+
+  private void recordDelegateTasksByRankMetrics() {
+    try {
+      for (Map.Entry<String, Long> entry :
+          delegateCache.getTasksCountPerAccount(DelegateTaskRank.OPTIONAL).entrySet()) {
+        recordDelegateTaskMetrics(entry.getKey(), DelegateTaskRank.OPTIONAL.name(), entry.getValue());
+      }
+    } catch (Exception e) {
+      log.warn("Exception occurred during publishing optional delegate tasks count metrics.", e);
+    }
+
+    try {
+      for (Map.Entry<String, Long> entry :
+          delegateCache.getTasksCountPerAccount(DelegateTaskRank.IMPORTANT).entrySet()) {
+        recordDelegateTaskMetrics(entry.getKey(), DelegateTaskRank.IMPORTANT.name(), entry.getValue());
+      }
+    } catch (Exception e) {
+      log.warn("Exception occurred during publishing optional delegate tasks count metrics.", e);
+    }
+  }
+
+  private void recordDelegateTaskMetrics(String accountId, String taskRank, long value) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId);
+         DelegateTaskRankMetricContext ignore1 = new DelegateTaskRankMetricContext(taskRank)) {
+      metricService.recordMetric(ACTIVE_DELEGATE_TASK, value);
     }
   }
 }

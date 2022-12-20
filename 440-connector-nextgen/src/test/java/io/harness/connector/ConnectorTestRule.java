@@ -148,6 +148,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
       }

@@ -227,7 +227,9 @@ public class ValidateAndMergeHelper {
       }
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(inputSet.getYaml());
-        if (InputSetErrorsHelper.getErrorMap(pipelineTemplateForValidations, inputSet.getYaml()) != null) {
+        if (InputSetErrorsHelper.getErrorMap(
+                pipelineTemplateForValidations, inputSet.getYaml(), inputSet.getIdentifier())
+            != null) {
           invalidReferences.add(identifier);
         }
       } else {
@@ -239,7 +241,9 @@ public class ValidateAndMergeHelper {
             invalidReferences.add(identifier);
           } else {
             inputSetYamlList.add(entity2.get().getYaml());
-            if (InputSetErrorsHelper.getErrorMap(pipelineTemplateForValidations, entity2.get().getYaml()) != null) {
+            if (InputSetErrorsHelper.getErrorMap(
+                    pipelineTemplateForValidations, entity2.get().getYaml(), entity2.get().getIdentifier())
+                != null) {
               invalidReferences.add(identifier);
             }
           }

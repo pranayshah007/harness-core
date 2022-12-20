@@ -34,6 +34,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.resourcegroup.v1.OrganizationResourceGroupsApi;
 import io.harness.spec.server.resourcegroup.v1.model.CreateResourceGroupRequest;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.util.stream.Collectors;
@@ -90,11 +91,11 @@ public class OrgResourceGroupsApiImpl implements OrganizationResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   public Response listResourceGroupsOrg(@OrgIdentifier String org, Integer page, Integer limit, String searchTerm,
       @AccountIdentifier String account, String sort, String order) {
-    PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, org, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ResourceGroupApiUtils.addLinksHeader(
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, format("/v1/orgs/%s/resource-groups)", org), pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()

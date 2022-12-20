@@ -6,21 +6,24 @@
 package handler
 
 import (
+	"os"
+	"testing"
+
 	"github.com/go-redis/redismock/v8"
+	"github.com/harness/harness-core/queue-service/hsqs/instrumentation/metrics"
 	"github.com/harness/harness-core/queue-service/hsqs/store/redis"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 func TestNewHandler(t *testing.T) {
 	rdb, _ := redismock.NewClientMock()
 	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
 	s := &redis.Store{Client: rdb, Logger: &l}
+	m := metrics.InitMetrics()
 
 	t.Run("TestConstructor", func(t *testing.T) {
-		got := NewHandler(s)
+		got := NewHandler(s, m)
 		assert.Equal(t, s, got.s)
 	})
 }

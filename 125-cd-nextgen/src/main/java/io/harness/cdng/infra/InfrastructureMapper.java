@@ -16,6 +16,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
+import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
@@ -38,6 +39,7 @@ import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -253,6 +255,21 @@ public class InfrastructureMapper {
         infrastructureOutcome = elastigroupInfrastructureOutcome;
         break;
 
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        AsgInfrastructureOutcome asgInfrastructureOutcome =
+            AsgInfrastructureOutcome.builder()
+                .connectorRef(asgInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .region(asgInfrastructure.getRegion().getValue())
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(
+            asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());
+        infrastructureOutcome = asgInfrastructureOutcome;
+        break;
+
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
         CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
         String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(accountIdentifier, orgIdentifier,
@@ -294,8 +311,8 @@ public class InfrastructureMapper {
                     service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
                 .build();
 
-        setInfraIdentifierAndName(tanzuInfrastructureOutcome, tanzuInfrastructureOutcome.getInfraIdentifier(),
-            tanzuInfrastructure.getInfraName());
+        setInfraIdentifierAndName(
+            tanzuInfrastructureOutcome, tanzuInfrastructure.getInfraIdentifier(), tanzuInfrastructure.getInfraName());
         infrastructureOutcome = tanzuInfrastructureOutcome;
         break;
 

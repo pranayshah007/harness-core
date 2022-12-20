@@ -23,6 +23,7 @@ import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
 import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
+import io.harness.service.instancesynchandler.SpotInstanceSyncHandler;
 import io.harness.service.instancesynchandler.TasInstanceSyncHandler;
 
 import com.google.inject.Inject;
@@ -43,7 +44,9 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
   private final AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
   private final CustomDeploymentInstanceSyncHandler customDeploymentInstanceSyncHandler;
+  private final SpotInstanceSyncHandler spotInstanceSyncHandler;
   private final TasInstanceSyncHandler tasInstanceSyncHandler;
+
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
     switch (deploymentType) {
@@ -64,6 +67,8 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return getSshWinRmInstanceSyncHandler(infraKind);
       case ServiceSpecType.CUSTOM_DEPLOYMENT:
         return customDeploymentInstanceSyncHandler;
+      case ServiceSpecType.ELASTIGROUP:
+        return spotInstanceSyncHandler;
       case ServiceSpecType.TAS:
         return tasInstanceSyncHandler;
       default:

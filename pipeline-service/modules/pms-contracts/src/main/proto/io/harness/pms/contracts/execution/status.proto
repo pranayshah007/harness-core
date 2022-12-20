@@ -21,7 +21,7 @@ enum Status {
   DISCONTINUING = 6;
   PAUSING = 7;
 
-  // Final Statuses : All the final statuses named with ed in the end
+  // Final Statuses : All the final statuses named with ed in the end(except queued)
   QUEUED = 8;
   SKIPPED = 9;
   PAUSED = 10;

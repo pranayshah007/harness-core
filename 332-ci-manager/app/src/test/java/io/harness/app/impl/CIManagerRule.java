@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -34,6 +35,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.iacm.beans.entities.IACMServiceConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -171,15 +173,22 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                                                                                   .connectTimeOutSeconds(15)
                                                                                   .build())
                                                   .build())
-            .ciExecutionServiceConfig(CIExecutionServiceConfig.builder()
-                                          .addonImageTag("v1.4-alpha")
-                                          .defaultCPULimit(200)
-                                          .defaultInternalImageConnector("account.harnessimage")
-                                          .defaultMemoryLimit(200)
-                                          .delegateServiceEndpointVariableValue("delegate-service:8080")
-                                          .liteEngineImageTag("v1.4-alpha")
-                                          .pvcDefaultStorageSize(25600)
-                                          .build())
+            .ciExecutionServiceConfig(
+                CIExecutionServiceConfig.builder()
+                    .addonImageTag("v1.4-alpha")
+                    .queueServiceClient(
+                        QueueServiceClient.builder()
+                            .queueServiceConfig(
+                                ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
+                            .authToken("tokrn")
+                            .build())
+                    .defaultCPULimit(200)
+                    .defaultInternalImageConnector("account.harnessimage")
+                    .defaultMemoryLimit(200)
+                    .delegateServiceEndpointVariableValue("delegate-service:8080")
+                    .liteEngineImageTag("v1.4-alpha")
+                    .pvcDefaultStorageSize(25600)
+                    .build())
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
             .logServiceConfig(
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
@@ -187,6 +196,8 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
             .stoServiceConfig(
                 STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .iacmServiceConfig(
+                IACMServiceConfig.builder().baseUrl("http://localhost-inc:5000").globalToken("global-token").build())
             .scmConnectionConfig(ScmConnectionConfig.builder().url("localhost:8181").build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .ngManagerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())

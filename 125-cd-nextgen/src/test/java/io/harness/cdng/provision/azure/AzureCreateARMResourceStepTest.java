@@ -32,7 +32,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -112,7 +111,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
   @Mock private AzureARMConfigDAL azureARMConfigDAL;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
@@ -136,7 +134,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
   }
 
   @Test

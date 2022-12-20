@@ -23,7 +23,8 @@ import lombok.experimental.SuperBuilder;
   @JsonSubTypes.Type(value = KubernetesChangeEventMetadata.class, name = "K8sCluster")
   , @JsonSubTypes.Type(value = HarnessCDEventMetadata.class, name = "HarnessCDNextGen"),
       @JsonSubTypes.Type(value = PagerDutyEventMetaData.class, name = "PagerDuty"),
-      @JsonSubTypes.Type(value = HarnessCDCurrentGenEventMetadata.class, name = "HarnessCD")
+      @JsonSubTypes.Type(value = HarnessCDCurrentGenEventMetadata.class, name = "HarnessCD"),
+      @JsonSubTypes.Type(value = InternalChangeEventMetaData.class, name = "HarnessFF")
 })
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

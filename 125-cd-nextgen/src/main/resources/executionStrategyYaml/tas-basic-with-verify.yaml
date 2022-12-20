@@ -8,14 +8,14 @@ spec:
   execution:
     steps:
       - step:
-          name: "Basic Setup Step"
+          name: "Basic App Setup"
           identifier: basicSetupStep
-          type: TasBasicAppSetup
+          type: BasicAppSetup
           timeout: 10m
           spec:
-            instanceCount: FromManifest
-            existingVersionToKepp: 3
-            additionalRoutes: ""
+            tasInstanceCountType: FromManifest
+            existingVersionToKeep: 3
+            additionalRoutes: []
       - step:
           type: Verify
           name: Verify
@@ -25,19 +25,21 @@ spec:
       - step:
           name: "Deploy Step"
           identifier: deployStep
-          type: TasAppResize
+          type: AppResize
           timeout: 10m
           spec:
             newAppInstances:
-              type: Count
-              value: 2
-            oldAppInstances:
               type: Percentage
-              value: 10
+              spec:
+                value: 100
+            oldAppInstances:
+              type: Count
+              spec:
+                value: 0
     rollbackSteps:
       - step:
           name: "App Rollback"
           identifier: appRollback
-          type: TasRollback
+          type: AppRollback
           timeout: 10m
           spec: {}

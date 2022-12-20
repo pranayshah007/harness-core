@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -218,18 +219,27 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       CompositeServiceLevelObjective compositeServiceLevelObjective,
       Map<ServiceLevelObjectiveDetailsRefDTO, Double> sloDetailsToWeightPercentageMap, ProjectParams projectParams,
       Long startTime, Long endTime) {
-    ProjectParams simpleSLOProjectParams = ProjectParams.builder()
-                                               .accountIdentifier(projectParams.getAccountIdentifier())
-                                               .orgIdentifier(sloDetail.getOrgIdentifier())
-                                               .projectIdentifier(sloDetail.getProjectIdentifier())
-                                               .build();
-    Double weightPercentage =
-        sloDetailsToWeightPercentageMap.get(ServiceLevelObjectiveDetailsRefDTO.builder()
-                                                .accountId(projectParams.getAccountIdentifier())
-                                                .orgIdentifier(sloDetail.getOrgIdentifier())
-                                                .projectIdentifier(sloDetail.getProjectIdentifier())
-                                                .serviceLevelObjectiveRef(sloDetail.getSloIdentifier())
-                                                .build());
+    ProjectParams simpleSLOProjectParams =
+        ProjectParams.builder()
+            .accountIdentifier(projectParams.getAccountIdentifier())
+            .orgIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                    ? sloDetail.getProjectParams().getOrgIdentifier()
+                    : "")
+            .projectIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                    ? sloDetail.getProjectParams().getProjectIdentifier()
+                    : "")
+            .build();
+    Double weightPercentage = sloDetailsToWeightPercentageMap.get(
+        ServiceLevelObjectiveDetailsRefDTO.builder()
+            .accountId(projectParams.getAccountIdentifier())
+            .orgIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                    ? sloDetail.getProjectParams().getOrgIdentifier()
+                    : "")
+            .projectIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                    ? sloDetail.getProjectParams().getProjectIdentifier()
+                    : "")
+            .serviceLevelObjectiveRef(sloDetail.getSloIdentifier())
+            .build());
 
     TimeRangeParams filter = null;
     Instant compositeSloStartedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
@@ -246,7 +256,9 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         serviceLevelObjectiveV2Service.getEntity(simpleSLOProjectParams, sloDetail.getSloIdentifier());
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
         startTimeForCurrentRange, endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
-
+    String projectName = getProjectName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier(),
+        simpleSLOProjectParams.getProjectIdentifier());
+    String orgName = getOrgName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier());
     return SLOConsumptionBreakdown.builder()
         .sloIdentifier(sloDetail.getSloIdentifier())
         .sloName(sloDetail.getName())
@@ -260,6 +272,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .errorBudgetBurned(sloGraphData.getErrorBudgetBurned())
         .contributedErrorBudgetBurned((int) ((weightPercentage / 100) * sloGraphData.getErrorBudgetBurned()))
         .projectParams(simpleSLOProjectParams)
+        .projectName(projectName)
+        .orgName(orgName)
         .build();
   }
 
@@ -370,6 +384,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
               .childResource(true)
               .build(),
           PageParams.builder().page(0).size(20).build());
+
       List<MonitoredServiceDetail> monitoredServiceDetails =
           sloHealthListViewPageResponse.getContent()
               .stream()
@@ -385,11 +400,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                          .healthSourceName(sloDetail.getHealthSourceName())
                          .orgName(sloDetail.getOrgName())
                          .projectName(sloDetail.getProjectName())
-                         .projectParams(ProjectParams.builder()
-                                            .accountIdentifier(projectParams.getAccountIdentifier())
-                                            .orgIdentifier(sloDetail.getOrgIdentifier())
-                                            .projectIdentifier(sloDetail.getProjectIdentifier())
-                                            .build())
+                         .projectParams(
+                             ProjectParams.builder()
+                                 .accountIdentifier(projectParams.getAccountIdentifier())
+                                 .orgIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                                         ? sloDetail.getProjectParams().getOrgIdentifier()
+                                         : "")
+                                 .projectIdentifier(Optional.ofNullable(sloDetail.getProjectParams()).isPresent()
+                                         ? sloDetail.getProjectParams().getProjectIdentifier()
+                                         : "")
+                                 .build())
                          .build())
               .collect(Collectors.toList());
 
@@ -475,18 +495,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           scopedMonitoredServiceIdentifierToDTOMap.get(getScopedInformation(simpleServiceLevelObjective.getAccountId(),
               simpleServiceLevelObjective.getOrgIdentifier(), simpleServiceLevelObjective.getProjectIdentifier(),
               simpleServiceLevelObjective.getMonitoredServiceIdentifier()));
-
+      String projectName =
+          getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
+      String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
       return SLOHealthListView
           .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
-          .projectName(nextGenService
-                           .getCachedProject(
-                               projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier())
-                           .getName())
-          .orgName(
-              nextGenService.getOrganization(projectParams.getAccountIdentifier(), slo.getOrgIdentifier()).getName())
+          .projectName(projectName)
+          .orgName(orgName)
           .environmentName(nextGenService
                                .getEnvironment(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
                                    monitoredService.getEnvironmentRef())
@@ -523,5 +541,21 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   private String getScopedInformation(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
     return accountId + '.' + orgIdentifier + '.' + projectIdentifier + '.' + identifier;
+  }
+
+  private String getOrgName(String accountIdentifier, String orgIdentifier) {
+    String orgName = "";
+    if (orgIdentifier != null) {
+      orgName = nextGenService.getOrganization(accountIdentifier, orgIdentifier).getName();
+    }
+    return orgName;
+  }
+
+  private String getProjectName(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    String projectName = "";
+    if (orgIdentifier != null) {
+      projectName = nextGenService.getCachedProject(accountIdentifier, orgIdentifier, projectIdentifier).getName();
+    }
+    return projectName;
   }
 }

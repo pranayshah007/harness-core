@@ -74,7 +74,7 @@ public class InitPowerShellCommandUnit extends AbstractCommandUnit {
       throw new WingsException("Unexpected context type");
     }
     return ((ShellCommandExecutionContext) context)
-        .executeCommandString(getInitCommand(context.getWindowsRuntimePath()));
+        .executeCommandString(getInitCommand(context.getWindowsRuntimePath()), false);
   }
 
   private void createPreparedCommands(Command command) {

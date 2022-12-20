@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewCondition;
@@ -118,6 +120,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private BigQuery bigQuery;
   @Mock private TableResult resultSet;
   @Mock private FieldValueList row;
+  @Mock private CEMetadataRecordDao ceMetadataRecordDao;
 
   private Schema schema;
   private List<Field> fields;
@@ -252,6 +255,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .thenReturn(Collections.emptySet());
     when(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromViewRules(anyList()))
         .thenReturn(Collections.emptySet());
+    when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
   }
 
   @Test
@@ -644,6 +648,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.NUMERIC).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
+    when(ceMetadataRecordDao.getDestinationCurrency(null)).thenReturn(Currency.USD);
 
     // Build query parameters
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();

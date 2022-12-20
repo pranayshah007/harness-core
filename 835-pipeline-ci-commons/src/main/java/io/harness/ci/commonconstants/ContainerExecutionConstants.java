@@ -82,4 +82,5 @@ public class ContainerExecutionConstants {
   public static final String PORT_PREFIX = "--port";
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";
   public static final String WIN_STEP_COMMAND = "C:\\addon\\bin\\addon.exe";
+  public static final String TMP_PATH = "/addon/tmp/";
 }

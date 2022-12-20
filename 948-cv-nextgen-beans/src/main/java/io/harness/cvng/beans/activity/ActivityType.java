@@ -7,4 +7,46 @@
 
 package io.harness.cvng.beans.activity;
 
-public enum ActivityType { DEPLOYMENT, CONFIG, KUBERNETES, HARNESS_CD, PAGER_DUTY, HARNESS_CD_CURRENT_GEN }
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.collections4.MapUtils;
+
+public enum ActivityType {
+  DEPLOYMENT("DEPLOYMENT"),
+  CONFIG("CONFIG"),
+  KUBERNETES("KUBERNETES"),
+  HARNESS_CD("HARNESS_CD"),
+  PAGER_DUTY("PAGER_DUTY"),
+  HARNESS_CD_CURRENT_GEN("HARNESS_CD_CURRENT_GEN"),
+  FEATURE_FLAG("FEATURE_FLAG");
+
+  public final String name;
+
+  ActivityType(String name) {
+    this.name = name;
+  }
+
+  @JsonValue
+  public String getName() {
+    return name;
+  }
+
+  private static Map<String, ActivityType> STRING_TO_ACTIVITY_TYPE_MAP;
+
+  public static ActivityType fromString(String stringValue) {
+    if (MapUtils.isEmpty(STRING_TO_ACTIVITY_TYPE_MAP)) {
+      STRING_TO_ACTIVITY_TYPE_MAP =
+          Arrays.stream(ActivityType.values()).collect(Collectors.toMap(ActivityType::getName, Function.identity()));
+      // TODO: Remove this once UI migrated to jsonValues for queryParams
+      Arrays.asList(ActivityType.values())
+          .forEach(activityType -> STRING_TO_ACTIVITY_TYPE_MAP.put(activityType.name(), activityType));
+    }
+    if (!STRING_TO_ACTIVITY_TYPE_MAP.containsKey(stringValue)) {
+      throw new IllegalStateException("Change source type should be in : " + STRING_TO_ACTIVITY_TYPE_MAP.keySet());
+    }
+    return STRING_TO_ACTIVITY_TYPE_MAP.get(stringValue);
+  }
+}

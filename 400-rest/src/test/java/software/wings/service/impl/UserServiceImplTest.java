@@ -18,6 +18,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_EXPIRED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVALID;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
@@ -81,6 +82,8 @@ import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.UserInvite.UserInviteKeys;
+import software.wings.beans.security.AccessRequest;
+import software.wings.beans.security.HarnessUserGroup;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -93,6 +96,7 @@ import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -633,6 +637,83 @@ public class UserServiceImplTest extends WingsBaseTest {
     List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_gerUseraccountIds() {
+    Account account1 = anAccount().withUuid("ACCOUNT_ID").withAccountName("account1").build();
+    Account account2 = anAccount().withUuid("id1").withAccountName("account2").build();
+    wingsPersistence.save(account1);
+    wingsPersistence.save(account2);
+    User user1 = User.Builder.anUser()
+                     .uuid("userId")
+                     .accounts(Arrays.asList(account1, account2))
+                     .email("aBc@harness.io")
+                     .name("pqr")
+                     .build();
+    user1.setDisabled(false);
+    wingsPersistence.save(user1);
+
+    List<String> ids = userServiceImpl.getUserAccountIds("userId");
+
+    assertThat(ids.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_getUsersAccounts() {
+    Account account1 =
+        anAccount().withUuid("ACCOUNT_ID").withAccountName("account1").withHarnessGroupAccessAllowed(false).build();
+    Account account2 =
+        anAccount().withUuid("id2").withAccountName("account2").withHarnessGroupAccessAllowed(false).build();
+    Account account3 =
+        anAccount().withUuid("id3").withAccountName("account3").withHarnessGroupAccessAllowed(true).build();
+    Account account4 =
+        anAccount().withUuid("id4").withAccountName("account4").withHarnessGroupAccessAllowed(true).build();
+    wingsPersistence.save(account4);
+    wingsPersistence.save(account1);
+    wingsPersistence.save(account3);
+    wingsPersistence.save(account2);
+
+    User user1 = User.Builder.anUser()
+                     .uuid("user1")
+                     .accounts(Arrays.asList(account1))
+                     .email("aBc@harness.io")
+                     .name("pqr")
+                     .build();
+    user1.setDisabled(false);
+    wingsPersistence.save(user1);
+    AccessRequest accessRequest = AccessRequest.builder()
+                                      .accountId("id3")
+                                      .accessActive(true)
+                                      .accessType(AccessRequest.AccessType.GROUP_ACCESS)
+                                      .memberIds(Sets.newHashSet("user1", "user2"))
+                                      .harnessUserGroupId("groupId")
+                                      .build();
+    wingsPersistence.save(accessRequest);
+    accessRequest = AccessRequest.builder()
+                        .accountId("id2")
+                        .accessActive(true)
+                        .accessType(AccessRequest.AccessType.MEMBER_ACCESS)
+                        .memberIds(Sets.newHashSet("user1", "user2"))
+                        .build();
+    wingsPersistence.save(accessRequest);
+    HarnessUserGroup harnessUserGroup =
+        HarnessUserGroup.builder().uuid("groupId").memberIds(Sets.newHashSet("user1")).build();
+    wingsPersistence.save(harnessUserGroup);
+
+    when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
+
+    List<Account> accounts = userServiceImpl.getUserAccounts("user1", 0, 2, "");
+
+    assertThat(accounts.size()).isEqualTo(2);
+    assertThat(accounts.get(0).getAccountName()).isEqualTo("account1");
+    accounts = userServiceImpl.getUserAccounts("user1", 0, 4, "");
+    assertThat(accounts.size()).isEqualTo(4);
+    assertThat(accounts.get(3).getAccountName()).isEqualTo("account4");
   }
 
   @Test
