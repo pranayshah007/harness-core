@@ -72,8 +72,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDP)
-public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
-  @InjectMocks K8sInstanceSyncV2HandlerCg k8sInstanceSyncV2HandlerCg;
+public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
+  @InjectMocks K8sInstanceSyncV2DeploymentHelperCg k8SInstanceSyncV2DeploymentHelperCg;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Mock private KryoSerializer kryoSerializer;
@@ -98,7 +98,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
     doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
     doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
     PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =
-        k8sInstanceSyncV2HandlerCg.fetchInfraConnectorDetails(settingAttribute);
+        k8SInstanceSyncV2DeploymentHelperCg.fetchInfraConnectorDetails(settingAttribute);
     assertThat(perpetualTaskExecutionBundle).isNotNull();
     assertThat(perpetualTaskExecutionBundle.getTaskParams().getTypeUrl())
         .isEqualTo("type.googleapis.com/io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams");
@@ -123,7 +123,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                   .isHelmDeployment(false)
                                   .build());
     Set<CgReleaseIdentifiers> result =
-        k8sInstanceSyncV2HandlerCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
+        k8SInstanceSyncV2DeploymentHelperCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
     assertThat(result).isNotNull();
     assertThat(result.size()).isEqualTo(1);
   }
@@ -143,7 +143,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                                                   .build())
                                               .build();
     InstanceSyncTaskDetails instanceSyncTaskDetails =
-        k8sInstanceSyncV2HandlerCg.prepareTaskDetails(deploymentSummary, "cloudProviderId", "perpetualId");
+        k8SInstanceSyncV2DeploymentHelperCg.prepareTaskDetails(deploymentSummary, "cloudProviderId", "perpetualId");
     assertThat(instanceSyncTaskDetails).isNotNull();
     assertThat(instanceSyncTaskDetails.getAccountId()).isEqualTo("accountId");
     assertThat(instanceSyncTaskDetails.getPerpetualTaskId()).isEqualTo("perpetualId");
@@ -159,7 +159,8 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                         .namespace("namespace")
                                         .clusterName("clusterName")
                                         .build();
-    Set<CgReleaseIdentifiers> releaseIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentInfo);
+    Set<CgReleaseIdentifiers> releaseIdentifiers =
+        k8SInstanceSyncV2DeploymentHelperCg.buildReleaseIdentifiers(deploymentInfo);
     assertThat(releaseIdentifiers).isNotNull();
     assertThat(releaseIdentifiers.stream().findAny().get().getClass()).isEqualTo(CgK8sReleaseIdentifier.class);
 
@@ -170,7 +171,8 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                          .containerInfoList(
                              new ArrayList<>(Arrays.asList(ContainerInfo.builder().containerId("containerId").build())))
                          .build();
-    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentInfo);
+    Set<CgReleaseIdentifiers> newIdentifiers =
+        k8SInstanceSyncV2DeploymentHelperCg.buildReleaseIdentifiers(deploymentInfo);
     assertThat(newIdentifiers).isNotNull();
     CgK8sReleaseIdentifier identifier = (CgK8sReleaseIdentifier) newIdentifiers.stream().findFirst().get();
     assertThat(identifier.getReleaseName()).isEqualTo("releaseName");
@@ -209,158 +211,10 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
         .getK8sClusterConfig(any(), any());
 
     List<CgDeploymentReleaseDetails> cgDeploymentReleaseDetails =
-        k8sInstanceSyncV2HandlerCg.getDeploymentReleaseDetails(instanceSyncTaskDetails);
+        k8SInstanceSyncV2DeploymentHelperCg.getDeploymentReleaseDetails(instanceSyncTaskDetails);
     assertThat(cgDeploymentReleaseDetails).isNotNull();
     assertThat(cgDeploymentReleaseDetails.size()).isEqualTo(1);
     assertThat(cgDeploymentReleaseDetails.get(0).getInfraMappingType()).isEqualTo("K8s");
     assertThat(cgDeploymentReleaseDetails.get(0).getInfraMappingId()).isEqualTo("infraMappingId");
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void testGetDeployedInstances() {
-    DeploymentSummary deploymentSummary =
-        DeploymentSummary.builder()
-            .appId("appId")
-            .infraMappingId("infraMappingId")
-            .accountId("accountId")
-            .deploymentInfo(
-                K8sDeploymentInfo.builder()
-                    .releaseName("releaseName")
-                    .k8sPods(Arrays.asList(K8sPodInfo.builder()
-                                               .podName("podName")
-                                               .namespace("namespace")
-                                               .releaseName("releaseName")
-                                               .clusterName("clusterName")
-                                               .containers(Collections.singletonList(K8sContainerInfo.builder()
-                                                                                         .containerId("containerId")
-                                                                                         .image("image")
-                                                                                         .name("nginx")
-                                                                                         .build()))
-                                               .build()))
-                    .namespace("namespace")
-                    .clusterName("clusterName")
-                    .build())
-            .build();
-    InfrastructureMapping infraMapping = DirectKubernetesInfrastructureMapping.builder()
-                                             .appId("appId")
-                                             .infraMappingType("K8s")
-                                             .accountId("accountId")
-                                             .envId("envId")
-                                             .build();
-    infraMapping.setServiceId("serviceId");
-    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
-    doReturn(KUBERNETES_CONTAINER_INSTANCE).when(instanceUtil).getInstanceType(anyString());
-    doReturn(Application.Builder.anApplication()
-                 .name(HARNESS_SAMPLE_APP)
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(appService)
-        .get(anyString());
-
-    doReturn(Environment.Builder.anEnvironment()
-                 .name("envName")
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
-
-    doReturn(Service.builder()
-                 .name("serviceName")
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
-
-    List<Instance> instances = k8sInstanceSyncV2HandlerCg.getDeployedInstances(deploymentSummary);
-    assertThat(instances).isNotNull();
-    assertThat(instances.size()).isEqualTo(1);
-    assertThat(instances.get(0).getEnvId()).isEqualTo("envId");
-    assertThat(instances.get(0).getServiceId()).isEqualTo("serviceId");
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void testGetDeployedInstancesOverride() {
-    List<InstanceInfo> instanceInfos = Arrays.asList(
-        K8sPodInfo.builder()
-            .podName("podName")
-            .namespace("namespace")
-            .releaseName("releaseName")
-            .clusterName("clusterName")
-            .containers(Collections.singletonList(
-                K8sContainerInfo.builder().containerId("containerId").image("image").name("nginx").build()))
-            .build());
-    Instance instance =
-        Instance.builder()
-            .instanceInfo(
-                K8sPodInfo.builder()
-                    .podName("podName")
-                    .namespace("namespace")
-                    .releaseName("releaseName")
-                    .clusterName("clusterName")
-                    .containers(Collections.singletonList(
-                        K8sContainerInfo.builder().containerId("containerId").image("image").name("nginx").build()))
-                    .build())
-            .appId("appId")
-            .infraMappingId("infraMappingId")
-            .accountId("accountId")
-            .appName("appName")
-            .serviceId("serviceId")
-            .serviceName("serviceName")
-            .computeProviderId("computeProviderId")
-            .computeProviderName("computeProviderId")
-            .envId("envId")
-            .build();
-    InfrastructureMapping infraMapping = DirectKubernetesInfrastructureMapping.builder()
-                                             .appId("appId")
-                                             .infraMappingType("K8s")
-                                             .accountId("accountId")
-                                             .envId("envId")
-                                             .build();
-    infraMapping.setServiceId("serviceId");
-    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
-    doReturn(KUBERNETES_CONTAINER_INSTANCE).when(instanceUtil).getInstanceType(anyString());
-    doReturn(Application.Builder.anApplication()
-                 .name(HARNESS_SAMPLE_APP)
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(appService)
-        .get(anyString());
-
-    doReturn(Environment.Builder.anEnvironment()
-                 .name("envName")
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
-
-    doReturn(Service.builder()
-                 .name("serviceName")
-                 .description(HARNESS_SAMPLE_APP_DESC)
-                 .accountId("accountId")
-                 .sample(true)
-                 .build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
-
-    List<Instance> instancesInDb = new ArrayList<>();
-    List<Instance> instances = k8sInstanceSyncV2HandlerCg.getDeployedInstances(instanceInfos, instancesInDb, instance);
-    assertThat(instances).isNotNull();
-    assertThat(instances.size()).isEqualTo(1);
-    assertThat(instances.get(0).getEnvId()).isEqualTo("envId");
-    assertThat(instances.get(0).getServiceId()).isEqualTo("serviceId");
   }
 }

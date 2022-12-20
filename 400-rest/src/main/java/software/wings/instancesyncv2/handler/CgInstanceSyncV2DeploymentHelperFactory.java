@@ -14,13 +14,13 @@ import com.google.inject.Singleton;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
-public class CgInstanceSyncV2HandlerFactory {
-  private final K8sInstanceSyncV2HandlerCg k8sHandler;
+public class CgInstanceSyncV2DeploymentHelperFactory {
+  private final K8sInstanceSyncV2DeploymentHelperCg k8sHandler;
 
-  private final ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2Handler> holder;
+  private final ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2DeploymentHelper> holder;
 
   @Inject
-  public CgInstanceSyncV2HandlerFactory(K8sInstanceSyncV2HandlerCg k8sHandler) {
+  public CgInstanceSyncV2DeploymentHelperFactory(K8sInstanceSyncV2DeploymentHelperCg k8sHandler) {
     this.holder = new ConcurrentHashMap<>();
     this.k8sHandler = k8sHandler;
 
@@ -31,7 +31,7 @@ public class CgInstanceSyncV2HandlerFactory {
     this.holder.put(SettingVariableTypes.KUBERNETES_CLUSTER, k8sHandler);
   }
 
-  public CgInstanceSyncV2Handler getHandler(SettingVariableTypes cloudProviderType) {
+  public CgInstanceSyncV2DeploymentHelper getHandler(SettingVariableTypes cloudProviderType) {
     return this.holder.getOrDefault(cloudProviderType, null);
   }
 }

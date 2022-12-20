@@ -7,8 +7,6 @@
 
 package software.wings.instancesyncv2;
 
-import static java.util.stream.Collectors.toSet;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
@@ -30,10 +28,8 @@ import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
-import software.wings.instancesyncv2.handler.CgInstanceSyncV2Handler;
-import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
+import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
+import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -55,9 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -68,7 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class CgInstanceSyncServiceV2 {
-  private final CgInstanceSyncV2HandlerFactory handlerFactory;
+  private final CgInstanceSyncV2DeploymentHelperFactory helperFactory;
   private final DelegateServiceGrpcClient delegateServiceClient;
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final InfrastructureMappingService infrastructureMappingService;
@@ -103,13 +97,14 @@ public class CgInstanceSyncServiceV2 {
           .filter(this::hasDeploymentKey)
           .forEach(deploymentSummary -> {
             SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
-            CgInstanceSyncV2Handler instanceSyncHandler =
-                handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
-            String configuredPerpetualTaskId =
-                getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
+            CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
+                helperFactory.getHandler(cloudProvider.getValue().getSettingType());
+            String configuredPerpetualTaskId = getConfiguredPerpetualTaskId(
+                deploymentSummary, cloudProvider.getUuid(), instanceSyncV2DeploymentHelper);
             if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
               String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-              trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
+              trackDeploymentRelease(
+                  cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncV2DeploymentHelper);
             } else {
               updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
             }
@@ -248,29 +243,6 @@ public class CgInstanceSyncServiceV2 {
           });
     }*/
 
-  private void handleInstances(List<Instance> instances, CgInstanceSyncV2Handler instanceSyncHandler) {
-    if (CollectionUtils.isEmpty(instances)) {
-      return;
-    }
-
-    Instance newInstance = instances.get(0);
-    List<Instance> instancesInDb =
-        instanceService.getInstancesForAppAndInframapping(newInstance.getAppId(), newInstance.getInfraMappingId());
-
-    List<Instance> instancesToDelete = instanceSyncHandler.difference(instancesInDb, instances);
-    Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
-    log.info("Instances to delete: [{}]", instanceIdsToDelete);
-    instanceService.delete(instanceIdsToDelete);
-
-    List<Instance> instancesToAdd = instanceSyncHandler.difference(instances, instancesInDb);
-    log.info("Instances to add: [{}]", instancesToAdd);
-    instanceService.saveOrUpdate(instancesToAdd);
-
-    List<Instance> instancesToUpdate = instanceSyncHandler.instancesToUpdate(instances, instancesInDb);
-    log.info("Instances to update: [{}]", instancesToUpdate);
-    instanceService.saveOrUpdate(instancesToUpdate);
-  }
-
   private SettingAttribute fetchCloudProvider(DeploymentSummary deploymentSummary) {
     InfrastructureMapping infraMapping =
         infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
@@ -280,7 +252,7 @@ public class CgInstanceSyncServiceV2 {
   private void updateInstanceSyncPerpetualTask(SettingAttribute cloudProvider, String perpetualTaskId) {
     delegateServiceClient.resetPerpetualTask(AccountId.newBuilder().setId(cloudProvider.getAccountId()).build(),
         PerpetualTaskId.newBuilder().setId(perpetualTaskId).build(),
-        handlerFactory.getHandler(cloudProvider.getValue().getSettingType()).fetchInfraConnectorDetails(cloudProvider));
+        helperFactory.getHandler(cloudProvider.getValue().getSettingType()).fetchInfraConnectorDetails(cloudProvider));
   }
 
   private String createInstanceSyncPerpetualTask(SettingAttribute cloudProvider) {
@@ -289,7 +261,7 @@ public class CgInstanceSyncServiceV2 {
     PerpetualTaskId taskId = delegateServiceClient.createPerpetualTask(AccountId.newBuilder().setId(accountId).build(),
         "CG_INSTANCE_SYNC_V2", preparePerpetualTaskSchedule(),
         PerpetualTaskClientContextDetails.newBuilder()
-            .setExecutionBundle(handlerFactory.getHandler(cloudProvider.getValue().getSettingType())
+            .setExecutionBundle(helperFactory.getHandler(cloudProvider.getValue().getSettingType())
                                     .fetchInfraConnectorDetails(cloudProvider))
             .build(),
         true, "CloudProvider: [" + cloudProvider.getUuid() + "] Instance Sync V2 Perpetual Task");
@@ -305,8 +277,8 @@ public class CgInstanceSyncServiceV2 {
         .build();
   }
 
-  private String getConfiguredPerpetualTaskId(
-      DeploymentSummary deploymentSummary, String cloudProviderId, CgInstanceSyncV2Handler instanceSyncHandler) {
+  private String getConfiguredPerpetualTaskId(DeploymentSummary deploymentSummary, String cloudProviderId,
+      CgInstanceSyncV2DeploymentHelper instanceSyncHandler) {
     InstanceSyncTaskDetails instanceSyncTaskDetails =
         taskDetailsService.getForInfraMapping(deploymentSummary.getAccountId(), deploymentSummary.getInfraMappingId());
 
@@ -336,7 +308,7 @@ public class CgInstanceSyncServiceV2 {
   }
 
   private void trackDeploymentRelease(String cloudProviderId, String perpetualTaskId,
-      DeploymentSummary deploymentSummary, CgInstanceSyncV2Handler instanceSyncHandler) {
+      DeploymentSummary deploymentSummary, CgInstanceSyncV2DeploymentHelper instanceSyncHandler) {
     InstanceSyncTaskDetails newTaskDetails =
         instanceSyncHandler.prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
     taskDetailsService.save(newTaskDetails);
@@ -407,9 +379,9 @@ public class CgInstanceSyncServiceV2 {
     instanceSyncTaskDetails.parallelStream().forEach(taskDetails -> {
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
-      CgInstanceSyncV2Handler instanceSyncHandler =
-          handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
-      deploymentReleaseDetails.addAll(instanceSyncHandler.getDeploymentReleaseDetails(taskDetails));
+      CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
+          helperFactory.getHandler(cloudProvider.getValue().getSettingType());
+      deploymentReleaseDetails.addAll(instanceSyncV2DeploymentHelper.getDeploymentReleaseDetails(taskDetails));
     });
 
     if (cloudProviders.size() > 1) {

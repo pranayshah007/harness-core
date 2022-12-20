@@ -38,8 +38,8 @@ import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
-import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
+import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
+import software.wings.instancesyncv2.handler.K8sInstanceSyncV2DeploymentHelperCg;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -64,10 +64,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock InfrastructureMapping infrastructureMapping = new DirectKubernetesInfrastructureMapping();
 
-  @Mock private K8sInstanceSyncV2HandlerCg k8sHandler;
+  @Mock private K8sInstanceSyncV2DeploymentHelperCg k8sHandler;
 
   @InjectMocks CgInstanceSyncServiceV2 cgInstanceSyncServiceV2;
-  @Mock CgInstanceSyncV2HandlerFactory handlerFactory;
+  @Mock CgInstanceSyncV2DeploymentHelperFactory handlerFactory;
   @Mock private DelegateServiceGrpcClient delegateServiceClient;
   @Mock private CgInstanceSyncTaskDetailsService taskDetailsService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
