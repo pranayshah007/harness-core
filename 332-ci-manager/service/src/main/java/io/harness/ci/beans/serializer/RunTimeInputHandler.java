@@ -224,7 +224,7 @@ public class RunTimeInputHandler {
             format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
                 stepIdentifier));
       } else {
-        return null;
+        return (parameterField != null && NULL_STR.equals(parameterField.fetchFinalValue())) ? NULL_STR : null;
       }
     }
 
