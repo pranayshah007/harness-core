@@ -32,6 +32,7 @@ import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -124,6 +125,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private OrganizationClient organizationClient;
   @Mock private TemplateReferenceHelper templateReferenceHelper;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
+  @Mock AccountClient accountClient;
 
   @InjectMocks NGTemplateServiceImpl templateService;
 
@@ -163,6 +165,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   public void setUp() throws IOException {
     String filename = "template.yaml";
     yaml = readFile(filename);
+    on(injectedTemplateMergeServiceHelper).set("accountClient", accountClient);
     on(inputsValidator).set("templateMergeServiceHelper", injectedTemplateMergeServiceHelper);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
     on(templateMergeService).set("templateMergeServiceHelper", injectedTemplateMergeServiceHelper);
@@ -1012,7 +1015,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void shouldCreateUpdateForNestedTemplates() {
+  public void shouldCreateUpdateForNestedTemplates() throws IOException {
     String stepYaml = readFile("service/shell-step-template.yaml");
     TemplateEntity stepTemplate = entity.withYaml(stepYaml);
     TemplateEntity createdEntity = templateService.create(stepTemplate, false, "");
@@ -1026,6 +1029,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     String stageYamlWithMissingInputs = readFile("service/updated-stage-template-with-step-template.yaml");
     TemplateEntity stageTemplateWithMissingInputs =
         entity.withYaml(stageYamlWithMissingInputs).withIdentifier(stageTemplateIdentifier);
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
     testShouldThrowExceptionWithInvalidTemplateInputs(
         () -> templateService.create(stageTemplateWithMissingInputs, false, ""));
 
