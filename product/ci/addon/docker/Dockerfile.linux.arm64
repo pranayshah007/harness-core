@@ -32,8 +32,8 @@ RUN chmod +x /usr/local/bin/ci-addon-linux \
 RUN  microdnf install -y wget \
   && microdnf install -y tar \
   && microdnf install -y xz \
-  && tar -xf tmate-2.4.0-static-linux-arm64v8.tar.xz \
-  && mv tmate-2.4.0-static-linux-arm64v8/tmate /usr/local/bin/tmate \
+  && tar -xf ci-addon_/tmate-2.4.0-static-linux-arm64v8.tar.xz \
+  && mv ci-addon_/tmate-2.4.0-static-linux-arm64v8/tmate /usr/local/bin/tmate \
   && chmod +x /usr/local/bin/tmate
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
