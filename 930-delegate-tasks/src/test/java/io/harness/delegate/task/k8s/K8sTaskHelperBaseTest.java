@@ -676,7 +676,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .build();
     Kubectl client = Kubectl.client("kubectl", "config-path");
 
-    spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true);
+    spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, null);
 
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
@@ -692,7 +692,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
-        k8sDelegateTaskParams, executionLogCallback, true);
+        k8sDelegateTaskParams, executionLogCallback, true, null);
     mock.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
@@ -724,7 +724,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                  .spec("")
                                                  .resourceId(KubernetesResourceId.builder().kind("Deployment").build())
                                                  .build()),
-                               k8sDelegateTaskParams, executionLogCallback, true, true))
+                               k8sDelegateTaskParams, executionLogCallback, true, true, null))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -2593,7 +2593,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .build();
     Kubectl client = Kubectl.client("kubectl", "config-path");
 
-    spyK8sTaskHelper.applyManifests(client, singletonList(resource), k8sDelegateTaskParams, executionLogCallback, true);
+    spyK8sTaskHelper.applyManifests(
+        client, singletonList(resource), k8sDelegateTaskParams, executionLogCallback, true, null);
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
     verify(spyK8sTaskHelper, times(1)).runK8sExecutable(any(), any(), captor.capture());
 

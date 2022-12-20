@@ -30,4 +30,7 @@ public class SvcEnvMigrationRequestDto {
   Map<String, TemplateObject> templateMap;
   List<String> skipServices;
   List<String> skipInfras;
+  String branch;
+  Map<String, String> expressionMap;
+  Map<String, RuntimeEntity> stageMap;
 }
