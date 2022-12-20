@@ -73,6 +73,7 @@ public interface StepSpecTypeConstants {
   String TAS_BASIC_APP_SETUP = "BasicAppSetup";
   String SWAP_ROLLBACK = "SwapRollback";
   String TANZU_COMMAND = "TanzuCommand";
+  String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";

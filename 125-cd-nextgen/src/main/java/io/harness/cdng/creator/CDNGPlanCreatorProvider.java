@@ -116,6 +116,7 @@ import io.harness.cdng.creator.plan.steps.TasBasicAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasCanaryAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasCommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
@@ -186,6 +187,7 @@ import io.harness.cdng.creator.variables.TasBasicAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCanaryAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
@@ -407,6 +409,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasSwapRollbackStepPlanCreator());
     planCreators.add(new TasAppResizeStepPlanCreator());
     planCreators.add(new TasRollbackStepPlanCreator());
+    planCreators.add(new TasRollingDeployStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -524,6 +527,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasSwapRollbackStepVariableCreator());
     variableCreators.add(new TasAppResizeStepVariableCreator());
     variableCreators.add(new TasRollbackStepVariableCreator());
+    variableCreators.add(new TasRollingDeployStepVariableCreator());
 
     return variableCreators;
   }
@@ -1068,6 +1072,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                 .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
                                 .build();
 
+    StepInfo tasRollingDeploy = StepInfo.newBuilder()
+            .setName("Tas Rolling Deploy")
+            .setType(StepSpecTypeConstants.TAS_ROLLING_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -1133,6 +1144,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(tasRollback);
     stepInfos.add(elastigroupBGStageSetup);
     stepInfos.add(elastigroupSwapRoute);
+    stepInfos.add(tasRollingDeploy);
     return stepInfos;
   }
 }
