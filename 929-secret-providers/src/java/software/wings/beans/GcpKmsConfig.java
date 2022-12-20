@@ -18,6 +18,7 @@ import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.security.encryption.SecretManagerType.KMS;
+import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
@@ -27,7 +28,6 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptionType;
@@ -146,7 +146,7 @@ public class GcpKmsConfig extends SecretManagerConfig {
                                             .region(getRegion())
                                             .delegateSelectors(getDelegateSelectors())
                                             .build();
-    SecretManagerConfigMapper.updateNGSecretManagerMetadata(getNgMetadata(), ngGcpKmsConfigDTO);
+    updateNGSecretManagerMetadata(getNgMetadata(), ngGcpKmsConfigDTO);
     if (!maskSecrets) {
       ngGcpKmsConfigDTO.setCredentials(getCredentials());
     }

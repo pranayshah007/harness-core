@@ -16,9 +16,10 @@ import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_FROM_
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
 
+import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
-import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.security.encryption.EncryptionType;
@@ -105,7 +106,7 @@ public class VaultConfig extends BaseVaultConfig {
                                           .appRoleId(getAppRoleId())
                                           .delegateSelectors(getDelegateSelectors())
                                           .build();
-    SecretManagerConfigMapper.updateNGSecretManagerMetadata(getNgMetadata(), ngVaultConfigDTO);
+    updateNGSecretManagerMetadata(getNgMetadata(), ngVaultConfigDTO);
     if (!maskSecrets) {
       ngVaultConfigDTO.setAuthToken(getAuthToken());
       ngVaultConfigDTO.setSecretId(getSecretId());

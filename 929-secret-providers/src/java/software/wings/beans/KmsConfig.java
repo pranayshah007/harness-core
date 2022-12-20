@@ -20,6 +20,7 @@ import static io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredenti
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.security.encryption.SecretManagerType.KMS;
+import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,7 +33,6 @@ import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator
 import io.harness.delegate.task.utils.KmsUtils;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsIamCredentialConfig;
@@ -159,7 +159,7 @@ public class KmsConfig extends SecretManagerConfig {
 
     BaseAwsKmsConfigDTO baseAwsKmsConfigDTO = populateBaseAwsKmsConfigDTO();
 
-    SecretManagerConfigMapper.updateNGSecretManagerMetadata(getNgMetadata(), awsKmsConfigDTO);
+    updateNGSecretManagerMetadata(getNgMetadata(), awsKmsConfigDTO);
 
     if (isAssumeIamRoleOnDelegate()) {
       baseAwsKmsConfigDTO.setCredentialType(ASSUME_IAM_ROLE);

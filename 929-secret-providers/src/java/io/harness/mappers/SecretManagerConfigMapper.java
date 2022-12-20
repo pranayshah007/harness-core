@@ -90,29 +90,4 @@ public class SecretManagerConfigMapper {
         throw new UnsupportedOperationException("Secret Manager not supported");
     }
   }
-
-  public static NGSecretManagerMetadata ngMetaDataFromDto(SecretManagerConfigDTO dto) {
-    return NGSecretManagerMetadata.builder()
-        .identifier(dto.getIdentifier())
-        .projectIdentifier(dto.getProjectIdentifier())
-        .orgIdentifier(dto.getOrgIdentifier())
-        .accountIdentifier(dto.getAccountIdentifier())
-        .description(dto.getDescription())
-        .tags(TagMapper.convertToList(dto.getTags()))
-        .harnessManaged(dto.isHarnessManaged())
-        .build();
-  }
-
-  public static void updateNGSecretManagerMetadata(
-      NGSecretManagerMetadata ngMetadata, SecretManagerConfigDTO secretManagerConfigDTO) {
-    if (ngMetadata != null) {
-      secretManagerConfigDTO.setAccountIdentifier(ngMetadata.getAccountIdentifier());
-      secretManagerConfigDTO.setOrgIdentifier(ngMetadata.getOrgIdentifier());
-      secretManagerConfigDTO.setProjectIdentifier(ngMetadata.getProjectIdentifier());
-      secretManagerConfigDTO.setIdentifier(ngMetadata.getIdentifier());
-      secretManagerConfigDTO.setTags(TagMapper.convertToMap(ngMetadata.getTags()));
-      secretManagerConfigDTO.setDescription(ngMetadata.getDescription());
-      secretManagerConfigDTO.setHarnessManaged(secretManagerConfigDTO.isHarnessManaged());
-    }
-  }
 }
