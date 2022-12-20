@@ -84,6 +84,8 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
@@ -391,8 +393,15 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                                 .projectIdentifier(connectorDTO.getProjectIdentifier())
                                 .build();
     if (isNotEmpty(secrets)) {
-      secrets.forEach(
-          (fieldName, secret) -> secretRefInputValidationHelper.validateTheSecretInput(secret, baseNGAccess));
+      secrets.forEach((fieldName, secret) -> {
+        try {
+          secretRefInputValidationHelper.validateTheSecretInput(secret, baseNGAccess);
+        } catch (InvalidRequestException | InvalidIdentifierRefException ex) {
+          // including field name in the error thrown
+          throw new InvalidRequestException(
+              String.format("Error while validating %s field : %s", fieldName, ExceptionUtils.getMessage(ex)), ex);
+        }
+      });
     }
   }
 
@@ -480,6 +489,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         log.info("[AccountSetup]:Default SecretManager created successfully");
       }
       connectorEntityReferenceHelper.createSetupUsageForSecret(
+          connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(
           connectorRequestDTO.getConnectorInfo(), accountIdentifier, false);
       log.info("[SecretManagerCreate] Created secret Manager {}", savedConnectorEntity);
     } catch (DuplicateKeyException ex) {
@@ -587,6 +598,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
       Connector updatedConnector = connectorRepository.save(newConnector, connectorRequest, gitChangeType, supplier);
       connectorEntityReferenceHelper.createSetupUsageForSecret(connector, accountIdentifier, true);
+      connectorEntityReferenceHelper.createSetupUsageForTemplate(connector, accountIdentifier, true);
       return getResponse(accountIdentifier, updatedConnector.getOrgIdentifier(),
           updatedConnector.getProjectIdentifier(), updatedConnector);
 

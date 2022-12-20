@@ -200,7 +200,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     List<InputSetEntity> inputSets = ImmutableList.of(inputSetEntity, overlayInputSetEntity);
 
     for (InputSetEntity entity : inputSets) {
-      InputSetEntity createdInputSet = pmsInputSetService.create(entity, null, null);
+      InputSetEntity createdInputSet = pmsInputSetService.create(entity, null, null, false);
       assertThat(createdInputSet).isNotNull();
       assertThat(createdInputSet.getAccountId()).isEqualTo(entity.getAccountId());
       assertThat(createdInputSet.getOrgIdentifier()).isEqualTo(entity.getOrgIdentifier());
@@ -210,8 +210,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
       assertThat(createdInputSet.getYaml()).isEqualTo(entity.getYaml());
       assertThat(createdInputSet.getVersion()).isEqualTo(0L);
 
-      Optional<InputSetEntity> getInputSet = pmsInputSetService.get(
-          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, entity.getIdentifier(), false, null, null);
+      Optional<InputSetEntity> getInputSet = pmsInputSetService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+          PIPELINE_IDENTIFIER, entity.getIdentifier(), false, null, null, false);
       assertThat(getInputSet).isPresent();
       assertThat(getInputSet.get().getAccountId()).isEqualTo(createdInputSet.getAccountId());
       assertThat(getInputSet.get().getOrgIdentifier()).isEqualTo(createdInputSet.getOrgIdentifier());
@@ -234,7 +234,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                 .inputSetReferences(entity.getInputSetReferences())
                                                 .build();
-      InputSetEntity updatedInputSet = pmsInputSetService.update(updateInputSetEntity, ChangeType.MODIFY, null, null);
+      InputSetEntity updatedInputSet =
+          pmsInputSetService.update(ChangeType.MODIFY, null, null, updateInputSetEntity, false);
       assertThat(updatedInputSet.getAccountId()).isEqualTo(updateInputSetEntity.getAccountId());
       assertThat(updatedInputSet.getOrgIdentifier()).isEqualTo(updateInputSetEntity.getOrgIdentifier());
       assertThat(updatedInputSet.getProjectIdentifier()).isEqualTo(updateInputSetEntity.getProjectIdentifier());
@@ -256,7 +257,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                    .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                    .inputSetReferences(entity.getInputSetReferences())
                                                    .build();
-      assertThatThrownBy(() -> pmsInputSetService.update(incorrectInputSetEntity, ChangeType.MODIFY, null, null))
+      assertThatThrownBy(() -> pmsInputSetService.update(ChangeType.MODIFY, null, null, incorrectInputSetEntity, false))
           .isInstanceOf(InvalidRequestException.class);
 
       boolean delete = pmsInputSetService.delete(
@@ -265,7 +266,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
       assertThatThrownBy(()
                              -> pmsInputSetService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-                                 entity.getIdentifier(), false, null, null))
+                                 entity.getIdentifier(), false, null, null, false))
           .isInstanceOf(InvalidRequestException.class);
     }
     mockSettings.close();
@@ -276,8 +277,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
-    pmsInputSetService.create(inputSetEntity, null, null);
-    pmsInputSetService.create(overlayInputSetEntity, null, null);
+    pmsInputSetService.create(inputSetEntity, null, null, false);
+    pmsInputSetService.create(overlayInputSetEntity, null, null, false);
 
     Criteria criteriaFromFilter = PMSInputSetFilterHelper.createCriteriaForGetList(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, InputSetListTypePMS.ALL, "", false);
@@ -301,7 +302,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                          .build();
 
-    pmsInputSetService.create(inputSetEntity2, null, null);
+    pmsInputSetService.create(inputSetEntity2, null, null, false);
     Page<InputSetEntity> list2 =
         pmsInputSetService.list(criteriaFromFilter, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertThat(list2.getContent()).isNotNull();
@@ -416,7 +417,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   public void testCreateForOldGitSync() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
-    pmsInputSetServiceMock.create(inputSetEntity, "branch", "repo");
+    pmsInputSetServiceMock.create(inputSetEntity, "branch", "repo", false);
     verify(inputSetRepository, times(1)).saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
     verify(inputSetRepository, times(0)).save(any());
     mockSettings.close();
@@ -429,21 +430,21 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doThrow(new DuplicateKeyException("msg")).when(inputSetRepository).save(inputSetEntity);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null, false))
         .isInstanceOf(DuplicateFieldException.class);
 
     doThrow(new ExplanationException("msg", null)).when(inputSetRepository).save(inputSetEntity);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null, false))
         .isInstanceOf(ExplanationException.class);
     doThrow(new HintException("msg", null)).when(inputSetRepository).save(inputSetEntity);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null, false))
         .isInstanceOf(HintException.class);
     doThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE)).when(inputSetRepository).save(inputSetEntity);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null, false))
         .isInstanceOf(ScmException.class);
 
     doThrow(new NullPointerException()).when(inputSetRepository).save(inputSetEntity);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null, false))
         .isInstanceOf(InvalidRequestException.class);
 
     mockSettings.close();
@@ -459,8 +460,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .when(inputSetRepository)
         .findForOldGitSync(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
-    pmsInputSetServiceMock.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null);
+    pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER,
+        false, null, null, false);
     verify(inputSetRepository, times(1))
         .findForOldGitSync(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
@@ -482,7 +483,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null))
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .hasMessage("msg")
         .isInstanceOf(InvalidInputSetException.class);
     verify(inputSetRepository, times(1))
@@ -502,21 +503,21 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null))
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(ExplanationException.class);
     doThrow(new HintException("msg", null))
         .when(inputSetRepository)
         .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null))
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(HintException.class);
     doThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE))
         .when(inputSetRepository)
         .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null))
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(ScmException.class);
 
     doThrow(new NullPointerException())
@@ -524,7 +525,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null))
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false))
         .isInstanceOf(InvalidRequestException.class);
 
     doReturn(Optional.of(inputSetEntity.withStoreType(StoreType.REMOTE)))
@@ -533,11 +534,11 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     // without mocks this will throw an exception
     assertThatThrownBy(()
                            -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null));
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null, false));
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     // no exception with the mock
-    pmsInputSetServiceMock.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false, null, null);
+    pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER,
+        false, null, null, false);
     mockSettings.close();
   }
 
@@ -552,7 +553,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
     setupGitContext(GitEntityInfo.builder().isNewBranch(true).branch("newBranch").yamlGitConfigId("repo").build());
     doReturn(inputSetEntity).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    InputSetEntity updateIntoNewBranch = pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo");
+    InputSetEntity updateIntoNewBranch = pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false);
     assertThat(updateIntoNewBranch).isEqualTo(inputSetEntity);
     verify(inputSetRepository, times(0)).findForOldGitSync(any(), any(), any(), any(), any(), anyBoolean());
 
@@ -562,14 +563,14 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .when(inputSetRepository)
         .findForOldGitSync(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(InvalidRequestException.class);
 
     doReturn(Optional.of(inputSetEntity.withVersion(3L)))
         .when(inputSetRepository)
         .findForOldGitSync(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity.withVersion(10L), c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity.withVersion(10L), false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("is not on the correct version.");
 
@@ -580,7 +581,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     doReturn(inputSetEntity)
         .when(inputSetRepository)
         .updateForOldGitSync(inputSetEntity.withIsEntityInvalid(false).withIsInvalid(false), inputSetYamlDTO, c);
-    InputSetEntity simpleUpdatedEntity = pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo");
+    InputSetEntity simpleUpdatedEntity = pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false);
     assertThat(simpleUpdatedEntity).isEqualTo(inputSetEntity);
 
     verify(inputSetRepository, times(0)).update(any());
@@ -598,28 +599,28 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     setupGitContext(GitEntityInfo.builder().isNewBranch(true).branch("newBranch").yamlGitConfigId("repo").build());
 
     doReturn(null).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("could not be updated.");
 
     doThrow(new ExplanationException("e", null))
         .when(inputSetRepository)
         .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(ExplanationException.class);
     doThrow(new HintException("e")).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(HintException.class);
     doThrow(new ScmException("e", null))
         .when(inputSetRepository)
         .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(ScmException.class);
 
     doThrow(new NullPointerException())
         .when(inputSetRepository)
         .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
-    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(c, "branch", "repo", inputSetEntity, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Error while updating input set");
 

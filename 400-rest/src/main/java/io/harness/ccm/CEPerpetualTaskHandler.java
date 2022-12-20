@@ -8,7 +8,6 @@
 package io.harness.ccm;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.beans.FeatureName.SIDE_NAVIGATION;
 import static io.harness.ccm.cluster.entities.ClusterType.DIRECT_KUBERNETES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -76,10 +75,6 @@ public class CEPerpetualTaskHandler implements AccountCrudObserver, ClusterRecor
             cePerpetualTaskManager.deletePerpetualTasks(clusterRecord);
           }
         });
-      }
-
-      if (account.isCloudCostEnabled()) {
-        featureFlagService.enableAccount(SIDE_NAVIGATION, account.getUuid());
       }
     }
   }

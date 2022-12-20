@@ -43,6 +43,7 @@ import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -205,6 +206,15 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
                                                     .certValidationRequired(false)
                                                     .build();
     configuration.setSegmentConfiguration(segmentConfiguration);
+
+    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
+                                            .queueServiceConfig(ServiceHttpClientConfig.builder()
+                                                                    .baseUrl("http://localhost:9091/")
+                                                                    .readTimeOutSeconds(15)
+                                                                    .connectTimeOutSeconds(15)
+                                                                    .build())
+                                            .topic("delegate-service")
+                                            .build());
     return configuration;
   }
 

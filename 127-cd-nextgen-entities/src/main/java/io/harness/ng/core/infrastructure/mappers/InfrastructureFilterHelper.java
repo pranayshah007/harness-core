@@ -8,16 +8,19 @@
 package io.harness.ng.core.infrastructure.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.utils.IdentifierRefHelper;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -29,8 +32,19 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InfrastructureFilterHelper {
   public Criteria createListCriteria(String accountId, String orgIdentifier, String projectIdentifier,
       String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType) {
-    Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-    criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
+    String[] envRefSplit = envIdentifier.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    Criteria criteria;
+    if (envRefSplit.length == 1) {
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+      criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
+    } else {
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(envIdentifier, accountId, orgIdentifier, projectIdentifier);
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
+          envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
+      criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifierRef.getIdentifier());
+    }
+
     if (EmptyPredicate.isNotEmpty(searchTerm)) {
       Criteria searchCriteria =
           new Criteria().orOperator(where(InfrastructureEntityKeys.name)

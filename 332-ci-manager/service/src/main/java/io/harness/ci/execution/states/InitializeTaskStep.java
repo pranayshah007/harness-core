@@ -34,7 +34,6 @@ import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.BuildSetupUtils;
@@ -60,6 +59,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
@@ -252,11 +252,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
-        accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
+        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
-    // populateStrategyExpansion(initializeStepInfo, ambiance);
-
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
@@ -274,9 +273,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       if (accountDTO == null) {
         throw new CIStageExecutionException("Account does not exist, contact Harness support team.");
       }
-      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-      String platformSelector = vmInitializeTaskParamsBuilder.getHostedPoolId(
-          hostedVmInfraYaml.getSpec().getPlatform(), AmbianceUtils.getAccountId(ambiance));
+
+      String platformSelector = ((DliteVmInitializeTaskParams) buildSetupTaskParams).getSetupVmRequest().getPoolID();
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;
@@ -383,7 +381,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
+        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 

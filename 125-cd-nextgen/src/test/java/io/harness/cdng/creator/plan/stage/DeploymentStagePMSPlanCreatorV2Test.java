@@ -71,6 +71,7 @@ import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -173,14 +174,14 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
         deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
 
-    assertThat(planCreationResponseMap).hasSize(8);
+    assertThat(planCreationResponseMap).hasSize(10);
     assertThat(planCreationResponseMap.values()
                    .stream()
                    .map(PlanCreationResponse::getPlanNode)
                    .filter(Objects::nonNull)
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("service", "infrastructure", "artifacts", "manifests", "configFiles");
+        .containsExactlyInAnyOrder("provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles");
   }
 
   @Test
@@ -306,6 +307,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     String svcId = "svcId";
     String envId = "envId";
     Map<String, Object> step = Map.of("name", "teststep");
+    Map<String, Object> provisionStep = Map.of("name", "testprovisionstep");
 
     final DeploymentStageNode node1 = buildNode(
         DeploymentStageConfig.builder()
@@ -316,6 +318,13 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                              .uuid("envuuid")
                              .environmentRef(ParameterField.<String>builder().value(envId).build())
                              .deployToAll(ParameterField.createValueField(false))
+                             .provisioner(ExecutionElementConfig.builder()
+                                              .uuid("provuuid")
+                                              .steps(List.of(ExecutionWrapperConfig.builder()
+                                                                 .uuid("provstepuuid")
+                                                                 .step(mapper.valueToTree(provisionStep))
+                                                                 .build()))
+                                              .build())
                              .infrastructureDefinitions(ParameterField.createValueField(
                                  asList(InfraStructureDefinitionYaml.builder()
                                             .identifier(ParameterField.createValueField("infra"))
@@ -337,6 +346,13 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                              .uuid("envuuid")
                              .environmentRef(ParameterField.<String>builder().value(envId).build())
                              .deployToAll(ParameterField.createValueField(false))
+                             .provisioner(ExecutionElementConfig.builder()
+                                              .uuid("provuuid")
+                                              .steps(List.of(ExecutionWrapperConfig.builder()
+                                                                 .uuid("provstepuuid")
+                                                                 .step(mapper.valueToTree(provisionStep))
+                                                                 .build()))
+                                              .build())
                              .infrastructureDefinition(ParameterField.createValueField(
                                  InfraStructureDefinitionYaml.builder()
                                      .identifier(ParameterField.createValueField("infra"))
@@ -494,5 +510,39 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     node.setUuid("nodeuuid");
     node.setDeploymentStageConfig(config);
     return node;
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testGetIdentifierWithExpressionForGitOps() {
+    // Gitops with single service, single env.
+    DeploymentStageNode node = DeploymentStageNode.builder()
+                                   .deploymentStageConfig(DeploymentStageConfig.builder().gitOpsEnabled(true).build())
+                                   .build();
+    PlanCreationContext context =
+        PlanCreationContext.builder().currentField(new YamlField("node", new YamlNode(new TextNode("abcc")))).build();
+
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1")).isEqualTo("id1");
+
+    // Gitops with single service, multi env.
+    node = DeploymentStageNode.builder()
+               .deploymentStageConfig(DeploymentStageConfig.builder()
+                                          .gitOpsEnabled(true)
+                                          .environments(EnvironmentsYaml.builder().build())
+                                          .build())
+               .build();
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1")).isEqualTo("id1");
+
+    // Gitops with multi service, multi env.
+    node = DeploymentStageNode.builder()
+               .deploymentStageConfig(DeploymentStageConfig.builder()
+                                          .gitOpsEnabled(true)
+                                          .services(ServicesYaml.builder().build())
+                                          .environments(EnvironmentsYaml.builder().build())
+                                          .build())
+               .build();
+    assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1"))
+        .isEqualTo("id1<+strategy.identifierPostFix>");
   }
 }

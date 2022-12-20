@@ -6,25 +6,22 @@
  */
 package io.harness.delegate.task.pcf.request;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.pcf.model.CfCliVersion;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Value
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class CfInfraMappingDataRequestNG implements CfCommandRequestNG {
-  String accountId;
-  CfCommandTypeNG cfCommandTypeNG;
-  String commandName;
-  CommandUnitsProgress commandUnitsProgress;
-  TasInfraConfig tasInfraConfig;
-  Integer timeoutIntervalInMin;
+@Data
+@OwnedBy(CDP)
+@EqualsAndHashCode(callSuper = true)
+public class CfInfraMappingDataRequestNG extends AbstractTasTaskRequest {
   String host;
   String domain;
   String path;
@@ -33,8 +30,21 @@ public class CfInfraMappingDataRequestNG implements CfCommandRequestNG {
   boolean tcpRoute;
   String applicationNamePrefix;
   CfDataFetchActionType actionType;
-  @Override
-  public TasInfraConfig getTasInfraConfig() {
-    return tasInfraConfig;
+
+  @Builder
+  public CfInfraMappingDataRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String host, String domain, String path, Integer port,
+      boolean useRandomPort, boolean tcpRoute, String applicationNamePrefix, CfDataFetchActionType actionType) {
+    super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
+        cfCliVersion);
+    this.host = host;
+    this.domain = domain;
+    this.path = path;
+    this.port = port;
+    this.useRandomPort = useRandomPort;
+    this.tcpRoute = tcpRoute;
+    this.applicationNamePrefix = applicationNamePrefix;
+    this.actionType = actionType;
   }
 }

@@ -10,4 +10,7 @@ package io.harness.cvng.core.beans.healthsource;
 import lombok.Data;
 
 @Data
-public class HealthSourceParams {}
+public class HealthSourceParams {
+  // TODO remove whats not required.
+  String region;
+}

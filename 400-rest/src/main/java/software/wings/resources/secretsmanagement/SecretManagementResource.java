@@ -346,10 +346,11 @@ public class SecretManagementResource {
   public RestResponse<PageResponse<EncryptedData>> listSecrets(@QueryParam("accountId") final String accountId,
       @QueryParam("type") final SettingVariableTypes type, @QueryParam("currentAppId") String currentAppId,
       @QueryParam("currentEnvId") String currentEnvId, @DefaultValue("true") @QueryParam("details") boolean details,
+      @DefaultValue("false") @QueryParam("ignoreRunTimeUsage") boolean ignoreRunTimeUsage,
       @BeanParam PageRequest<EncryptedData> pageRequest) {
     try {
-      return new RestResponse<>(
-          secretManager.listSecrets(accountId, pageRequest, currentAppId, currentEnvId, details, false));
+      return new RestResponse<>(secretManager.listSecrets(
+          accountId, pageRequest, currentAppId, currentEnvId, details, false, ignoreRunTimeUsage));
     } catch (IllegalAccessException e) {
       log.error("Illegal access exception while trying to get secrets", e);
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, SRE);
@@ -360,11 +361,12 @@ public class SecretManagementResource {
   @Path("/list-account-secrets")
   public RestResponse<PageResponse<EncryptedData>> listSecrets(@QueryParam("accountId") final String accountId,
       @QueryParam("type") final SettingVariableTypes type, @DefaultValue("true") @QueryParam("details") boolean details,
-      @BeanParam PageRequest<EncryptedData> pageRequest) {
+      @QueryParam("ignoreRunTimeUsage") boolean ignoreRunTimeUsage, @BeanParam PageRequest<EncryptedData> pageRequest) {
     try {
       pageRequest.addFilter("type", Operator.EQ, type);
       pageRequest.addFilter("accountId", Operator.EQ, accountId);
-      return new RestResponse<>(secretManager.listSecretsMappedToAccount(accountId, pageRequest, details));
+      return new RestResponse<>(
+          secretManager.listSecretsMappedToAccount(accountId, pageRequest, details, ignoreRunTimeUsage));
     } catch (IllegalAccessException e) {
       log.error("Illegal access exception while trying to get secrets", e);
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, SRE);

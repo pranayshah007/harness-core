@@ -567,7 +567,7 @@ public class AwsApiHelperService {
   public AWSCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
     AWSCredentialsProvider credentialsProvider;
     if (awsConfig.isUseEc2IamCredentials()) {
-      log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
+      log.debug("Instantiating EC2ContainerCredentialsProviderWrapper");
       credentialsProvider = new EC2ContainerCredentialsProviderWrapper();
     } else if (awsConfig.isUseIRSA()) {
       WebIdentityTokenCredentialsProvider.Builder providerBuilder = WebIdentityTokenCredentialsProvider.builder();

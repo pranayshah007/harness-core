@@ -22,7 +22,8 @@ public enum JiraFieldTypeNG {
   @JsonProperty("datetime") DATETIME,
   @JsonProperty("timetracking") TIME_TRACKING,
   @JsonProperty("option") OPTION,
-  @JsonProperty("user") USER;
+  @JsonProperty("user") USER,
+  @JsonProperty("issuelink") ISSUE_LINK;
 
   public static JiraFieldTypeNG fromTypeString(String typeStr) {
     if (typeStr == null) {
@@ -49,6 +50,8 @@ public enum JiraFieldTypeNG {
       case "priority":
       case "version":
         return OPTION;
+      case "issuelink":
+        return ISSUE_LINK;
       default:
         // Special fields (project, issuetype) and unknown fields throw this exception and are not part of issue create
         // meta.

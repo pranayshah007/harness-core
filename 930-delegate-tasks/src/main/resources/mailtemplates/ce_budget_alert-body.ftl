@@ -46,7 +46,7 @@
                             <h1 style="font-size: 18px; color: #77787b; line-height: 30px; font-weight: normal;">
                                 Hi ${(name!"there")?capitalize},<br></h1>
                             <h1 style="font-size: 18px; color: #77787b; line-height: 30px; font-weight: normal;">
-                                You requested that we alert you when the ${COST_TYPE} associated with your <B>"${BUDGET_NAME}"</B> budget exceeds <B>${THRESHOLD_PERCENTAGE}%</B> for the current month. As of now, the ${COST_TYPE} associated with this budget is <B>$${CURRENT_COST}</B>.
+                                You requested that we alert you when the ${COST_TYPE} associated with your <B>"${BUDGET_NAME}"</B> budget exceeds <B>${THRESHOLD_PERCENTAGE}%</B> for the current month. As of now, the ${COST_TYPE} associated with this budget is <B>${CURRENT_COST}</B>.
                             </h1>
                         </td>
                     </tr>

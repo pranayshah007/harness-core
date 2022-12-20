@@ -56,9 +56,9 @@ public interface InfrastructureEntityService {
       @NotEmpty String accountId, @NotNull List<InfrastructureEntity> infrastructureEntities);
 
   List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String value, List<String> infraIdentifier);
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifier);
 
-  List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
+  List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
   List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(

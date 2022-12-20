@@ -35,4 +35,7 @@ public class EnvironmentOutcome implements Outcome, ExecutionSweepingOutput {
   // EnvironmentOutcomeV2
   String environmentRef;
   Map<String, Object> variables;
+
+  String envGroupRef;
+  String envGroupName;
 }

@@ -25,7 +25,7 @@ public class FileSystemAwareInvertedShellWrapper extends InvertedShellWrapper im
    * @param shell the shell
    */
   public FileSystemAwareInvertedShellWrapper(InvertedShell shell) {
-    this(shell, DEFAULT_BUFFER_SIZE);
+    super(shell);
   }
 
   /**

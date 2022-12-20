@@ -9,6 +9,7 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +62,23 @@ public class WinRmExecutorHelperTest extends CategoryTest {
     assertThat(result.size()).isEqualTo(2);
     assertThat(result.get(0)).contains("`$a `$b &a `n zxc`r`n");
     assertThat(result.get(1)).isEqualTo("powershell -f \"psScriptFile\" ");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testPrepareCommandForCopyingToRemoteFile() {
+    String result = WinRmExecutorHelper.prepareCommandForCopyingToRemoteFile(
+        "encodedScriptFilePath", "psScriptFile", "powershell", Collections.emptyList(), "executableFile");
+    assertThat(result).isNotEmpty();
+    assertThat(result).isEqualTo("powershell Invoke-Command  -command {[IO.File]::AppendAllText(\\\"psScriptFile\\\","
+        + " \\\"`$encodedScriptFile = [Environment]::ExpandEnvironmentVariables(`\\\"encodedScriptFilePath`\\\");`n"
+        + "`$scriptExecutionFile = [Environment]::ExpandEnvironmentVariables(`\\\"executableFile`\\\");`n"
+        + "`$encoded = get-content `$encodedScriptFile`n"
+        + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
+        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}\\\" ) }");
   }
 
   @Test

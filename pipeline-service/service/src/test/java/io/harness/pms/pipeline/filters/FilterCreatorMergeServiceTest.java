@@ -38,12 +38,16 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -132,6 +136,8 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Mock PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  @Mock PrincipalInfoHelper principalInfoHelper;
+  @Mock TriggeredByHelper triggeredByHelper;
   @Inject IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   FilterCreatorMergeService filterCreatorMergeService;
@@ -139,7 +145,8 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Before
   public void init() {
     filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
-        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService));
+        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService,
+        principalInfoHelper, triggeredByHelper));
     when(
         pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(new ArrayList<>());
@@ -165,6 +172,11 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
         .when(filterCreatorMergeService)
         .obtainFiltersRecursively(any(), any(), any(), any());
     doNothing().when(pipelineSetupUsageHelper).deleteExistingSetupUsages(ACCOUNT_ID, ORG_ID, PROJECT_ID, IDENTIFIER);
+
+    doReturn(ExecutionPrincipalInfo.newBuilder().build())
+        .when(principalInfoHelper)
+        .getPrincipalInfoFromSecurityContext();
+    doReturn(TriggeredBy.newBuilder().build()).when(triggeredByHelper).getFromSecurityContext();
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .yaml(pipelineYaml)
                                         .accountId(ACCOUNT_ID)

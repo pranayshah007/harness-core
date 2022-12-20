@@ -50,6 +50,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.Account;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.TaskType;
@@ -61,6 +62,7 @@ import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 import software.wings.service.impl.aws.model.AwsIamListInstanceRolesRequest;
 import software.wings.service.impl.aws.model.AwsIamRequest;
 import software.wings.service.impl.instance.InstanceSyncTestConstants;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AssignDelegateService;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -114,6 +116,8 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Mock private DelegateCache delegateCache;
+
+  @Mock private AccountService accountService;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private PerpetualTaskServiceImpl perpetualTaskService;
 
@@ -130,6 +134,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeleteDelegateTaskAssignedOnDelegateDisconnect() throws ExecutionException {
     Delegate delegate = createDelegate(ACCOUNT_ID);
+    when(accountService.getFromCacheWithFallback(ACCOUNT_ID)).thenReturn(Account.Builder.anAccount().build());
     createAndAssignDelegateTasks(delegate);
     assertThat(getAlreadyStartedDelegateTask(ACCOUNT_ID, delegate.getUuid())).hasSize(3);
     delegateDisconnectDetectorIterator.handle(delegate);

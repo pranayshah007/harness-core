@@ -8,16 +8,18 @@ package handler
 import (
 	"net/http"
 
+	"github.com/harness/harness-core/queue-service/hsqs/instrumentation"
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
 	s store.Store
+	m instrumentation.MetricsHandler
 }
 
-func NewHandler(s store.Store) *Handler {
-	return &Handler{s: s}
+func NewHandler(s store.Store, m instrumentation.MetricsHandler) *Handler {
+	return &Handler{s: s, m: m}
 }
 
 func (h *Handler) Register(g *echo.Group) {
@@ -40,7 +42,6 @@ func (h *Handler) Register(g *echo.Group) {
 // @Router      /v1/queue [POST]
 func (h *Handler) handleEnqueue() echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		// bind request body to enqueue request
 		p := &store.EnqueueRequest{}
 
@@ -50,8 +51,10 @@ func (h *Handler) handleEnqueue() echo.HandlerFunc {
 
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
+			h.m.CountMetric(c.Request().Context(), false, "queue", p.Topic, p.SubTopic)
 			return c.JSON(http.StatusBadRequest, err)
 		}
+		h.m.CountMetric(c.Request().Context(), true, "queue", p.Topic, p.SubTopic)
 		return c.JSON(http.StatusOK, enqueue)
 	}
 }
@@ -76,8 +79,10 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 
 		dequeue, err := h.s.Dequeue(c.Request().Context(), *p)
 		if err != nil {
+			h.m.CountMetric(c.Request().Context(), false, "dequeue", p.Topic)
 			return c.JSON(http.StatusBadRequest, err)
 		}
+		h.m.CountMetric(c.Request().Context(), true, "dequeue", p.Topic)
 		return c.JSON(http.StatusOK, dequeue)
 	}
 }

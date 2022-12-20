@@ -40,6 +40,7 @@ import io.harness.spec.server.connector.v1.AccountConnectorApi;
 import io.harness.spec.server.connector.v1.model.ConnectorRequest;
 import io.harness.spec.server.connector.v1.model.ConnectorResponse;
 import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -122,7 +123,7 @@ public class AccountConnectorApiImpl implements AccountConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        connectorApiUtils.addLinksHeader(responseBuilder, "/v1/connectors", connectorResponses.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/connectors", connectorResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();
   }

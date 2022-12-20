@@ -10,6 +10,7 @@ package io.harness.delegate.task.manifests;
 import static io.harness.eraro.ErrorCode.GIT_ERROR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -97,10 +98,10 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   private static final String DEFAULT_DIR = "DEFAULT_DIR";
   private static final String TEMP_DIR = "TEMP_DIR";
-
   private static final Map<String, Collection<CustomSourceFile>> valuesFilesContentMap =
       singletonMap("Service", singletonList(CustomSourceFile.builder().build()));
-
+  //  private static final String tmpDir = Paths.get("tmp").toFile().getAbsolutePath();
+  private static final String ABSOLUTE_DIR = Paths.get("tmp").toFile().getAbsolutePath() + "/myChart1/";
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -246,6 +247,54 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     assertThatThrownBy(() -> doRun(taskParams))
         .extracting(ex -> ((TaskNGDataException) ex).getCause().getMessage())
         .isEqualTo("access denied");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testRunFetchTaskInAbsoluteDirectory() throws IOException {
+    CustomManifestSource customManifestSource =
+        CustomManifestSource.builder().script("Test script").filePaths(singletonList(ABSOLUTE_DIR)).build();
+    CustomManifestValuesFetchParams taskParams =
+        createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
+    CustomManifestValuesFetchResponse fetchValueFileResponse = CustomManifestValuesFetchResponse.builder()
+                                                                   .commandExecutionStatus(SUCCESS)
+                                                                   .valuesFilesContentMap(valuesFilesContentMap)
+                                                                   .build();
+
+    FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
+    FileIo.createDirectoryIfDoesNotExist(ABSOLUTE_DIR);
+
+    doReturn(ABSOLUTE_DIR)
+        .when(customManifestService)
+        .executeCustomSourceScript(
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false));
+
+    doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
+
+    doReturn(fetchValueFileResponse)
+        .when(customManifestFetchTaskHelper)
+        .fetchValuesTask(eq(taskParams), any(LogCallback.class), eq(ABSOLUTE_DIR), eq(false));
+    doReturn(DelegateFile.Builder.aDelegateFile().withFileId("FILE_ID").build())
+        .when(delegateFileManagerBase)
+        .uploadAsFile(any(DelegateFile.class), any(File.class));
+
+    CustomManifestValuesFetchResponse response = doRun(taskParams);
+
+    ArgumentCaptor<DelegateFile> fileArgumentCaptor = ArgumentCaptor.forClass(DelegateFile.class);
+    verify(delegateFileManagerBase, times(1)).uploadAsFile(fileArgumentCaptor.capture(), any(File.class));
+    DelegateFile fileArgumentCaptorValue = fileArgumentCaptor.getValue();
+    assertThat(fileArgumentCaptorValue.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(fileArgumentCaptorValue.getBucket()).isEqualTo(FileBucket.CUSTOM_MANIFEST);
+    assertThat(fileArgumentCaptorValue.getFileName())
+        .isEqualTo(format("zippedCustomManifestFiles%s", taskParams.getActivityId()));
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getValuesFilesContentMap()).isEqualTo(valuesFilesContentMap);
+
+    // clean up
+    FileIo.deleteDirectoryAndItsContentIfExists(ABSOLUTE_DIR);
+    FileIo.deleteDirectoryAndItsContentIfExists(TEMP_DIR);
   }
 
   private static CustomManifestValuesFetchParams createTaskParams(

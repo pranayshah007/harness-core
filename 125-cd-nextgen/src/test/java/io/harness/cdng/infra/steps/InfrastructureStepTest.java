@@ -882,9 +882,6 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testValidateTASConnector() {
-    StoreConfig storeConfig =
-        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
-
     TanzuApplicationServiceInfrastructure infrastructure =
         TanzuApplicationServiceInfrastructure.builder()
             .connectorRef(ParameterField.createValueField("tanzuConnector"))

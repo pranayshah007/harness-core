@@ -311,6 +311,14 @@ public class ArtifactCollectionState extends State {
       }
     }
 
+    if (!artifactStream.isArtifactStreamParameterized()
+        && featureFlagService.isEnabled(FeatureName.SPG_FETCH_ARTIFACT_FROM_DB, context.getAccountId())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
+      if (lastCollectedArtifact != null) {
+        return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
+      }
+    }
+
     Integer timeout = getTimeoutMillis();
     DelegateTaskBuilder delegateTaskBuilder;
 

@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureDeploymentMode;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
@@ -34,10 +33,7 @@ import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -79,11 +75,6 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_ARM_BP_NG)) {
-      throw new AccessDeniedException(
-          "Azure Rollback NG is not enabled for this account. Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
     AzureARMRollbackStepParameters azureARMRollbackStepParameters =
         (AzureARMRollbackStepParameters) stepParameters.getSpec();
     if (isEmpty(getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier()))) {

@@ -9,9 +9,13 @@ package io.harness.gitsync.caching.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
 import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestKey;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateRequestValues;
+import io.harness.gitsync.caching.beans.GitFileCacheUpdateResult;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GitFileCacheService {
@@ -19,5 +23,7 @@ public interface GitFileCacheService {
 
   GitFileCacheResponse upsertCache(GitFileCacheKey gitFileCacheKey, GitFileCacheObject gitFileCacheObject);
 
-  void invalidateCache(GitFileCacheKey gitFileCacheKey);
+  GitFileCacheDeleteResult invalidateCache(GitFileCacheKey gitFileCacheKey);
+
+  GitFileCacheUpdateResult updateCache(GitFileCacheUpdateRequestKey key, GitFileCacheUpdateRequestValues values);
 }

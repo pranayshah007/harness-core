@@ -7,11 +7,6 @@
 
 package io.harness.template.resources;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.template.TemplateEntityConstants.ALL;
@@ -20,7 +15,6 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STABLE_TEMPLAT
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -55,14 +49,13 @@ import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -76,7 +69,6 @@ import org.springframework.data.domain.Page;
 @NextGenManagerAuth
 public class TemplateResourceApiUtils {
   public static final String TEMPLATE = "TEMPLATE";
-  public static final int FIRST_PAGE = 1;
 
   private final NGTemplateService templateService;
   private final AccessControlClient accessControlClient;
@@ -245,37 +237,17 @@ public class TemplateResourceApiUtils {
     ResponseBuilder responseBuilder = Response.ok();
     if (isEmpty(org)) {
       ResponseBuilder responseBuilderWithLinks =
-          addLinksHeader(responseBuilder, "/v1/templates", templateList.size(), page, limit);
+          ApiUtils.addLinksHeader(responseBuilder, "/v1/templates", templateList.size(), page, limit);
       return responseBuilderWithLinks.entity(templateList).build();
     } else if (isEmpty(project)) {
-      ResponseBuilder responseBuilderWithLinks =
-          addLinksHeader(responseBuilder, format("/v1/orgs/%s/templates", org), templateList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
+          responseBuilder, format("/v1/orgs/%s/templates", org), templateList.size(), page, limit);
       return responseBuilderWithLinks.entity(templateList).build();
     } else {
-      ResponseBuilder responseBuilderWithLinks = addLinksHeader(
+      ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
           responseBuilder, format("/v1/orgs/%s/projects/%s/templates", org, project), templateList.size(), page, limit);
       return responseBuilderWithLinks.entity(templateList).build();
     }
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= FIRST_PAGE) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
   public String toListType(String listType) {
     String type;

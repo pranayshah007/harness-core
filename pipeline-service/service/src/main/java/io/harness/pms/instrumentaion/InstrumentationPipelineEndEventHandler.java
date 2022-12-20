@@ -69,15 +69,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class InstrumentationPipelineEndEventHandler implements OrchestrationEndObserver, AsyncInformObserver {
-  private static int MAX_NODES_BATCH_SIZE = 1000;
-
   @Inject TelemetryReporter telemetryReporter;
   @Inject PMSExecutionService pmsExecutionService;
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
@@ -95,44 +92,29 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
     String accountName = accountDTO.getName();
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    List<NodeExecution> nodeExecutionList = new LinkedList<>();
     Set<String> allSdkSteps = sdkStepHelper.getAllStepVisibleInUI();
 
     List<String> stepTypes = new LinkedList<>();
     List<String> failedSteps = new LinkedList<>();
     List<String> failedStepTypes = new LinkedList<>();
-    int currentPage = 0;
-    int totalPages = 0;
 
-    do {
-      Page<NodeExecution> paginatedNodeExecutions = nodeExecutionService.fetchAllStepNodeExecutions(planExecutionId,
-          NodeProjectionUtils.fieldsForInstrumentationHandler, PageRequest.of(currentPage, MAX_NODES_BATCH_SIZE));
-      if (paginatedNodeExecutions == null || paginatedNodeExecutions.getTotalElements() == 0) {
-        break;
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchAllStepNodeExecutions(
+             planExecutionId, NodeProjectionUtils.fieldsForInstrumentationHandler)) {
+      while (iterator.hasNext()) {
+        NodeExecution currentNodeExecution = iterator.next();
+
+        String currentStepType = AmbianceUtils.getCurrentStepType(currentNodeExecution.getAmbiance()).getType();
+        if (allSdkSteps.contains(currentStepType)) {
+          stepTypes.add(currentStepType);
+          // If step is in broken status then only add to results
+          if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
+            // Add step identifier
+            failedSteps.add(AmbianceUtils.obtainCurrentLevel(currentNodeExecution.getAmbiance()).getIdentifier());
+            failedStepTypes.add(currentStepType);
+          }
+        }
       }
-      totalPages = paginatedNodeExecutions.getTotalPages();
-      nodeExecutionList.addAll(new LinkedList<>(paginatedNodeExecutions.getContent()));
-
-      stepTypes.addAll(
-          nodeExecutionList.stream()
-              .map(nodeExecution -> AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()).getType())
-              .filter(allSdkSteps::contains)
-              .collect(Collectors.toList()));
-      failedSteps.addAll(
-          nodeExecutionList.stream()
-              .filter(o -> allSdkSteps.contains(AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType()))
-              .filter(o -> StatusUtils.brokeStatuses().contains(o.getStatus()))
-              .map(o -> AmbianceUtils.obtainCurrentLevel(o.getAmbiance()).getIdentifier())
-              .collect(Collectors.toList()));
-      failedStepTypes.addAll(
-          nodeExecutionList.stream()
-              .filter(o -> allSdkSteps.contains(AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType()))
-              .filter(o -> StatusUtils.brokeStatuses().contains(o.getStatus()))
-              .map(o -> AmbianceUtils.getCurrentStepType(o.getAmbiance()).getType())
-              .collect(Collectors.toList()));
-
-      currentPage++;
-    } while (currentPage < totalPages);
+    }
 
     // TODO(Projection)
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =

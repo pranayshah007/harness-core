@@ -43,10 +43,15 @@ import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
+import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.utils.RepositoryFormat;
@@ -56,9 +61,14 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
+  @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock DelegateMetricsService delegateMetricsService;
+  @Mock SecretManagerClientService ngSecretService;
+  @Mock ExceptionManager exceptionManager;
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
@@ -409,7 +419,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
-    assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(600000L);
 
     customArtifactConfig =
         CustomArtifactConfig.builder()
@@ -436,8 +445,192 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
                          .build())
             .version(ParameterField.createValueField("build-x"))
             .build();
+
+    customArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
+    assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
+    assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
+
+    customArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build(), delegateMetricsService, ngSecretService);
+    assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
+    assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
+    assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
+    assertThat(customArtifactDelegateRequest.getExpressionFunctorToken()).isNotNull();
+    assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
+
+    // Validate for Triggers
     customArtifactDelegateRequest =
         ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
     assertThat(customArtifactDelegateRequest.getTimeout()).isEqualTo(700000L);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetCustomDelegateRequestForInvalidYaml() {
+    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
+                                                    .identifier("test")
+                                                    .primaryArtifact(true)
+                                                    .version(ParameterField.createValueField("v1"))
+                                                    .versionRegex(ParameterField.createValueField("regex"))
+                                                    .version(ParameterField.createValueField("build-x"))
+                                                    .build();
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder().build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(FetchAllArtifacts.builder()
+                                                .artifactsArrayPath(ParameterField.createValueField("results"))
+                                                .versionPath(ParameterField.createValueField("version"))
+                                                .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(FetchAllArtifacts.builder()
+                                                .artifactsArrayPath(ParameterField.createValueField("results"))
+                                                .versionPath(ParameterField.createValueField("version"))
+                                                .shellScriptBaseStepInfo(CustomArtifactScriptInfo.builder().build())
+                                                .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(FetchAllArtifacts.builder()
+                                                .artifactsArrayPath(ParameterField.createValueField("results"))
+                                                .versionPath(ParameterField.createValueField("version"))
+                                                .shellScriptBaseStepInfo(null)
+                                                .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .timeout(ParameterField.createValueField(Timeout.builder().timeoutInMillis(700000L).build()))
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .version(ParameterField.createValueField("build-x"))
+            .build();
+    try {
+      ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, Ambiance.newBuilder().build());
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidArtifactServerException.class);
+      assertThat(ex.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
   }
 }

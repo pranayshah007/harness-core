@@ -9,6 +9,9 @@ load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
+    resources = [
+        "//120-ng-manager/src/main/resources:resource",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",

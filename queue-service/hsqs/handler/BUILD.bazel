@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/harness/harness-core/queue-service/hsqs/handler",
     visibility = ["//visibility:public"],
     deps = [
+        "//queue-service/hsqs/instrumentation",
         "//queue-service/hsqs/store",
         "@com_github_labstack_echo_v4//:echo",
     ],
@@ -24,6 +25,7 @@ go_test(
     embed = [":handler"],
     deps = [
         "//queue-service/hsqs/config",
+        "//queue-service/hsqs/instrumentation/metrics",
         "//queue-service/hsqs/store",
         "//queue-service/hsqs/store/redis",
         "@com_github_go_redis_redismock_v8//:redismock",

@@ -31,7 +31,8 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(min = 2, max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 20, message = "A minimum of 2 simple SLO's and a maximum of 20 simple SLO's can be referenced.")
+  List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   @Data
   @Builder

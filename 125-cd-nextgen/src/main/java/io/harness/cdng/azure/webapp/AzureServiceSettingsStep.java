@@ -10,6 +10,7 @@ package io.harness.cdng.azure.webapp;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.AzureHelperService;
@@ -22,23 +23,31 @@ import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -56,7 +65,9 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
   @Inject private AzureHelperService azureHelperService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDExpressionResolver expressionResolver;
-
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -81,6 +92,8 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
 
     expressionResolver.updateExpressions(ambiance, serviceSpec);
 
+    checkForAccessOrThrow(ambiance, serviceSpec);
+
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
@@ -99,6 +112,43 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     return StepResponse.builder().status(Status.SUCCEEDED).stepOutcomes(outcomes).build();
   }
 
+  private void checkForAccessOrThrow(Ambiance ambiance, AzureWebAppServiceSpec serviceSpec) {
+    Set<EntityDetailProtoDTO> toCheckAccessFor =
+        addSafely(new HashSet<>(), getEntityDetailsProto(ambiance, serviceSpec.getApplicationSettings()),
+            getEntityDetailsProto(ambiance, serviceSpec.getConnectionStrings()),
+            getEntityDetailsProto(ambiance, serviceSpec.getStartupCommand()));
+
+    checkForAccessOrThrow(ambiance, toCheckAccessFor);
+  }
+
+  private Set<EntityDetailProtoDTO> addSafely(
+      Set<EntityDetailProtoDTO> sourceSet, Set<EntityDetailProtoDTO>... setsToAdd) {
+    if (EmptyPredicate.isEmpty(setsToAdd)) {
+      return sourceSet;
+    }
+    if (sourceSet == null) {
+      sourceSet = new HashSet<>();
+    }
+
+    for (Set<EntityDetailProtoDTO> entityDetailProtoDTOS : setsToAdd) {
+      if (EmptyPredicate.isNotEmpty(entityDetailProtoDTOS)) {
+        sourceSet.addAll(entityDetailProtoDTOS);
+      }
+    }
+
+    return sourceSet;
+  }
+
+  private Set<EntityDetailProtoDTO> getEntityDetailsProto(Ambiance ambiance, Object object) {
+    return emptyIfNull(entityReferenceExtractorUtils.extractReferredEntities(ambiance, object));
+  }
+
+  void checkForAccessOrThrow(Ambiance ambiance, Set<EntityDetailProtoDTO> entityDetailsProto) {
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
   private StepResponse.StepOutcome processConnectionStrings(
       Ambiance ambiance, AzureWebAppServiceSpec serviceSpec, NGLogCallback logCallback) {
     saveExecutionLog(logCallback, "Processing connection strings...");

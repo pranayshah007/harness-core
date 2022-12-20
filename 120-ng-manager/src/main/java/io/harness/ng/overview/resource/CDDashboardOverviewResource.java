@@ -359,8 +359,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get service header info", nickname = "getServiceHeaderInfo")
   public ResponseDTO<ServiceHeaderInfo> getServiceHeaderInfo(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceHeaderInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));

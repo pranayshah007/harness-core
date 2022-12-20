@@ -33,11 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 public class InputsFunctor implements LateBindingValue {
-  private final String inputs;
+  private final String inputSet;
   private final String pipelineYamlV1;
 
-  public InputsFunctor(String inputs, String pipelineYamlV1) {
-    this.inputs = inputs;
+  public InputsFunctor(String inputSet, String pipelineYamlV1) {
+    this.inputSet = inputSet;
     this.pipelineYamlV1 = pipelineYamlV1;
   }
 
@@ -57,7 +57,7 @@ public class InputsFunctor implements LateBindingValue {
 
     YamlNode inputsYamlNode = pipelineNode.getField("inputs").getNode();
 
-    Map<String, Object> inputsMap = JsonUtils.asMap(inputs);
+    Map<String, Object> inputsMap = JsonUtils.jsonNodeToMap(JsonUtils.readTree(inputSet).get("inputs"));
     for (Map.Entry<String, Object> entry : inputsMap.entrySet()) {
       String key = entry.getKey();
       if (inputsYamlNode.getField(key) == null || inputsYamlNode.getField(key).getNode().getField("type") == null) {

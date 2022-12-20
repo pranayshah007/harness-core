@@ -8,6 +8,7 @@
 package io.harness.artifacts.nexus;
 
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -35,6 +36,7 @@ import software.wings.utils.RepositoryFormat;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
@@ -384,5 +386,1012 @@ public class NexusThreeClientImplTest {
     assertThat(response).size().isEqualTo(1);
     assertThat(response.get(0).getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("localhost:999/" + artifactPath + ":" + tag);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailException() throws UnsupportedEncodingException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey2";
+    String artifactPath = "test/artifact";
+    String tag = "latest2";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey
+                + "&name=" + URLEncoder.encode(artifactPath, "UTF-8") + "&format=docker&version=" + tag))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "        ],\n"
+                + "\"continuationToken\": null"
+                + "}")));
+
+    try {
+      List<BuildDetailsInternal> response = nexusThreeService.getBuildDetails(
+          nexusConfig, repoKey, "8080:", artifactPath, RepositoryFormat.docker.name(), tag);
+    } catch (HintException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Please check repository port field in your Nexus artifact configuration.");
+    }
+  }
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetVersion() throws UnsupportedEncodingException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey2";
+    String artifactPath = "test/artifact";
+    String tag = "latest2";
+
+    wireMockRule.stubFor(get(urlEqualTo("service/rest/v1/search?sort=version&direction=desc"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    try {
+      List<BuildDetailsInternal> response =
+          nexusThreeService.getVersions(nexusConfig, repoKey, null, artifactPath, null, null);
+    } catch (InvalidArtifactServerException exception) {
+      assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetVersionsSuccess() throws UnsupportedEncodingException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
+                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response =
+        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetVersionsNoCredentials() throws UnsupportedEncodingException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(false)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
+                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response =
+        nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageVersionsSuccess() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&name=package"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageVersions(nexusConfig, repoKey, "package");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageVersionsNoCredentials() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(false)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&name=package"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageVersions(nexusConfig, repoKey, "package");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageVersionsNotFound() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&name=package1234"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    try {
+      nexusThreeService.getPackageVersions(nexusConfig, repoKey, "package");
+    } catch (InvalidArtifactServerException exception) {
+      assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageNameBuildDetails() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&group=group"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoKey, "group");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("test/artifact");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("test/artifact");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageNameBuildDetailsNoCredentials() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(false)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&group=group"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoKey, "group");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(2);
+    assertThat(response.get(0).getNumber()).isEqualTo("test/artifact");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("test/artifact");
+    assertThat(response.get(0).getBuildUrl())
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetPackageNameBuildDetailsExceptions() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?repository=" + repoKey + "&group=group"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "{\n"
+                + "            \"id\": \"dG9kb2xpc3Q6NzFhZmVhNTQwZTIzZGRlNTdiODg3MThiYzBmNWY3M2Q\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"latest2\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/latest2\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6OTEyZDBmZTdiODE5MjM5MjcxODliMGYyNmQxMDE3NTQ\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"dG9kb2xpc3Q6OTNiOWI5ZWI5YTdlY2IwNjMyMDJhMTYwMzhmMTZkODk\",\n"
+                + "            \"repository\": \"" + repoKey + "\",\n"
+                + "            \"format\": \"docker\",\n"
+                + "            \"group\": null,\n"
+                + "            \"name\": \"" + artifactPath + "\",\n"
+                + "            \"version\": \"a1new\",\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new\",\n"
+                + "                    \"path\": \"v2/todolist/manifests/a1new\",\n"
+                + "                    \"id\": \"dG9kb2xpc3Q6N2Y2Mzc5ZDMyZjhkZDc4ZmRjMWY0MTM4NDI0M2JmOTE\",\n"
+                + "                    \"repository\": \"" + repoKey + "\",\n"
+                + "                    \"format\": \"docker\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"0d0793de2da200fd2a821357adffe89438bbc9be\",\n"
+                + "                        \"sha256\": \"90659bf80b44ce6be8234e6ff90a1ac34acbeb826903b02cfa0da11c82cbc042\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "],\n"
+                + "\"continuationToken\": null\n"
+                + "}")));
+    try {
+      nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoKey, "group");
+    } catch (InvalidArtifactServerException exception) {
+      assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
+    }
   }
 }

@@ -183,6 +183,31 @@ public class AccessRequestServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = NANDAN)
   @Category(UnitTests.class)
+  public void testAccessRequest_getAccos() {
+    AccessRequest accessRequest = AccessRequest.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .accessActive(true)
+                                      .accessType(AccessRequest.AccessType.GROUP_ACCESS)
+                                      .memberIds(Sets.newHashSet("user1", "user2"))
+                                      .harnessUserGroupId("groupId")
+                                      .build();
+    wingsPersistence.save(accessRequest);
+    accessRequest = AccessRequest.builder()
+                        .accountId("account1")
+                        .accessActive(true)
+                        .accessType(AccessRequest.AccessType.MEMBER_ACCESS)
+                        .memberIds(Sets.newHashSet("user1", "user2"))
+                        .build();
+    wingsPersistence.save(accessRequest);
+    harnessUserGroup = HarnessUserGroup.builder().uuid("groupId").memberIds(Sets.newHashSet("user1")).build();
+    wingsPersistence.save(harnessUserGroup);
+    List<String> ids = accessRequestService.getAccountsHavingActiveAccessRequestForUser("user1");
+    assertThat(ids.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = NANDAN)
+  @Category(UnitTests.class)
   public void testAccessRequest_createMemberAccessRequesForNonHarnessUser() {
     long accessStartAt = Instant.now().toEpochMilli();
     long accessEndAt = Instant.now().plus(24, ChronoUnit.HOURS).toEpochMilli();

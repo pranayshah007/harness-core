@@ -16,6 +16,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -172,7 +173,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetInputSet() {
     doReturn(Optional.of(inputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
 
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -191,7 +192,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     InputSetEntity inlineInputSetEntity = inputSetEntity.withStoreType(StoreType.INLINE);
     doReturn(Optional.of(inlineInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
 
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -212,7 +213,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     remoteInputSetEntity.setConnectorRef("conn");
     doReturn(Optional.of(remoteInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
 
     responseDTO = inputSetResourcePMSImpl.getInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -233,7 +234,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
     doThrow(new InvalidInputSetException("msg", dummyErrorResponse, remoteInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
     responseDTO = inputSetResourcePMSImpl.getInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
     data = responseDTO.getData();
@@ -251,7 +252,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetInputSetWithInvalidInputSetId() {
     doReturn(Optional.empty())
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INVALID_INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INVALID_INPUT_SET_ID, false, null, null,
+            false);
 
     assertThatThrownBy(()
                            -> inputSetResourcePMSImpl.getInputSet(INVALID_INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER,
@@ -267,7 +269,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetOverlayInputSet() {
     doReturn(Optional.of(overlayInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, OVERLAY_INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, OVERLAY_INPUT_SET_ID, false, null, null,
+            false);
 
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
         OVERLAY_INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -286,7 +289,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     InputSetEntity inlineInputSetEntity = overlayInputSetEntity.withStoreType(StoreType.INLINE);
     doReturn(Optional.of(inlineInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
 
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -307,7 +310,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     remoteInputSetEntity.setConnectorRef("conn");
     doReturn(Optional.of(remoteInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
 
     responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
@@ -329,7 +332,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
                 OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(overlayInputSetErrorResponse).build(),
                 remoteInputSetEntity))
         .when(pmsInputSetService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
     responseDTO = inputSetResourcePMSImpl.getOverlayInputSet(
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
     data = responseDTO.getData();
@@ -360,7 +363,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(Optional.empty())
         .when(pmsInputSetService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INVALID_OVERLAY_INPUT_SET_ID, false,
-            null, null);
+            null, null, false);
 
     assertThatThrownBy(()
                            -> inputSetResourcePMSImpl.getOverlayInputSet(INVALID_OVERLAY_INPUT_SET_ID, ACCOUNT_ID,
@@ -377,7 +380,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -391,7 +394,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createOverlayInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
@@ -407,7 +410,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -421,7 +424,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateOverlayInputSet(null,
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());

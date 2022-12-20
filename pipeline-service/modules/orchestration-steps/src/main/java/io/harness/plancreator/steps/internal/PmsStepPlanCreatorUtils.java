@@ -10,6 +10,7 @@ package io.harness.plancreator.steps.internal;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
@@ -20,7 +21,6 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
-import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -34,13 +34,14 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters;
+import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
@@ -113,7 +114,11 @@ public class PmsStepPlanCreatorUtils {
       }
 
       YamlField siblingField;
+      // IF Pipeline Stage is in Parallel Stage, adviser obtainment will be null for individual stages
       if (isPipelineStage) {
+        if (currentField.checkIfParentIsParallel(STAGES)) {
+          return null;
+        }
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(currentField);
       } else {
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);

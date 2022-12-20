@@ -29,33 +29,34 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class StreamingDestinationMapperTest extends CategoryTest {
-  public static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
-  public static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
+  private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
+  private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
+  private String accountIdentifier;
+  private String slug;
+  private String name;
+  private StatusEnum statusEnum;
+  private String bucket;
+  private String connectorRef;
+
   private StreamingDestinationMapper streamingDestinationMapper;
 
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     this.streamingDestinationMapper = new StreamingDestinationMapper();
+
+    accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
+    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
+    connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testToStreamingDestinationEntity_AwsS3() {
-    String accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    String slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    String name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    StatusEnum statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
-    String bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    String connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    StreamingDestinationSpecDTO streamingDestinationSpecDTO =
-        new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(TypeEnum.AWS_S3);
-    StreamingDestinationDTO streamingDestinationDTO = new StreamingDestinationDTO()
-                                                          .slug(slug)
-                                                          .name(name)
-                                                          .status(statusEnum)
-                                                          .connectorRef(connectorRef)
-                                                          .spec(streamingDestinationSpecDTO);
+    StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
 
     StreamingDestination streamingDestination =
         streamingDestinationMapper.toStreamingDestinationEntity(accountIdentifier, streamingDestinationDTO);
@@ -67,7 +68,20 @@ public class StreamingDestinationMapperTest extends CategoryTest {
     expectedStreamingDestination.setStatus(statusEnum);
     expectedStreamingDestination.setConnectorRef(connectorRef);
     expectedStreamingDestination.setType(TypeEnum.AWS_S3);
+    expectedStreamingDestination.setLastStatusChangedAt(streamingDestination.getLastStatusChangedAt());
 
     assertThat(streamingDestination).isEqualToComparingFieldByField(expectedStreamingDestination);
+  }
+
+  private StreamingDestinationDTO getStreamingDestinationDTO() {
+    StreamingDestinationSpecDTO streamingDestinationSpecDTO =
+        new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(TypeEnum.AWS_S3);
+
+    return new StreamingDestinationDTO()
+        .slug(slug)
+        .name(name)
+        .status(statusEnum)
+        .connectorRef(connectorRef)
+        .spec(streamingDestinationSpecDTO);
   }
 }

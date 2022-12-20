@@ -9,6 +9,7 @@ package io.harness.engine.progress;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -34,6 +35,7 @@ import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ProgressData;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +46,7 @@ import org.mockito.Mock;
 public class EngineProgressCallbackTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock ProgressEventPublisher progressEventPublisher;
 
   private final String nodeExecutionId = generateUuid();
@@ -56,6 +59,7 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
         EngineProgressCallback.builder()
             .nodeExecutionService(nodeExecutionService)
             .kryoSerializer(kryoSerializer)
+            .referenceFalseKryoSerializer(referenceFalseKryoSerializer)
             .progressEventPublisher(progressEventPublisher)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build()).build())
             .build();
@@ -89,6 +93,25 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldTestNotifyWithUnitProgressDataUsingKryoWithoutReference() {
+    String correlationId = generateUuid();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    BinaryResponseData binaryResponseData = BinaryResponseData.builder()
+                                                .data(referenceFalseKryoSerializer.asDeflatedBytes(unitProgressData))
+                                                .usingKryoWithoutReference(true)
+                                                .build();
+
+    when(progressEventPublisher.publishEvent(nodeExecutionId, binaryResponseData)).thenReturn(null);
+
+    engineProgressCallback.notify(correlationId, binaryResponseData);
+
+    verify(progressEventPublisher).publishEvent(nodeExecutionId, binaryResponseData);
+    verify(nodeExecutionService).updateV2(anyString(), any());
+  }
+
+  @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestNotify() {
@@ -97,6 +120,27 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
         CommandUnitStatusProgress.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     BinaryResponseData binaryResponseData =
         BinaryResponseData.builder().data(kryoSerializer.asDeflatedBytes(commandUnitStatusProgress)).build();
+
+    when(progressEventPublisher.publishEvent(nodeExecutionId, binaryResponseData)).thenReturn(null);
+
+    engineProgressCallback.notify(correlationId, binaryResponseData);
+
+    verify(progressEventPublisher).publishEvent(nodeExecutionId, binaryResponseData);
+    verify(nodeExecutionService, never()).updateV2(anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldTestNotifyUsingKryoWithoutReference() {
+    String correlationId = generateUuid();
+    CommandUnitStatusProgress commandUnitStatusProgress =
+        CommandUnitStatusProgress.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    BinaryResponseData binaryResponseData =
+        BinaryResponseData.builder()
+            .data(referenceFalseKryoSerializer.asDeflatedBytes(commandUnitStatusProgress))
+            .usingKryoWithoutReference(true)
+            .build();
 
     when(progressEventPublisher.publishEvent(nodeExecutionId, binaryResponseData)).thenReturn(null);
 

@@ -265,7 +265,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
 
     assertThat(envFqnPropertiesList)
         .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
-            "env.variables");
+            "env.variables", "env.envGroupRef", "env.envGroupName");
 
     // no infra vars
     // service
@@ -388,8 +388,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .infraYamlFile("k8sDirectInfrastructure.yaml")
             .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
                 "service.tags", "service.gitOpsEnabled", "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of())
             .envFqnIndex(0)
             .svcFqnIndex(1)
@@ -414,8 +415,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.repository", "artifacts.primary.project", "artifacts.primary.package",
                 "artifacts.primary.version", "artifacts.primary.versionRegex", "serviceVariables.envVar1",
                 "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
             .envFqnIndex(0)
@@ -437,8 +439,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
                     "artifacts.primary.registryHostname", "artifacts.primary.metadata", "artifacts.primary.label",
                     "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
             .envFqnIndex(0)
@@ -468,8 +471,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
                 "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
             .envFqnIndex(0)
@@ -499,8 +503,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
                 "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
             .envFqnIndex(0)
@@ -530,8 +535,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
                 "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
-                "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
+            .expectedEnvFqn(
+                List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+                    "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
             .envFqnIndex(0)

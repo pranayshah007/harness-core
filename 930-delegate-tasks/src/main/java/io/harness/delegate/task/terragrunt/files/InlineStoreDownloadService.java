@@ -53,11 +53,10 @@ public class InlineStoreDownloadService implements FileStoreDownloadService {
 
     FileIo.createDirectoryIfDoesNotExist(outputDirectory);
     List<String> filePaths = new ArrayList<>();
-    String loggableOutputDirectory = getLoggablePath(outputDirectory);
     for (InlineFileConfig inlineFileConfig : inlineStoreConfig.getFiles()) {
       UUID uuid = UUID.randomUUID();
       String fileName = inlineFileConfig.getName().replace("${UUID}", uuid.toString());
-      logCallback.saveExecutionLog(format("Save inline file '%s' to '%s'", fileName, loggableOutputDirectory));
+      logCallback.saveExecutionLog(format("Save inline file '%s' to '%s'", fileName, outputDirectory));
       Path filePath = Files.createFile(Paths.get(outputDirectory, fileName));
       Files.write(filePath, inlineFileConfig.getContent().getBytes());
       filePaths.add(filePath.toAbsolutePath().toString());

@@ -8,24 +8,64 @@
 package io.harness.delegate.task.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terragrunt.TerragruntTaskService.createCliRequest;
+import static io.harness.delegate.task.terragrunt.TerragruntTaskService.executeWithErrorHandling;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
+import static io.harness.provision.TerragruntConstants.DESTROY;
+import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
+
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters;
+import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
+import io.harness.delegate.utils.TaskExceptionUtils;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.secretmanagerclient.EncryptDecryptHelper;
+import io.harness.terragrunt.v2.TerragruntClient;
+import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntDestroyCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntWorkspaceCliRequest;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
+import com.google.inject.Inject;
+import java.io.File;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
 @Slf4j
 @OwnedBy(CDP)
 public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
+  @Inject private TerragruntTaskService taskService;
+  @Inject private EncryptDecryptHelper encryptDecryptHelper;
+  @Inject private TerraformBaseHelper terraformHelper;
+
   public TerragruntDestroyTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -39,6 +79,120 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
-    return null;
+    if (!(parameters instanceof TerragruntDestroyTaskParameters)) {
+      throw new InvalidArgumentsException(Pair.of("parameters",
+          format("Invalid task parameters type provided '%s', expected '%s'", parameters.getClass().getSimpleName(),
+              TerragruntDestroyTaskParameters.class.getSimpleName())));
+    }
+
+    TerragruntDestroyTaskParameters destroyTaskParameters = (TerragruntDestroyTaskParameters) parameters;
+    CommandUnitsProgress commandUnitsProgress = destroyTaskParameters.getCommandUnitsProgress() != null
+        ? destroyTaskParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
+
+    String baseDir =
+        TerragruntTaskService.getBaseDir(destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    try {
+      taskService.decryptTaskParameters(destroyTaskParameters);
+
+      LogCallback fetchFilesLogCallback =
+          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
+
+      TerragruntContext terragruntContext =
+          taskService.prepareTerragrunt(fetchFilesLogCallback, destroyTaskParameters, baseDir);
+
+      TerragruntClient client = terragruntContext.getClient();
+      LogCallback destroyLogCallback =
+          taskService.getLogCallback(getLogStreamingTaskClient(), DESTROY, commandUnitsProgress);
+
+      executeWithErrorHandling(client::init,
+          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
+          destroyLogCallback);
+
+      if (isNotEmpty(destroyTaskParameters.getWorkspace())) {
+        log.info("Create or select workspace {}", destroyTaskParameters.getWorkspace());
+        destroyLogCallback.saveExecutionLog(
+            color(format("Create or select workspace %s", destroyTaskParameters.getWorkspace()), LogColor.White,
+                LogWeight.Bold));
+        executeWithErrorHandling(client::workspace,
+            createCliRequest(TerragruntWorkspaceCliRequest.builder(), terragruntContext, destroyTaskParameters)
+                .workspace(destroyTaskParameters.getWorkspace())
+                .build(),
+            destroyLogCallback);
+        destroyLogCallback.saveExecutionLog(
+            color(format("Use workspace: %s\n", destroyTaskParameters.getWorkspace()), LogColor.White, LogWeight.Bold));
+      }
+
+      if (TerragruntTaskRunType.RUN_MODULE == destroyTaskParameters.getRunConfiguration().getRunType()) {
+        if (destroyTaskParameters.getEncryptedTfPlan() != null) {
+          destroyLogCallback.saveExecutionLog(
+              color("\nDecrypting terraform plan before applying\n", LogColor.White, LogWeight.Bold));
+          taskService.saveTerraformPlanContentToFile(destroyTaskParameters.getPlanSecretManager(),
+              destroyTaskParameters.getEncryptedTfPlan(), terragruntContext.getScriptDirectory(),
+              destroyTaskParameters.getAccountId(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
+          destroyLogCallback.saveExecutionLog(
+              color("Using approved terraform plan \n", LogColor.White, LogWeight.Bold));
+
+          String destroyPlanName = TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
+          destroyLogCallback.saveExecutionLog(
+              color(format("\nExecute terragrunt apply for '%s'", destroyPlanName), LogColor.White, LogWeight.Bold));
+          executeWithErrorHandling(client::apply,
+              createCliRequest(TerragruntApplyCliRequest.builder(), terragruntContext, destroyTaskParameters)
+                  .terraformPlanName(destroyPlanName)
+                  .build(),
+              destroyLogCallback);
+
+          destroyLogCallback.saveExecutionLog(
+              color(format("Terragrunt Apply for '%s' successfully executed \n", destroyPlanName), LogColor.White,
+                  LogWeight.Bold));
+        } else {
+          destroyLogCallback.saveExecutionLog(color("\nExecute terragrunt destroy", LogColor.White, LogWeight.Bold));
+          executeWithErrorHandling(client::destroy,
+              createCliRequest(TerragruntDestroyCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
+              destroyLogCallback);
+
+          destroyLogCallback.saveExecutionLog(
+              color("Terragrunt destroy successfully executed \n", LogColor.White, LogWeight.Bold));
+        }
+      } else {
+        destroyLogCallback.saveExecutionLog(
+            color("\nExecute terragrunt run-all destroy", LogColor.White, LogWeight.Bold));
+        executeWithErrorHandling(client::destroy,
+            createCliRequest(TerragruntDestroyCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
+            destroyLogCallback);
+
+        destroyLogCallback.saveExecutionLog(
+            color("Terragrunt run-all destroy successfully executed \n", LogColor.White, LogWeight.Bold));
+      }
+
+      String stateFileId = null;
+      if (TerragruntTaskRunType.RUN_MODULE == destroyTaskParameters.getRunConfiguration().getRunType()) {
+        destroyLogCallback.saveExecutionLog("Uploading terraform state file");
+        stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
+            destroyTaskParameters.getWorkspace(), destroyTaskParameters.getAccountId(),
+            destroyTaskParameters.getEntityId(), getDelegateId(), getTaskId(), destroyLogCallback);
+      }
+
+      destroyLogCallback.saveExecutionLog(
+          color("\nTerragrunt Destroy command successfully completed", LogColor.White, LogWeight.Bold), INFO,
+          CommandExecutionStatus.SUCCESS);
+
+      return TerragruntDestroyTaskResponse.builder()
+          .stateFileId(stateFileId)
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Terragrunt destroy task failed", sanitizedException);
+      TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
+          unitName
+          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
+          sanitizedException);
+
+      throw new TaskNGDataException(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+    } finally {
+      FileUtils.deleteQuietly(new File(baseDir));
+    }
   }
 }

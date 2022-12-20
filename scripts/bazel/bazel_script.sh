@@ -98,7 +98,6 @@ BAZEL_MODULES="\
   //platform-service/modules/notification-service/contracts:module \
   //platform-service/modules/notification-service/contracts/src/main/proto:all \
   //platform-service/modules/notification-service/delegate-tasks:module \
-  //platform-service/modules/resource-group-service/contracts:module \
   //platform-service/modules/audit-service:module \
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \

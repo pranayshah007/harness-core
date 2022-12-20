@@ -12,7 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cli.CliResponse;
 import io.harness.logging.LogCallback;
+import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntDestroyCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntOutputCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntPlanCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntShowCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntWorkspaceCliRequest;
@@ -37,6 +40,18 @@ public interface TerragruntClient {
 
   @Nonnull
   CliResponse plan(@Nonnull TerragruntPlanCliRequest request, @Nonnull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException;
+
+  @Nonnull
+  CliResponse apply(@Nonnull TerragruntApplyCliRequest request, @Nonnull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException;
+
+  @Nonnull
+  CliResponse output(@Nonnull TerragruntOutputCliRequest request, @Nonnull LogCallback logCallback)
+      throws InterruptedException, TimeoutException, IOException;
+
+  @Nonnull
+  CliResponse destroy(@Nonnull TerragruntDestroyCliRequest request, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull

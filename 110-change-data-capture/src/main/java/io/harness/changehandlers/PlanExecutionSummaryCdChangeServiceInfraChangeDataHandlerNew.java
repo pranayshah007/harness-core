@@ -188,9 +188,10 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             columnValueMapping.put(PlanExecutionSummaryCDConstants.PROJECT_IDENTIFIER_KEY, projectIdentifier);
 
             // gitOpsEnabled
-            if (serviceInfoObject.get("gitOpsEnabled") != null) {
-              String gitOpsEnabled = serviceInfoObject.get("gitOpsEnabled").toString();
-              columnValueMapping.put("gitOpsEnabled", gitOpsEnabled);
+            if (serviceInfoObject.get(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY) != null) {
+              String gitOpsEnabled =
+                  serviceInfoObject.get(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY).toString();
+              columnValueMapping.put(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY, gitOpsEnabled);
             }
 
             // deploymentType
@@ -266,6 +267,22 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                 String envType = infraExecutionSummaryObject.get("type").toString();
                 columnValueMapping.put("env_type", envType);
               }
+
+              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID) != null
+                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString().length()
+                      > 0) {
+                String envGroupId =
+                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString();
+                columnValueMapping.put("env_group_ref", envGroupId);
+              }
+
+              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
+                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length()
+                      > 0) {
+                String envGroupName =
+                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
+                columnValueMapping.put("env_group_name", envGroupName);
+              }
             }
           }
 
@@ -282,7 +299,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return nodeMap;
   }
 
-  public boolean dbOperation(String query) {
+  private boolean dbOperation(String query) {
     boolean successfulOperation = false;
     log.trace("In dbOperation, Query: {}", query);
     if (timeScaleDBService.isValid()) {
@@ -303,7 +320,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return successfulOperation;
   }
 
-  public static String insertSQL(String tableName, Map<String, String> columnValueMappingForInsert) {
+  private static String insertSQL(String tableName, Map<String, String> columnValueMappingForInsert) {
     StringBuilder insertSQLBuilder = new StringBuilder();
 
     // Removing column that holds NULL value or Blank value...
@@ -344,7 +361,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return insertSQLBuilder.toString();
   }
 
-  public static String updateSQL(String tableName, Map<String, String> columnValueMappingForSet,
+  private static String updateSQL(String tableName, Map<String, String> columnValueMappingForSet,
       Map<String, String> columnValueMappingForCondition) {
     StringBuilder updateQueryBuilder = new StringBuilder(2048);
 

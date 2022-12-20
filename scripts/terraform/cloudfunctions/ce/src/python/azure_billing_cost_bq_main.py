@@ -21,7 +21,8 @@ Event format:
         "azureResourceRate": "resourcerate",
         "cost": "pretaxcost",
         "azureInstanceId": "instanceid"
-    }
+    },
+    "ccmPreferredCurrency": "USD" // could be None
 }
 """
 
@@ -46,11 +47,11 @@ def main(event, context):
     azure_cost_table_id = jsonData["tableId"].replace("azureBilling_", "azurecost_")
 
     create_empty_azure_cost_table(azure_cost_table_id)
-    insert_data_into_azure_cost_table(azure_cost_table_id, jsonData["tableId"], jsonData["azure_column_mapping"])
+    insert_data_into_azure_cost_table(azure_cost_table_id, jsonData)
 
 
-def insert_data_into_azure_cost_table(azure_cost_table_id, azure_billing_table_id, azure_column_mapping):
-    query = create_insert_query(azure_cost_table_id, azure_billing_table_id, azure_column_mapping)
+def insert_data_into_azure_cost_table(azure_cost_table_id, jsonData):
+    query = create_insert_query(azure_cost_table_id, jsonData)
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
@@ -58,13 +59,13 @@ def insert_data_into_azure_cost_table(azure_cost_table_id, azure_billing_table_i
     run_batch_query(client, query, job_config, timeout=180)
 
 
-def update_query_strings(azure_cost_table_column, azure_billing_table_column, insert_query, select_query):
+def update_query_strings(azure_cost_table_column, azure_billing_table_column, fx_rate_multiplier_query, insert_query, select_query):
     if (not AZURE_BILLING_TABLE_COLUMNS) or (azure_billing_table_column in AZURE_BILLING_TABLE_COLUMNS):
         insert_query += (", " if insert_query else "")
         insert_query += azure_cost_table_column
 
         select_query += (", " if select_query else "")
-        select_query += f"{azure_billing_table_column} as {azure_cost_table_column}"
+        select_query += f"{azure_billing_table_column}{fx_rate_multiplier_query} as {azure_cost_table_column}"
     return insert_query, select_query
 
 
@@ -86,21 +87,38 @@ def fetch_existing_columns_from_azure_billing_table(dataset_name, table_name):
     AZURE_BILLING_TABLE_COLUMNS = list(AZURE_BILLING_TABLE_COLUMNS)
 
 
-def create_insert_query(azure_cost_table_id, azure_billing_table_id, azure_column_mapping):
+def create_insert_query(azure_cost_table_id, jsonData):
+    azure_billing_table_id = jsonData["tableId"]
+    azure_column_mapping = jsonData["azure_column_mapping"]
+
     # form query strings
     select_columns_string = ""
     insert_columns_string = ""
     for column_dict in bq_schema.azure_cost_table_schema:
         column = column_dict["name"]
+        if column in ["fxRateSrcToDest", "ccmPreferredCurrency"]:
+            continue
+
+        fx_rate_multiplier_query = "*fxRateSrcToDest" if (jsonData["ccmPreferredCurrency"] and column in ["azureResourceRate", "cost"]) else ""
         if column in azure_column_mapping:
             azure_billing_table_column = azure_column_mapping[column]
             print(f"Column {column} is mapped to {azure_billing_table_column}, searching for {azure_billing_table_column} in {azure_billing_table_id} table.")
-            insert_columns_string, select_columns_string = update_query_strings(column, azure_billing_table_column, insert_columns_string, select_columns_string)
+            insert_columns_string, select_columns_string = update_query_strings(column, azure_billing_table_column,
+                                                                                fx_rate_multiplier_query,
+                                                                                insert_columns_string,
+                                                                                select_columns_string)
         else:
             print(f"No mapping found in pubsub message for column: {column}. Will search for {column.lower()} in {azure_billing_table_id} table.")
             azure_billing_table_column = column.lower()
-            insert_columns_string, select_columns_string = update_query_strings(column, azure_billing_table_column, insert_columns_string, select_columns_string)
+            insert_columns_string, select_columns_string = update_query_strings(column, azure_billing_table_column,
+                                                                                fx_rate_multiplier_query,
+                                                                                insert_columns_string,
+                                                                                select_columns_string)
 
+    insert_columns_string += ", fxRateSrcToDest, ccmPreferredCurrency"
+    select_columns_string += ", %s as fxRateSrcToDest, %s as ccmPreferredCurrency " \
+                             % (("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
+                                (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"))
     return """INSERT INTO `%s` (%s)
             SELECT %s FROM `%s`""" % (azure_cost_table_id, insert_columns_string, select_columns_string, azure_billing_table_id)
 

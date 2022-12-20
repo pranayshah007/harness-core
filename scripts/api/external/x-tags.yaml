@@ -1,15 +1,15 @@
-- name: Organization
+- name: Organizations
   tags:
     - Organization
-- name: Project
+- name: Projects
   tags:
     - Org Project
-- name: Secret
+- name: Secrets
   tags:
     - Account Secret
     - Org Secret
     - Project Secret
-- name: Connector
+- name: Connectors
   tags:
     - Account Connector
     - Org Connector

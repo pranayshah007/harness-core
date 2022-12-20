@@ -185,7 +185,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList
         .<MongoIndex>builder()
-        // used
+        // used by getByPlanNodeUuid
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_nodeId_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -201,11 +201,13 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchNodeExecutionsStatusesWithoutOldRetries
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_idx")
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.status)
                  .build())
+        // Used by findCountByParentIdAndStatusIn and fetchChildrenNodeExecutionsIterator
         .add(CompoundMongoIndex.builder()
                  .name("parentId_status_idx")
                  .field(NodeExecutionKeys.parentId)
@@ -219,6 +221,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.status)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
+        // Used by fetchAllStepNodeExecutions
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_stepCategory_identifier_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -231,6 +234,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.stageFqn)
                  .build())
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
+        // fetchChildrenNodeExecutionsIterator
         .add(SortCompoundMongoIndex.builder()
                  .name("planExecutionId_parentId_createdAt_idx")
                  .field(NodeExecutionKeys.planExecutionId)

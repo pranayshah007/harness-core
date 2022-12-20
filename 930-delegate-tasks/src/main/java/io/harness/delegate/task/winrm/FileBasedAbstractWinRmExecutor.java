@@ -8,7 +8,6 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructCommandsList;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommandsBulk;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getScriptExecutingCommand;
@@ -58,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class FileBasedAbstractWinRmExecutor {
   public static final String WINDOWS_TEMPFILE_LOCATION = "%TEMP%";
+
   public static final String NOT_IMPLEMENTED = "Not implemented";
   protected static final String ERROR_WHILE_EXECUTING_COMMAND = "Error while executing command";
   /**
@@ -246,15 +246,9 @@ public abstract class FileBasedAbstractWinRmExecutor {
         }
       }
     } else {
-      if (winrmScriptCommandSplit) {
-        exitCode = session.executeCommandsListV2(
-            constructCommandsList(command, psScriptFile, getPowershell(), config.getCommandParameters()), outputWriter,
-            errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()), true);
-      } else {
-        exitCode = session.executeCommandsList(
-            constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),
-            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()));
-      }
+      exitCode = session.executeCommandsList(
+          constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),
+          outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()));
     }
     return exitCode;
   }

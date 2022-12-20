@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.licensing.services.LicenseService;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngsettings.NgSettingsPersistenceTestModule;
@@ -78,6 +79,7 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         bind(TransactionTemplate.class)
             .annotatedWith(Names.named("OUTBOX_TRANSACTION_TEMPLATE"))
             .toInstance(mock(TransactionTemplate.class));
+        bind(LicenseService.class).toInstance(mock(LicenseService.class));
         MapBinder<String, SettingValidator> settingValidatorMapBinder =
             MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
       }
