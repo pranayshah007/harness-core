@@ -193,56 +193,6 @@ public class CgInstanceSyncServiceV2 {
         || deploymentSummary.getCustomDeploymentKey() != null;
   }
 
-  /*  public void handleInstanceSync(DeploymentEvent event) {
-      if (Objects.isNull(event)) {
-        log.error("Null event sent for Instance Sync Processing. Doing nothing");
-        return;
-      }
-
-      if (CollectionUtils.isEmpty(event.getDeploymentSummaries())) {
-        log.error("No deployment summaries present in the deployment event. Doing nothing");
-        return;
-      }
-
-      event.getDeploymentSummaries()
-          .parallelStream()
-          .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
-          .forEach(deploymentSummary -> {
-            SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
-
-            CgInstanceSyncV2Handler instanceSyncHandler =
-                handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
-            if (Objects.isNull(instanceSyncHandler)) {
-              log.error("No handler registered for cloud provider type: [{}]. Doing nothing",
-                  cloudProvider.getValue().getSettingType());
-              throw new InvalidRequestException("No handler registered for cloud provider type: ["
-                  + cloudProvider.getValue().getSettingType() + "] with Instance Sync V2");
-            }
-
-            if (!instanceSyncHandler.isDeploymentInfoTypeSupported(deploymentSummary.getDeploymentInfo().getClass())) {
-              log.error("Instance Sync V2 not enabled for deployment info type: [{}]",
-                  deploymentSummary.getDeploymentInfo().getClass().getName());
-              throw new InvalidRequestException("Instance Sync V2 not enabled for deployment info type: "
-                  + deploymentSummary.getDeploymentInfo().getClass().getName());
-            }
-
-            String configuredPerpetualTaskId =
-                getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
-            if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
-              String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-              trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
-            } else {
-              updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
-            }
-
-            // handle current instances
-            List<Instance> deployedInstances = instanceSyncHandler.getDeployedInstances(deploymentSummary);
-            if (CollectionUtils.isNotEmpty(deployedInstances)) {
-              handleInstances(deployedInstances, instanceSyncHandler);
-            }
-          });
-    }*/
-
   private SettingAttribute fetchCloudProvider(DeploymentSummary deploymentSummary) {
     InfrastructureMapping infraMapping =
         infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
@@ -313,62 +263,6 @@ public class CgInstanceSyncServiceV2 {
         instanceSyncHandler.prepareTaskDetails(deploymentSummary, cloudProviderId, perpetualTaskId);
     taskDetailsService.save(newTaskDetails);
   }
-
-  /* public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
-     log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
-     result.getInstanceDataList().forEach(instanceSyncData -> {
-       log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
-           instanceSyncData.getTaskDetailsId(),
-           instanceSyncData.getInstanceDataList()
-               .parallelStream()
-               .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
-               .collect(Collectors.toList()));
-     });
-
-     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-       log.error(
-           "Instance Sync failed for perpetual task: [{}], with error: [{}]", perpetualTaskId,
-   result.getErrorMessage()); return;
-     }
-
-     Map<String, List<InstanceInfo>> instancesPerTask = new HashMap<>();
-     for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
-       if (!instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-         log.error("Instance Sync failed for perpetual task: [{}], for task details: [{}], with error: [{}]",
-             perpetualTaskId, instanceSyncData.getTaskDetailsId(), instanceSyncData.getErrorMessage());
-         continue;
-       }
-
-       if (!instancesPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
-         instancesPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
-       }
-
-       instancesPerTask.get(instanceSyncData.getTaskDetailsId())
-           .addAll(instanceSyncData.getInstanceDataList()
-                       .parallelStream()
-                       .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
-                       .collect(Collectors.toList()));
-     }
-
-     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-     for (String taskDetailsId : instancesPerTask.keySet()) {
-       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
-       SettingAttribute cloudProvider =
-           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
-       CgInstanceSyncV2Handler instanceSyncHandler =
-           handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
-
-       Instance lastDiscoveredInstance =
-           instanceService.getLastDiscoveredInstance(taskDetails.getAppId(), taskDetails.getInfraMappingId());
-       List<Instance> instancesInDb =
-           instanceService.getInstancesForAppAndInframapping(taskDetails.getAppId(), taskDetails.getInfraMappingId());
-
-       List<Instance> instances = instanceSyncHandler.getDeployedInstances(
-           instancesPerTask.get(taskDetailsId), instancesInDb, lastDiscoveredInstance);
-       handleInstances(instances, instanceSyncHandler);
-       taskDetailsService.updateLastRun(taskDetailsId);
-     }
-   }*/
 
   public InstanceSyncTrackedDeploymentDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
     List<InstanceSyncTaskDetails> instanceSyncTaskDetails =

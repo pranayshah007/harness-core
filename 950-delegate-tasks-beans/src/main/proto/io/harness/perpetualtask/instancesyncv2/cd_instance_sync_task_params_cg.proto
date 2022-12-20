@@ -12,5 +12,4 @@ option java_multiple_files = true;
 message CgInstanceSyncTaskParams {
   string account_id = 1;
   string cloud_provider_type = 2;
-  bytes cloud_provider_details = 3;
 }
