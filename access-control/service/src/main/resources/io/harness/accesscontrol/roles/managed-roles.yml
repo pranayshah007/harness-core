@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 40
+version: 41
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -133,7 +133,6 @@ roles:
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
-        - core_setting_view
         - core_setting_edit
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
@@ -186,7 +185,6 @@ roles:
         - chaos_chaosinfrastructure_view
         - chaos_chaosexperiment_view
         - chaos_chaosgameday_view
-        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true
@@ -327,7 +325,6 @@ roles:
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
-        - core_setting_view
         - core_setting_edit
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
@@ -382,7 +379,6 @@ roles:
         - chaos_chaosinfrastructure_view
         - chaos_chaosexperiment_view
         - chaos_chaosgameday_view
-        - core_setting_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -534,7 +530,6 @@ roles:
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
-        - core_setting_view
         - core_setting_edit
         - ccm_overview_view
         - ccm_perspective_view
@@ -614,7 +609,6 @@ roles:
         - chaos_chaosinfrastructure_view
         - chaos_chaosexperiment_view
         - chaos_chaosgameday_view
-        - core_setting_view
         - ccm_overview_view
         - ccm_perspective_view
         - ccm_budget_view
@@ -654,7 +648,6 @@ roles:
         - core_template_view
         - core_template_access
         - core_template_copy
-        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true
