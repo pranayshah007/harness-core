@@ -569,6 +569,15 @@ io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
 io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig
+io.harness.cdng.manifest.yaml.kinds.TasManifest
+io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome
+io.harness.cdng.manifest.yaml.VarsManifestOutcome
+io.harness.cdng.manifest.yaml.TasManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.VarsManifest
+io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
+io.harness.cdng.instance.outcome.TasOutcome
+io.harness.cdng.tas.outcome.TasSetupVariablesOutcome
+io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome
 io.harness.cdng.environment.filters.TagsFilter
 io.harness.cdng.environment.filters.FilterYaml
 io.harness.cdng.environment.filters.AllowAllFilter
@@ -608,12 +617,6 @@ io.harness.cdng.provision.terragrunt.TerragruntApplyOutcome
 io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
-io.harness.cdng.manifest.yaml.kinds.TasManifest
-io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome
-io.harness.cdng.manifest.yaml.VarsManifestOutcome
-io.harness.cdng.manifest.yaml.TasManifestOutcome
-io.harness.cdng.manifest.yaml.kinds.VarsManifest
-io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
 io.harness.cdng.infra.beans.AsgInfraMapping
 io.harness.cdng.infra.beans.AsgInfrastructureOutcome
 io.harness.cdng.infra.yaml.AsgInfrastructure
@@ -655,7 +658,7 @@ io.harness.cdng.tas.TasSwapRollbackStepNode
 io.harness.cdng.tas.TasAppResizeStepInfo
 io.harness.cdng.tas.TasAppResizeStepParameters
 io.harness.cdng.tas.TasRollbackStepParameters
-io.harness.cdng.tas.beans.TasAppResizeDataOutcome
+io.harness.cdng.tas.outcome.TasAppResizeDataOutcome
 io.harness.cdng.tas.TasSwapRoutesStepNode
 io.harness.cdng.pcf.TasRollbackStepNode
 io.harness.cdng.tas.TasInstanceCountType

@@ -2731,8 +2731,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
     boolean shouldReduceKeywords =
         featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
-    if (!shouldReduceKeywords && featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
-      populateHelmChartsInWorkflowExecution(workflowExecution, keywords, executionArgs, accountId);
+    if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
+      populateHelmChartsInWorkflowExecution(
+          workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
     }
 
     if (isEmpty(executionArgs.getArtifacts())) {
@@ -2828,8 +2829,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
   }
 
-  private void populateHelmChartsInWorkflowExecution(
-      WorkflowExecution workflowExecution, Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
+  private void populateHelmChartsInWorkflowExecution(WorkflowExecution workflowExecution, Set<String> keywords,
+      ExecutionArgs executionArgs, String accountId, boolean shouldReduceKeywords) {
     if (isEmpty(executionArgs.getHelmCharts())) {
       return;
     }
@@ -2856,12 +2857,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     List<HelmChart> filteredHelmCharts =
         helmCharts.stream().filter(chart -> serviceIds.contains(chart.getServiceId())).collect(toList());
 
-    filteredHelmCharts.forEach(helmChart -> {
-      keywords.addAll(Arrays.asList(helmChart.getName(), helmChart.getVersion(), helmChart.getDescription()));
-      if (isNotEmpty(helmChart.getMetadata())) {
-        keywords.addAll(helmChart.getMetadata().values());
-      }
-    });
+    if (!shouldReduceKeywords) {
+      filteredHelmCharts.forEach(helmChart -> {
+        keywords.addAll(Arrays.asList(helmChart.getName(), helmChart.getVersion(), helmChart.getDescription()));
+        if (isNotEmpty(helmChart.getMetadata())) {
+          keywords.addAll(helmChart.getMetadata().values());
+        }
+      });
+    }
 
     executionArgs.setHelmCharts(helmCharts);
     workflowExecution.setHelmCharts(filteredHelmCharts);

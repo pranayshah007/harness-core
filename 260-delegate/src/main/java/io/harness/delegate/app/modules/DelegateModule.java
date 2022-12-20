@@ -147,8 +147,6 @@ import io.harness.delegate.k8s.K8sSwapServiceSelectorsHandler;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.message.MessageServiceImpl;
 import io.harness.delegate.message.MessengerType;
-import io.harness.delegate.pcf.CfCommandTaskNGHandler;
-import io.harness.delegate.pcf.CfDataFetchCommandTaskHandlerNG;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
@@ -319,8 +317,6 @@ import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
 import io.harness.delegate.task.nexus.NexusValidationHandler;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
-import io.harness.delegate.task.pcf.CfCommandTaskNG;
-import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
@@ -361,6 +357,14 @@ import io.harness.delegate.task.spot.SpotDelegateTask;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
+import io.harness.delegate.task.tas.TasAppResizeTask;
+import io.harness.delegate.task.tas.TasBGSetupTask;
+import io.harness.delegate.task.tas.TasBasicSetupTask;
+import io.harness.delegate.task.tas.TasCommandTask;
+import io.harness.delegate.task.tas.TasDataFetchTask;
+import io.harness.delegate.task.tas.TasRollbackTask;
+import io.harness.delegate.task.tas.TasSwapRollbackTask;
+import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
@@ -1940,13 +1944,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
 
-    // TAS NG
-    MapBinder<String, CfCommandTaskNGHandler> CfTaskTypeToTaskHandlerMap =
-        MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
-    CfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
-
-    mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
-
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, EcsCommandTaskNGHandler.class);
@@ -2005,6 +2002,16 @@ public class DelegateModule extends AbstractModule {
         .toInstance(ElastigroupBGStageSetupCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG)
         .toInstance(ElastigroupSwapRouteCommandTaskNG.class);
+
+    // TAS NG
+    mapBinder.addBinding(TaskType.TAS_BG_SETUP).toInstance(TasBGSetupTask.class);
+    mapBinder.addBinding(TaskType.TAS_BASIC_SETUP).toInstance(TasBasicSetupTask.class);
+    mapBinder.addBinding(TaskType.TAS_SWAP_ROUTES).toInstance(TasSwapRouteTask.class);
+    mapBinder.addBinding(TaskType.TAS_APP_RESIZE).toInstance(TasAppResizeTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLBACK).toInstance(TasRollbackTask.class);
+    mapBinder.addBinding(TaskType.TAS_SWAP_ROLLBACK).toInstance(TasSwapRollbackTask.class);
+    mapBinder.addBinding(TaskType.TANZU_COMMAND).toInstance(TasCommandTask.class);
+    mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
@@ -31,7 +30,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.TasExecutionPassThroughData")
 public class TasExecutionPassThroughData implements PassThroughData {
   String applicationName;
-  @NonFinal Integer maxCount;
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;

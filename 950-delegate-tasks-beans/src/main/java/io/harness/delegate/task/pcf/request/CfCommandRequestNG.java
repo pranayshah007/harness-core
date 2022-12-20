@@ -18,6 +18,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public interface CfCommandRequestNG extends TaskParameters, ExecutionCapabilityD
   CfCommandTypeNG getCfCommandTypeNG();
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
+  CfCliVersion getCfCliVersion();
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     TasInfraConfig tasInfraConfig = getTasInfraConfig();
@@ -37,9 +39,14 @@ public interface CfCommandRequestNG extends TaskParameters, ExecutionCapabilityD
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             infraConfigEncryptionDataDetails, maskingEvaluator));
-
     TasConnectorDTO tasConnectorDTO = tasInfraConfig.getTasConnectorDTO();
     capabilities.addAll(TasCapabilityHelper.fetchRequiredExecutionCapabilities(tasConnectorDTO, maskingEvaluator));
+    populateRequestCapabilities(capabilities, maskingEvaluator);
     return capabilities;
+  }
+
+  default void populateRequestCapabilities(
+      List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    // used for request specific additional capabilities
   }
 }

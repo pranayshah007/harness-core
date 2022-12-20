@@ -60,6 +60,8 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.SLIDataCollectionTask;
@@ -70,8 +72,6 @@ import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.VerificationTask;
@@ -230,8 +230,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CompositeSLORecord.class);
     set.add(AutoVerificationJob.class);
     set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
-    set.add(SumologicMetricCVConfig.class);
-    set.add(SumologicLogCVConfig.class);
+    set.add(NextGenMetricCVConfig.class);
+    set.add(NextGenLogCVConfig.class);
   }
 
   @Override

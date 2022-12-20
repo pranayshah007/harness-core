@@ -103,7 +103,7 @@ import io.swagger.annotations.ApiModel;
         AsgCanaryDeleteStepInfo.class, TasSwapRoutesStepInfo.class, TasSwapRollbackStepInfo.class,
         AsgCanaryDeleteStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
         TasBasicAppSetupStepInfo.class, TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
-        ElastigroupSwapRouteStepInfo.class, TasRollbackStepInfo.class, TasAppResizeStepInfo.class})
+        ElastigroupSwapRouteStepInfo.class, TasAppResizeStepInfo.class, TasRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

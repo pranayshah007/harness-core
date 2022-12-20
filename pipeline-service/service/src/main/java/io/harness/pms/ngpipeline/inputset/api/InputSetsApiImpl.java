@@ -80,7 +80,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipeline, project, org, account));
     InputSetResponseBody inputSetResponse =
-        inputSetsApiUtils.getInputSetResponse(pmsInputSetService.create(entity, null, null));
+        inputSetsApiUtils.getInputSetResponse(pmsInputSetService.create(entity, null, null, true));
     return Response.status(201).entity(inputSetResponse).build();
   }
 
@@ -108,7 +108,8 @@ public class InputSetsApiImpl implements InputSetsApi {
         inputSet, pipeline, project, org, account));
     Optional<InputSetEntity> optionalInputSetEntity = Optional.empty();
     try {
-      optionalInputSetEntity = pmsInputSetService.get(account, org, project, pipeline, inputSet, false, null, null);
+      optionalInputSetEntity =
+          pmsInputSetService.get(account, org, project, pipeline, inputSet, false, null, null, true);
     } catch (InvalidInputSetException e) {
       return Response.ok()
           .entity(inputSetsApiUtils.getInputSetResponseWithError(
@@ -165,7 +166,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     String yaml = removeRuntimeInputFromYaml(pipelineYaml, requestBody.getInputSetYaml());
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         InputSetsApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, pipeline, yaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, null, null);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, null, null, entity, true);
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(updatedEntity);
     return Response.ok().entity(inputSetResponse).build();
   }

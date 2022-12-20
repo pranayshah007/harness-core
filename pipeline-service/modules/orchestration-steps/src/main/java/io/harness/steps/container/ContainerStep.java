@@ -42,6 +42,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
+import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepInfo;
@@ -71,6 +72,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private final OutcomeService outcomeService;
   private final ContainerStepCleanupHelper containerStepCleanupHelper;
   private final ContainerStepRbacHelper containerStepRbacHelper;
+  private final ContainerStepExecutionResponseHelper executionResponseHelper;
 
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
@@ -137,7 +139,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
-    // todo(abhinav): handle if failed.
+    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 

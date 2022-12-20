@@ -1,0 +1,77 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+HarnessTeam = "PL"
+
+shared_dependencies = [
+    "@batch//:com_fasterxml_jackson_core_jackson_databind",
+    "@batch//:com_azure_azure_core",
+    "@batch//:com_azure_azure_storage_blob",
+    "@batch//:com_azure_azure_storage_common",
+] + [
+    "//:lombok",
+    "//platform-service/modules/audit-service:module",
+    "@maven//:org_codehaus_janino_janino",
+    "@maven//:io_opencensus_opencensus_api",
+    "@maven//:io_opencensus_opencensus_impl",
+    "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
+    "@maven//:javax_ws_rs_javax_ws_rs_api",
+    "@maven//:org_apache_commons_commons_email",
+    "@maven//:org_apache_commons_commons_math3",
+    "@maven//:org_apache_httpcomponents_httpclient",
+    "@maven//:org_apache_httpcomponents_httpcore",
+    "@maven//:org_apache_logging_log4j_log4j_api",
+    "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+    "@maven//:org_jetbrains_kotlin_kotlin_stdlib",
+    "@maven//:org_mongodb_mongo_java_driver",
+    "@maven//:org_projectlombok_lombok",
+    "@maven//:org_springframework_batch_spring_batch_core",
+    "@maven//:org_springframework_batch_spring_batch_infrastructure",
+    "@maven//:org_springframework_boot_spring_boot",
+    "@maven//:org_springframework_boot_spring_boot_autoconfigure",
+    "@maven//:org_springframework_boot_spring_boot_starter_batch",
+    "@maven//:org_springframework_data_spring_data_mongodb",
+    "@maven//:org_springframework_guice_spring_guice",
+]
+
+java_binary(
+    name = "module",
+    srcs = glob([
+        "src/main/java/**/*.java",
+    ]),
+    data = ["//:resource"],
+    main_class = "io.harness.auditevent.streaming.AuditEventBatchProcessingApplication",
+    resources = [
+        "//audit-event-streaming/service/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = shared_dependencies,
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    data = [
+        "//:resource",
+    ],
+    visibility = ["//visibility:public"],
+    runtime_deps = shared_dependencies + [
+        ":module",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)
+
+#run_tests()
+
+run_analysis()

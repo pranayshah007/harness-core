@@ -82,6 +82,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//clients/notification:module",
+        "//clients/queue-service/java-client:module",
         "//platform-service/modules/audit-service/contracts:module",
         "//platform-service/modules/notification-service/contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",

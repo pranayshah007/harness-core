@@ -14,12 +14,16 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTask;
+import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
+import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 
@@ -32,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -117,6 +122,34 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+  private LoadingCache<String, Long> optionalDelegateTasksCountCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Long>() {
+            @Override
+            public Long load(@NotNull String accountId) {
+              return persistence.createQuery(DelegateTask.class)
+                  .filter(DelegateTaskKeys.accountId, accountId)
+                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.OPTIONAL)
+                  .count();
+            }
+          });
+
+  private LoadingCache<String, Long> importantDelegateTasksCountCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Long>() {
+            @Override
+            public Long load(@NotNull String accountId) {
+              return persistence.createQuery(DelegateTask.class)
+                  .filter(DelegateTaskKeys.accountId, accountId)
+                  .filter(DelegateTaskKeys.rank, DelegateTaskRank.IMPORTANT)
+                  .count();
+            }
+          });
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -191,6 +224,31 @@ public class DelegateCacheImpl implements DelegateCache {
       log.warn("Unable to get supported task types from cache based on account id");
       return null;
     }
+  }
+
+  @Override
+  public long getTasksCount(@NotNull String accountId, @NotNull DelegateTaskRank rank) {
+    try {
+      if (rank == DelegateTaskRank.OPTIONAL) {
+        return optionalDelegateTasksCountCache.get(accountId);
+      } else if (rank == DelegateTaskRank.IMPORTANT) {
+        return importantDelegateTasksCountCache.get(accountId);
+      }
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to get count of optional delegate tasks from cache based on accountId.");
+      return 0;
+    }
+    throw new InvalidArgumentsException("Unsupported delegate task rank " + rank);
+  }
+
+  @Override
+  public Map<String, Long> getTasksCountPerAccount(@NotNull DelegateTaskRank rank) {
+    if (rank == DelegateTaskRank.OPTIONAL) {
+      return optionalDelegateTasksCountCache.asMap();
+    } else if (rank == DelegateTaskRank.IMPORTANT) {
+      return importantDelegateTasksCountCache.asMap();
+    }
+    throw new InvalidArgumentsException("Unsupported delegate task rank " + rank);
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

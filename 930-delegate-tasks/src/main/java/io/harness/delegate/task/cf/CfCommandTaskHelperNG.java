@@ -63,6 +63,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
@@ -176,7 +177,7 @@ public class CfCommandTaskHelperNG {
       TasArtifactDownloadContext artifactDownloadContext, LogCallback logCallback) {
     TasArtifactDownloadResponseBuilder artifactResponseBuilder =
         TasArtifactDownloadResponse.builder().artifactType(ArtifactType.ZIP);
-    InputStream artifactStream;
+    InputStream artifactStream = null;
     TasPackageArtifactConfig artifactConfig = artifactDownloadContext.getArtifactConfig();
 
     try {
@@ -196,19 +197,23 @@ public class CfCommandTaskHelperNG {
         case AZURE_ARTIFACTS:
           artifactStream = downloadFromAzureArtifacts(artifactConfig, artifactResponseBuilder, logCallback);
           break;
+        case CUSTOM_ARTIFACT:
+          break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
               format("Registry of type '%s' is not supported yet", artifactConfig.getSourceType().getDisplayName()),
               new InvalidArgumentsException(Pair.of("sourceType", "Unsupported artifact source type")));
       }
-
-      File artifactFile = copyArtifactStreamToWorkingDirectory(artifactDownloadContext, artifactStream, logCallback);
+      if (!isNull(artifactStream)) {
+        File artifactFile = copyArtifactStreamToWorkingDirectory(artifactDownloadContext, artifactStream, logCallback);
+        artifactResponseBuilder.artifactFile(artifactFile);
+      }
       logCallback.saveExecutionLog("" /* Empty line */);
       logCallback.saveExecutionLog(
           color(format("Successfully downloaded artifact '%s'", artifactConfig.getArtifactDetails().getArtifactName()),
               LogColor.White, LogWeight.Bold));
 
-      return artifactResponseBuilder.artifactFile(artifactFile).build();
+      return artifactResponseBuilder.build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(
           format("Failed to download artifact '%s' due to: %s", artifactConfig.getArtifactDetails().getArtifactName(),
@@ -647,7 +652,7 @@ public class CfCommandTaskHelperNG {
 
   public void downsizePreviousReleases(CfDeployCommandRequestNG cfDeployCommandRequestNG,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
-      Integer updateCount, List<CfInternalInstanceElement> pcfInstanceElements,
+      Integer updateCount, List<CfInternalInstanceElement> oldAppInstances,
       CfAppAutoscalarRequestData appAutoscalarRequestData) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("# Downsizing previous application version/s");
 
@@ -693,12 +698,12 @@ public class CfCommandTaskHelperNG {
     // Application that is downsized
     if (EmptyPredicate.isNotEmpty(applicationDetailAfterResize.getInstanceDetails())) {
       applicationDetailAfterResize.getInstanceDetails().forEach(instance
-          -> pcfInstanceElements.add(CfInternalInstanceElement.builder()
-                                         .applicationId(applicationDetailAfterResize.getId())
-                                         .displayName(applicationDetailAfterResize.getName())
-                                         .instanceIndex(instance.getIndex())
-                                         .isUpsize(false)
-                                         .build()));
+          -> oldAppInstances.add(CfInternalInstanceElement.builder()
+                                     .applicationId(applicationDetailAfterResize.getId())
+                                     .displayName(applicationDetailAfterResize.getName())
+                                     .instanceIndex(instance.getIndex())
+                                     .isUpsize(false)
+                                     .build()));
     }
     unmapRoutesIfAppDownsizedToZero(cfDeployCommandRequestNG, cfRequestConfig, executionLogCallback);
   }
@@ -718,7 +723,7 @@ public class CfCommandTaskHelperNG {
 
   void unmapRoutesIfAppDownsizedToZero(CfDeployCommandRequestNG cfCommandDeployRequest, CfRequestConfig cfRequestConfig,
       LogCallback executionLogCallback) throws PivotalClientApiException {
-    if (cfCommandDeployRequest.getDownsizeAppDetail() == null
+    if (cfCommandDeployRequest.isStandardBlueGreen() || cfCommandDeployRequest.getDownsizeAppDetail() == null
         || isBlank(cfCommandDeployRequest.getDownsizeAppDetail().getApplicationName())) {
       return;
     }
@@ -733,7 +738,7 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeNewApplication(LogCallback executionLogCallback, CfDeployCommandRequestNG cfCommandDeployRequest,
       List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, ApplicationDetail details,
-      List<CfInternalInstanceElement> pcfInstanceElements, CfAppAutoscalarRequestData cfAppAutoscalarRequestData)
+      List<CfInternalInstanceElement> newAppInstances, CfAppAutoscalarRequestData cfAppAutoscalarRequestData)
       throws PivotalClientApiException, IOException {
     executionLogCallback.saveExecutionLog(color("# Upsizing new application:", White, Bold));
 
@@ -746,7 +751,7 @@ public class CfCommandTaskHelperNG {
 
     // perform upsize
     pcfCommandTaskBaseHelper.upsizeInstance(
-        cfRequestConfig, cfDeploymentManager, executionLogCallback, cfServiceDataUpdated, pcfInstanceElements);
+        cfRequestConfig, cfDeploymentManager, executionLogCallback, cfServiceDataUpdated, newAppInstances);
     configureAutoscalarIfNeeded(cfCommandDeployRequest, details, cfAppAutoscalarRequestData, executionLogCallback);
   }
 
@@ -780,8 +785,8 @@ public class CfCommandTaskHelperNG {
 
   public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
       CfDeploymentManager cfDeploymentManager, TasApplicationInfo oldApplicationInfo, CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances)
-      throws PivotalClientApiException {
+      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, List<CfInternalInstanceElement> oldAppInstances,
+      CfRollbackCommandResult cfRollbackCommandResult) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(oldApplicationInfo.getApplicationName());
     cfRequestConfig.setDesiredCount(oldApplicationInfo.getRunningCount());
     executionLogCallback.saveExecutionLog(color("# Upsizing application:", White, Bold));
@@ -799,8 +804,8 @@ public class CfCommandTaskHelperNG {
                                    .build()));
     executionLogCallback.saveExecutionLog("\n# Application state details after upsize:  ");
     pcfCommandTaskBaseHelper.printApplicationDetail(detailsAfterUpsize, executionLogCallback);
-    restoreRoutesForOldApplication(
-        cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig, executionLogCallback);
+    restoreRoutesForOldApplication(cfRollbackCommandRequestNG.getActiveApplicationDetails(), cfRequestConfig,
+        executionLogCallback, cfRollbackCommandResult);
   }
 
   public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
@@ -810,10 +815,10 @@ public class CfCommandTaskHelperNG {
         cfRequestConfig, upsizeList, cfInstanceElements);
   }
 
-  public List<String> getAppNameBasedOnGuidForBlueGreen(
-      CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid) throws PivotalClientApiException {
+  public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
+      throws PivotalClientApiException {
     List<ApplicationSummary> previousReleases =
-        cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
+        cfDeploymentManager.getPreviousReleasesBasicAndCanaryNG(cfRequestConfig, cfAppNamePrefix);
     return previousReleases.stream()
         .filter(app -> app.getId().equalsIgnoreCase(appGuid))
         .map(ApplicationSummary::getName)
@@ -965,14 +970,15 @@ public class CfCommandTaskHelperNG {
   }
 
   public void restoreRoutesForOldApplication(TasApplicationInfo tasApplicationInfo, CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback, CfRollbackCommandResult cfRollbackCommandResult)
+      throws PivotalClientApiException {
     if (isNull(tasApplicationInfo)) {
       return;
     }
 
     cfRequestConfig.setApplicationName(tasApplicationInfo.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
-
+    cfRollbackCommandResult.setActiveAppAttachedRoutes(tasApplicationInfo.getAttachedRoutes());
     if (EmptyPredicate.isEmpty(tasApplicationInfo.getAttachedRoutes())) {
       return;
     }

@@ -122,12 +122,14 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
   public void testSave() throws IOException {
     setupGitContext();
     overLayYaml = Resources.toString(this.getClass().getClassLoader().getResource("overlay1.yml"), Charsets.UTF_8);
-    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build()).when(pmsInputSetService).create(any(), any(), any());
+    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build())
+        .when(pmsInputSetService)
+        .create(any(), any(), any(), anyBoolean());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.save(accountId, inputSetYaml);
-    verify(pmsInputSetService, times(1)).create(any(), any(), any());
+    verify(pmsInputSetService, times(1)).create(any(), any(), any(), anyBoolean());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
     inputSetEntityGitSyncHelper.save(accountId, overLayYaml);
-    verify(pmsInputSetService, times(2)).create(any(), any(), any());
+    verify(pmsInputSetService, times(2)).create(any(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -137,9 +139,9 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     setupGitContext();
     doReturn(InputSetEntity.builder().yaml(inputSetYaml).build())
         .when(pmsInputSetService)
-        .update(any(), any(), any(), any());
+        .update(any(), any(), any(), any(), anyBoolean());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.update(accountId, inputSetYaml, ChangeType.NONE);
-    verify(pmsInputSetService, times(1)).update(any(), any(), any(), any());
+    verify(pmsInputSetService, times(1)).update(any(), any(), any(), any(), anyBoolean());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
   }
 

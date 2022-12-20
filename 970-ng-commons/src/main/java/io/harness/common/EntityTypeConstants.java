@@ -61,6 +61,16 @@ public interface EntityTypeConstants {
   String K8S_DELETE = "K8sDelete";
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
+
+  String TAS_CANARY_APP_SETUP_STEP = "CanaryAppSetup";
+  String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
+  String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
+  String TAS_APP_RESIZE_STEP = "AppResize";
+  String TAS_ROLLBACK_STEP = "AppRollback";
+  String TAS_SWAP_ROUTES_STEP = "SwapRoutes";
+  String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  String TANZU_COMMAND_STEP = "TanzuCommand";
+
   String RUN_STEP = "Run";
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
@@ -184,12 +194,4 @@ public interface EntityTypeConstants {
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
-  String TAS_SWAP_ROUTES_STEP = "SwapRoutes";
-  String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
-  String TAS_APP_RESIZE_STEP = "AppResize";
-  String TAS_ROLLBACK_STEP = "AppRollback";
-  String TAS_CANARY_APP_SETUP_STEP = "CanaryAppSetup";
-  String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
-  String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
-  String TANZU_COMMAND_STEP = "TanzuCommand";
 }

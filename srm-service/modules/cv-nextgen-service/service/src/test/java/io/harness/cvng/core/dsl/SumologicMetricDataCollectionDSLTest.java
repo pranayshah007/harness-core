@@ -20,8 +20,8 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.entities.MetricPack;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricInfo;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
@@ -91,19 +91,19 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         DataSourceType.SUMOLOGIC_METRICS);
 
-    SumologicMetricCVConfig sumologicMetricCVConfig =
-        builderFactory.sumologicMetricCVConfigBuilder()
-            .metricInfos(Collections.singletonList(SumologicMetricInfo.builder()
+    NextGenMetricCVConfig nextGenMetricCVConfig =
+        builderFactory.nextGenMetricCVConfigBuilder(DataSourceType.SUMOLOGIC_METRICS)
+            .metricInfos(Collections.singletonList(NextGenMetricInfo.builder()
                                                        .query("metric=Mem_UsedPercent")
                                                        .identifier("Mem_UsedPercent")
                                                        .metricName("Mem_UsedPercent")
                                                        .build()))
             .build();
-    sumologicMetricCVConfig.setMetricPack(metricPacks.get(0));
-    sumologicMetricCVConfig.setGroupName("default");
-    metricPackService.populateDataCollectionDsl(sumologicMetricCVConfig.getType(), metricPacks.get(0));
+    nextGenMetricCVConfig.setMetricPack(metricPacks.get(0));
+    nextGenMetricCVConfig.setGroupName("default");
+    metricPackService.populateDataCollectionDsl(nextGenMetricCVConfig.getType(), metricPacks.get(0));
     SumologicMetricDataCollectionInfo sumologicMetricDataCollectionInfo =
-        dataCollectionInfoMapper.toDataCollectionInfo(sumologicMetricCVConfig, VerificationTask.TaskType.SLI);
+        dataCollectionInfoMapper.toDataCollectionInfo(nextGenMetricCVConfig, VerificationTask.TaskType.SLI);
     SumoLogicConnectorDTO sumoLogicConnectorDTO =
         SumoLogicConnectorDTO.builder()
             .url(SUMOLOGIC_BASE_URL)
@@ -122,7 +122,7 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
                                               .baseUrl(SUMOLOGIC_BASE_URL)
                                               .build();
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
-        sumologicMetricCVConfig.getDataCollectionDsl(), runtimeParameters, (CallDetails callDetails) -> {});
+        nextGenMetricCVConfig.getDataCollectionDsl(), runtimeParameters, (CallDetails callDetails) -> {});
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(readJson("expected-sumologic-metric-sample-dsl-output.json"),
             new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));

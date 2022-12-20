@@ -34,7 +34,7 @@ public class InfraMapperFactory {
           .put(KUBERNETES, k8sInfraDefMapper)
           .put(HELM, helmInfraDefMapper)
           .put(SSH, sshInfraDefMapper)
-          .put(ECS, sshInfraDefMapper)
+          .put(ECS, ecsInfraDefMapper)
           .build();
 
   public static InfraDefMapper getInfraDefMapper(InfrastructureDefinition infraDef) {

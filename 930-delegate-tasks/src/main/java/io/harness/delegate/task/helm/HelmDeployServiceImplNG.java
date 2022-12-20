@@ -15,6 +15,10 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
 import static io.harness.delegate.clienttools.ClientTool.OC;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HELM_CHART_ERROR_EXPLANATION;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HELM_CHART_EXCEPTION;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HELM_CHART_REGEX;
+import static io.harness.delegate.task.helm.HelmExceptionConstants.Hints.HELM_CUSTOM_EXCEPTION_HINT;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -71,6 +75,7 @@ import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
@@ -199,7 +204,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       kubernetesConfig =
           containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequest.getK8sInfraDelegateConfig());
 
-      prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis());
+      prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
       resources = printHelmChartKubernetesResources(commandRequest);
 
@@ -667,7 +672,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   @VisibleForTesting
-  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) throws Exception {
+  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis, LogCallback logCallback)
+      throws Exception {
     ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
@@ -677,7 +683,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         fetchLocalChartRepo(commandRequest);
         break;
       case CUSTOM_REMOTE:
-        fetchCustomSourceManifest(commandRequest);
+        fetchCustomSourceManifest(commandRequest, logCallback);
         break;
       case GIT:
         fetchSourceRepo(commandRequest);
@@ -694,7 +700,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     }
   }
 
-  void fetchCustomSourceManifest(HelmCommandRequestNG commandRequest) throws IOException {
+  void fetchCustomSourceManifest(HelmCommandRequestNG commandRequest, LogCallback logCallback) throws IOException {
     CustomRemoteStoreDelegateConfig storeDelegateConfig =
         (CustomRemoteStoreDelegateConfig) commandRequest.getManifestDelegateConfig().getStoreDelegateConfig();
 
@@ -707,8 +713,20 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       throw new InvalidRequestException("No manifest files found under working directory", USER);
     }
     File manifestDirectory = file.listFiles(pathname -> !file.isHidden())[0];
-    copyManifestFilesToWorkingDir(manifestDirectory, new File(workingDirectory));
 
+    try {
+      copyManifestFilesToWorkingDir(manifestDirectory, new File(workingDirectory));
+    } catch (IOException e) {
+      String exceptionMessage = ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(e));
+      String msg = HELM_CHART_EXCEPTION + exceptionMessage;
+      log.error(msg, e);
+      if (e.getMessage().matches(HELM_CHART_REGEX)) {
+        throw NestedExceptionUtils.hintWithExplanationException(HELM_CUSTOM_EXCEPTION_HINT,
+            HELM_CHART_ERROR_EXPLANATION, new InvalidRequestException(HELM_CHART_EXCEPTION, e, WingsException.USER));
+      } else {
+        throw new InvalidRequestException(HELM_CHART_EXCEPTION, e, WingsException.USER);
+      }
+    }
     commandRequest.setWorkingDir(workingDirectory);
     commandRequest.getLogCallback().saveExecutionLog("Custom source manifest downloaded locally");
   }

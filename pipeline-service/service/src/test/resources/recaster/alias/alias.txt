@@ -178,3 +178,4 @@ io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.beans.outcomes.LiteEnginePodDetailsOutcome
 io.harness.beans.yaml.extended.CIShellType
 io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
+io.harness.steps.plugin.ContainerStepOutcome

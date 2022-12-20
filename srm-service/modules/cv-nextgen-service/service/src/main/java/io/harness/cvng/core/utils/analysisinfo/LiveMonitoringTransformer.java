@@ -8,6 +8,7 @@
 package io.harness.cvng.core.utils.analysisinfo;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
 
 import java.util.Objects;
@@ -18,6 +19,13 @@ public class LiveMonitoringTransformer {
   public static LiveMonitoring transformDTOtoEntity(HealthSourceMetricDefinition.AnalysisDTO analysisDTO) {
     if (Objects.nonNull(analysisDTO) && Objects.nonNull(analysisDTO.getLiveMonitoring())) {
       return LiveMonitoring.builder().enabled(analysisDTO.getLiveMonitoring().getEnabled()).build();
+    }
+    return null;
+  }
+
+  public static LiveMonitoring transformQueryDefinitiontoEntity(QueryDefinition queryDefinition) {
+    if (Objects.nonNull(queryDefinition) && Objects.nonNull(queryDefinition.getLiveMonitoringEnabled())) {
+      return LiveMonitoring.builder().enabled(queryDefinition.getLiveMonitoringEnabled()).build();
     }
     return null;
   }

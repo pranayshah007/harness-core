@@ -121,7 +121,6 @@ import software.wings.beans.AccountStatus;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.TaskType;
 import software.wings.cdn.CdnConfig;
-import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.events.TestUtils;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
@@ -154,7 +153,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -194,7 +192,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Rule public WireMockRule wireMockRule = new WireMockRule(port);
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @InjectMocks @Inject private DelegateCache delegateCache;
+  @Mock private DelegateCache delegateCache;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateTaskService delegateTaskService;
@@ -236,7 +234,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     when(mainConfiguration.getLogStreamingServiceConfig()).thenReturn(logSteamingServiceConfig);
 
     PortalConfig portalConfig = new PortalConfig();
-    portalConfig.setCriticalDelegateTaskRejectAtLimit(100000);
+    portalConfig.setOptionalDelegateTaskRejectAtLimit(1000);
+    portalConfig.setImportantDelegateTaskRejectAtLimit(1000);
     portalConfig.setJwtNextGenManagerSecret("**********");
     when(mainConfiguration.getPortal()).thenReturn(portalConfig);
     when(delegateGrpcConfig.getPort()).thenReturn(8080);
@@ -244,6 +243,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     when(accountService.getDelegateConfiguration(anyString()))
         .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList("0.0.0")).build());
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    when(accountService.getFromCacheWithFallback(anyString())).thenReturn(account);
     when(infraDownloadService.getDownloadUrlForDelegate(anyString(), any()))
         .thenReturn("http://localhost:" + port + "/builds/9/delegate.jar");
     when(infraDownloadService.getCdnWatcherBaseUrl()).thenReturn("http://localhost:9500/builds");
@@ -364,9 +364,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
                       .build())
             .build();
 
-    PortalConfig portalConfig = new PortalConfig();
-    portalConfig.setOptionalDelegateTaskRejectAtLimit(10000);
-    when(mainConfiguration.getPortal()).thenReturn(portalConfig);
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     delegateTaskServiceClassic.queueTask(delegateTask);
@@ -379,12 +376,10 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
-  @Ignore("Ignore until we replace noop with real exception")
   public void shouldNotSaveDelegateTaskWhenRankLimitIsReached() {
     DelegateTask delegateTask = DelegateTask.builder()
                                     .uuid(generateUuid())
                                     .accountId(ACCOUNT_ID)
-                                    .rank(DelegateTaskRank.IMPORTANT)
                                     .waitId(generateUuid())
                                     .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
                                     .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
@@ -404,9 +399,12 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     portalConfig.setImportantDelegateTaskRejectAtLimit(0);
     when(mainConfiguration.getPortal()).thenReturn(portalConfig);
 
-    assertThatThrownBy(() -> delegateTaskServiceClassic.queueTask(delegateTask))
-        .isInstanceOf(RateLimitExceededException.class)
-        .hasMessage("Rate limit exceeded for task rank IMPORTANT. Please try again later.");
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+
+    delegateTaskServiceClassic.queueTask(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
+        .isNull();
   }
 
   @Test
@@ -472,6 +470,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     Delegate delegate = createDelegateBuilder().build();
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, false)).thenReturn(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     DelegateTaskPackage delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), DELEGATE_ID);
@@ -494,6 +493,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     Delegate delegate = createDelegateBuilder().build();
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
+    when(delegateCache.get(ACCOUNT_ID, DELEGATE_ID, false)).thenReturn(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     String delegateInstanceId = generateUuid();
     DelegateTaskPackage delegateTaskPackage = delegateTaskServiceClassic.acquireDelegateTask(
@@ -525,7 +525,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     Delegate delegate = createDelegateBuilder().build();
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
-    delegateCache.get(ACCOUNT_ID, DELEGATE_ID, true);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     assertThat(delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null))
         .isNotNull();
