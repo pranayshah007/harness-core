@@ -31,6 +31,7 @@ import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -61,8 +62,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
@@ -81,13 +84,18 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   @Override
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, DeploymentStageNode yamlField) {
     CdFilterBuilder filterBuilder = CdFilter.builder();
+    try {
+      final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
 
-    final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
+      validate(filterCreationContext, deploymentStageConfig);
+      addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
+      addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
-    validate(filterCreationContext, deploymentStageConfig);
-    addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
-    addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
-
+    } catch (InvalidYamlRuntimeException | WingsException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      log.error("Error in DeploymentStageFilterJsonCreatorV2", ex);
+    }
     return filterBuilder.build();
   }
 
