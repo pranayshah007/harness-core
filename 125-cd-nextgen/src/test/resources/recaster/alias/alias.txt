@@ -682,3 +682,5 @@ io.harness.cdng.tas.TasStepPassThroughData
 io.harness.cdng.aws.asg.AsgRollingDeployStepNode
 io.harness.cdng.aws.asg.AsgRollingDeployStepParameters
 io.harness.cdng.aws.asg.AsgRollingDeployStepInfo
+io.harness.cdng.aws.asg.AsgRollingRollbackDataOutcome
+io.harness.cdng.aws.asg.AsgStepExceptionPassThroughData

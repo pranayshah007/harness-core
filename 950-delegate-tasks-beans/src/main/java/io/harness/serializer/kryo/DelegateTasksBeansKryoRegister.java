@@ -7,9 +7,8 @@
 
 package io.harness.serializer.kryo;
 
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.esotericsoftware.kryo.Kryo;
-import com.google.protobuf.UnknownFieldSet;
+import static io.harness.annotations.dev.HarnessTeam.DEL;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
@@ -438,7 +437,10 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+<<<<<<< HEAD
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
+=======
+>>>>>>> 7256e7d8233 ([feat]: [CDS-47025] asg rolling deploy manager changes 4)
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
@@ -901,10 +903,7 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.serializer.KryoRegistrar;
-import lombok.SneakyThrows;
-import org.eclipse.jgit.api.GitCommand;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.APMValidateCollectorConfig;
@@ -1042,9 +1041,14 @@ import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
 import software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec;
 import software.wings.yaml.gitSync.YamlGitConfig;
 
+import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.esotericsoftware.kryo.Kryo;
+import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static io.harness.annotations.dev.HarnessTeam.DEL;
+import lombok.SneakyThrows;
+import org.eclipse.jgit.api.GitCommand;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @OwnedBy(DEL)
 public class DelegateTasksBeansKryoRegister implements KryoRegistrar {

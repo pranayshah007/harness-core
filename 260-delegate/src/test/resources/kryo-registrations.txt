@@ -2365,7 +2365,6 @@
 573570:io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters
 573571:io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest
 573572:io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse
-<<<<<<< HEAD
 573573:io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest
 573574:io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse
 573575:io.harness.delegate.task.aws.asg.AsgCanaryDeployResult

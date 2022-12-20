@@ -7,7 +7,9 @@
 
 package io.harness.cdng.aws.asg;
 
-import com.google.inject.Inject;
+import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -33,10 +35,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
 
-import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
-import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
+import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -69,7 +70,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       throws Exception {
     log.info("Calling executeNextLink");
     return asgStepCommonHelper.executeNextLinkRolling(
-            this, ambiance, stepParameters, passThroughData, responseSupplier, asgStepHelper);
+        this, ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
@@ -101,26 +102,28 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Override
   public TaskChainResponse executeAsgPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepElementParameters,
-                                                         AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData, UnitProgressData unitProgressData) {
+      AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = asgPrepareRollbackDataPassThroughData.getInfrastructureOutcome();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     AsgPrepareRollbackDataRequest asgPrepareRollbackDataRequest =
-            AsgPrepareRollbackDataRequest.builder()
-                    .commandName(ASG_PREPARE_ROLLBACK_COMMAND_NAME)
-                    .accountId(accountId)
-                    .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
-                    .asgStoreManifestsContent(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent())
-                    .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-                    .build();
-    return asgStepCommonHelper.queueAsgTask(
-            stepElementParameters, asgPrepareRollbackDataRequest, ambiance, asgPrepareRollbackDataPassThroughData, false, AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
+        AsgPrepareRollbackDataRequest.builder()
+            .commandName(ASG_PREPARE_ROLLBACK_COMMAND_NAME)
+            .accountId(accountId)
+            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgStoreManifestsContent(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent())
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .build();
+    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgPrepareRollbackDataRequest, ambiance,
+        asgPrepareRollbackDataPassThroughData, false, AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
   }
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    // TODO
+    if (passThroughData instanceof AsgStepExceptionPassThroughData) {
+      return asgStepCommonHelper.handleStepExceptionFailure((AsgStepExceptionPassThroughData) passThroughData);
+    }
 
     AsgExecutionPassThroughData asgExecutionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
     InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();

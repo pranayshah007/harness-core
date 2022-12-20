@@ -7,10 +7,11 @@
 
 package io.harness.cdng.stepsdependency.constants;
 
-import io.harness.annotations.dev.OwnedBy;
-import lombok.experimental.UtilityClass;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
+
+import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
 @UtilityClass
