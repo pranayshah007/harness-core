@@ -261,13 +261,13 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
 
     List<CgDeploymentReleaseDetails> releaseDetails = new ArrayList<>();
     taskDetails.getReleaseIdentifiers()
-        .parallelStream()
+        .stream()
         .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
         .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
         .forEach(releaseIdentifier
             -> releaseDetails.addAll(
                 releaseIdentifier.getNamespaces()
-                    .parallelStream()
+                    .stream()
                     .map(namespace
                         -> CgDeploymentReleaseDetails.newBuilder()
                                .setTaskDetailsId(taskDetails.getUuid())
