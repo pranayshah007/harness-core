@@ -36,7 +36,6 @@ import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
-import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
@@ -141,7 +140,6 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private CDExpressionResolver cdExpressionResolver;
   private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
 
   public TaskChainResponse startChainLink(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
@@ -399,8 +397,6 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
-    cdExpressionResolver.updateExpressions(ambiance, stepElementParameters);
 
     List<ManifestOutcome> ecsRunTaskManifestOutcomes = getEcsRunTaskManifestOutcomes(stepElementParameters);
 

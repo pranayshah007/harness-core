@@ -43,13 +43,11 @@ public class EcsRunTaskBaseStepInfo {
   @Wither
   @JsonProperty("taskDefinition")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
-  @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> taskDefinition;
 
   @Wither
   @JsonProperty("runTaskRequestDefinition")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
-  @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> runTaskRequestDefinition;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
