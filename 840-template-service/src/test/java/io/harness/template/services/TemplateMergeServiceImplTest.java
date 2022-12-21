@@ -143,7 +143,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNotNull();
 
-    String resFile = "template-pipeline-templateInputs.yaml";
+    String resFile = "step-template-with-var-inputs.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
   }
@@ -752,7 +752,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testMergeTemplateSpecToPipelineYaml_StepTemplateAtDiffScopeWithVariables() {
-    String filename = "step-template-with-variables";
+    String filename = "step-template-with-variables.yaml";
     String shellScriptTemplateStepYaml = readFile(filename);
     TemplateEntity templateEntity = TemplateEntity.builder()
                                         .accountId(ACCOUNT_ID)

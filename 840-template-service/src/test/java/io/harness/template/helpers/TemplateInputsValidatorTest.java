@@ -70,8 +70,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
-  @Mock
-  AccountClient accountClient;
+  @Mock AccountClient accountClient;
 
   @Before
   public void setup() throws IOException {

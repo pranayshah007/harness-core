@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -28,6 +29,7 @@ import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.template.entity.TemplateEntity;
@@ -54,6 +56,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
+  @Mock AccountClient accountClient;
 
   private static final String ACCOUNT_ID = "accountId";
 
@@ -70,6 +73,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
+    on(templateMergeServiceHelper).set("accountClient", accountClient);
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
@@ -89,6 +93,10 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
         -> Response.success(ResponseDTO.newResponse(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build())))
         .when(ngManagerReconcileCall)
         .execute();
+
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
   @Test
