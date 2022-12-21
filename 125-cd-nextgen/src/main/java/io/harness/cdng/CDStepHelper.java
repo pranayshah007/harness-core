@@ -79,6 +79,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -398,6 +399,13 @@ public class CDStepHelper {
         String repoUrl = getGitRepoUrl(bitbucketConnectorDTO, repoName);
         bitbucketConnectorDTO.setUrl(repoUrl);
         bitbucketConnectorDTO.setConnectionType(GitConnectionType.REPO);
+      }
+    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
+      AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
+      if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
+        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
+        azureRepoConnectorDTO.setUrl(repoUrl);
+        azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
     }
   }
