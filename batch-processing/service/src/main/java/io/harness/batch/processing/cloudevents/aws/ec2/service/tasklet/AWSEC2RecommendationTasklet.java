@@ -26,6 +26,7 @@ import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -61,6 +62,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
   @Autowired private CEAWSConfigHelper ceawsConfigHelper;
+  @Autowired private RecommendationsIgnoreListService ignoreListService;
 
   private static final String MODIFY = "Modify";
 
@@ -114,6 +116,8 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
               log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
               saveRecommendationInTimeScaleDB(ec2Recommendation);
+              ignoreListService.updateEC2RecommendationState(ec2Recommendation.getUuid(), accountId,
+                  ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceId());
             }
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);

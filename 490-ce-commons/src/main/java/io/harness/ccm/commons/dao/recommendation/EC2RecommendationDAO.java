@@ -8,7 +8,7 @@
 package io.harness.ccm.commons.dao.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
@@ -18,10 +18,13 @@ import static io.harness.timescaledb.Tables.UTILIZATION_DATA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation.EC2RecommendationKeys;
+import io.harness.ccm.commons.entities.recommendations.RecommendationEC2InstanceId;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -34,6 +37,7 @@ import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -132,16 +136,25 @@ public class EC2RecommendationDAO {
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
-            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
+            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 1, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
-            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS - 1, ChronoUnit.DAYS)))
+            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 1, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
+  }
+
+  @NonNull
+  public void updateJiraInEC2Recommendation(@NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(EC2Recommendation.class)
+                            .filter(EC2RecommendationKeys.accountId, accountId)
+                            .filter(EC2RecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(EC2Recommendation.class)
+            .set(EC2RecommendationKeys.jiraDetails, jiraDetails));
   }
 
   /**
@@ -158,5 +171,47 @@ public class EC2RecommendationDAO {
         .offset(0)
         .limit(UTIL_DAYS)
         .fetchInto(EC2InstanceUtilizationData.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreEC2Recommendations(
+      @NonNull String accountId, @NonNull List<RecommendationEC2InstanceId> ec2Instances) {
+    if (ec2Instances.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.EC2_INSTANCE.name()))
+                   .and(getEC2Condition(ec2Instances)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unignoreEC2Recommendations(
+      @NonNull String accountId, @NonNull List<RecommendationEC2InstanceId> ec2Instances) {
+    if (ec2Instances.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.EC2_INSTANCE.name()))
+                   .and(getEC2Condition(ec2Instances)))
+        .execute();
+  }
+
+  private Condition getEC2Condition(List<RecommendationEC2InstanceId> ec2Instances) {
+    RecommendationEC2InstanceId ec2Instance = ec2Instances.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(ec2Instance.getInstanceId())
+                              .and(CE_RECOMMENDATIONS.NAMESPACE.eq(ec2Instance.getAwsAccountId()));
+    for (int i = 1; i < ec2Instances.size(); i++) {
+      ec2Instance = ec2Instances.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(ec2Instance.getInstanceId())
+                       .and(CE_RECOMMENDATIONS.NAMESPACE.eq(ec2Instance.getAwsAccountId())));
+    }
+    return condition;
   }
 }
