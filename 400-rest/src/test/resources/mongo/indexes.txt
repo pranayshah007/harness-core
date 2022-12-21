@@ -64,6 +64,7 @@ artifactStream {"name": "nextCleanupIteration_1", "background": true} {"nextClea
 artifactStream {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 artifactStream {"name": "perpetualTaskId_1", "background": true} {"perpetualTaskId": 1}
 artifactStream {"name": "serviceId_1", "background": true} {"serviceId": 1}
+artifactStream {"name": "settingId_1", "background": true} {"settingId": 1}
 artifactStream {"name": "templateUuid_1", "background": true} {"templateUuid": 1}
 artifactStream {"name": "yaml", "unique": true} {"appId": 1, "serviceId": 1, "name": 1}
 artifacts {"name": "accountId_artifactStreamId_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "createdAt": -1}
