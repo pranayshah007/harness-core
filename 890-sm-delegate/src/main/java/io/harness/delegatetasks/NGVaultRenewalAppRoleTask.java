@@ -8,7 +8,7 @@
 package io.harness.delegatetasks;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;

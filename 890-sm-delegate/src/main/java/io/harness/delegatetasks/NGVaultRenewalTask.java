@@ -10,7 +10,7 @@ package io.harness.delegatetasks;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.helpers.NGVaultTaskHelper.logAndThrowVaultError;
+import static io.harness.helpers.vault.NGVaultTaskHelper.logAndThrowVaultError;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofMillis;
