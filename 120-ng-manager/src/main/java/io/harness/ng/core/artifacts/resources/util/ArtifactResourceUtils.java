@@ -53,6 +53,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -328,6 +329,7 @@ public class ArtifactResourceUtils {
     YamlNode artifactTagLeafNode =
         serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
 
+    // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
 
     if (artifactSpecNode.getParentNode() != null
@@ -361,7 +363,13 @@ public class ArtifactResourceUtils {
         YamlNode artifactTemplateSpecNode;
         try {
           artifactTemplateSpecNode = YamlNode.fromYamlPath(response.getYaml(), "template/spec");
-          artifactSpecNode = artifactTemplateSpecNode;
+
+          String inputSetYaml = YamlUtils.writeYamlString(new YamlField(artifactSpecNode));
+          String originalYaml = YamlUtils.writeYamlString(new YamlField(artifactTemplateSpecNode));
+          String mergedArtifactYamlConfig =
+              InputSetMergeUtility.mergeRuntimeInputValuesIntoOriginalYamlForArrayNode(originalYaml, inputSetYaml);
+
+          artifactSpecNode = YamlUtils.readTree(mergedArtifactYamlConfig).getNode();
         } catch (IOException e) {
           throw new InvalidRequestException("Cannot read spec from the artifact source template");
         }
