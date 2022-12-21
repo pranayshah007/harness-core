@@ -16,6 +16,8 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.nullCheck;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
@@ -225,6 +227,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public void deleteByAccountId(String accountId) {
     pruneByEntity("accountId", accountId);
+    deleteManualSyncJobsByAccountId(accountId);
+  }
+
+  private void deleteManualSyncJobsByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(ManualSyncJob.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 
   @Override
@@ -459,7 +466,7 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public List<Boolean> getManualSyncJobsStatus(String accountId, Set<String> manualJobIdSet) {
     List<Key<ManualSyncJob>> keyList = wingsPersistence.createQuery(ManualSyncJob.class)
-                                           .filter(ManualSyncJob.ACCOUNT_ID_KEY2, accountId)
+                                           .filter(ACCOUNT_ID_KEY2, accountId)
                                            .field("_id")
                                            .in(manualJobIdSet)
                                            .asKeyList();

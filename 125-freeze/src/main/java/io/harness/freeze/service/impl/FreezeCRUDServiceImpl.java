@@ -20,6 +20,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
@@ -189,6 +190,21 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
         .noOfFailed(failed)
         .freezeErrorResponseDTOList(freezeErrorResponseDTOList)
         .build();
+  }
+
+  @Override
+  public void deleteByScope(io.harness.beans.Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    freezeConfigRepository.delete(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(FreezeConfigEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(FreezeConfigEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(FreezeConfigEntityKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
   }
 
   @Override

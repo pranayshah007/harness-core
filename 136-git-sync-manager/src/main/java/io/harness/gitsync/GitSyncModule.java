@@ -12,7 +12,9 @@ import static io.harness.Microservice.CORE;
 import static io.harness.Microservice.PMS;
 import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_COMMIT;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
@@ -72,6 +74,7 @@ import io.harness.gitsync.core.service.YamlChangeSetLifeCycleManagerService;
 import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.gitsync.core.service.webhookevent.GitBranchHookEventExecutionService;
 import io.harness.gitsync.core.service.webhookevent.GitPushEventExecutionService;
+import io.harness.gitsync.event.GitCommitEventListener;
 import io.harness.gitsync.gitfileactivity.impl.GitSyncServiceImpl;
 import io.harness.gitsync.gitfileactivity.service.GitSyncService;
 import io.harness.gitsync.gitsyncerror.impl.GitSyncErrorServiceImpl;
@@ -164,6 +167,7 @@ public class GitSyncModule extends AbstractModule {
     bind(FullSyncTriggerService.class).to(FullSyncTriggerServiceImpl.class);
     bind(GitFullSyncConfigService.class).to(GitFullSyncConfigServiceImpl.class);
     bind(GitFileCacheService.class).to(GitFileCacheServiceImpl.class);
+    bind(MessageListener.class).annotatedWith(Names.named(GIT_COMMIT + ENTITY_CRUD)).to(GitCommitEventListener.class);
     registerRequiredBindings();
 
     bindFullSyncMessageListeners();
