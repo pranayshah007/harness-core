@@ -1012,6 +1012,14 @@ public class CfCommandTaskHelperNG {
     cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
   }
 
+  public void enableAutoscalerIfNeeded(ApplicationDetail applicationDetail, CfAppAutoscalarRequestData autoscalarRequestData,
+                                       LogCallback logCallback) throws PivotalClientApiException {
+    autoscalarRequestData.setApplicationName(applicationDetail.getName());
+    autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+    autoscalarRequestData.setExpectedEnabled(false);
+    cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
+  }
+
   public void deleteNewApp(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, TasApplicationInfo newApp,
       LogCallback logCallback) throws PivotalClientApiException {
     String newAppGuid = newApp.getApplicationGuid();

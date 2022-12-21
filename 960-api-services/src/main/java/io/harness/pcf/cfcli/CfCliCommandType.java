@@ -30,7 +30,8 @@ public enum CfCliCommandType {
   AUTOSCALING_APPS("autoscaling-apps"),
   PUSH("push"),
   START("start"),
-  PLUGINS("plugins");
+  PLUGINS("plugins"),
+  CURL("curl");
 
   CfCliCommandType(String value) {
     this.value = value;

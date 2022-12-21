@@ -14,6 +14,7 @@ import io.harness.pcf.cfcli.command.ApiCliCommand.ApiOptions;
 import io.harness.pcf.cfcli.command.AuthCliCommand;
 import io.harness.pcf.cfcli.command.AutoscalingAppsCliCommand;
 import io.harness.pcf.cfcli.command.ConfigureAutoscalingCliCommand;
+import io.harness.pcf.cfcli.command.CurlCliCommand;
 import io.harness.pcf.cfcli.command.DisableAutoscalingCliCommand;
 import io.harness.pcf.cfcli.command.EnableAutoscalingCliCommand;
 import io.harness.pcf.cfcli.command.LogsCliCommand;
@@ -208,6 +209,25 @@ public interface CfCliCommandResolver {
         .options(PushOptions.builder().pathToManifest(pathToManifest).variableFilePaths(variableFilePaths).build())
         .build()
         .getCommand();
+  }
+
+  static String getPushCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest, final String strategy) {
+    return PushCliCommand.builder()
+            .cliPath(cfCliPath)
+            .cliVersion(cfCliVersion)
+            .options(PushCliCommand.PushOptionsV7.builder().pathToManifest(pathToManifest).strategy(strategy).build())
+            .build()
+            .getCommand();
+  }
+
+  static String getPushCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest,
+                                  final List<String> variableFilePaths, final String strategy) {
+    return PushCliCommand.builder()
+            .cliPath(cfCliPath)
+            .cliVersion(cfCliVersion)
+            .options(PushCliCommand.PushOptionsV7.builder().pathToManifest(pathToManifest).variableFilePaths(variableFilePaths).strategy(strategy).build())
+            .build()
+            .getCommand();
   }
 
   static String getCheckingPluginsCliCommand(

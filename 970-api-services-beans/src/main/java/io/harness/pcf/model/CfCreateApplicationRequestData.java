@@ -31,4 +31,5 @@ public class CfCreateApplicationRequestData {
   private boolean dockerBasedDeployment;
   private String newReleaseName;
   private boolean varsYmlFilePresent;
+  private String strategy;
 }
