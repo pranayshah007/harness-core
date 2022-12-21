@@ -16,6 +16,7 @@ import io.harness.pcf.model.CfConfig;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.CfRevertApplicationRequestData;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 
 import java.util.List;
@@ -96,5 +97,8 @@ public interface CfDeploymentManager {
       throws PivotalClientApiException;
 
   ApplicationDetail createRollingApplicationWithSteadyStateCheck(
-          CfCreateApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException
+          CfCreateApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
+
+  ApplicationDetail rollbackRollingApplicationWithSteadyStateCheck(
+          CfRevertApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
 }

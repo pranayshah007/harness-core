@@ -230,6 +230,17 @@ public interface CfCliCommandResolver {
             .getCommand();
   }
 
+  static String getCurlCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String httpMethod,
+                                  final String apiPath, final String httpData) {
+    return CurlCliCommand.builder()
+            .cliPath(cfCliPath)
+            .cliVersion(cfCliVersion)
+            .arguments(Collections.singletonList(apiPath))
+            .options(CurlCliCommand.CurlOptions.builder().httpMethod(httpMethod).httpData(httpData).build())
+            .build()
+            .getCommand();
+  }
+
   static String getCheckingPluginsCliCommand(
       final String cfCliPath, CfCliVersion cfCliVersion, final String pluginName) {
     List<String> arguments = new LinkedList<>();

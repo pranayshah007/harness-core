@@ -137,13 +137,11 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     File artifactFile = null;
     File workingDirectory = null;
-    List<ApplicationSummary> previousReleases =
-            cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfRollingDeployRequestNG.getReleaseNamePrefix());
     TasApplicationInfo currentProdInfo = null;
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
-      currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
-              workingDirectory, ((CfBasicSetupRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+      currentProdInfo = getCurrentProdInfo(clonePcfRequestConfig(cfRequestConfig).build(),
+              workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
               CfAppAutoscalarRequestData.builder()
@@ -151,11 +149,6 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                       .configPathVar(workingDirectory.getAbsolutePath())
                       .timeoutInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
                       .build();
-
-      logCallback.saveExecutionLog("\n# Fetching all existing applications ");
-
-      // Print Existing applications information
-      printExistingApplicationsDetails(logCallback, previousReleases);
 
       artifactFile = downloadArtifactFile(cfRollingDeployRequestNG, workingDirectory, logCallback);
 
@@ -493,27 +486,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
             .routeMaps(cfRequestConfig.getRouteMaps());
   }
 
-  private ApplicationSummary getCurrentProdApplicationSummary(List<ApplicationSummary> previousReleases) {
-    if (EmptyPredicate.isEmpty(previousReleases)) {
-      return null;
-    }
-
-    ApplicationSummary currentActiveApplication =
-            previousReleases.stream()
-                    .filter(applicationSummary -> applicationSummary.getInstances() > 0)
-                    .reduce((first, second) -> second)
-                    .orElse(null);
-
-    // if not found, get Most recent version with non-zero count.
-    if (currentActiveApplication == null) {
-      currentActiveApplication = previousReleases.get(previousReleases.size() - 1);
-    }
-    return currentActiveApplication;
-  }
-
-  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases,
-                                                CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) {
-    ApplicationSummary currentActiveApplication = getCurrentProdApplicationSummary(previousReleases);
+  private TasApplicationInfo getCurrentProdInfo(CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+    ApplicationDetail currentActiveApplication = cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
     if (currentActiveApplication == null) {
       return null;
     }
@@ -565,14 +539,5 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                     cfRollingDeployRequestNG.isUseCfCLI(), cfRollingDeployRequestNG.getCfCliVersion()))
             .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
             .build();
-  }
-
-  private void logException(
-      LogCallback executionLogCallback, CfDeployCommandRequestNG cfDeployCommandRequestNG, Exception exception) {
-    log.error(
-        CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing CF Deploy task [{}]", cfDeployCommandRequestNG, exception);
-
-    executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
-    Misc.logAllMessages(exception, executionLogCallback);
   }
 }

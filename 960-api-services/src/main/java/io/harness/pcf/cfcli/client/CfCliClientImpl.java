@@ -55,6 +55,7 @@ import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
 import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.CfRevertApplicationRequestData;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 import io.harness.pcf.model.PcfRouteInfo;
 import io.harness.pcf.model.PcfRouteInfo.PcfRouteInfoBuilder;
@@ -134,6 +135,43 @@ public class CfCliClientImpl implements CfCliClient {
   }
 
   @Override
+  public void revertAppByRevisionIdUsingCli(CfRevertApplicationRequestData requestData, LogCallback logCallback)
+          throws PivotalClientApiException {
+    log.info("Using CLI to revert application");
+
+    // Create a new filePath.
+    CfRequestConfig cfRequestConfig = requestData.getCfRequestConfig();
+
+    int exitCode = 1;
+    try {
+      logCallback.saveExecutionLog("# CF_HOME value: " + cfRequestConfig.getCfHomeDirPath());
+      boolean loginSuccessful = true;
+      if (!cfRequestConfig.isLoggedin()) {
+        loginSuccessful = doLogin(cfRequestConfig, logCallback, cfRequestConfig.getCfHomeDirPath());
+      }
+
+      String apiPath = "/v3/deployments";
+      String httpMethod = "POST";
+      String httpData = format("{\"relationships\":{\"app\":{\"data\":{\"guid\":\"%s\"}}},\"revision\":{\"guid\":\"%s\"}}", requestData.getApplicationId(), requestData.getRevisionId());
+
+      if (loginSuccessful) {
+        exitCode = doCfCurl(cfRequestConfig, logCallback, apiPath, httpMethod, httpData);
+      }
+    } catch (Exception e) {
+      throw new PivotalClientApiException(
+              format("Exception occurred while reverting Application: %s, Error: App revert process Failed. Revision Id used was: %s",
+                      cfRequestConfig.getApplicationName(), requestData.getRevisionId()),
+              e);
+    }
+
+    if (exitCode != 0) {
+      throw new PivotalClientApiException(
+              format("\"Exception occurred while reverting Application: %s, Error: App revert process Failed. Revision Id used was: %s . ExitCode: %s",
+                      cfRequestConfig.getApplicationName(), requestData.getRevisionId(), exitCode));
+    }
+  }
+
+  @Override
   public void startAppByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException {
     log.info("Using CLI to start application");
 
@@ -176,6 +214,21 @@ public class CfCliClientImpl implements CfCliClient {
     String command = constructCfPushCommand(requestData, finalFilePath);
     ProcessResult processResult = getProcessResult(
         command, environmentMapForPcfExecutor, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
+    int result = processResult.getExitValue();
+    if (result != 0) {
+      logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
+    } else {
+      logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
+    }
+    return result;
+  }
+
+  private int doCfCurl(CfRequestConfig pcfRequestConfig, LogCallback logCallback, String apiPath, String httpMethod, String httpData) throws InterruptedException, TimeoutException, IOException {
+    logCallback.saveExecutionLog("# Performing \"cf curl\"");
+    Map<String, String> environmentMapForPcfExecutor = getEnvironmentMapForCfExecutor(pcfRequestConfig.getEndpointUrl(), pcfRequestConfig.getCfHomeDirPath());
+    String command = CfCliCommandResolver.getCurlCliCommand(pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), httpMethod, apiPath, httpData);
+    ProcessResult processResult = getProcessResult(
+            command, environmentMapForPcfExecutor, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
     int result = processResult.getExitValue();
     if (result != 0) {
       logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);

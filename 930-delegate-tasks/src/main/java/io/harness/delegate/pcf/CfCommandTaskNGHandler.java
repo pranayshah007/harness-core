@@ -26,6 +26,7 @@ import io.harness.logging.LogCallback;
 
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -52,18 +53,6 @@ public abstract class CfCommandTaskNGHandler {
 
   protected abstract CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception;
-
-  protected void printExistingApplicationsDetails(
-      LogCallback executionLogCallback, List<ApplicationSummary> previousReleases) {
-    if (EmptyPredicate.isEmpty(previousReleases)) {
-      executionLogCallback.saveExecutionLog("# No Existing applications found");
-    } else {
-      StringBuilder appNames = new StringBuilder(color("# Existing applications: ", White, Bold));
-      previousReleases.forEach(
-          applicationSummary -> appNames.append("\n").append(encodeColor(applicationSummary.getName())));
-      executionLogCallback.saveExecutionLog(appNames.toString());
-    }
-  }
 
   protected boolean isDockerArtifact(TasArtifactConfig tasArtifactConfig) {
     return TasArtifactType.CONTAINER == tasArtifactConfig.getArtifactType();

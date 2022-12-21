@@ -650,6 +650,11 @@ public class CfCommandTaskHelperNG {
     return cfDeploymentManager.getApplicationByName(cfRequestConfig);
   }
 
+  public ApplicationDetail getApplicationDetails(CfRequestConfig cfRequestConfig, CfDeploymentManager cfDeploymentManager)
+          throws PivotalClientApiException {
+    return cfDeploymentManager.getApplicationByName(cfRequestConfig);
+  }
+
   public void downsizePreviousReleases(CfDeployCommandRequestNG cfDeployCommandRequestNG,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
       Integer updateCount, List<CfInternalInstanceElement> oldAppInstances,
