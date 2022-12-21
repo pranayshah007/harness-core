@@ -205,6 +205,11 @@ public class FreezeTimeUtils {
       if (recurrence.getRecurrenceType() == null) {
         throw new InvalidRequestException("Recurrence Type cannot be empty");
       }
+    } else {
+      Long endTime = getEpochValue(null, firstWindowEndTime, timeZone, 0);
+      if (endTime < getCurrentTime()) {
+        throw new InvalidRequestException("Freeze Window is already expired");
+      }
     }
   }
 }
