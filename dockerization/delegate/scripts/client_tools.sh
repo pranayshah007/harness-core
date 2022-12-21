@@ -16,8 +16,6 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://qa.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$ARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/helm/v3.9.2 \
   && curl -s -L -o client-tools/helm/v3.9.2/helm https://qa.harness.io/public/shared/tools/helm/release/v3.9.2/bin/linux/$ARCH/helm \
-  && mkdir -m 777 -p client-tools/helm/v2.13.1 \
-  && curl -s -L -o client-tools/helm/v2.13.1/helm https://qa.harness.io/public/shared/tools/helm/release/v2.13.1/bin/linux/$ARCH/helm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://qa.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$ARCH/chartmuseum \
   && mkdir -m 777 -p client-tools/tf-config-inspect/v1.1 \
