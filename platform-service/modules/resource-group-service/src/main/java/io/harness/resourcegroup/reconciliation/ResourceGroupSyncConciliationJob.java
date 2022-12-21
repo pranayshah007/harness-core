@@ -40,6 +40,7 @@ import io.harness.security.dto.ServicePrincipal;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -203,20 +204,18 @@ public class ResourceGroupSyncConciliationJob extends RedisTraceConsumer {
   }
 
   private void deleteResourceFromResourceGroup(ResourceInfo resource, ResourceGroupDTO resourceGroup) {
-    List<ResourceSelector> resourceSelectors =
-        resourceGroup.getResourceFilter()
-            .getResources()
-            .stream()
-            .filter(Objects::nonNull)
-            .filter(rs -> rs.getResourceType().equals(resource.getResourceType()))
-            .collect(Collectors.toList());
+    List<ResourceSelector> resourceSelectors = resourceGroup.getResourceFilter().getResources();
+    List<ResourceSelector> selectorsToBeRemoved = new ArrayList<>();
     for (Iterator<ResourceSelector> iterator = resourceSelectors.iterator(); iterator.hasNext();) {
       ResourceSelector resourceSelector = iterator.next();
-      resourceSelector.getIdentifiers().remove(resource.getResourceIdentifier());
-      if (resourceSelector.getIdentifiers().isEmpty()) {
-        iterator.remove();
+      if (resourceSelector != null && resourceSelector.getResourceType().equals(resource.getResourceType())) {
+        resourceSelector.getIdentifiers().remove(resource.getResourceIdentifier());
+        if (resourceSelector.getIdentifiers().isEmpty()) {
+          selectorsToBeRemoved.add(resourceSelector);
+        }
       }
     }
+    resourceSelectors.removeAll(selectorsToBeRemoved);
     resourceGroup.setResourceFilter(ResourceFilter.builder().resources(resourceSelectors).build());
   }
 }
