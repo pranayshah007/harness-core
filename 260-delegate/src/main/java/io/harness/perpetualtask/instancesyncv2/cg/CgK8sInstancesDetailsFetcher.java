@@ -34,8 +34,6 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.infrastructure.instance.info.ContainerInfo;
-import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -185,7 +183,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     }
   }
 
-  public List<ContainerInfo> fetchRunningK8sPods(
+  private List<ContainerInfo> fetchRunningK8sPods(
       K8sClusterConfig config, DirectK8sInstanceSyncTaskDetails k8sInstanceSyncTaskDetails) {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
     String containerServiceName = k8sInstanceSyncTaskDetails.getContainerServiceName();
@@ -193,6 +191,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
     try {
       log.info("Kubernetes cluster config for account {}, controller: {}", accountId, containerServiceName);
       notNullCheck("KubernetesConfig", kubernetesConfig);
+
+      // for k8s cluster version < v116 containerServiceName is not Empty
       if (isNotEmpty(containerServiceName)) {
         return fetchRunningK8sPodsForContainerServiceName(config, k8sInstanceSyncTaskDetails);
       } else {
