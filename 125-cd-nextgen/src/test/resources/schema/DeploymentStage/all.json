@@ -13047,7 +13047,7 @@
         "templateRef": {
           "type": "string"
         },
-        "templateVariables": {
+        "variables": {
           "$ref": "#/definitions/JsonNode"
         },
         "versionLabel": {
