@@ -20,9 +20,10 @@ message CgInstanceSyncResponse {
 }
 
 message InstanceSyncData {
+  reserved 2, 5;
   string task_details_id = 1;
-  bytes task_response = 2;
   string execution_status = 3;
   string error_message = 4;
-  int32 instance_count = 5;
+  bytes task_response = 6;
+  int32 instance_count = 7;
 }
