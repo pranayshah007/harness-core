@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -34,6 +35,7 @@ import io.harness.ng.core.template.refresh.TemplateInfo;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
@@ -68,9 +70,12 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
+  @Mock
+  AccountClient accountClient;
 
   @Before
   public void setup() throws IOException {
+    on(templateMergeServiceHelper).set("accountClient", accountClient);
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
@@ -88,6 +93,10 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     doReturn(ngManagerReconcileCall)
         .when(ngManagerReconcileClient)
         .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
+
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
 
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
