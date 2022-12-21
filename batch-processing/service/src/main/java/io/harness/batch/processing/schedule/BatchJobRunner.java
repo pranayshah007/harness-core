@@ -99,7 +99,7 @@ public class BatchJobRunner {
     if (batchJobType == BatchJobType.RERUN_JOB) {
       endAt = Instant.now().minus(15, ChronoUnit.HOURS);
     }
-    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
+    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK || batchJobType == BatchJobType.RECOMMENDATION_JIRA_STATUS) {
       endAt = Instant.now();
     }
     log.info("{} startAt: {}, endAt: {}", batchJobType, startAt, endAt);
@@ -109,7 +109,7 @@ public class BatchJobRunner {
     Instant jobsStartTime = Instant.now();
     log.info("{} batchJobScheduleTimeProvider: {}", batchJobType, batchJobScheduleTimeProvider);
     while (batchJobScheduleTimeProvider.hasNext()) {
-      log.info("");
+      log.info("{} Doing next", batchJobType);
       Instant endInstant = batchJobScheduleTimeProvider.next();
       if (null != endInstant && checkDependentJobFinished(accountId, endInstant, dependentBatchJobs)
           && checkOutOfClusterDependentJobs(accountId, startInstant, endInstant, batchJobType)
