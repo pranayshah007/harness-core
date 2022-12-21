@@ -8,7 +8,9 @@
 package io.harness.serializer;
 
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.CvNextGenCommonsKryoRegistrar;
+import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 
 import com.google.common.collect.ImmutableSet;
 import io.serializer.registrars.NGCommonsRegistrars;
@@ -19,16 +21,18 @@ public class CvNextGenCommonsRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(CvNextGenCommonsKryoRegistrar.class)
+          .add(CommonEntitiesKryoRegistrar.class)
+          .addAll(PersistenceRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
-          .addAll(CommonEntitiesRegistrars.kryoRegistrars)
           .addAll(NGCommonsRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+          .add(CommonEntitiesMorphiaRegister.class)
           .addAll(ConnectorNextGenRegistrars.morphiaRegistrars)
-          .addAll(CommonEntitiesRegistrars.morphiaRegistrars)
+          .addAll(PersistenceRegistrars.morphiaRegistrars)
           .addAll(NGCommonsRegistrars.morphiaRegistrars)
           .build();
 }
