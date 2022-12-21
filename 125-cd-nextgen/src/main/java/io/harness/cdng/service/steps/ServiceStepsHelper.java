@@ -87,7 +87,7 @@ public class ServiceStepsHelper {
 
     for (NGVariable ngVariable : serviceVariables) {
       Set<EntityDetailProtoDTO> entityDetailsProto =
-          entityReferenceExtractorUtils.extractReferredEntities(ambiance, ngVariable);
+          ngVariable == null ? Set.of() : entityReferenceExtractorUtils.extractReferredEntities(ambiance, ngVariable);
       List<EntityDetail> entityDetail =
           entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
       if (EmptyPredicate.isNotEmpty(entityDetail)) {

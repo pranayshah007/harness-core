@@ -114,8 +114,9 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
         .build();
   }
   private void checkForAccessOrThrow(Ambiance ambiance, StartupScriptConfiguration startupScriptConfiguration) {
-    Set<EntityDetailProtoDTO> entityDetailsProto =
-        entityReferenceExtractorUtils.extractReferredEntities(ambiance, startupScriptConfiguration);
+    Set<EntityDetailProtoDTO> entityDetailsProto = startupScriptConfiguration == null
+        ? Set.of()
+        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, startupScriptConfiguration);
 
     List<EntityDetail> entityDetails =
         entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));

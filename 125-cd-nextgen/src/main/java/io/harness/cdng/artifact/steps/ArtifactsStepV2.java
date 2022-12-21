@@ -231,8 +231,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
   }
   void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
-    Set<EntityDetailProtoDTO> entityDetailsProto =
-        entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
+    Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
+        ? Set.of()
+        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
 
     List<EntityDetail> entityDetails =
         entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
