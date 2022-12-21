@@ -23,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
@@ -45,6 +46,7 @@ import software.wings.beans.UserInvite;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
@@ -88,6 +90,7 @@ import retrofit2.http.Body;
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public class UserResourceNG {
   private final UserService userService;
+  private final UserServiceHelper userServiceHelper;
   private final SignupService signupService;
   private final TwoFactorAuthenticationManager twoFactorAuthenticationManager;
   private final AccountService accountService;
@@ -179,7 +182,10 @@ public class UserResourceNG {
   @DELETE
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
-    userService.delete(accountId, userId);
+    userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    if (!userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
+      userService.delete(accountId, userId);
+    }
     return new RestResponse<>(true);
   }
 
@@ -195,7 +201,7 @@ public class UserResourceNG {
   @Path("/scim/disabled")
   public RestResponse<Boolean> disableScimUser(@QueryParam("accountId") String accountId,
       @QueryParam("userId") String userId, @QueryParam("disabled") boolean disabled) {
-    return new RestResponse<>(scimUserService.changeScimUserDisabled(accountId, userId, disabled));
+    return new RestResponse<>(scimUserService.changeScimUserDisabled(accountId, userId));
   }
 
   @PUT

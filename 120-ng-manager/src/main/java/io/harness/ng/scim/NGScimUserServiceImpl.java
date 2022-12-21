@@ -201,7 +201,6 @@ public class NGScimUserServiceImpl implements ScimUserService {
         operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
 
     // Call CG to update the user as it is
-    ngUserService.updateScimUser(accountId, userId, patchRequest);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);
     if (!userMetadataDTOOptional.isPresent()) {
       log.error(
@@ -227,11 +226,6 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.error("NGSCIM: User is not found. userId: {}, accountId: {}", userId, accountId);
       return Response.status(Response.Status.NOT_FOUND).build();
     } else {
-      boolean cgUpdateResult = ngUserService.updateScimUser(accountId, userId, scimUser);
-      if (!cgUpdateResult) {
-        log.error("NGSCIM: User is not in CG found. userId: {}, accountId: {}", userId, accountId);
-        return Response.status(Response.Status.NOT_FOUND).build();
-      }
       String displayName = getName(scimUser);
       UserInfo existingUser = userInfo.get();
       UserMetadataDTO userMetadata = userMetadataDTOOptional.get();
@@ -242,9 +236,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
         ngUserService.updateUserMetadata(userMetadata);
       }
 
-      if (scimUser.getActive() != null && scimUser.getActive() == existingUser.isDisabled()) {
-        log.info("NGSCIM: Updated user's {}, active: {}", userId, scimUser.getActive());
-        changeScimUserDisabled(accountId, userId, !scimUser.getActive());
+      if (scimUser.getActive() != null && !scimUser.getActive()) {
+        log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+        deleteUser(userId, accountId);
       }
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
@@ -254,16 +248,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   @Override
-  public boolean changeScimUserDisabled(String accountId, String userId, boolean disabled) {
-    if (disabled) {
-      // OKTA doesn't send an explicit delete user request but only makes active true/false.
-      // We need to remove the user completely if active=false as we do not have any first
-      // class support for a disabled user vs a deleted user
-      ngUserService.removeUser(userId, accountId);
-    } else {
-      // This is to keep CG implementation working as it is.
-      ngUserService.updateUserDisabled(accountId, userId, disabled);
-    }
+  public boolean changeScimUserDisabled(String accountId, String userId) {
+    log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+    deleteUser(userId, accountId);
     return true;
   }
 
@@ -278,8 +265,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
 
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+    if ("active".equals(patchOperation.getPath()) && !patchOperation.getValue(Boolean.class)) {
+      log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     }
 
     if (CGRestUtils.getResponse(
@@ -299,8 +287,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
 
-    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
-      changeScimUserDisabled(accountId, userId, !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    if (patchOperation.getValue(ScimUserValuedObject.class) != null
+        && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive()) {
+      log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     } else {
       // Not supporting any other updates as of now.
       log.error("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
@@ -323,7 +313,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   private boolean shouldUpdateUser(ScimUser userQuery, UserMetadataDTO user) {
-    return user.isDisabled() || !StringUtils.equals(user.getName(), userQuery.getDisplayName())
+    return !StringUtils.equals(user.getName(), userQuery.getDisplayName()) || !userQuery.getActive()
         || !StringUtils.equals(user.getEmail(), userQuery.getUserName());
   }
 

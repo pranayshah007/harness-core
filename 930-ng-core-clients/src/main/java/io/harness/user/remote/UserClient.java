@@ -44,7 +44,6 @@ public interface UserClient {
   String SEARCH_TERM_KEY = "searchTerm";
   String USERS_SEARCH_API = "ng/user/search";
   String USERS_API = "ng/user";
-
   String USERS_AGGREGATE_API = "user";
   String USERS_API_OAUTH = "ng/user/oauth";
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
@@ -55,11 +54,11 @@ public interface UserClient {
   String SCIM_USER_UPDATE = "ng/user/scim";
   String SCIM_USER_DISABLED_UPDATE = "ng/user/scim/disabled";
   String USER_IN_ACCOUNT_VERIFICATION = "ng/user/user-account";
+
   String USER_SAFE_DELETE = "ng/user/safeDelete/{userId}";
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
   String CHECK_USER_LIMIT = "ng/user/limit-check";
-
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
   String USER_DISABLE_TWO_FACTOR_AUTH = "ng/user/disable-two-factor-auth";

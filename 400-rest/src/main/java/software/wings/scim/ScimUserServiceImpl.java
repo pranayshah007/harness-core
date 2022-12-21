@@ -267,8 +267,10 @@ public class ScimUserServiceImpl implements ScimUserService {
           patchOperation.getValue(String.class));
     }
 
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
+    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+        && !(patchOperation.getValue(Boolean.class))) {
+      log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     }
 
     if (patchOperation.getValue(ScimMultiValuedObject.class) != null
@@ -276,9 +278,10 @@ public class ScimUserServiceImpl implements ScimUserService {
       updateUser(patchOperation, user, UserKeys.name);
     }
 
-    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
-      changeScimUserDisabled(
-          accountId, user.getUuid(), !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    if (patchOperation.getValue(ScimUserValuedObject.class) != null
+        && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive()) {
+      log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     } else {
       // Not supporting any other updates as of now.
       log.error("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
@@ -356,10 +359,10 @@ public class ScimUserServiceImpl implements ScimUserService {
         }
       }
 
-      if (userResource.getActive() != null && userResource.getActive() == user.isDisabled()) {
+      if (userResource.getActive() != null && !userResource.getActive()) {
         userUpdate = true;
-        log.info("SCIM: Updating user's {}, enabled: {}", userId, userResource.getActive());
-        updateOperations.set(UserKeys.disabled, !userResource.getActive());
+        log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+        deleteUser(userId, accountId);
       }
       if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
           && userResource.getEmails() != null && userResource.getEmails().get(0) != null
@@ -381,13 +384,9 @@ public class ScimUserServiceImpl implements ScimUserService {
   }
 
   @Override
-  public boolean changeScimUserDisabled(String accountId, String userId, boolean disabled) {
-    UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-    updateOperation.set(UserKeys.disabled, disabled);
-    userService.updateUser(userId, updateOperation);
-    if (disabled) {
-      removeUserFromAllScimGroups(accountId, userId);
-    }
+  public boolean changeScimUserDisabled(String accountId, String userId) {
+    log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+    deleteUser(userId, accountId);
     return true;
   }
 }

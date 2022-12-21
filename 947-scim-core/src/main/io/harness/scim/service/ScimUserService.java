@@ -26,5 +26,5 @@ public interface ScimUserService {
 
   Response updateUser(String userId, String accountId, ScimUser scimUser);
 
-  boolean changeScimUserDisabled(String accountId, String userId, boolean disabled);
+  boolean changeScimUserDisabled(String accountId, String userId);
 }

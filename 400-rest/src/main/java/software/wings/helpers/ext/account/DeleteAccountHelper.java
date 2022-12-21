@@ -194,7 +194,7 @@ public class DeleteAccountHelper {
     });
     List<User> users = userService.getUsersOfAccount(accountId);
     if (!users.isEmpty()) {
-      users.forEach(user -> userService.delete(accountId, user.getUuid()));
+      users.forEach(user -> userService.forceDelete(accountId, user.getUuid()));
     }
     ssoSettingService.deleteByAccountId(accountId);
     return hPersistence.delete(Account.class, accountId);
