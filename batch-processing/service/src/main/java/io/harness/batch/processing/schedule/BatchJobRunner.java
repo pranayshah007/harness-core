@@ -72,6 +72,7 @@ public class BatchJobRunner {
       throws JobParametersInvalidException, JobExecutionAlreadyRunningException, JobRestartException,
              JobInstanceAlreadyCompleteException {
     BatchJobType batchJobType = BatchJobType.fromJob(job);
+    log.info("BatchJobRunner.runJob: {}", batchJobType);
     // Disable some jobs based on the flag. This can be removed later on
     if (batchJobType == BatchJobType.SYNC_BILLING_REPORT_AZURE
         && batchMainConfig.getAzureStorageSyncConfig().isSyncJobDisabled()) {
@@ -88,7 +89,7 @@ public class BatchJobRunner {
     List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
     Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
     if (null == startAt) {
-      log.debug("Event not received for account {} ", accountId);
+      log.info("Event not received for account {}, batchJobType: {} ", accountId, batchJobType);
       return;
     }
     Instant endAt = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -101,11 +102,14 @@ public class BatchJobRunner {
     if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
       endAt = Instant.now();
     }
+    log.info("{} startAt: {}, endAt: {}", batchJobType, startAt, endAt);
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
         new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
     Instant startInstant = startAt;
     Instant jobsStartTime = Instant.now();
+    log.info("{} batchJobScheduleTimeProvider: {}", batchJobType, batchJobScheduleTimeProvider);
     while (batchJobScheduleTimeProvider.hasNext()) {
+      log.info("");
       Instant endInstant = batchJobScheduleTimeProvider.next();
       if (null != endInstant && checkDependentJobFinished(accountId, endInstant, dependentBatchJobs)
           && checkOutOfClusterDependentJobs(accountId, startInstant, endInstant, batchJobType)
@@ -122,6 +126,7 @@ public class BatchJobRunner {
           try (AutoLogContext ignore =
                    new BatchJobTimeLogContext(String.valueOf(startInstant.toEpochMilli()), OVERRIDE_ERROR)) {
             Instant jobStartTime = Instant.now();
+            log.info("Launching job: {}", batchJobType);
             BatchStatus status = jobLauncher.run(job, params).getStatus();
             log.info("Job status {}", status);
             Instant jobStopTime = Instant.now();

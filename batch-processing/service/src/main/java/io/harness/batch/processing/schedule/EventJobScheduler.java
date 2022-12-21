@@ -167,6 +167,7 @@ public class EventJobScheduler {
   // this job runs every 1 hour "0 0 */1 ? * *". For debugging, run every minute "0 * * ? * *"
   @Scheduled(cron = "0 0 */1 ? * *")
   public void sendSegmentEvents() {
+    log.info("RECOMMENDATION_JIRA_STATUS checking");
     runCloudEfficiencyEventJobs(BatchJobBucket.OTHERS, true);
   }
 
@@ -394,6 +395,7 @@ public class EventJobScheduler {
 
   @SuppressWarnings("squid:S1166") // not required to rethrow exceptions.
   private void runJob(String accountId, Job job, boolean runningMode) {
+    log.info("RUNJOB: {}", BatchJobType.fromJob(job));
     if (BatchJobType.K8S_NODE_RECOMMENDATION == BatchJobType.fromJob(job)
         && !featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId)) {
       return;
