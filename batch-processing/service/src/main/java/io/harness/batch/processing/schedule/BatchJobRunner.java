@@ -11,6 +11,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.config.BatchMainConfig;
@@ -18,8 +19,10 @@ import io.harness.batch.processing.service.impl.BatchJobTimeLogContext;
 import io.harness.batch.processing.service.intfc.BatchJobIntervalService;
 import io.harness.batch.processing.service.intfc.BatchJobScheduledDataService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
+import io.harness.ccm.commons.dao.CEDataReRunRequestDao;
 import io.harness.ccm.commons.entities.batch.BatchJobInterval;
 import io.harness.ccm.commons.entities.batch.BatchJobScheduledData;
+import io.harness.ccm.commons.entities.batch.CEDataReRunRequest;
 import io.harness.logging.AutoLogContext;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -43,6 +46,7 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -53,6 +57,8 @@ public class BatchJobRunner {
   @Autowired private BatchJobScheduledDataService batchJobScheduledDataService;
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private BatchMainConfig batchMainConfig;
+  @Autowired private CEDataReRunRequestDao ceDataReRunRequestDao;
+  @Autowired private BillingDataServiceImpl billingDataService;
 
   private Cache<CacheKey, Boolean> logErrorCache = Caffeine.newBuilder().expireAfterWrite(24, TimeUnit.HOURS).build();
 
@@ -85,7 +91,22 @@ public class BatchJobRunner {
       chronoUnit = batchJobInterval.getIntervalUnit();
       duration = batchJobInterval.getInterval();
     }
-    List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
+
+    List<CEDataReRunRequest> notProcessedDataReRunRequests =
+        ceDataReRunRequestDao.getNotProcessedDataReRunRequests(accountId, batchJobType.name());
+    if (!CollectionUtils.isEmpty(notProcessedDataReRunRequests)) {
+      for (CEDataReRunRequest ceDataReRunRequest : notProcessedDataReRunRequests) {
+        Instant reRunStartAt = ceDataReRunRequest.getStartAt();
+        Instant reRunEndAt = ceDataReRunRequest.getEndAt();
+        if (null != ceDataReRunRequest.getProcessedEndAt()) {
+          reRunStartAt = ceDataReRunRequest.getProcessedEndAt();
+        }
+        triggerJob(accountId, batchJobType, reRunStartAt, reRunEndAt, duration, chronoUnit, job, runningMode,
+            ceDataReRunRequest.getUuid());
+        ceDataReRunRequestDao.updateRequestStatus(ceDataReRunRequest);
+      }
+    }
+
     Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
     if (null == startAt) {
       log.debug("Event not received for account {} ", accountId);
@@ -101,12 +122,30 @@ public class BatchJobRunner {
     if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
       endAt = Instant.now();
     }
+    triggerJob(accountId, batchJobType, startAt, endAt, duration, chronoUnit, job, runningMode, null);
+  }
+
+  private void triggerJob(String accountId, BatchJobType batchJobType, Instant startAt, Instant endAt, long duration,
+      ChronoUnit chronoUnit, Job job, boolean runningMode, String dataReRunRequestId)
+      throws JobParametersInvalidException, JobExecutionAlreadyRunningException, JobRestartException,
+             JobInstanceAlreadyCompleteException {
+    List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
+
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
         new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
     Instant startInstant = startAt;
     Instant jobsStartTime = Instant.now();
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
+
+      if (null != dataReRunRequestId
+          && ImmutableSet.of(BatchJobType.INSTANCE_BILLING, BatchJobType.INSTANCE_BILLING_HOURLY)
+                 .contains(batchJobType)) {
+        boolean cleanBillingData =
+            billingDataService.cleanBillingData(accountId, startInstant, endInstant, batchJobType);
+        log.info("Cleanup billing data {}", cleanBillingData);
+      }
+
       if (null != endInstant && checkDependentJobFinished(accountId, endInstant, dependentBatchJobs)
           && checkOutOfClusterDependentJobs(accountId, startInstant, endInstant, batchJobType)
           && checkClusterToBigQueryJobCompleted(accountId, batchJobType)) {
@@ -130,6 +169,9 @@ public class BatchJobRunner {
               BatchJobScheduledData batchJobScheduledData = new BatchJobScheduledData(accountId, batchJobType.name(),
                   Duration.between(jobStartTime, jobStopTime).toMillis(), startInstant, endInstant);
               batchJobScheduledDataService.create(batchJobScheduledData);
+              if (null != dataReRunRequestId) {
+                ceDataReRunRequestDao.updateProcessedTime(dataReRunRequestId, startInstant, endInstant);
+              }
               startInstant = endInstant;
             } else {
               logJobErrors(accountId, batchJobType, status, startInstant, endInstant);
