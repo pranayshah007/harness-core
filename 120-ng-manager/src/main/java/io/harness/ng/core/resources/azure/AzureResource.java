@@ -9,6 +9,7 @@ package io.harness.ng.core.resources.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
@@ -84,13 +85,13 @@ public class AzureResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
-    if (isEmpty(azureConnectorIdentifier)) {
+    if (isEmpty(azureConnectorIdentifier) && isNotEmpty(envId) && isNotEmpty(infraDefinitionId)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =
           getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
       azureConnectorIdentifier = infrastructureDefinitionConfig.getSpec().getConnectorReference().getValue();
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier));
   }
@@ -106,8 +107,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @NotEmpty @PathParam("subscriptionId") String subscriptionId,
       @NotNull @NotEmpty @PathParam("resourceGroup") String resourceGroup) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getWebAppNames(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
@@ -123,8 +124,8 @@ public class AzureResource {
       @NotNull @NotEmpty @PathParam("subscriptionId") String subscriptionId,
       @NotNull @NotEmpty @PathParam("resourceGroup") String resourceGroup,
       @NotNull @NotEmpty @PathParam("webAppName") String webAppName) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getAppServiceDeploymentSlots(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup, webAppName));
   }
@@ -139,8 +140,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getResourceGroups(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -156,8 +157,8 @@ public class AzureResource {
       @PathParam("subscriptionId") String subscriptionId, @QueryParam("fqnPath") String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @PathParam("resourceGroup") String resourceGroup) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getImageGallery(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
@@ -190,8 +191,8 @@ public class AzureResource {
       subscriptionId = azureInfrastructure.getSubscriptionId().getValue();
     }
 
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getResourceGroups(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -204,8 +205,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId, @PathParam("resourceGroup") String resourceGroup) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getClusters(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
@@ -243,8 +244,8 @@ public class AzureResource {
       resourceGroup = azureInfrastructure.getResourceGroup().getValue();
     }
 
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getClusters(
         connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
   }
@@ -258,8 +259,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getTags(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -292,8 +293,8 @@ public class AzureResource {
       subscriptionId = azureInfrastructure.getSubscriptionId().getValue();
     }
 
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getTags(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -330,8 +331,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getAzureManagementGroups(connectorRef, orgIdentifier, projectIdentifier));
   }
@@ -345,8 +346,8 @@ public class AzureResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getLocations(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
