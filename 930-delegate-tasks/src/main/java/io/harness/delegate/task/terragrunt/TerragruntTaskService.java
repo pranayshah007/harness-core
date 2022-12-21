@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_STATE;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.TERRAFORM_STATE_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TF_BACKEND_CONFIG_DIR;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
@@ -52,7 +54,10 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.terragrunt.v2.TerragruntClient;
 import io.harness.terragrunt.v2.TerragruntClientFactory;
 import io.harness.terragrunt.v2.TerragruntExecutable;
@@ -67,6 +72,7 @@ import software.wings.delegatetasks.DelegateFileManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -88,10 +94,12 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 @OwnedBy(CDP)
 public class TerragruntTaskService {
+  public static final String TERRAFORM_INTERNAL_TO_TERRAGRUNT = "./terraform";
   @Inject private TerragruntDownloadService terragruntDownloadService;
   @Inject private DelegateFileManager delegateFileManager;
   @Inject private TerragruntClientFactory terragruntClientFactory;
   @Inject private DecryptionHelper decryptionHelper;
+  @Inject private EncryptDecryptHelper encryptDecryptHelper;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -193,7 +201,7 @@ public class TerragruntTaskService {
           log.warn("Downloaded multiple backend files, expected only a single file");
           logCallback.saveExecutionLog(
               "Found multiple backend files, only first file will be used. Please check your backend configuration",
-              LogLevel.WARN);
+              WARN);
         }
 
         backendFile = backendFetchResult.getFiles().get(0);
@@ -203,7 +211,11 @@ public class TerragruntTaskService {
         handleFetchFilesException(backendFilesDirectory, "backend file", logCallback, e);
       }
     }
-    if (isNotEmpty(parameters.getStateFileId())) {
+
+    cleanupTerragruntLocalFiles(scriptDirectory);
+
+    if (isNotEmpty(parameters.getStateFileId())
+        && TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       log.info("Downloading harness terraform state file: {}", parameters.getStateFileId());
       logCallback.saveExecutionLog(color(
           format("Downloading local state file to: %s", terragruntWorkingDirectory), LogColor.White, LogWeight.Bold));
@@ -237,10 +249,16 @@ public class TerragruntTaskService {
     }
   }
 
-  public String uploadStateFile(
-      String scripDirectory, String workspace, String accountId, String entityId, String delegateId, String taskId) {
-    File terraformStateFile = getTerraformStateFile(scripDirectory, workspace);
+  public String uploadStateFile(String scripDirectory, String workspace, String accountId, String entityId,
+      String delegateId, String taskId, LogCallback logCallback) {
+    File terraformStateFile;
+    terraformStateFile = getTerraformStateFile(scripDirectory + TERRAFORM_INTERNAL_TO_TERRAGRUNT, workspace);
     if (terraformStateFile == null) {
+      terraformStateFile = getTerraformStateFile(scripDirectory, workspace);
+    }
+
+    if (terraformStateFile == null) {
+      log.info("Terraform state file was not found and not uploaded.");
       return null;
     }
 
@@ -255,6 +273,7 @@ public class TerragruntTaskService {
 
     try (InputStream initialStream = new FileInputStream(terraformStateFile)) {
       delegateFileManager.upload(delegateFile, initialStream);
+      log.info("Terraform state file successfully uploaded.");
     } catch (FileNotFoundException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Unable to find terraform state file, probably it was deleted before uploading it",
@@ -353,8 +372,7 @@ public class TerragruntTaskService {
       PushbackInputStream pushbackInputStream = new PushbackInputStream(stateRemoteInputStream);
       int firstByte = pushbackInputStream.read();
       if (firstByte == -1) {
-        logCallback.saveExecutionLog(
-            format("Invalid or corrupted terraform state file %s", stateFileId), LogLevel.WARN);
+        logCallback.saveExecutionLog(format("Invalid or corrupted terraform state file %s", stateFileId), WARN);
         FileUtils.deleteQuietly(tfStateFile);
       } else {
         pushbackInputStream.unread(firstByte);
@@ -365,6 +383,36 @@ public class TerragruntTaskService {
       throw new TerragruntFetchFilesRuntimeException(
           format("Failed to download terraform state file '%s'", stateFileId), configFilesDirectory, exception);
     }
+  }
+
+  public void saveTerraformPlanContentToFile(EncryptionConfig encryptionConfig, EncryptedRecordData encryptedTfPlan,
+      String scriptDirectory, String accountId, String terraformOutputFileName) throws IOException {
+    File tfPlanFile = Paths.get(scriptDirectory, terraformOutputFileName).toFile();
+    byte[] decryptedTerraformPlan =
+        encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+    FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
+  }
+
+  public void cleanDirectoryAndSecretFromSecretManager(
+      EncryptedRecordData encryptedTfPlan, EncryptionConfig encryptionConfig, String baseDir, LogCallback logCallback) {
+    FileUtils.deleteQuietly(new File(baseDir));
+    if (encryptedTfPlan != null) {
+      try {
+        boolean isSafelyDeleted = encryptDecryptHelper.deleteEncryptedRecord(encryptionConfig, encryptedTfPlan);
+        if (isSafelyDeleted) {
+          log.info("Terraform Plan has been safely deleted from vault");
+        }
+      } catch (Exception ex) {
+        Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(ex);
+        logCallback.saveExecutionLog(color(format("Failed to delete secret: [%s] from vault: [%s], please clean it up",
+                                               encryptedTfPlan.getEncryptionKey(), encryptionConfig.getName()),
+                                         LogColor.Yellow, LogWeight.Bold),
+            WARN);
+        logCallback.saveExecutionLog(sanitizeException.getMessage(), WARN);
+        log.error("Exception occurred while deleting Terraform Plan from vault", sanitizeException);
+      }
+    }
+    logCallback.saveExecutionLog("Done cleaning up directories.", INFO, CommandExecutionStatus.SUCCESS);
   }
 
   private static String getScriptDir(String baseDir) {

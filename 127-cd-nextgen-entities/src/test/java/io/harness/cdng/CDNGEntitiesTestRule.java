@@ -38,6 +38,8 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
+import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -213,6 +215,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
             .toInstance(mock(NoOpProducer.class));
         bind(ClusterService.class).to(ClusterServiceImpl.class);
         bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
+        bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
         bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
       }

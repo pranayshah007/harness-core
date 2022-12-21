@@ -34,6 +34,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.Service.ServiceKeys;
@@ -61,6 +62,7 @@ public abstract class AbstractServicesApiImpl {
   @Inject private final ServiceEntityManagementService serviceEntityManagementService;
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final ServiceResourceApiUtils serviceResourceApiUtils;
+  @Inject private final ServiceEntityYamlSchemaHelper serviceSchemaHelper;
 
   private static final String projectScopedServiceUri = "/v1/orgs/%s/projects/%s/services)";
   private static final String orgScopedServiceUri = "/v1/orgs/%s/services)";
@@ -70,6 +72,7 @@ public abstract class AbstractServicesApiImpl {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
@@ -111,7 +114,7 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
     ServiceDefinitionType optionalType = ServiceDefinitionType.getServiceDefinitionType(type);
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        account, org, project, false, searchTerm, optionalType, gitOpsEnabled);
+        account, org, project, false, searchTerm, optionalType, gitOpsEnabled, false);
     Pageable pageRequest;
     if (isNotEmpty(services)) {
       criteria.and(ServiceEntityKeys.identifier).in(services);
@@ -136,8 +139,8 @@ public abstract class AbstractServicesApiImpl {
       List<ServiceResponse> filterserviceList = filterByPermissionAndId(accessControlList, serviceList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), filterserviceList.size(), page, limit);
       return responseBuilderWithLinks.entity(filterserviceList).build();
     } else {
       Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
@@ -152,8 +155,8 @@ public abstract class AbstractServicesApiImpl {
 
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
-          responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
+      ResponseBuilder responseBuilderWithLinks =
+          ApiUtils.addLinksHeader(responseBuilder, getScopedUri(org, project), serviceList.size(), page, limit);
 
       return responseBuilderWithLinks.entity(serviceList).build();
     }
@@ -181,6 +184,7 @@ public abstract class AbstractServicesApiImpl {
     }
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());

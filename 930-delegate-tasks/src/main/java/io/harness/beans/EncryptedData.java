@@ -197,7 +197,7 @@ public class EncryptedData implements EncryptedRecord, PersistentEntity, UuidAwa
 
   @SchemaIgnore @Transient private transient int setupUsage;
 
-  @SchemaIgnore @Transient private transient long runTimeUsage;
+  @SchemaIgnore @Transient @Builder.Default private transient Long runTimeUsage = 0L;
 
   @SchemaIgnore @Transient private transient int changeLog;
 

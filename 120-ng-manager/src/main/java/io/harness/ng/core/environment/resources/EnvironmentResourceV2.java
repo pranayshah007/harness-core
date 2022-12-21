@@ -43,6 +43,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
@@ -84,6 +85,7 @@ import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
@@ -473,8 +475,8 @@ public class EnvironmentResourceV2 {
   @Operation(operationId = "getEnvironmentAccessList", summary = "Gets Environment Access list",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
-            description = "Returns the list of Environments for a Project that are accessible")
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the list of Environments that are accessible")
       })
   public ResponseDTO<List<EnvironmentResponse>>
   listAccessEnvironment(@Parameter(description = NGCommonEntityConstants.PAGE) @QueryParam(
@@ -498,12 +500,19 @@ public class EnvironmentResourceV2 {
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list environments");
+    Criteria criteria;
     if (isEmpty(envIdentifiers) && isNotEmpty(envGroupIdentifier)) {
       Optional<EnvironmentGroupEntity> environmentGroupEntity =
           environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
+      IdentifierRef envGroupIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(envGroupIdentifier, accountId, orgIdentifier, projectIdentifier);
       environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
+      // fetch environments from the same scope as of env group
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
+          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false);
+    } else {
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
     }
-    Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
@@ -698,9 +707,9 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @NotNull String orgIdentifier,
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier @NotNull String projectIdentifier,
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier @NotNull String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @QueryParam(

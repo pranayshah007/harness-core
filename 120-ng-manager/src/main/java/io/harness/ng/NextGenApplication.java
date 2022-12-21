@@ -786,6 +786,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

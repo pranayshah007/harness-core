@@ -12,6 +12,7 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.SweepingOutputInstance.Scope.WORKFLOW;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -74,6 +75,7 @@ import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.CustomInfrastructureMapping;
+import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
@@ -678,5 +680,21 @@ public class InstanceFetchStateTest extends WingsBaseTest {
 
     InstanceInfoVariables instanceInfoVariables = (InstanceInfoVariables) argumentCaptor.getValue().getValue();
     assertThat(instanceInfoVariables.isSkipVerification()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDetectInvalidInfraDef() {
+    DirectKubernetesInfrastructureMapping infraMapping = DirectKubernetesInfrastructureMapping.builder().build();
+    infraMapping.setDisplayName("infraDef DisplayName");
+    doReturn(infraMapping).when(infrastructureMappingService).get(APP_ID, INFRA_MAPPING_ID);
+
+    final ExecutionResponse response = state.execute(context);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(FAILED);
+    assertThat(response.getErrorMessage())
+        .isEqualTo("Prerequisites not met.\n"
+            + "Infrastructure definition infraDef DisplayName is not supported on fetch instance");
   }
 }

@@ -30,4 +30,5 @@ public class SvcEnvMigrationProjectWrapperRequestDto {
   List<String> skipServices;
   List<String> skipInfras;
   List<String> skipPipelines;
+  String branch;
 }

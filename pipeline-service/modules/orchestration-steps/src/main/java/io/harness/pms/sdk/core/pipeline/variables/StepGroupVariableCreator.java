@@ -78,7 +78,8 @@ public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupE
     return VariableCreationResponse.builder().yamlProperties(yamlPropertiesMap).build();
   }
 
-  private void addVariablesForStepGroup(Map<String, YamlProperties> yamlPropertiesMap, YamlNode yamlNode) {
+  @VisibleForTesting
+  void addVariablesForStepGroup(Map<String, YamlProperties> yamlPropertiesMap, YamlNode yamlNode) {
     YamlField nameField = yamlNode.getField(YAMLFieldNameConstants.NAME);
     if (nameField != null) {
       String nameFQN = YamlUtils.getFullyQualifiedName(nameField.getNode());
@@ -95,7 +96,8 @@ public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupE
         YAMLFieldNameConstants.STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private List<YamlField> getStepYamlFields(YamlField config) {
+  @VisibleForTesting
+  List<YamlField> getStepYamlFields(YamlField config) {
     List<YamlField> childYamlFields = new LinkedList<>();
     List<YamlNode> yamlNodes =
         Optional

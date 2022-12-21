@@ -60,8 +60,7 @@ public class EnvironmentYamlV2 implements Visitable {
   @YamlSchemaTypes({runtime})
   ParameterField<Boolean> deployToAll;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 

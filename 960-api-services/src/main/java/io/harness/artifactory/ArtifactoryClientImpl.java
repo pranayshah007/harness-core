@@ -94,7 +94,8 @@ public class ArtifactoryClientImpl {
 
   public List<Map<String, String>> getLabels(
       ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {
-    log.info("Retrieving label docker in artifactory");
+    log.debug("Retrieving label docker in artifactory");
+
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
     ArtifactoryRequest repositoryRequest =
         new ArtifactoryRequestImpl()
@@ -119,7 +120,7 @@ public class ArtifactoryClientImpl {
       if (EmptyPredicate.isEmpty(filteredAndParsedLabels)) {
         log.warn("Docker image doesn't have labels. Properties: {}", properties);
       } else {
-        log.info("Retrieving labels {} for image {} for repository {} for version {} was success",
+        log.debug("Retrieving labels {} for image {} for repository {} for version {} was success",
             filteredAndParsedLabels, imageName, repositoryName, buildNos);
       }
 
@@ -143,14 +144,15 @@ public class ArtifactoryClientImpl {
   }
 
   public boolean isRunning(ArtifactoryConfigRequest artifactoryConfig) {
-    log.info("Validating artifactory server");
+    log.debug("Validating artifactory server");
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
     ArtifactoryRequest repositoryRequest =
         new ArtifactoryRequestImpl().apiUrl("api/repositories/").method(GET).responseType(JSON);
     try {
       ArtifactoryResponse artifactoryResponse = artifactory.restCall(repositoryRequest);
       handleErrorResponse(artifactoryResponse);
-      log.info("Validating artifactory server success");
+      log.debug("Validating artifactory server success");
+
     } catch (RuntimeException e) {
       log.error("Runtime exception occurred while validating artifactory", e);
       handleAndRethrow(e, USER);
@@ -232,7 +234,7 @@ public class ArtifactoryClientImpl {
         builder.setUsername(artifactoryConfig.getUsername());
         builder.setPassword(new String(artifactoryConfig.getPassword()));
       } else {
-        log.info("Username is not set for artifactory config {} . Will use anonymous access.",
+        log.debug("Username is not set for artifactory config {} . Will use anonymous access.",
             artifactoryConfig.getArtifactoryUrl());
       }
 
@@ -291,7 +293,9 @@ public class ArtifactoryClientImpl {
 
   public Map<String, String> getRepositories(
       ArtifactoryConfigRequest artifactoryConfig, List<PackageTypeImpl> packageTypes) {
-    log.info("Retrieving repositories for packages {}", packageTypes.toArray());
+    if (log.isDebugEnabled()) {
+      log.debug("Retrieving repositories for packages {}", packageTypes.toArray());
+    }
     Map<String, String> repositories = new HashMap<>();
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
     ArtifactoryRequest repositoryRequest =
@@ -324,7 +328,9 @@ public class ArtifactoryClientImpl {
         log.info("Repositories are not available of package types {} or User not authorized to access artifactory",
             packageTypes);
       }
-      log.info("Retrieving repositories for packages {} success", packageTypes.toArray());
+      if (log.isDebugEnabled()) {
+        log.debug("Retrieving repositories for packages {} success", packageTypes.toArray());
+      }
     } catch (SocketTimeoutException e) {
       log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
       return repositories;
@@ -354,7 +360,9 @@ public class ArtifactoryClientImpl {
 
   public List<BuildDetails> getBuildDetails(
       ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions) {
-    log.info("Retrieving file paths for repositoryName {} artifactPath {}", repositoryName, artifactPath);
+    if (log.isDebugEnabled()) {
+      log.debug("Retrieving file paths for repositoryName {} artifactPath {}", repositoryName, artifactPath);
+    }
     List<String> artifactPaths = new ArrayList<>();
     LinkedHashMap<String, String> map = new LinkedHashMap<>();
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
@@ -418,7 +426,11 @@ public class ArtifactoryClientImpl {
             }
           }
         }
-        log.info("Artifact paths order from Artifactory Server" + artifactPaths);
+
+        if (log.isDebugEnabled()) {
+          log.debug("Artifact paths order from Artifactory Server" + artifactPaths);
+        }
+
         Collections.reverse(artifactPaths);
         String finalArtifactPath = artifactPath;
         return artifactPaths.stream()
@@ -451,13 +463,13 @@ public class ArtifactoryClientImpl {
     String artifactName = metadata.get(artifactFileNameMetadataKey);
 
     try {
-      log.info("Artifact name {}", artifactName);
+      log.debug("Artifact name {}", artifactName);
       if (artifactNames.add(artifactName)) {
         if (metadata.get(artifactPathMetadataKey) != null) {
-          log.info(DOWNLOAD_FILE_FOR_GENERIC_REPO);
-          log.info("Downloading file {} ", artifactPath);
+          log.debug(DOWNLOAD_FILE_FOR_GENERIC_REPO);
+          log.debug("Downloading file {} ", artifactPath);
           InputStream inputStream = artifactory.repository(repoKey).download(artifactPath).doDownload();
-          log.info("Downloading file {} success", artifactPath);
+          log.debug("Downloading file {} success", artifactPath);
           return inputStream;
         }
       }
@@ -468,7 +480,7 @@ public class ArtifactoryClientImpl {
       throw new ArtifactoryServerException(
           msg + REASON + ExceptionUtils.getRootCauseMessage(e), ARTIFACT_SERVER_ERROR, USER);
     }
-    log.info(
+    log.debug(
         "Downloading artifacts from artifactory for repository  {} and file path {} success", repoKey, artifactPath);
     return null;
   }
@@ -476,7 +488,7 @@ public class ArtifactoryClientImpl {
   public Long getFileSize(
       ArtifactoryConfigRequest artifactoryConfig, Map<String, String> metadata, String artifactPathMetadataKey) {
     String artifactPath = metadata.get(artifactPathMetadataKey);
-    log.info("Retrieving file paths for artifactPath {}", artifactPath);
+    log.debug("Retrieving file paths for artifactPath {}", artifactPath);
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
     try {
       String apiStorageQuery = "api/storage/" + artifactPath;
@@ -541,7 +553,9 @@ public class ArtifactoryClientImpl {
 
   private List<String> getFilePathsForAnonymousUser(
       Artifactory artifactory, String repoKey, String artifactPath, int maxVersions) {
-    log.info("Retrieving file paths for repoKey {} artifactPath {}", repoKey, artifactPath);
+    if (log.isDebugEnabled()) {
+      log.debug("Retrieving file paths for repoKey {} artifactPath {}", repoKey, artifactPath);
+    }
     List<String> artifactPaths = new ArrayList<>();
 
     List<software.wings.helpers.ext.artifactory.FolderPath> folderPaths;
@@ -600,7 +614,9 @@ public class ArtifactoryClientImpl {
       } else {
         throw new ArtifactoryServerException("Artifact path can not be empty", INVALID_ARTIFACT_SERVER);
       }
-      log.info("Artifact paths order from Artifactory Server" + artifactPaths);
+      if (log.isDebugEnabled()) {
+        log.debug("Artifact paths order from Artifactory Server" + artifactPaths);
+      }
       return artifactPaths;
     } catch (Exception e) {
       log.error(
@@ -680,7 +696,7 @@ public class ArtifactoryClientImpl {
 
   public List<BuildDetailsInternal> getArtifactsDetails(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactName, String repositoryFormat, int maxNumberOfBuilds) {
-    log.info("Retrieving artifact tags");
+    log.debug("Retrieving artifact tags");
     String repositoryKey = ArtifactUtilities.trimSlashforwardChars(repositoryName);
     String artifactPath = ArtifactUtilities.trimSlashforwardChars(artifactName);
     List<BuildDetailsInternal> buildDetailsInternals;
@@ -770,12 +786,16 @@ public class ArtifactoryClientImpl {
                                           .build();
                                     })
                                     .collect(toList());
-        if (tags.size() < 10) {
-          log.info("Retrieving artifact tags from artifactory url {} and repo key {} and artifact {} success. Tags {}",
-              artifactoryUrl + artifactoryRequest.getApiUrl(), repositoryKey, artifactPath, tags);
-        } else {
-          log.info("Retrieving artifact tags from artifactory url {} and repo key {} and artifact {} success. Tags {}",
-              artifactoryUrl + artifactoryRequest.getApiUrl(), repositoryKey, artifactPath, tags.size());
+        if (log.isDebugEnabled()) {
+          if (tags.size() < 10) {
+            log.info(
+                "Retrieving artifact tags from artifactory url {} and repo key {} and artifact {} success. Tags {}",
+                artifactoryUrl + artifactoryRequest.getApiUrl(), repositoryKey, artifactPath, tags);
+          } else {
+            log.info(
+                "Retrieving artifact tags from artifactory url {} and repo key {} and artifact {} success. Tags {}",
+                artifactoryUrl + artifactoryRequest.getApiUrl(), repositoryKey, artifactPath, tags.size());
+          }
         }
 
         buildDetailsInternals.sort(new BuildDetailsInternalComparatorAscending());
@@ -796,7 +816,7 @@ public class ArtifactoryClientImpl {
     String repoKey = ArtifactUtilities.trimSlashforwardChars(repository);
     String errorOnListingDockerimages = "Error occurred while listing docker images from artifactory %s for Repo %s";
     try {
-      log.info("Retrieving docker images from artifactory url {} and repo key {}", artifactory.getUri(), repoKey);
+      log.debug("Retrieving docker images from artifactory url {} and repo key {}", artifactory.getUri(), repoKey);
       ArtifactoryResponse artifactoryResponse = artifactory.restCall(new ArtifactoryRequestImpl()
                                                                          .apiUrl("api/docker/" + repoKey + "/v2"
                                                                              + "/_catalog")
@@ -810,7 +830,7 @@ public class ArtifactoryClientImpl {
           log.info("No docker images from artifactory url {} and repo key {}", artifactory.getUri(), repoKey);
           images = new ArrayList<>();
         }
-        log.info("Retrieving images from artifactory url {} and repo key {} success. Images {}", artifactory.getUri(),
+        log.debug("Retrieving images from artifactory url {} and repo key {} success. Images {}", artifactory.getUri(),
             repoKey, images);
       }
     } catch (SocketTimeoutException e) {

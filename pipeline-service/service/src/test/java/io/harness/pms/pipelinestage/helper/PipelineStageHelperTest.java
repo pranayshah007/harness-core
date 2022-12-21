@@ -29,9 +29,22 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.failurestrategy.OnFailureConfig;
+import io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -173,5 +186,50 @@ public class PipelineStageHelperTest extends CategoryTest {
     assertThat(outcome.size()).isEqualTo(2);
     assertThat(outcome.get(var1)).isEqualTo("pipelineName");
     assertThat(outcome.get(var2)).isEqualTo("constant");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testValidateFailureStrategy() {
+    assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(null)).doesNotThrowAnyException();
+    List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategy(RetryFailureActionConfig.builder().build());
+
+    assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(failureStrategyConfigs))
+        .isInstanceOf(InvalidRequestException.class);
+
+    List<FailureStrategyConfig> miFailureStrategy =
+        getFailureStrategy(ManualInterventionFailureActionConfig.builder().build());
+    assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(miFailureStrategy))
+        .isInstanceOf(InvalidRequestException.class);
+
+    List<FailureStrategyConfig> pipelineRollbackFailureStrategy =
+        getFailureStrategy(PipelineRollbackFailureActionConfig.builder().build());
+    assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(pipelineRollbackFailureStrategy))
+        .isInstanceOf(InvalidRequestException.class);
+
+    List<FailureStrategyConfig> defaultFailureStrategy =
+        getFailureStrategy(ProceedWithDefaultValuesFailureActionConfig.builder().build());
+    assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(defaultFailureStrategy))
+        .doesNotThrowAnyException();
+
+    List<FailureStrategyConfig> ignoreFailureStrategy = getFailureStrategy(IgnoreFailureActionConfig.builder().build());
+    assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(ignoreFailureStrategy)).doesNotThrowAnyException();
+
+    List<FailureStrategyConfig> markAsSuccessFailureStrategy =
+        getFailureStrategy(MarkAsSuccessFailureActionConfig.builder().build());
+    assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(markAsSuccessFailureStrategy))
+        .doesNotThrowAnyException();
+
+    List<FailureStrategyConfig> abortFailureStrategy = getFailureStrategy(AbortFailureActionConfig.builder().build());
+    assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(abortFailureStrategy)).doesNotThrowAnyException();
+  }
+
+  @NotNull
+  private List<FailureStrategyConfig> getFailureStrategy(FailureStrategyActionConfig failureStrategyActionConfig) {
+    return Collections.singletonList(
+        FailureStrategyConfig.builder()
+            .onFailure(OnFailureConfig.builder().action(failureStrategyActionConfig).build())
+            .build());
   }
 }

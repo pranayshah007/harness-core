@@ -41,6 +41,7 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   String image;
   String registryHostname;
   String imagePullSecret;
+  String repositoryType;
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {

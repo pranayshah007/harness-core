@@ -253,11 +253,13 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
         UnitProgressData.builder().build(), new K8sCanaryDataException(canaryWorkload, true, cause));
 
     doThrow(taskException).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, taskException);
+    try {
+      k8sCanaryStep.finalizeExecutionWithSecurityContext(
+          ambiance, stepElementParameters, executionPassThroughData, () -> { throw taskException; });
 
-    assertThatThrownBy(()
-                           -> k8sCanaryStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
-                               executionPassThroughData, () -> { throw taskException; }))
-        .isSameAs(taskException);
+    } catch (Exception e) {
+      assertThat(e).isSameAs(taskException);
+    }
     ArgumentCaptor<K8sCanaryOutcome> canaryOutcomeCaptor = ArgumentCaptor.forClass(K8sCanaryOutcome.class);
     verify(executionSweepingOutputService, times(1))
         .consume(eq(ambiance), eq(OutcomeExpressionConstants.K8S_CANARY_OUTCOME), canaryOutcomeCaptor.capture(),

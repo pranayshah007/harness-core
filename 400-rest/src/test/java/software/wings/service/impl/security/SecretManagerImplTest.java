@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
@@ -24,6 +25,7 @@ import static software.wings.service.impl.security.SecretManagerImpl.ENCRYPTION_
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_VARIABLE_NAME;
 
+import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -548,18 +550,44 @@ public class SecretManagerImplTest extends WingsBaseTest {
 
     // show all files
     PageResponse<EncryptedData> retrievedSecretsAll =
-        secretManager.listSecrets(account.getUuid(), pageRequest, null, null, false, true);
+        secretManager.listSecrets(account.getUuid(), pageRequest, null, null, false, true, false);
     assertThat(retrievedSecretsAll.getResponse().size()).isEqualTo(2);
 
     // don't show hidden files
     PageResponse<EncryptedData> retrievedSecretsHideHidden =
-        secretManager.listSecrets(account.getUuid(), pageRequest, null, null, false, false);
+        secretManager.listSecrets(account.getUuid(), pageRequest, null, null, false, false, false);
     assertThat(retrievedSecretsHideHidden.getResponse().size()).isEqualTo(1);
     EncryptedData retrievedSecret = retrievedSecretsHideHidden.getResponse().get(0);
     assertThat(retrievedSecret.isHideFromListing()).isEqualTo(false);
     assertThat(retrievedSecret.getName()).isEqualTo("fileName");
 
     secretManager.deleteSecret(account.getUuid(), hiddenFileRecordId, new HashMap<>(), false);
+    secretManager.deleteSecret(account.getUuid(), recordId, new HashMap<>(), false);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testListSecrets_skipRunTimeUsage() throws IllegalAccessException {
+    byte[] fileContent = "fileContent".getBytes();
+    SecretFile secretFile = SecretFile.builder()
+                                .name("fileName")
+                                .kmsId(account.getUuid())
+                                .usageRestrictions(null)
+                                .scopedToAccount(true)
+                                .hideFromListing(false)
+                                .fileContent(fileContent)
+                                .build();
+    String recordId = secretManager.saveSecretFile(account.getUuid(), secretFile);
+
+    PageRequest<EncryptedData> pageRequest = new PageRequest<>();
+    pageRequest.addFilter("type", SearchFilter.Operator.EQ, SettingVariableTypes.CONFIG_FILE);
+    pageRequest.addFilter("accountId", SearchFilter.Operator.EQ, account.getUuid());
+
+    PageResponse<EncryptedData> retrievedSecretsAll =
+        secretManager.listSecrets(account.getUuid(), pageRequest, null, null, true, true);
+    assertThat(retrievedSecretsAll.getResponse().size()).isEqualTo(1);
+    assertNull(retrievedSecretsAll.getResponse().get(0).getRunTimeUsage());
     secretManager.deleteSecret(account.getUuid(), recordId, new HashMap<>(), false);
   }
 

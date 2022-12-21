@@ -90,13 +90,19 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       String projectIdentifier = ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier);
       String expandedPipelineJson = metadata.getExpandedPipelineJson();
       PlanExecution planExecution;
-      PlanExecutionSettingResponse planExecutionSettingResponse = pipelineSettingsService.shouldQueuePlanExecution(
-          accountId, orgIdentifier, projectIdentifier, ambiance.getMetadata().getPipelineIdentifier());
+      PlanExecutionSettingResponse planExecutionSettingResponse =
+          pipelineSettingsService.shouldQueuePlanExecution(accountId, ambiance.getMetadata().getPipelineIdentifier());
       GovernanceMetadata governanceMetadata =
           governanceService.evaluateGovernancePolicies(expandedPipelineJson, accountId, orgIdentifier,
               projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN, ambiance.getPlanExecutionId());
 
       planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, planExecutionSettingResponse);
+      if (governanceMetadata.getDeny()) {
+        log.info(
+            "Not starting the planExecution with planExecutionId: {} because the governance check denied the execution.",
+            ambiance.getPlanExecutionId());
+        return planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
+      }
 
       // isNewFlow: for restrictions using the enforcements.
       if (planExecutionSettingResponse.isUseNewFlow() || planExecutionSettingResponse.isShouldQueue()) {
@@ -164,9 +170,6 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
       log.error("Not starting the PlanExecution:", e);
       throw e;
-    }
-    if (governanceMetadata.getDeny()) {
-      return planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
     }
     return createdPlanExecution;
   }

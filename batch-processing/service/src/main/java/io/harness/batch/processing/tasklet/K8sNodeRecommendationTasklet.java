@@ -33,6 +33,7 @@ import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
@@ -63,6 +64,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   @Autowired private VMPricingService vmPricingService;
   @Autowired private ClusterHelper clusterHelper;
   @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
+  @Autowired private RecommendationsIgnoreListService ignoreListService;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -121,11 +123,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     K8sServiceProvider serviceProvider = getCurrentNodePoolConfiguration(jobConstants, nodePoolId);
     log.info("serviceProvider: {}", serviceProvider);
 
-    final Double conversionFactor =
-        currencyPreferenceHelper.getDestinationCurrencyConversionFactor(jobConstants.getAccountId(),
-            CloudServiceProvider.valueOf(serviceProvider.getCloudProvider().name()), Currency.USD);
-    log.info("Conversion factor from {} to destination currency is {} for account {}", Currency.USD, conversionFactor,
-        jobConstants.getAccountId());
+    final Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
+        jobConstants.getAccountId(), getCloudServiceProvider(serviceProvider), Currency.USD);
 
     updateK8sServiceProvider(serviceProvider, conversionFactor);
     log.info("Updated serviceProvider: {}", serviceProvider);
@@ -147,6 +146,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
 
     final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
     recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    ignoreListService.updateNodeRecommendationState(
+        mongoEntityId, jobConstants.getAccountId(), clusterName, nodePoolId.getNodepoolname());
   }
 
   private void updateK8sServiceProvider(@NonNull K8sServiceProvider serviceProvider, @NonNull Double conversionFactor) {
@@ -186,11 +187,26 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     if (!Lists.isNullOrEmpty(nodePools)) {
       for (NodePool nodePool : nodePools) {
         if (Objects.nonNull(nodePool.getVm())) {
-          nodePool.getVm().setAvgPrice(nodePool.getVm().getAvgPrice() * conversionFactor);
-          nodePool.getVm().setOnDemandPrice(nodePool.getVm().getOnDemandPrice() * conversionFactor);
+          if (Objects.nonNull(nodePool.getVm().getAvgPrice())) {
+            nodePool.getVm().setAvgPrice(nodePool.getVm().getAvgPrice() * conversionFactor);
+          }
+          if (Objects.nonNull(nodePool.getVm().getOnDemandPrice())) {
+            nodePool.getVm().setOnDemandPrice(nodePool.getVm().getOnDemandPrice() * conversionFactor);
+          }
         }
       }
     }
+  }
+
+  @NotNull
+  private CloudServiceProvider getCloudServiceProvider(K8sServiceProvider serviceProvider) {
+    CloudServiceProvider cloudServiceProvider;
+    try {
+      cloudServiceProvider = CloudServiceProvider.valueOf(serviceProvider.getCloudProvider().name());
+    } catch (Exception exception) {
+      cloudServiceProvider = CloudServiceProvider.AWS;
+    }
+    return cloudServiceProvider;
   }
 
   private K8sServiceProvider getCurrentNodePoolConfiguration(

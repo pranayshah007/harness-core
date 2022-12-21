@@ -221,6 +221,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws IllegalAccessException {
+    when(accountService.getFromCacheWithFallback(ACCOUNT_ID)).thenReturn(Account.Builder.anAccount().build());
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
     FieldUtils.writeField(delegateService, "subject", new Subject<>(), true);

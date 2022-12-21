@@ -61,7 +61,7 @@ public class InputSetPipelineObserver implements PipelineActionObserver {
 
   private void checkIfInputSetIsValid(InputSetEntity inputSet, PipelineEntity pipelineEntity) {
     InputSetErrorWrapperDTOPMS errorWrapperDTO =
-        InputSetErrorsHelper.getErrorMap(pipelineEntity.getYaml(), inputSet.getYaml());
+        InputSetErrorsHelper.getErrorMap(pipelineEntity.getYaml(), inputSet.getYaml(), inputSet.getIdentifier());
     if (errorWrapperDTO != null) {
       markAsInvalid(inputSet);
     } else {

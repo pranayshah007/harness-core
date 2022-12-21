@@ -3433,6 +3433,45 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "IACMTerraformPlanInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "mode": {
+              "type": "string"
+            },
+            "operation": {
+              "type": "string"
+            },
+            "tfVars": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IgnoreFailureActionConfig": {
       "allOf": [
         {
@@ -7250,10 +7289,8 @@
             {
               "type": "string",
               "enum": [
-                "repository",
-                "container",
-                "instance",
-                "configuration"
+                "apiKey",
+                "usernamePassword"
               ]
             },
             {
@@ -7809,7 +7846,13 @@
         "type": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "repository",
+                "container",
+                "instance",
+                "configuration"
+              ]
             },
             {
               "type": "string",
@@ -9080,7 +9123,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "pipelineStatus": {
           "type": "string",
@@ -9498,6 +9542,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GrypeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMTerraformPlan"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMTerraformPlanInfo"
               }
             }
           }
@@ -10104,7 +10164,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "stageStatus": {
           "type": "string",

@@ -7,13 +7,17 @@
 
 package io.harness.delegate.task.k8s;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.expression.Expression;
 import io.harness.k8s.model.KubernetesResourceId;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -33,6 +37,7 @@ public class K8sRollingRollbackDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean pruningEnabled;
   List<KubernetesResourceId> prunedResourceIds;
+  @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
 
   @Override
   public List<String> getValuesYamlList() {

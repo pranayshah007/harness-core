@@ -15,6 +15,7 @@ import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.govern.ProviderModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.persistence.UserProvider;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
@@ -95,7 +96,7 @@ public class DelegateTaskStressTestApplication extends Application<DelegateTaskS
     });
     modules.add(new io.harness.mongo.AbstractMongoModule() {
       @Override
-      public io.harness.persistence.UserProvider userProvider() {
+      public UserProvider userProvider() {
         return new io.harness.persistence.NoopUserProvider();
       }
 

@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.cdng.artifact.steps.ArtifactsStepV2.ARTIFACTS_STEP_V_2;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 
@@ -50,6 +51,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSourc
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
@@ -74,6 +76,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -82,7 +85,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -93,6 +98,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -105,6 +111,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.SerializationFormat;
@@ -115,6 +122,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -146,7 +154,9 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private CDExpressionResolver expressionResolver;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private TemplateResourceClient templateResourceClient;
-
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
   private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
   @Mock private ConnectorService connectorService;
@@ -234,6 +244,19 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
         ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("docker").build());
+    listEntityDetail.add(EntityDetail.builder().name("googleArtifactRegistry").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
     doReturn(getServiceYaml(ArtifactListConfig.builder()
                                 .primary(PrimaryArtifact.builder()
                                              .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
@@ -253,6 +276,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, times(1))
         .submitAsyncTask(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -975,14 +1000,14 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                 .projectIdentifier("projectId")
                                 .build();
 
-    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(4);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNotNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId/projectId");
 
     ngAccess = BaseNGAccess.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier("orgId").build();
 
-    abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     assertThat(abstractions).hasSize(3);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId");

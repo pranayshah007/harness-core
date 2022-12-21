@@ -51,8 +51,8 @@ public class RuleExecutionDAO {
                                      .equal(ruleExecutionFilter.getAccountId());
     log.info("Added accountId filter");
     if (ruleExecutionFilter.getTargetAccount() != null) {
-      query.field(RuleExecutionKeys.targetAccount).equal(ruleExecutionFilter.getTargetAccount());
-      log.info("Added target account filter");
+      query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
+      log.info("Added target account filter: {} ", ruleExecutionFilter.getTargetAccount());
     }
     if (ruleExecutionFilter.getRuleIds() != null) {
       query.field(RuleExecutionKeys.ruleIdentifier).in(ruleExecutionFilter.getRuleIds());

@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.instance;
 
+import static io.harness.beans.FeatureName.CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX;
 import static io.harness.beans.FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -1274,6 +1275,24 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
           instanceBuilderUpdated = true;
           break;
         }
+      } else if (featureFlagService.isEnabled(
+                     CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX, deploymentSummary.getAccountId())) {
+        String imageSuffix = image.substring(image.lastIndexOf('/') + 1);
+        artifact = findArtifactWithBuildNum(
+            deploymentSummary.getArtifactStreamId(), infraMapping.getAppId(), deploymentSummary.getArtifactBuildNum());
+        if (artifact != null) {
+          if (firstValidArtifact == null) {
+            firstValidArtifact = artifact;
+            firstValidImage = image;
+          }
+          if (isNotEmpty(artifact.getMetadata().get("image"))
+              && artifact.getMetadata().get("image").endsWith(imageSuffix)) {
+            builder.lastArtifactId(artifact.getUuid());
+            updateInstanceWithArtifactSourceAndBuildNum(builder, image);
+            instanceBuilderUpdated = true;
+            break;
+          }
+        }
       }
     }
 
@@ -1302,6 +1321,15 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .filter(ArtifactKeys.appId, appId)
         .filter("metadata.image", image)
+        .disableValidation()
+        .get();
+  }
+
+  private Artifact findArtifactWithBuildNum(String artifactStreamId, String appId, String buildNo) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.appId, appId)
+        .filter("metadata.buildNo", buildNo)
         .disableValidation()
         .get();
   }

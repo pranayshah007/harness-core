@@ -12,9 +12,13 @@ import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.notIn;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -22,10 +26,13 @@ import io.harness.EntityType;
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.NGTemplateReference;
 import io.harness.category.element.UnitTests;
 import io.harness.common.EntityReference;
+import io.harness.connector.ConnectivityStatus;
+import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
@@ -392,5 +399,37 @@ public class ConnectorPreflightHandlerTest extends PipelineServiceTestBase {
     assertThat(connectorResponseDTOS).contains(accLevelConnectorResponse);
     assertThat(connectorResponseDTOS).contains(orgLevelConnectorResponse);
     assertThat(connectorResponseDTOS).contains(projLevelConnectorResponse);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetConnectorCheckResponsesForReferredConnectors() {
+    EntityReference entityReference1 =
+        IdentifierRef.builder()
+            .identifier("id2")
+            .metadata(Map.of("fqn", "pipeline.stages.stage1.serviceConfig.manifests.baseValues.id2"))
+            .scope(Scope.ACCOUNT)
+            .build();
+    ConnectorResponseDTO accLevelConnectorResponse =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().identifier("id2").build())
+            .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
+            .status(ConnectorConnectivityDetails.builder().status(ConnectivityStatus.SUCCESS).build())
+            .build();
+    doReturn(Collections.singletonList(accLevelConnectorResponse))
+        .when(connectorPreflightHandler)
+        .getUpdatedConnectorResponses(
+            anyString(), isNull(String.class), isNull(String.class), anyMap(), any(Scope.class));
+    List<EntityDetail> connectorUsages = Arrays.asList(EntityDetail.builder().entityRef(entityReference1).build());
+    List<ConnectorCheckResponse> connectorCheckResponses =
+        connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
+            "accountId", "orgId", "projectId", fqnToObjectMapMergedYaml, connectorUsages);
+    assertEquals(connectorCheckResponses.size(), 1);
+    assertEquals(connectorCheckResponses.get(0).connectorIdentifier, "id2");
+    assertEquals(connectorCheckResponses.get(0).status, PreFlightStatus.SUCCESS);
+    assertNull(connectorCheckResponses.get(0).errorInfo);
+    assertEquals(connectorCheckResponses.get(0).fqn, "pipeline.stages.stage1.serviceConfig.manifests.baseValues.id2");
+    assertEquals(connectorCheckResponses.get(0).stageIdentifier, "stage1");
   }
 }

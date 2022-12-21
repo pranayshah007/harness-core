@@ -87,7 +87,7 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
       ExecutionLogCallback pruneLogCallback = k8sTaskHelper.getExecutionLogCallback(request, RecreatePrunedResource);
       try {
         resourceRecreationStatus = k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig,
-            request.getReleaseNumber(), request.getPrunedResourcesIds(), pruneLogCallback, k8sDelegateTaskParams);
+            request.getReleaseNumber(), request.getPrunedResourcesIds(), pruneLogCallback, k8sDelegateTaskParams, null);
         k8sRollingRollbackBaseHandler.logResourceRecreationStatus(resourceRecreationStatus, pruneLogCallback);
       } catch (Exception ex) {
         resourceRecreationStatus = ResourceRecreationStatus.RESOURCE_CREATION_FAILED;
@@ -106,7 +106,7 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
     boolean success = k8sRollingRollbackBaseHandler.rollback(rollbackHandlerConfig, k8sDelegateTaskParams,
         request.getReleaseNumber(), k8sTaskHelper.getExecutionLogCallback(request, Rollback),
         k8sRollingRollbackBaseHandler.getResourcesRecreated(request.getPrunedResourcesIds(), resourceRecreationStatus),
-        false);
+        false, null);
     if (!success) {
       return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
     }

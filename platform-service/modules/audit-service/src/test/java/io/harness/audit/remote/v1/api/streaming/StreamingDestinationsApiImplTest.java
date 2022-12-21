@@ -7,10 +7,15 @@
 
 package io.harness.audit.remote.v1.api.streaming;
 
+import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NISHANT;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,6 +28,10 @@ import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestina
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NoResultFoundException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
@@ -46,10 +55,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 public class StreamingDestinationsApiImplTest extends CategoryTest {
-  public static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
-  public static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
-  public static final int MAX_PAGE_NUMBER = 100;
-  public static final int MAX_PAGE_SIZE = 100;
+  private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
+  private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
+  private static final int MAX_PAGE_NUMBER = 100;
+  private static final int MAX_PAGE_SIZE = 100;
+  private String harnessAccount;
+  private String slug;
+  private String name;
+  private String bucket;
+  private StatusEnum statusEnum;
+  private String connectorRef;
+
   @Mock private StreamingService streamingService;
   @Mock private StreamingDestinationsApiUtils streamingDestinationsApiUtils;
   private StreamingDestinationsApiImpl streamingDestinationsApi;
@@ -58,22 +74,20 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   public void setup() throws Exception {
     MockitoAnnotations.openMocks(this).close();
     this.streamingDestinationsApi = new StreamingDestinationsApiImpl(streamingService, streamingDestinationsApiUtils);
+
+    harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
+    bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
+    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testCreateStreamingDestinations() {
-    String harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    String slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    String name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    String bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    StatusEnum statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
-
-    StreamingDestinationSpecDTO s3StreamingDestinationSpecDTO =
-        new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
-    StreamingDestinationDTO streamingDestinationDTO =
-        new StreamingDestinationDTO().slug(slug).name(name).status(statusEnum).spec(s3StreamingDestinationSpecDTO);
+    StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
 
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().build();
 
@@ -92,14 +106,12 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  public void testGetStreamingDestinations() {
-    String harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+  public void testGetStreamingDestinationsList() {
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     int page = RandomUtils.nextInt(0, MAX_PAGE_NUMBER);
     int limit = RandomUtils.nextInt(1, MAX_PAGE_SIZE);
     String sort = SortFields.UPDATED.value();
     String order = SortOrder.OrderType.values()[RandomUtils.nextInt(0, SortOrder.OrderType.values().length - 1)].name();
-    StatusEnum statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
 
     StreamingDestinationFilterProperties filterProperties =
         StreamingDestinationFilterProperties.builder().searchTerm(searchTerm).status(statusEnum).build();
@@ -127,5 +139,152 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     assertThat(response.getHeaders()).containsKey("Link");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetStreamingDestinations() {
+    StreamingDestination streamingDestination = getStreamingDestination();
+
+    when(streamingService.getStreamingDestination(harnessAccount, slug)).thenReturn(streamingDestination);
+    when(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
+        .thenReturn(new StreamingDestinationResponse());
+
+    Response response = streamingDestinationsApi.getStreamingDestination(slug, harnessAccount);
+
+    verify(streamingService, times(1)).getStreamingDestination(harnessAccount, slug);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+    assertThat(response.getEntity()).isNotNull();
+    assertThat(response.getEntity()).isInstanceOf(StreamingDestinationResponse.class);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetStreamingDestinations_withNotFoundException() {
+    doThrow(NoResultFoundException.newBuilder()
+                .code(ErrorCode.RESOURCE_NOT_FOUND)
+                .message(String.format("StreamingDestination: not found with identifier [%s]", slug))
+                .level(Level.ERROR)
+                .reportTargets(USER)
+                .build())
+        .when(streamingService)
+        .getStreamingDestination(harnessAccount, slug);
+
+    assertThatThrownBy(() -> streamingDestinationsApi.getStreamingDestination(slug, harnessAccount))
+        .hasMessage(String.format("StreamingDestination: not found with identifier [%s]", slug))
+        .isInstanceOf(NoResultFoundException.class);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testDeleteStreamingDestinations() {
+    when(streamingService.delete(harnessAccount, slug)).thenReturn(Boolean.TRUE);
+
+    Response response = streamingDestinationsApi.deleteDisabledStreamingDestination(slug, harnessAccount);
+
+    verify(streamingService, times(1)).delete(harnessAccount, slug);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.NO_CONTENT.getStatusCode());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testDeleteStreamingDestinations_withInvalidRequestException() {
+    doThrow(new InvalidRequestException(String.format(
+                "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", slug)))
+        .when(streamingService)
+        .delete(harnessAccount, slug);
+
+    assertThatThrownBy(() -> streamingDestinationsApi.deleteDisabledStreamingDestination(slug, harnessAccount))
+        .hasMessage(String.format(
+            "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", slug))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateStreamingDestinations() throws Exception {
+    StreamingDestination streamingDestination = getStreamingDestination();
+    StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
+
+    when(streamingService.update(any(), any(), any())).thenReturn(streamingDestination);
+    when(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
+        .thenReturn(new StreamingDestinationResponse());
+
+    Response response =
+        streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount);
+
+    verify(streamingService, times(1)).update(slug, streamingDestinationDTO, harnessAccount);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+    assertThat(response.getEntity()).isNotNull();
+    assertThat(response.getEntity()).isInstanceOf(StreamingDestinationResponse.class);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateStreamingDestinations_withExceptions() throws Exception {
+    StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
+
+    doThrow(new InvalidRequestException(String.format(
+                "StreamingDestination: identifier [%s] did not match with StreamingDestinationDTO identifier [%s]",
+                slug, slug)))
+        .when(streamingService)
+        .update(slug, streamingDestinationDTO, harnessAccount);
+    assertThatThrownBy(
+        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        .hasMessage(String.format(
+            "StreamingDestination: identifier [%s] did not match with StreamingDestinationDTO identifier [%s]", slug,
+            slug));
+
+    doThrow(new InvalidRequestException(String.format(
+                "StreamingDestination: conectorRef [%s] did not match with StreamingDestinationDTO conectorRef [%s]",
+                connectorRef, connectorRef)))
+        .when(streamingService)
+        .update(slug, streamingDestinationDTO, harnessAccount);
+    assertThatThrownBy(
+        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        .hasMessage(String.format(
+            "StreamingDestination: conectorRef [%s] did not match with StreamingDestinationDTO conectorRef [%s]",
+            connectorRef, connectorRef));
+
+    doThrow(new InvalidRequestException(
+                String.format("StreamingDestination: type [%s] did not match with StreamingDestinationDTO type [%s]",
+                    statusEnum.name(), statusEnum.name())))
+        .when(streamingService)
+        .update(slug, streamingDestinationDTO, harnessAccount);
+    assertThatThrownBy(
+        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        .hasMessage(
+            String.format("StreamingDestination: type [%s] did not match with StreamingDestinationDTO type [%s]",
+                statusEnum.name(), statusEnum.name()));
+  }
+
+  private StreamingDestinationDTO getStreamingDestinationDTO() {
+    StreamingDestinationSpecDTO streamingDestinationSpecDTO =
+        new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
+
+    return new StreamingDestinationDTO()
+        .slug(slug)
+        .name(name)
+        .status(statusEnum)
+        .connectorRef(connectorRef)
+        .spec(streamingDestinationSpecDTO);
+  }
+
+  private StreamingDestination getStreamingDestination() {
+    StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
+    streamingDestination.setIdentifier(slug);
+    streamingDestination.setName(name);
+    streamingDestination.setType(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
+    streamingDestination.setStatus(statusEnum);
+    streamingDestination.setAccountIdentifier(harnessAccount);
+    streamingDestination.setConnectorRef(connectorRef);
+
+    return streamingDestination;
   }
 }

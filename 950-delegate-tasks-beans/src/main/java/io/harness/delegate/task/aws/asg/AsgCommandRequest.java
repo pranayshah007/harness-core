@@ -9,13 +9,17 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -24,9 +28,18 @@ public interface AsgCommandRequest extends TaskParameters, ExecutionCapabilityDe
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
   Integer getTimeoutIntervalInMin();
+  AsgInfraConfig getAsgInfraConfig();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.emptyList();
+    AsgInfraConfig infraConfig = getAsgInfraConfig();
+    List<EncryptedDataDetail> infraConfigEncryptionDataDetails = infraConfig.getEncryptionDataDetails();
+    List<ExecutionCapability> capabilities =
+        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            infraConfigEncryptionDataDetails, maskingEvaluator));
+
+    AwsConnectorDTO awsConnectorDTO = infraConfig.getAwsConnectorDTO();
+    capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+    return capabilities;
   }
 }

@@ -20,6 +20,7 @@ import io.harness.beans.SearchFilter;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.exception.WingsException;
 import io.harness.persistence.GoogleDataStoreAware;
+import io.harness.reflection.HarnessReflections;
 
 import software.wings.beans.Log;
 import software.wings.dl.WingsPersistence;
@@ -47,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
-import org.reflections.Reflections;
 
 @Singleton
 @Slf4j
@@ -162,10 +162,8 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public void purgeOlderRecords() {
-    Reflections reflections = new Reflections("software.wings");
-    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses = reflections.getSubTypesOf(GoogleDataStoreAware.class);
-    reflections = new Reflections("io.harness");
-    dataStoreClasses.addAll(reflections.getSubTypesOf(GoogleDataStoreAware.class));
+    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses =
+        HarnessReflections.get().getSubTypesOf(GoogleDataStoreAware.class);
 
     dataStoreClasses.forEach(dataStoreClass -> {
       if (AccountDataRetentionEntity.class.isAssignableFrom(dataStoreClass)) {
@@ -192,10 +190,8 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public void purgeDataRetentionOlderRecords(Map<String, Long> accounts) {
-    Reflections reflections = new Reflections("software.wings");
-    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses = reflections.getSubTypesOf(GoogleDataStoreAware.class);
-    reflections = new Reflections("io.harness");
-    dataStoreClasses.addAll(reflections.getSubTypesOf(GoogleDataStoreAware.class));
+    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses =
+        HarnessReflections.get().getSubTypesOf(GoogleDataStoreAware.class);
 
     dataStoreClasses.forEach(dataStoreClass -> {
       long now = currentTimeMillis();

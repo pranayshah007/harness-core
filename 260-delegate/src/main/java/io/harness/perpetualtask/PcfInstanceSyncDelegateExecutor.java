@@ -48,7 +48,9 @@ public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    if (log.isDebugEnabled()) {
+      log.debug("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    }
     PcfInstanceSyncPerpetualTaskParams instanceSyncParams =
         AnyUtils.unpack(params.getCustomizedParams(), PcfInstanceSyncPerpetualTaskParams.class);
     String applicationName = instanceSyncParams.getApplicationName();

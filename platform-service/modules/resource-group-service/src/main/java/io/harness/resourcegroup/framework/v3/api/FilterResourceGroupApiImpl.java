@@ -20,6 +20,7 @@ import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.resourcegroup.v1.FilterResourceGroupsApi;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupFilterRequestBody;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.util.stream.Collectors;
@@ -40,10 +41,10 @@ public class FilterResourceGroupApiImpl implements FilterResourceGroupsApi {
   public Response filterResourceGroups(ResourceGroupFilterRequestBody requestBody, String account, Integer page,
       Integer limit, String sort, String order) {
     ResourceGroupFilterDTO resourceGroupFilterDTO = ResourceGroupApiUtils.getResourceFilterDTO(requestBody);
-    PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse = resourceGroupService.list(resourceGroupFilterDTO, pageRequest);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ResourceGroupApiUtils.addLinksHeader(
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, "/v1/resource-groups/filter", pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()

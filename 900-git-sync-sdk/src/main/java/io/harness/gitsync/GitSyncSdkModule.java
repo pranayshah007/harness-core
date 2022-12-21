@@ -8,13 +8,16 @@
 package io.harness.gitsync;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.gitsync.AbstractGitSyncSdkModule.GIT_SYNC_SDK;
 
 import io.harness.SCMJavaClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.dao.GitProcessingRequestService;
 import io.harness.gitsync.dao.GitProcessingRequestServiceImpl;
+import io.harness.gitsync.events.GitProcessRequestListener;
 import io.harness.gitsync.events.GitSyncConfigEventMessageListener;
 import io.harness.gitsync.fullsync.FullSyncSdkService;
 import io.harness.gitsync.fullsync.FullSyncSdkServiceImpl;
@@ -62,6 +65,9 @@ public class GitSyncSdkModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(GIT_CONFIG_STREAM + GIT_SYNC_SDK))
         .to(GitSyncConfigEventMessageListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(GIT_PROCESS_REQUEST + ENTITY_CRUD))
+        .to(GitProcessRequestListener.class);
     bind(GitAwarePersistence.class).to(GitAwarePersistenceNewImpl.class);
     bind(GitSyncSdkService.class).to(GitSyncSdkServiceImpl.class);
     bind(GitProcessingRequestService.class).to(GitProcessingRequestServiceImpl.class);

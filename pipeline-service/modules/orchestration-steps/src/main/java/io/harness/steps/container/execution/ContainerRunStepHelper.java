@@ -23,7 +23,6 @@ import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -116,6 +115,13 @@ public class ContainerRunStepHelper {
     runStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 
     CIShellType shellType = ContainerStepResolverUtils.resolveShellType(runStepInfo.getShell());
+    return getUnitStep(port, callbackId, logKey, identifier, accountId, stepName, runStepBuilder, shellType,
+        delegateCallbackTokenSupplier);
+  }
+
+  private UnitStep getUnitStep(Integer port, String callbackId, String logKey, String identifier, String accountId,
+      String stepName, RunStep.Builder runStepBuilder, CIShellType shellType,
+      Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier) {
     ShellType protoShellType = ShellType.SH;
     if (shellType == CIShellType.BASH) {
       protoShellType = ShellType.BASH;
@@ -147,7 +153,7 @@ public class ContainerRunStepHelper {
     List<Integer> ports = containerPortDetails.getPortDetails().get(stepIdentifier);
 
     if (ports.size() != 1) {
-      throw new CIStageExecutionException(format("Step [%s] should map to single port", stepIdentifier));
+      throw new ContainerStepExecutionException(format("Step [%s] should map to single port", stepIdentifier));
     }
 
     return ports.get(0);

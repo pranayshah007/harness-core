@@ -35,6 +35,7 @@ import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -98,6 +99,7 @@ public class ShellScriptTaskHandler {
       case WINRM: {
         try {
           WinRmSessionConfig winRmSessionConfig = parameters.winrmSessionConfig(encryptionService);
+          applyTimeoutOnSessionConfig(timeoutInMillis, winRmSessionConfig);
           WinRmExecutor executor =
               winrmExecutorFactory.getExecutor(winRmSessionConfig, parameters.isDisableWinRMCommandEncodingFFSet(),
                   parameters.isSaveExecutionLogs(), parameters.isWinrmScriptCommandSplit());
@@ -113,6 +115,13 @@ public class ShellScriptTaskHandler {
             .status(FAILURE)
             .errorMessage(format("Unsupported ConnectionType %s", parameters.getConnectionType()))
             .build();
+    }
+  }
+
+  @VisibleForTesting
+  void applyTimeoutOnSessionConfig(Long timeoutInMillis, WinRmSessionConfig config) {
+    if (timeoutInMillis != null) {
+      config.setTimeout((int) Long.min(timeoutInMillis, Integer.MAX_VALUE));
     }
   }
 

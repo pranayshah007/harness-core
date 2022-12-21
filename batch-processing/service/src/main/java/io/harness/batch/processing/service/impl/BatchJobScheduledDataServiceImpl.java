@@ -46,6 +46,12 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       if (batchJobType.equals(BatchJobType.DELEGATE_HEALTH_CHECK)) {
         return Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
       }
+      if (batchJobType.equals(BatchJobType.RECOMMENDATION_JIRA_STATUS)) {
+        return Instant.now()
+            .minus(BatchJobType.RECOMMENDATION_JIRA_STATUS.getInterval(),
+                BatchJobType.RECOMMENDATION_JIRA_STATUS.getIntervalUnit())
+            .truncatedTo(BatchJobType.RECOMMENDATION_JIRA_STATUS.getIntervalUnit());
+      }
       if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
               .contains(batchJobType.getBatchJobBucket())) {
         Instant connectorCreationTime =
