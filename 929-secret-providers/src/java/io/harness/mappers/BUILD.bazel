@@ -16,7 +16,6 @@ java_library(
         "//929-secret-providers/src/java/software/wings/beans:module",
         "//930-delegate-tasks/src/main/java/io/harness/mappers:module",
         "//940-secret-manager-client:module",
-        "//970-ng-commons:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )
