@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 public class CgK8sReleaseIdentifier extends AbstractCgReleaseIdentifier {
-  private String namespaces;
+  private String namespace;
   private String releaseName;
   private String clusterName;
   private String containerServiceName;

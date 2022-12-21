@@ -33,6 +33,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
+import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -50,10 +51,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -169,14 +172,26 @@ public class CgInstanceSyncServiceV2 {
           log.warn("Couldn't acquire infra lock. appId [{}]", infraMapping.getAppId());
           return;
         }
+        Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
+        Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
         for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
           DelegateResponseData delegateResponse =
               (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
-
+          Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
+          SettingAttribute cloudProvider =
+              cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
           instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
 
-          taskDetailsService.updateLastRun(taskDetailsId);
+          long deleteReleaseAfter = helperFactory.getHandler(cloudProvider.getValue().getSettingType())
+                                        .getDeleteReleaseAfter(taskDetails.getReleaseIdentifiers(), instanceSyncData);
+          taskDetails.getReleaseIdentifiers().setDeleteAfter(deleteReleaseAfter);
+          if (deleteReleaseAfter > System.currentTimeMillis()) {
+            releasesToUpdate.add(cgReleaseIdentifiers);
+          } else {
+            releasesToDelete.add(cgReleaseIdentifiers);
+          }
         }
+        taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }
     }
   }

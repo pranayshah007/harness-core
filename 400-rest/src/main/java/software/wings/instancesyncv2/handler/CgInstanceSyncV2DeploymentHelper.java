@@ -9,6 +9,7 @@ package software.wings.instancesyncv2.handler;
 
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
@@ -31,4 +32,6 @@ public interface CgInstanceSyncV2DeploymentHelper {
       Set<CgReleaseIdentifiers> releaseIdentifiers, Set<CgReleaseIdentifiers> buildReleaseIdentifiers);
 
   List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
+
+  long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData);
 }

@@ -17,6 +17,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
 
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -32,7 +33,9 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
@@ -56,6 +59,7 @@ import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
+import software.wings.instancesyncv2.model.AbstractCgReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
@@ -71,6 +75,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
@@ -87,6 +92,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,6 +106,8 @@ import org.apache.groovy.util.Maps;
 public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2DeploymentHelper {
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   private final InfrastructureMappingService infrastructureMappingService;
+
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(10);
   private final KryoSerializer kryoSerializer;
   private final InstanceUtils instanceUtil;
   private final ServiceResourceService serviceResourceService;
@@ -175,56 +183,78 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   @Override
   public Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentInfo deploymentInfo) {
     if (deploymentInfo instanceof K8sDeploymentInfo) {
-      K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentInfo;
-      Set<String> namespaces = getNamespaces(k8sDeploymentInfo.getNamespaces(), k8sDeploymentInfo.getNamespace());
-      if (CollectionUtils.isEmpty(namespaces)) {
-        log.error("No namespace found for deployment info. Returning empty");
-        return Collections.emptySet();
-      }
-
-      return Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                       .clusterName(k8sDeploymentInfo.getClusterName())
-                                       .releaseName(k8sDeploymentInfo.getReleaseName())
-                                       .namespaces(namespaces)
-                                       .isHelmDeployment(false)
-                                       .build());
+      return createReleaseIdentifiersK8sDeploymentInfo(deploymentInfo);
     } else if (deploymentInfo instanceof ContainerDeploymentInfoWithLabels) {
-      ContainerDeploymentInfoWithLabels containerDeploymentInfo = (ContainerDeploymentInfoWithLabels) deploymentInfo;
-      Set<String> namespaces =
-          getNamespaces(containerDeploymentInfo.getNamespaces(), containerDeploymentInfo.getNamespace());
-      if (CollectionUtils.isEmpty(namespaces)) {
-        log.error("No namespace found for deployment info. Returning empty");
-        return Collections.emptySet();
-      }
+      return createReleaseIdentifiersContainerDeploymentInfoWithLabels(deploymentInfo);
+    } else {
+      throw new InvalidRequestException("DeploymentInfo of type: [" + deploymentInfo.getClass().getCanonicalName()
+          + "] not supported with V2 Instance Sync framework.");
+    }
+  }
 
-      Set<String> controllers = emptyIfNull(containerDeploymentInfo.getContainerInfoList())
-                                    .stream()
-                                    .map(io.harness.container.ContainerInfo::getWorkloadName)
-                                    .filter(EmptyPredicate::isNotEmpty)
-                                    .collect(Collectors.toSet());
-      if (isNotEmpty(controllers)) {
-        return controllers.stream()
-            .map(controller
-                -> CgK8sReleaseIdentifier.builder()
-                       .containerServiceName(controller)
-                       .namespaces(namespaces)
-                       .releaseName(containerDeploymentInfo.getReleaseName())
-                       .isHelmDeployment(true)
-                       .build())
-            .collect(Collectors.toSet());
-      } else if (isNotEmpty(containerDeploymentInfo.getContainerInfoList())) {
-        return Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                         .namespaces(namespaces)
-                                         .releaseName(containerDeploymentInfo.getReleaseName())
-                                         .isHelmDeployment(true)
-                                         .build());
-      }
-
+  private Set<CgReleaseIdentifiers> createReleaseIdentifiersContainerDeploymentInfoWithLabels(
+      DeploymentInfo deploymentInfo) {
+    ContainerDeploymentInfoWithLabels containerDeploymentInfo = (ContainerDeploymentInfoWithLabels) deploymentInfo;
+    Set<String> namespaces =
+        getNamespaces(containerDeploymentInfo.getNamespaces(), containerDeploymentInfo.getNamespace());
+    if (CollectionUtils.isEmpty(namespaces)) {
+      log.error("No namespace found for deployment info. Returning empty");
       return Collections.emptySet();
     }
 
-    throw new InvalidRequestException("DeploymentInfo of type: [" + deploymentInfo.getClass().getCanonicalName()
-        + "] not supported with V2 Instance Sync framework.");
+    Set<String> controllers = emptyIfNull(containerDeploymentInfo.getContainerInfoList())
+                                  .stream()
+                                  .map(io.harness.container.ContainerInfo::getWorkloadName)
+                                  .filter(EmptyPredicate::isNotEmpty)
+                                  .collect(Collectors.toSet());
+
+    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
+    if (isNotEmpty(controllers)) {
+      for (String namespace : namespaces) {
+        cgReleaseIdentifiersSet.addAll(controllers.stream()
+                                           .map(controller
+                                               -> CgK8sReleaseIdentifier.builder()
+                                                      .containerServiceName(isEmpty(controller) ? null : controller)
+                                                      .namespace(namespace)
+                                                      .releaseName(containerDeploymentInfo.getReleaseName())
+                                                      .isHelmDeployment(true)
+                                                      .build())
+                                           .collect(Collectors.toSet()));
+      }
+
+      return cgReleaseIdentifiersSet;
+    } else if (isNotEmpty(containerDeploymentInfo.getContainerInfoList())) {
+      for (String namespace : namespaces) {
+        cgReleaseIdentifiersSet.add(CgK8sReleaseIdentifier.builder()
+                                        .namespace(namespace)
+                                        .releaseName(containerDeploymentInfo.getReleaseName())
+                                        .isHelmDeployment(true)
+                                        .build());
+      }
+      return cgReleaseIdentifiersSet;
+    }
+
+    return Collections.emptySet();
+  }
+
+  private Set<CgReleaseIdentifiers> createReleaseIdentifiersK8sDeploymentInfo(DeploymentInfo deploymentInfo) {
+    K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentInfo;
+    Set<String> namespaces = getNamespaces(k8sDeploymentInfo.getNamespaces(), k8sDeploymentInfo.getNamespace());
+    if (CollectionUtils.isEmpty(namespaces)) {
+      log.error("No namespace found for deployment info. Returning empty");
+      return Collections.emptySet();
+    }
+
+    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
+    for (String namespace : namespaces) {
+      cgReleaseIdentifiersSet.add(CgK8sReleaseIdentifier.builder()
+                                      .clusterName(k8sDeploymentInfo.getClusterName())
+                                      .releaseName(k8sDeploymentInfo.getReleaseName())
+                                      .namespace(namespace)
+                                      .isHelmDeployment(false)
+                                      .build());
+    }
+    return cgReleaseIdentifiersSet;
   }
 
   private Set<String> getNamespaces(Collection<String> namespaces, String namespace) {
@@ -265,27 +295,34 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
         .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
         .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
         .forEach(releaseIdentifier
-            -> releaseDetails.addAll(
-                releaseIdentifier.getNamespaces()
-                    .stream()
-                    .map(namespace
-                        -> CgDeploymentReleaseDetails.newBuilder()
-                               .setTaskDetailsId(taskDetails.getUuid())
-                               .setInfraMappingId(taskDetails.getInfraMappingId())
-                               .setInfraMappingType(infraMapping.getInfraMappingType())
-                               .setReleaseDetails(Any.pack(
-                                   DirectK8sInstanceSyncTaskDetails.newBuilder()
-                                       .setReleaseName(releaseIdentifier.getReleaseName())
-                                       .setNamespace(namespace)
-                                       .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
-                                       .setIsHelm(releaseIdentifier.isHelmDeployment())
-                                       .setContainerServiceName(isEmpty(releaseIdentifier.getContainerServiceName())
-                                               ? ""
-                                               : releaseIdentifier.getContainerServiceName())
-                                       .build()))
-                               .build())
-                    .collect(Collectors.toList())));
+            -> releaseDetails.add(CgDeploymentReleaseDetails.newBuilder()
+                                      .setTaskDetailsId(taskDetails.getUuid())
+                                      .setInfraMappingId(taskDetails.getInfraMappingId())
+                                      .setInfraMappingType(infraMapping.getInfraMappingType())
+                                      .setReleaseDetails(Any.pack(
+                                          directK8sInstanceSyncTaskDetailsBuilder(releaseIdentifier, clusterConfig)))
+                                      .build()));
 
     return releaseDetails;
+  }
+
+  private DirectK8sInstanceSyncTaskDetails directK8sInstanceSyncTaskDetailsBuilder(
+      CgK8sReleaseIdentifier releaseIdentifier, K8sClusterConfig clusterConfig) {
+    return DirectK8sInstanceSyncTaskDetails.newBuilder()
+        .setReleaseName(releaseIdentifier.getReleaseName())
+        .setNamespace(releaseIdentifier.getNamespace())
+        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
+        .setIsHelm(releaseIdentifier.isHelmDeployment())
+        .setContainerServiceName(
+            isEmpty(releaseIdentifier.getContainerServiceName()) ? "" : releaseIdentifier.getContainerServiceName())
+        .build();
+  }
+
+  @Override
+  public long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData) {
+    if (instanceSyncData.getInstanceCount() == 0) {
+      return releaseIdentifier.getDeleteAfter();
+    }
+    return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
   }
 }

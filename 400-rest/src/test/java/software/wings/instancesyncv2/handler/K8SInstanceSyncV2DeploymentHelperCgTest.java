@@ -108,20 +108,18 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void mergeReleaseIdentifiers() {
-    Set<CgReleaseIdentifiers> existingIdentifiers =
-        Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                  .releaseName("releaseName")
-                                  .clusterName("clusterName")
-                                  .namespaces(new HashSet<>(Arrays.asList("namespace1")))
-                                  .isHelmDeployment(false)
-                                  .build());
-    Set<CgReleaseIdentifiers> newIdentifiers =
-        Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                  .releaseName("releaseName")
-                                  .clusterName("clusterName")
-                                  .namespaces(new HashSet<>(Arrays.asList("namespace")))
-                                  .isHelmDeployment(false)
-                                  .build());
+    Set<CgReleaseIdentifiers> existingIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                              .releaseName("releaseName")
+                                                                              .clusterName("clusterName")
+                                                                              .namespace("namespace1")
+                                                                              .isHelmDeployment(false)
+                                                                              .build());
+    Set<CgReleaseIdentifiers> newIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                         .releaseName("releaseName")
+                                                                         .clusterName("clusterName")
+                                                                         .namespace("namespace")
+                                                                         .isHelmDeployment(false)
+                                                                         .build());
     Set<CgReleaseIdentifiers> result =
         k8SInstanceSyncV2DeploymentHelperCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
     assertThat(result).isNotNull();
@@ -194,7 +192,7 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
             .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
                                                           .releaseName("releaseName")
                                                           .clusterName("clusterName")
-                                                          .namespaces(new HashSet<>(Arrays.asList("namespace1")))
+                                                          .namespace("namespace1")
                                                           .isHelmDeployment(false)
                                                           .build()))
             .build();
