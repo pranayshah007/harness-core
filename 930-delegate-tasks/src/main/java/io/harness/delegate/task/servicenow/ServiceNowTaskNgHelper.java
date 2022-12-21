@@ -19,6 +19,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.network.Http;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -601,9 +602,11 @@ public class ServiceNowTaskNgHelper {
         importDataJsonMap =
             JsonUtils.asObject(serviceNowTaskNGParameters.getImportData(), new TypeReference<Map<String, String>>() {});
       } catch (Exception ex) {
-        log.error("Provided import data is not a valid json: {}", ExceptionUtils.getMessage(ex), ex);
-        throw new InvalidRequestException(
-            String.format("Provided import data is not a valid json: %s", ExceptionUtils.getMessage(ex)));
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Provided import data is not a valid json: {}", ExceptionUtils.getMessage(sanitizedException),
+            sanitizedException);
+        throw new InvalidRequestException(String.format(
+            "Provided import data is not a valid json: %s", ExceptionUtils.getMessage(sanitizedException)));
       }
     } else {
       importDataJsonMap = new HashMap<>();

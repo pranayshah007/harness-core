@@ -161,7 +161,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
 
     success = k8sTaskHelperBase.applyManifests(k8sBlueGreenHandlerConfig.getClient(),
         k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams,
-        k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Apply), true);
+        k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Apply), true, null);
     if (!success) {
       k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(IK8sRelease.Status.Failed);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(k8sBlueGreenHandlerConfig.getKubernetesConfig(),

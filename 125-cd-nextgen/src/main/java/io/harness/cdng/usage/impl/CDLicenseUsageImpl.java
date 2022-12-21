@@ -142,7 +142,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         "Start fetching active services names, org and project names for accountIdentifier: {}", accountIdentifier);
     long updateActiveServiceQueryStartTime = System.currentTimeMillis();
     List<ActiveService> activeServices = licenseUsageDAL.fetchActiveServicesNameOrgAndProjectName(
-        accountIdentifier, activeServiceBaseResponse.getActiveServiceItems());
+        accountIdentifier, activeServiceBaseResponse.getActiveServiceItems(), activeServiceFetchData.getSort());
     long updateActiveServiceQueryEndTime = System.currentTimeMillis() - updateActiveServiceQueryStartTime;
     log.info(
         "Active services names, org and project names fetched successfully for accountIdentifier: {}, time taken in ms: {}",

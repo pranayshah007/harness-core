@@ -110,6 +110,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -193,15 +194,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(serviceRef), "service ref must be present");
 
     return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
   }
 
   private Optional<ServiceEntity> getServiceByRef(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    String[] serviceRefSplit = serviceRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (serviceRefSplit.length == 1) {
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
     } else {
@@ -429,10 +429,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   private Criteria getServiceEqualityCriteria(ServiceEntity requestService, boolean deleted) {
     checkArgument(isNotEmpty(requestService.getAccountId()), "accountId must be present");
-    checkArgument(isNotEmpty(requestService.getIdentifier()), "service ref must be present");
-    String[] serviceRefSplit = requestService.getIdentifier().split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] serviceRefSplit = StringUtils.split(requestService.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
-    if (serviceRefSplit.length == 1) {
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       criteria = Criteria.where(ServiceEntityKeys.accountId)
                      .is(requestService.getAccountId())
                      .and(ServiceEntityKeys.orgIdentifier)

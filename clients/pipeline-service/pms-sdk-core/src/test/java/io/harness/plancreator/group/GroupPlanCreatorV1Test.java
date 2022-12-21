@@ -146,6 +146,7 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     assertThat(planNode.getStepType()).isEqualTo(GroupStepV1.STEP_TYPE);
     assertThat(planNode.getAdviserObtainments()).isEmpty();
     assertThat(planNode.getFacilitatorObtainments().size()).isEqualTo(1);
+    assertThat(planNode.getWhenCondition()).isEqualTo("<+OnPipelineSuccess> && (\"a\"==\"A\")");
     assertThat(planNode.getFacilitatorObtainments().get(0).getType())
         .isEqualTo(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build());
 

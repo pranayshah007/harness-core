@@ -19,8 +19,8 @@ message InstanceSyncTrackedDeploymentDetails {
 }
 
 message ResponseBatchConfig {
-  int32 release_count = 1;
-  int32 instance_count = 2;
+  int32 instance_count = 1;
+  int32 release_count = 2;
 }
 
 message CgDeploymentReleaseDetails {

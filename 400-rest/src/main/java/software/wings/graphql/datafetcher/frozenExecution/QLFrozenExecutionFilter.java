@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.graphql.schema.type.aggregation.EntityFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
+import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
 
 import lombok.Builder;
 import lombok.Data;
@@ -27,4 +28,5 @@ public class QLFrozenExecutionFilter implements EntityFilter {
   private QLIdFilter environment;
   private QLIdFilter service;
   private QLIdFilter rejectedByFreezeWindow;
+  private QLTimeFilter creationTime;
 }

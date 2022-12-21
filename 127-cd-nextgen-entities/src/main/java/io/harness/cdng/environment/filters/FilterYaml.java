@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -38,6 +39,8 @@ public class FilterYaml implements Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
+
+  @NotNull @EntityIdentifier private String identifier;
 
   @NotNull @JsonProperty("type") FilterType type;
 

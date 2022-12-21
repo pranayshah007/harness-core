@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -88,16 +89,14 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   public Optional<NGServiceOverridesEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(environmentRef), "environment ref must be present");
-    checkArgument(isNotEmpty(serviceRef), "service ref must be present");
 
     return getByEnvironmentRef(accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
   }
 
   private Optional<NGServiceOverridesEntity> getByEnvironmentRef(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    String[] environmentRefSplit = environmentRef.split("\\.", 2);
-    if (environmentRefSplit.length == 1) {
+    String[] environmentRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (environmentRefSplit == null || environmentRefSplit.length == 1) {
       return serviceOverrideRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRef(
               accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
@@ -337,8 +336,9 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   private Criteria getServiceOverrideEqualityCriteria(NGServiceOverridesEntity requestServiceOverride) {
-    String[] environmentRefSplit = requestServiceOverride.getEnvironmentRef().split("\\.", 2);
-    if (environmentRefSplit.length == 1) {
+    String[] environmentRefSplit =
+        StringUtils.split(requestServiceOverride.getEnvironmentRef(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (environmentRefSplit == null || environmentRefSplit.length == 1) {
       return Criteria.where(NGServiceOverridesEntityKeys.accountId)
           .is(requestServiceOverride.getAccountId())
           .and(NGServiceOverridesEntityKeys.orgIdentifier)

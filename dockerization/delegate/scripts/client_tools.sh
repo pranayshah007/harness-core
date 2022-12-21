@@ -44,5 +44,5 @@ else
   echo "Client tools are disabled"
   echo "Installing scm binary"
   mkdir -m 777 -p client-tools/scm/5452b1a7 \
-  && curl -s -L -o client-tools/scm/5452b1a7/scm https://app.harness.io/public/shared/tools/scm/release/9ddfb2b9/bin/linux/$ARCH/scm
+  && curl -s -L -o client-tools/scm/5452b1a7/scm https://app.harness.io/public/shared/tools/scm/release/5452b1a7/bin/linux/$ARCH/scm
 fi
