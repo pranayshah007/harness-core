@@ -320,6 +320,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
         .image(getImageValue(garDelegateResponse))
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
 
