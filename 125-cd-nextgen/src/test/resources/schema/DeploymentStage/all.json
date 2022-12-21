@@ -12609,10 +12609,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12633,7 +12642,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",
@@ -12682,10 +12692,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12706,7 +12725,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",
@@ -12741,10 +12761,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12765,7 +12794,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",
