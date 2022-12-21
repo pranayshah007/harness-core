@@ -7,6 +7,8 @@
 
 package software.wings.instancesyncv2;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
@@ -22,6 +24,7 @@ import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
+import io.harness.perpetualtask.instancesyncv2.ResponseBatchConfig;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentEvent;
@@ -75,6 +78,11 @@ public class CgInstanceSyncServiceV2 {
   public static final int PERPETUAL_TASK_INTERVAL = 2;
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
 
+  private static final int INSTANCE_COUNT_LIMIT =
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
+  private static final int RELEASE_COUNT_LIMIT =
+      Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
+
   public void handleInstanceSync(DeploymentEvent event) {
     if (Objects.isNull(event)) {
       log.error("Null event sent for Instance Sync Processing. Doing nothing");
@@ -116,23 +124,15 @@ public class CgInstanceSyncServiceV2 {
     } catch (Exception ex) {
       // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
       // forever in case of exception
-      log.warn("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
-          event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId, ex);
+      throw new RuntimeException(
+          format("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
+              event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
+          ex);
     }
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
-    /*
-        result.getInstanceDataList().forEach(instanceSyncData -> {
-          log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
-              instanceSyncData.getTaskDetailsId(),
-              instanceSyncData.getInstanceDataList()
-                  .stream()
-                  .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
-                  .collect(Collectors.toList()));
-        });
-    */
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
       log.error(
@@ -287,6 +287,10 @@ public class CgInstanceSyncServiceV2 {
         .setAccountId(accountId)
         .setPerpetualTaskId(perpetualTaskId)
         .addAllDeploymentDetails(deploymentReleaseDetails)
+        .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
+                                    .setReleaseCount(RELEASE_COUNT_LIMIT)
+                                    .setInstanceCount(INSTANCE_COUNT_LIMIT)
+                                    .build())
         .build();
   }
 }
