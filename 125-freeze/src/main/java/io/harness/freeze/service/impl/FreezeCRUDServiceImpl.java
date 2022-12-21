@@ -31,6 +31,7 @@ import io.harness.repositories.FreezeConfigRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -93,6 +94,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       throw new DuplicateEntityException(createFreezeConfigAlreadyExistsMessage(freezeConfigEntity.getOrgIdentifier(),
           freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getIdentifier()));
     } else {
+      updateNextIterations(freezeConfigEntity);
       freezeConfigRepository.save(freezeConfigEntity);
     }
     return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
@@ -115,8 +117,17 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     FreezeConfigEntity updatedFreezeConfigEntity =
         updateFreezeConfig(freezeConfigEntity, accountId, orgId, projectId, freezeConfigEntity.getIdentifier());
     deleteFreezeWindowsIfDisabled(updatedFreezeConfigEntity);
+    updateNextIterations(updatedFreezeConfigEntity);
     updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
     return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
+  }
+
+  private void updateNextIterations(FreezeConfigEntity freezeConfigEntity) {
+    freezeConfigEntity.setNextIterations(new ArrayList<>());
+    if (freezeConfigEntity.getStatus().equals(FreezeStatus.ENABLED)) {
+      freezeConfigEntity.setNextIterations(
+          freezeConfigEntity.recalculateNextIterations(FreezeConfigEntityKeys.nextIterations, true, 0));
+    }
   }
 
   @Override
@@ -131,6 +142,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
     updatedFreezeConfigEntity = updateFreezeConfig(
         updatedFreezeConfigEntity, accountId, orgId, projectId, updatedFreezeConfigEntity.getIdentifier());
+    updateNextIterations(updatedFreezeConfigEntity);
     updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
     return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
   }
@@ -305,6 +317,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
       freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
       freezeConfigEntity.setStatus(freezeStatus);
+      updateNextIterations(freezeConfigEntity);
       freezeConfigEntity = freezeConfigRepository.save(freezeConfigEntity);
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {

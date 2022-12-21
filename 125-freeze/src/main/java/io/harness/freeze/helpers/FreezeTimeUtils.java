@@ -21,12 +21,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.tuple.Pair;
 
 @UtilityClass
 public class FreezeTimeUtils {
@@ -109,6 +112,90 @@ public class FreezeTimeUtils {
     return null;
   }
 
+  public List<Long> fetchUpcomingTimeWindow(List<FreezeWindow> freezeWindows) {
+    List<Long> allUpcomingWindows = new LinkedList<>();
+    if (freezeWindows == null) {
+      return allUpcomingWindows;
+    }
+    freezeWindows.forEach(freezeWindow -> {
+      List<Long> upcomingWindows = fetchUpcomingTimeWindow(freezeWindow);
+      allUpcomingWindows.addAll(upcomingWindows);
+    });
+    // TODO : Sort all upcoming start time in case of multiple windows in future
+    return allUpcomingWindows;
+  }
+
+  private List<Long> fetchUpcomingTimeWindow(FreezeWindow freezeWindow) {
+    TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime firstWindowEndTime = getLocalDateTime(freezeWindow, timeZone, firstWindowStartTime);
+    if (freezeWindow.getRecurrence() == null) {
+      return fetchUpcomingTimeWindowWithoutRecurrence(timeZone, firstWindowStartTime, firstWindowEndTime);
+    } else {
+      return fetchUpcomingTimeWindowWithRecurrence(freezeWindow, timeZone, firstWindowStartTime, firstWindowEndTime);
+    }
+  }
+
+  private List<Long> fetchUpcomingTimeWindowWithRecurrence(FreezeWindow freezeWindow, TimeZone timeZone,
+      LocalDateTime firstWindowStartTime, LocalDateTime firstWindowEndTime) {
+    LocalDateTime until;
+    if (freezeWindow.getRecurrence().getSpec() == null) {
+      until = getLocalDateTime(RecurrenceType.YEARLY, firstWindowEndTime, 5);
+    } else {
+      until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+    }
+    Long lastWindowEndTimeEpoch = getEpochValueFromDateString(until, timeZone);
+    if (getCurrentTime() > lastWindowEndTimeEpoch) {
+      return new ArrayList<>();
+    } else {
+      return fetchUpcomingTimeWindow(firstWindowStartTime, firstWindowEndTime, lastWindowEndTimeEpoch,
+          freezeWindow.getRecurrence().getRecurrenceType(), timeZone);
+    }
+  }
+
+  private List<Long> fetchUpcomingTimeWindowWithoutRecurrence(
+      TimeZone timeZone, LocalDateTime firstWindowStartTime, LocalDateTime firstWindowEndTime) {
+    if (getCurrentTime() <= getEpochValueFromDateString(firstWindowEndTime, timeZone)) {
+      if (getCurrentTime() < getEpochValueFromDateString(firstWindowStartTime, timeZone)) {
+        return Collections.singletonList(getEpochValueFromDateString(firstWindowStartTime, timeZone));
+      }
+    }
+    return new ArrayList<>();
+  }
+
+  private LocalDateTime getLocalDateTime(
+      FreezeWindow freezeWindow, TimeZone timeZone, LocalDateTime firstWindowStartTime) {
+    LocalDateTime firstWindowEndTime;
+    if (freezeWindow.getEndTime() == null) {
+      FreezeDuration freezeDuration = FreezeDuration.fromString(freezeWindow.getDuration());
+      Long endTime = getEpochValueFromDateString(firstWindowStartTime, timeZone) + freezeDuration.getTimeoutInMillis();
+      firstWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+    } else {
+      firstWindowEndTime = LocalDateTime.parse(freezeWindow.getEndTime(), dtf);
+    }
+    return firstWindowEndTime;
+  }
+
+  private List<Long> fetchUpcomingTimeWindow(LocalDateTime firstWindowStartTime, LocalDateTime firstWindowEndTime,
+      Long lastWindowEndTimeEpoch, RecurrenceType recurrenceType, TimeZone timeZone) {
+    int recurrenceNumber = 0;
+    int cnt = 1;
+    List<Long> upcomingWindows = new ArrayList<>();
+    Long currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
+    while (currentWindowStartTime < lastWindowEndTimeEpoch) {
+      if (getCurrentTime() < currentWindowStartTime) {
+        upcomingWindows.add(currentWindowStartTime);
+        cnt++;
+        if (cnt > 10) {
+          break;
+        }
+      }
+      recurrenceNumber++;
+      currentWindowStartTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
+    }
+    return upcomingWindows;
+  }
+
   private boolean currentWindowIsActive(Long windowStartTime, Long windowEndTime) {
     Long currentTime = getCurrentTime();
     return currentTime > windowStartTime && currentTime < windowEndTime;
@@ -119,7 +206,27 @@ public class FreezeTimeUtils {
         && currentWindowIsActive(currentOrUpcomingWindow.getStartTime(), currentOrUpcomingWindow.getEndTime());
   }
 
-  private Long getEpochValue(RecurrenceType offsetType, LocalDateTime date, TimeZone timeZone, int offsetValue) {
+  public Pair<LocalDateTime, LocalDateTime> setCurrWindowStartAndEndTime(LocalDateTime firstWindowStartTime,
+      LocalDateTime firstWindowEndTime, RecurrenceType recurrenceType, TimeZone timeZone) {
+    Long startTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, 0);
+    Long endTime = getEpochValue(recurrenceType, firstWindowEndTime, timeZone, 0);
+    int recurrenceNumber = 0;
+    Long currTime = getCurrentTime();
+    while (currTime >= startTime) {
+      if (currTime <= endTime) {
+        LocalDateTime currWindowStartTime =
+            Instant.ofEpochMilli(startTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+        LocalDateTime currWindowEndTime = Instant.ofEpochMilli(endTime).atZone(timeZone.toZoneId()).toLocalDateTime();
+        return Pair.of(currWindowStartTime, currWindowEndTime);
+      }
+      recurrenceNumber++;
+      startTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, recurrenceNumber);
+      endTime = getEpochValue(recurrenceType, firstWindowEndTime, timeZone, recurrenceNumber);
+    }
+    return Pair.of(firstWindowStartTime, firstWindowEndTime);
+  }
+
+  public Long getEpochValue(RecurrenceType offsetType, LocalDateTime date, TimeZone timeZone, int offsetValue) {
     ZoneOffset zoneOffset = timeZone.toZoneId().getRules().getOffset(now);
     if (offsetValue == 0) {
       return date.toInstant(zoneOffset).toEpochMilli();
