@@ -171,6 +171,7 @@ ciExecutionServiceConfig:
     serviceKey: "gcp_service_key"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
+    splitLinuxArm64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

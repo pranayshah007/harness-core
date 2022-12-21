@@ -145,7 +145,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     doThrow(thrownException)
         .when(taskHelperBase)
         .applyManifests(any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class),
-            eq(true), eq(true));
+            eq(true), eq(true), anyString());
     doReturn(Collections.singletonList(deployment()))
         .when(taskHelperBase)
         .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean(), anyBoolean());

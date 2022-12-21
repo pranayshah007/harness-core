@@ -39,6 +39,7 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
+import io.harness.ccm.commons.entities.recommendations.RecommendationsIgnoreList;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -76,18 +77,17 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(K8sYaml.class);
     set.add(ClusterRecord.class);
 
-    // k8s.recommendation
+    // ecs
+    set.add(ECSService.class);
+
+    // recommendations
     set.add(K8sNodeRecommendation.class);
     set.add(K8sWorkloadRecommendation.class);
     set.add(PartialRecommendationHistogram.class);
-
-    // ecs
-    set.add(ECSService.class);
+    set.add(EC2Recommendation.class);
     set.add(ECSPartialRecommendationHistogram.class);
     set.add(ECSServiceRecommendation.class);
-
-    // ec2
-    set.add(EC2Recommendation.class);
+    set.add(RecommendationsIgnoreList.class);
 
     // commons
     set.add(CCMNotificationSetting.class);

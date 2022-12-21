@@ -810,6 +810,7 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.lifecycle.Managed;
 import java.io.Closeable;
@@ -1053,7 +1054,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(EcsContainerService.class).to(EcsContainerServiceImpl.class);
     bind(AwsClusterService.class).to(AwsClusterServiceImpl.class);
     bind(DelegateServiceQueue.class).to(DelegateTaskQueueService.class);
-    bind(DelegateQueueServiceConfig.class).toInstance(configuration.getQueueServiceConfig());
+    bind(DelegateQueueServiceConfig.class).toProvider(Providers.of(configuration.getQueueServiceConfig()));
     bind(GkeClusterService.class).to(GkeClusterServiceImpl.class);
     try {
       bind(new TypeLiteral<DataStore<StoredCredential>>() {

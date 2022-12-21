@@ -575,7 +575,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
                                                                           .build()))
                         .totalCountOfItems(1)
                         .build());
-    when(utils.fetchActiveServicesNameOrgAndProjectName(eq(accountIdentifier), any()))
+    when(utils.fetchActiveServicesNameOrgAndProjectName(eq(accountIdentifier), any(), any()))
         .thenReturn(Collections.singletonList(ActiveService.builder()
                                                   .identifier(serviceIdentifier)
                                                   .name(serviceName)

@@ -258,7 +258,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
           String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
           Optional<String> provisionerIdOptional =
-              addProvisionerNode(specField, planCreationResponseMap, stageNode, infraNodeId);
+              addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
           String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
@@ -288,7 +288,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       YamlField specField, YamlField executionField) throws IOException {
     String infraNodeId = addGitOpsClustersNode(ctx, planCreationResponseMap, stageNode, executionField);
-    String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, infraNodeId);
+    Optional<String> provisionerIdOptional =
+        addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
+    String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
+    String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     addCDExecutionDependencies(planCreationResponseMap, executionField);
@@ -718,7 +721,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }
-  private Optional<String> addProvisionerNode(YamlField specField,
+  private Optional<String> addProvisionerNodeIfNeeded(YamlField specField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       String infraNodeId) {
     if (stageNode.getDeploymentStageConfig().getEnvironment() == null

@@ -10,6 +10,7 @@ package io.harness.cdng.ecs;
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -223,6 +224,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
         .isEqualTo(EcsInfrastructureOutcome.builder().build());
+    assertNull(ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
   }
 
   @Test

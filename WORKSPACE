@@ -4671,7 +4671,7 @@ plain_artifacts = [
     "com.esotericsoftware.yamlbeans:yamlbeans:1.13",
     "com.esotericsoftware:kryo:4.0.2",
     "com.esotericsoftware:minlog:1.3.0",
-    "com.esotericsoftware:reflectasm:1.11.3",
+    "com.esotericsoftware:reflectasm:1.11.6",
     "com.fasterxml.jackson.core:jackson-annotations:2.13.4",
     "com.fasterxml.jackson.core:jackson-core:2.13.4",
     "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",

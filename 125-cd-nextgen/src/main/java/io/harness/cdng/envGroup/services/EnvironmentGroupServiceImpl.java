@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -88,15 +89,14 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   public Optional<EnvironmentGroupEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String envGroupRef, boolean deleted) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(envGroupRef), "environment group ref must be present");
 
     return getEnvironmentGroupByRef(accountId, orgIdentifier, projectIdentifier, envGroupRef, deleted);
   }
 
   private Optional<EnvironmentGroupEntity> getEnvironmentGroupByRef(
       String accountId, String orgIdentifier, String projectIdentifier, String envGroupRef, boolean deleted) {
-    String[] envGroupRefSplit = envGroupRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envGroupRefSplit.length == 1) {
+    String[] envGroupRefSplit = StringUtils.split(envGroupRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envGroupRefSplit == null || envGroupRefSplit.length == 1) {
       return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           accountId, orgIdentifier, projectIdentifier, envGroupRef, !deleted);
     } else {
