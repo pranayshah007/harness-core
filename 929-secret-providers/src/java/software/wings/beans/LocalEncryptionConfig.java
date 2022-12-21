@@ -12,6 +12,7 @@ import static io.harness.beans.SecretManagerCapabilities.CREATE_FILE_SECRET;
 import static io.harness.beans.SecretManagerCapabilities.CREATE_INLINE_SECRET;
 import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.security.encryption.SecretManagerType.KMS;
+
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
 import io.harness.beans.SecretManagerCapabilities;

@@ -18,6 +18,7 @@ import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
+
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
 import io.harness.annotations.dev.OwnedBy;

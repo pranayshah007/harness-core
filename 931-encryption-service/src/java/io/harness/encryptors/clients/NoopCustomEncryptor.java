@@ -16,12 +16,14 @@ import java.util.Set;
 
 public class NoopCustomEncryptor implements CustomEncryptor {
   @Override
-  public boolean validateReference(final String accountId, final Set<EncryptedDataParams> params, final EncryptionConfig encryptionConfig) {
+  public boolean validateReference(
+      final String accountId, final Set<EncryptedDataParams> params, final EncryptionConfig encryptionConfig) {
     throw new UnsupportedOperationException("Unsupported custom encryptor");
   }
 
   @Override
-  public char[] fetchSecretValue(final String accountId, final EncryptedRecord encryptedRecord, final EncryptionConfig encryptionConfig) {
+  public char[] fetchSecretValue(
+      final String accountId, final EncryptedRecord encryptedRecord, final EncryptionConfig encryptionConfig) {
     throw new UnsupportedOperationException("Unsupported custom encryptor");
   }
 }

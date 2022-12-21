@@ -10,12 +10,13 @@ package software.wings.beans.helper;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class NgSecretManagerHelper {
   public static void updateNGSecretManagerMetadata(
-          NGSecretManagerMetadata ngMetadata, SecretManagerConfigDTO secretManagerConfigDTO) {
+      NGSecretManagerMetadata ngMetadata, SecretManagerConfigDTO secretManagerConfigDTO) {
     if (ngMetadata != null) {
       secretManagerConfigDTO.setAccountIdentifier(ngMetadata.getAccountIdentifier());
       secretManagerConfigDTO.setOrgIdentifier(ngMetadata.getOrgIdentifier());

@@ -10,19 +10,20 @@ package io.harness.mappers;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class NgSecretConfigMapperHelper {
   public static NGSecretManagerMetadata ngMetaDataFromDto(SecretManagerConfigDTO dto) {
     return NGSecretManagerMetadata.builder()
-            .identifier(dto.getIdentifier())
-            .projectIdentifier(dto.getProjectIdentifier())
-            .orgIdentifier(dto.getOrgIdentifier())
-            .accountIdentifier(dto.getAccountIdentifier())
-            .description(dto.getDescription())
-            .tags(TagMapper.convertToList(dto.getTags()))
-            .harnessManaged(dto.isHarnessManaged())
-            .build();
+        .identifier(dto.getIdentifier())
+        .projectIdentifier(dto.getProjectIdentifier())
+        .orgIdentifier(dto.getOrgIdentifier())
+        .accountIdentifier(dto.getAccountIdentifier())
+        .description(dto.getDescription())
+        .tags(TagMapper.convertToList(dto.getTags()))
+        .harnessManaged(dto.isHarnessManaged())
+        .build();
   }
 }
