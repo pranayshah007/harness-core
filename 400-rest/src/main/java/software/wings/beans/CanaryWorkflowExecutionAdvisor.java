@@ -21,8 +21,10 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CONSIDER_ORIGINAL_STATE_VERSION;
 import static io.harness.beans.FeatureName.ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES;
 import static io.harness.beans.FeatureName.LOG_APP_DEFAULTS;
+import static io.harness.beans.FeatureName.SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
+import static io.harness.beans.RepairActionCode.MANUAL_INTERVENTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -32,6 +34,7 @@ import static software.wings.common.WorkflowConstants.PHASE_NAME_PREFIX;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.ROLLBACK_PREFIX;
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
@@ -81,6 +84,7 @@ import software.wings.sm.ExecutionInterruptManager;
 import software.wings.sm.State;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
+import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.states.PhaseStepSubWorkflow;
@@ -291,6 +295,21 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
             orchestrationWorkflow.getPreDeploymentSteps(), ROLLBACK_PROVISIONERS);
       } else if (executionEvent.getExecutionStatus() == STARTING) {
         PhaseStep phaseStep = findPhaseStep(orchestrationWorkflow, phaseElement, state);
+        if (featureFlagService.isEnabled(
+                SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE, context.getAccountId())) {
+          if (state.getParentId() != null) {
+            if (isNotEmpty(phaseStep.getFailureStrategies())) {
+              FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
+                  executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
+              if (failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
+                  && !state.getStateType().equals(APPROVAL.getType())) {
+                wingsPersistence.updateField(StateExecutionInstance.class, stateExecutionInstance.getUuid(),
+                    StateExecutionInstanceKeys.manualInterventionCandidate, true);
+              }
+            }
+          }
+        }
+
         return shouldSkipStep(context, phaseStep, state, featureFlagService);
       } else if (!(executionEvent.getExecutionStatus() == FAILED || executionEvent.getExecutionStatus() == ERROR
                      || (featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId())
@@ -412,6 +431,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
             failureStrategy = selectTopMatchingStrategy(workflowFailureStrategies, executionEvent.getFailureTypes(),
                 state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW);
           }
+
           return computeExecutionEventAdvice(
               orchestrationWorkflow, failureStrategy, executionEvent, null, stateExecutionInstance, null);
         }
@@ -776,7 +796,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     RepairActionCode repairActionCodeAfterRetry = failureStrategy.getRepairActionCodeAfterRetry();
     Long timeout;
     ExecutionInterruptType actionAfterTimeout;
-    if (RepairActionCode.MANUAL_INTERVENTION == repairActionCodeAfterRetry) {
+    if (MANUAL_INTERVENTION == repairActionCodeAfterRetry) {
       timeout = isValidTimeOut(failureStrategy.getManualInterventionTimeout())
           ? failureStrategy.getManualInterventionTimeout()
           : DEFAULT_TIMEOUT;

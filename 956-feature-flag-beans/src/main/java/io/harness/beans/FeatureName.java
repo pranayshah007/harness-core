@@ -400,6 +400,8 @@ public enum FeatureName {
 
   PIPELINE_CHAINING("UI flag to enable/disable Pipeline Chaining feature", HarnessTeam.PIPELINE),
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
+  SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE(
+      "Disable the expiration of stateExecutionInstances candidates of manual intervention", HarnessTeam.SPG),
   MERGE_RUNTIME_VARIABLES_IN_RESUME(
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
