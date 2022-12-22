@@ -89,6 +89,7 @@ import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.resources.UserResourceNG;
 import software.wings.security.authentication.TOTPAuthHandler;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.HarnessUserGroupService;
@@ -139,6 +140,8 @@ public class UserServiceImplTest extends WingsBaseTest {
   @Mock TOTPAuthHandler totpAuthHandler;
   @Mock UserServiceLimitChecker userServiceLimitChecker;
   @Inject WingsPersistence wingsPersistence;
+  @Mock UserServiceHelper userServiceHelper;
+  @Inject @InjectMocks UserResourceNG userResourceNG;
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
 
   @Test
@@ -839,7 +842,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                    .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
                    .get())
         .isEqualTo(null);
-    verify(accountService, times(1)).isNextGenEnabled("ACCOUNT_ID");
+    when(userServiceHelper.isUserActiveInNG(any(),an yString())).thenReturn(false);
     verifyNoMoreInteractions(userMembershipClient);
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
@@ -895,6 +898,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                                        .isDefault(true)
                                        .build();
     wingsPersistence.save(user1);
+    when(userServiceHelper.isUserActiveInNG(any(),an yString())).thenReturn(true);
     when(harnessUserGroupService.isHarnessSupportUser(user1.getUuid())).thenReturn(false);
     assertThat(userServiceImpl.get(user1.getUuid())).isEqualTo(user1);
 
@@ -931,7 +935,7 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     doNothing().when(auditServiceHelper).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
 
-    userServiceImpl.delete("ACCOUNT_ID", user1.getUuid());
+    userResourceNG.deleteUser("ACCOUNT_ID", user1.getUuid());
     assertThat(wingsPersistence.createQuery(UserInvite.class)
                    .filter(UserInviteKeys.email, user1.getEmail())
                    .filter(UserInviteKeys.accountId, "ACCOUNT_ID")

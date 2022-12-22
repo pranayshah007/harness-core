@@ -2947,11 +2947,7 @@ public class UserServiceImpl implements UserService {
       return true;
     }
     Collection<UserGroup> userGroups = userUserGroupMap.get(user.getUuid());
-    if (isEmpty(userGroups)) {
-      return false;
-    } else {
-      return true;
-    }
+    return !isEmpty(userGroups);
   }
 
   /* (non-Javadoc)
@@ -2965,7 +2961,7 @@ public class UserServiceImpl implements UserService {
     } else {
       log.warn("User is removed from all user groups in CG");
       user.setUserGroups(new ArrayList<>());
-      log.error("User {} cannot be deleted in CG, since he is active on NG in account {}", user.getEmail(), accountId);
+      log.error("User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
       throw new InvalidRequestException(
           String.format("User %s, is active on NG, please delete in NG first", user.getEmail()));
     }

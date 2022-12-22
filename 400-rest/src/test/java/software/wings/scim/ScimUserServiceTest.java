@@ -99,11 +99,10 @@ public class ScimUserServiceTest extends WingsBaseTest {
     userGroup.setAccountId(ACCOUNT_ID);
     userGroup.setImportedByScim(true);
 
-    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
     when(wingsPersistence.save(userGroup)).thenReturn("true");
     scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
-    verify(userService, times(1)).updateUser(USER_ID, updateOperations);
+    verify(userService, times(1)).delete(ACCOUNT_ID, USER_ID);
   }
 
   @Test
