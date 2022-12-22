@@ -7,6 +7,8 @@
 
 package io.harness.auditevent.streaming;
 
+import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AUDIT_EVENT_PUBLISHER_JOB;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -19,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AuditEventPublisherJobConfiguration {
   @Bean
-  @Qualifier(value = "auditEventPublisherJob")
+  @Qualifier(value = AUDIT_EVENT_PUBLISHER_JOB)
   public Job auditEventPublisherJob(JobBuilderFactory jobBuilderFactory, Step auditEventPublisherStep) {
     return jobBuilderFactory.get("auditEventPublisherJob")
         .incrementer(new RunIdIncrementer())
