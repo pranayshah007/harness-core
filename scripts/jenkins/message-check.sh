@@ -24,6 +24,7 @@ SHDIR=`dirname "$0"`
 PROJECTS=$(<$SHDIR/jira-projects.txt)
 
 # Check commit message if there's a single commit
+#test comment
 #if [ $(git rev-list --count $ghprbActualCommit ^origin/master)  -eq 1 ]; then
 #    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
 #fi
