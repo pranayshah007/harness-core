@@ -309,6 +309,7 @@ filters {"name": "unique_accountId_organizationId_projectId_type", "unique": tru
 gcpBillingAccount {"name": "no_dup", "unique": true} {"accountId": 1, "organizationSettingId": 1}
 gcpBillingJobEntity {"name": "accountId_1", "background": true} {"accountId": 1}
 gcpBillingJobEntity {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
+gcpMarketplaceCustomers {"name": "harnessAccountId_1", "background": true} {"harnessAccountId": 1}
 gcpServiceAccount {"name": "no_dup", "unique": true} {"accountId": 1, "serviceAccountId": 1}
 gcpUsageReport {"name": "accountId_startTimestamp_unique_idx", "unique": true} {"accountId": 1, "startTimestamp": 1}
 gcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -910,5 +911,6 @@ yamlGitConfig {"name": "gitPollingIterator_1", "background": true} {"gitPollingI
 yamlGitConfig {"name": "unique_locate", "unique": true} {"accountId": 1, "entityId": 1, "entityType": 1}
 yamlSuccessfulChange {"name": "unique_yaml_file_path", "unique": true} {"accountId": 1, "yamlFilePath": 1}
 yamlSuccessfulChange {"name": "validUntil_1", "background": true, "expireAfterSeconds": 86400} {"validUntil": 1}
+yamlVersion {"name": "accountId_1", "background": true} {"accountId": 1}
 yamlVersion {"name": "appId_1", "background": true} {"appId": 1}
 yamlVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}

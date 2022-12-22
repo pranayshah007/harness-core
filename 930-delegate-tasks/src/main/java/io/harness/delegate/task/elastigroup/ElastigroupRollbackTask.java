@@ -202,8 +202,8 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
       taskHelper.deleteElastigroup(
           newElastigroup, spotInstToken, spotInstAccountId, getLogStreamingTaskClient(), commandUnitsProgress);
 
-      olderElastigroupInstanceIds =
-          taskHelper.getAllEc2InstanceIdsOfElastigroup(spotInstToken, spotInstAccountId, oldElastigroup);
+      olderElastigroupInstanceIds = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+          spotInstToken, spotInstAccountId, oldElastigroup);
     }
 
     return ElastigroupRollbackTaskResponse.builder()

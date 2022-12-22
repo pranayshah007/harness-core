@@ -29,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
+import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
@@ -65,6 +66,8 @@ import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
+import io.harness.gitsync.core.runnable.GitFileFetchRunnable;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -90,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -99,23 +103,26 @@ import net.jodah.failsafe.RetryPolicy;
 @OwnedBy(HarnessTeam.PL)
 public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitSyncConnectorHelper gitSyncConnectorHelper;
-  @Named("connectorDecoratorService") ConnectorService connectorService;
+  ConnectorService connectorService;
   ScmOrchestratorService scmOrchestratorService;
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
   GitClientEnabledHelper gitClientEnabledHelper;
   GitFileCacheService gitFileCacheService;
+  ExecutorService executor;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService) {
+      GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
+      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.gitClientEnabledHelper = gitClientEnabledHelper;
     this.gitFileCacheService = gitFileCacheService;
+    this.executor = executor;
   }
 
   @Override
@@ -765,6 +772,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
         log.info("CACHE HIT for cacheKey : {}", cacheKey);
+        if (gitFileCacheResponse.getCacheDetails().isStale()) {
+          executor.execute(new GitFileFetchRunnable(getGitFileFetchRunnableParams(scmGetFileByBranchRequestDTO)));
+        }
         return Optional.of(prepareScmGetFileCacheResponse(gitFileCacheResponse.getGitFileCacheObject().getFileContent(),
             gitFileCacheResponse.getGitFileCacheResponseMetadata().getRef(),
             gitFileCacheResponse.getGitFileCacheObject().getCommitId(),
@@ -772,5 +782,17 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       }
     }
     return Optional.empty();
+  }
+
+  private GitFileFetchRunnableParams getGitFileFetchRunnableParams(
+      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
+    return GitFileFetchRunnableParams.builder()
+        .filePath(scmGetFileByBranchRequestDTO.getFilePath())
+        .branchName(scmGetFileByBranchRequestDTO.getBranchName())
+        .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+        .scope(scmGetFileByBranchRequestDTO.getScope())
+        .scmFacilitatorService(this)
+        .build();
   }
 }

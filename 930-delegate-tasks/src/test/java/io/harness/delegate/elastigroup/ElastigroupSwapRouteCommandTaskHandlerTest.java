@@ -46,6 +46,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Rule;
@@ -82,7 +83,6 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeTaskInternalElastigroupSetupRequestTest() throws Exception {
     int timeout = 10;
-    String elastigroupNamePrefix = "prefix";
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     doReturn(createServiceLogCallback)
         .when(elastigroupCommandTaskNGHelper)
@@ -114,7 +114,6 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     SecretRefData spotAccountId = SecretRefData.builder().build();
     SecretRefData spotInstApiTokenRef = SecretRefData.builder().decryptedValue(new char[] {'a'}).build();
     String decryptedSpotAccountIdRef = "a";
-    String decryptedSpotInstApiTokenRef = "a";
     SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = SpotPermanentTokenConfigSpecDTO.builder()
                                                                           .spotAccountId(decryptedSpotAccountIdRef)
                                                                           .spotAccountIdRef(spotAccountId)
@@ -128,8 +127,11 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().spotConnectorDTO(spotConnectorDTO).build();
 
     String id = "id";
+    String newStageId = "id__STAGE";
     String name = "name";
-    ElastiGroup elastiGroup = ElastiGroup.builder().name(name).id(id).build();
+    String newStageName = name + "__STAGE__Harness";
+    ElastiGroup newElastigroup = ElastiGroup.builder().name(newStageName).id(newStageId).build();
+    ElastiGroup oldElastiGroup = ElastiGroup.builder().name(name).id(id).build();
 
     AwsLoadBalancerConfig awsLoadBalancerConfig =
         AwsLoadBalancerConfig.builder().loadBalancerDetails(lbDetailList).build();
@@ -137,10 +139,10 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         ElastigroupSwapRouteCommandRequest.builder()
             .timeoutIntervalInMin(timeout)
-            .elastigroupNamePrefix(elastigroupNamePrefix)
+            .elastigroupNamePrefix(name)
             .spotInstConfig(spotInstConfig)
-            .newElastigroup(elastiGroup)
-            .oldElastigroup(elastiGroup)
+            .newElastigroup(newElastigroup)
+            .oldElastigroup(oldElastiGroup)
             .connectedCloudProvider(AwsConnectedCloudProvider.builder()
                                         .connectorInfoDTO(connectorInfoDTO)
                                         .encryptionDetails(encryptedDataDetails)
@@ -156,9 +158,11 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
             .downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
             .lbDetails(awsLoadBalancerConfig.getLoadBalancerDetails())
             .oldElastiGroupId(id)
-            .oldElastiGroupName(name)
-            .newElastiGroupId(id)
+            .oldElastiGroupName(newStageName)
+            .newElastiGroupId(newStageId)
             .newElastiGroupName(name)
+            .ec2InstanceIdsExisting(new ArrayList<>())
+            .ec2InstanceIdsAdded(new ArrayList<>())
             .build();
 
     ElastigroupSwapRouteResponse elastigroupSwapRouteResponse =

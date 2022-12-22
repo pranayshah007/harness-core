@@ -782,6 +782,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     environment.lifecycle().manage(injector.getInstance(ApprovalInstanceExpirationJob.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
   private void registerCorsFilter(PipelineServiceConfiguration appConfig, Environment environment) {

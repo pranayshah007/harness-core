@@ -441,6 +441,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
   private void registerPmsSdkEvents(Injector injector) {

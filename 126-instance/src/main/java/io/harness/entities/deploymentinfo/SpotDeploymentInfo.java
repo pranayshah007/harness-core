@@ -10,8 +10,7 @@ package io.harness.entities.deploymentinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -23,5 +22,6 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.CDP)
 public class SpotDeploymentInfo extends DeploymentInfo {
   @NotNull private String infrastructureKey;
-  @NotNull private Map<String, Set<String>> elastigroupEc2InstancesMap;
+  @NotNull private String elastigroupId;
+  @NotNull private List<String> ec2Instances;
 }

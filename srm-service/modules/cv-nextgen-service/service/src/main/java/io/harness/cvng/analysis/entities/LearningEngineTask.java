@@ -20,9 +20,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -57,8 +55,8 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "learningEngineTasks")
 @HarnessEntity(exportable = true)
-public abstract class LearningEngineTask implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware,
-                                                    AccountAccess, VerificationTaskExecutionInstance {
+public abstract class LearningEngineTask extends VerificationTaskBase
+    implements PersistentEntity, UuidAware, AccountAccess, VerificationTaskExecutionInstance {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -71,7 +69,7 @@ public abstract class LearningEngineTask implements PersistentEntity, UuidAware,
                  .name("taskFetchNextTaskPriorityIdx")
                  .field(LearningEngineTaskKeys.taskPriority)
                  .field(LearningEngineTaskKeys.taskStatus)
-                 .ascSortField(LearningEngineTaskKeys.createdAt)
+                 .ascSortField(VerificationTaskBaseKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("trend_idx")
@@ -85,8 +83,7 @@ public abstract class LearningEngineTask implements PersistentEntity, UuidAware,
 
   @Id private String uuid;
   private String verificationTaskId;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
+
   private Instant pickedAt;
   @FdIndex private String accountId;
   private LearningEngineTaskType analysisType;

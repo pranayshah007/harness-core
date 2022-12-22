@@ -164,7 +164,6 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
             planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
-        planLogCallback.saveExecutionLog("Uploading terraform state file");
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
             planTaskParameters.getWorkspace(), planTaskParameters.getAccountId(), planTaskParameters.getEntityId(),
             getDelegateId(), getTaskId(), planLogCallback);
