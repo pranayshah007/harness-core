@@ -37,6 +37,11 @@ public class AddIsProductLedToAccount implements Migration {
         List<ModuleLicenseDTO> moduleLicenses =
             NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(account.getUuid()));
         String accountID = account.getUuid();
+        try {
+          moduleLicenses = NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(accountID));
+        } catch (Exception ex) {
+          log.warn("Encountered exception while trying to get moduleLicenses for accountId= {}", accountID, ex);
+        }
         if (moduleLicenses == null || moduleLicenses.size() == 0) {
           wingsPersistence.updateField(Account.class, accountID, isProductLed, Boolean.TRUE);
         } else {
