@@ -5,21 +5,27 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.caching;
+package io.harness.gitsync.core.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.threading.ThreadPoolConfig;
+import io.harness.beans.Scope;
+import io.harness.gitsync.common.service.ScmFacilitatorService;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
-@Value
+@Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class GitServiceCacheConfiguration {
-  @JsonProperty("validCacheDurationInMillis") long validCacheDurationInMillis;
-  @JsonProperty("maxCacheDurationInMillis") long maxCacheDurationInMillis;
-  @JsonProperty("backgroundUpdateThreadPool") ThreadPoolConfig backgroundUpdateThreadPoolConfig;
+public class GitFileFetchRunnableParams {
+  Scope scope;
+  String repoName;
+  String branchName;
+  String filePath;
+  String connectorRef;
+  ScmFacilitatorService scmFacilitatorService;
 }

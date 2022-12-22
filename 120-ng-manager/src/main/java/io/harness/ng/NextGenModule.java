@@ -632,7 +632,7 @@ public class NextGenModule extends AbstractModule {
         return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
-    install(new GitSyncModule());
+    install(GitSyncModule.getInstance(getGitServiceConfiguration()));
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new CdLicenseUsageCgModule(appConfig.getManagerClientConfig(),
