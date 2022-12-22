@@ -109,6 +109,7 @@ public class HQuery<T> extends QueryImpl<T> {
 
   @Override
   public void remove(Criteria criteria) {
+    super.remove(criteria);
     this.children.remove(criteria);
   }
 
