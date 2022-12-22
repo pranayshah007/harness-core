@@ -77,6 +77,7 @@ public class PipelineExecutorTest extends CategoryTest {
   List<String> inputSetReferences = Arrays.asList("i1", "i2", "i3");
   String pipelineBranch = null;
   String pipelineRepoId = null;
+  boolean isDebug = false;
 
   PipelineEntity pipelineEntity = PipelineEntity.builder().allowStageExecutions(true).build();
   ExecutionTriggerInfo executionTriggerInfo = ExecutionTriggerInfo.newBuilder().build();
@@ -142,7 +143,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(originalExecutionId, false, stageIdentifiers);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunStagesWithRuntimeInputYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2);
+        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2, isDebug);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -156,7 +157,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(originalExecutionId, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2);
+        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2, false);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -171,7 +172,7 @@ public class PipelineExecutorTest extends CategoryTest {
 
     PlanExecutionResponseDto planExecutionResponse =
         pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgId, projectId, pipelineId, moduleType,
-            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId);
+            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId, false);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -194,12 +195,13 @@ public class PipelineExecutorTest extends CategoryTest {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
+              false);
     } else {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
     }
 
     doReturn(planExecution)
@@ -221,11 +223,12 @@ public class PipelineExecutorTest extends CategoryTest {
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
+              false);
     } else {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);

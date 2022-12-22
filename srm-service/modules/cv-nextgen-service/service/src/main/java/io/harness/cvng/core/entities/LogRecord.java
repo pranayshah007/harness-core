@@ -12,13 +12,13 @@ import static io.harness.cvng.core.utils.DateTimeUtils.instantToEpochMinute;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.analysis.beans.LogClusterDTO;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -46,7 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "logRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class LogRecord implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
+public final class LogRecord extends VerificationTaskBase implements PersistentEntity, UuidAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -62,7 +62,6 @@ public final class LogRecord implements PersistentEntity, UuidAware, CreatedAtAw
   @FdIndex private String verificationTaskId;
   @NotEmpty private Instant timestamp;
   private String host;
-  private long createdAt;
   @JsonIgnore
   @SchemaIgnore
   @Builder.Default

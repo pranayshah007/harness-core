@@ -47,6 +47,7 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
   @Inject private SpotNgConfigMapper ngConfigMapper;
 
   @Inject private ElastigroupDeployTaskHelper taskHelper;
+  @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
 
   public ElastigroupDeployTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -96,10 +97,10 @@ public class ElastigroupDeployTask extends AbstractDelegateRunnableTask {
         getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
 
-    List<String> newElastigroupInstanceIds =
-        taskHelper.getAllEc2InstanceIdsOfElastigroup(spotInstToken, spotInstAccountId, newElastigroup);
-    List<String> olderElastigroupInstanceIds =
-        taskHelper.getAllEc2InstanceIdsOfElastigroup(spotInstToken, spotInstAccountId, oldElastigroup);
+    List<String> newElastigroupInstanceIds = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+        spotInstToken, spotInstAccountId, newElastigroup);
+    List<String> olderElastigroupInstanceIds = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+        spotInstToken, spotInstAccountId, oldElastigroup);
 
     return ElastigroupDeployTaskResponse.builder()
         .status(CommandExecutionStatus.SUCCESS)

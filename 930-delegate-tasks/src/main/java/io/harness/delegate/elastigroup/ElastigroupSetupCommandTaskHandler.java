@@ -69,7 +69,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
-        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), false, commandUnitsProgress);
     try {
       // Handle canary and basic
       String prefix = format("%s__", elastigroupSetupCommandRequest.getElastigroupNamePrefix());

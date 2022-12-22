@@ -34,6 +34,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
@@ -506,7 +507,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
                                       .filter(DataCollectionTaskKeys.accountId, accountId)
                                       .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
                                       .filter(DataCollectionTaskKeys.status, QUEUED)
-                                      .order(DataCollectionTaskKeys.lastUpdatedAt)
+                                      .order(VerificationTaskBaseKeys.lastUpdatedAt)
                                       .get();
 
     assertThat(nextTask.getStatus()).isEqualTo(QUEUED);
@@ -536,7 +537,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
                                       .filter(DataCollectionTaskKeys.accountId, accountId)
                                       .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
                                       .filter(DataCollectionTaskKeys.status, QUEUED)
-                                      .order(DataCollectionTaskKeys.lastUpdatedAt)
+                                      .order(VerificationTaskBaseKeys.lastUpdatedAt)
                                       .get();
 
     assertThat(nextTask).isNull();
@@ -566,7 +567,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
                                       .filter(DataCollectionTaskKeys.accountId, accountId)
                                       .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
                                       .filter(DataCollectionTaskKeys.status, QUEUED)
-                                      .order(DataCollectionTaskKeys.lastUpdatedAt)
+                                      .order(VerificationTaskBaseKeys.lastUpdatedAt)
                                       .get();
 
     assertThat(nextTask.getStatus()).isEqualTo(QUEUED);

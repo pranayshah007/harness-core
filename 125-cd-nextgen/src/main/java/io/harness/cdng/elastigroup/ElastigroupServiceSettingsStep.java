@@ -87,14 +87,13 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
 
     expressionResolver.updateExpressions(ambiance, serviceSpec);
 
-    checkForAccessOrThrow(ambiance, serviceSpec.getStartupScript());
-
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
 
     // Process elastigroup settings
     if (serviceSpec.getStartupScript() != null) {
+      checkForAccessOrThrow(ambiance, serviceSpec.getStartupScript());
       outcomes.add(processStartupScript(ambiance, serviceSpec, logCallback));
     }
 
@@ -114,8 +113,9 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
         .build();
   }
   private void checkForAccessOrThrow(Ambiance ambiance, StartupScriptConfiguration startupScriptConfiguration) {
-    Set<EntityDetailProtoDTO> entityDetailsProto =
-        entityReferenceExtractorUtils.extractReferredEntities(ambiance, startupScriptConfiguration);
+    Set<EntityDetailProtoDTO> entityDetailsProto = startupScriptConfiguration == null
+        ? Set.of()
+        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, startupScriptConfiguration);
 
     List<EntityDetail> entityDetails =
         entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));

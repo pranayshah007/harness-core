@@ -57,6 +57,7 @@ import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
@@ -175,12 +176,23 @@ public class ExecutionHelper {
         .build();
   }
 
+  boolean validForDebug(PipelineEntity pipelineEntity) {
+    List<String> modules = PipelinesApiUtils.getModules(pipelineEntity);
+
+    return (modules != null) && (modules.contains("ci"));
+  }
   @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
-      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser) {
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      boolean isDebug) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
+
+    if (isDebug && !validForDebug(pipelineEntity)) {
+      throw new InvalidRequestException(
+          String.format("Debug executions are not allowed for pipeline [%s]", pipelineEntity.getIdentifier()));
+    }
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
@@ -244,7 +256,7 @@ public class ExecutionHelper {
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules);
+          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
@@ -253,7 +265,7 @@ public class ExecutionHelper {
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
-      RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules) {
+      RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
     ExecutionMetadata.Builder builder =
         ExecutionMetadata.newBuilder()
             .setExecutionUuid(executionId)
@@ -264,7 +276,8 @@ public class ExecutionHelper {
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion());
+            .setHarnessVersion(pipelineEntity.getHarnessVersion())
+            .setIsDebug(isDebug);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {

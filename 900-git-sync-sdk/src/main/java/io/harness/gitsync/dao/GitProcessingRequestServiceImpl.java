@@ -38,6 +38,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
@@ -120,6 +121,14 @@ public class GitProcessingRequestServiceImpl implements GitProcessingRequestServ
                                   .and(GitProcessingRequestKeys.accountId)
                                   .is(accountId);
     return mongoTemplate.findOne(query(criteria), GitProcessRequest.class);
+  }
+
+  @Override
+  public boolean deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(GitProcessingRequestKeys.accountId).is(accountId);
+    mongoTemplate.findAllAndRemove(new Query(criteria), GitProcessRequest.class);
+    return true;
   }
 
   private Map<String, FileProcessingResponse> getFileProcessingResponse(List<FileStatus> fileStatuses) {

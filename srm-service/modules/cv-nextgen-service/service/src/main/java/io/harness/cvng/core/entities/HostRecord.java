@@ -12,13 +12,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -48,7 +48,7 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "hostRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class HostRecord implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
+public final class HostRecord extends VerificationTaskBase implements PersistentEntity, UuidAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -66,7 +66,7 @@ public final class HostRecord implements PersistentEntity, UuidAware, CreatedAtA
   @NotEmpty private Instant startTime;
   private Instant endTime;
   private Set<String> hosts;
-  private long createdAt;
+
   @JsonIgnore
   @SchemaIgnore
   @Builder.Default

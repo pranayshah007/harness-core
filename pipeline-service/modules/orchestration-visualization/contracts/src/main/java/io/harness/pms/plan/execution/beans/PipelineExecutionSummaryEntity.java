@@ -220,7 +220,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         // Sort queries are added for list page
         // New Index having all filters index without repo and branch
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_startTs_repo_branch_pipelineIds_status_modules_range_idx")
+                 .name("accountId_orgId_projectId_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -231,26 +231,30 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
                  .ascRangeField(PlanExecutionSummaryKeys.status)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
                  .build())
         // Sort queries are added for list page
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_range_idx")
-                 .field(PlanExecutionSummaryKeys.accountId)
-                 .field(PlanExecutionSummaryKeys.orgIdentifier)
-                 .field(PlanExecutionSummaryKeys.projectIdentifier)
-                 .descSortField(PlanExecutionSummaryKeys.name)
-                 // For range in startTs
-                 .ascRangeField(PlanExecutionSummaryKeys.startTs)
-                 // In pipeline Identifier list
-                 .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
-                 .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
-                 .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
-                 .ascRangeField(PlanExecutionSummaryKeys.status)
-                 .ascRangeField(PlanExecutionSummaryKeys.modules)
-                 .build())
+        .add(
+            SortCompoundMongoIndex.builder()
+                .name(
+                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
+                .field(PlanExecutionSummaryKeys.accountId)
+                .field(PlanExecutionSummaryKeys.orgIdentifier)
+                .field(PlanExecutionSummaryKeys.projectIdentifier)
+                .descSortField(PlanExecutionSummaryKeys.name)
+                // For range in startTs
+                .ascRangeField(PlanExecutionSummaryKeys.startTs)
+                // In pipeline Identifier list
+                .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
+                .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
+                .ascRangeField(PlanExecutionSummaryKeys.status)
+                .ascRangeField(PlanExecutionSummaryKeys.modules)
+                .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
+                .build())
         // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_range_idx")
+                 .name("accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_parent_info_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.orgIdentifier)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -262,6 +266,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.entityGitDetailsBranch)
                  .ascRangeField(PlanExecutionSummaryKeys.pipelineIdentifier)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
+                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
                  .build())
         .build();
   }
@@ -286,6 +291,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "key";
     public String tagsValue = PlanExecutionSummaryKeys.tags + "."
         + "value";
+    public String isChildPipeline = PlanExecutionSummaryKeys.parentStageInfo + "."
+        + "hasParentPipeline";
   }
 
   public boolean isStagesExecutionAllowed() {

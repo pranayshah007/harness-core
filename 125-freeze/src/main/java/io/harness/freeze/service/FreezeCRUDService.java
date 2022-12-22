@@ -7,6 +7,7 @@
 
 package io.harness.freeze.service;
 
+import io.harness.beans.Scope;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
@@ -34,6 +35,8 @@ public interface FreezeCRUDService {
 
   FreezeResponseWrapperDTO deleteFreezeConfigs(
       List<String> freezeIdentifiers, String accountId, String orgId, String projectId);
+
+  void deleteByScope(Scope scope);
 
   FreezeResponseWrapperDTO updateActiveStatus(
       FreezeStatus freezeStatus, String accountId, String orgId, String projectId, List<String> freezeIdentifiers);

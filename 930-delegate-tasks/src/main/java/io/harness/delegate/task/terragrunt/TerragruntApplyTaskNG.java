@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.terragrunt.TerragruntTaskService.createCliRequest;
 import static io.harness.delegate.task.terragrunt.TerragruntTaskService.executeWithErrorHandling;
-import static io.harness.logging.LogLevel.INFO;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_VARIABLES_FILE_NAME;
 import static io.harness.provision.TerragruntConstants.APPLY;
@@ -38,7 +37,6 @@ import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
@@ -61,7 +59,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
@@ -94,21 +91,39 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = applyTaskParameters.getCommandUnitsProgress() != null
         ? applyTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
-
+    LogCallback applyLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress);
     String baseDir =
         TerragruntTaskService.getBaseDir(applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+    TerragruntApplyTaskResponse applyTaskResponse;
+
+    try {
+      applyTaskResponse = runApplyTask(applyTaskParameters, commandUnitsProgress, applyLogCallback, baseDir);
+      applyTaskResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Terragrunt apply task failed", sanitizedException);
+      TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
+          unitName
+          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
+          sanitizedException);
+
+      throw new TaskNGDataException(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+    }
+    return applyTaskResponse;
+  }
+
+  private TerragruntApplyTaskResponse runApplyTask(TerragruntApplyTaskParameters applyTaskParameters,
+      CommandUnitsProgress commandUnitsProgress, LogCallback applyLogCallback, String baseDir) throws IOException {
     try (PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       taskService.decryptTaskParameters(applyTaskParameters);
 
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
-
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, applyTaskParameters, baseDir);
 
       TerragruntClient client = terragruntContext.getClient();
-      LogCallback applyLogCallback =
-          taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress);
 
       executeWithErrorHandling(client::init,
           createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
@@ -178,15 +193,10 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
 
       String stateFileId = null;
       if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()) {
-        applyLogCallback.saveExecutionLog("Uploading terraform state file");
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
             applyTaskParameters.getWorkspace(), applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId(),
             getDelegateId(), getTaskId(), applyLogCallback);
       }
-
-      applyLogCallback.saveExecutionLog(
-          color("\nTerragrunt Apply successfully completed", LogColor.White, LogWeight.Bold), INFO,
-          CommandExecutionStatus.SUCCESS);
 
       return TerragruntApplyTaskResponse.builder()
           .stateFileId(stateFileId)
@@ -194,20 +204,10 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
           .configFilesSourceReference(terragruntContext.getConfigFilesSourceReference())
           .backendFileSourceReference(terragruntContext.getBackendFileSourceReference())
           .varFilesSourceReference(terragruntContext.getVarFilesSourceReference())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
-    } catch (Exception e) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Terragrunt apply task failed", sanitizedException);
-      TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
-          unitName
-          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
-          sanitizedException);
-
-      throw new TaskNGDataException(
-          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     } finally {
-      FileUtils.deleteQuietly(new File(baseDir));
+      taskService.cleanDirectoryAndSecretFromSecretManager(applyTaskParameters.getEncryptedTfPlan(),
+          applyTaskParameters.getPlanSecretManager(), baseDir, applyLogCallback);
     }
   }
 }

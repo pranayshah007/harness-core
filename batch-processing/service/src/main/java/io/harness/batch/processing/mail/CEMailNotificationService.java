@@ -11,8 +11,8 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.exception.WingsException;
 
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.mail.SmtpConfig;
+import software.wings.persistence.mail.EmailData;
 
 import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
