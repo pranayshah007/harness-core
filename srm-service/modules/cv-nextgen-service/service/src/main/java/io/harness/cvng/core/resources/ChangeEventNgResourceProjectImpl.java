@@ -27,7 +27,9 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.cronutils.utils.Preconditions;
 import com.google.inject.Inject;
+import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -102,17 +104,19 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @ExceptionMetered
   public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       PageRequest pageRequest) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeEvents(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
+        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
   }
 
   @Override
@@ -120,17 +124,20 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @NextGenManagerAuth
   @ExceptionMetered
   public RestResponse<ChangeTimeline> get(@Valid ProjectPathParams projectPathParams, List<String> serviceIdentifiers,
-      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, String searchText,
-      @NotNull long startTime, @NotNull long endTime, Integer pointCount) {
+      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
+      Integer pointCount) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getTimeline(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
+        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
   }
 
   @Override
@@ -139,15 +146,17 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @ExceptionMetered
   public RestResponse<ChangeSummaryDTO> getSummary(@Valid ProjectPathParams projectPathParams,
       String monitoredServiceIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+        monitoredServiceIdentifiers, false, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime)));
   }
 }
