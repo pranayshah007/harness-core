@@ -85,8 +85,8 @@ public class AsgCanaryDeployStepTest extends CategoryTest {
         UnitProgressData unitProgressData =
                 UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build();
         Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
-        asgStoreManifestsContent.put("asgLaunchTemplateContent", Collections.singletonList("asgLaunchTemplate"));
-        asgStoreManifestsContent.put("asgConfigurtionContent", Collections.singletonList("asgConfiguration"));
+        asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList("asgLaunchTemplate"));
+        asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList("asgConfiguration"));
         AsgStepExecutorParams asgStepExecutorParams = AsgStepExecutorParams.builder()
                 .asgStoreManifestsContent(asgStoreManifestsContent)
                 .build();

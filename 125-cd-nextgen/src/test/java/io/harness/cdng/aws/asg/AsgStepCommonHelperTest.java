@@ -215,8 +215,8 @@ public class AsgStepCommonHelperTest extends CategoryTest {
                                                                .build();
 
     Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
-    asgStoreManifestsContent.put("asgLaunchTemplateContent", Collections.singletonList(content));
-    asgStoreManifestsContent.put("asgConfigurtionContent", Collections.singletonList(content));
+    asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList(content));
+    asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList(content));
 
     AsgStepExecutorParams asgStepExecutorParams = AsgStepExecutorParams.builder()
                                                       .shouldOpenFetchFilesLogStream(false)
