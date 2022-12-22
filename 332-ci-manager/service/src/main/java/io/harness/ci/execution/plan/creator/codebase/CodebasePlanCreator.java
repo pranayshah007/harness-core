@@ -90,8 +90,8 @@ public class CodebasePlanCreator {
   static PlanNode createPlanForCodeBaseTask(
       CodeBase ciCodeBase, ExecutionSource executionSource, String facilitatorType, String codeBaseId) {
     CodeBaseTaskStepParameters codeBaseTaskStepParameters = CodeBaseTaskStepParameters.builder()
-                                                                .connectorRef(ciCodeBase.getConnectorRef().getValue())
-                                                                .repoName(ciCodeBase.getRepoName().getValue())
+                                                                .connectorRef(ciCodeBase.getConnectorRef())
+                                                                .repoName(ciCodeBase.getRepoName())
                                                                 .executionSource(executionSource)
                                                                 .build();
 
