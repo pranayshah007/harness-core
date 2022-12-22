@@ -72,7 +72,6 @@ BAZEL_MODULES="\
   //420-delegate-agent:module \
   //420-delegate-service:module \
   //425-verification-commons:module \
-  //430-cv-nextgen-commons:module \
   //440-connector-nextgen:module \
   //440-secret-management-service:module \
   //441-cg-instance-sync:module \
