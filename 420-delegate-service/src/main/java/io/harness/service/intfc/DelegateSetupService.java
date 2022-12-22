@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateSetupService {
@@ -84,4 +85,6 @@ public interface DelegateSetupService {
 
   AutoUpgrade setAutoUpgrade(long upgraderLastUpdated, boolean immutableDelegate, long delegateCreationTime,
       String version, String delegateType);
+
+  void updateDelegateGroupValidity(@NotNull String accountId, @NotNull String delegateGroupId);
 }

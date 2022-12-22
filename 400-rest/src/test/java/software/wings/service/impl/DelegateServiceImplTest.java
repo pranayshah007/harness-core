@@ -1407,7 +1407,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateGroup delegateGroup2 =
         delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
 
-    assertThat(delegateGroup1).isEqualTo(delegateGroup2);
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+    assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
+    assertThat(delegateGroup1.getOwner()).isEqualTo(delegateGroup2.getOwner());
   }
 
   @Test
