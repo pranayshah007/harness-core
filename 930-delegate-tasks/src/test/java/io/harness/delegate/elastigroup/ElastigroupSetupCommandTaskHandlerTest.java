@@ -86,7 +86,7 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     doReturn(createServiceLogCallback)
         .when(elastigroupCommandTaskNGHelper)
-        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true,
+        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), false,
             commandUnitsProgress);
 
     SecretRefData spotAccountIdRef = SecretRefData.builder().decryptedValue(new char[] {'a'}).build();
