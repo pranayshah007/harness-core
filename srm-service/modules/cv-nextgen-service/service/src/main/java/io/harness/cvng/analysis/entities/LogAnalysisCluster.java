@@ -14,9 +14,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -51,7 +49,7 @@ import org.mongodb.morphia.annotations.PrePersist;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "logAnalysisClusters", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class LogAnalysisCluster implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public final class LogAnalysisCluster extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -63,8 +61,7 @@ public final class LogAnalysisCluster implements PersistentEntity, UuidAware, Cr
   }
 
   @Id private String uuid;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
+
   private String verificationTaskId;
   private Instant analysisStartTime;
   private Instant analysisEndTime;

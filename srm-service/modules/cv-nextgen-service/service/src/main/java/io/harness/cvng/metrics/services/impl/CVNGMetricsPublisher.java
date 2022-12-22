@@ -17,6 +17,7 @@ import static org.mongodb.morphia.aggregation.Group.id;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
@@ -143,7 +144,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
     long now = Instant.now().toEpochMilli();
     LearningEngineTask earliestTask = hPersistence.createQuery(LearningEngineTask.class)
                                           .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
-                                          .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                          .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
                                           .get();
     long timeSinceTask = earliestTask == null ? 0l : now - earliestTask.getLastUpdatedAt();
     Duration maxTime = null;
@@ -153,7 +154,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
                                                     .field(LearningEngineTaskKeys.analysisType)
                                                     .in(LearningEngineTaskType.getDeploymentTaskTypes())
-                                                    .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                                    .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
                                                     .get();
 
     timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
@@ -166,7 +167,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
                                                     .field(LearningEngineTaskKeys.analysisType)
                                                     .notIn(LearningEngineTaskType.getDeploymentTaskTypes())
-                                                    .order(Sort.ascending(LearningEngineTaskKeys.lastUpdatedAt))
+                                                    .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
                                                     .get();
 
     timeSinceTask = earliestLiveHealthTask == null ? 0l : now - earliestLiveHealthTask.getLastUpdatedAt();

@@ -36,6 +36,7 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.jobs.ActivityStatusJob;
 import io.harness.cvng.activity.jobs.HarnessCDCurrentGenEventsHandler;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -898,7 +899,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
                         query.and(
                             query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
-                            query.criteria(DataCollectionTaskKeys.lastUpdatedAt)
+                            query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                                 .lessThan(injector.getInstance(Clock.class)
                                               .instant()
                                               .minus(5, ChronoUnit.MINUTES)
