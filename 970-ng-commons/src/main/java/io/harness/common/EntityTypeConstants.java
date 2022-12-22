@@ -195,4 +195,5 @@ public interface EntityTypeConstants {
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
+  String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
 }

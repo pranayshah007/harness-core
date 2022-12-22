@@ -72,6 +72,7 @@ import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingDeployStepInfo;
+import io.harness.cdng.tas.TasRollingRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
@@ -105,7 +106,7 @@ import io.swagger.annotations.ApiModel;
         AsgCanaryDeleteStepInfo.class, TasSwapRoutesStepInfo.class, TasSwapRollbackStepInfo.class,
         AsgCanaryDeleteStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
         TasBasicAppSetupStepInfo.class, TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class,
-        ElastigroupSwapRouteStepInfo.class, TasAppResizeStepInfo.class, TasRollbackStepInfo.class, TasRollingDeployStepInfo.class})
+        ElastigroupSwapRouteStepInfo.class, TasAppResizeStepInfo.class, TasRollbackStepInfo.class, TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
