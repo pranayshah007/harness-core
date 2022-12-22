@@ -129,7 +129,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.events.TestUtils;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AssignDelegateService;
