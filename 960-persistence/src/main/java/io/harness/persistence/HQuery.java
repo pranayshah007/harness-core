@@ -107,6 +107,11 @@ public class HQuery<T> extends QueryImpl<T> {
     children.addAll(Arrays.asList(criteria));
   }
 
+  @Override
+  public void remove(Criteria criteria) {
+    this.children.remove(criteria);
+  }
+
   private void checkKeyListSize(List<Key<T>> list) {
     if (!queryChecks.contains(COUNT)) {
       return;
