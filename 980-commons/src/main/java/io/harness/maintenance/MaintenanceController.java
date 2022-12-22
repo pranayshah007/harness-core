@@ -31,9 +31,7 @@ public class MaintenanceController implements Managed {
   private static final String SHUTDOWN_FILENAME = "shutdown";
 
   private static Boolean forceMaintenance;
-
-  // true: in maintenance, false: not in maintenance
-  private static final AtomicBoolean currentMaintenanceState = new AtomicBoolean(false);
+  private static final AtomicBoolean maintenance = new AtomicBoolean(true);
   private static final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public static void forceMaintenance(boolean force) {
@@ -41,7 +39,6 @@ public class MaintenanceController implements Managed {
       if (forceMaintenance == null || forceMaintenance != force) {
         log.info("Setting forced maintenance {}", force);
         forceMaintenance = force;
-        currentMaintenanceState.set(force);
       }
     }
   }
@@ -50,12 +47,11 @@ public class MaintenanceController implements Managed {
     synchronized (log) {
       log.info("Un-setting forced maintenance");
       forceMaintenance = null;
-      currentMaintenanceState.set(false);
     }
   }
 
   public static boolean getMaintenanceFlag() {
-    return currentMaintenanceState.get();
+    return forceMaintenance != null ? forceMaintenance : maintenance.get();
   }
 
   private final AtomicBoolean running = new AtomicBoolean(false);
@@ -92,9 +88,9 @@ public class MaintenanceController implements Managed {
         maintenanceListenerSubject.fireInform(MaintenanceListener::onShutdown);
       }
     }
-
-    boolean isMaintenance = currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists() || isShutdown;
-    if (currentMaintenanceState.getAndSet(isMaintenance) != isMaintenance) {
+    boolean isMaintenance =
+        forceMaintenance != null ? forceMaintenance : new File(MAINTENANCE_FILENAME).exists() || isShutdown;
+    if (maintenance.getAndSet(isMaintenance) != isMaintenance) {
       log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
       maintenanceListenerSubject.fireInform(
           isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
