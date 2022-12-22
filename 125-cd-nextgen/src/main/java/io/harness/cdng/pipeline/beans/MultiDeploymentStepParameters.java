@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -36,4 +37,5 @@ public class MultiDeploymentStepParameters implements StepParameters {
   ParameterField<Integer> maxConcurrency;
   @NotNull StrategyType strategyType;
   String subType;
+  ServiceYamlV2 serviceYamlV2;
 }

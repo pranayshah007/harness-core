@@ -272,7 +272,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .entities(Set.of(Entity.environments, Entity.gitOpsClusters, Entity.infrastructures))
         .type(FilterType.tags)
         .spec(TagsFilter.builder()
-                  .matchType(ParameterField.createValueField(MatchType.all))
+                  .matchType(ParameterField.createValueField(MatchType.all.name()))
                   .tags(ParameterField.createValueField(tagMap))
                   .build())
         .build();
@@ -289,7 +289,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .entities(Set.of(Entity.environments, Entity.gitOpsClusters, Entity.infrastructures))
         .type(FilterType.tags)
         .spec(TagsFilter.builder()
-                  .matchType(ParameterField.createValueField(MatchType.any))
+                  .matchType(ParameterField.createValueField(MatchType.any.name()))
                   .tags(ParameterField.createValueField(tagMap))
                   .build())
         .build();

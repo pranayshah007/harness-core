@@ -125,7 +125,7 @@ public class EnvironmentsPlanCreatorHelper {
       if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
           && environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
         List<EnvironmentYamlV2> envV2YamlsWithFilters =
-            environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml);
+            environmentInfraFilterHelper.getEnvYamlV2WithFilters(environmentsYaml.getValues());
         List<String> envRefsWithFilters =
             envV2YamlsWithFilters.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
 
