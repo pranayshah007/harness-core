@@ -9,6 +9,7 @@ package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 
+import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -27,6 +28,7 @@ import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2RecommendationDetail;
 import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -40,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +66,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
   @Autowired private CEAWSConfigHelper ceawsConfigHelper;
   @Autowired private RecommendationsIgnoreListService ignoreListService;
+  @Autowired private AwsAccountFieldHelper awsAccountFieldHelper;
 
   private static final String MODIFY = "Modify";
 
@@ -82,7 +86,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         EC2RecommendationResponse ec2RecommendationResponse = awsEc2RecommendationService.getRecommendations(
             EC2RecommendationRequest.builder().awsCrossAccountAttributes(infraAccCrossArn.getValue()).build());
         Map<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendations = new HashMap<>();
-        log.debug("Ec2RecommendationResponse size = {}", ec2RecommendationResponse);
+        log.info("Ec2RecommendationResponse = {}", ec2RecommendationResponse);
 
         if (Objects.nonNull(ec2RecommendationResponse) && !ec2RecommendationResponse.getRecommendationMap().isEmpty()) {
           for (Map.Entry<RecommendationTarget, List<RightsizingRecommendation>> rightsizingRecommendations :
@@ -97,6 +101,7 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               });
             }
           }
+          boolean recommendationSaved = false;
           for (Map.Entry<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendation :
               instanceLevelRecommendations.entrySet()) {
             if (!instanceLevelRecommendation.getValue().isEmpty()) {
@@ -113,12 +118,21 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               recommendation.setAccountId(accountId);
               recommendation.setLastUpdatedTime(startTime);
               // Save the ec2 recommendation to mongo and timescale
-              EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
-              log.debug("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
-              saveRecommendationInTimeScaleDB(ec2Recommendation);
-              ignoreListService.updateEC2RecommendationState(ec2Recommendation.getUuid(), accountId,
-                  ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceId());
+              log.info("Saving ec2Recommendation: {}", recommendation);
+              try {
+                EC2Recommendation ec2Recommendation = ec2RecommendationDAO.saveRecommendation(recommendation);
+                log.info("EC2Recommendation saved to mongoDB = {}", ec2Recommendation);
+                saveRecommendationInTimeScaleDB(ec2Recommendation);
+                ignoreListService.updateEC2RecommendationState(ec2Recommendation.getUuid(), accountId,
+                    ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceId());
+                recommendationSaved = true;
+              } catch (Exception e) {
+                log.error("Couldn't save recommendation: {}", recommendation, e);
+              }
             }
+          }
+          if (!recommendationSaved) {
+            throw new BatchProcessingException("No recommendation could be saved successfully", null);
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
           List<Ec2UtilzationData> utilizationData = ec2MetricHelper.getUtilizationMetrics(
@@ -343,9 +357,12 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
         ec2Recommendation.getCurrentMonthlyCost().isEmpty() ? "0.0" : ec2Recommendation.getCurrentMonthlyCost());
     Double monthlySaving = Double.parseDouble(
         ec2Recommendation.getExpectedSaving().isEmpty() ? "0.0" : ec2Recommendation.getExpectedSaving());
+    List<String> nameSpace = awsAccountFieldHelper.mergeAwsAccountNameWithValues(
+        Collections.singletonList(ec2Recommendation.getAwsAccountId()), ec2Recommendation.getAccountId());
+    String name = ec2Recommendation.getInstanceType() + " (" + ec2Recommendation.getInstanceId() + ")";
     ec2RecommendationDAO.upsertCeRecommendation(ec2Recommendation.getUuid(), ec2Recommendation.getAccountId(),
-        ec2Recommendation.getInstanceId(), ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceType(),
-        currentMonthCost, monthlySaving, ec2Recommendation.getLastUpdatedTime());
+        ec2Recommendation.getInstanceId(), nameSpace.get(0), name, currentMonthCost, monthlySaving,
+        ec2Recommendation.getLastUpdatedTime());
   }
 
   private String calculateMaxSaving(List<EC2InstanceRecommendationInfo> recommendations) {

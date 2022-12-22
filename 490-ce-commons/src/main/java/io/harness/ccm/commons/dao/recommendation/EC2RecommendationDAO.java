@@ -115,7 +115,7 @@ public class EC2RecommendationDAO {
    * @param uuid
    * @param accountId
    * @param instanceId
-   * @param awsAccountId
+   * @param nameSpace
    * @param instanceName
    * @param monthlyCost
    * @param monthlySaving
@@ -123,13 +123,13 @@ public class EC2RecommendationDAO {
    */
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, @NonNull String instanceId,
-      @NonNull String awsAccountId, String instanceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
+      @NonNull String nameSpace, String instanceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
       @NonNull Instant lastReceivedUntilAt) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
         .set(CE_RECOMMENDATIONS.ID, uuid)
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, instanceId)
-        .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
+        .set(CE_RECOMMENDATIONS.NAMESPACE, nameSpace)
         .set(CE_RECOMMENDATIONS.NAME, instanceName)
         .set(CE_RECOMMENDATIONS.RESOURCETYPE, ResourceType.EC2_INSTANCE.name())
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
