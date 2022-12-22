@@ -385,11 +385,11 @@ public class ArtifactResourceUtils {
     return artifactDTO.spec;
   }
 
-  static class ArtifactInternalDTO {
-    @JsonProperty("type") ArtifactSourceType sourceType;
+  public static class ArtifactInternalDTO {
+    @JsonProperty("type") public ArtifactSourceType sourceType;
     @JsonProperty("spec")
     @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-    ArtifactConfig spec;
+    public ArtifactConfig spec;
   }
 
   public NexusResponseDTO getBuildDetails(String nexusConnectorIdentifier, String repositoryName, String repositoryPort,
