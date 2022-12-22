@@ -7,6 +7,7 @@
 
 package software.wings.service.impl;
 
+import static io.harness.ng.core.user.NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK;
 import static io.harness.rule.OwnerRule.BOOPESH;
 
 import static software.wings.beans.Account.Builder.anAccount;
@@ -19,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
@@ -125,5 +127,23 @@ public class UserServiceHelperTest extends WingsBaseTest {
     wingsPersistence.save(user1);
     List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user1, ACCOUNT_ID_2);
     assertThat(updatedPendingAccounts).doesNotContain(account2);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteUserFromNG() {
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    userServiceHelper.deleteUserFromNG(user1.getUuid(), ACCOUNT_ID, ACCOUNT_LAST_ADMIN_CHECK);
   }
 }

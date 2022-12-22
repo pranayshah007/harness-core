@@ -842,7 +842,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                    .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
                    .get())
         .isEqualTo(null);
-    when(userServiceHelper.isUserActiveInNG(any(),an yString())).thenReturn(false);
+    when(userServiceHelper.isUserActiveInNG(any(),anyString())).thenReturn(false);
     verifyNoMoreInteractions(userMembershipClient);
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
@@ -898,7 +898,7 @@ public class UserServiceImplTest extends WingsBaseTest {
                                        .isDefault(true)
                                        .build();
     wingsPersistence.save(user1);
-    when(userServiceHelper.isUserActiveInNG(any(),an yString())).thenReturn(true);
+    when(userServiceHelper.isUserActiveInNG(any(),anyString())).thenReturn(true);
     when(harnessUserGroupService.isHarnessSupportUser(user1.getUuid())).thenReturn(false);
     assertThat(userServiceImpl.get(user1.getUuid())).isEqualTo(user1);
 

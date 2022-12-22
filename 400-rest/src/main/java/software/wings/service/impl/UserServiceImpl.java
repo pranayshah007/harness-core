@@ -2877,27 +2877,37 @@ public class UserServiceImpl implements UserService {
     return pageResponse;
   }
 
-  @Override
-  public void loadUserGroupsForUsers(List<User> users, String accountId) {
+  private List<UserGroup> getUserGroupsOfAccount(String accountId) {
     PageRequest<UserGroup> req = aPageRequest()
                                      .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
     PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
     List<UserGroup> allUserGroupList = res.getResponse();
-    if (isEmpty(allUserGroupList)) {
-      return;
-    }
+    return allUserGroupList;
+  }
 
+  private HashMultimap getUsergroupsOfUser(List<UserGroup> userGroupList) {
     Multimap<String, UserGroup> userUserGroupMap = HashMultimap.create();
 
-    allUserGroupList.forEach(userGroup -> {
+    userGroupList.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
       if (isEmpty(memberIds)) {
         return;
       }
       memberIds.forEach(userId -> userUserGroupMap.put(userId, userGroup));
     });
+    return (HashMultimap) userUserGroupMap;
+  }
+
+  @Override
+  public void loadUserGroupsForUsers(List<User> users, String accountId) {
+    List<UserGroup> allUserGroupList = getUserGroupsOfAccount(accountId);
+    if (isEmpty(allUserGroupList)) {
+      return;
+    }
+
+    Multimap<String, UserGroup> userUserGroupMap = getUsergroupsOfUser(allUserGroupList);
 
     users.forEach(user -> {
       if (isUserInvitedToAccount(user, accountId)) {
@@ -2920,25 +2930,12 @@ public class UserServiceImpl implements UserService {
 
   public boolean isUserPartOfAnyUserGroupInCG(String userId, String accountId) {
     User user = get(userId);
-    PageRequest<UserGroup> req = aPageRequest()
-                                     .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
-                                     .addFilter(UserGroup.UserGroupKeys.accountId, EQ, accountId)
-                                     .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
-    List<UserGroup> allUserGroupList = res.getResponse();
+    List<UserGroup> allUserGroupList = getUserGroupsOfAccount(accountId);
     if (isEmpty(allUserGroupList)) {
       return false;
     }
 
-    Multimap<String, UserGroup> userUserGroupMap = HashMultimap.create();
-
-    allUserGroupList.forEach(userGroup -> {
-      List<String> memberIds = userGroup.getMemberIds();
-      if (isEmpty(memberIds)) {
-        return;
-      }
-      memberIds.forEach(userIdentifier -> userUserGroupMap.put(userIdentifier, userGroup));
-    });
+    Multimap<String, UserGroup> userUserGroupMap = getUsergroupsOfUser(allUserGroupList);
     if (isUserInvitedToAccount(user, accountId)) {
       UserInvite userInvite = getInviteFromEmail(accountId, user.getEmail());
       if (userInvite == null) {

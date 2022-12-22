@@ -83,7 +83,8 @@ public class UserServiceHelper {
     Boolean deletedFromNG = NGRestUtils.getResponse(
         userMembershipClient.removeUserInternal(userId, deletedAccountId, null, null, removeUserFilter));
     if (!Boolean.TRUE.equals(deletedFromNG)) {
-      throw new UnexpectedException("User could not be removed from NG. User might be the last account admin in NG.");
+      throw new InvalidRequestException(
+          "User could not be removed from NG. User might be the last account admin in NG.");
     }
   }
 }
