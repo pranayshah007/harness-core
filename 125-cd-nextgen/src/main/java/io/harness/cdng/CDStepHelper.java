@@ -375,6 +375,7 @@ public class CDStepHelper {
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       } else if (gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
+        // Only Azure Repo has GitConnectionType Project
         String repoUrl = getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
