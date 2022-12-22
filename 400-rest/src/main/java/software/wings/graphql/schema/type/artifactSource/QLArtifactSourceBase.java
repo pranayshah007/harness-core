@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -16,18 +16,19 @@ import io.harness.annotations.dev.TargetModule;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDC)
-@Value
 @SuperBuilder
-@FieldNameConstants(innerTypeName = "QLGCRArtifactSourceKeys")
+@Data
+@FieldNameConstants(innerTypeName = "QLArtifactSourceBaseKeys")
 @Scope(PermissionAttribute.ResourceType.SERVICE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLGCRArtifactSource extends QLArtifactSourceBase {
-  String registryHostName;
-  String dockerImageName;
-  String gcpCloudProviderId;
+public class QLArtifactSourceBase implements QLArtifactSource {
+  String name;
+  String id;
+  Long createdAt;
+  Boolean collectionEnabled;
 }
