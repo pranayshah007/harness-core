@@ -18,6 +18,7 @@ import io.harness.pcf.model.CfConfig;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.CfRevertApplicationRequestData;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 
 import com.google.inject.Singleton;
@@ -180,6 +181,18 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   @Override
   public void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
       throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(
+          CfCreateApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public ApplicationDetail rollbackRollingApplicationWithSteadyStateCheck(
+          CfRevertApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 }
