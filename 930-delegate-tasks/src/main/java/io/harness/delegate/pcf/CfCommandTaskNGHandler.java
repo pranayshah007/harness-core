@@ -54,6 +54,18 @@ public abstract class CfCommandTaskNGHandler {
   protected abstract CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception;
 
+  protected void printExistingApplicationsDetails(
+          LogCallback executionLogCallback, List<ApplicationSummary> previousReleases) {
+    if (EmptyPredicate.isEmpty(previousReleases)) {
+      executionLogCallback.saveExecutionLog("# No Existing applications found");
+    } else {
+      StringBuilder appNames = new StringBuilder(color("# Existing applications: ", White, Bold));
+      previousReleases.forEach(
+              applicationSummary -> appNames.append("\n").append(encodeColor(applicationSummary.getName())));
+      executionLogCallback.saveExecutionLog(appNames.toString());
+    }
+  }
+
   protected boolean isDockerArtifact(TasArtifactConfig tasArtifactConfig) {
     return TasArtifactType.CONTAINER == tasArtifactConfig.getArtifactType();
   }
