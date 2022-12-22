@@ -44,6 +44,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
@@ -109,7 +110,7 @@ public class CgInstanceSyncServiceV2 {
           .forEach(deploymentSummary -> {
             SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
             CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
-                helperFactory.getHandler(cloudProvider.getValue().getSettingType());
+                helperFactory.getHelper(cloudProvider.getValue().getSettingType());
             String configuredPerpetualTaskId = getConfiguredPerpetualTaskId(
                 deploymentSummary, cloudProvider.getUuid(), instanceSyncV2DeploymentHelper);
             if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
@@ -172,24 +173,36 @@ public class CgInstanceSyncServiceV2 {
           log.warn("Couldn't acquire infra lock. appId [{}]", infraMapping.getAppId());
           return;
         }
+        Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
+        SettingAttribute cloudProvider =
+            cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
+
+        Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
+            helperFactory.getHelper(cloudProvider.getValue().getSettingType())
+                .getCgReleaseIdentifiersList(instancesPerTask.get(taskDetailsId));
+
+        Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
+            Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
+
         Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
         Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
-        for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-          DelegateResponseData delegateResponse =
-              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
-          Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-          SettingAttribute cloudProvider =
-              cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
-          instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
-
-          long deleteReleaseAfter = helperFactory.getHandler(cloudProvider.getValue().getSettingType())
-                                        .getDeleteReleaseAfter(taskDetails.getReleaseIdentifiers(), instanceSyncData);
-          taskDetails.getReleaseIdentifiers().setDeleteAfter(deleteReleaseAfter);
+        for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
+          long deleteReleaseAfter = helperFactory.getHelper(cloudProvider.getValue().getSettingType())
+                                        .getDeleteReleaseAfter(cgReleaseIdentifiers,
+                                            cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
+          cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
           if (deleteReleaseAfter > System.currentTimeMillis()) {
             releasesToUpdate.add(cgReleaseIdentifiers);
           } else {
             releasesToDelete.add(cgReleaseIdentifiers);
           }
+        }
+
+        for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
+          DelegateResponseData delegateResponse =
+              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
+
+          instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }
@@ -217,7 +230,7 @@ public class CgInstanceSyncServiceV2 {
   private void updateInstanceSyncPerpetualTask(SettingAttribute cloudProvider, String perpetualTaskId) {
     delegateServiceClient.resetPerpetualTask(AccountId.newBuilder().setId(cloudProvider.getAccountId()).build(),
         PerpetualTaskId.newBuilder().setId(perpetualTaskId).build(),
-        helperFactory.getHandler(cloudProvider.getValue().getSettingType()).fetchInfraConnectorDetails(cloudProvider));
+        helperFactory.getHelper(cloudProvider.getValue().getSettingType()).fetchInfraConnectorDetails(cloudProvider));
   }
 
   private String createInstanceSyncPerpetualTask(SettingAttribute cloudProvider) {
@@ -226,7 +239,7 @@ public class CgInstanceSyncServiceV2 {
     PerpetualTaskId taskId = delegateServiceClient.createPerpetualTask(AccountId.newBuilder().setId(accountId).build(),
         "CG_INSTANCE_SYNC_V2", preparePerpetualTaskSchedule(),
         PerpetualTaskClientContextDetails.newBuilder()
-            .setExecutionBundle(helperFactory.getHandler(cloudProvider.getValue().getSettingType())
+            .setExecutionBundle(helperFactory.getHelper(cloudProvider.getValue().getSettingType())
                                     .fetchInfraConnectorDetails(cloudProvider))
             .build(),
         true, "CloudProvider: [" + cloudProvider.getUuid() + "] Instance Sync V2 Perpetual Task");
@@ -289,7 +302,7 @@ public class CgInstanceSyncServiceV2 {
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
-          helperFactory.getHandler(cloudProvider.getValue().getSettingType());
+          helperFactory.getHelper(cloudProvider.getValue().getSettingType());
       deploymentReleaseDetails.addAll(instanceSyncV2DeploymentHelper.getDeploymentReleaseDetails(taskDetails));
     });
 

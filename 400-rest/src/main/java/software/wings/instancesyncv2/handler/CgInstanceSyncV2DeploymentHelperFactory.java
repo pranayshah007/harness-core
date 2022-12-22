@@ -15,23 +15,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class CgInstanceSyncV2DeploymentHelperFactory {
-  private final K8sInstanceSyncV2DeploymentHelperCg k8sHandler;
+  private final K8sInstanceSyncV2DeploymentHelperCg k8sHelper;
 
   private final ConcurrentHashMap<SettingVariableTypes, CgInstanceSyncV2DeploymentHelper> holder;
 
   @Inject
-  public CgInstanceSyncV2DeploymentHelperFactory(K8sInstanceSyncV2DeploymentHelperCg k8sHandler) {
+  public CgInstanceSyncV2DeploymentHelperFactory(K8sInstanceSyncV2DeploymentHelperCg k8sHelper) {
     this.holder = new ConcurrentHashMap<>();
-    this.k8sHandler = k8sHandler;
+    this.k8sHelper = k8sHelper;
 
-    initHandlers();
+    initHelpers();
   }
 
-  private void initHandlers() {
-    this.holder.put(SettingVariableTypes.KUBERNETES_CLUSTER, k8sHandler);
+  private void initHelpers() {
+    this.holder.put(SettingVariableTypes.KUBERNETES_CLUSTER, k8sHelper);
   }
 
-  public CgInstanceSyncV2DeploymentHelper getHandler(SettingVariableTypes cloudProviderType) {
+  public CgInstanceSyncV2DeploymentHelper getHelper(SettingVariableTypes cloudProviderType) {
     return this.holder.getOrDefault(cloudProviderType, null);
   }
 }

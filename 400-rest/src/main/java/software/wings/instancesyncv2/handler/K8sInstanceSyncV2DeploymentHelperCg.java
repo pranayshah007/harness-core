@@ -29,10 +29,12 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.grpc.utils.AnyUtils;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.core.timeout.Timeout;
@@ -107,7 +109,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   private final InfrastructureMappingService infrastructureMappingService;
 
-  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(10);
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(2);
   private final KryoSerializer kryoSerializer;
   private final InstanceUtils instanceUtil;
   private final ServiceResourceService serviceResourceService;
@@ -315,6 +317,31 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
         .setIsHelm(releaseIdentifier.isHelmDeployment())
         .setContainerServiceName(
             isEmpty(releaseIdentifier.getContainerServiceName()) ? "" : releaseIdentifier.getContainerServiceName())
+        .build();
+  }
+
+  public Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(
+      List<InstanceSyncData> instanceSyncDataList) {
+    Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap = new HashMap<>();
+    if (isEmpty(instanceSyncDataList)) {
+      return instanceSyncDataMap;
+    }
+    for (InstanceSyncData instanceSyncData : instanceSyncDataList) {
+      instanceSyncDataMap.put(getCgReleaseIdentifiers(instanceSyncData), instanceSyncData);
+    }
+    return instanceSyncDataMap;
+  }
+
+  public CgK8sReleaseIdentifier getCgReleaseIdentifiers(InstanceSyncData instanceSyncData) {
+    DirectK8sReleaseDetails directK8sReleaseDetails =
+        AnyUtils.unpack(instanceSyncData.getReleaseDetails(), DirectK8sReleaseDetails.class);
+    return CgK8sReleaseIdentifier.builder()
+        .releaseName(directK8sReleaseDetails.getReleaseName())
+        .namespace(directK8sReleaseDetails.getNamespace())
+        .isHelmDeployment(directK8sReleaseDetails.getIsHelm())
+        .containerServiceName(isEmpty(directK8sReleaseDetails.getContainerServiceName())
+                ? null
+                : directK8sReleaseDetails.getContainerServiceName())
         .build();
   }
 

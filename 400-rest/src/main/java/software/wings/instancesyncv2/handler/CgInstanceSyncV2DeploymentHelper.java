@@ -18,6 +18,7 @@ import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface CgInstanceSyncV2DeploymentHelper {
@@ -34,4 +35,6 @@ public interface CgInstanceSyncV2DeploymentHelper {
   List<CgDeploymentReleaseDetails> getDeploymentReleaseDetails(InstanceSyncTaskDetails taskDetails);
 
   long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData);
+
+  Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
 }
