@@ -121,7 +121,7 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
 
     try {
       String command = getCommandString(commandUnit, artifactDelegateConfig);
-      return executor.executeCommandString(command);
+      return executor.executeCommandString(command, false, false);
     } catch (Exception e) {
       return FAILURE;
     }
