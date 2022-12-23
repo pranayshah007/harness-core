@@ -4629,6 +4629,12 @@
               "minLength": 1
             }
           ]
+        },
+        "servicesOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceOverrideInputsYaml"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10213,6 +10219,30 @@
           }
         }
       ]
+    },
+    "ServiceOverrideInputsYaml": {
+      "type": "object",
+      "required": [
+        "serviceRef"
+      ],
+      "properties": {
+        "serviceOverrideInputs": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/JsonNode"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "serviceRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceOverrides": {
       "type": "object",

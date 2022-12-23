@@ -41,7 +41,7 @@ public class MultiDeploymentSpawnerUtils {
 
   private static final String ENVIRONMENT_REF_EXPRESSION = String.format(MATRIX_EXPRESSION, "environmentRef");
   private static final String ENVIRONMENT_INPUTS_EXPRESSION = String.format(MATRIX_EXPRESSION, "environmentInputs");
-  private static final String SERVICE_OVERRIDE_INPUTS_EXPRESSION =
+  public static final String SERVICE_OVERRIDE_INPUTS_EXPRESSION =
       String.format(MATRIX_EXPRESSION, "serviceOverrideInputs");
   private static final String GIT_OPS_CLUSTERS_EXPRESSION = String.format(MATRIX_EXPRESSION, "gitOpsClusters");
 
@@ -69,6 +69,10 @@ public class MultiDeploymentSpawnerUtils {
     return matrixMetadataMap;
   }
 
+  public String getServiceRef(Map<String, String> serviceMap) {
+    return serviceMap.get(SERVICE_REF);
+  }
+
   Map<String, String> getMapFromEnvironmentYaml(
       EnvironmentYamlV2 environmentYamlV2, InfraStructureDefinitionYaml infraStructureDefinitionYaml) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
@@ -90,6 +94,12 @@ public class MultiDeploymentSpawnerUtils {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }
     return matrixMetadataMap;
+  }
+
+  public void addServiceOverridesToMap(Map<String, String> environmentsMap, Map<String, Object> serviceOverrideInputs) {
+    if (EmptyPredicate.isNotEmpty(serviceOverrideInputs)) {
+      environmentsMap.put(SERVICE_OVERRIDE_INPUTS, JsonUtils.asJson(serviceOverrideInputs));
+    }
   }
 
   public String getUuidForMultiDeployment(DeploymentStageNode node) {
