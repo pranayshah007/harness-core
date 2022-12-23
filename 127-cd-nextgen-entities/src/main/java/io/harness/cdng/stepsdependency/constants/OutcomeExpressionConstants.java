@@ -32,6 +32,7 @@ public class OutcomeExpressionConstants {
   public final String OUTPUT = "output";
   public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
+  public final String TERRAGRUNT_CONFIG = "terragruntConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
