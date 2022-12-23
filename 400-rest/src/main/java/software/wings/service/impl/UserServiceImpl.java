@@ -89,7 +89,6 @@ import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UnauthorizedException;
-import io.harness.exception.UnexpectedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
@@ -2886,7 +2885,7 @@ public class UserServiceImpl implements UserService {
     return res.getResponse();
   }
 
-  private HashMultimap getUsergroupsOfUser(List<UserGroup> userGroupList) {
+  private HashMultimap createUsergroupsOfUserMap(List<UserGroup> userGroupList) {
     Multimap<String, UserGroup> userUserGroupMap = HashMultimap.create();
 
     userGroupList.forEach(userGroup -> {
@@ -2906,7 +2905,7 @@ public class UserServiceImpl implements UserService {
       return;
     }
 
-    Multimap<String, UserGroup> userUserGroupMap = getUsergroupsOfUser(allUserGroupList);
+    Multimap<String, UserGroup> userUserGroupMap = createUsergroupsOfUserMap(allUserGroupList);
 
     users.forEach(user -> {
       if (isUserInvitedToAccount(user, accountId)) {
@@ -2934,7 +2933,7 @@ public class UserServiceImpl implements UserService {
       return false;
     }
 
-    Multimap<String, UserGroup> userUserGroupMap = getUsergroupsOfUser(allUserGroupList);
+    Multimap<String, UserGroup> userUserGroupMap = createUsergroupsOfUserMap(allUserGroupList);
     if (isUserInvitedToAccount(user, accountId)) {
       UserInvite userInvite = getInviteFromEmail(accountId, user.getEmail());
       if (userInvite == null) {
