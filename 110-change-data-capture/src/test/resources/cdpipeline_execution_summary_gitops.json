@@ -1,0 +1,2338 @@
+{
+      "pipelineIdentifier": "SanityPipelineForEnvGroup",
+      "planExecutionId": "ohp7SYSuRpyIUdCFjwpZmQ",
+      "name": "Sanity-Pipeline-For-EnvGroup",
+      "status": "Failed",
+      "tags":
+      [],
+      "executionTriggerInfo":
+      {
+        "triggerType": "MANUAL",
+        "triggeredBy":
+        {
+          "uuid": "jFpfmZWHRG6jehcFYAtICw",
+          "identifier": "yogesh.chauhan@harness.io",
+          "extraInfo":
+          {
+            "email": "yogesh.chauhan@harness.io"
+          }
+        },
+        "isRerun": true,
+        "rerunInfo":
+        {
+          "rootExecutionId": "iD2ZmhMDTh-0n82tvTHrQA",
+          "rootTriggerType": "MANUAL",
+          "prevExecutionId": "wSZMcSSfSzG0Vtr6Ngcf3w",
+          "prevTriggerType": "MANUAL"
+        }
+      },
+      "executionErrorInfo":
+      {
+        "message": "Invalid request: No GitOps Cluster is selected with the current environment configuration"
+      },
+      "governanceMetadata":
+      {
+        "id": "0",
+        "deny": false,
+        "details":
+        [],
+        "message": "",
+        "timestamp": "1671346275061",
+        "status": "pass",
+        "accountId": "1bvyLackQK-Hapk25-Ry4w",
+        "orgId": "default",
+        "projectId": "Sanity_Pipelines",
+        "entity": "accountIdentifier%3A1bvyLackQK-Hapk25-Ry4w%2ForgIdentifier%3Adefault%2FprojectIdentifier%3ASanity_Pipelines%2FpipelineIdentifier%3ASanityPipelineForEnvGroup",
+        "type": "pipeline",
+        "action": "onrun",
+        "created": "1671346275059"
+      },
+      "moduleInfo":
+      {
+        "cd":
+        {
+          "__recast": "io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo",
+          "envGroupIdentifiers":
+          [
+            "EnvGroup1",
+            "envGroup"
+          ],
+          "envIdentifiers":
+          [
+            "env2"
+          ],
+          "environmentTypes":
+          [],
+          "freezeIdentifiers":
+          [],
+          "infrastructureIdentifiers":
+          [],
+          "infrastructureNames":
+          [],
+          "infrastructureTypes":
+          [],
+          "serviceDefinitionTypes":
+          [
+            "Kubernetes"
+          ],
+          "serviceIdentifiers":
+          [
+            "service3",
+            "service2",
+            "service1",
+            "service4",
+            "service5"
+          ]
+        }
+      },
+      "layoutNodeMap":
+      {
+        "WPL4ibc0RRmpUJoEKfwmegparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelWPL4ibc0RRmpUJoEKfwmegparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "WPL4ibc0RRmpUJoEKfwmegparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "zoSl1zLvSbSu_ILTy8hQGw_rollbackStage",
+              "r0c3N6B1TxOpg1DhIFJYhA_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "EiVHRJUtTlePImKbsuVVBQparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "r0c3N6B1TxOpg1DhIFJYhA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIAllEnvProjectLClsMoreThan1RI_rollbackStage",
+          "name": "SvcRI-EnvGRI-AllEnv-ProjectLCls-MoreThan1RI (Rollback Stage)",
+          "nodeUuid": "r0c3N6B1TxOpg1DhIFJYhA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ANXXqOnUTTKDHUuZXNkbmwparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelANXXqOnUTTKDHUuZXNkbmwparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "ANXXqOnUTTKDHUuZXNkbmwparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "InUUAzQNT0qYjdE1k07Ktg_rollbackStage",
+              "vsaskV1KSEKXrK46BH1NAw_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "-VFa3QcPRcCjusG6sAsHWAparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "LrtPqlVfR1SOhwOvEz5nEw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRI1EnvProjectLClsAllRI",
+          "name": "SvcRI-EnvGRI-1Env-ProjectLCls-AllRI",
+          "nodeUuid": "LrtPqlVfR1SOhwOvEz5nEw",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334529,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "Da01jbOwS4GJDZkbmGaK3g",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "u8zw3uvZQRyrQQWwGL-32g":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepToAll",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepToAll",
+          "nodeUuid": "u8zw3uvZQRyrQQWwGL-32g",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334344,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "z8Oy3AV3Squ_rAetoiZAXA",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "mf7q4AI6TVWS5amuXzFpGQ_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepToMoreThan1_rollbackStage",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepToMoreThan1 (Rollback Stage)",
+          "nodeUuid": "mf7q4AI6TVWS5amuXzFpGQ_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "zoSl1zLvSbSu_ILTy8hQGw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIAllEnvProjectLCls1RI",
+          "name": "SvcRI-EnvGRI-AllEnv-ProjectLCls-1RI",
+          "nodeUuid": "zoSl1zLvSbSu_ILTy8hQGw",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334895,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "ScoWdQ7hTbGXgFlOZ3w94A",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "IQaX9FKoTTmsKQ4wqm5dlg_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLClsAllRI_rollbackStage",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-AllRI (Rollback Stage)",
+          "nodeUuid": "IQaX9FKoTTmsKQ4wqm5dlg_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ANXXqOnUTTKDHUuZXNkbmwparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelANXXqOnUTTKDHUuZXNkbmwparallel",
+          "name": "",
+          "nodeUuid": "ANXXqOnUTTKDHUuZXNkbmwparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "InUUAzQNT0qYjdE1k07Ktg",
+              "vsaskV1KSEKXrK46BH1NAw"
+            ],
+            "nextIds":
+            [
+              "EAymVxaDS22KVfAnY6kTowparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "gPfCWZ9WQxWOw5miYocUfA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToFew",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToFew",
+          "nodeUuid": "gPfCWZ9WQxWOw5miYocUfA",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service2",
+                "displayName": "service2",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "type": "Production",
+                    "envGroupIdentifier": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  },
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelInAgentGitOpsCluster",
+                    "clusterName": "incluster"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346275772,
+          "endTs": 1671346296079,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "nOSbPfr-RTeJGggw51d8lA",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "fkNFsY9YToqnSL4wUfqg8w_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToFewProjectLClsDepToFew_rollbackStage",
+          "name": "EnvG-2Env-DepToFew-ProjectNAccountLCls-DepToFew (Rollback Stage)",
+          "nodeUuid": "fkNFsY9YToqnSL4wUfqg8w_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ev9_xNp0T96yPcfbFe7Mnw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToFewProjectLClsDepToFew_rollbackStage",
+          "name": "EnvG-1Env-DepToFew-ProjectLCls-DepToFew (Rollback Stage)",
+          "nodeUuid": "ev9_xNp0T96yPcfbFe7Mnw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "vRVRcCMURs-fUu2oRxjzMA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToMoreThan1",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToMoreThan1",
+          "nodeUuid": "vRVRcCMURs-fUu2oRxjzMA",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service5",
+                "displayName": "service5",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "type": "PreProduction",
+                    "envGroupIdentifier": "envGroup",
+                    "envGroupName": "EnvGroup-2Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "envGroup",
+                    "envGroupName": "EnvGroup-2Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  },
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "envGroup",
+                    "envGroupName": "EnvGroup-2Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelInAgentGitOpsCluster",
+                    "clusterName": "incluster"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346298085,
+          "endTs": 1671346316016,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "4axfwtaaRH-kAalcK7Kn5g",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "-VFa3QcPRcCjusG6sAsHWAparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallel-VFa3QcPRcCjusG6sAsHWAparallel",
+          "name": "",
+          "nodeUuid": "-VFa3QcPRcCjusG6sAsHWAparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "B9u3mW0yQwCIovStIGzGkg",
+              "M7v0YIX9QsCD1n0S_FuFXA",
+              "fkNFsY9YToqnSL4wUfqg8w"
+            ],
+            "nextIds":
+            [
+              "ANXXqOnUTTKDHUuZXNkbmwparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "50ixjq-yQDy7-u6AVOzA0Q":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRI1EnvProjectLClsMoreThan1RI",
+          "name": "SvcRI-EnvGRI-1Env-ProjectLCls-MoreThan1RI",
+          "nodeUuid": "50ixjq-yQDy7-u6AVOzA0Q",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334528,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "IfsVe-eaSyKflVjWEIzpAQ",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "fkNFsY9YToqnSL4wUfqg8w":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToFewProjectLClsDepToFew",
+          "name": "EnvG-2Env-DepToFew-ProjectNAccountLCls-DepToFew",
+          "nodeUuid": "fkNFsY9YToqnSL4wUfqg8w",
+          "status": "Failed",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 46,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service3",
+                "displayName": "service3",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [],
+                "clusters":
+                []
+              }
+            }
+          },
+          "startTs": 1671346316187,
+          "endTs": 1671346326076,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": "No files were committed. Hence not creating a pull request."
+          },
+          "failureInfoDTO":
+          {
+            "message": "No files were committed. Hence not creating a pull request.",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "2jqSYzOCSzScCv9P6r9Akg",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "B9u3mW0yQwCIovStIGzGkg_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLClsDepToAll_rollbackStage",
+          "name": "EnvG-2Env-DepToAll-ProjectNAccountLCls-DepToAll (Rollback Stage)",
+          "nodeUuid": "B9u3mW0yQwCIovStIGzGkg_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ev9_xNp0T96yPcfbFe7Mnw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToFewProjectLClsDepToFew",
+          "name": "EnvG-1Env-DepToFew-ProjectLCls-DepToFew",
+          "nodeUuid": "ev9_xNp0T96yPcfbFe7Mnw",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service4",
+                "displayName": "service4",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "envGroupIdentifier": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346298094,
+          "endTs": 1671346313953,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "5MDRvY7PTpGIINe4NZirIg",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "EAymVxaDS22KVfAnY6kTowparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelEAymVxaDS22KVfAnY6kTowparallel",
+          "name": "",
+          "nodeUuid": "EAymVxaDS22KVfAnY6kTowparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "bV6fLazASV2PJ9S2KvZARw",
+              "mf7q4AI6TVWS5amuXzFpGQ",
+              "u8zw3uvZQRyrQQWwGL-32g"
+            ],
+            "nextIds":
+            [
+              "Jce4v1NIQLO5wuWlX1o3jAparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "FNra8NwISJ2qUWFyz9vPiA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToAll",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToAll",
+          "nodeUuid": "FNra8NwISJ2qUWFyz9vPiA",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service1",
+                "displayName": "service1",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "envGroupIdentifier": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346275754,
+          "endTs": 1671346296111,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "StygORekQXyvvXXyKdvImQ",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "g8PZqzBfRpyECg2ZyIVSrQparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelg8PZqzBfRpyECg2ZyIVSrQparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "g8PZqzBfRpyECg2ZyIVSrQparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "FNra8NwISJ2qUWFyz9vPiA_rollbackStage",
+              "gPfCWZ9WQxWOw5miYocUfA_rollbackStage",
+              "rA7k-ziARyO4aTxKl4THvA_rollbackStage"
+            ],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "vsaskV1KSEKXrK46BH1NAw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLClsDepToAllSameCls",
+          "name": "EnvG-2Env-DepToAll-ProjectLCls-DepToAll-SameCls",
+          "nodeUuid": "vsaskV1KSEKXrK46BH1NAw",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334174,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "Cynma-3TTiaB-7FJQep52A",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "vRVRcCMURs-fUu2oRxjzMA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToMoreThan1_rollbackStage",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToMoreThan1 (Rollback Stage)",
+          "nodeUuid": "vRVRcCMURs-fUu2oRxjzMA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "M7v0YIX9QsCD1n0S_FuFXA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToFewProjectLClsDepToAll",
+          "name": "EnvG-2Env-DepToFew-ProjectNAccountLCls-DepToAll",
+          "nodeUuid": "M7v0YIX9QsCD1n0S_FuFXA",
+          "status": "Failed",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service2",
+                "displayName": "service2",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              }
+            }
+          },
+          "startTs": 1671346316182,
+          "endTs": 1671346318850,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": "Invalid request: No GitOps Cluster is selected with the current environment configuration"
+          },
+          "failureInfoDTO":
+          {
+            "message": "Invalid request: No GitOps Cluster is selected with the current environment configuration",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "CzjPqkGuSV-2Ui6RMfjziw",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "rA7k-ziARyO4aTxKl4THvA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToFewProjectLClsDepToAll",
+          "name": "EnvG-1Env-DepToFew-ProjectLCls-DepToAll",
+          "nodeUuid": "rA7k-ziARyO4aTxKl4THvA",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service3",
+                "displayName": "service3",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "envGroupIdentifier": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  },
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "EnvGroup1",
+                    "envGroupName": "EnvGroup-1Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelInAgentGitOpsCluster",
+                    "clusterName": "incluster"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346275760,
+          "endTs": 1671346297916,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "BPODmklyRdCkQ75_rh0eGg",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "zoSl1zLvSbSu_ILTy8hQGw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIAllEnvProjectLCls1RI_rollbackStage",
+          "name": "SvcRI-EnvGRI-AllEnv-ProjectLCls-1RI (Rollback Stage)",
+          "nodeUuid": "zoSl1zLvSbSu_ILTy8hQGw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "r0c3N6B1TxOpg1DhIFJYhA":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIAllEnvProjectLClsMoreThan1RI",
+          "name": "SvcRI-EnvGRI-AllEnv-ProjectLCls-MoreThan1RI",
+          "nodeUuid": "r0c3N6B1TxOpg1DhIFJYhA",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334897,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "DEpFGYudRSe6-EhzPDJKIg",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "M7v0YIX9QsCD1n0S_FuFXA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToFewProjectLClsDepToAll_rollbackStage",
+          "name": "EnvG-2Env-DepToFew-ProjectNAccountLCls-DepToAll (Rollback Stage)",
+          "nodeUuid": "M7v0YIX9QsCD1n0S_FuFXA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "FNra8NwISJ2qUWFyz9vPiA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToAll_rollbackStage",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToAll (Rollback Stage)",
+          "nodeUuid": "FNra8NwISJ2qUWFyz9vPiA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ISLzwCuZSNGB56g7L7nDVw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLClsMoreThan1RI",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-MoreThan1RI",
+          "nodeUuid": "ISLzwCuZSNGB56g7L7nDVw",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334715,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "8jHJX20tR12ZT5CA7I3Zag",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "-VFa3QcPRcCjusG6sAsHWAparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallel-VFa3QcPRcCjusG6sAsHWAparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "-VFa3QcPRcCjusG6sAsHWAparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "B9u3mW0yQwCIovStIGzGkg_rollbackStage",
+              "M7v0YIX9QsCD1n0S_FuFXA_rollbackStage",
+              "fkNFsY9YToqnSL4wUfqg8w_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "ib3aG66XRfmzrHveFApPXQparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "B9u3mW0yQwCIovStIGzGkg":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLClsDepToAll",
+          "name": "EnvG-2Env-DepToAll-ProjectNAccountLCls-DepToAll",
+          "nodeUuid": "B9u3mW0yQwCIovStIGzGkg",
+          "status": "Success",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {
+              "__recast": "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+              "rollbackDuration": 0,
+              "serviceInfo":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+                "identifier": "service1",
+                "displayName": "service1",
+                "deploymentType": "Kubernetes",
+                "gitOpsEnabled": true,
+                "artifacts":
+                {
+                  "__recast": "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+                  "sidecars":
+                  []
+                }
+              },
+              "gitopsExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary",
+                "environments":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment",
+                    "name": "EnvProjectLevelAgents",
+                    "identifier": "env2",
+                    "envGroupIdentifier": "envGroup",
+                    "envGroupName": "EnvGroup-2Env"
+                  }
+                ],
+                "clusters":
+                [
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "envGroup",
+                    "envGroupName": "EnvGroup-2Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelGitOpsCluster",
+                    "clusterName": "cluster22"
+                  },
+                  {
+                    "__recast": "io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster",
+                    "envGroupId": "envGroup",
+                    "envGroupName": "EnvGroup-2Env",
+                    "envId": "env2",
+                    "envName": "EnvProjectLevelAgents",
+                    "clusterId": "ProjectLevelInAgentGitOpsCluster",
+                    "clusterName": "incluster"
+                  }
+                ]
+              },
+              "infraExecutionSummary":
+              {
+                "__recast": "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+                "identifier": "env2",
+                "name": "EnvProjectLevelAgents"
+              }
+            }
+          },
+          "startTs": 1671346316182,
+          "endTs": 1671346334009,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": true,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "true",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "02ON5ujfT-iEqbYR4SOcug",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "mlcSjt4fQ3avuiIy55SyQQ_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLCls1RI_rollbackStage",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-1RI (Rollback Stage)",
+          "nodeUuid": "mlcSjt4fQ3avuiIy55SyQQ_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "50ixjq-yQDy7-u6AVOzA0Q_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRI1EnvProjectLClsMoreThan1RI_rollbackStage",
+          "name": "SvcRI-EnvGRI-1Env-ProjectLCls-MoreThan1RI (Rollback Stage)",
+          "nodeUuid": "50ixjq-yQDy7-u6AVOzA0Q_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "mf7q4AI6TVWS5amuXzFpGQ":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepToMoreThan1",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepToMoreThan1",
+          "nodeUuid": "mf7q4AI6TVWS5amuXzFpGQ",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334345,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "y54Qh-1eRq2g9Fb2sG1UNQ",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "Jce4v1NIQLO5wuWlX1o3jAparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelJce4v1NIQLO5wuWlX1o3jAparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "Jce4v1NIQLO5wuWlX1o3jAparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "50ixjq-yQDy7-u6AVOzA0Q_rollbackStage",
+              "LrtPqlVfR1SOhwOvEz5nEw_rollbackStage",
+              "mlcSjt4fQ3avuiIy55SyQQ_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "EAymVxaDS22KVfAnY6kTowparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "rA7k-ziARyO4aTxKl4THvA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToFewProjectLClsDepToAll_rollbackStage",
+          "name": "EnvG-1Env-DepToFew-ProjectLCls-DepToAll (Rollback Stage)",
+          "nodeUuid": "rA7k-ziARyO4aTxKl4THvA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "vsaskV1KSEKXrK46BH1NAw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLClsDepToAllSameCls_rollbackStage",
+          "name": "EnvG-2Env-DepToAll-ProjectLCls-DepToAll-SameCls (Rollback Stage)",
+          "nodeUuid": "vsaskV1KSEKXrK46BH1NAw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "IQaX9FKoTTmsKQ4wqm5dlg":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLClsAllRI",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-AllRI",
+          "nodeUuid": "IQaX9FKoTTmsKQ4wqm5dlg",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334717,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "KrLezxsPRVWlwmXArGBQNQ",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "Jce4v1NIQLO5wuWlX1o3jAparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelJce4v1NIQLO5wuWlX1o3jAparallel",
+          "name": "",
+          "nodeUuid": "Jce4v1NIQLO5wuWlX1o3jAparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "50ixjq-yQDy7-u6AVOzA0Q",
+              "LrtPqlVfR1SOhwOvEz5nEw",
+              "mlcSjt4fQ3avuiIy55SyQQ"
+            ],
+            "nextIds":
+            [
+              "EiVHRJUtTlePImKbsuVVBQparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "EiVHRJUtTlePImKbsuVVBQparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelEiVHRJUtTlePImKbsuVVBQparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "EiVHRJUtTlePImKbsuVVBQparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "ISLzwCuZSNGB56g7L7nDVw_rollbackStage",
+              "IQaX9FKoTTmsKQ4wqm5dlg_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "Jce4v1NIQLO5wuWlX1o3jAparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "ib3aG66XRfmzrHveFApPXQparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelib3aG66XRfmzrHveFApPXQparallel",
+          "name": "",
+          "nodeUuid": "ib3aG66XRfmzrHveFApPXQparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "ev9_xNp0T96yPcfbFe7Mnw",
+              "vRVRcCMURs-fUu2oRxjzMA"
+            ],
+            "nextIds":
+            [
+              "-VFa3QcPRcCjusG6sAsHWAparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "LrtPqlVfR1SOhwOvEz5nEw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRI1EnvProjectLClsAllRI_rollbackStage",
+          "name": "SvcRI-EnvGRI-1Env-ProjectLCls-AllRI (Rollback Stage)",
+          "nodeUuid": "LrtPqlVfR1SOhwOvEz5nEw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ib3aG66XRfmzrHveFApPXQparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelib3aG66XRfmzrHveFApPXQparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "ib3aG66XRfmzrHveFApPXQparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "ev9_xNp0T96yPcfbFe7Mnw_rollbackStage",
+              "vRVRcCMURs-fUu2oRxjzMA_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "g8PZqzBfRpyECg2ZyIVSrQparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "mlcSjt4fQ3avuiIy55SyQQ":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLCls1RI",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-1RI",
+          "nodeUuid": "mlcSjt4fQ3avuiIy55SyQQ",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334543,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "H7a-uKVFRbeVrkJtJ8UFSA",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "bV6fLazASV2PJ9S2KvZARw":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepTo1",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepTo1",
+          "nodeUuid": "bV6fLazASV2PJ9S2KvZARw",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334347,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "25Ve5Ra2RqO-Jd8P82Leig",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "WPL4ibc0RRmpUJoEKfwmegparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelWPL4ibc0RRmpUJoEKfwmegparallel",
+          "name": "",
+          "nodeUuid": "WPL4ibc0RRmpUJoEKfwmegparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "zoSl1zLvSbSu_ILTy8hQGw",
+              "r0c3N6B1TxOpg1DhIFJYhA"
+            ],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": false
+        },
+        "bV6fLazASV2PJ9S2KvZARw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepTo1_rollbackStage",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepTo1 (Rollback Stage)",
+          "nodeUuid": "bV6fLazASV2PJ9S2KvZARw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "InUUAzQNT0qYjdE1k07Ktg_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLCls1DepToFew1DepToAll_rollbackStage",
+          "name": "EnvG-2Env-DepToAll-ProjectNAccountLCls-1DepToFew-1DepToAll (Rollback Stage)",
+          "nodeUuid": "InUUAzQNT0qYjdE1k07Ktg_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "EAymVxaDS22KVfAnY6kTowparallel_rollbackStage":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelEAymVxaDS22KVfAnY6kTowparallel_rollbackStage",
+          "name": "",
+          "nodeUuid": "EAymVxaDS22KVfAnY6kTowparallel_rollbackStage",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "bV6fLazASV2PJ9S2KvZARw_rollbackStage",
+              "mf7q4AI6TVWS5amuXzFpGQ_rollbackStage",
+              "u8zw3uvZQRyrQQWwGL-32g_rollbackStage"
+            ],
+            "nextIds":
+            [
+              "ANXXqOnUTTKDHUuZXNkbmwparallel_rollbackStage"
+            ]
+          },
+          "isRollbackStageNode": true
+        },
+        "gPfCWZ9WQxWOw5miYocUfA_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG1EnvDepToAllProjectLClsDepToFew_rollbackStage",
+          "name": "EnvG-1Env-DepToAll-ProjectLCls-DepToFew (Rollback Stage)",
+          "nodeUuid": "gPfCWZ9WQxWOw5miYocUfA_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "g8PZqzBfRpyECg2ZyIVSrQparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelg8PZqzBfRpyECg2ZyIVSrQparallel",
+          "name": "",
+          "nodeUuid": "g8PZqzBfRpyECg2ZyIVSrQparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "FNra8NwISJ2qUWFyz9vPiA",
+              "gPfCWZ9WQxWOw5miYocUfA",
+              "rA7k-ziARyO4aTxKl4THvA"
+            ],
+            "nextIds":
+            [
+              "ib3aG66XRfmzrHveFApPXQparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "EiVHRJUtTlePImKbsuVVBQparallel":
+        {
+          "nodeType": "parallel",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "parallelEiVHRJUtTlePImKbsuVVBQparallel",
+          "name": "",
+          "nodeUuid": "EiVHRJUtTlePImKbsuVVBQparallel",
+          "status": "NotStarted",
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [
+              "ISLzwCuZSNGB56g7L7nDVw",
+              "IQaX9FKoTTmsKQ4wqm5dlg"
+            ],
+            "nextIds":
+            [
+              "WPL4ibc0RRmpUJoEKfwmegparallel"
+            ]
+          },
+          "isRollbackStageNode": false
+        },
+        "InUUAzQNT0qYjdE1k07Ktg":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToAllProjectLCls1DepToFew1DepToAll",
+          "name": "EnvG-2Env-DepToAll-ProjectNAccountLCls-1DepToFew-1DepToAll",
+          "nodeUuid": "InUUAzQNT0qYjdE1k07Ktg",
+          "status": "Skipped",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "endTs": 1671346334161,
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "nodeRunInfo":
+          {
+            "whenCondition": "<+OnPipelineSuccess>",
+            "evaluatedCondition": false,
+            "expressions":
+            [
+              {
+                "expression": "OnPipelineSuccess",
+                "expressionValue": "false",
+                "count": 1
+              }
+            ]
+          },
+          "failureInfo":
+          {
+            "message": ""
+          },
+          "failureInfoDTO":
+          {
+            "message": "",
+            "failureTypeList":
+            [],
+            "responseMessages":
+            []
+          },
+          "nodeExecutionId": "_CplK4T-QyelLVc3AQteDg",
+          "executionInputConfigured": false,
+          "isRollbackStageNode": false
+        },
+        "u8zw3uvZQRyrQQWwGL-32g_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "EnvG2EnvDepToMoreThan1ProjectNAccountLClsDepToAll_rollbackStage",
+          "name": "EnvG-2Env-DepToMoreThan1-ProjectNAccountLCls-DepToAll (Rollback Stage)",
+          "nodeUuid": "u8zw3uvZQRyrQQWwGL-32g_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        },
+        "ISLzwCuZSNGB56g7L7nDVw_rollbackStage":
+        {
+          "nodeType": "Deployment",
+          "nodeGroup": "STAGE",
+          "nodeIdentifier": "SvcRIEnvGRIMoreThan1EnvProjectLClsMoreThan1RI_rollbackStage",
+          "name": "SvcRI-EnvGRI-MoreThan1Env-ProjectLCls-MoreThan1RI (Rollback Stage)",
+          "nodeUuid": "ISLzwCuZSNGB56g7L7nDVw_rollbackStage",
+          "status": "NotStarted",
+          "module": "cd",
+          "moduleInfo":
+          {
+            "cd":
+            {}
+          },
+          "edgeLayoutList":
+          {
+            "currentNodeChildren":
+            [],
+            "nextIds":
+            []
+          },
+          "isRollbackStageNode": true
+        }
+      },
+      "modules":
+      [
+        "cd"
+      ],
+      "startingNodeId": "g8PZqzBfRpyECg2ZyIVSrQparallel",
+      "startTs": 1671346275061,
+      "endTs": 1671346335023,
+      "createdAt": 1671346275464,
+      "canRetry": true,
+      "showRetryHistory": false,
+      "runSequence": 34,
+      "successfulStagesCount": 6,
+      "runningStagesCount": 0,
+      "failedStagesCount": 2,
+      "totalStagesCount": 20,
+      "storeType": "INLINE",
+      "executionInputConfigured": false,
+      "parentStageInfo":
+      {
+        "hasparentpipeline": false,
+        "stagenodeid": "",
+        "executionid": "",
+        "identifier": "",
+        "projectid": "",
+        "orgid": "",
+        "runsequence": 0
+      },
+      "allowStageExecutions": false,
+      "stagesExecution": false
+    }

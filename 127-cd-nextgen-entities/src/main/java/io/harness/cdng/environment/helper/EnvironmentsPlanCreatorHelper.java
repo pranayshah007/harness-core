@@ -24,6 +24,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -175,6 +176,7 @@ public class EnvironmentsPlanCreatorHelper {
         IndividualEnvData envData = IndividualEnvData.builder()
                                         .envRef(envref)
                                         .envName(envMapping.get(envref).getName())
+                                        .type(envMapping.get(envref).getType().toString())
                                         .gitOpsClusterRefs(getClusterRefs(envV2Yaml))
                                         .deployToAll(envV2Yaml.getDeployToAll().getValue())
                                         .build();
@@ -204,14 +206,15 @@ public class EnvironmentsPlanCreatorHelper {
                                       .map(Cluster::getClusterRef)
                                       .collect(Collectors.toSet());
 
-    listEnvData.add(getIndividualEnvData(env.getIdentifier(), env.getName(), filteredClsRefs, false));
+    listEnvData.add(getIndividualEnvData(env.getIdentifier(), env.getName(), env.getType(), filteredClsRefs, false));
   }
 
   private static IndividualEnvData getIndividualEnvData(
-      String envRef, String envName, Set<String> filteredClsRefs, boolean isDeployToAll) {
+      String envRef, String envName, EnvironmentType type, Set<String> filteredClsRefs, boolean isDeployToAll) {
     return IndividualEnvData.builder()
         .envRef(envRef)
         .envName(envName)
+        .type(type.toString())
         .deployToAll(isDeployToAll)
         .gitOpsClusterRefs(filteredClsRefs)
         .build();
