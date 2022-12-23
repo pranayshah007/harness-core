@@ -132,7 +132,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
     } else {
       K8sInstanceSyncResponse k8sInstanceSyncResponse =
-          ((K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse());
+          (K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse();
       return k8sInstanceSyncResponse.getK8sPodInfoList() != null ? k8sInstanceSyncResponse.getK8sPodInfoList().size()
                                                                  : 0;
     }
