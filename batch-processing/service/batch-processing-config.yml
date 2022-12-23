@@ -19,8 +19,8 @@ events-mongo:
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: "postgres"
-  timescaledbPassword: ""
+  timescaledbUsername: "admin"
+  timescaledbPassword: "password"
   connectTimeout: 300
   socketTimeout: 900
   logUnclosedConnections: false

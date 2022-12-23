@@ -25,7 +25,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 public class BatchConfiguration {
   @Bean
   public static BatchMainConfig batchMainConfig(Environment environment) throws IOException {
-    String configFilePath = environment.getProperty("config-file", "batch-processing-config.yml");
+    String configFilePath = environment.getProperty(
+        "config-file", "/Users/abhinavsingh/harness/harness-core/batch-processing/service/batch-processing-config.yml");
     log.info("batch-processing configFilePath: {}", configFilePath);
 
     File configFile = new File(configFilePath);
