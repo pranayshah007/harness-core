@@ -15,7 +15,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sApplyBaseStepInfo.K8sApplyBaseStepInfoKeys;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -29,6 +31,7 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
+import io.harness.delegate.task.k8s.K8sApplyRequest.K8sApplyRequestBuilder;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.InvalidRequestException;
@@ -52,6 +55,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -65,6 +69,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
 
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -135,9 +140,8 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             K8sApplyBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
     boolean skipRendering = CDStepHelper.getParameterFieldBooleanValue(
         k8sApplyStepParameters.getSkipRendering(), K8sApplyBaseStepInfoKeys.skipRendering, stepElementParameters);
-
     final String accountId = AmbianceUtils.getAccountId(ambiance);
-    K8sApplyRequest k8sApplyRequest =
+    K8sApplyRequestBuilder applyRequestBuilder =
         K8sApplyRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
@@ -159,9 +163,14 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .skipRendering(skipRendering)
-            .build();
+            .skipRendering(skipRendering);
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      Map<String, String> k8sCommandFlag =
+          k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags());
+      applyRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    }
+    K8sApplyRequest k8sApplyRequest = applyRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 
     return k8sStepHelper.queueK8sTask(stepElementParameters, k8sApplyRequest, ambiance, executionPassThroughData);
