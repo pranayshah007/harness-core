@@ -39,5 +39,5 @@ public interface ViewFieldConstants {
   String GCP_SKU_DESCRIPTION_FIELD_ID = "gcpSkuDescription";
 
   String REGION_FIELD_ID = "region";
-  long THRESHOLD_DAYS = 4;
+  long THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION = 4;
 }

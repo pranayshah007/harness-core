@@ -106,6 +106,25 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     serviceBuildEnvInfraMap.put("svc1", buildEnvInfraMap);
 
+    Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> infraPipelineExecutionMap3 =
+        new HashMap<>();
+
+    infraPipelineExecutionMap3.put(
+        "infra1", Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a")));
+    Map<String,
+        Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+            Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>> envInfraMap3 =
+        new HashMap<>();
+    envInfraMap3.put("env1", new MutablePair<>(infraPipelineExecutionMap3, new HashMap<>()));
+    Map<String,
+        Map<String,
+            Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+                Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>
+        buildEnvInfraMap2 = new HashMap<>();
+    buildEnvInfraMap2.put("1", envInfraMap3);
+
+    serviceBuildEnvInfraMap.put("svc2", buildEnvInfraMap2);
+
     return serviceBuildEnvInfraMap;
   }
 
@@ -203,7 +222,38 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .lastDeployedAt(2l)
             .instanceGroupedByArtifactList(Arrays.asList(instanceGroupedByArtifact1, instanceGroupedByArtifact2))
             .build();
-    return Arrays.asList(instanceGroupedByService1);
+    InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2 instanceGroupedByInfrastructureV2 =
+        InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
+            .infraName("infra1")
+            .infraIdentifier("infra1")
+            .lastDeployedAt(1l)
+            .instanceGroupedByPipelineExecutionList(
+                Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a")))
+            .build();
+    InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2 instanceGroupedByEnvironmentV2 =
+        InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2.builder()
+            .envId("env1")
+            .envName("env1")
+            .lastDeployedAt(1l)
+            .instanceGroupedByInfraList(Arrays.asList(instanceGroupedByInfrastructureV2))
+            .instanceGroupedByClusterList(new ArrayList<>())
+            .build();
+    InstanceGroupedByServiceList.InstanceGroupedByArtifactV2 instanceGroupedByArtifactV2 =
+        InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
+            .artifactPath("artifact11")
+            .artifactVersion("1")
+            .lastDeployedAt(1l)
+            .latest(true)
+            .instanceGroupedByEnvironmentList(Arrays.asList(instanceGroupedByEnvironmentV2))
+            .build();
+    InstanceGroupedByServiceList.InstanceGroupedByService instanceGroupedByService =
+        InstanceGroupedByServiceList.InstanceGroupedByService.builder()
+            .serviceId("svc2")
+            .serviceName("svcN2")
+            .lastDeployedAt(1l)
+            .instanceGroupedByArtifactList(Arrays.asList(instanceGroupedByArtifactV2))
+            .build();
+    return Arrays.asList(instanceGroupedByService1, instanceGroupedByService);
   }
 
   List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfo() {
@@ -222,6 +272,9 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        "svc2", "svcN2", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact11:1", 1);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -257,18 +310,22 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                     Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>>
         serviceBuildEnvInfraMap = getSampleServiceBuildEnvInfraMap();
     Map<String, String> serviceIdToServiceNameMap = new HashMap<>();
-    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
+    Map<String, Map<String, String>> serviceIdBuildIdToArtifactPathMap = new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, String> infraIdToInfraNameMap = new HashMap<>();
     Map<String, String> serviceIdToLatestBuildMap = new HashMap<>();
 
     serviceIdToLatestBuildMap.put("svc1", "1");
+    serviceIdToLatestBuildMap.put("svc2", "1");
 
     serviceIdToServiceNameMap.put("svc1", "svcN1");
     serviceIdToServiceNameMap.put("svc2", "svcN2");
 
-    buildIdToArtifactPathMap.put("1", "artifact1");
-    buildIdToArtifactPathMap.put("2", "artifact2");
+    serviceIdBuildIdToArtifactPathMap.put("svc1", new HashMap<>());
+    serviceIdBuildIdToArtifactPathMap.get("svc1").put("1", "artifact1");
+    serviceIdBuildIdToArtifactPathMap.get("svc1").put("2", "artifact2");
+    serviceIdBuildIdToArtifactPathMap.put("svc2", new HashMap<>());
+    serviceIdBuildIdToArtifactPathMap.get("svc2").put("1", "artifact11");
 
     envIdToEnvNameMap.put("env1", "env1");
     envIdToEnvNameMap.put("env2", "env2");
@@ -281,8 +338,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServices1 =
         cdOverviewDashboardService.groupedByServices(serviceBuildEnvInfraMap, envIdToEnvNameMap, infraIdToInfraNameMap,
-            serviceIdToServiceNameMap, infraIdToInfraNameMap, buildIdToArtifactPathMap, serviceIdToLatestBuildMap,
-            false);
+            serviceIdToServiceNameMap, infraIdToInfraNameMap, serviceIdBuildIdToArtifactPathMap,
+            serviceIdToLatestBuildMap, false);
 
     assertThat(instanceGroupedByServices1).isEqualTo(instanceGroupedByServices);
   }

@@ -11,6 +11,7 @@ import static software.wings.yaml.YamlVersion.Builder.aYamlVersion;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
@@ -37,7 +38,7 @@ public class YamlVersion extends Base implements YamlHistory {
   private long inEffectEnd;
   private String yaml;
 
-  @SchemaIgnore private String accountId;
+  @FdIndex @SchemaIgnore private String accountId;
 
   public YamlVersion() {}
 

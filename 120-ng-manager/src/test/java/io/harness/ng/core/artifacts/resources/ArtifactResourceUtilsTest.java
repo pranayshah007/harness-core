@@ -667,8 +667,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
 
     assertThat(artifactConfig).isNotNull();
-    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
-    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getValue())
+        .isEqualTo("account.harnessImage");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue())
+        .isEqualTo("library/<+service.name>");
   }
 
   @Test
@@ -726,6 +728,77 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(artifactConfig).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourcesFromTemplateWithTemplateInputs() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.withInputs1.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-2.yaml");
+
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+    // final artifact config created by merging template inputs with template
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getValue())
+        .isEqualTo("account.harnessImage");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getValue()).isEqualTo("library/nginx");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourceWithAllTemplateInputs() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.withAllInputs.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-all-inputs.yaml");
+
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+
+    // final artifact config will have Inputs but the API call will already contain concrete imagePath, connectorRef
+    // so it not be overriden
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getExpressionValue()).isEqualTo("<+input>");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue()).isEqualTo("<+input>");
   }
 
   private void mockEnvironmentGetCall() {

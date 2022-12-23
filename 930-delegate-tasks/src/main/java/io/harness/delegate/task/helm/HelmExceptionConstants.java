@@ -30,6 +30,14 @@ public class HelmExceptionConstants {
     public static final String DEFAULT_HINT_REPO_ADD =
         "Make sure that the repo can be added using the helm cli \"repo add\" command";
 
+    public static final String HELM_CUSTOM_EXCEPTION_HINT =
+        "Provided helm chart path point to a file inside the helm chart. Path to the helm chart directory should be provided instead";
+
+    public static final String HELM_CHART_EXCEPTION = "Exception in deploying helm chart:";
+
+    public static final String HELM_CHART_REGEX = "Source.*and destination.*are the same";
+    public static final String HELM_CHART_ERROR_EXPLANATION =
+        "This error can be possible if provided helm chart path is a file path instead of folder path";
     public static final String HINT_NO_CHART_FOUND = "Provide an existing helm chart and/or valid chart path";
     public static final String HINT_NO_CHART_VERSION_FOUND = "Provide existing helm chart version";
     public static final String HINT_CHART_VERSION_IMPROPER_CONSTRAINT = "Provide existing and valid helm chart version";

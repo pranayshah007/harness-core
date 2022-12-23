@@ -14,7 +14,6 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
-import io.harness.cvng.core.beans.healthsource.HealthSourceQueryParams;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.LogRecord;
@@ -46,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
@@ -137,13 +135,11 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     List<MetricPack> metricPacks = metricPackService.getMetricPacks(
         accountIdentifier, orgIdentifier, projectIdentifier, queryRecordsRequest.getProviderType());
     metricPackService.populateDataCollectionDsl(queryRecordsRequest.getProviderType(), metricPacks.get(0));
-    switch (queryRecordsRequest.getProviderType()) {
-      case SUMOLOGIC_METRICS:
-        cvConfig = HealthSourceOnboardMappingUtils.getCvConfigForSumologicMetric(
-            queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier, metricPacks);
-        break;
-      default:
-        throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
+    if (queryRecordsRequest.getProviderType() == DataSourceType.SUMOLOGIC_METRICS) {
+      cvConfig =
+          HealthSourceOnboardMappingUtils.getCvConfigForNextGenMetric(queryRecordsRequest, projectParams, metricPacks);
+    } else {
+      throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
     }
 
     DataCollectionInfoMapper<DataCollectionInfo<ConnectorConfigDTO>, CVConfig> dataCollectionInfoMapper =
@@ -162,7 +158,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
     DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
-        getDataCollectionInfoForLog(queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier);
+        getDataCollectionInfoForLog(queryRecordsRequest, projectParams);
     dataCollectionInfo.setCollectHostData(false);
     DataCollectionRequest<ConnectorConfigDTO> request =
         SyncDataCollectionRequest.builder()
@@ -195,26 +191,16 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   }
 
   @NotNull
-  private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForLog(QueryRecordsRequest queryRecordsRequest,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForLog(
+      QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     CVConfig cvConfig;
-    String serviceInstanceField = Optional.ofNullable(queryRecordsRequest.getHealthSourceQueryParams())
-                                      .map(HealthSourceQueryParams::getServiceInstanceField)
-                                      .orElse(null);
-    switch (queryRecordsRequest.getProviderType()) {
-      case SUMOLOGIC_LOG:
-        cvConfig = HealthSourceOnboardMappingUtils.getCVConfigForSumologicLog(
-            queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier, serviceInstanceField);
-        break;
-      default:
-        throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
+    if (queryRecordsRequest.getProviderType() == DataSourceType.SUMOLOGIC_LOG) {
+      cvConfig = HealthSourceOnboardMappingUtils.getCVConfigForNextGenLog(queryRecordsRequest, projectParams);
+    } else {
+      throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
     }
-
     DataCollectionInfoMapper<DataCollectionInfo<ConnectorConfigDTO>, CVConfig> dataCollectionInfoMapper =
         dataSourceTypeDataCollectionInfoMapperMap.get(queryRecordsRequest.getProviderType());
-    DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
-        dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.DEPLOYMENT);
-    dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-    return dataCollectionInfo;
+    return dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.DEPLOYMENT);
   }
 }

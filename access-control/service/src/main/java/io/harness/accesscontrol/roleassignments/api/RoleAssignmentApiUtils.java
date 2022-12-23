@@ -7,11 +7,6 @@
 
 package io.harness.accesscontrol.roleassignments.api;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.accesscontrol.AccessControlPermissions.EDIT_SERVICEACCOUNT_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
@@ -26,8 +21,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
@@ -64,7 +57,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -72,16 +64,12 @@ import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 
 @OwnedBy(PL)
 @Singleton
 public class RoleAssignmentApiUtils {
-  public static final int FIRST_PAGE = 1;
-
   public static final String ROLE_ASSIGNMENT_DOES_NOT_EXISTS = "Role Assignment with given identifier doesn't exists";
 
   Validator validator;
@@ -166,7 +154,7 @@ public class RoleAssignmentApiUtils {
 
   public RoleAssignmentResponse getRoleAssignmentResponse(RoleAssignmentResponseDTO responseDTO) {
     RoleAssignmentResponse roleAssignmentResponse = new RoleAssignmentResponse();
-    roleAssignmentResponse.setRoleassignment(getRoleAssignment(responseDTO.getRoleAssignment()));
+    roleAssignmentResponse.setRoleAssignment(getRoleAssignment(responseDTO.getRoleAssignment()));
     roleAssignmentResponse.setHarnessManaged(responseDTO.isHarnessManaged());
     roleAssignmentResponse.setCreated(responseDTO.getCreatedAt());
     roleAssignmentResponse.setUpdated(responseDTO.getLastModifiedAt());
@@ -351,26 +339,6 @@ public class RoleAssignmentApiUtils {
         harnessServiceAccountService.sync(roleAssignment.getPrincipalIdentifier(), principalScope);
       }
     }
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= FIRST_PAGE) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 
   public PageRequest getPageRequest(int page, int limit, String sort, String order) {

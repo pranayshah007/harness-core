@@ -12,6 +12,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
+import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.TasDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -89,5 +90,12 @@ public class TasInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .applicationName(((TasServerInstanceInfo) serverInstanceInfoList.get(0)).getTasApplicationName())
         .applicationGuid(((TasServerInstanceInfo) serverInstanceInfoList.get(0)).getTasApplicationGuid())
         .build();
+  }
+
+  @Override
+  public InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer) {
+    instanceDTO.setInstanceInfoDTO(instanceInfoFromServer);
+    instanceDTO.setLastDeployedAt(System.currentTimeMillis());
+    return instanceDTO;
   }
 }

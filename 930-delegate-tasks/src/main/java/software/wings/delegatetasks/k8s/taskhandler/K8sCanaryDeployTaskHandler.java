@@ -144,9 +144,8 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     if (!success) {
       return getFailureResponse();
     }
-
     success = k8sTaskHelperBase.applyManifests(canaryHandlerConfig.getClient(), canaryHandlerConfig.getResources(),
-        k8sDelegateTaskParams, getLogCallBack(k8sCanaryDeployTaskParameters, Apply), true);
+        k8sDelegateTaskParams, getLogCallBack(k8sCanaryDeployTaskParameters, Apply), true, null);
     if (!success) {
       k8sCanaryBaseHandler.failAndSaveKubernetesRelease(
           canaryHandlerConfig, k8sCanaryDeployTaskParameters.getReleaseName());

@@ -8,21 +8,22 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Account Roles
-    description: This contains APIs for performing CRUD operations on Account level Roles.
+    description: This contains APIs for Account-scoped Roles.
   - name: Organization Roles
-    description: This contains APIs for performing CRUD operations on Organization level Roles.
+    description: This contains APIs for Organization-scoped Roles.
   - name: Project Roles
-    description: This contains APIs for performing CRUD operations on Project level Roles.
+    description: This contains APIs for Project-scoped Roles.
   - name: Account Role Assignments
-    description: This contains APIs for performing CRUD operations on Account level Role Assignments.
+    description: This contains APIs for Account-scoped Role Assignments.
   - name: Org Role Assignments
-    description: This contains APIs for performing CRUD operations on Organization level Role Assignments.
+    description: This contains APIs for Organization-scoped Role Assignments.
+    x-displayName: Organization Role Assignments
   - name: Project Role Assignments
-    description: This contains APIs for performing CRUD operations on Project level Role Assignments.
+    description: This contains APIs for Project-scoped Role Assignments.
 paths:
   /v1/roles:
     parameters: []
@@ -283,6 +284,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-account-scoped-role-assignments
@@ -296,6 +299,8 @@ paths:
         - Account Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
   '/v1/role-assignments/{role-assignment}':
     parameters:
       - schema:
@@ -315,6 +320,8 @@ paths:
       description: Retrieves the information of the role assignment with the matching role assignment slug.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-account-scoped-role-assignment
@@ -326,7 +333,9 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Account Role Assignments
-  /v1/orgs/{org}/role-assignments:
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/role-assignments':
     get:
       summary: List role assignments
       tags:
@@ -342,6 +351,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-org-scoped-role-assignments
@@ -355,6 +366,8 @@ paths:
         - Org Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgParam'
   '/v1/orgs/{org}/role-assignments/{role-assignment}':
@@ -377,6 +390,8 @@ paths:
       description: Retrieves the information of the role assignment with the matching role assignment slug.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-org-scoped-role-assignment
@@ -388,7 +403,9 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Org Role Assignments
-  /v1/orgs/{org}/projects/{project}/role-assignments:
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/role-assignments':
     get:
       summary: List role assignments
       tags:
@@ -404,6 +421,8 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
     post:
       summary: Create a role assignment
       operationId: create-project-scoped-role-assignments
@@ -417,6 +436,8 @@ paths:
         - Project Role Assignments
       requestBody:
         $ref: '#/components/requestBodies/RoleAssignmentRequest'
+      security:
+        - x-api-key: []
     parameters:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
@@ -441,6 +462,8 @@ paths:
       description: Retrieves the information of the role assignment with the matching role assignment slug.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
     delete:
       summary: Delete a role assignment
       operationId: delete-project-scoped-role-assignment
@@ -452,6 +475,8 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - Project Role Assignments
+      security:
+        - x-api-key: []
 components:
   schemas:
     RolesResponse:
@@ -489,7 +514,7 @@ components:
         name:
           type: string
           description: Role Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
           minLength: 1
           maxLength: 64
         permissions:
@@ -658,7 +683,7 @@ components:
       type: object
       description: Role assignment response model
       properties:
-        roleassignment:
+        role-assignment:
           $ref: '#/components/schemas/RoleAssignment'
         created:
           type: integer
@@ -872,7 +897,7 @@ components:
           examples:
             role-assignment-response-json:
               value:
-                roleassignment:
+                role-assignment:
                   slug: example_role_assignment
                   resource_group: example_resource_group_slug
                   role: example_role_slug
@@ -891,7 +916,7 @@ components:
           examples:
             role-assignment-response-yaml:
               value: |
-                roleassignment:
+                role-assignment:
                   slug: example_role_assignment
                   resource_group: example_resource_group_slug
                   role: example_role_slug
@@ -915,7 +940,7 @@ components:
           examples:
             role-assignment-response-json:
               value:
-                - roleassignment:
+                - role-assignment:
                     slug: example_role_assignment
                     resource_group: example_resource_group_slug
                     role: example_role_slug
@@ -936,7 +961,7 @@ components:
           examples:
             role-assignment-response-json:
               value: |
-                - roleassignment:
+                - role-assignment:
                     slug: example_role_assignment
                     resource_group: example_resource_group_slug
                     role: example_role_slug

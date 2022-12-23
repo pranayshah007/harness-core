@@ -11,14 +11,13 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
@@ -51,7 +50,7 @@ import org.mongodb.morphia.annotations.Version;
 @Entity(value = "sliRecords", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class SLIRecord implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class SLIRecord extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -77,8 +76,7 @@ public class SLIRecord implements PersistentEntity, UuidAware, UpdatedAtAware, C
   private SLIState sliState;
   private long runningBadCount; // prevMinuteRecord.runningBadCount + sliState == BAD ? 1 : 0
   private long runningGoodCount; // // prevMinuteRecord.runningGoodCount + sliState == GOOD ? 1 : 0
-  private long lastUpdatedAt;
-  private long createdAt;
+
   private int sliVersion;
   public enum SLIState { NO_DATA, GOOD, BAD }
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());

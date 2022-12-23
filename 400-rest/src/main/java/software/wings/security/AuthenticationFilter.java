@@ -375,7 +375,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   }
 
   private void updateUserInAuditRecord(User user) {
-    auditService.updateUser(auditHelper.get(), user.getPublicUser());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      auditService.updateUser(auditHelper.get(), user.getPublicUser(true));
+    }
+    auditService.updateUser(auditHelper.get(), user.getPublicUser(false));
   }
 
   protected void validateLearningEngineRequest(ContainerRequestContext containerRequestContext) {

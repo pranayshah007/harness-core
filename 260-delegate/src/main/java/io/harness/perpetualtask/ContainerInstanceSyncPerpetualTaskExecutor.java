@@ -65,7 +65,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    if (log.isDebugEnabled()) {
+      log.debug("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    }
     ContainerInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), ContainerInstanceSyncPerpetualTaskParams.class);
 

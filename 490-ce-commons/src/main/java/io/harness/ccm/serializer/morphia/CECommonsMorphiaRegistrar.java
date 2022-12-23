@@ -10,6 +10,7 @@ package io.harness.ccm.serializer.morphia;
 import io.harness.ccm.budget.ApplicationBudgetScope;
 import io.harness.ccm.budget.ClusterBudgetScope;
 import io.harness.ccm.budget.PerspectiveBudgetScope;
+import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.commons.entities.AWSConnectorToBucketMapping;
 import io.harness.ccm.commons.entities.ClusterRecord;
 import io.harness.ccm.commons.entities.batch.BatchJobInterval;
@@ -38,6 +39,7 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
+import io.harness.ccm.commons.entities.recommendations.RecommendationsIgnoreList;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -59,6 +61,7 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
     // billing
     set.add(BillingDataPipelineRecord.class);
     set.add(Budget.class);
+    set.add(BudgetGroup.class);
     set.add(CECloudAccount.class);
     set.add(CECluster.class);
     set.add(CEGcpServiceAccount.class);
@@ -74,18 +77,17 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(K8sYaml.class);
     set.add(ClusterRecord.class);
 
-    // k8s.recommendation
+    // ecs
+    set.add(ECSService.class);
+
+    // recommendations
     set.add(K8sNodeRecommendation.class);
     set.add(K8sWorkloadRecommendation.class);
     set.add(PartialRecommendationHistogram.class);
-
-    // ecs
-    set.add(ECSService.class);
+    set.add(EC2Recommendation.class);
     set.add(ECSPartialRecommendationHistogram.class);
     set.add(ECSServiceRecommendation.class);
-
-    // ec2
-    set.add(EC2Recommendation.class);
+    set.add(RecommendationsIgnoreList.class);
 
     // commons
     set.add(CCMNotificationSetting.class);

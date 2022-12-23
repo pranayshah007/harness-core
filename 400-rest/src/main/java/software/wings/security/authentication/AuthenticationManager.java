@@ -26,6 +26,7 @@ import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import static software.wings.beans.Account.AccountKeys;
+import static software.wings.beans.User.Builder;
 
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 
@@ -309,18 +310,20 @@ public class AuthenticationManager {
     HashMap<String, String> claimMap = new HashMap<>();
     claimMap.put(EMAIL, user.getEmail());
     String jwtToken = userService.generateJWTToken(user, claimMap, JWT_CATEGORY.MULTIFACTOR_AUTH, false);
-    return User.Builder.anUser()
-        .uuid(user.getUuid())
-        .email(user.getEmail())
-        .name(user.getName())
-        .twoFactorAuthenticationMechanism(user.getTwoFactorAuthenticationMechanism())
-        .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
-        .twoFactorJwtToken(jwtToken)
-        .accounts(user.getAccounts())
-        .supportAccounts(user.getSupportAccounts())
-        .defaultAccountId(user.getDefaultAccountId())
-        .emailVerified(user.isEmailVerified())
-        .build();
+    Builder userBuilder = User.Builder.anUser()
+                              .uuid(user.getUuid())
+                              .email(user.getEmail())
+                              .name(user.getName())
+                              .twoFactorAuthenticationMechanism(user.getTwoFactorAuthenticationMechanism())
+                              .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+                              .twoFactorJwtToken(jwtToken)
+                              .accounts(user.getAccounts())
+                              .defaultAccountId(user.getDefaultAccountId())
+                              .emailVerified(user.isEmailVerified());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      userBuilder.supportAccounts(user.getSupportAccounts());
+    }
+    return userBuilder.build();
   }
 
   public String[] decryptBasicToken(String basicToken) {

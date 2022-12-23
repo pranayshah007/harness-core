@@ -347,6 +347,10 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
       log.info("Destination currency conversion factor for accountId {}, cloudServiceProvider {} "
               + "and sourceCurrency {} is {}",
           accountId, cloudServiceProvider, sourceCurrency, conversionFactor);
+    } else {
+      log.info("Destination currency is not set. So returning 1.0 as conversion factor for accountId {}, "
+              + "cloudServiceProvider {} and sourceCurrency {}",
+          accountId, cloudServiceProvider, sourceCurrency);
     }
     return conversionFactor;
   }

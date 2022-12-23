@@ -428,15 +428,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       return templateServiceHelper.getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
           versionLabel, deleted, false, loadFromCache, loadFromFallbackBranch);
+    } catch (ExplanationException | HintException | ScmException e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw e;
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
-      ScmException exception = TemplateUtils.getScmException(e);
-      if (null != exception) {
-        throw new InvalidRequestException(errorMessage, e);
-      } else {
-        throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
-      }
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
     }
   }
 

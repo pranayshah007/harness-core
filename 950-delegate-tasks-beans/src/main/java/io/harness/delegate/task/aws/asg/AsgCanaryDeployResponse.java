@@ -25,6 +25,7 @@ public class AsgCanaryDeployResponse implements AsgCommandResponse {
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
+  AsgCanaryDeployResult asgCanaryDeployResult;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

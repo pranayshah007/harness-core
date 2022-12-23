@@ -23,8 +23,8 @@ import io.harness.logging.AutoLogContext;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.logcontext.UserLogContext;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.authentication.totp.FeatureFlaggedTotpChecker;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserService;

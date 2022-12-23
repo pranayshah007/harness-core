@@ -102,7 +102,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
-            eq(logCallback), anyBoolean());
+            eq(logCallback), anyBoolean(), any());
     doReturn(K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).build())
         .when(k8sDeleteBaseHandler)
         .getSuccessResponse();

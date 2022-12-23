@@ -146,8 +146,8 @@ import software.wings.beans.sso.SamlSettings;
 import software.wings.beans.utm.UtmInfo;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.mail.EmailData;
 import software.wings.resources.UserResource;
 import software.wings.security.JWT_CATEGORY;
 import software.wings.security.PermissionAttribute.Action;
@@ -372,7 +372,7 @@ public class UserServiceTest extends WingsBaseTest {
     List<Account> accountList = Arrays.asList(account2);
     when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
 
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
 
     assertThat(user.getAccounts().size()).isEqualTo(1);
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());
@@ -430,7 +430,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(accessRequestService.getActiveAccessRequestForAccount(accountId3))
         .thenReturn(Arrays.asList(accessRequest1, accessRequest2));
     when(harnessUserGroupService.get(harnessUserGroupId)).thenReturn(harnessUserGroup);
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
     user.setAccounts(Arrays.asList(account1));
 
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());
@@ -503,7 +503,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(accessRequestService.getActiveAccessRequestForAccount(accountId3))
         .thenReturn(Arrays.asList(accessRequest1, accessRequest2, accessRequest3));
     when(harnessUserGroupService.get(harnessUserGroupId1)).thenReturn(harnessUserGroup1);
-    user = userService.get(USER_ID);
+    userService.loadSupportAccounts(user);
     user.setAccounts(Arrays.asList(account1));
 
     assertThat(user.getAccounts().get(0).getUuid()).isEqualTo(account1.getUuid());

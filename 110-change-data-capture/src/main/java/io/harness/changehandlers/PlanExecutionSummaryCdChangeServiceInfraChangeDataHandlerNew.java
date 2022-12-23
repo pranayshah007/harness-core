@@ -188,9 +188,10 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             columnValueMapping.put(PlanExecutionSummaryCDConstants.PROJECT_IDENTIFIER_KEY, projectIdentifier);
 
             // gitOpsEnabled
-            if (serviceInfoObject.get("gitOpsEnabled") != null) {
-              String gitOpsEnabled = serviceInfoObject.get("gitOpsEnabled").toString();
-              columnValueMapping.put("gitOpsEnabled", gitOpsEnabled);
+            if (serviceInfoObject.get(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY) != null) {
+              String gitOpsEnabled =
+                  serviceInfoObject.get(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY).toString();
+              columnValueMapping.put(PlanExecutionSummaryCDConstants.GITOPS_ENABLED_KEY, gitOpsEnabled);
             }
 
             // deploymentType
@@ -265,6 +266,22 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                   && infraExecutionSummaryObject.get("type").toString().length() != 0) {
                 String envType = infraExecutionSummaryObject.get("type").toString();
                 columnValueMapping.put("env_type", envType);
+              }
+
+              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID) != null
+                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString().length()
+                      > 0) {
+                String envGroupId =
+                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString();
+                columnValueMapping.put("env_group_ref", envGroupId);
+              }
+
+              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
+                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length()
+                      > 0) {
+                String envGroupName =
+                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
+                columnValueMapping.put("env_group_name", envGroupName);
               }
             }
           }

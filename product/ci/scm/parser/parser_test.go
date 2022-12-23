@@ -220,3 +220,35 @@ func TestParseCreateBranch(t *testing.T) {
 		t.Log(want)
 	}
 }
+
+func TestParseReleaseWebhookSuccess(t *testing.T) {
+	data, _ := os.ReadFile("testdata/release.json")
+	in := &pb.ParseWebhookRequest{
+		Body: string(data),
+		Header: &pb.Header{
+			Fields: []*pb.Header_Pair{
+				{
+					Key:    "X-Github-Event",
+					Values: []string{"release"},
+				},
+			},
+		},
+		Secret:   "",
+		Provider: pb.GitProvider_GITHUB,
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := ParseWebhook(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+	assert.NotNil(t, got.GetRelease())
+
+	want := &pb.ParseWebhookResponse{}
+	raw, _ := os.ReadFile("testdata/release.json.golden")
+	_ = jsonpb.UnmarshalString(string(raw), want)
+
+	if !proto.Equal(got, want) {
+		t.Errorf("Unexpected Results")
+		t.Log(got)
+		t.Log(want)
+	}
+}

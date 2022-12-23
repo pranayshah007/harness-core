@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.shellscript;
 
-import static io.harness.beans.FeatureName.SHELL_SCRIPT_PROVISION_NG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
@@ -25,10 +24,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNG;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -77,13 +73,7 @@ public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), SHELL_SCRIPT_PROVISION_NG)) {
-      throw new AccessDeniedException("Shell Script Provisioner is not enabled for this account."
-              + " Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-  }
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(

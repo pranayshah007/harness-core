@@ -97,7 +97,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
     } catch (InvalidInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
           e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
@@ -123,7 +123,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
     } catch (InvalidOverlayInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
           e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));
@@ -152,7 +152,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID, false);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(createdEntity));
   }
@@ -169,7 +169,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
     // overlay input set validation does not require pipeline branch and repo, hence sending null here
-    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null, false);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(createdEntity));
   }
@@ -189,7 +189,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     InputSetEntity updatedEntity =
-        pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
+        pmsInputSetService.update(ChangeType.MODIFY, pipelineBranch, pipelineRepoID, entityWithVersion, false);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity));
   }
@@ -207,7 +207,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
 
     // overlay input set validation does not require pipeline branch and repo, hence sending null here
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, null, null);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, null, null, entityWithVersion, false);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
@@ -324,7 +324,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
+    InputSetEntity updatedEntity =
+        pmsInputSetService.update(ChangeType.MODIFY, pipelineBranch, pipelineRepoID, entity, false);
     return ResponseDTO.newResponse(
         InputSetSanitiseResponseDTO.builder()
             .shouldDeleteInputSet(false)

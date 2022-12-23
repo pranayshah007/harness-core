@@ -15,11 +15,13 @@ import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.InstanceUnitType;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sScale;
 import software.wings.yaml.workflow.StepYaml;
@@ -42,7 +44,7 @@ public class K8sScaleStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
     K8sScale state = (K8sScale) getState(stepYaml);
     K8sScaleStepNode k8sScaleStepNode = new K8sScaleStepNode();
     baseSetup(stepYaml, k8sScaleStepNode);

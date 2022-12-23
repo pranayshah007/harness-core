@@ -17,13 +17,15 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stoYamlScanMode")
 @RecasterAlias("io.harness.yaml.sto.variables.STOYamlScanMode")
 public enum STOYamlScanMode {
-  @JsonProperty("ingestion") INGESTION("ingestion"),
-  @JsonProperty("orchestration") ORCHESTRATION("orchestration"),
-  @JsonProperty("extraction") EXTRACTION("extraction");
+  @JsonProperty("ingestion") INGESTION("ingestion", "ingestionOnly"),
+  @JsonProperty("orchestration") ORCHESTRATION("orchestration", "orchestratedScan"),
+  @JsonProperty("extraction") EXTRACTION("extraction", "dataLoad");
   private final String yamlName;
+  private final String pluginName;
 
-  STOYamlScanMode(String yamlName) {
+  STOYamlScanMode(String yamlName, String pluginName) {
     this.yamlName = yamlName;
+    this.pluginName = pluginName;
   }
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
@@ -39,6 +41,10 @@ public enum STOYamlScanMode {
   @JsonValue
   public String getYamlName() {
     return yamlName;
+  }
+
+  public String getPluginName() {
+    return pluginName;
   }
 
   @Override

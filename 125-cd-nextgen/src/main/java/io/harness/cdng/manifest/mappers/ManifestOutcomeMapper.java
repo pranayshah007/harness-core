@@ -104,9 +104,9 @@ public class ManifestOutcomeMapper {
       case VALUES:
         return getValuesOutcome(manifestAttributes, order);
       case TAS_MANIFEST:
-        return getTasOutcome(manifestAttributes);
+        return getTasOutcome(manifestAttributes, order);
       case TAS_AUTOSCALER:
-        return getAutoScalerOutcome(manifestAttributes);
+        return getAutoScalerOutcome(manifestAttributes, order);
       case TAS_VARS:
         return getVarsOutcome(manifestAttributes, order);
       case HelmChart:
@@ -174,7 +174,7 @@ public class ManifestOutcomeMapper {
         .build();
   }
 
-  private TasManifestOutcome getTasOutcome(ManifestAttributes manifestAttributes) {
+  private TasManifestOutcome getTasOutcome(ManifestAttributes manifestAttributes, int order) {
     TasManifest tasManifest = (TasManifest) manifestAttributes;
 
     return TasManifestOutcome.builder()
@@ -183,15 +183,17 @@ public class ManifestOutcomeMapper {
         .cfCliVersion(tasManifest.getCfCliVersion())
         .varsPaths(tasManifest.getVarsPaths())
         .autoScalerPath(tasManifest.getAutoScalerPath())
+        .order(order)
         .build();
   }
 
-  private AutoScalerManifestOutcome getAutoScalerOutcome(ManifestAttributes manifestAttributes) {
+  private AutoScalerManifestOutcome getAutoScalerOutcome(ManifestAttributes manifestAttributes, int order) {
     AutoScalerManifest autoScalerManifest = (AutoScalerManifest) manifestAttributes;
 
     return AutoScalerManifestOutcome.builder()
         .identifier(autoScalerManifest.getIdentifier())
         .store(autoScalerManifest.getStoreConfig())
+        .order(order)
         .build();
   }
 

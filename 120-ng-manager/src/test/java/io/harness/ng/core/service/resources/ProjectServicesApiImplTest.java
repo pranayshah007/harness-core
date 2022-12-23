@@ -12,6 +12,7 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
@@ -30,6 +31,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -41,6 +43,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.Service;
 import io.harness.spec.server.ng.v1.model.ServiceRequest;
 import io.harness.spec.server.ng.v1.model.ServiceResponse;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -66,10 +69,12 @@ import org.mockito.MockitoAnnotations;
 @RunWith(JUnitParamsRunner.class)
 public class ProjectServicesApiImplTest extends CategoryTest {
   @Inject @InjectMocks ProjectServicesApiImpl projectServicesApiImpl;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock ServiceEntityService serviceEntityService;
   @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Mock AccessControlClient accessControlClient;
   @Mock ServiceEntityManagementService serviceEntityManagementService;
+  @Mock ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
   @Inject ServiceResourceApiUtils serviceResourceApiUtils;
 
   String slug = randomAlphabetic(10);
@@ -101,7 +106,7 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
-  public void testCreateService() throws IOException {
+  public void testCreateService() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.create(any())).thenReturn(entity);
@@ -114,6 +119,28 @@ public class ProjectServicesApiImplTest extends CategoryTest {
         .checkForAccessOrThrow(ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null),
             SERVICE_CREATE_PERMISSION);
     verify(orgAndProjectValidationHelper, times(1)).checkThatTheOrganizationAndProjectExists(org, project, account);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateServiceWithSchemaValidationFlagOn() throws IOException {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION)).thenReturn(true);
+    when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
+
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
+        .thenReturn(true);
+    when(serviceEntityService.create(any())).thenReturn(entity);
+    ServiceRequest serviceRequest = new ServiceRequest();
+    serviceRequest.setSlug(slug);
+    serviceRequest.setName(name);
+    serviceRequest.setDescription(description);
+    projectServicesApiImpl.createServiceEntity(serviceRequest, org, project, account);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null),
+            SERVICE_CREATE_PERMISSION);
+    verify(orgAndProjectValidationHelper, times(1)).checkThatTheOrganizationAndProjectExists(org, project, account);
+    verify(serviceEntityYamlSchemaHelper, times(1)).validateSchema(account, serviceRequest.getYaml());
   }
 
   @Test
@@ -159,6 +186,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testUpdateService() throws IOException {
+    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION)).thenReturn(true);
+    when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
@@ -171,6 +200,25 @@ public class ProjectServicesApiImplTest extends CategoryTest {
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(account, org, project),
             Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateServiceWithSchemaValidationFlagOn() throws IOException {
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
+        .thenReturn(true);
+    when(serviceEntityService.update(any())).thenReturn(entity);
+    io.harness.spec.server.ng.v1.model.ServiceRequest serviceRequest =
+        new io.harness.spec.server.ng.v1.model.ServiceRequest();
+    serviceRequest.setSlug(slug);
+    serviceRequest.setName(name);
+    serviceRequest.setDescription(description);
+    projectServicesApiImpl.updateServiceEntity(serviceRequest, org, project, slug, account);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(account, org, project),
+            Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+    verify(serviceEntityYamlSchemaHelper, times(1)).validateSchema(account, serviceRequest.getYaml());
   }
 
   @Test

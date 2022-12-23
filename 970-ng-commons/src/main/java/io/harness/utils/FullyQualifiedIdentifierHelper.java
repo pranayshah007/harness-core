@@ -7,7 +7,9 @@
 
 package io.harness.utils;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
@@ -58,6 +60,42 @@ public class FullyQualifiedIdentifierHelper {
       return String.format("%s/%s", accountId, orgIdentifier);
     } else if (EmptyPredicate.isNotEmpty(accountId)) {
       return String.format("%s", accountId);
+    }
+    throw new InvalidRequestException("No account ID provided.");
+  }
+
+  /***
+   *
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param identifier
+   * @return IdentifierRef with appropriate scope based on the identifiers provided
+   */
+
+  public IdentifierRef getIdentifierRefWithScope(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
+    validateIdentifier(identifier);
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      validateOrgIdentifier(orgIdentifier);
+      validateAccountIdentifier(accountId);
+      return IdentifierRef.builder()
+          .accountIdentifier(accountId)
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .identifier(identifier)
+          .scope(Scope.PROJECT)
+          .build();
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      validateAccountIdentifier(accountId);
+      return IdentifierRef.builder()
+          .accountIdentifier(accountId)
+          .orgIdentifier(orgIdentifier)
+          .identifier(identifier)
+          .scope(Scope.ORG)
+          .build();
+    } else if (EmptyPredicate.isNotEmpty(accountId)) {
+      return IdentifierRef.builder().accountIdentifier(accountId).identifier(identifier).scope(Scope.ACCOUNT).build();
     }
     throw new InvalidRequestException("No account ID provided.");
   }

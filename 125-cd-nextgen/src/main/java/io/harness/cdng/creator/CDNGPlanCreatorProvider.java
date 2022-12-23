@@ -110,10 +110,19 @@ import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasAppResizeStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasBGAppSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasBasicAppSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasCanaryAppSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasCommandStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasSwapRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
@@ -127,13 +136,16 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
+import io.harness.cdng.creator.variables.AsgCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
@@ -145,9 +157,11 @@ import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupBGStageSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupSwapRouteStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
@@ -166,6 +180,14 @@ import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
+import io.harness.cdng.creator.variables.TasAppResizeStepVariableCreator;
+import io.harness.cdng.creator.variables.TasBGAppSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.TasBasicAppSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.TasCanaryAppSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -237,6 +259,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String CUSTOM = "Custom Deployment";
   private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
+  private static final String TAS = "TAS";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY =
@@ -349,9 +372,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
 
-    // ASG
-    planCreators.add(new AsgCanaryDeployStepPlanCreator());
-
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
@@ -365,12 +385,28 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ElastigroupDeployStepPlanCreator());
     planCreators.add(new ElastigroupRollbackStepPlanCreator());
     planCreators.add(new ElastigroupSetupStepPlanCreator());
+    planCreators.add(new ElastigroupBGStageSetupStepPlanCreator());
+    planCreators.add(new ElastigroupSwapRouteStepPlanCreator());
 
     // Terragrunt
     planCreators.add(new TerragruntPlanStepPlanCreator());
     planCreators.add(new TerragruntApplyStepPlanCreator());
     planCreators.add(new TerragruntDestroyStepPlanCreator());
     planCreators.add(new TerragruntRollbackStepPlanCreator());
+
+    // Asg
+    planCreators.add(new AsgCanaryDeployStepPlanCreator());
+    planCreators.add(new AsgCanaryDeleteStepPlanCreator());
+
+    // TAS
+    planCreators.add(new TasCanaryAppSetupStepPlanCreator());
+    planCreators.add(new TasBGAppSetupStepPlanCreator());
+    planCreators.add(new TasBasicAppSetupStepPlanCreator());
+    planCreators.add(new TasCommandStepPlanCreator());
+    planCreators.add(new TasSwapRoutesStepPlanCreator());
+    planCreators.add(new TasSwapRollbackStepPlanCreator());
+    planCreators.add(new TasAppResizeStepPlanCreator());
+    planCreators.add(new TasRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -456,9 +492,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
 
-    // ASG
-    variableCreators.add(new AsgCanaryDeployStepVariableCreator());
-
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
@@ -469,12 +502,28 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new ElastigroupDeployStepVariableCreator());
     variableCreators.add(new ElastigroupRollbackStepVariableCreator());
     variableCreators.add(new ElastigroupSetupStepVariableCreator());
+    variableCreators.add(new ElastigroupBGStageSetupStepVariableCreator());
+    variableCreators.add(new ElastigroupSwapRouteStepVariableCreator());
 
     // Terragrunt
     variableCreators.add(new TerragruntPlanStepVariableCreator());
     variableCreators.add(new TerragruntApplyStepVariableCreator());
     variableCreators.add(new TerragruntDestroyStepVariableCreator());
     variableCreators.add(new TerragruntRollbackStepVariableCreator());
+
+    // Asg
+    variableCreators.add(new AsgCanaryDeployStepVariableCreator());
+    variableCreators.add(new AsgCanaryDeleteStepVariableCreator());
+
+    // TAS
+    variableCreators.add(new TasCanaryAppSetupStepVariableCreator());
+    variableCreators.add(new TasBGAppSetupStepVariableCreator());
+    variableCreators.add(new TasBasicAppSetupStepVariableCreator());
+    variableCreators.add(new TasCommandStepVariableCreator());
+    variableCreators.add(new TasSwapRoutesStepVariableCreator());
+    variableCreators.add(new TasSwapRollbackStepVariableCreator());
+    variableCreators.add(new TasAppResizeStepVariableCreator());
+    variableCreators.add(new TasRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -731,14 +780,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
-    StepInfo asgCanaryDeploy =
-        StepInfo.newBuilder()
-            .setName("Asg Canary Deploy")
-            .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
-            .build();
-
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
                                .setType(StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK)
@@ -822,7 +863,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo azureCreateBPResources =
@@ -834,7 +874,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo azureARMRollback =
@@ -846,7 +885,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
     StepInfo fetchInstanceScript =
@@ -865,7 +903,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                              .addAllCategory(SHELL_SCRIPT_PROVISIONER_CATEGORY)
                                                              .addFolderPaths(SHELL_SCRIPT_PROVISIONER_STEM_METADATA)
                                                              .build())
-                                        .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
                                         .build();
 
     StepInfo chaosStep =
@@ -944,6 +981,92 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                            .build())
                                       .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
+    StepInfo elastigroupBGStageSetup =
+        StepInfo.newBuilder()
+            .setName("Elastigroup BG Stage Setup")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .build();
+
+    StepInfo elastigroupSwapRoute =
+        StepInfo.newBuilder()
+            .setName("Elastigroup Swap Route")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .build();
+
+    StepInfo asgCanaryDeploy =
+        StepInfo.newBuilder()
+            .setName("Asg Canary Deploy")
+            .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .build();
+
+    StepInfo asgCanaryDelete =
+        StepInfo.newBuilder()
+            .setName("Asg Canary Delete")
+            .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .build();
+
+    StepInfo tasCanaryAppSetup =
+        StepInfo.newBuilder()
+            .setName("Canary App Setup")
+            .setType(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+    StepInfo tasBGAppSetup =
+        StepInfo.newBuilder()
+            .setName("BG App Setup")
+            .setType(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+    StepInfo tasBasicAppSetup =
+        StepInfo.newBuilder()
+            .setName("Basic App Setup")
+            .setType(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+    StepInfo tasAppResize = StepInfo.newBuilder()
+                                .setName("App Resize")
+                                .setType(StepSpecTypeConstants.TAS_APP_RESIZE)
+                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .build();
+    StepInfo tasSwapRoutes =
+        StepInfo.newBuilder()
+            .setName("Swap Routes")
+            .setType(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+    StepInfo tasRollback = StepInfo.newBuilder()
+                               .setName("App Rollback")
+                               .setType(StepSpecTypeConstants.TAS_ROLLBACK)
+                               .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                               .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                               .build();
+    StepInfo tasSwapRollback =
+        StepInfo.newBuilder()
+            .setName("Swap Rollback")
+            .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
+    StepInfo tanzuCommand = StepInfo.newBuilder()
+                                .setName("Tanzu Command")
+                                .setType(StepSpecTypeConstants.TANZU_COMMAND)
+                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -982,7 +1105,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsCanaryDeploy);
     stepInfos.add(ecsCanaryDelete);
     stepInfos.add(ecsRunTask);
-    stepInfos.add(asgCanaryDeploy);
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
@@ -999,7 +1121,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terragruntApply);
     stepInfos.add(terragruntDestroy);
     stepInfos.add(terragruntRollback);
-
+    stepInfos.add(asgCanaryDeploy);
+    stepInfos.add(asgCanaryDelete);
+    stepInfos.add(tasCanaryAppSetup);
+    stepInfos.add(tasBGAppSetup);
+    stepInfos.add(tasBasicAppSetup);
+    stepInfos.add(tanzuCommand);
+    stepInfos.add(tasSwapRoutes);
+    stepInfos.add(tasSwapRollback);
+    stepInfos.add(tasAppResize);
+    stepInfos.add(tasRollback);
+    stepInfos.add(elastigroupBGStageSetup);
+    stepInfos.add(elastigroupSwapRoute);
     return stepInfos;
   }
 }

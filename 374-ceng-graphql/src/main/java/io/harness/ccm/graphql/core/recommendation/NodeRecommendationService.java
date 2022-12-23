@@ -67,6 +67,7 @@ public class NodeRecommendationService {
         .resourceRequirement(recommendation.getRecommendClusterRequest())
         .nodePoolId(recommendation.getNodePoolId())
         .totalResourceUsage(recommendation.getTotalResourceUsage())
+        .jiraDetails(recommendation.getJiraDetails())
         .build();
   }
 

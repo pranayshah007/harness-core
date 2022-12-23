@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
@@ -16,12 +17,14 @@ import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 import software.wings.yaml.workflow.MultiServiceWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
@@ -73,8 +76,8 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(Workflow workflow) {
-    return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
+  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
   }
 
   @Override

@@ -22,7 +22,7 @@ import lombok.experimental.UtilityClass;
 public class ArtifactBuildDetailsMapper {
   public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal) {
     Map<String, String> metadata = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
+    if (buildDetailsInternal != null && EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
       metadata = buildDetailsInternal.getMetadata();
     }
     metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getBuildUrl());

@@ -108,7 +108,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_FLAT", "true");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        uploadToArtifactoryStepInfo, "identifier", 100, ambiance, Type.K8);
+        uploadToArtifactoryStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -142,7 +142,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(gcrStepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(gcrStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -174,7 +174,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(acrStepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(acrStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -209,7 +209,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
   @Test
@@ -239,7 +239,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(dockerStepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(dockerStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -267,7 +267,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8);
+        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -298,7 +298,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8);
+        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -328,8 +328,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     expected.put("PLUGIN_OVERRIDE", "false");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -361,8 +361,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     expected.put("PLUGIN_OVERRIDE", "true");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -385,7 +385,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8);
+        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -411,7 +411,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8);
+        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -436,8 +436,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_OVERRIDE", "false");
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -464,8 +464,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_OVERRIDE", "false");
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -488,8 +488,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_TARGET", "target");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -508,8 +508,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
 
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -558,7 +558,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -605,7 +605,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -652,7 +652,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -699,7 +699,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -719,7 +719,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
                                           .cloneDirectory(ParameterField.createValueField(cloneDir))
                                           .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
-    pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+    pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
   }
 
   @Test(expected = CIStageExecutionException.class)
@@ -738,7 +738,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -771,7 +771,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
   }
 

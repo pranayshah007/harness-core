@@ -58,6 +58,12 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
+  public List<ApplicationSummary> getPreviousReleasesBasicAndCanaryNG(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
   public void deleteApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
@@ -133,6 +139,12 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   @Override
   public boolean checkIfAppHasAutoscalarAttached(CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public boolean checkIfAppHasAutoscalarEnabled(
+      CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback logCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 

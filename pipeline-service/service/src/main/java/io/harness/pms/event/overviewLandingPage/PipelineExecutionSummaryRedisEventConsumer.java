@@ -46,6 +46,7 @@ public class PipelineExecutionSummaryRedisEventConsumer extends RedisTraceConsum
 
   private static final int WAIT_TIME_IN_SECONDS = 30;
   private static final int TIMEOUT_IN_SECONDS = 30;
+  private static final int SLEEP_SECONDS = 10;
   private static final String LOCK_PREFIX = "DEBEZIUM_CONSUMER_";
   private static final String CACHE_PREFIX = "DEBEZIUM_EVENT_";
 
@@ -76,7 +77,8 @@ public class PipelineExecutionSummaryRedisEventConsumer extends RedisTraceConsum
     try {
       do {
         while (getMaintenanceFlag()) {
-          sleep(ofSeconds(1));
+          log.info("We are under maintenance, will try again after {} seconds", SLEEP_SECONDS);
+          sleep(ofSeconds(SLEEP_SECONDS));
         }
         if (queueController.isNotPrimary()) {
           log.info(this.getClass().getSimpleName()

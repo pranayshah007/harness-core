@@ -17,9 +17,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -46,7 +44,7 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "clusteredLogs", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class ClusteredLog implements PersistentEntity, CreatedAtAware, UpdatedAtAware {
+public final class ClusteredLog extends VerificationTaskBase implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -59,8 +57,6 @@ public final class ClusteredLog implements PersistentEntity, CreatedAtAware, Upd
   }
 
   @Id private String uuid;
-  private long createdAt;
-  private long lastUpdatedAt;
   private String verificationTaskId;
   private LogClusterLevel clusterLevel;
   private String log;

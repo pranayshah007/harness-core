@@ -22,4 +22,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AllowAllFilter")
 @RecasterAlias("io.harness.cdng.environment.filters.AllowAllFilter")
 @OwnedBy(HarnessTeam.CDC)
-public class AllowAllFilter implements FilterSpec {}
+public class AllowAllFilter implements FilterSpec {
+  @Override
+  public FilterSpec clone() {
+    return AllowAllFilter.builder().build();
+  }
+}

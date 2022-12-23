@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -108,19 +109,17 @@ public class EnvironmentGroupMapper {
   }
 
   public void validateYamlOfEnvGroup(EnvironmentGroupConfig config, EnvironmentGroupRequestDTO dto) {
-    if (!config.getOrgIdentifier().equals(dto.getOrgIdentifier())) {
+    if (StringUtils.compare(config.getOrgIdentifier(), dto.getOrgIdentifier()) != 0) {
       throw new InvalidRequestException(
           String.format("Org Identifier %s passed in yaml is not same as passed in query params %s",
               config.getOrgIdentifier(), dto.getOrgIdentifier()));
     }
-
-    if (!config.getProjectIdentifier().equals(dto.getProjectIdentifier())) {
+    if (StringUtils.compare(config.getProjectIdentifier(), dto.getProjectIdentifier()) != 0) {
       throw new InvalidRequestException(
           String.format("Project Identifier %s passed in yaml is not same as passed in query params %s",
               config.getProjectIdentifier(), dto.getProjectIdentifier()));
     }
-
-    if (!config.getIdentifier().equals(dto.getIdentifier())) {
+    if (StringUtils.compare(config.getIdentifier(), dto.getIdentifier()) != 0) {
       throw new InvalidRequestException(
           String.format("Environment Group Identifier %s passed in yaml is not same as passed in query params %s",
               config.getIdentifier(), dto.getIdentifier()));
