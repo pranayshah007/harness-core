@@ -10,19 +10,14 @@ package io.harness.cdng.gitops;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.UpdateReleaseRepoStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -45,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = UpdateReleaseRepoStepVisitorHelper.class)
 @TypeAlias("UpdateReleaseRepoStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.UpdateReleaseRepoStepInfo")
-public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo implements CDStepInfo, Visitable {
+public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo implements Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @VariableExpression(skipVariableExpression = true) List<NGVariable> variables;
@@ -55,29 +50,5 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
       ParameterField<Map<String, String>> stringMap, List<NGVariable> variables) {
     super(stringMap, delegateSelectors);
     this.variables = variables;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
-  }
-
-  @Override
-  public StepType getStepType() {
-    return UpdateReleaseRepoStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return UpdateReleaseRepoStepParams.infoBuilder()
-        .stringMap(getStringMap())
-        .delegateSelectors(getDelegateSelectors())
-        .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
-        .build();
   }
 }

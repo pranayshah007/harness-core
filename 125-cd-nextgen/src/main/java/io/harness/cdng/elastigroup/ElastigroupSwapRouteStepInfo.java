@@ -10,13 +10,9 @@ package io.harness.cdng.elastigroup;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupSwapRouteStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
 @TypeAlias("elastigroupSwapRouteStepInfo")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo")
-public class ElastigroupSwapRouteStepInfo extends ElastigroupSwapRouteBaseStepInfo implements CDStepInfo, Visitable {
+public class ElastigroupSwapRouteStepInfo extends ElastigroupSwapRouteBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,28 +49,5 @@ public class ElastigroupSwapRouteStepInfo extends ElastigroupSwapRouteBaseStepIn
   public ElastigroupSwapRouteStepInfo(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Boolean> downsizeOldElastigroup) {
     super(delegateSelectors, downsizeOldElastigroup);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return ElastigroupSwapRouteStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return ElastigroupSwapRouteStepParameters.infoBuilder()
-        .delegateSelectors(this.getDelegateSelectors())
-        .downsizeOldElastigroup(this.getDownsizeOldElastigroup())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

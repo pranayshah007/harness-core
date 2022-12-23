@@ -11,21 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.CommandStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Builder;
@@ -42,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = CommandStepInfoVisitorHelper.class)
 @TypeAlias("commandStepInfo")
 @RecasterAlias("io.harness.cdng.ssh.CommandStepInfo")
-public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, Visitable {
+public class CommandStepInfo extends CommandBaseStepInfo implements Visitable {
   List<NGVariable> environmentVariables;
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
 
@@ -53,34 +46,5 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, 
     super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
-  }
-
-  @Override
-  @JsonIgnore
-  public StepType getStepType() {
-    return CommandStep.STEP_TYPE;
-  }
-
-  @Override
-  @JsonIgnore
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return CommandStepParameters.infoBuilder()
-        .onDelegate(getOnDelegate())
-        .delegateSelectors(getDelegateSelectors())
-        .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
-        .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
-        .commandUnits(getCommandUnits())
-        .host(host)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

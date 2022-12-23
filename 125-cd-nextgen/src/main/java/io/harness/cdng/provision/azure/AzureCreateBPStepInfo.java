@@ -11,13 +11,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.walktree.visitor.Visitable;
@@ -45,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateBPStepInfo")
 public class AzureCreateBPStepInfo
-    extends AzureCreateBPBaseStepInfo implements CDStepInfo, Visitable, WithConnectorRef {
+    extends AzureCreateBPBaseStepInfo implements Visitable, WithConnectorRef {
   @NotNull @JsonProperty("configuration") AzureCreateBPStepConfiguration createStepBPConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
@@ -72,32 +68,8 @@ public class AzureCreateBPStepInfo
     return connectorRefMap;
   }
 
-  @Override
-  public StepType getStepType() {
-    return AzureCreateBPStep.STEP_TYPE;
-  }
-  //
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    validateSpecParameters();
-    return AzureCreateBPStepParameters.infoBuilder()
-        .delegateSelectors(getDelegateSelectors())
-        .configuration(createStepBPConfiguration.toStepParameters())
-        .build();
-  }
-
   void validateSpecParameters() {
     Validator.notNullCheck("AzureCreateBPResource Step configuration is null", createStepBPConfiguration);
     createStepBPConfiguration.validateParams();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

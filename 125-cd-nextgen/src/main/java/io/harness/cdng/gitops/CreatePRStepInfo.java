@@ -10,13 +10,9 @@ package io.harness.cdng.gitops;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.CreatePRStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -40,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = CreatePRStepVisitorHelper.class)
 @TypeAlias("CreatePRStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.CreatePRStepInfo")
-public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo, Visitable {
+public class CreatePRStepInfo extends CreatePRBaseStepInfo implements Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -49,31 +45,5 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
       ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
       ShellType shellType, ParameterField<Boolean> overrideConfig) {
     super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors);
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
-  }
-
-  @Override
-  public StepType getStepType() {
-    return CreatePRStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return CreatePRStepParams.infoBuilder()
-        .shellType(getShell())
-        .overrideConfig(getOverrideConfig())
-        .updateConfigScriptWrapper(this.getSource())
-        .stringMap(getStringMap())
-        .delegateSelectors(getDelegateSelectors())
-        .build();
   }
 }

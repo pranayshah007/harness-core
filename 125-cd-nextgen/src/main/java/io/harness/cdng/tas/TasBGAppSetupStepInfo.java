@@ -13,13 +13,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasBGAppSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -48,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_BG_APP_SETUP)
 @TypeAlias("tasBGAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasBGAppSetupStepInfo")
-public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CDStepInfo, Visitable {
+public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -65,31 +61,5 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
       ParameterField<List<String>> tempRoutes) {
     super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.tempRoutes = tempRoutes;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return TasBGAppSetupStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return TasBGAppSetupStepParameters.infoBuilder()
-        .tasInstanceCountType(this.tasInstanceCountType)
-        .existingVersionToKeep(this.existingVersionToKeep)
-        .additionalRoutes(this.additionalRoutes)
-        .tempRoutes(this.tempRoutes)
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

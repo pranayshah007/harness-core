@@ -12,13 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sRollingStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -43,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sRollingStepInfoVisitorHelper.class)
 @TypeAlias("k8sRollingStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingStepInfo")
-public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -57,31 +53,5 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn,
       List<K8sStepCommandFlag> commandFlags) {
     super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn, commandFlags);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return K8sRollingStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sRollingStepParameters.infoBuilder()
-        .skipDryRun(skipDryRun)
-        .pruningEnabled(pruningEnabled)
-        .delegateSelectors(this.getDelegateSelectors())
-        .canaryStepFqn(canaryStepFqn)
-        .commandFlags(commandFlags)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

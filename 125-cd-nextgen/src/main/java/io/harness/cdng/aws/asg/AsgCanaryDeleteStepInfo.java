@@ -10,13 +10,9 @@ package io.harness.cdng.aws.asg;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgCanaryDeleteStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ASG_CANARY_DELETE)
 @TypeAlias("asgCanaryDeleteStepInfo")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo")
-public class AsgCanaryDeleteStepInfo extends AsgCanaryDeleteBaseStepInfo implements CDStepInfo, Visitable {
+public class AsgCanaryDeleteStepInfo extends AsgCanaryDeleteBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,25 +49,5 @@ public class AsgCanaryDeleteStepInfo extends AsgCanaryDeleteBaseStepInfo impleme
   public AsgCanaryDeleteStepInfo(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFqn, String asgCanaryDeleteFqn) {
     super(delegateSelectors, asgCanaryDeployFqn, asgCanaryDeleteFqn);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return AsgCanaryDeleteStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return AsgCanaryDeleteStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

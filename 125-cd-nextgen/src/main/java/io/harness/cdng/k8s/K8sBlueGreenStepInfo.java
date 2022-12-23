@@ -12,13 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sBlueGreenStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -43,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sBlueGreenStepInfoVisitorHelper.class)
 @TypeAlias("k8sBlueGreenStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sBlueGreenStepInfo")
-public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -56,30 +52,5 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
   public K8sBlueGreenStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags) {
     super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return K8sBlueGreenStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sBlueGreenStepParameters.infoBuilder()
-        .skipDryRun(skipDryRun)
-        .pruningEnabled(pruningEnabled)
-        .delegateSelectors(delegateSelectors)
-        .commandFlags(commandFlags)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

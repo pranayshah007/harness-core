@@ -10,13 +10,9 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
 @TypeAlias("TasRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasRollbackStepInfo")
-public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,31 +49,5 @@ public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements CDSt
   public TasRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasResizeFqn,
       String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn) {
     super(delegateSelectors, tasResizeFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return TasRollbackStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return TasRollbackStepParameters.infoBuilder()
-        .tasResizeFqn(tasResizeFqn)
-        .tasBasicSetupFqn(tasBasicSetupFqn)
-        .tasBGSetupFqn(tasBGSetupFqn)
-        .tasCanarySetupFqn(tasCanarySetupFqn)
-        .delegateSelectors(this.delegateSelectors)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

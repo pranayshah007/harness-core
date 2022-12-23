@@ -10,13 +10,9 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -43,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_APP_RESIZE)
 @TypeAlias("TasAppResizeStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasAppResizeStepInfo")
-public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CDStepInfo, Visitable {
+public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -57,31 +53,5 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
       String tasBasicAppSetupFqn, String tasCanaryAppSetupFqn) {
     super(newAppInstances, oldAppInstances, delegateSelectors, tasBGAppSetupFqn, tasBasicAppSetupFqn,
         tasCanaryAppSetupFqn);
-  }
-  @Override
-  public StepType getStepType() {
-    return TasAppResizeStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return TasAppResizeStepParameters.infoBuilder()
-        .newAppInstances(newAppInstances)
-        .oldAppInstances(oldAppInstances)
-        .tasBGAppSetupFqn(tasBGSetupFqn)
-        .tasBasicAppSetupFqn(tasBasicSetupFqn)
-        .tasCanaryAppSetupFqn(tasCanarySetupFqn)
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

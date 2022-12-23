@@ -11,12 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sDeleteStepInfoVisitorHelper.class)
 @TypeAlias("K8sDeleteStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sDeleteStepInfo")
-public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -54,28 +50,5 @@ public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements CDStepIn
   public K8sDeleteStepInfo(
       DeleteResourcesWrapper deleteResources, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(deleteResources, delegateSelectors);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return K8sDeleteStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sDeleteStepParameters.infoBuilder()
-        .deleteResources(this.getDeleteResources())
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

@@ -10,13 +10,9 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsBlueGreenRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
 @TypeAlias("ecsBlueGreenRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsBlueGreenRollbackStepInfo")
-public class EcsBlueGreenRollbackStepInfo extends EcsBlueGreenRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class EcsBlueGreenRollbackStepInfo extends EcsBlueGreenRollbackBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,24 +49,5 @@ public class EcsBlueGreenRollbackStepInfo extends EcsBlueGreenRollbackBaseStepIn
   public EcsBlueGreenRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq) {
     super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
-  }
-  @Override
-  public StepType getStepType() {
-    return EcsBlueGreenRollbackStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return EcsBlueGreenRollbackStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 }

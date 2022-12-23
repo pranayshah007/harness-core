@@ -13,15 +13,11 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.JenkinsBuildStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
@@ -51,7 +47,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("jenkinsBuildStepInfo")
 @SimpleVisitorHelper(helperClass = JenkinsBuildStepInfoVisitorHelper.class)
 @RecasterAlias("io.harness.cdng.pipeline.stepinfo.JenkinsBuildStepInfo")
-public class JenkinsBuildStepInfo implements CDStepInfo, WithConnectorRef, WithDelegateSelector, Visitable {
+public class JenkinsBuildStepInfo implements WithConnectorRef, WithDelegateSelector, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -69,28 +65,6 @@ public class JenkinsBuildStepInfo implements CDStepInfo, WithConnectorRef, WithD
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
-  @Override
-  public StepType getStepType() {
-    return JenkinsBuildStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return JenkinsBuildSpecParameters.builder()
-        .connectorRef(connectorRef)
-        .fields(JenkinsBuildStepUtils.processJenkinsFieldsList(jobParameter.getValue()))
-        .jobName(jobName)
-        .unstableStatusAsSuccess(unstableStatusAsSuccess)
-        .useConnectorUrlForJobExecution(useConnectorUrlForJobExecution)
-        .delegateSelectors(delegateSelectors)
-        .build();
-  }
 
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {

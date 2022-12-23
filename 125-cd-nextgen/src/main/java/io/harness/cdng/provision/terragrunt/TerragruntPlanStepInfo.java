@@ -19,13 +19,9 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.Validator;
@@ -52,7 +48,7 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(StepSpecTypeConstants.TERRAGRUNT_PLAN)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo")
-public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implements CDStepInfo, WithConnectorRef {
+public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implements WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -66,26 +62,6 @@ public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implement
       TerragruntPlanExecutionData terragruntPlanExecutionData) {
     super(provisionerIdentifier, delegateSelectors);
     this.terragruntPlanExecutionData = terragruntPlanExecutionData;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return TerragruntPlanStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    validateSpecParams();
-    return TerragruntPlanStepParameters.infoBuilder()
-        .provisionerIdentifier(provisionerIdentifier)
-        .delegateSelectors(delegateSelectors)
-        .configuration(terragruntPlanExecutionData.toStepParameters())
-        .build();
   }
 
   void validateSpecParams() {
@@ -108,10 +84,5 @@ public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implement
 
     connectorRefMap.put("configuration.secretManagerRef", terragruntPlanExecutionData.getSecretManagerRef());
     return connectorRefMap;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

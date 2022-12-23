@@ -13,20 +13,15 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -46,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ElastigroupRollbackStepInfoVisitorHelper.class)
 @TypeAlias("ElastigroupRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo")
-public class ElastigroupRollbackStepInfo implements CDStepInfo, Visitable {
+public class ElastigroupRollbackStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -60,27 +55,5 @@ public class ElastigroupRollbackStepInfo implements CDStepInfo, Visitable {
   public ElastigroupRollbackStepInfo(String uuid, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.delegateSelectors = delegateSelectors;
-  }
-
-  @Override
-  @JsonIgnore
-  public StepType getStepType() {
-    return ElastigroupRollbackStep.STEP_TYPE;
-  }
-
-  @Override
-  @JsonIgnore
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return ElastigroupRollbackStepParameters.builder().delegateSelectors(getDelegateSelectors()).build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

@@ -12,12 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.Visitable;
@@ -38,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.K8S_CANARY_DELETE)
 @TypeAlias("k8sCanaryDeleteStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryDeleteStepInfo")
-public class K8sCanaryDeleteStepInfo implements CDStepInfo, Visitable {
+public class K8sCanaryDeleteStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -50,28 +46,4 @@ public class K8sCanaryDeleteStepInfo implements CDStepInfo, Visitable {
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-
-  @Override
-  public StepType getStepType() {
-    return K8sCanaryDeleteStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sCanaryDeleteStepParameters.infoBuilder()
-        .delegateSelectors(delegateSelectors)
-        .canaryStepFqn(canaryStepFqn)
-        .canaryDeleteStepFqn(canaryDeleteStepFqn)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
-  }
 }

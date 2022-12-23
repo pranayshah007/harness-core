@@ -10,18 +10,13 @@ package io.harness.cdng.provision.cloudformation;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.walktree.visitor.Visitable;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
@@ -45,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo")
 public class CloudformationDeleteStackStepInfo
-    extends CloudformationDeleteStackBaseStepInfo implements CDStepInfo, Visitable, WithConnectorRef {
+    extends CloudformationDeleteStackBaseStepInfo implements Visitable, WithConnectorRef {
   @NotNull @JsonProperty("configuration") CloudformationDeleteStackStepConfiguration cloudformationStepConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
@@ -67,32 +62,7 @@ public class CloudformationDeleteStackStepInfo
     return connectorRefMap;
   }
 
-  @Override
-  @JsonIgnore
-  public StepType getStepType() {
-    return CloudformationDeleteStackStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    validateSpecParameters();
-    return CloudformationDeleteStackStepParameters.infoBuilder()
-        .delegateSelectors(getDelegateSelectors())
-        .configuration(cloudformationStepConfiguration)
-        .build();
-  }
-
   void validateSpecParameters() {
     Validator.notNullCheck("CloudformationStepConfiguration is null", cloudformationStepConfiguration);
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

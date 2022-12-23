@@ -10,13 +10,9 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsBlueGreenCreateServiceStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -42,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsBlueGreenCreateServiceStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo")
 public class EcsBlueGreenCreateServiceStepInfo
-    extends EcsBlueGreenCreateServiceBaseStepInfo implements CDStepInfo, Visitable {
+    extends EcsBlueGreenCreateServiceBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -56,32 +52,5 @@ public class EcsBlueGreenCreateServiceStepInfo
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn) {
     super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return EcsBlueGreenCreateServiceStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return EcsBlueGreenCreateServiceStepParameters.infoBuilder()
-        .delegateSelectors(this.getDelegateSelectors())
-        .loadBalancer(this.getLoadBalancer())
-        .prodListener(this.getProdListener())
-        .stageListener(this.getStageListener())
-        .prodListenerRuleArn(this.getProdListenerRuleArn())
-        .stageListenerRuleArn(this.getStageListenerRuleArn())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

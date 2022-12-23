@@ -11,13 +11,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.common.capacity.Capacity;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgCanaryDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -42,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
 @TypeAlias("asgCanaryDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo")
-public class AsgCanaryDeployStepInfo extends AsgCanaryBaseStepInfo implements CDStepInfo, Visitable {
+public class AsgCanaryDeployStepInfo extends AsgCanaryBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,28 +49,5 @@ public class AsgCanaryDeployStepInfo extends AsgCanaryBaseStepInfo implements CD
   @Builder(builderMethodName = "infoBuilder")
   public AsgCanaryDeployStepInfo(Capacity instanceSelection, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(instanceSelection, delegateSelectors);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return AsgCanaryDeployStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return AsgCanaryDeployStepParameters.infoBuilder()
-        .delegateSelectors(delegateSelectors)
-        .instanceSelection(instanceSelection)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

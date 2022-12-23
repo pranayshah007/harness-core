@@ -10,13 +10,9 @@ package io.harness.cdng.serverless;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -42,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaDeployStepInfo")
 @RecasterAlias("io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo")
 public class ServerlessAwsLambdaDeployStepInfo
-    extends ServerlessAwsLambdaDeployBaseStepInfo implements CDStepInfo, Visitable {
+    extends ServerlessAwsLambdaDeployBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -54,27 +50,5 @@ public class ServerlessAwsLambdaDeployStepInfo
   public ServerlessAwsLambdaDeployStepInfo(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> commandOptions) {
     super(delegateSelectors, commandOptions);
-  }
-  @Override
-  public StepType getStepType() {
-    return ServerlessAwsLambdaDeployStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return ServerlessAwsLambdaDeployStepParameters.infoBuilder()
-        .delegateSelectors(this.getDelegateSelectors())
-        .commandOptions(commandOptions)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

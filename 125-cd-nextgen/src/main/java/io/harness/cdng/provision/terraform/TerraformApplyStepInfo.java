@@ -10,20 +10,15 @@ package io.harness.cdng.provision.terraform;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.Validator;
 import io.harness.walktree.visitor.Visitable;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -49,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformApplyStepInfo")
 public class TerraformApplyStepInfo
-    extends TerraformApplyBaseStepInfo implements CDStepInfo, Visitable, WithConnectorRef {
+    extends TerraformApplyBaseStepInfo implements Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -62,28 +57,6 @@ public class TerraformApplyStepInfo
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformStepConfiguration terraformStepConfiguration) {
     super(provisionerIdentifier, delegateSelectors);
     this.terraformStepConfiguration = terraformStepConfiguration;
-  }
-
-  @Override
-  @JsonIgnore
-  public StepType getStepType() {
-    return TerraformApplyStep.STEP_TYPE;
-  }
-
-  @Override
-  @JsonIgnore
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    validateSpecParams();
-    return TerraformApplyStepParameters.infoBuilder()
-        .provisionerIdentifier(getProvisionerIdentifier())
-        .configuration(terraformStepConfiguration.toStepParameters())
-        .delegateSelectors(getDelegateSelectors())
-        .build();
   }
 
   void validateSpecParams() {
@@ -114,10 +87,5 @@ public class TerraformApplyStepInfo
       }
     }
     return connectorRefMap;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

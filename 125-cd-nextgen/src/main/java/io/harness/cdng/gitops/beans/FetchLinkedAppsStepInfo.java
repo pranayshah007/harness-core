@@ -13,13 +13,8 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -36,27 +31,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
 @TypeAlias("FetchLinkedAppsStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo")
-public class FetchLinkedAppsStepInfo implements CDStepInfo {
+public class FetchLinkedAppsStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-  @Override
-  public StepType getStepType() {
-    return FetchLinkedAppsStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return delegateSelectors;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return FetchLinkedAppsStepParams.infoBuilder().delegateSelectors(delegateSelectors).build();
-  }
 }

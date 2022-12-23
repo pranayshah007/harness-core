@@ -19,13 +19,9 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.Validator;
@@ -56,7 +52,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo")
 public class TerragruntApplyStepInfo
-    extends TerragruntApplyBaseStepInfo implements CDStepInfo, Visitable, WithConnectorRef {
+    extends TerragruntApplyBaseStepInfo implements Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -73,35 +69,10 @@ public class TerragruntApplyStepInfo
   }
 
   @Override
-  public StepType getStepType() {
-    return TerragruntApplyStep.STEP_TYPE;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    validateSpecParams();
-    return TerragruntApplyStepParameters.infoBuilder()
-        .provisionerIdentifier(getProvisionerIdentifier())
-        .configuration(terragruntStepConfiguration.toStepParameters())
-        .delegateSelectors(getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     TerragruntStepHelper.addConnectorRef(connectorRefMap, terragruntStepConfiguration);
     return connectorRefMap;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 
   void validateSpecParams() {

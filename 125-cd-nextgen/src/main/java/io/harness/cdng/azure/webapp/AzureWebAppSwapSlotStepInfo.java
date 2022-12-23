@@ -11,13 +11,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSwapSlotStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -44,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AZURE_SWAP_SLOT)
 @TypeAlias("azureWebAppSwapSlotStepInfo")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo")
-public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo implements CDStepInfo, Visitable {
+public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -58,28 +54,5 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
       String slotDeploymentStepFqn, ParameterField<String> targetSlot) {
     super(delegateSelectors, slotDeploymentStepFqn);
     this.targetSlot = targetSlot;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return AzureWebAppSwapSlotStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return AzureWebAppSwapSlotStepParameters.infoBuilder()
-        .targetSlot(this.getTargetSlot())
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

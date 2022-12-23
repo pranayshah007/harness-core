@@ -10,13 +10,9 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsCanaryDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
 @TypeAlias("ecsCanaryDeployStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeployStepInfo")
-public class EcsCanaryDeployStepInfo extends EcsCanaryDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class EcsCanaryDeployStepInfo extends EcsCanaryDeployBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -52,24 +48,5 @@ public class EcsCanaryDeployStepInfo extends EcsCanaryDeployBaseStepInfo impleme
   @Builder(builderMethodName = "infoBuilder")
   public EcsCanaryDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
-  }
-  @Override
-  public StepType getStepType() {
-    return EcsCanaryDeployStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return EcsCanaryDeployStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

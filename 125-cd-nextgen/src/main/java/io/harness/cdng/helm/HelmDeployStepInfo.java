@@ -11,13 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.HelmDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -40,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = HelmDeployStepInfoVisitorHelper.class)
 @TypeAlias("HelmDeployStepInfo")
 @RecasterAlias("io.harness.cdng.helm.HelmDeployStepInfo")
-public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -48,27 +44,5 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStep
   public HelmDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn,
       ParameterField<Boolean> ignoreReleaseHistFailStatus) {
     super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus);
-  }
-  @Override
-  public StepType getStepType() {
-    return HelmDeployStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return HelmDeployStepParams.infoBuilder()
-        .delegateSelectors(delegateSelectors)
-        .ignoreReleaseHistFailStatus(ignoreReleaseHistFailStatus)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

@@ -11,13 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sScaleStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -42,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sScaleStepInfoVisitorHelper.class)
 @TypeAlias("k8sScale")
 @RecasterAlias("io.harness.cdng.k8s.K8sScaleStepInfo")
-public class K8sScaleStepInfo extends K8sScaleBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sScaleStepInfo extends K8sScaleBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -55,30 +51,5 @@ public class K8sScaleStepInfo extends K8sScaleBaseStepInfo implements CDStepInfo
   public K8sScaleStepInfo(ParameterField<Boolean> skipSteadyStateCheck, InstanceSelectionWrapper instanceSelection,
       ParameterField<String> workload, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(instanceSelection, workload, skipSteadyStateCheck, delegateSelectors);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return K8sScaleStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sScaleStepParameter.infoBuilder()
-        .instanceSelection(instanceSelection)
-        .workload(workload)
-        .skipSteadyStateCheck(skipSteadyStateCheck)
-        .delegateSelectors(delegateSelectors)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

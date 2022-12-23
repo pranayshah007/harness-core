@@ -12,13 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sCanaryStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -44,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sCanaryStepInfoVisitorHelper.class)
 @TypeAlias("k8sCanaryStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryStepInfo")
-public class K8sCanaryStepInfo extends K8sCanaryBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sCanaryStepInfo extends K8sCanaryBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -68,30 +64,5 @@ public class K8sCanaryStepInfo extends K8sCanaryBaseStepInfo implements CDStepIn
   public K8sCanaryStepInfo(String name, String identifier) {
     this.name = name;
     this.identifier = identifier;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return K8sCanaryStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return K8sCanaryStepParameters.infoBuilder()
-        .instanceSelection(instanceSelection)
-        .skipDryRun(skipDryRun)
-        .delegateSelectors(delegateSelectors)
-        .commandFlags(commandFlags)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

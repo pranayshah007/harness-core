@@ -10,20 +10,15 @@ package io.harness.cdng.provision.shellscript;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ShellScriptProvisionStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -44,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
 @TypeAlias("shellScriptProvisionStepInfo")
 @RecasterAlias("io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo")
-public class ShellScriptProvisionStepInfo extends ShellScriptProvisionBaseStepInfo implements CDStepInfo, Visitable {
+public class ShellScriptProvisionStepInfo extends ShellScriptProvisionBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -59,29 +54,5 @@ public class ShellScriptProvisionStepInfo extends ShellScriptProvisionBaseStepIn
       ShellScriptSourceWrapper source, List<NGVariable> environmentVariables) {
     super(source, delegateSelectors);
     this.environmentVariables = environmentVariables;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return ShellScriptProvisionStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return ShellScriptProvisionStepParameters.infoBuilder()
-        .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
-        .source(source)
-        .delegateSelectors(delegateSelectors)
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

@@ -10,13 +10,9 @@ package io.harness.cdng.elastigroup;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupBGStageSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -42,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("elastigroupBGStageSetupStepInfo")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo")
 public class ElastigroupBGStageSetupStepInfo
-    extends ElastigroupBGStageSetupBaseStepInfo implements CDStepInfo, Visitable {
+    extends ElastigroupBGStageSetupBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -55,31 +51,5 @@ public class ElastigroupBGStageSetupStepInfo
       ParameterField<String> name, List<LoadBalancer> loadBalancers, ElastigroupInstances instances,
       CloudProvider connectedCloudProvider) {
     super(delegateSelectors, name, loadBalancers, instances, connectedCloudProvider);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return ElastigroupBGStageSetupStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return ElastigroupBGStageSetupStepParameters.infoBuilder()
-        .delegateSelectors(this.getDelegateSelectors())
-        .name(this.getName())
-        .loadBalancers(this.getLoadBalancers())
-        .instances(this.getInstances())
-        .connectedCloudProvider(this.getConnectedCloudProvider())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

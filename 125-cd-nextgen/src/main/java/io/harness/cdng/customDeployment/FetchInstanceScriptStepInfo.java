@@ -10,13 +10,9 @@ package io.harness.cdng.customDeployment;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.customDeployment.FetchInstanceScriptStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -43,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
 @TypeAlias("fetchInstanceScriptStepInfo")
 @RecasterAlias("io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo")
-public class FetchInstanceScriptStepInfo extends FetchInstanceScriptBaseStepInfo implements CDStepInfo, Visitable {
+public class FetchInstanceScriptStepInfo extends FetchInstanceScriptBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -54,25 +50,5 @@ public class FetchInstanceScriptStepInfo extends FetchInstanceScriptBaseStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public FetchInstanceScriptStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
-  }
-
-  @Override
-  public StepType getStepType() {
-    return FetchInstanceScriptStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return FetchInstanceScriptStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

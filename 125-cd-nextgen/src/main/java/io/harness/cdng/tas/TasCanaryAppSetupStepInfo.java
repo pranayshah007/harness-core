@@ -10,14 +10,10 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -45,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
 @TypeAlias("tasCanaryAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasCanaryAppSetupStepInfo")
-public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CDStepInfo, Visitable {
+public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -59,31 +55,5 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
       TasResizeStrategyType resizeStrategy) {
     super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
-  }
-
-  @Override
-  public StepType getStepType() {
-    return TasCanaryAppSetupStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return TasCanaryAppSetupStepParameters.infoBuilder()
-        .tasInstanceCountType(this.tasInstanceCountType)
-        .existingVersionToKeep(this.existingVersionToKeep)
-        .additionalRoutes(this.additionalRoutes)
-        .resizeStrategy(this.resizeStrategy)
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }

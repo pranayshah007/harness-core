@@ -10,13 +10,9 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsRollingRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -41,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
 @TypeAlias("ecsRollingRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsRollingRollbackStepInfo")
-public class EcsRollingRollbackStepInfo extends EcsRollingRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class EcsRollingRollbackStepInfo extends EcsRollingRollbackBaseStepInfo implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -53,24 +49,5 @@ public class EcsRollingRollbackStepInfo extends EcsRollingRollbackBaseStepInfo i
   public EcsRollingRollbackStepInfo(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String ecsRollingRollbackFnq) {
     super(delegateSelectors, ecsRollingRollbackFnq);
-  }
-  @Override
-  public StepType getStepType() {
-    return EcsRollingRollbackStep.STEP_TYPE;
-  }
-
-  @Override
-  public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public SpecParameters getSpecParameters() {
-    return EcsRollingRollbackStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegateSelectors();
   }
 }
