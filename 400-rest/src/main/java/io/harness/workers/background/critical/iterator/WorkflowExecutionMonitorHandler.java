@@ -41,7 +41,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.mongo.iterator.provider.MorphiaPersistenceRequiredProvider;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
@@ -76,7 +76,7 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
   @Inject private ExecutionInterruptManager executionInterruptManager;
   @Inject private StateMachineExecutor stateMachineExecutor;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
+  @Inject private MorphiaPersistenceRequiredProvider<WorkflowExecution> persistenceProvider;
   @Inject private WorkflowExecutionZombieHandler zombieHandler;
 
   private static final Duration INACTIVITY_TIMEOUT = Duration.ofMinutes(3);
