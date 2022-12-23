@@ -75,7 +75,7 @@ import org.bson.conversions.Bson;
 @Slf4j
 @ExposeInternalException
 @OwnedBy(HarnessTeam.CDC)
-public class TriggerPartialSync {
+public class PartialSyncResource {
   @Inject ChangeDataCaptureBulkMigrationHelper changeDataCaptureBulkMigrationHelper;
 
   @Inject AccountEntity accountEntity;

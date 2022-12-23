@@ -7,9 +7,16 @@
 
 package io.harness.cdng.pipeline.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.beans.FeatureName;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.filters.FilterType;
+import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.TagsFilter;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
@@ -19,27 +26,41 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAndRbac<MultiDeploymentStepParameters> {
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Inject private ServiceEntityService serviceEntityService;
+
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
 
@@ -66,12 +87,29 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Map<String, String>> servicesMap = getServicesMap(stepParameters.getServices());
     List<Map<String, String>> environmentsMapList = new ArrayList<>();
+
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    String childNodeId = stepParameters.getChildNodeId();
+
+    // Separate handling as parallelism works differently when filters are present with service.tags expression
+    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
+        && (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
+            || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup()))) {
+      return getChildrenExecutableResponse(
+          stepParameters, children, accountIdentifier, orgIdentifier, projectIdentifier, childNodeId);
+    }
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(accountIdentifier, orgIdentifier, projectIdentifier,
+        stepParameters.getEnvironments(), stepParameters.getEnvironmentGroup());
     if (stepParameters.getEnvironments() != null) {
       environmentsMapList = getEnvironmentMapList(stepParameters.getEnvironments());
     } else if (stepParameters.getEnvironmentGroup() != null) {
       environmentsMapList = getEnvironmentsGroupMap(stepParameters.getEnvironmentGroup());
     }
-    String childNodeId = stepParameters.getChildNodeId();
+
     if (servicesMap.isEmpty()) {
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
@@ -151,6 +189,201 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       }
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
+  }
+
+  private ChildrenExecutableResponse getChildrenExecutableResponse(MultiDeploymentStepParameters stepParameters,
+      List<ChildrenExecutableResponse.Child> children, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String childNodeId) {
+    Map<String, Map<String, String>> serviceToMatrixMetadataMap =
+        getServiceToMatrixMetadataMap(stepParameters.getServices());
+    // Find service tags
+    Map<String, List<NGTag>> serviceTagsMap =
+        getFetchServiceTags(accountIdentifier, orgIdentifier, projectIdentifier, stepParameters);
+
+    // Parse the yaml and set the FilterYaml tag value
+    Map<String, EnvironmentsYaml> serviceEnvYamlMap =
+        getServiceToEnvsYaml(serviceTagsMap, stepParameters.getEnvironments());
+
+    Map<String, EnvironmentGroupYaml> serviceEnvGroupMap =
+        getServiceToEnvGroup(serviceTagsMap, stepParameters.getEnvironmentGroup());
+
+    Map<String, List<Map<String, String>>> serviceEnvMatrixMap = new LinkedHashMap<>();
+    for (String serviceRef : serviceTagsMap.keySet()) {
+      EnvironmentsYaml environmentsYaml = serviceEnvYamlMap.get(serviceRef);
+      EnvironmentGroupYaml environmentGroupYaml = serviceEnvGroupMap.get(serviceRef);
+      environmentInfraFilterHelper.processEnvInfraFiltering(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml, environmentGroupYaml);
+      List<Map<String, String>> environmentMapList;
+      if (environmentsYaml != null) {
+        environmentMapList = getEnvironmentMapList(environmentsYaml);
+      } else if (environmentGroupYaml != null) {
+        environmentMapList = getEnvironmentsGroupMap(environmentGroupYaml);
+      } else {
+        throw new InvalidRequestException("No environments found for service: " + serviceRef);
+      }
+      serviceEnvMatrixMap.put(serviceRef, environmentMapList);
+    }
+
+    int maxConcurrency = 0;
+    // If Both service and env are non-parallel
+    if (stepParameters.getServices().getServicesMetadata() != null
+        && stepParameters.getServices().getServicesMetadata().getParallel() != null
+        && !stepParameters.getServices().getServicesMetadata().getParallel()
+        && ((stepParameters.getEnvironments() != null
+                && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+                && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
+                && !stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel())
+            || (stepParameters.getEnvironmentGroup() != null
+                && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata() != null
+                && stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel() != null
+                && !stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel()))) {
+      maxConcurrency = 1;
+    }
+    int totalIterations = 0;
+    for (Map.Entry<String, List<Map<String, String>>> serviceEnv : serviceEnvMatrixMap.entrySet()) {
+      totalIterations += serviceEnv.getValue().size();
+    }
+
+    int currentIteration = 0;
+    for (Map.Entry<String, List<Map<String, String>>> serviceEnv : serviceEnvMatrixMap.entrySet()) {
+      String serviceRef = serviceEnv.getKey();
+      for (Map<String, String> envMap : serviceEnv.getValue()) {
+        Map<String, String> serviceMatrixMetadata = serviceToMatrixMetadataMap.get(serviceRef);
+        children.add(getChildForMultiServiceInfra(
+            childNodeId, currentIteration, totalIterations, serviceMatrixMetadata, envMap));
+      }
+    }
+    return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
+  }
+
+  private Map<String, Map<String, String>> getServiceToMatrixMetadataMap(ServicesYaml servicesYaml) {
+    if (servicesYaml == null) {
+      return new LinkedHashMap<>();
+    }
+    if (ParameterField.isNull(servicesYaml.getValues())) {
+      throw new InvalidYamlException("Expected a value of serviceRefs to be provided but found null");
+    }
+    if (servicesYaml.getValues().isExpression()) {
+      throw new InvalidYamlException("Expression could not be resolved for services yaml");
+    }
+    List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
+    if (services.isEmpty()) {
+      throw new InvalidYamlException("No value of services provided. Please provide atleast one value");
+    }
+    Map<String, Map<String, String>> serviceToMatrixMetadataMap = new LinkedHashMap<>();
+    for (ServiceYamlV2 service : services) {
+      serviceToMatrixMetadataMap.put(
+          service.getServiceRef().getValue(), MultiDeploymentSpawnerUtils.getMapFromServiceYaml(service));
+    }
+    return serviceToMatrixMetadataMap;
+  }
+
+  private Map<String, EnvironmentGroupYaml> getServiceToEnvGroup(
+      Map<String, List<NGTag>> serviceTagsMap, EnvironmentGroupYaml environmentGroup) {
+    Map<String, EnvironmentGroupYaml> serviceEnvGroupMap = new LinkedHashMap<>();
+
+    if (environmentGroup == null) {
+      return serviceEnvGroupMap;
+    }
+    for (Map.Entry<String, List<NGTag>> serviceTag : serviceTagsMap.entrySet()) {
+      EnvironmentGroupYaml envGroupPerService = environmentGroup.clone();
+
+      if (ParameterField.isNotNull(envGroupPerService.getFilters())) {
+        ParameterField<List<FilterYaml>> filters = envGroupPerService.getFilters();
+        resolveServiceTags(serviceTag, filters);
+      }
+
+      ParameterField<List<EnvironmentYamlV2>> environments = envGroupPerService.getEnvironments();
+      if (ParameterField.isNotNull(environments) && isNotEmpty(environments.getValue())) {
+        resolveServiceTags(serviceTag, environments.getValue());
+      }
+      serviceEnvGroupMap.put(serviceTag.getKey(), envGroupPerService);
+    }
+
+    return serviceEnvGroupMap;
+  }
+
+  private Map<String, EnvironmentsYaml> getServiceToEnvsYaml(
+      Map<String, List<NGTag>> serviceTagsMap, EnvironmentsYaml environments) {
+    Map<String, EnvironmentsYaml> serviceEnvMap = new LinkedHashMap<>();
+
+    if (environments == null) {
+      return serviceEnvMap;
+    }
+    for (Map.Entry<String, List<NGTag>> serviceTag : serviceTagsMap.entrySet()) {
+      EnvironmentsYaml environmentsYamlPerService = environments.clone();
+
+      if (ParameterField.isNotNull(environmentsYamlPerService.getFilters())) {
+        ParameterField<List<FilterYaml>> filters = environmentsYamlPerService.getFilters();
+        resolveServiceTags(serviceTag, filters);
+      }
+
+      ParameterField<List<EnvironmentYamlV2>> values = environmentsYamlPerService.getValues();
+      if (ParameterField.isNotNull(values) && isNotEmpty(values.getValue())) {
+        resolveServiceTags(serviceTag, values.getValue());
+      }
+      serviceEnvMap.put(serviceTag.getKey(), environmentsYamlPerService);
+    }
+
+    return serviceEnvMap;
+  }
+
+  private void resolveServiceTags(
+      Map.Entry<String, List<NGTag>> serviceTag, List<EnvironmentYamlV2> environmentYamlV2s) {
+    if (isEmpty(environmentYamlV2s)) {
+      return;
+    }
+    for (EnvironmentYamlV2 environmentYamlV2 : environmentYamlV2s) {
+      ParameterField<List<FilterYaml>> filters = environmentYamlV2.getFilters();
+      resolveServiceTags(serviceTag, filters);
+    }
+  }
+
+  private void resolveServiceTags(Map.Entry<String, List<NGTag>> serviceTag, ParameterField<List<FilterYaml>> filters) {
+    if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
+      for (FilterYaml filterYaml : filters.getValue()) {
+        if (filterYaml.getType().equals(FilterType.tags)) {
+          TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
+          if (tagsFilter.getTags().isExpression()
+              && tagsFilter.getTags().getExpressionValue().contains("<+service.tags>")) {
+            tagsFilter.setTags(ParameterField.createValueField(getTagsMap(serviceTag.getValue())));
+          }
+        }
+      }
+    }
+  }
+
+  public Map<String, String> getTagsMap(List<NGTag> ngTagList) {
+    Map<String, String> tags = new LinkedHashMap<>();
+    for (NGTag ngTag : ngTagList) {
+      tags.put(ngTag.getKey(), ngTag.getValue());
+    }
+    return tags;
+  }
+  private Map<String, List<NGTag>> getFetchServiceTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, MultiDeploymentStepParameters multiDeploymentStepParameters) {
+    ServicesYaml services = multiDeploymentStepParameters.getServices();
+    if (services == null || ParameterField.isNull(services.getValues())) {
+      throw new InvalidYamlException("Services cannot be null when filters are specified");
+    }
+
+    List<ServiceYamlV2> serviceYamlV2List = services.getValues().getValue();
+    List<String> serviceRefs =
+        serviceYamlV2List.stream().map(s -> s.getServiceRef().getValue()).collect(Collectors.toList());
+
+    if (isEmpty(serviceRefs)) {
+      serviceRefs =
+          Collections.singletonList(multiDeploymentStepParameters.getServiceYamlV2().getServiceRef().getValue());
+    }
+
+    List<ServiceEntity> serviceEntityList =
+        serviceEntityService.getServices(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+
+    Map<String, List<NGTag>> serviceToTagsMap = new LinkedHashMap<>();
+    for (ServiceEntity serviceEntity : serviceEntityList) {
+      serviceToTagsMap.put(serviceEntity.getIdentifier(), serviceEntity.getTags());
+    }
+    return serviceToTagsMap;
   }
 
   private ChildrenExecutableResponse.Child getChild(

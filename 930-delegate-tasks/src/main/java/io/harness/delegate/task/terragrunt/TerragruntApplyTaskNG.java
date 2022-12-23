@@ -210,4 +210,9 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
           applyTaskParameters.getPlanSecretManager(), baseDir, applyLogCallback);
     }
   }
+
+  @Override
+  public boolean isSupportingErrorFramework() {
+    return true;
+  }
 }

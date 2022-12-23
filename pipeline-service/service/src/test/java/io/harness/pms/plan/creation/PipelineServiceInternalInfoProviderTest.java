@@ -50,6 +50,7 @@ import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
+import io.harness.pms.pipelinestage.v1.plancreator.PipelineStagePlanCreatorV1;
 import io.harness.pms.sdk.PmsSdkInitValidator;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
@@ -127,7 +128,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(planCreatorClasses).hasSize(41);
+    assertThat(planCreatorClasses).hasSize(42);
     assertThat(planCreatorClasses.contains(CustomApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(NGPipelinePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(StagesPlanCreator.class)).isTrue();
@@ -157,6 +158,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(SpecNodePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(WaitStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PipelineStagePlanCreator.class)).isTrue();
+    assertThat(planCreatorClasses.contains(PipelineStagePlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(ParallelPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(GroupPlanCreatorV1.class)).isTrue();
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();

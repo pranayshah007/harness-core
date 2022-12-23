@@ -200,9 +200,9 @@ public class MorphiaModule extends AbstractModule {
               jarPath = jarPath.substring(1);
             }
 
-            classes.addAll(ReflectionUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
+            classes.addAll(MorphiaUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
           } else {
-            classes.addAll(ReflectionUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
+            classes.addAll(MorphiaUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
           }
         }
       }

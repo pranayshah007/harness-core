@@ -197,6 +197,7 @@ public class JiraClient {
       boolean fetchStatus, boolean ignoreComment, boolean ffEnabled, boolean fromCG) {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
     JiraInstanceData jiraInstanceData = getInstanceData();
+
     if (jiraInstanceData.deploymentType == JiraInstanceData.JiraDeploymentType.SERVER && ffEnabled) {
       if (issueType == null) {
         JiraIssueCreateMetadataNGIssueTypes createMetadataNGIssueTypes = executeCall(

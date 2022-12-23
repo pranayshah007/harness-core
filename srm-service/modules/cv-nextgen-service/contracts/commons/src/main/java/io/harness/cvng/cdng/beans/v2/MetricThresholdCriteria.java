@@ -7,21 +7,16 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-import io.harness.cvng.core.beans.RiskCategory;
+import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
 
-import java.util.List;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder
-public class MetricsAnalysis {
-  String metricIdentifier;
-  String metricName;
-  String transactionGroup;
-  RiskCategory metricType;
-  String healthSourceIdentifier;
-  List<MetricThreshold> thresholds;
-  AnalysisResult analysisResult;
-  List<AnalysedTestDataNode> testDataNodes;
+public class MetricThresholdCriteria {
+  int actionableCount;
+  TimeSeriesThresholdComparisonType measurementType;
+  Double greaterThanThreshold;
+  Double lessThanThreshold;
 }
