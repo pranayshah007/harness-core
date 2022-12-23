@@ -115,10 +115,7 @@ public class TriggerEventExecutionHelper {
     WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
     List<TriggerEventResponse> eventResponses = new ArrayList<>();
     if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
-      if (pmsFeatureFlagService.isEnabled(
-              triggerWebhookEvent.getAccountId(), FeatureName.SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION)) {
-        authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
-      }
+      authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
       log.info("Preparing for pipeline execution request");
       resultBuilder.mappedToTriggers(true);
       if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {

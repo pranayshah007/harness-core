@@ -10,6 +10,7 @@ package software.wings.graphql.datafetcher.artifactSource;
 import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType.IMAGE_GALLERY;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.FJUNIOR;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.beans.artifact.ArtifactStreamType.ACR;
@@ -49,6 +50,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
+import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactoryArtifactStream;
 import software.wings.beans.artifact.AzureArtifactsArtifactStream;
 import software.wings.beans.artifact.AzureMachineImageArtifactStream;
@@ -103,6 +105,7 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldReturnParameterizedNexus2ArtifactSource() {
     NexusArtifactStream nexusArtifactStream = getNexusArtifactStream(SETTING_ID, ARTIFACT_STREAM_ID);
+
     List<String> parameters = asList("repo", "groupId", "path");
     QLArtifactSource qlArtifactSource =
         ArtifactSourceController.populateArtifactSource(nexusArtifactStream, parameters);
@@ -113,6 +116,17 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlNexusArtifactSource.getId()).isEqualTo(ARTIFACT_STREAM_ID);
     assertThat(qlNexusArtifactSource.getParameters().size()).isEqualTo(3);
     assertThat(qlNexusArtifactSource.getParameters()).containsAll(asList("repo", "groupId", "path"));
+
+    // Testing Collection Enabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    nexusArtifactStream.setCollectionEnabled(Boolean.TRUE);
+    qlArtifactSource = ArtifactSourceController.populateArtifactSource(nexusArtifactStream, parameters);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isEqualTo(Boolean.TRUE);
+
+    nexusArtifactStream.setCollectionEnabled(Boolean.FALSE);
+    qlArtifactSource = ArtifactSourceController.populateArtifactSource(nexusArtifactStream, parameters);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isEqualTo(Boolean.FALSE);
   }
 
   @Test
@@ -144,6 +158,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlAcrArtifactSource.getRepositoryName()).isEqualTo(REPO_NAME);
     assertThat(qlAcrArtifactSource.getSubscriptionId()).isEqualTo(subcscription_id);
     assertThat(qlAcrArtifactSource.getAzureCloudProviderId()).isEqualTo(SETTING_ID);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(acrArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(acrArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -188,6 +211,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(awsTags.get(1).getKey()).isEqualTo(key2);
     assertThat(awsTags.get(1).getValue()).isEqualTo(value2);
     assertThat(qlAmiArtifactSource.getAmiResourceFilters()).isEmpty();
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(amiArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(amiArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -216,6 +248,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlEcrArtifactSource.getRegion()).isEqualTo(REGION);
     assertThat(qlEcrArtifactSource.getAwsCloudProviderId()).isEqualTo(SETTING_ID);
     assertThat(qlEcrArtifactSource.getImageName()).isEqualTo(IMAGE_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(ecrArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(ecrArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -244,6 +285,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlGcrArtifactSource.getRegistryHostName()).isEqualTo(REGISRTY_NAME);
     assertThat(qlGcrArtifactSource.getGcpCloudProviderId()).isEqualTo(SETTING_ID);
     assertThat(qlGcrArtifactSource.getDockerImageName()).isEqualTo(IMAGE_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(gcrArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(gcrArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -274,6 +324,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlGcsArtifactSource.getGcpCloudProviderId()).isEqualTo(SETTING_ID);
     assertThat(qlGcsArtifactSource.getBucket()).isEqualTo(JOB_NAME);
     assertThat(qlGcsArtifactSource.getProjectId()).isEqualTo(PROJECT_ID);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(gcsArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(gcsArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -300,6 +359,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlSmbArtifactSource.getName()).isEqualTo(ARTIFACT_STREAM_NAME);
     assertThat(qlSmbArtifactSource.getSmbConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlSmbArtifactSource.getArtifactPaths()).isEqualTo(artifactPaths);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(smbArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(smbArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -326,6 +394,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlSftpArtifactSource.getName()).isEqualTo(ARTIFACT_STREAM_NAME);
     assertThat(qlSftpArtifactSource.getSftpConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlSftpArtifactSource.getArtifactPaths()).isEqualTo(artifactPaths);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(sftpArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(sftpArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -414,6 +491,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlNexusRawProps.getNexusConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlNexusRawProps.getRepository()).isEqualTo(JOB_NAME);
     assertThat(qlNexusRawProps.getPackageName()).isEqualTo(package_name);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(nexusArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(nexusArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -442,6 +528,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlBambooArtifactSource.getBambooConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlBambooArtifactSource.getArtifactPaths()).isEqualTo(artifactPaths);
     assertThat(qlBambooArtifactSource.getPlanKey()).isEqualTo(JOB_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(bambooArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(bambooArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -468,6 +563,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qldockerArtifactSource.getName()).isEqualTo(ARTIFACT_STREAM_NAME);
     assertThat(qldockerArtifactSource.getDockerConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qldockerArtifactSource.getImageName()).isEqualTo(IMAGE_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(dockerArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(dockerArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -496,14 +600,21 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlJenkinsArtifactSource.getJenkinsConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlJenkinsArtifactSource.getArtifactPaths()).isEqualTo(artifactPaths);
     assertThat(qlJenkinsArtifactSource.getJobName()).isEqualTo(JOB_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(jenkinsArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(jenkinsArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldPopulateAs3ArtifactSource() {
-    final String REGISRTY_NAME = "REGISRTY_NAME";
-    final String subcscription_id = "SUBCSCRIPTION_ID";
     AmazonS3ArtifactStream as3ArtifactStream = AmazonS3ArtifactStream.builder()
                                                    .uuid(ARTIFACT_STREAM_ID)
                                                    .createdAt(LONG_DEFAULT_VALUE)
@@ -526,6 +637,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlAcrArtifactSource.getAwsCloudProviderId()).isEqualTo(SETTING_ID);
     assertThat(qlAcrArtifactSource.getBucket()).isEqualTo(JOB_NAME);
     assertThat(qlAcrArtifactSource.getArtifactPaths()).isEqualTo(artifactPaths);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(as3ArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(as3ArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -574,6 +694,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(fileProps.getArtifactPath()).isEqualTo(artifactPaths.get(0));
     assertThat(fileProps.getArtifactoryConnectorId()).isEqualTo(SETTING_ID);
     assertThat(dockerProps.getRepository()).isEqualTo(JOB_NAME);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(artifactoryArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(artifactoryArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -610,6 +739,15 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlAzureArtifactSource.getProject()).isEqualTo(PROJECT_ID);
     assertThat(qlAzureArtifactSource.getPackageType()).isEqualTo(PACKAGE_TYPE);
     assertThat(qlAzureArtifactSource.getScope()).isEqualTo("PROJECT");
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(azureArtifactStream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(azureArtifactStream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -640,6 +778,7 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
                                                      .createdAt(LONG_DEFAULT_VALUE)
                                                      .azureCloudProviderId(SETTING_ID)
                                                      .imageType("IMAGE_GALLERY")
+                                                     .collectionEnabled(Boolean.TRUE)
                                                      .subscriptionId("subID")
                                                      .imageDefinition(QLAzureImageDefinition.builder()
                                                                           .resourceGroup("resourceGroup")
@@ -648,5 +787,22 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
                                                                           .build())
                                                      .build();
     assertEquals("GraphQL artifact source should be mapped correctly", expected, qaArtifactSource);
+
+    // Testing CollectionEnabled
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(stream, Boolean.TRUE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isTrue();
+
+    qlArtifactSource = getQlArtifactSourceWithCollectionEnabled(stream, Boolean.FALSE);
+    assertThat(qlArtifactSource.getCollectionEnabled()).isFalse();
+  }
+
+  @Owner(developers = FJUNIOR)
+  private QLArtifactSource getQlArtifactSourceWithCollectionEnabled(
+      ArtifactStream artifactStream, Boolean collectionEnabled) {
+    artifactStream.setCollectionEnabled(collectionEnabled);
+    QLArtifactSource qlArtifactSource = ArtifactSourceController.populateArtifactSource(artifactStream);
+    return qlArtifactSource;
   }
 }

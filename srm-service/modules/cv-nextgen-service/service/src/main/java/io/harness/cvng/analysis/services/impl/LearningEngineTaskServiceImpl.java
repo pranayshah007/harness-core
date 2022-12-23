@@ -19,6 +19,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
@@ -71,8 +72,8 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     Query<LearningEngineTask> learningEngineTaskQuery =
         hPersistence.createQuery(LearningEngineTask.class)
             .filter(LearningEngineTaskKeys.taskStatus, ExecutionStatus.QUEUED)
-            .order(
-                Sort.ascending(LearningEngineTaskKeys.taskPriority), Sort.ascending(LearningEngineTaskKeys.createdAt));
+            .order(Sort.ascending(LearningEngineTaskKeys.taskPriority),
+                Sort.ascending(VerificationTaskBaseKeys.createdAt));
     if (isNotEmpty(taskType)) {
       learningEngineTaskQuery.field(LearningEngineTaskKeys.analysisType).in(taskType);
     }

@@ -21,7 +21,7 @@ import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 
 import software.wings.beans.User;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 

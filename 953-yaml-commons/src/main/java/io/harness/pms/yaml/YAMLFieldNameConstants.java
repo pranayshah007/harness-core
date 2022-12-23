@@ -58,6 +58,7 @@ public class YAMLFieldNameConstants {
   public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
+  public final String SECRET = "secret";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
@@ -95,4 +96,5 @@ public class YAMLFieldNameConstants {
   public static final String OUTPUTS = "outputs";
 
   public final String REPOSITORY = "repository";
+  public final String DEFAULT = "default";
 }

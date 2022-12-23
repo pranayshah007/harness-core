@@ -14,7 +14,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
 
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.intfc.EmailNotificationService;
 
 import com.google.inject.Inject;

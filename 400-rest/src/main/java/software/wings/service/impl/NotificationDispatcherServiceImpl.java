@@ -24,7 +24,7 @@ import software.wings.beans.alert.AlertNotificationRule;
 import software.wings.beans.security.UserGroup;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.common.NotificationMessageResolver.ChannelTemplate.EmailTemplate;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.notifications.EmailDispatcher;
 import software.wings.service.impl.notifications.NotificationDispatcher;
 import software.wings.service.impl.notifications.UseNotificationGroup;

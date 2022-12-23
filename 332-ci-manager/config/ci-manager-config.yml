@@ -166,6 +166,7 @@ ciExecutionServiceConfig:
   addonImage: harness/ci-addon:1.16.0
   liteEngineImage: harness/ci-lite-engine:1.16.0
   isLocal: false
+  remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"

@@ -39,18 +39,22 @@ import software.wings.graphql.schema.type.QLWorkflowExecution.QLWorkflowExecutio
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
+import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
+import software.wings.graphql.schema.type.aggregation.QLTimeOperator;
 import software.wings.graphql.utils.nameservice.NameService;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
 import graphql.schema.DataFetchingEnvironment;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
+
 @Slf4j
 @OwnedBy(SPG)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
@@ -58,6 +62,8 @@ public class FrozenExecutionConnectionDataFetcher
     extends AbstractConnectionV2DataFetcher<QLFrozenExecutionFilter, QLNoOpSortCriteria, QLFrozenExecutionConnection> {
   @Inject private WorkflowExecutionController workflowExecutionController;
   @Inject private PipelineExecutionController pipelineExecutionController;
+  private static final Long DEFAULT_CREATION_TIME_INTERVAL = Duration.ofDays(10).toMillis();
+  private static final Long MAX_CREATION_TIME_INTERVAL = Duration.ofDays(30).toMillis();
 
   @Override
   @AuthRule(permissionType = PermissionAttribute.PermissionType.LOGGED_IN)
@@ -102,6 +108,7 @@ public class FrozenExecutionConnectionDataFetcher
   @Override
   protected void populateFilters(List<QLFrozenExecutionFilter> filters, Query query) {
     boolean rejectedByFreezeWindowFilterFound = false;
+    boolean afterCreationTimeFilterFound = false;
     if (isNotEmpty(filters)) {
       for (QLFrozenExecutionFilter filter : filters) {
         if (filter.getRejectedByFreezeWindow() != null) {
@@ -117,10 +124,29 @@ public class FrozenExecutionConnectionDataFetcher
           QLIdFilter idFilter = filter.getService();
           utils.setIdFilter(query.field(WorkflowExecutionKeys.serviceIds), idFilter);
         }
+        if (filter.getCreationTime() != null) {
+          QLTimeFilter timeFilter = filter.getCreationTime();
+          // For query performance reason, only executions from 30 days ago to now are allowed to be queried
+          Long minAllowedCreationTime = System.currentTimeMillis() - MAX_CREATION_TIME_INTERVAL;
+          if ((Long) timeFilter.getValue() < minAllowedCreationTime) {
+            throw new InvalidRequestException("Only executions from less than 30 days ago are allowed for querying");
+          }
+          if (timeFilter.getOperator() == QLTimeOperator.AFTER) {
+            afterCreationTimeFilterFound = true;
+          }
+          utils.setTimeFilter(query.field(WorkflowExecutionKeys.createdAt), timeFilter);
+        }
       }
     }
     if (!rejectedByFreezeWindowFilterFound) {
       throw new InvalidRequestException("rejectedByFreezeWindow filter is required");
+    }
+    if (!afterCreationTimeFilterFound) {
+      // Default mandatory "AFTER" `createdAt` TimeFilter is for 10 days ago
+      Long defaultCreationTime = System.currentTimeMillis() - DEFAULT_CREATION_TIME_INTERVAL;
+      QLTimeFilter mandatoryTimeFilter =
+          QLTimeFilter.builder().operator(QLTimeOperator.AFTER).value(defaultCreationTime).build();
+      utils.setTimeFilter(query.field(WorkflowExecutionKeys.createdAt), mandatoryTimeFilter);
     }
   }
 

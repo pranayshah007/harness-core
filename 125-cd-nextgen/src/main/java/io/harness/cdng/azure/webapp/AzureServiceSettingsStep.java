@@ -140,6 +140,9 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
   }
 
   private Set<EntityDetailProtoDTO> getEntityDetailsProto(Ambiance ambiance, Object object) {
+    if (object == null) {
+      return Set.of();
+    }
     return emptyIfNull(entityReferenceExtractorUtils.extractReferredEntities(ambiance, object));
   }
 

@@ -15,7 +15,7 @@ BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
 bazel ${bazelrc} build //srm-service/modules/cv-nextgen-service/service:module //srm-service/modules/cv-nextgen-service/service:module_deploy.jar ${BAZEL_ARGUMENTS}
 
-module=srm-service
+module=srm-service/modules/cv-nextgen-service
 moduleName=srm-service
 
 bazel query "deps(//${module}/service:module)" | grep -i "KryoRegistrar" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > /tmp/KryoDeps.text

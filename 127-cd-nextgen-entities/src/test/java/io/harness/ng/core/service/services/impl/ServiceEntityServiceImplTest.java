@@ -140,6 +140,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .projectIdentifier("PROJECT_ID")
                                       .name("Service")
                                       .type(ServiceDefinitionType.NATIVE_HELM)
+                                      .gitOpsEnabled(true)
                                       .build();
 
     // Create operations
@@ -151,6 +152,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(createdService.getIdentifier()).isEqualTo(serviceEntity.getIdentifier());
     assertThat(createdService.getName()).isEqualTo(serviceEntity.getName());
     assertThat(createdService.getType()).isEqualTo(serviceEntity.getType());
+    assertThat(createdService.getGitOpsEnabled()).isEqualTo(serviceEntity.getGitOpsEnabled());
     assertThat(createdService.getVersion()).isEqualTo(0L);
 
     // Get operations
@@ -168,6 +170,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .name("UPDATED_SERVICE")
                                              .description("NEW_DESCRIPTION")
                                              .type(ServiceDefinitionType.NATIVE_HELM)
+                                             .gitOpsEnabled(true)
                                              .build();
     ServiceEntity updatedServiceResponse = serviceEntityService.update(updateServiceRequest);
     assertThat(updatedServiceResponse.getAccountId()).isEqualTo(updateServiceRequest.getAccountId());
@@ -176,6 +179,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(updatedServiceResponse.getIdentifier()).isEqualTo(updateServiceRequest.getIdentifier());
     assertThat(updatedServiceResponse.getName()).isEqualTo(updateServiceRequest.getName());
     assertThat(updatedServiceResponse.getDescription()).isEqualTo(updateServiceRequest.getDescription());
+    assertThat(updatedServiceResponse.getGitOpsEnabled()).isEqualTo(updateServiceRequest.getGitOpsEnabled());
     assertThat(updatedServiceResponse.getVersion()).isEqualTo(1L);
 
     updateServiceRequest.setAccountId("NEW_ACCOUNT");
@@ -188,6 +192,12 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThatThrownBy(() -> serviceEntityService.update(updateServiceRequest))
         .isInstanceOf(InvalidRequestException.class);
     assertThat(updatedServiceResponse.getType()).isNotEqualTo(ServiceDefinitionType.KUBERNETES);
+
+    // adding test for 'GitOps Enabled is not allowed to change'
+    updateServiceRequest.setGitOpsEnabled(false);
+    assertThatThrownBy(() -> serviceEntityService.update(updateServiceRequest))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThat(updatedServiceResponse.getGitOpsEnabled()).isNotEqualTo(updateServiceRequest.getGitOpsEnabled());
 
     // Upsert operations
     ServiceEntity upsertServiceRequest = ServiceEntity.builder()

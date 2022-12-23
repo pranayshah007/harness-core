@@ -116,6 +116,14 @@ public class IdentifierRefHelper {
     }
   }
 
+  public IdentifierRef getConnectorIdentifierRef(
+      String scopedConnectorIdentifierRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (isEmpty(scopedConnectorIdentifierRef)) {
+      throw new InvalidIdentifierRefException("Unable to resolve empty connector identifier reference");
+    }
+    return getIdentifierRef(scopedConnectorIdentifierRef, accountId, orgIdentifier, projectIdentifier);
+  }
+
   public IdentifierRef getIdentifierRef(
       String scopedIdentifierConfig, String accountId, String orgIdentifier, String projectIdentifier) {
     return getIdentifierRef(scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, null);

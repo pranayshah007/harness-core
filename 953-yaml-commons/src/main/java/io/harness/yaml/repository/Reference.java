@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -23,6 +24,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CI)
 public class Reference {
-  @JsonProperty("type") ReferenceType type;
-  @JsonProperty("value") String value;
+  @JsonProperty("type") @NotNull ReferenceType type;
+  @JsonProperty("value") @NotNull String value;
 }

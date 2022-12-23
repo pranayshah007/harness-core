@@ -13,6 +13,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -39,7 +40,7 @@ public final class GCPMarketplaceCustomer implements PersistentEntity, UuidAware
   @Id private String uuid;
 
   private final String gcpAccountId;
-  private final String harnessAccountId;
+  @FdIndex private final String harnessAccountId;
   private List<GCPMarketplaceProduct> products;
 
   private long createdAt;

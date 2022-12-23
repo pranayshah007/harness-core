@@ -17,6 +17,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
 import io.harness.observer.Subject;
 import io.harness.service.intfc.DelegateCache;
+import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.service.impl.DelegateObserver;
@@ -43,6 +44,8 @@ public abstract class DelegateHeartbeatService<T extends Object> {
   @Inject private DelegateHeartbeatDao delegateHeartbeatDao;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject private DelegateCache delegateCache;
+
+  @Inject private DelegateSetupService delegateSetupService;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   public Optional<T> precheck(@NotNull final Delegate existingDelegate) {
@@ -60,6 +63,12 @@ public abstract class DelegateHeartbeatService<T extends Object> {
         clock.millis(), Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
     delegateTaskService.touchExecutingTasks(existingDelegate.getAccountId(), existingDelegate.getUuid(),
         existingDelegate.getCurrentlyExecutingDelegateTasks());
+    // FIXME: have a different way of updating TTL since one group can have multiple delegates and all of them will be
+    // updating this very frequently
+    if (existingDelegate.getDelegateGroupId() != null) {
+      delegateSetupService.updateDelegateGroupValidity(
+          existingDelegate.getAccountId(), existingDelegate.getDelegateGroupId());
+    }
     return buildHeartbeatResponseOnSuccess(params, existingDelegate);
   }
 

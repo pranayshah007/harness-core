@@ -56,6 +56,8 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.EcsException;
@@ -131,6 +133,19 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       super.handleException(exception);
     }
     return RegisterTaskDefinitionResponse.builder().build();
+  }
+
+  @Override
+  public DescribeTaskDefinitionResponse describeTaskDefinition(
+      AwsInternalConfig awsConfig, DescribeTaskDefinitionRequest describeTaskDefinitionRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.describeTaskDefinition(describeTaskDefinitionRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return DescribeTaskDefinitionResponse.builder().build();
   }
 
   @Override

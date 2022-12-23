@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.core.recommendation;
 
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
@@ -50,6 +51,9 @@ public class RecommendationService {
                    .resourceType(ResourceType.valueOf(ceRecommendations.getResourcetype()))
                    .monthlyCost(ceRecommendations.getMonthlycost())
                    .monthlySaving(ceRecommendations.getMonthlysaving())
+                   .jiraConnectorRef(ceRecommendations.getJiraconnectorref())
+                   .jiraIssueKey(ceRecommendations.getJiraconnectorref())
+                   .jiraStatus(ceRecommendations.getJirastatus())
                    .build())
         .collect(Collectors.toList());
   }
@@ -70,5 +74,10 @@ public class RecommendationService {
 
   public int getRecommendationsCount(@NonNull String accountId, @NonNull Condition condition) {
     return k8sRecommendationDAO.fetchRecommendationsCount(accountId, condition);
+  }
+
+  public void updateRecommendationState(
+      @NonNull String recommendationId, @NonNull RecommendationState recommendationState) {
+    k8sRecommendationDAO.updateRecommendationState(recommendationId, recommendationState);
   }
 }

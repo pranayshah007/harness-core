@@ -203,7 +203,7 @@ public class AsgSdkManager {
     return resultList.get(0);
   }
 
-  public void deleteService(AutoScalingGroup autoScalingGroup) {
+  public void deleteAsgService(AutoScalingGroup autoScalingGroup) {
     String asgName = autoScalingGroup.getAutoScalingGroupName();
     String operationName = format("Delete Asg %s", asgName);
     info("Operation `%s` has started", operationName);

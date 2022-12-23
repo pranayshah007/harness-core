@@ -16,7 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
@@ -38,6 +38,7 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
@@ -179,6 +180,11 @@ public class RecommendationsOverviewQueryV2 {
     return genericCountQuery(env);
   }
 
+  @GraphQLQuery(name = "markRecommendationAsApplied", description = "Mark a recommendation as applied")
+  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId) {
+    recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
+  }
+
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
 
@@ -216,6 +222,10 @@ public class RecommendationsOverviewQueryV2 {
     } else {
       if (!isEmpty(filter.getResourceTypes())) {
         condition = condition.and(CE_RECOMMENDATIONS.RESOURCETYPE.in(enumToString(filter.getResourceTypes())));
+      }
+      if (!isEmpty(filter.getRecommendationStates())) {
+        condition =
+            condition.and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.in(enumToString(filter.getRecommendationStates())));
       }
 
       condition = condition.and(constructInCondition(CE_RECOMMENDATIONS.CLUSTERNAME, filter.getClusterNames()));
@@ -521,12 +531,12 @@ public class RecommendationsOverviewQueryV2 {
     return DSL.noCondition();
   }
 
-  private static Condition getValidRecommendationFilter() {
+  public static Condition getValidRecommendationFilter() {
     return CE_RECOMMENDATIONS.ISVALID
         .eq(true)
         // based on current-gen workload recommendation dataFetcher
         .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS)))
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)))
         .and(nonDelegate());
   }
 

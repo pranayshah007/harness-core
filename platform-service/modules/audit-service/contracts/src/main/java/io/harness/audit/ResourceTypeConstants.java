@@ -65,4 +65,6 @@ public class ResourceTypeConstants {
   public static final String CLOUD_ASSET_GOVERNANCE_RULE = "CLOUD_ASSET_GOVERNANCE_RULE";
   public static final String CLOUD_ASSET_GOVERNANCE_RULE_SET = "CLOUD_ASSET_GOVERNANCE_RULE_SET";
   public static final String CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT = "CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT";
+  public static final String FEATURE_FLAG = "FEATURE_FLAG";
+  public static final String TARGET_GROUP = "TARGET_GROUP";
 }

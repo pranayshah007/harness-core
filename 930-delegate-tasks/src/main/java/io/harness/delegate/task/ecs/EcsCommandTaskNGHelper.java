@@ -9,6 +9,8 @@ package io.harness.delegate.task.ecs;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogColor.Yellow;
@@ -30,15 +32,19 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.ecs.EcsMapper;
+import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
+import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.exception.CommandExecutionException;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -81,6 +87,8 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.Deployment;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.DesiredStatus;
 import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
@@ -95,6 +103,7 @@ import software.amazon.awssdk.services.ecs.model.ServiceField;
 import software.amazon.awssdk.services.ecs.model.Tag;
 import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
 import software.amazon.awssdk.services.ecs.model.Task;
+import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
@@ -119,6 +128,7 @@ public class EcsCommandTaskNGHelper {
   @Inject private ElbV2Client elbV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private EcsCommandTaskNGHelper ecsCommandTaskHelper;
 
   private YamlUtils yamlUtils = new YamlUtils();
   public static final String DELIMITER = "__";
@@ -130,6 +140,12 @@ public class EcsCommandTaskNGHelper {
       RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region, AwsConnectorDTO awsConnectorDTO) {
     return ecsV2Client.createTask(
         awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), registerTaskDefinitionRequest, region);
+  }
+
+  public DescribeTaskDefinitionResponse describeTaskDefinition(
+      DescribeTaskDefinitionRequest describeTaskDefinitionRequest, String region, AwsConnectorDTO awsConnectorDTO) {
+    return ecsV2Client.describeTaskDefinition(
+        awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), describeTaskDefinitionRequest, region);
   }
 
   public CreateServiceResponse createService(
@@ -1264,6 +1280,94 @@ public class EcsCommandTaskNGHelper {
 
   public boolean isServiceDraining(Service service) {
     return service != null && service.status().equals("DRAINING");
+  }
+
+  public EcsRunTaskResponse getEcsRunTaskResponse(TaskDefinition taskDefinition,
+      String ecsRunTaskRequestDefinitionManifestContent, boolean isSkipSteadyStateCheck, long timeoutInMillis,
+      EcsInfraConfig ecsInfraConfig, LogCallback runTaskLogCallback) {
+    String taskDefinitionArn = taskDefinition.taskDefinitionArn();
+    String taskDefinitionName = getEcsTaskDefinitionName(taskDefinition);
+
+    RunTaskRequest.Builder runTaskRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
+        ecsRunTaskRequestDefinitionManifestContent, RunTaskRequest.serializableBuilderClass());
+
+    RunTaskRequest runTaskRequest =
+        runTaskRequestBuilder.taskDefinition(taskDefinitionArn).cluster(ecsInfraConfig.getCluster()).build();
+
+    runTaskLogCallback.saveExecutionLog(
+        format("Triggering %s tasks with task definition %s",
+            runTaskRequest.count() != null ? runTaskRequest.count() : 1, taskDefinitionName),
+        LogLevel.INFO);
+
+    RunTaskResponse runTaskResponse =
+        ecsCommandTaskHelper.runTask(runTaskRequest, ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getRegion());
+
+    runTaskLogCallback.saveExecutionLog(format("%d Tasks were triggered successfully and %d failures were received.",
+                                            runTaskResponse.tasks().size(), runTaskResponse.failures().size()),
+        LogLevel.INFO);
+
+    List<Task> triggeredTasks = runTaskResponse.tasks();
+    List<EcsTask> triggeredEcsTasks = null;
+    if (triggeredTasks != null) {
+      runTaskResponse.tasks().forEach(
+          t -> runTaskLogCallback.saveExecutionLog(format("Task => %s succeeded", t.taskArn())));
+    }
+
+    if (runTaskResponse.failures() != null) {
+      runTaskResponse.failures().forEach(f -> {
+        runTaskLogCallback.saveExecutionLog(
+            format("%s failed with reason => %s \nDetails: %s", f.arn(), f.reason(), f.detail()), LogLevel.ERROR,
+            CommandExecutionStatus.FAILURE);
+      });
+    }
+
+    if (triggeredTasks != null && isNotEmpty(triggeredTasks)) {
+      List<String> triggeredTaskARNs = triggeredTasks.stream().map(task -> task.taskArn()).collect(Collectors.toList());
+      if (!isSkipSteadyStateCheck) {
+        ecsCommandTaskHelper.waitAndDoSteadyStateCheck(triggeredTaskARNs, timeoutInMillis,
+            ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getRegion(), ecsInfraConfig.getCluster(),
+            runTaskLogCallback);
+      } else {
+        runTaskLogCallback.saveExecutionLog(format("Skipped Steady State Check"), LogLevel.INFO);
+      }
+
+      triggeredEcsTasks =
+          triggeredTasks.stream().map(task -> EcsMapper.toEcsTask(task, null)).collect(Collectors.toList());
+    }
+
+    EcsRunTaskResult ecsRunTaskResult =
+        EcsRunTaskResult.builder().ecsTasks(triggeredEcsTasks).region(ecsInfraConfig.getRegion()).build();
+
+    runTaskLogCallback.saveExecutionLog("Success.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    return EcsRunTaskResponse.builder()
+        .ecsRunTaskResult(ecsRunTaskResult)
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .build();
+  }
+
+  public String getEcsTaskDefinitionName(TaskDefinition taskDefinition) {
+    return taskDefinition.family() + ":" + taskDefinition.revision();
+  }
+
+  public DescribeTaskDefinitionResponse validateEcsTaskDefinition(
+      String ecsTaskDefinition, EcsInfraConfig ecsInfraConfig, LogCallback logCallback) {
+    DescribeTaskDefinitionRequest describeTaskDefinitionRequest =
+        DescribeTaskDefinitionRequest.builder().taskDefinition(ecsTaskDefinition).build();
+    try {
+      return ecsCommandTaskHelper.describeTaskDefinition(
+          describeTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Invalid Ecs Task Definition ", sanitizedException);
+      logCallback.saveExecutionLog(
+          "Invalid Ecs Task Definition \n" + ExceptionUtils.getMessage(sanitizedException), ERROR);
+      throw NestedExceptionUtils.hintWithExplanationException(format("Please check the following inputs\n"
+                                                                  + " Task Definition\n"
+                                                                  + " Aws Credentials\n"
+                                                                  + " Region\n"),
+          format("Invalid Ecs Task Definition [%s]", ecsTaskDefinition),
+          new InvalidRequestException("Invalid Ecs Task Definition ", sanitizedException));
+    }
   }
 
   public RunTaskResponse runTask(RunTaskRequest runTaskRequest, AwsConnectorDTO awsConnectorDTO, String region) {

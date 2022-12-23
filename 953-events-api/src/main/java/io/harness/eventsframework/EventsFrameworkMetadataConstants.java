@@ -50,6 +50,12 @@ public final class EventsFrameworkMetadataConstants {
 
   public static final String RESOURCE_GROUP = "resourcegroup";
   public static final String USER_GROUP = "usergroup";
+  public static final String FILTER = "filter";
+  public static final String FREEZE_CONFIG = "freezeConfig";
+
+  public static final String GIT_COMMIT = "gitCommit";
+
+  public static final String GIT_PROCESS_REQUEST = "gitProcessReq";
   // deprecated, use setupusage and entityActivity channel.
   public static final String SETUP_USAGE_ENTITY = "setupUsage";
   public static final String ACCOUNT_ENTITY = "account";

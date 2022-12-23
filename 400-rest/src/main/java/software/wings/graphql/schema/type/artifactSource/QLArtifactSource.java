@@ -24,4 +24,5 @@ public interface QLArtifactSource extends QLObject {
   Long getCreatedAt();
   String getName();
   String getId();
+  Boolean getCollectionEnabled();
 }
