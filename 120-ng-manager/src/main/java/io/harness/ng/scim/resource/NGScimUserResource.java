@@ -7,6 +7,13 @@
 
 package io.harness.ng.scim.resource;
 
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.scim.PatchRequest;
@@ -66,6 +73,7 @@ import lombok.extern.slf4j.Slf4j;
     })
 public class NGScimUserResource extends ScimResource {
   @Inject private ScimUserService scimUserService;
+  @Inject private AccessControlClient accessControlClient;
 
   @POST
   @Path("Users")
@@ -78,6 +86,10 @@ public class NGScimUserResource extends ScimResource {
       })
   public Response
   createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), MANAGE_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to create user for accountId {}", accountIdentifier);
+    }
     try {
       return scimUserService.createUser(userQuery, accountIdentifier);
     } catch (Exception ex) {
@@ -99,6 +111,10 @@ public class NGScimUserResource extends ScimResource {
   public Response
   updateUser(@PathParam("userIdentifier") String userIdentifier,
       @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to update user for accountId {}", accountIdentifier);
+    }
     try {
       return scimUserService.updateUser(userIdentifier, accountIdentifier, userQuery);
     } catch (Exception ex) {
@@ -121,6 +137,10 @@ public class NGScimUserResource extends ScimResource {
   public Response
   getUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userIdentifier), VIEW_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to get user for accountId {}", accountIdentifier);
+    }
     try {
       return Response.status(Response.Status.OK)
           .entity(scimUserService.getUser(userIdentifier, accountIdentifier))
@@ -149,6 +169,10 @@ public class NGScimUserResource extends ScimResource {
   public Response
   searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), VIEW_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to search users for accountId {}", accountIdentifier);
+    }
     try {
       ScimListResponse<ScimUser> searchUserResponse =
           scimUserService.searchUser(accountIdentifier, filter, count, startIndex);
@@ -173,6 +197,10 @@ public class NGScimUserResource extends ScimResource {
   public Response
   deleteUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to delete user for accountId {}", accountIdentifier);
+    }
     scimUserService.deleteUser(userIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -190,6 +218,10 @@ public class NGScimUserResource extends ScimResource {
   public ScimUser
   updateUser(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to patch update users for accountId {}", accountIdentifier);
+    }
     return scimUserService.updateUser(accountIdentifier, userIdentifier, patchRequest);
   }
 }

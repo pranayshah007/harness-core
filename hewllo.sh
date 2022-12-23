@@ -1,0 +1,2 @@
+export hqw=bye
+

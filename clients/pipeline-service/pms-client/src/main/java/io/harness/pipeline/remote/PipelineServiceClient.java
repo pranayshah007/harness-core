@@ -117,5 +117,8 @@ public interface PipelineServiceClient {
       @Query(GitSyncApiConstants.LAST_OBJECT_ID_KEY) String lastObjectId,
       @Query(GitSyncApiConstants.RESOLVED_CONFLICT_COMMIT_ID) String resolvedConflictCommitId,
       @Query(GitSyncApiConstants.STORE_TYPE) StoreType storeType,
-      @Query(GitSyncApiConstants.LAST_COMMIT_ID) String lastCommitId);
+      @Query(GitSyncApiConstants.LAST_COMMIT_ID) String lastCommitId,
+      @Query(GitSyncApiConstants.NEW_BRANCH) Boolean isNewBranch,
+      @Query(GitSyncApiConstants.CREATE_PR_KEY) Boolean createPr,
+      @Query(GitSyncApiConstants.BASE_BRANCH) String baseBranch);
 }

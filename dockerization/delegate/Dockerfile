@@ -1,0 +1,71 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+FROM redhat/ubi8-minimal:8.7
+
+LABEL name="harness/delegate-immutable" \
+      vendor="Harness" \
+      maintainer="Harness"
+
+RUN microdnf update \
+  && microdnf install --nodocs \
+    procps \
+    hostname \
+    lsof \
+    findutils \
+    tar \
+  && rm -rf /var/cache/yum \
+  && microdnf clean all \
+  && mkdir -p /opt/harness-delegate/
+
+COPY immutable-scripts /opt/harness-delegate/
+COPY scripts/client_tools.sh /opt/harness-delegate/client_tools.sh
+
+WORKDIR /opt/harness-delegate
+
+ARG disable_client_tools=true
+ARG TARGETARCH
+RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
+    && chmod -R 755 /opt/harness-delegate \
+    && chgrp -R 0 /opt/harness-delegate  \
+    && chmod -R g=u /opt/harness-delegate \
+    && chown -R 1001 /opt/harness-delegate
+
+RUN rm /opt/harness-delegate/client_tools.sh
+
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+
+ENV HOME=/opt/harness-delegate
+ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools
+ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=$disable_client_tools
+ENV JAVA_HOME=/opt/java/openjdk/
+ENV PATH="$JAVA_HOME/bin:${PATH}"
+
+RUN chmod +x /opt/harness-delegate/client-tools/kubectl/v1.24.3/kubectl
+RUN chmod +x /opt/harness-delegate/client-tools/go-template/v0.4.1/go-template
+RUN chmod +x /opt/harness-delegate/client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm
+RUN chmod +x /opt/harness-delegate/client-tools/helm/v3.9.2/helm
+RUN chmod +x /opt/harness-delegate/client-tools/chartmuseum/v0.15.0/chartmuseum
+RUN chmod +x /opt/harness-delegate/client-tools/tf-config-inspect/v1.1/terraform-config-inspect
+RUN chmod +x /opt/harness-delegate/client-tools/oc/v4.2.16/oc
+RUN chmod +x /opt/harness-delegate/client-tools/kustomize/v4.5.4/kustomize
+RUN chmod +x /opt/harness-delegate/client-tools/scm/3920e509/scm
+
+ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.1/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/harness-pywinrm/v0.4-dev/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/helm/v3.9.2/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/oc/v4.2.16/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/scm/3920e509/:$PATH
+
+
+COPY ./delegate.jar ./delegate.jar
+
+USER 1001
+
+CMD [ "./start.sh" ]
