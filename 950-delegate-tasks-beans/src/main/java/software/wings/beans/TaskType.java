@@ -431,7 +431,8 @@ public enum TaskType {
   TAS_BASIC_SETUP(TaskGroup.TAS, "Tas Basic Setup task"),
   TAS_BG_SETUP(TaskGroup.TAS, "Tas BG Setup task"),
   TAS_SWAP_ROLLBACK(TaskGroup.TAS, "Tas Swap Rollback task"),
-  TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task");
+  TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task"),
+  ECS_RUN_TASK_ARN(TaskGroup.ECS, "ECS Run Task Arn");
 
   private final TaskGroup taskGroup;
   private final String displayName;

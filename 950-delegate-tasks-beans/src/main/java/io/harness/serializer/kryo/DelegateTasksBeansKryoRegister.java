@@ -585,6 +585,7 @@ import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
@@ -2156,6 +2157,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntCommandType.class, 573568);
     kryo.register(TerragruntApplyTaskParameters.class, 573569);
     kryo.register(TerragruntDestroyTaskParameters.class, 573570);
+    kryo.register(EcsRunTaskArnRequest.class, 573583);
     kryo.register(ConcurrentHashMap.class, 673567);
   }
 }

@@ -18,7 +18,7 @@ import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
@@ -31,14 +31,13 @@ import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class EcsRunTaskCommandTaskHandler extends EcsCommandTaskNGHandler {
+public class EcsRunTaskArnCommandTaskHandler extends EcsCommandTaskNGHandler {
   @Inject private EcsTaskHelperBase ecsTaskHelperBase;
   @Inject private EcsCommandTaskNGHelper ecsCommandTaskHelper;
 
@@ -47,40 +46,29 @@ public class EcsRunTaskCommandTaskHandler extends EcsCommandTaskNGHandler {
   @Override
   protected EcsCommandResponse executeTaskInternal(EcsCommandRequest ecsCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
-    if (!(ecsCommandRequest instanceof EcsRunTaskRequest)) {
-      throw new InvalidArgumentsException(Pair.of("ecsCommandRequest", "Must be instance of EcsRunTaskRequest"));
+    if (!(ecsCommandRequest instanceof EcsRunTaskArnRequest)) {
+      throw new InvalidArgumentsException(Pair.of("ecsCommandRequest", "Must be instance of EcsRunTaskArnRequest"));
     }
 
-    EcsRunTaskRequest ecsRunTaskRequest = (EcsRunTaskRequest) ecsCommandRequest;
+    EcsRunTaskArnRequest ecsRunTaskArnRequest = (EcsRunTaskArnRequest) ecsCommandRequest;
 
-    timeoutInMillis = ecsRunTaskRequest.getTimeoutIntervalInMin() * 60000;
-    ecsInfraConfig = ecsRunTaskRequest.getEcsInfraConfig();
+    timeoutInMillis = ecsRunTaskArnRequest.getTimeoutIntervalInMin() * 60000;
+    ecsInfraConfig = ecsRunTaskArnRequest.getEcsInfraConfig();
 
     LogCallback runTaskLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.runTask.toString(), true, commandUnitsProgress);
-
     try {
-      String ecsTaskDefinitionManifestContent = ecsRunTaskRequest.getEcsTaskDefinitionManifestContent();
+      String ecsTaskDefinition = ecsRunTaskArnRequest.getEcsTaskDefinition();
+      runTaskLogCallback.saveExecutionLog(format("TaskDefinition: %s %n", ecsTaskDefinition), LogLevel.INFO);
+      DescribeTaskDefinitionResponse describeTaskDefinitionResponse =
+          ecsCommandTaskHelper.validateEcsTaskDefinition(ecsTaskDefinition, ecsInfraConfig, runTaskLogCallback);
 
-      RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
-          ecsCommandTaskHelper.parseYamlAsObject(
-              ecsTaskDefinitionManifestContent, RegisterTaskDefinitionRequest.serializableBuilderClass());
-
-      RegisterTaskDefinitionRequest registerTaskDefinitionRequest = registerTaskDefinitionRequestBuilder.build();
-
-      runTaskLogCallback.saveExecutionLog(
-          format("Creating Task Definition with family %s %n", registerTaskDefinitionRequest.family()), LogLevel.INFO);
-
-      RegisterTaskDefinitionResponse registerTaskDefinitionResponse = ecsCommandTaskHelper.createTaskDefinition(
-          registerTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-      TaskDefinition taskDefinition = registerTaskDefinitionResponse.taskDefinition();
-      String taskDefinitionName = ecsCommandTaskHelper.getEcsTaskDefinitionName(taskDefinition);
-      runTaskLogCallback.saveExecutionLog(format("Created Task Definition %s %n", taskDefinitionName), LogLevel.INFO);
+      TaskDefinition taskDefinition = describeTaskDefinitionResponse.taskDefinition();
 
       EcsRunTaskResponse ecsRunTaskResponse = ecsCommandTaskHelper.getEcsRunTaskResponse(taskDefinition,
-          ecsRunTaskRequest.getEcsRunTaskRequestDefinitionManifestContent(), ecsRunTaskRequest.isSkipSteadyStateCheck(),
-          timeoutInMillis, ecsInfraConfig, runTaskLogCallback);
+          ecsRunTaskArnRequest.getEcsRunTaskRequestDefinitionManifestContent(),
+          ecsRunTaskArnRequest.isSkipSteadyStateCheck(), timeoutInMillis, ecsInfraConfig, runTaskLogCallback);
+
       log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return ecsRunTaskResponse;
     } catch (Exception e) {
