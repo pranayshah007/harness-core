@@ -10,7 +10,6 @@ package software.wings.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.usermembership.remote.UserMembershipClient;
