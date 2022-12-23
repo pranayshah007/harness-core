@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//930-delegate-tasks/src/main/java/io/harness/exception:module",
+        "//931-encryption-service/src/java/io/harness/exception:module",
         "//931-encryption-service/src/java/io/harness/secrets:module",
         "//931-encryption-service/src/java/software/wings/service/intfc/security:module",
         "//950-delegate-tasks-beans:module",

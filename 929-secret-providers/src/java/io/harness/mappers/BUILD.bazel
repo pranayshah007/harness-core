@@ -14,9 +14,15 @@ java_library(
         "//:lombok",
         "//929-secret-providers/src/java/io/harness/beans:module",
         "//929-secret-providers/src/java/software/wings/beans:module",
-        "//930-delegate-tasks/src/main/java/io/harness/mappers:module",
+        "//931-encryption-service/src/java/io/harness/exception:module",
         "//940-secret-manager-client:module",
+        "//954-connector-beans:module",
+        "//970-ng-commons:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_intellij_annotations",
     ],
 )
 
