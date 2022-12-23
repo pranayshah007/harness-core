@@ -429,6 +429,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(389, "TAS_BG_SETUP");
     taskTypeOrdinalMapping.put(390, "TAS_SWAP_ROLLBACK");
     taskTypeOrdinalMapping.put(391, "TAS_DATA_FETCH");
+    taskTypeOrdinalMapping.put(392, "ECS_RUN_TASK_ARN");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

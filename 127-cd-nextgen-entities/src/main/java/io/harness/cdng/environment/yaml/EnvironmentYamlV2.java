@@ -88,6 +88,8 @@ public class EnvironmentYamlV2 implements Visitable {
   @YamlSchemaTypes({runtime})
   ParameterField<List<ClusterYaml>> gitOpsClusters;
 
+  List<ServiceOverrideInputsYaml> servicesOverrides;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 

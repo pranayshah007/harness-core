@@ -24,6 +24,7 @@ import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
@@ -43,16 +44,17 @@ public class WorkflowEntityReconServiceImpl implements LookerEntityReconService 
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> workflowIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<Workflow> workflows = persistence.createQuery(Workflow.class)
                                                  .field(WorkflowKeys.accountId)
                                                  .equal(accountId)
                                                  .field(WorkflowKeys.createdAt)
-                                                 .exists()
+                                                 .notEqual(null)
                                                  .field(WorkflowKeys.createdAt)
                                                  .greaterThanOrEq(durationStartTs)
                                                  .field(WorkflowKeys.createdAt)
                                                  .lessThanOrEq(durationEndTs)
-                                                 .fetchKeys();
+                                                 .fetchKeys(options);
     workflows.forEachRemaining(workflowKey -> workflowIds.add((String) workflowKey.getId()));
 
     return workflowIds;

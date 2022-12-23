@@ -42,6 +42,7 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome.HelmChartManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome.K8sManifestOutcomeKeys;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome.KustomizeManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
@@ -951,5 +952,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
     }
     return Collections.emptyList();
+  }
+
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+    if (commandFlags == null) {
+      return new HashMap<>();
+    }
+
+    Map<String, String> commandsValueMap = new HashMap<>();
+    for (K8sStepCommandFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+    }
+
+    return commandsValueMap;
   }
 }

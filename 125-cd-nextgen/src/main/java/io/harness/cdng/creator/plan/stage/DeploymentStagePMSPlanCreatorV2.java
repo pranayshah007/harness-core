@@ -26,6 +26,7 @@ import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
@@ -412,6 +413,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
       }
     }
+    List<ServiceOverrideInputsYaml> servicesOverrides = null;
+    if (stageConfig.getEnvironment() != null
+        && EmptyPredicate.isNotEmpty(stageConfig.getEnvironment().getServicesOverrides())) {
+      servicesOverrides = stageConfig.getEnvironment().getServicesOverrides();
+    }
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
@@ -421,6 +427,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .services(stageConfig.getServices())
             .serviceYamlV2(stageConfig.getService())
             .subType(subType)
+            .servicesOverrides(servicesOverrides)
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);

@@ -21,7 +21,6 @@ import static java.util.function.Predicate.not;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
-import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -85,14 +84,13 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   public static final String GITOPS_ENV_OUTCOME = "gitopsEnvOutcome";
 
   @Inject private ClusterService clusterService;
-  @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EngineExpressionService engineExpressionService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
-      "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
+      "Error getting clusters from Harness GitOps...retrying", "Failed to fetch clusters from Harness GitOps",
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -308,6 +306,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                   .envGroupName(envGroupName)
                                   .envName(ec.getEnvName())
                                   .envRef(ec.getEnvRef())
+                                  .envType(ec.getEnvType())
                                   .clusterRef(c)
                                   .envVariables(envVarsMap.get(ec.getEnvRef()))
                                   .build())
@@ -337,6 +336,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                         .envName(envsWithAllClustersAsTarget.get(c.getEnvRef()) != null
                                                 ? envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvName()
                                                 : null)
+                                        .envType(envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvType())
                                         .clusterRef(c.getClusterRef())
                                         .envVariables(envVarsMap.get(c.getEnvRef()))
                                         .build())
@@ -368,7 +368,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         mergedVars.putAll(envSvcOverrideVars.get(clusterInternal.getEnvRef()));
       }
       outcome.appendCluster(new Metadata(clusterInternal.getEnvGroupRef(), clusterInternal.getEnvGroupName()),
-          new Metadata(clusterInternal.getEnvRef(), clusterInternal.getEnvName()),
+          new Metadata(clusterInternal.getEnvRef(), clusterInternal.getEnvName()), clusterInternal.getEnvType(),
           new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars);
     }
 
@@ -382,6 +382,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envGroupName;
     String envRef;
     String envName;
+
+    String envType;
     String clusterRef;
     String clusterName;
     Map<String, Object> envVariables;

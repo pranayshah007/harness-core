@@ -26,8 +26,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -49,7 +52,11 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.junit.Test;
@@ -63,15 +70,24 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock InstanceInfoService instanceInfoService;
   @InjectMocks private K8sCanaryStep k8sCanaryStep;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTask() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
     CountInstanceSelection instanceSelection = new CountInstanceSelection();
     instanceSelection.setCount(ParameterField.createValueField("10"));
     K8sCanaryStepParameters stepParameters = new K8sCanaryStepParameters();
     stepParameters.setSkipDryRun(ParameterField.createValueField(true));
+    Map<String, String> k8sCommandFlag = ImmutableMap.of("Apply", "--server-side");
+    List<K8sStepCommandFlag> commandFlags =
+        Collections.singletonList(K8sStepCommandFlag.builder()
+                                      .commandType(K8sCommandFlagType.Apply)
+                                      .flag(ParameterField.createValueField("--server-side"))
+                                      .build());
+    stepParameters.setCommandFlags(commandFlags);
     stepParameters.setInstanceSelection(
         InstanceSelectionWrapper.builder().type(K8sInstanceUnitType.Count).spec(instanceSelection).build());
     final StepElementParameters stepElementParameters =
@@ -87,6 +103,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
     assertThat(request.isSkipResourceVersioning()).isTrue();
+    assertThat(request.getK8sCommandFlags()).isEqualTo(k8sCommandFlag);
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());

@@ -200,6 +200,12 @@ public class SettingAttribute
                  .field(SettingAttributeKeys.appId)
                  .field(SettingAttributeKeys.value_type)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdCategoryCreatedAt")
+                 .field(SettingAttributeKeys.accountId)
+                 .field(SettingAttributeKeys.category)
+                 .descSortField(SettingAttributeKeys.createdAt)
+                 .build())
         .build();
   }
 

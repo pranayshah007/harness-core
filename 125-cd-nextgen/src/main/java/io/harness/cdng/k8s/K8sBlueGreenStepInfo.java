@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sBlueGreenStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -53,8 +54,8 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
 
   @Builder(builderMethodName = "infoBuilder")
   public K8sBlueGreenStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(skipDryRun, pruningEnabled, delegateSelectors);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags);
   }
 
   @Override
@@ -73,6 +74,7 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
         .skipDryRun(skipDryRun)
         .pruningEnabled(pruningEnabled)
         .delegateSelectors(delegateSelectors)
+        .commandFlags(commandFlags)
         .build();
   }
 

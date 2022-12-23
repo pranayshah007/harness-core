@@ -8,9 +8,20 @@
 package io.harness.ngtriggers.beans.entity.metadata.catalog;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
+import static io.harness.ngtriggers.Constants.AWS_CODECOMMIT_REPO;
+import static io.harness.ngtriggers.Constants.BITBUCKET_REPO;
+import static io.harness.ngtriggers.Constants.CUSTOM_REPO;
+import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
+import static io.harness.ngtriggers.Constants.GITHUB_REPO;
+import static io.harness.ngtriggers.Constants.GITLAB_REPO;
+import static io.harness.ngtriggers.Constants.NEXUS2_REGISTRY;
+import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
 
 import io.harness.EntitySubtype;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngtriggers.Constants;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,26 +30,32 @@ import com.fasterxml.jackson.annotation.JsonValue;
 @OwnedBy(PL)
 public enum TriggerCatalogType implements EntitySubtype {
   // Webhook
-  @JsonProperty("Github") GITHUB("Github", TriggerCategory.WEBHOOK),
-  @JsonProperty("Gitlab") GITLAB("Gitlab", TriggerCategory.WEBHOOK),
-  @JsonProperty("Bitbucket") BITBUCKET("Bitbucket", TriggerCategory.WEBHOOK),
-  @JsonProperty("Codecommit") CODECOMMIT("Codecommit", TriggerCategory.WEBHOOK),
+  @JsonProperty(GITHUB_REPO) GITHUB(GITHUB_REPO, NGTriggerType.WEBHOOK),
+  @JsonProperty(GITLAB_REPO) GITLAB(GITLAB_REPO, NGTriggerType.WEBHOOK),
+  @JsonProperty(BITBUCKET_REPO) BITBUCKET(BITBUCKET_REPO, NGTriggerType.WEBHOOK),
+  @JsonProperty(AWS_CODECOMMIT_REPO) AWS_CODECOMMIT(AWS_CODECOMMIT_REPO, NGTriggerType.WEBHOOK),
+  @JsonProperty(CUSTOM_REPO) CUSTOM(CUSTOM_REPO, NGTriggerType.WEBHOOK),
 
   // Artifact
-  @JsonProperty("GCR") GCR("GCR", TriggerCategory.ARTIFACT),
-  @JsonProperty("ECR") ECR("ECR", TriggerCategory.ARTIFACT),
-  @JsonProperty("DockerRegistry") DOCKER("DockerRegistry", TriggerCategory.ARTIFACT),
-  @JsonProperty("Artifactory") ARTIFACTORY("Artifactory", TriggerCategory.ARTIFACT),
-  @JsonProperty("ACR") ACR("ACR", TriggerCategory.ARTIFACT),
-  @JsonProperty("AmazonS3") AMAZON_S3("AmazonS3", TriggerCategory.ARTIFACT),
-  @JsonProperty("Nexus") NEXUS("Nexus", TriggerCategory.ARTIFACT),
+  @JsonProperty(Constants.GCR) GCR(Constants.GCR, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.ECR) ECR(Constants.ECR, NGTriggerType.ARTIFACT),
+  @JsonProperty(DOCKER_REGISTRY) DOCKER(DOCKER_REGISTRY, NGTriggerType.ARTIFACT),
+  @JsonProperty(ARTIFACTORY_REGISTRY) ARTIFACTORY(ARTIFACTORY_REGISTRY, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.ACR) ACR(Constants.ACR, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.AMAZON_S3) GOOGLE_ARTIFACT_REGISTRY(Constants.AMAZON_S3, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.GOOGLE_ARTIFACT_REGISTRY)
+  AMAZON_S3(Constants.GOOGLE_ARTIFACT_REGISTRY, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.CUSTOM_ARTIFACT) CUSTOM_ARTIFACT(Constants.CUSTOM_ARTIFACT, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.GITHUB_PACKAGES) GITHUB_PACKAGES(Constants.GITHUB_PACKAGES, NGTriggerType.ARTIFACT),
+  @JsonProperty(NEXUS2_REGISTRY) NEXUS2(NEXUS2_REGISTRY, NGTriggerType.ARTIFACT),
+  @JsonProperty(NEXUS3_REGISTRY) NEXUS3(NEXUS3_REGISTRY, NGTriggerType.ARTIFACT),
 
   // Manifest
-  @JsonProperty("HelmChart") HELM_CHART("HelmChart", TriggerCategory.MANIFEST),
+  @JsonProperty(Constants.HELM_CHART) HELM_CHART(Constants.HELM_CHART, NGTriggerType.MANIFEST),
   // Scheduled
-  @JsonProperty("Cron") CRON("Cron", TriggerCategory.SCHEDULED);
+  @JsonProperty(Constants.CRON) CRON(Constants.CRON, NGTriggerType.SCHEDULED);
   private final String displayName;
-  private final TriggerCategory triggerCategory;
+  private final NGTriggerType ngTriggerType;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TriggerCatalogType getTriggerType(@JsonProperty("type") String displayName) {
@@ -50,9 +67,9 @@ public enum TriggerCatalogType implements EntitySubtype {
     throw new IllegalArgumentException("Invalid value: " + displayName);
   }
 
-  TriggerCatalogType(String displayName, TriggerCategory triggerCategory) {
+  TriggerCatalogType(String displayName, NGTriggerType ngTriggerType) {
     this.displayName = displayName;
-    this.triggerCategory = triggerCategory;
+    this.ngTriggerType = ngTriggerType;
   }
 
   @JsonValue
@@ -60,8 +77,8 @@ public enum TriggerCatalogType implements EntitySubtype {
     return displayName;
   }
 
-  public TriggerCategory getCategoryName() {
-    return triggerCategory;
+  public NGTriggerType getTriggerType() {
+    return ngTriggerType;
   }
 
   @Override
@@ -73,7 +90,7 @@ public enum TriggerCatalogType implements EntitySubtype {
     return TriggerCatalogType.getTriggerType(s);
   }
 
-  public static TriggerCategory getTriggerCategory(TriggerCatalogType catalogType) {
-    return catalogType.getCategoryName();
+  public static NGTriggerType getTriggerCategory(TriggerCatalogType catalogType) {
+    return catalogType.getTriggerType();
   }
 }

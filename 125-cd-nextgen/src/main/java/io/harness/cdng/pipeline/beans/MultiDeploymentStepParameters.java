@@ -13,12 +13,14 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -37,5 +39,7 @@ public class MultiDeploymentStepParameters implements StepParameters {
   ParameterField<Integer> maxConcurrency;
   @NotNull StrategyType strategyType;
   String subType;
+
+  List<ServiceOverrideInputsYaml> servicesOverrides;
   ServiceYamlV2 serviceYamlV2;
 }

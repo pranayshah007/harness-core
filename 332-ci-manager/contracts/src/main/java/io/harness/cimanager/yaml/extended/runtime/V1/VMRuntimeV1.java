@@ -10,6 +10,7 @@ package io.harness.beans.yaml.extended.runtime.V1;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -22,14 +23,16 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @AllArgsConstructor
-@JsonTypeName("docker")
-@TypeAlias("DockerRuntimeV1")
+@JsonTypeName("vm")
+@TypeAlias("VMRuntimeV1")
 @OwnedBy(CI)
-public class DockerRuntimeV1 implements RuntimeV1 {
-  @Builder.Default @NotNull @ApiModelProperty(allowableValues = "docker") Type type = Type.DOCKER;
-  @NotNull DockerRuntimeSpec spec;
+public class VMRuntimeV1 implements RuntimeV1 {
+  @Builder.Default @NotNull @ApiModelProperty(allowableValues = "vm") RuntimeV1.Type type = RuntimeV1.Type.VM;
+  @NotNull VMRuntimeSpec spec;
 
   @Value
   @Builder
-  public static class DockerRuntimeSpec {}
+  public static class VMRuntimeSpec {
+    @NotNull ParameterField<String> pool;
+  }
 }
