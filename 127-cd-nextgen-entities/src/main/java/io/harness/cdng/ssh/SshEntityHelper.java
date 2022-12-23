@@ -29,6 +29,7 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -295,9 +296,28 @@ public class SshEntityHelper {
 
   private Set<String> extractHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure,
       PhysicalDataCenterConnectorDTO pdcConnectorDTO, NGAccess ngAccess) {
+    if (pdcDirectInfrastructure.isDynamicallyProvisioned()) {
+      return extractDynamicallyProvisionedHostNames(pdcDirectInfrastructure);
+    }
+
     return pdcDirectInfrastructure.useInfrastructureHosts()
         ? new HashSet<>(pdcDirectInfrastructure.getHosts())
         : toStringHostNames(extractConnectorHostNames(pdcDirectInfrastructure, pdcConnectorDTO.getHosts(), ngAccess));
+  }
+
+  private Set<String> extractDynamicallyProvisionedHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure) {
+    if (isEmpty(pdcDirectInfrastructure.getHosts())) {
+      return emptySet();
+    }
+
+    if (pdcDirectInfrastructure.getHostFilter() != null
+        && HostFilterType.HOST_NAMES.equals(pdcDirectInfrastructure.getHostFilter().getType())) {
+      List<String> filterHostNames =
+          ((HostNamesFilterDTO) pdcDirectInfrastructure.getHostFilter().getSpec()).getValue();
+      return pdcDirectInfrastructure.getHosts().stream().filter(filterHostNames::contains).collect(Collectors.toSet());
+    }
+
+    return new HashSet<>(pdcDirectInfrastructure.getHosts());
   }
 
   private Set<HostDTO> extractConnectorHostNames(

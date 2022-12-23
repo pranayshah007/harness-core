@@ -35,6 +35,7 @@ public class PdcInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   HostFilterDTO hostFilter;
   List<Map<String, Object>> hostsAttributes;
+  boolean dynamicallyProvisioned;
 
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;

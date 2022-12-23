@@ -76,6 +76,7 @@ public class InfrastructureProvisionerMapper {
               .infrastructureKey(InfrastructureKey.generate(
                   service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
               .hostsAttributes(evaluatedHostObjectsAttributes)
+              .dynamicallyProvisioned(true)
               .build();
 
       pdcInfrastructureOutcome.setInfraName(pdcInfrastructure.getInfraName());
