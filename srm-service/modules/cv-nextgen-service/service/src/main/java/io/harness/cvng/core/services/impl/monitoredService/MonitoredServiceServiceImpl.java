@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -11,19 +11,15 @@ import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builder
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_FORMATTED_VERSION_LIST;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_BEGIN;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_END;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_MIDDLE;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorNotificationData;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.MODULE_NAME;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -1934,115 +1930,39 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           return NotificationData.builder().shouldSendNotification(false).build();
         }
       case CODE_ERRORS:
-        if (featureFlagService.isFeatureFlagEnabled(SRM_CODE_ERROR_NOTIFICATIONS, monitoredService.getAccountId())) {
-          log.info("SRM_CODE_ERROR_NOTIFICATIONS feature flag enabled");
-          MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+        boolean featureFlagEnabled =
+            featureFlagService.isFeatureFlagEnabled(SRM_CODE_ERROR_NOTIFICATIONS, monitoredService.getAccountId());
+        final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
+        boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
 
-          if (monitoredService.getEnvironmentIdentifierList() == null
-              || monitoredService.getEnvironmentIdentifierList().size() != 1) {
-            return NotificationData.builder().shouldSendNotification(false).build();
-          }
-          String environmentId = monitoredService.getEnvironmentIdentifierList().get(0);
-
-          final String baseLinkUrl =
-              ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
-                   NotificationRuleConditionType.CODE_ERRORS))
-                  .getBaseLinkUrl(monitoredService.getAccountId());
+        if (featureFlagEnabled && oneEnvironmentId) {
+          String environmentId = environmentIdentifierList.get(0);
+          ErrorTrackingNotificationData notificationData = null;
           try {
-            final ErrorTrackingNotificationData notificationData = errorTrackingService.getNotificationData(
-                monitoredService.getOrgIdentifier(), monitoredService.getAccountId(),
-                monitoredService.getProjectIdentifier(), monitoredService.getServiceIdentifier(), environmentId,
-                codeErrorCondition.getErrorTrackingEventTypes(), notificationUuid);
-
-            if (notificationData == null || notificationData.getScorecards().isEmpty()) {
-              return NotificationData.builder().shouldSendNotification(false).build();
-            }
-            templateDataMap.putAll(getCodeErrorNotificationData(notificationData, baseLinkUrl));
+            MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+            notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
+                monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+                monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventTypes(),
+                notificationUuid);
           } catch (Exception e) {
             log.error("Error connecting to the ErrorTracking Event Summary API.", e);
-            return NotificationData.builder().shouldSendNotification(false).build();
           }
-          templateDataMap.put(
-              NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
-          templateDataMap.put(NOTIFICATION_NAME, notificationName);
-          templateDataMap.put(ENVIRONMENT_NAME, environmentId);
-          return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+          if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+            final String baseLinkUrl =
+                ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
+                     NotificationRuleConditionType.CODE_ERRORS))
+                    .getBaseLinkUrl(monitoredService.getAccountId());
+            templateDataMap.putAll(getCodeErrorNotificationData(notificationData, baseLinkUrl));
+            templateDataMap.put(
+                NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+            templateDataMap.put(NOTIFICATION_NAME, notificationName);
+            templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+            return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+          }
         }
         return NotificationData.builder().shouldSendNotification(false).build();
       default:
         return NotificationData.builder().shouldSendNotification(false).build();
-    }
-  }
-
-  private Map<String, String> getCodeErrorNotificationData(
-      ErrorTrackingNotificationData errorTrackingNotificationData, String baseLinkUrl) {
-    Map<String, String> notificationDataMap = new HashMap<>();
-
-    String from = String.valueOf(errorTrackingNotificationData.getFrom().getTime() / 1000);
-    String to = String.valueOf(errorTrackingNotificationData.getTo().getTime() / 1000);
-
-    List<ErrorTrackingEvent> errorTrackingEvents =
-        getErrorTrackingEventsRecursive(errorTrackingNotificationData.getScorecards(), baseLinkUrl, from, to);
-
-    final String slackVersionList =
-        errorTrackingEvents.stream().map(ErrorTrackingEvent::toSlackString).collect(Collectors.joining(" "));
-    final String emailVersionList =
-        errorTrackingEvents.stream().map(ErrorTrackingEvent::toEmailString).collect(Collectors.joining(" "));
-
-    notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackVersionList);
-    notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
-    return notificationDataMap;
-  }
-
-  private List<ErrorTrackingEvent> getErrorTrackingEventsRecursive(
-      List<Scorecard> scorecards, String baseLinkUrl, String from, String to) {
-    List<ErrorTrackingEvent> urlsByVersion = new ArrayList<>();
-    for (Scorecard scorecard : scorecards) {
-      if (scorecard.getChildren() == null) {
-        if (scorecard.getNewHitCount() > 0 && scorecard.getVersionIdentifier() != null) {
-          ErrorTrackingEvent errorTrackingEvent = new ErrorTrackingEvent();
-          errorTrackingEvent.setVersion(scorecard.getVersionIdentifier());
-          errorTrackingEvent.setUrl(buildEventListUrlWithParameters(baseLinkUrl, scorecard.getAccountIdentifier(),
-              scorecard.getOrganizationIdentifier(), scorecard.getProjectIdentifier(),
-              scorecard.getEnvironmentIdentifier(), scorecard.getServiceIdentifier(), scorecard.getVersionIdentifier(),
-              from, to));
-          errorTrackingEvent.setNewCount(scorecard.getNewHitCount().toString());
-
-          urlsByVersion.add(errorTrackingEvent);
-        }
-      } else {
-        urlsByVersion.addAll(getErrorTrackingEventsRecursive(scorecard.getChildren(), baseLinkUrl, from, to));
-      }
-    }
-    return urlsByVersion;
-  }
-
-  private String buildEventListUrlWithParameters(String baseLinkUrl, String account, String org, String project,
-      String env, String service, String deployment, String from, String to) {
-    return String.format(
-        "%s/account/%s/%s/orgs/%s/projects/%s/et/eventsummary/events?env=%s&service=%s&dep=%s&fromTimestamp=%s&toTimestamp=%s",
-        baseLinkUrl, account, MODULE_NAME, org, project, env, service, deployment, from, to);
-  }
-
-  private String buildMonitoredServiceConfigurationTabUrl(String baseUrl, MonitoredServiceParams params) {
-    return String.format("%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=Configurations", baseUrl,
-        params.getAccountIdentifier(), MODULE_NAME, params.getOrgIdentifier(), params.getProjectIdentifier(),
-        params.getMonitoredServiceIdentifier());
-  }
-
-  @Data
-  private class ErrorTrackingEvent {
-    private String version;
-    private String url;
-    private String newCount;
-
-    public String toSlackString() {
-      return "<" + url + "|" + version + "(" + newCount + ")"
-          + ">";
-    }
-
-    public String toEmailString() {
-      return EMAIL_LINK_BEGIN + url + EMAIL_LINK_MIDDLE + version + "(" + newCount + ")" + EMAIL_LINK_END;
     }
   }
 
