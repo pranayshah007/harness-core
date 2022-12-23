@@ -28,7 +28,16 @@ import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
-
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
 import static software.wings.app.ManagerCacheRegistrar.USER_CACHE;
 import static software.wings.beans.Account.Builder.anAccount;
@@ -41,17 +50,10 @@ import static software.wings.utils.WingsTestConstants.USER_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
@@ -76,31 +78,6 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.usermembership.remote.UserMembershipClient;
-
-import software.wings.WingsBaseTest;
-import software.wings.beans.Account;
-import software.wings.beans.Base.BaseKeys;
-import software.wings.beans.User;
-import software.wings.beans.UserInvite;
-import software.wings.beans.UserInvite.UserInviteKeys;
-import software.wings.beans.security.AccessRequest;
-import software.wings.beans.security.HarnessUserGroup;
-import software.wings.beans.security.UserGroup;
-import software.wings.beans.security.UserGroup.UserGroupKeys;
-import software.wings.core.managerConfiguration.ConfigurationController;
-import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.resources.UserResourceNG;
-import software.wings.security.authentication.TOTPAuthHandler;
-import software.wings.service.intfc.AccountService;
-import software.wings.service.intfc.HarnessUserGroupService;
-import software.wings.service.intfc.SignupService;
-import software.wings.service.intfc.UserGroupService;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -121,9 +98,29 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import retrofit2.Call;
 import retrofit2.Response;
+import software.wings.WingsBaseTest;
+import software.wings.beans.Account;
+import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.User;
+import software.wings.beans.UserInvite;
+import software.wings.beans.UserInvite.UserInviteKeys;
+import software.wings.beans.security.AccessRequest;
+import software.wings.beans.security.HarnessUserGroup;
+import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroup.UserGroupKeys;
+import software.wings.core.managerConfiguration.ConfigurationController;
+import software.wings.dl.WingsPersistence;
+import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.resources.UserResourceNG;
+import software.wings.security.authentication.TOTPAuthHandler;
+import software.wings.service.intfc.AccountService;
+import software.wings.service.intfc.HarnessUserGroupService;
+import software.wings.service.intfc.SignupService;
+import software.wings.service.intfc.UserGroupService;
 
-@OwnedBy(PL) @TargetModule(
-        _360_CG_MANAGER) public class UserServiceImplTest extends WingsBaseTest {
+@OwnedBy(PL)
+@TargetModule(_360_CG_MANAGER)
+public class UserServiceImplTest extends WingsBaseTest {
   @Mock AccountService accountService;
   @Mock HarnessUserGroupService harnessUserGroupService;
   @Mock UserGroupService userGroupService;
@@ -142,11 +139,12 @@ import retrofit2.Response;
   @Inject WingsPersistence wingsPersistence;
   @Mock UserServiceHelper userServiceHelper;
   @Inject @InjectMocks UserResourceNG userResourceNG;
-  private
-  static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
+  private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
 
-  @Test @Owner(developers = DEEPAK)
-  @Category(UnitTests.class) public void testTrialSignup() {
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testTrialSignup() {
     String email = "email@email.com";
     UserInvite userInvite = anUserInvite()
             .withEmail(email)
@@ -167,8 +165,10 @@ import retrofit2.Response;
             .publishTrialUserSignupEvent(any(), any(), any());
   }
 
-  @Test @Owner(developers = DEEPAK)
-  @Category(UnitTests.class) public void testValidateAccountName() {
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testValidateAccountName() {
     Mockito.doNothing()
             .when(accountService)
             .validateAccount(any(Account.class));
@@ -177,10 +177,10 @@ import retrofit2.Response;
             .validateAccount(any(Account.class));
   }
 
-  @Test(expected = InvalidRequestException.class) @Owner(developers = DEEPAK)
-  @Category(
-          UnitTests
-                  .class) public void testValidateAccountNameWhenInvalidName() {
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testValidateAccountNameWhenInvalidName() {
     doThrow(new InvalidRequestException(""))
             .when(accountService)
             .validateAccount(any(Account.class));
@@ -189,8 +189,10 @@ import retrofit2.Response;
             .validateAccount(any(Account.class));
   }
 
-  @Test @Owner(developers = MOHIT) @Category(
-          UnitTests.class) public void testGetUserCountForPendingAccounts() {
+  @Test
+  @Owner(developers = MOHIT)
+  @Category(UnitTests.class)
+  public void testGetUserCountForPendingAccounts() {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
     User user = anUser().pendingAccounts(Arrays.asList(account)).build();
@@ -199,8 +201,7 @@ import retrofit2.Response;
             .isEqualTo(1);
   }
 
-  private
-  void setup() {
+  private void setup() {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
     User user1 = User.Builder.anUser()
@@ -226,9 +227,10 @@ import retrofit2.Response;
     wingsPersistence.save(user3);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests
-                  .class) public void test_checkInviteStatus_userAddedRequiredPassword() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_userAddedRequiredPassword() {
     Account withNonSso =
             anAccount()
                     .withAccountName("harness")
@@ -265,8 +267,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_checkInviteStatus_userInviteAccepted() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_userInviteAccepted() {
     Account withNonSso =
             anAccount()
                     .withAccountName("harness")
@@ -302,8 +306,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_checkInviteStatus_userInvalid() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_userInvalid() {
     Account withNonSso =
             anAccount()
                     .withAccountName("harness")
@@ -340,8 +346,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_checkInviteStatus_accountInvalid() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_accountInvalid() {
     Account withNonSso =
             anAccount()
                     .withAccountName("harness")
@@ -376,8 +384,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_checkInviteStatus_userInviteInvalid() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_userInviteInvalid() {
     Account withNonSso =
             anAccount()
                     .withAccountName("harness")
@@ -410,8 +420,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_checkInviteStatus_SsoUserAdded() {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_checkInviteStatus_SsoUserAdded() {
     Account withSso =
             anAccount()
                     .withAccountName("harness")
@@ -452,8 +464,10 @@ import retrofit2.Response;
                     USER_EMAIL);
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests.class) public void test_CompleteNgInvite() throws Exception {
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_CompleteNgInvite() throws Exception {
     Account account =
             anAccount()
                     .withAccountName("harness")
@@ -483,9 +497,10 @@ import retrofit2.Response;
             .publishUserRegistrationCompletionEvent(anyString(), any());
   }
 
-  @Test @Owner(developers = RAJ)
-  @Category(UnitTests.class) public void test_CompleteNgInvite_2FA()
-          throws Exception {
+  @Test
+  @Owner(developers = RAJ)
+  @Category(UnitTests.class)
+  public void test_CompleteNgInvite_2FA() throws Exception {
     Account account =
             anAccount()
                     .withAccountName("harness")
@@ -524,9 +539,11 @@ import retrofit2.Response;
             .publishUserRegistrationCompletionEvent(anyString(), any());
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests
-                  .class) public void test_getInviteAcceptRedirectURL_AccountInviteAcceptedNeedPassword()
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void
+  test_getInviteAcceptRedirectURL_AccountInviteAcceptedNeedPassword()
           throws URISyntaxException {
     InviteOperationResponse inviteOperationResponse =
             ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
@@ -551,9 +568,10 @@ import retrofit2.Response;
             .isEqualTo(uriBuilder.build());
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests
-                  .class) public void test_getInviteAcceptRedirectURL_FailedInvite()
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_getInviteAcceptRedirectURL_FailedInvite()
           throws URISyntaxException {
     InviteOperationResponse inviteOperationResponse = FAIL;
     UserInvite userInvite = anUserInvite()
@@ -572,9 +590,10 @@ import retrofit2.Response;
             .isEqualTo(uriBuilder.build());
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests
-                  .class) public void test_getInviteAcceptRedirectURL_ExpiredInvite()
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_getInviteAcceptRedirectURL_ExpiredInvite()
           throws URISyntaxException {
     InviteOperationResponse inviteOperationResponse = INVITE_EXPIRED;
     UserInvite userInvite = anUserInvite()
@@ -594,9 +613,10 @@ import retrofit2.Response;
             .isEqualTo(uriBuilder.build());
   }
 
-  @Test @Owner(developers = VIKAS_M) @Category(
-          UnitTests
-                  .class) public void test_getInviteAcceptRedirectURL_InvalidInvite()
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_getInviteAcceptRedirectURL_InvalidInvite()
           throws URISyntaxException {
     InviteOperationResponse inviteOperationResponse = INVITE_INVALID;
     UserInvite userInvite = anUserInvite()
@@ -616,8 +636,10 @@ import retrofit2.Response;
             .isEqualTo(uriBuilder.build());
   }
 
-  @Test @Owner(developers = MOHIT)
-  @Category(UnitTests.class) public void shouldSortUsers() {
+  @Test
+  @Owner(developers = MOHIT)
+  @Category(UnitTests.class)
+  public void shouldSortUsers() {
     setup();
 
     PageRequest pageRequest = mock(PageRequest.class);
@@ -639,8 +661,10 @@ import retrofit2.Response;
     assertThat(userList.get(2).getName()).isEqualTo("eFg");
   }
 
-  @Test @Owner(developers = MOHIT)
-  @Category(UnitTests.class) public void shouldSearchUsers() {
+  @Test
+  @Owner(developers = MOHIT)
+  @Category(UnitTests.class)
+  public void shouldSearchUsers() {
     setup();
 
     PageRequest pageRequest = mock(PageRequest.class);
@@ -659,8 +683,10 @@ import retrofit2.Response;
     assertThat(userList.size()).isEqualTo(2);
   }
 
-  @Test @Owner(developers = MOHIT)
-  @Category(UnitTests.class) public void shouldSearchAndSortUsers() {
+  @Test
+  @Owner(developers = MOHIT)
+  @Category(UnitTests.class)
+  public void shouldSearchAndSortUsers() {
     setup();
 
     PageRequest pageRequest = mock(PageRequest.class);
@@ -680,8 +706,10 @@ import retrofit2.Response;
     assertThat(userList.size()).isEqualTo(0);
   }
 
-  @Test @Owner(developers = PRATEEK)
-  @Category(UnitTests.class) public void shouldSearchUsersNotDisabled() {
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldSearchUsersNotDisabled() {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
     User user1 = User.Builder.anUser()
@@ -705,8 +733,10 @@ import retrofit2.Response;
     assertThat(userList.get(0).getName()).isEqualTo("pqr");
   }
 
-  @Test @Owner(developers = BHAVYA)
-  @Category(UnitTests.class) public void test_gerUseraccountIds() {
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_gerUseraccountIds() {
     Account account1 =
             anAccount().withUuid("ACCOUNT_ID").withAccountName("account1").build();
     Account account2 =
@@ -727,8 +757,10 @@ import retrofit2.Response;
     assertThat(ids.size()).isEqualTo(2);
   }
 
-  @Test @Owner(developers = BHAVYA)
-  @Category(UnitTests.class) public void test_getUsersAccounts() {
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_getUsersAccounts() {
     Account account1 = anAccount()
             .withUuid("ACCOUNT_ID")
             .withAccountName("account1")
@@ -795,8 +827,10 @@ import retrofit2.Response;
     assertThat(accounts.get(3).getAccountName()).isEqualTo("account4");
   }
 
-  @Test @Owner(developers = PRATEEK)
-  @Category(UnitTests.class) public void shouldNotSearchUsersDisabled() {
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldNotSearchUsersDisabled() {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
     User user1 = User.Builder.anUser()
@@ -818,9 +852,10 @@ import retrofit2.Response;
     assertThat(userList.size()).isEqualTo(0);
   }
 
-  @Test @Owner(developers = VOJIN) @Category(
-          UnitTests
-                  .class) public void sanitizeUserNameTest_without_malicious_content() {
+  @Test
+  @Owner(developers = VOJIN)
+  @Category(UnitTests.class)
+  public void sanitizeUserNameTest_without_malicious_content() {
     String name1 = "Vojin Đukić";
     String name2 = "Peter O'Toole";
     String name3 = "You <p>user login</p> is <strong>owasp-user01</strong>";
@@ -831,9 +866,10 @@ import retrofit2.Response;
             .isEqualTo(expectedName3);
   }
 
-  @Test @Owner(developers = NANDAN) @Category(
-          UnitTests
-                  .class) public void sanitizeUserNameTest_with_malicious_content() {
+  @Test
+  @Owner(developers = NANDAN)
+  @Category(UnitTests.class)
+  public void sanitizeUserNameTest_with_malicious_content() {
     String name1 = "<script>alert(22);</script>" + USER_NAME +
             "<img src='#' onload='javascript:alert(23);'>";
     String name2 =
@@ -850,9 +886,10 @@ import retrofit2.Response;
             .isEqualTo(expectedName3);
   }
 
-  @Test @Owner(developers = NAMANG) @Category(
-          UnitTests
-                  .class) public void test_delete_when_user_part_of_only_one_CG_account() {
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_delete_when_user_part_of_only_one_CG_account() {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
     User user1 = User.Builder.anUser()
@@ -962,9 +999,10 @@ import retrofit2.Response;
             .reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
   }
 
-  @Test @Owner(developers = NAMANG) @Category(
-          UnitTests
-                  .class) public void test_delete_when_user_part_of_only_one_NG_account()
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_delete_when_user_part_of_only_one_NG_account()
           throws IOException {
     Account account = anAccount().withUuid("ACCOUNT_ID").build();
     wingsPersistence.save(account);
