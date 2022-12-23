@@ -2883,8 +2883,7 @@ public class UserServiceImpl implements UserService {
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
     PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
-    List<UserGroup> allUserGroupList = res.getResponse();
-    return allUserGroupList;
+    return res.getResponse();
   }
 
   private HashMultimap getUsergroupsOfUser(List<UserGroup> userGroupList) {
