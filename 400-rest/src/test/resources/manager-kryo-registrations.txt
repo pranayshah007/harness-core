@@ -2248,6 +2248,7 @@
 88507:io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec
 88508:io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec
 88509:io.harness.yaml.extended.ci.codebase.BuildType
+88510:io.harness.yaml.extended.ci.codebase.PRCloneStrategy
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
