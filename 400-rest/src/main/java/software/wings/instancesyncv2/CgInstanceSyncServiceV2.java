@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.runtime.NoInstancesException;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -197,12 +198,16 @@ public class CgInstanceSyncServiceV2 {
             releasesToDelete.add(cgReleaseIdentifiers);
           }
         }
+        try {
+          for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
+            DelegateResponseData delegateResponse =
+                (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
 
-        for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-          DelegateResponseData delegateResponse =
-              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
-
-          instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
+            instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
+          }
+        } catch (NoInstancesException e) {
+          log.error(e.getMessage());
+          taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }

@@ -123,7 +123,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(taskDetailsService)
         .fetchForCloudProvider(anyString(), anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
 
     ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
@@ -183,7 +183,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(taskDetailsService)
         .fetchForCloudProvider(anyString(), anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
   }
 
@@ -208,7 +208,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(cloudProviderService)
         .get(anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
 
     InstanceSyncTrackedDeploymentDetails instanceSyncTrackedDeploymentDetails =
         cgInstanceSyncServiceV2.fetchTaskDetails("perpetualTaskId", "accountId");
@@ -250,10 +250,10 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(cloudProviderService)
         .get(anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
-    verify(taskDetailsService, times(1)).updateLastRun(captor.capture());
+    verify(taskDetailsService, times(1)).updateLastRun(captor.capture(), any(), any());
     assertThat(captor.getValue()).isEqualTo("taskId");
   }
 }

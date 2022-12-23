@@ -7,6 +7,8 @@
 
 package software.wings.instancesyncv2.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -74,7 +76,9 @@ public class CgInstanceSyncTaskDetailsService {
     taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
     if (!releasesToUpdate.isEmpty() || !releasesToDelete.isEmpty()) {
       Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
-      allReleases.addAll(taskDetails.getReleaseIdentifiers());
+      if (isNotEmpty(taskDetails.getReleaseIdentifiers())) {
+        allReleases.addAll(taskDetails.getReleaseIdentifiers());
+      }
       allReleases.removeAll(releasesToDelete);
       taskDetails.setReleaseIdentifiers(allReleases);
     }
