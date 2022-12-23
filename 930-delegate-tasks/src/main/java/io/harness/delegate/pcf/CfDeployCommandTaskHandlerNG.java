@@ -190,7 +190,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     log.error(
         CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing CF Deploy task [{}]", cfDeployCommandRequestNG, exception);
 
-    executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
     Misc.logAllMessages(exception, executionLogCallback);
+    executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
   }
 }

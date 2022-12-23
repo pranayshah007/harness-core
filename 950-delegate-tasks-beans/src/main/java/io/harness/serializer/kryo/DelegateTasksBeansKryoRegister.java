@@ -726,6 +726,7 @@ import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRoutesRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfBlueGreenSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
@@ -1472,6 +1473,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasArtifactRegistryType.class, 10000257);
     kryo.register(TasResizeStrategyType.class, 10000258);
     kryo.register(TasConstants.class, 10000259);
+    kryo.register(TasManifestsPackage.class, 10000260);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
