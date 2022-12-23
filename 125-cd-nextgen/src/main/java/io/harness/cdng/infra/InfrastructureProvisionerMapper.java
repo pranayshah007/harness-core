@@ -26,7 +26,6 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -60,7 +59,9 @@ public class InfrastructureProvisionerMapper {
       @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
     if (InfrastructureKind.PDC.equals(infrastructure.getKind())) {
       PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
+      validateHostAttributes(pdcInfrastructure.getHostAttributes().getValue());
       List<Map<String, Object>> hostObjects = parseHostInstancesJSON(pdcInfrastructure.getHostObjectArray().getValue());
+      validateHostObjects(hostObjects);
       Map<String, String> hostAttributes = fixHostAttributes(pdcInfrastructure.getHostAttributes().getValue());
 
       List<Map<String, Object>> evaluatedHostObjectsAttributes =
@@ -88,15 +89,32 @@ public class InfrastructureProvisionerMapper {
 
   private List<Map<String, Object>> parseHostInstancesJSON(final String hostInstancesJson) {
     if (isEmpty(hostInstancesJson)) {
-      return Collections.emptyList();
+      throw new InvalidArgumentsException("Host object array JSON cannot be null or empty");
     }
 
     try {
       TypeReference<List<Map<String, Object>>> typeRef = new TypeReference<>() {};
       return new ObjectMapper().readValue(IOUtils.toInputStream(hostInstancesJson), typeRef);
     } catch (IOException ex) {
-      log.error("Unable to parse host instances JSON", ex);
-      throw new InvalidRequestException("Unable to parse host instances JSON", ex);
+      log.error("Unable to parse host object array  JSON", ex);
+      throw new InvalidRequestException("Host object array JSON cannot be parsed", ex);
+    }
+  }
+
+  private void validateHostObjects(List<Map<String, Object>> hostObjects) {
+    if (isEmpty(hostObjects)) {
+      throw new InvalidRequestException("Cannot evaluate empty host object array");
+    }
+  }
+
+  private void validateHostAttributes(Map<String, String> hostAttributes) {
+    if (!hostAttributes.containsKey(HOSTNAME_HOST_ATTRIBUTE)) {
+      throw new InvalidRequestException(
+          format("[%s] property is mandatory for all host objects", HOSTNAME_HOST_ATTRIBUTE));
+    }
+
+    if (isEmpty(hostAttributes.get(HOSTNAME_HOST_ATTRIBUTE))) {
+      throw new InvalidRequestException(format("[%s] property value cannot be null or empty", HOSTNAME_HOST_ATTRIBUTE));
     }
   }
 
@@ -111,17 +129,14 @@ public class InfrastructureProvisionerMapper {
   }
 
   private List<Map<String, Object>> evaluateHostObjectsAttributes(
-      List<Map<String, Object>> hostInstances, Map<String, String> hostAttributes) {
-    if (hostInstances == null) {
-      throw new InvalidRequestException("Host instances cannot be null");
-    }
-    if (EmptyPredicate.isEmpty(hostAttributes)) {
+      List<Map<String, Object>> hostObjects, Map<String, String> hostAttributes) {
+    if (isEmpty(hostAttributes) || isEmpty(hostObjects)) {
       return Collections.emptyList();
     }
 
     List<Map<String, Object>> evaluatedHostAttributes = new ArrayList<>();
-    for (Object hostInstance : hostInstances) {
-      evaluatedHostAttributes.add(evaluator.evaluateProperties(hostAttributes, (Map<String, Object>) hostInstance));
+    for (Object hostObject : hostObjects) {
+      evaluatedHostAttributes.add(evaluator.evaluateProperties(hostAttributes, (Map<String, Object>) hostObject));
     }
 
     return evaluatedHostAttributes;

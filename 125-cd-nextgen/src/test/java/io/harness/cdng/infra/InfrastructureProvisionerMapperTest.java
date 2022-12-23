@@ -17,7 +17,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.expressionEvaluator.CDEngineExpressionEvaluator;
-import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
@@ -28,6 +27,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -82,6 +82,85 @@ public class InfrastructureProvisionerMapperTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  public void testOutcomeWithInvalidJson() {
+    HashMap<String, String> hostAttributes = populateHostAttributes();
+    Infrastructure pdcInfrastructure =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+            .hostObjectArray(ParameterField.createValueField("Not valid JSON"))
+            .hostAttributes(ParameterField.createValueField(hostAttributes))
+            .hostFilter(HostFilter.builder().type(HostFilterType.HOST_ATTRIBUTES).build())
+            .build();
+
+    assertThatThrownBy(()
+                           -> infrastructureProvisionerMapper.toOutcome(pdcInfrastructure,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
+        .hasMessage("Host object array JSON cannot be parsed")
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateHostAttributesWithoutHostnameValue() {
+    HashMap<String, String> hostAttributes = populateHostAttributesWithoutHostnameValue();
+    Infrastructure pdcInfrastructure =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+            .hostObjectArray(ParameterField.createValueField("Not valid JSON"))
+            .hostAttributes(ParameterField.createValueField(hostAttributes))
+            .hostFilter(HostFilter.builder().type(HostFilterType.HOST_ATTRIBUTES).build())
+            .build();
+
+    assertThatThrownBy(()
+                           -> infrastructureProvisionerMapper.toOutcome(pdcInfrastructure,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
+        .hasMessage("[hostname] property value cannot be null or empty")
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateHostAttributesWithoutHostname() {
+    HashMap<String, String> hostAttributes = populateHostAttributesWithoutHostname();
+    Infrastructure pdcInfrastructure = PdcInfrastructure.builder()
+                                           .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+                                           .hostObjectArray(ParameterField.createValueField(hostObjectArray))
+                                           .hostAttributes(ParameterField.createValueField(hostAttributes))
+                                           .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
+                                           .build();
+
+    assertThatThrownBy(()
+                           -> infrastructureProvisionerMapper.toOutcome(pdcInfrastructure,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
+        .hasMessage("[hostname] property is mandatory for all host objects")
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testOutcomeWithEmptyJson() {
+    HashMap<String, String> hostAttributes = populateHostAttributes();
+    Infrastructure pdcInfrastructure =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+            .hostObjectArray(ParameterField.createValueField(""))
+            .hostAttributes(ParameterField.createValueField(hostAttributes))
+            .hostFilter(HostFilter.builder().type(HostFilterType.HOST_ATTRIBUTES).build())
+            .build();
+
+    assertThatThrownBy(()
+                           -> infrastructureProvisionerMapper.toOutcome(pdcInfrastructure,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
+        .hasMessage("Host object array JSON cannot be null or empty")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
   public void testToOutcomeWithInvalidHostFilter() {
     HashMap<String, String> hostAttributes = populateHostAttributes();
     Infrastructure pdcInfrastructure =
@@ -106,6 +185,21 @@ public class InfrastructureProvisionerMapperTest extends CategoryTest {
     hostAttributes.put("SubnetId", "public_ip");
     hostAttributes.put("hostnameType", "private_dns_name_options[0].hostname_type");
     hostAttributes.put("httpEnabled", "metadata_options.http_endpoint");
+    return hostAttributes;
+  }
+
+  @NotNull
+  private HashMap<String, String> populateHostAttributesWithoutHostname() {
+    HashMap<String, String> hostAttributes = Maps.newHashMap();
+    hostAttributes.put("SubnetId", "public_ip");
+    return hostAttributes;
+  }
+
+  @NotNull
+  private HashMap<String, String> populateHostAttributesWithoutHostnameValue() {
+    HashMap<String, String> hostAttributes = Maps.newHashMap();
+    hostAttributes.put("hostname", "");
+    hostAttributes.put("SubnetId", "public_ip");
     return hostAttributes;
   }
 
