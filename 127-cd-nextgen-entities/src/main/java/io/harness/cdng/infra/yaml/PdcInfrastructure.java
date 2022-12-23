@@ -81,7 +81,10 @@ public class PdcInfrastructure
   @Wither
   ParameterField<Boolean> dynamicallyProvisioned;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> hostObjectArray;
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
+  @Wither
+  ParameterField<String> hostObjectArray;
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)

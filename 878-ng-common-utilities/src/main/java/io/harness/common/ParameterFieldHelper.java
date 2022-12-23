@@ -164,4 +164,20 @@ public class ParameterFieldHelper {
     throw new InvalidArgumentsException(format(
         "Unsupported value validation for parameter field, parameter field class: %s", parameterField.getClass()));
   }
+
+  public boolean hasValueOrExpression(ParameterField<String> parameterField) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
+  }
+
+  public <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
+  }
 }

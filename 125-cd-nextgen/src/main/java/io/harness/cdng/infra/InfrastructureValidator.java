@@ -8,6 +8,8 @@
 package io.harness.cdng.infra;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.hasValueListOrExpression;
+import static io.harness.common.ParameterFieldHelper.hasValueOrExpression;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,7 +32,6 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Singleton;
-import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -173,11 +174,23 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
     }
 
-    if (!hasValueListOrExpression(infrastructure.getHosts())
+    if (infrastructure.isDynamicallyProvisioned()) {
+      validateDynamicPdcInfrastructure(infrastructure);
+    } else if (!hasValueListOrExpression(infrastructure.getHosts())
         && !hasValueOrExpression(infrastructure.getConnectorRef())) {
       throw new InvalidArgumentsException(Pair.of("hosts", "cannot be empty"),
           Pair.of("connectorRef", "cannot be empty"),
           new IllegalArgumentException("hosts and connectorRef are not defined"));
+    }
+  }
+
+  private void validateDynamicPdcInfrastructure(PdcInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getHostObjectArray(), false)) {
+      throw new InvalidArgumentsException(Pair.of("hostObjectArray", "cannot be empty"));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getHostAttributes(), false)) {
+      throw new InvalidArgumentsException(Pair.of("hostAttributes", "cannot be empty"));
     }
   }
 
@@ -269,21 +282,5 @@ public class InfrastructureValidator {
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
     }
-  }
-
-  private boolean hasValueOrExpression(ParameterField<String> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
-  }
-
-  private <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
   }
 }

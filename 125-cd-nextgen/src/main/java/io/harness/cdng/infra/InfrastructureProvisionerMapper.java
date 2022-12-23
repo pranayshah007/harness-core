@@ -7,7 +7,6 @@
 
 package io.harness.cdng.infra;
 
-import static io.harness.common.ParameterFieldHelper.hasValueOrExpression;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -48,7 +47,6 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -62,39 +60,29 @@ public class InfrastructureProvisionerMapper {
       @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
     if (InfrastructureKind.PDC.equals(infrastructure.getKind())) {
       PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
-      validatePdcInfrastructure(pdcInfrastructure);
-      List<Map<String, Object>> hostInstances =
-          parseHostInstancesJSON(pdcInfrastructure.getHostObjectArray().getValue());
+      List<Map<String, Object>> hostObjects = parseHostInstancesJSON(pdcInfrastructure.getHostObjectArray().getValue());
+      Map<String, String> hostAttributes = fixHostAttributes(pdcInfrastructure.getHostAttributes().getValue());
+
+      List<Map<String, Object>> evaluatedHostObjectsAttributes =
+          evaluateHostObjectsAttributes(hostObjects, hostAttributes);
+      List<String> hosts = getHostNames(evaluatedHostObjectsAttributes);
 
       PdcInfrastructureOutcome pdcInfrastructureOutcome =
           PdcInfrastructureOutcome.builder()
               .credentialsRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
-              .hosts(getHostNames(hostInstances, fixHostAttributes(pdcInfrastructure.getHostAttributes().getValue())))
+              .hosts(hosts)
               .hostFilter(toHostFilterDTO(pdcInfrastructure.getHostFilter()))
               .environment(environmentOutcome)
               .infrastructureKey(InfrastructureKey.generate(
                   service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
+              .hostsAttributes(evaluatedHostObjectsAttributes)
               .build();
 
       pdcInfrastructureOutcome.setInfraName(pdcInfrastructure.getInfraName());
       pdcInfrastructureOutcome.setInfraIdentifier(pdcInfrastructure.getInfraIdentifier());
       return pdcInfrastructureOutcome;
     }
-    throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
-  }
-
-  private void validatePdcInfrastructure(PdcInfrastructure infrastructure) {
-    if (!hasValueOrExpression(infrastructure.getCredentialsRef(), true)) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
-    }
-
-    if (!hasValueOrExpression(infrastructure.getHostObjectArray(), false)) {
-      throw new InvalidArgumentsException(Pair.of("hostObjectArray", "cannot be empty"));
-    }
-
-    if (!hasValueOrExpression(infrastructure.getHostAttributes(), false)) {
-      throw new InvalidArgumentsException(Pair.of("hostAttributes", "cannot be empty"));
-    }
+    throw new InvalidArgumentsException(format("Unsupported Infrastructure Kind : [%s]", infrastructure.getKind()));
   }
 
   private List<Map<String, Object>> parseHostInstancesJSON(final String hostInstancesJson) {
@@ -121,14 +109,7 @@ public class InfrastructureProvisionerMapper {
     return hostAttributes;
   }
 
-  private List<String> getHostNames(List<Map<String, Object>> hostInstances, Map<String, String> hostAttributes) {
-    List<Map<String, Object>> evaluatedHostsAttributes = evaluateHostAttributes(hostInstances, hostAttributes);
-    return evaluatedHostsAttributes.stream()
-        .map(evaluatedHostAttributes -> (String) evaluatedHostAttributes.get(HOSTNAME_HOST_ATTRIBUTE))
-        .collect(Collectors.toList());
-  }
-
-  private List<Map<String, Object>> evaluateHostAttributes(
+  private List<Map<String, Object>> evaluateHostObjectsAttributes(
       List<Map<String, Object>> hostInstances, Map<String, String> hostAttributes) {
     if (hostInstances == null) {
       throw new InvalidRequestException("Host instances cannot be null");
@@ -143,6 +124,12 @@ public class InfrastructureProvisionerMapper {
     }
 
     return evaluatedHostAttributes;
+  }
+
+  private List<String> getHostNames(List<Map<String, Object>> evaluatedHostObjectsAttributes) {
+    return evaluatedHostObjectsAttributes.stream()
+        .map(evaluatedHostAttributes -> (String) evaluatedHostAttributes.get(HOSTNAME_HOST_ATTRIBUTE))
+        .collect(Collectors.toList());
   }
 
   private HostFilterDTO toHostFilterDTO(HostFilter hostFilter) {
