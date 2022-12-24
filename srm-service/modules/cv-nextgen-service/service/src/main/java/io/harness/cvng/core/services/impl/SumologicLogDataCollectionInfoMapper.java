@@ -24,7 +24,8 @@ public class SumologicLogDataCollectionInfoMapper
             .query(cvConfig.getQuery())
             .serviceInstanceIdentifier(cvConfig.getQueryParams().getServiceInstanceField())
             .build();
-    sumologicLogDataCollectionInfo.setDataCollectionDsl(NextGenLogCVConfig.readLogDSL(DataSourceType.SUMOLOGIC_LOG));
+    sumologicLogDataCollectionInfo.setDataCollectionDsl(
+        DataCollectionDSLFactory.readLogDSL(DataSourceType.SUMOLOGIC_LOG));
     return sumologicLogDataCollectionInfo;
   }
 }

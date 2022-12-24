@@ -48,7 +48,7 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "timeseriesRiskSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class TimeSeriesRiskSummary implements PersistentEntity, UuidAware {
+public final class TimeSeriesRiskSummary extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

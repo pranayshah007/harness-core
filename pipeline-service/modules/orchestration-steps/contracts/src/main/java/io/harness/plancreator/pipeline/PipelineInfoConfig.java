@@ -64,7 +64,7 @@ public class PipelineInfoConfig {
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
   @NotNull
   @EntityIdentifier
-  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @Pattern(regexp = NGRegexValidatorConstants.PIPELINE_IDENTIFIER_PATTERN)
   @VariableExpression
   String identifier;
 

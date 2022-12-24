@@ -91,6 +91,10 @@ public class Kubectl {
     return "--" + type.toString() + " ";
   }
 
+  public static String flag(String flag) {
+    return flag + " ";
+  }
+
   public static String flag(Flag type, boolean value) {
     return "--" + type.toString() + "=" + value + " ";
   }

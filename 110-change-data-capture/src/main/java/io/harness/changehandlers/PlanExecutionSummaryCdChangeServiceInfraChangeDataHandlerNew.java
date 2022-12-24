@@ -13,6 +13,7 @@ import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeEvent;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.BasicBSONObject;
+import org.bson.types.BasicBSONList;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -43,6 +46,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
   // Passing artifactPath as both tag and artifact_image in case of ArtifactoryGenericArtifactSummary. Have put in end
   // to avoid conflict for other ArtifactSummary
   private static final List<String> tagNameSet = Arrays.asList("tag", "version", "build", "artifactPath");
+  static final String ENV_GROUP_IDENTIFIER = "envGroupIdentifier";
 
   @Inject private TimeScaleDBService timeScaleDBService;
 
@@ -121,6 +125,8 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             .entrySet();
 
     for (Map.Entry<String, Object> stageExecutionNode : layoutNodeMap) {
+      // columnValueMappingList: for the case when single stageExecution contains multiple environments ( gitops )
+      final List<Map<String, String>> columnValueMappingList = new ArrayList<>();
       Map<String, String> columnValueMapping = new HashMap<>();
       String id = stageExecutionNode.getKey();
       columnValueMapping.put("pipeline_execution_summary_cd_id", changeEvent.getUuid());
@@ -224,66 +230,13 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
               }
             }
 
-            // env info
-            if (cdObject.get("infraExecutionSummary") != null) {
-              DBObject infraExecutionSummaryObject = (DBObject) cdObject.get("infraExecutionSummary");
-              if (infraExecutionSummaryObject.get("name") != null) {
-                String envName = infraExecutionSummaryObject.get("name").toString();
-                columnValueMapping.put("env_name", envName);
-              }
-
-              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY) != null
-                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString().length()
-                      != 0) {
-                String envIdentifier =
-                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString();
-                columnValueMapping.put("env_id", envIdentifier);
-              }
-
-              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY) != null
-                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY)
-                          .toString()
-                          .length()
-                      != 0) {
-                String infrastructureIdentifier =
-                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY)
-                        .toString();
-                columnValueMapping.put(
-                    PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY, infrastructureIdentifier);
-              }
-
-              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY) != null
-                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY)
-                          .toString()
-                          .length()
-                      != 0) {
-                String infrastructureName =
-                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY).toString();
-                columnValueMapping.put(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY, infrastructureName);
-              }
-
-              if (infraExecutionSummaryObject.get("type") != null
-                  && infraExecutionSummaryObject.get("type").toString().length() != 0) {
-                String envType = infraExecutionSummaryObject.get("type").toString();
-                columnValueMapping.put("env_type", envType);
-              }
-
-              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID) != null
-                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString().length()
-                      > 0) {
-                String envGroupId =
-                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString();
-                columnValueMapping.put("env_group_ref", envGroupId);
-              }
-
-              if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
-                  && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length()
-                      > 0) {
-                String envGroupName =
-                    infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
-                columnValueMapping.put("env_group_name", envGroupName);
-              }
-            }
+            // infraExecutionSummary
+            columnValueMapping.putAll(generateColumnValueMappingFromInfraExecSummary(cdObject));
+            generateEnvMappingFromGitOpsExecSummary(cdObject).forEach(incomingMapping -> {
+              Map<String, String> copyOfMapping = new HashMap<>(columnValueMapping);
+              copyOfMapping.putAll(incomingMapping);
+              columnValueMappingList.add(copyOfMapping);
+            });
           }
 
           // rollback_duration
@@ -293,7 +246,11 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
           }
         }
       }
-      nodeMap.add(columnValueMapping);
+      if (EmptyPredicate.isNotEmpty(columnValueMappingList)) {
+        nodeMap.addAll(columnValueMappingList);
+      } else {
+        nodeMap.add(columnValueMapping);
+      }
     }
 
     return nodeMap;
@@ -415,5 +372,107 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
     // Returning the generated UPDATE SQL Query as a String...
     return updateQueryBuilder.toString();
+  }
+
+  private Map<String, String> generateColumnValueMappingFromInfraExecSummary(DBObject cdObject) {
+    Map<String, String> columnValueMapping = new HashMap<>();
+    if (cdObject.get("infraExecutionSummary") != null) {
+      DBObject infraExecutionSummaryObject = (DBObject) cdObject.get("infraExecutionSummary");
+      if (infraExecutionSummaryObject.get("name") != null) {
+        String envName = infraExecutionSummaryObject.get("name").toString();
+        columnValueMapping.put("env_name", envName);
+      }
+
+      if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY) != null
+          && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString().length() != 0) {
+        String envIdentifier =
+            infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString();
+        columnValueMapping.put("env_id", envIdentifier);
+      }
+
+      if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY) != null
+          && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY)
+                  .toString()
+                  .length()
+              != 0) {
+        String infrastructureIdentifier =
+            infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY).toString();
+        columnValueMapping.put(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_IDENTIFIER_KEY, infrastructureIdentifier);
+      }
+
+      if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY) != null
+          && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY)
+                  .toString()
+                  .length()
+              != 0) {
+        String infrastructureName =
+            infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY).toString();
+        columnValueMapping.put(PlanExecutionSummaryCDConstants.INFRASTRUCTURE_NAME_KEY, infrastructureName);
+      }
+
+      if (infraExecutionSummaryObject.get("type") != null
+          && infraExecutionSummaryObject.get("type").toString().length() != 0) {
+        String envType = infraExecutionSummaryObject.get("type").toString();
+        columnValueMapping.put("env_type", envType);
+      }
+
+      if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID) != null
+          && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString().length() > 0) {
+        String envGroupId = infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_ID).toString();
+        columnValueMapping.put("env_group_ref", envGroupId);
+      }
+
+      if (infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
+          && infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length() > 0) {
+        String envGroupName =
+            infraExecutionSummaryObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
+        columnValueMapping.put("env_group_name", envGroupName);
+      }
+    }
+    return columnValueMapping;
+  }
+
+  private List<Map<String, String>> generateEnvMappingFromGitOpsExecSummary(DBObject cdObject) {
+    final List<Map<String, String>> result = new ArrayList<>();
+    if (cdObject.containsField("gitopsExecutionSummary")) {
+      BasicBSONObject gitopsExecutionSummary = (BasicBSONObject) cdObject.get("gitopsExecutionSummary");
+      if (gitopsExecutionSummary.containsField("environments")) {
+        BasicBSONList environments = (BasicBSONList) gitopsExecutionSummary.get("environments");
+        for (Object environment : environments) {
+          Map<String, String> columnMappingForSingleEnv = new HashMap<>();
+          if (environment instanceof BasicBSONObject) {
+            BasicBSONObject environmentObject = (BasicBSONObject) environment;
+            if (environmentObject.get("name") != null) {
+              String envName = environmentObject.get("name").toString();
+              columnMappingForSingleEnv.put("env_name", envName);
+            }
+            if (environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY) != null
+                && environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString().length() != 0) {
+              String envIdentifier = environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString();
+              columnMappingForSingleEnv.put("env_id", envIdentifier);
+            }
+
+            if (environmentObject.get("type") != null && environmentObject.get("type").toString().length() != 0) {
+              String envType = environmentObject.get("type").toString();
+              columnMappingForSingleEnv.put("env_type", envType);
+            }
+
+            if (environmentObject.get(ENV_GROUP_IDENTIFIER) != null
+                && environmentObject.get(ENV_GROUP_IDENTIFIER).toString().length() > 0) {
+              String envGroupId = environmentObject.get(ENV_GROUP_IDENTIFIER).toString();
+              columnMappingForSingleEnv.put("env_group_ref", envGroupId);
+            }
+
+            if (environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
+                && environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length() > 0) {
+              String envGroupName = environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
+              columnMappingForSingleEnv.put("env_group_name", envGroupName);
+            }
+          }
+          result.add(columnMappingForSingleEnv);
+        }
+      }
+    }
+    return result;
   }
 }

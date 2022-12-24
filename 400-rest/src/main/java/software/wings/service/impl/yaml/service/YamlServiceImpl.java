@@ -21,6 +21,7 @@ import static software.wings.beans.yaml.YamlConstants.APP_SETTINGS_FILE;
 import static software.wings.beans.yaml.YamlConstants.CONN_STRINGS_FILE;
 import static software.wings.beans.yaml.YamlConstants.ENVIRONMENTS_FOLDER;
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
+import static software.wings.beans.yaml.YamlConstants.INDEX_YAML;
 import static software.wings.beans.yaml.YamlConstants.KUSTOMIZE_PATCHES_FILE;
 import static software.wings.beans.yaml.YamlConstants.OC_PARAMS_FILE;
 import static software.wings.beans.yaml.YamlConstants.SETUP_FOLDER_PATH;
@@ -102,6 +103,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
@@ -125,6 +127,7 @@ import io.harness.yaml.BaseYaml;
 import software.wings.audit.AuditHeader;
 import software.wings.beans.Application;
 import software.wings.beans.Base;
+import software.wings.beans.Service;
 import software.wings.beans.User;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
@@ -651,6 +654,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       try {
         ChangeContext manifestFileChangeContext = validateManifestFile(yamlFilePath, change);
 
+        validateServiceInPath(yamlFilePath, change);
         if (manifestFileChangeContext != null) {
           changeContextList.add(manifestFileChangeContext);
         } else if (yamlFilePath.endsWith(YAML_EXTENSION)) {
@@ -740,6 +744,26 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     return true;
   }
 
+  @VisibleForTesting
+  protected void validateServiceInPath(String yamlFilePath, Change change) {
+    if (featureFlagService.isEnabled(FeatureName.VALIDATE_SERVICE_NAME_IN_FILE_PATH, change.getAccountId())) {
+      if (yamlFilePath.contains(
+              YamlConstants.VALUES_FOLDER + YamlConstants.PATH_DELIMITER + YamlConstants.SERVICES_FOLDER)
+          && (yamlFilePath.contains(VALUES_YAML_KEY) || yamlFilePath.contains(INDEX_YAML))) {
+        String appName = yamlHelper.getAppName(yamlFilePath);
+        if (isNotEmpty(appName)) {
+          Application app = appService.getAppByName(change.getAccountId(), appName);
+          String serviceName = yamlHelper.getServiceNameForFileOverride(yamlFilePath);
+          if (isNotEmpty(serviceName)) {
+            Service svc = yamlHelper.getServiceByName(app.getAppId(), serviceName);
+            if (svc == null) {
+              throw new YamlException(String.format("Service with name %s not found in app %s.", serviceName, appName));
+            }
+          }
+        }
+      }
+    }
+  }
   private void addToFailedYamlMap(
       Map<String, ChangeWithErrorMsg> failedYamlFileChangeMap, Change change, String errorMsg) {
     ChangeWithErrorMsg changeWithErrorMsg = ChangeWithErrorMsg.builder().change(change).errorMsg(errorMsg).build();

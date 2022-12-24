@@ -149,8 +149,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   public Optional<InfrastructureEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(environmentRef), "environment identifier must be present");
-    checkArgument(isNotEmpty(infraIdentifier), "infra identifier must be present");
 
     return getInfrastructureByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
   }
@@ -158,8 +156,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   private Optional<InfrastructureEntity> getInfrastructureByRef(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
     // get using environmentRef
-    String[] envRefSplit = environmentRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
           accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
     } else {
@@ -278,10 +276,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   public HIterator<InfrastructureEntity> listIterator(
       String accountId, String orgIdentifier, String projectIdentifier, String envRef, Collection<String> identifiers) {
     checkArgument(isNotEmpty(accountId), "account id must be present");
-    checkArgument(isNotEmpty(envRef), "env ref must be present");
 
-    String[] envRefSplit = envRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return new HIterator<>(hPersistence.createQuery(InfrastructureEntity.class)
                                  .filter(InfrastructureEntityKeys.accountId, accountId)
                                  .filter(InfrastructureEntityKeys.orgIdentifier, orgIdentifier)
@@ -416,12 +413,10 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
   private Criteria getInfrastructureEqualityCriteria(@Valid InfrastructureEntity requestInfra) {
     checkArgument(isNotEmpty(requestInfra.getAccountId()), "accountId must be present");
-    checkArgument(isNotEmpty(requestInfra.getEnvIdentifier()), "environment identifier must be present");
-    checkArgument(isNotEmpty(requestInfra.getIdentifier()), "infra identifier must be present");
 
     // infra id will be provided
-    String[] envRefSplit = requestInfra.getEnvIdentifier().split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(requestInfra.getEnvIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return Criteria.where(InfrastructureEntityKeys.accountId)
           .is(requestInfra.getAccountId())
           .and(InfrastructureEntityKeys.orgIdentifier)
@@ -484,8 +479,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Override
   public List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, List<String> infraIdentifierList) {
-    String[] envRefSplit = envIdentifier.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.findAllFromInfraIdentifierList(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
     } else {
@@ -500,8 +495,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Override
   public List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envRef) {
-    String[] envRefSplit = envRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.findAllFromEnvIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, envRef);
     } else {
@@ -533,8 +528,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Override
   public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, List<String> infraIdentifierList, Update update) {
-    String[] envRefSplit = envIdentifier.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.batchUpdateInfrastructure(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList, update);
     } else {
@@ -673,8 +668,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   private Criteria getInfrastructureEqualityCriteriaForEnv(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
-    String[] envRefSplit = envIdentifier.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return Criteria.where(InfrastructureEntityKeys.accountId)
           .is(accountId)
           .and(InfrastructureEntityKeys.orgIdentifier)
@@ -797,8 +792,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(
       String accountId, String orgId, String projectId, String envRef, String infraId) {
     Optional<InfrastructureEntity> infrastructureEntity;
-    String[] envRefSplit = envRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       infrastructureEntity =
           infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
               accountId, orgId, projectId, envRef, infraId);

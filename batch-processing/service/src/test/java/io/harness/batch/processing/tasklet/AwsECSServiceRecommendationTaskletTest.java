@@ -31,6 +31,7 @@ import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.testsupport.BaseTaskletTest;
@@ -55,6 +56,7 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private ECSRecommendationDAO ecsRecommendationDAO;
   @Mock private BillingDataServiceImpl billingDataService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private RecommendationsIgnoreListService ignoreListService;
   @InjectMocks private AwsECSServiceRecommendationTasklet tasklet;
 
   private static final String CLUSTER_NAME = "clusterName";
@@ -142,6 +144,9 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
         .when(ecsRecommendationDAO)
         .upsertCeRecommendation(
             anyString(), anyString(), anyString(), anyString(), anyDouble(), anyDouble(), anyBoolean(), any());
+    doNothing()
+        .when(ignoreListService)
+        .updateECSRecommendationState(anyString(), anyString(), anyString(), anyString());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
     verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());

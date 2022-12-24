@@ -59,6 +59,7 @@ import io.harness.migrations.all.AddOrchestrationToWorkflows;
 import io.harness.migrations.all.AddPipelinesReferenceToUserGroups;
 import io.harness.migrations.all.AddRingsToAccountMigration;
 import io.harness.migrations.all.AddStateMachineToWorkflowExecutions;
+import io.harness.migrations.all.AddValidUntilToDelegateGroupMigration;
 import io.harness.migrations.all.AddValidUntilToSecretUsageLogs;
 import io.harness.migrations.all.AddValidUntilToWorkflowExecution;
 import io.harness.migrations.all.AlertCheckJobPollIntervalMigration;
@@ -407,6 +408,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
+        .add(Pair.of(239, AddValidUntilToDelegateGroupMigration.class))
         .build();
   }
 }

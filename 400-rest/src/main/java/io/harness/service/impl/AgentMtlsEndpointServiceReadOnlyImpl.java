@@ -108,4 +108,9 @@ public class AgentMtlsEndpointServiceReadOnlyImpl implements AgentMtlsEndpointSe
         .mode(endpoint.getMode())
         .build();
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    deleteEndpointForAccount(accountId);
+  }
 }

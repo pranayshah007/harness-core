@@ -28,8 +28,6 @@ import io.harness.perpetualtask.PerpetualTaskType;
 
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -95,20 +93,15 @@ public class SpotInstanceSyncHandler extends AbstractInstanceSyncHandler {
           Pair.of("serverInstanceInfo", "Must be instance of " + SpotServerInstanceInfo.class));
     }
 
+    List<String> ec2Instances = serverInstanceInfoList.stream()
+                                    .map(s -> (SpotServerInstanceInfo) s)
+                                    .map(SpotServerInstanceInfo::getEc2InstanceId)
+                                    .collect(Collectors.toList());
+
     return SpotDeploymentInfoDTO.builder()
         .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
-        .elastigroupEc2InstancesMap(getElastigroupEc2InstancesMap(serverInstanceInfoList))
+        .elastigroupId(((SpotServerInstanceInfo) serverInstanceInfoList.get(0)).getElastigroupId())
+        .ec2Instances(ec2Instances)
         .build();
-  }
-
-  private Map<String, Set<String>> getElastigroupEc2InstancesMap(List<ServerInstanceInfo> serverInstanceInfoList) {
-    Map<String, List<SpotServerInstanceInfo>> groupedMap =
-        serverInstanceInfoList.stream()
-            .map(SpotServerInstanceInfo.class ::cast)
-            .collect(Collectors.groupingBy(SpotServerInstanceInfo::getElastigroupId));
-
-    return groupedMap.entrySet().stream().collect(Collectors.toMap(entry
-        -> entry.getKey(),
-        entry -> entry.getValue().stream().map(SpotServerInstanceInfo::getEc2InstanceId).collect(Collectors.toSet())));
   }
 }

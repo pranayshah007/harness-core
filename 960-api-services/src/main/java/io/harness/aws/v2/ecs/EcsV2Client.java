@@ -29,6 +29,8 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.ListServicesRequest;
 import software.amazon.awssdk.services.ecs.model.ListServicesResponse;
@@ -57,6 +59,9 @@ public interface EcsV2Client {
 
   RegisterTaskDefinitionResponse createTask(
       AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region);
+
+  DescribeTaskDefinitionResponse describeTaskDefinition(
+      AwsInternalConfig awsConfig, DescribeTaskDefinitionRequest describeTaskDefinitionRequest, String region);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(AwsInternalConfig awsConfig,
       DescribeServicesRequest describeServicesRequest, String region, int serviceInactiveStateTimeout);

@@ -14,9 +14,7 @@ import io.harness.cvng.analysis.beans.LogAnalysisCluster;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,10 +41,9 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "logAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class LogAnalysisRecord implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public final class LogAnalysisRecord extends VerificationTaskBase implements PersistentEntity, UuidAware {
   @Id private String uuid;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
+
   @FdIndex private String verificationTaskId;
   private Instant analysisStartTime;
   private Instant analysisEndTime;

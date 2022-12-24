@@ -111,7 +111,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
 
     for (ConfigFileWrapper configFile : configFiles) {
       Set<EntityDetailProtoDTO> entityDetailsProto =
-          entityReferenceExtractorUtils.extractReferredEntities(ambiance, configFile);
+          configFile == null ? Set.of() : entityReferenceExtractorUtils.extractReferredEntities(ambiance, configFile);
       List<EntityDetail> entityDetail =
           entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
       if (EmptyPredicate.isNotEmpty(entityDetail)) {

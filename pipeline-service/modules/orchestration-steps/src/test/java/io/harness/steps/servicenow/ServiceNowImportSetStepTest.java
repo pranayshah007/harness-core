@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +23,10 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -43,6 +47,7 @@ import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 
 import java.util.Collections;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,6 +70,8 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
 
   @Mock private ServiceNowStepHelperService serviceNowStepHelperService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
+
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @InjectMocks private ServiceNowImportSetStep serviceNowImportSetStep;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
   @Captor ArgumentCaptor<ServiceNowTaskNGParametersBuilder> paramsCaptor;
@@ -73,6 +80,13 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
   private static final String orgIdentifier = "orgIdentifier";
   private static final String projectIdentifier = "projectIdentifier";
   private static final String pipelineIdentifier = "pipelineIdentifier";
+  private ILogStreamingStepClient logStreamingStepClient;
+
+  @Before
+  public void setup() {
+    logStreamingStepClient = mock(ILogStreamingStepClient.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
 
   @Test
   @Owner(developers = NAMANG)
@@ -102,6 +116,8 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
     StepElementParameters invalidParameters1 = getStepElementParameters(CONNECTOR, STAGING_TABLE_NAME, null);
     assertThatThrownBy(() -> serviceNowImportSetStep.obtainTaskAfterRbac(ambiance, invalidParameters1, null))
         .isInstanceOf(InvalidRequestException.class);
+    verify(logStreamingStepClient, times(3)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient, times(2)).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -138,6 +154,8 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
     StepElementParameters invalidParameters1 = getStepElementParameters(CONNECTOR, STAGING_TABLE_NAME, null);
     assertThatThrownBy(() -> serviceNowImportSetStep.obtainTaskAfterRbac(ambiance, invalidParameters1, null))
         .isInstanceOf(InvalidRequestException.class);
+    verify(logStreamingStepClient, times(3)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient, times(2)).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -175,6 +193,7 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
     assertThat(serviceNowImportSetStep.handleTaskResultWithSecurityContext(
                    getAmbiance(), getStepElementParameters(CONNECTOR, STAGING_TABLE_NAME, null), null))
         .isEqualTo(stepResponse);
+    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   private StepElementParameters getStepElementParameters(

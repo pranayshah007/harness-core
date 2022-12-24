@@ -10,6 +10,7 @@ package io.harness.cdng.ecs;
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +39,7 @@ import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
@@ -165,6 +167,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsRollingDeployStep ecsRollingDeployStep;
   @Mock private EcsCanaryDeployStep ecsCanaryDeployStep;
   @Mock private StepUtils stepUtils;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
 
@@ -223,6 +226,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
         .isEqualTo(EcsInfrastructureOutcome.builder().build());
+    assertNull(ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
   }
 
   @Test

@@ -93,7 +93,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     String orgIdentifier = projectParams.getOrgIdentifier();
     String projectIdentifier = projectParams.getProjectIdentifier();
     DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
-        getDatacollectionInfoForMetric(queryRecordsRequest, projectParams);
+        getDataCollectionInfoForMetric(queryRecordsRequest, projectParams);
     DataCollectionRequest<ConnectorConfigDTO> request =
         SyncDataCollectionRequest.builder()
             .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
@@ -126,7 +126,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   }
 
   @NotNull
-  private DataCollectionInfo<ConnectorConfigDTO> getDatacollectionInfoForMetric(
+  private DataCollectionInfo<ConnectorConfigDTO> getDataCollectionInfoForMetric(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     String accountIdentifier = projectParams.getAccountIdentifier();
     String orgIdentifier = projectParams.getOrgIdentifier();
@@ -179,7 +179,6 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
     List<LogDataRecord> logDataRecords =
         JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
-    // How to get the query name ?
     List<LogRecord> logRecords = new ArrayList<>();
     logDataRecords.forEach(logDataRecord
         -> logRecords.add(LogRecord.builder()

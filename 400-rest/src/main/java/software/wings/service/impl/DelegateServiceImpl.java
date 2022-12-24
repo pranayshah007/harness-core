@@ -204,9 +204,9 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.expression.SecretFunctor;
 import software.wings.features.DelegatesFeature;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
@@ -2817,8 +2817,11 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setLastHeartBeat(now);
     delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
 
-    if (isGroupedCgDelegate(delegate)) {
-      updateDelegateWithConfigFromGroup(delegate);
+    if (delegate.getDelegateGroupId() != null) {
+      if (!delegate.isNg()) {
+        updateDelegateWithConfigFromGroup(delegate);
+      }
+      delegateSetupService.updateDelegateGroupValidity(delegate.getAccountId(), delegate.getDelegateGroupId());
     }
 
     Delegate registeredDelegate;
@@ -3239,7 +3242,9 @@ public class DelegateServiceImpl implements DelegateService {
             .set(DelegateGroupKeys.name, name)
             .set(DelegateGroupKeys.accountId, accountId)
             .set(DelegateGroupKeys.ng, isNg)
-            .set(DelegateGroupKeys.delegateType, delegateType);
+            .set(DelegateGroupKeys.delegateType, delegateType)
+            .set(DelegateGroupKeys.validUntil,
+                Date.from(OffsetDateTime.now().plusDays(DelegateGroup.TTL.toDays()).toInstant()));
 
     if (k8sConfigDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.k8sConfigDetails, k8sConfigDetails);

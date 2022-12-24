@@ -13,7 +13,6 @@ import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -21,6 +20,7 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 

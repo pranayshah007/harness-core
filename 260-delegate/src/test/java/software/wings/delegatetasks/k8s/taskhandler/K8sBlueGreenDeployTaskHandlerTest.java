@@ -156,7 +156,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
         new ArrayList<>(asList(primaryService(), deployment(), stageService(), configMap())));
-    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     doReturn("latest-rev").when(k8sTaskHelperBase).getLatestRevision(any(), eq(deployment().getResourceId()), any());
 
@@ -190,7 +190,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2)).saveReleaseHistoryInConfigMap(any(), eq("releaseName-statusCheck"), any());
 
     deployTaskParams.setReleaseName("releaseName-apply");
-    doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
     verify(k8sTaskHelperBase).saveReleaseHistoryInConfigMap(any(), eq("releaseName-apply"), any());
@@ -234,8 +234,8 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
+            anyBoolean(), any());
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheck(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class),
@@ -256,7 +256,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     verify(spyHandler, times(0)).init(any(), any(), any());
     verify(k8sTaskHelper, times(1)).getK8sTaskExecutionResponse(captor.capture(), eq(SUCCESS));
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     final K8sBlueGreenDeployResponse k8sTaskResponse = captor.getValue();
     assertThat(k8sTaskResponse.getPrimaryServiceName()).isEqualTo(primaryService().getResourceId().getName());
     assertThat(k8sTaskResponse.getStageServiceName()).isEqualTo(stageService().getResourceId().getName());
@@ -299,7 +299,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
             .build());
     assertThat(k8sTaskExecutionResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
   }
 
   @Test
@@ -330,7 +330,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
             .build());
 
     verify(k8sTaskHelper, times(0)).restore(any(), any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(spyHandler, times(1)).init(any(), any(), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(((K8sBlueGreenDeployResponse) response.getK8sTaskResponse()).getResources())
@@ -782,8 +782,8 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         any(K8sBlueGreenDeployTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
+            anyBoolean(), any());
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheck(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class),
@@ -845,8 +845,8 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         any(K8sBlueGreenDeployTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
+            anyBoolean(), any());
     doReturn(false)
         .when(k8sTaskHelperBase)
         .doStatusCheck(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class),
@@ -915,7 +915,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     k8sBlueGreenHandlerConfig.setStageService(stageService());
     k8sBlueGreenHandlerConfig.setResources(
         new ArrayList<>(asList(primaryService(), deployment(), stageService(), configMap())));
-    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     doReturn("latest-rev").when(k8sTaskHelperBase).getLatestRevision(any(), eq(deployment().getResourceId()), any());
 
@@ -942,7 +942,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2)).saveReleaseHistoryInConfigMap(any(), eq("releaseName-statusCheck"), any());
 
     deployTaskParams.setReleaseName("releaseName-apply");
-    doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
     verify(k8sTaskHelperBase).saveReleaseHistoryInConfigMap(any(), eq("releaseName-apply"), any());
@@ -956,7 +956,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(true).when(spyHandler).init(any(), any(), any());
     doReturn(true).when(k8sTaskHelper).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
     doReturn(true).when(spyHandler).prepareForBlueGreen(any(), any(), any());
-    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     doReturn("latest-rev").when(k8sTaskHelperBase).getLatestRevision(any(), eq(deployment().getResourceId()), any());
     doReturn(executionLogCallback).when(k8sTaskHelper).getExecutionLogCallback(any(), any());

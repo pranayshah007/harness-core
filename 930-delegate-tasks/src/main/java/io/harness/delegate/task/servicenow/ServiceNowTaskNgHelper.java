@@ -12,14 +12,22 @@ import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.network.Http;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
@@ -40,6 +48,8 @@ import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.servicenow.ServiceNowUtils;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
 import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -80,7 +90,13 @@ public class ServiceNowTaskNgHelper {
     this.secretDecryptionService = secretDecryptionService;
   }
 
-  public ServiceNowTaskNGResponse getServiceNowResponse(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+  public ServiceNowTaskNGResponse getServiceNowResponse(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, ILogStreamingTaskClient logStreamingTaskClient) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    LogCallback executionLogCallback = null;
+    if (!isNull(logStreamingTaskClient)) {
+      executionLogCallback = new NGDelegateLogCallback(logStreamingTaskClient, "Execute", false, commandUnitsProgress);
+    }
     decryptRequestDTOs(serviceNowTaskNGParameters);
     switch (serviceNowTaskNGParameters.getAction()) {
       case VALIDATE_CREDENTIALS:
@@ -98,7 +114,7 @@ public class ServiceNowTaskNgHelper {
       case GET_TEMPLATE:
         return getTemplateList(serviceNowTaskNGParameters);
       case IMPORT_SET:
-        return createImportSet(serviceNowTaskNGParameters);
+        return createImportSet(serviceNowTaskNGParameters, executionLogCallback);
       case GET_IMPORT_SET_STAGING_TABLES:
         return getStagingTableList(serviceNowTaskNGParameters);
       default:
@@ -590,27 +606,34 @@ public class ServiceNowTaskNgHelper {
     }
   }
 
-  private ServiceNowTaskNGResponse createImportSet(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+  private ServiceNowTaskNGResponse createImportSet(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, LogCallback executionLogCallback) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
     String userName = getUserName(serviceNowConnectorDTO);
     String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+    saveLogs(executionLogCallback, "-----");
+    saveLogs(executionLogCallback, "Initiating ServiceNow import set step");
     Map importDataJsonMap = null;
     if (!StringUtils.isBlank(serviceNowTaskNGParameters.getImportData())) {
       try {
         importDataJsonMap =
             JsonUtils.asObject(serviceNowTaskNGParameters.getImportData(), new TypeReference<Map<String, String>>() {});
       } catch (Exception ex) {
-        log.error("Provided import data is not a valid json: {}", ExceptionUtils.getMessage(ex), ex);
-        throw new InvalidRequestException(
-            String.format("Provided import data is not a valid json: %s", ExceptionUtils.getMessage(ex)));
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Provided import data is not a valid json: {}", ExceptionUtils.getMessage(sanitizedException),
+            sanitizedException);
+        saveLogs(executionLogCallback, "Failed to create/execute import set: Provided import data is not a valid json",
+            LogLevel.ERROR);
+        throw new InvalidRequestException(String.format(
+            "Provided import data is not a valid json: %s", ExceptionUtils.getMessage(sanitizedException)));
       }
     } else {
       importDataJsonMap = new HashMap<>();
     }
+    saveLogs(executionLogCallback, "Executing import set .....");
     final Call<JsonNode> request = serviceNowRestClient.createImportSet(Credentials.basic(userName, password),
         serviceNowTaskNGParameters.getStagingTableName(), "all", importDataJsonMap);
-
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -620,6 +643,9 @@ public class ServiceNowTaskNgHelper {
       if (responseObj.isEmpty()) {
         log.info(
             "Empty response received from serviceNow for IMPORT_SET, might because of missing permissions to view target record");
+        saveLogs(executionLogCallback,
+            "Succeeded to execute import set: Empty response received from serviceNow for IMPORT_SET, might because of missing permissions to view target record",
+            LogLevel.WARN);
         return ServiceNowTaskNGResponse.builder()
             .serviceNowImportSetResponseNG(new ServiceNowImportSetResponseNG())
             .build();
@@ -638,12 +664,22 @@ public class ServiceNowTaskNgHelper {
       serviceNowImportSetResponseNGBuilder.stagingTable(JsonNodeUtils.mustGetString(responseObj, "staging_table"));
       ServiceNowImportSetResponseNG serviceNowImportSetResponseNG = serviceNowImportSetResponseNGBuilder.build();
       log.info("Corresponding ServiceNow import set : {}", serviceNowImportSetResponseNG.getImportSet());
+      saveLogs(executionLogCallback,
+          LogHelper.color(
+              String.format("Succeeded to execute import set: %s; please refer to step for input/output details",
+                  serviceNowImportSetResponseNG.getImportSet()),
+              LogColor.Cyan),
+          LogLevel.INFO);
       return ServiceNowTaskNGResponse.builder().serviceNowImportSetResponseNG(serviceNowImportSetResponseNG).build();
     } catch (ServiceNowException e) {
       log.error("Failed to create/execute ServiceNow import set: {}", ExceptionUtils.getMessage(e), e);
+      saveLogs(executionLogCallback,
+          String.format("Failed to create/execute import set: %s", ExceptionUtils.getMessage(e)), LogLevel.ERROR);
       throw e;
     } catch (Exception ex) {
       log.error("Failed to create/execute ServiceNow import set: {}", ExceptionUtils.getMessage(ex), ex);
+      saveLogs(executionLogCallback,
+          String.format("Failed to create/execute import set: %s", ExceptionUtils.getMessage(ex)), LogLevel.ERROR);
       throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
@@ -800,5 +836,17 @@ public class ServiceNowTaskNgHelper {
     return NestedExceptionUtils.hintWithExplanationException(
         "Check if the ServiceNow url and credentials are correct and accessible from delegate",
         "Not able to access the given ServiceNow url with the credentials", e);
+  }
+
+  private void saveLogs(LogCallback executionLogCallback, String message) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message);
+    }
+  }
+
+  private void saveLogs(LogCallback executionLogCallback, String message, LogLevel logLevel) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message, logLevel);
+    }
   }
 }

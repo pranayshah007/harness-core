@@ -7,13 +7,16 @@
 
 package io.harness.cdng.tas.outcome;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.expression.Expression;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -47,5 +50,5 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   List<String> routeMaps;
   @Builder.Default Boolean isBlueGreen = Boolean.FALSE;
   boolean useAppAutoScalar;
-  PcfManifestsPackage manifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage manifestsPackage;
 }

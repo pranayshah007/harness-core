@@ -20,14 +20,16 @@ public class SpotDeploymentInfoMapper {
   public SpotDeploymentInfoDTO toDTO(SpotDeploymentInfo deploymentInfo) {
     return SpotDeploymentInfoDTO.builder()
         .infrastructureKey(deploymentInfo.getInfrastructureKey())
-        .elastigroupEc2InstancesMap(deploymentInfo.getElastigroupEc2InstancesMap())
+        .elastigroupId(deploymentInfo.getElastigroupId())
+        .ec2Instances(deploymentInfo.getEc2Instances())
         .build();
   }
 
   public SpotDeploymentInfo toEntity(SpotDeploymentInfoDTO deploymentInfoDTO) {
     return SpotDeploymentInfo.builder()
         .infrastructureKey(deploymentInfoDTO.getInfrastructureKey())
-        .elastigroupEc2InstancesMap(deploymentInfoDTO.getElastigroupEc2InstancesMap())
+        .elastigroupId(deploymentInfoDTO.getElastigroupId())
+        .ec2Instances(deploymentInfoDTO.getEc2Instances())
         .build();
   }
 }

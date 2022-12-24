@@ -14,5 +14,4 @@ import lombok.Data;
 @Builder
 public class HealthSourceQueryParams {
   String serviceInstanceField;
-  // Add provider specific fields here.
 }

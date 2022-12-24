@@ -20,6 +20,6 @@ public interface AsgStepExecutor {
   TaskChainResponse executeAsgTask(Ambiance ambiance, StepElementParameters stepParameters,
       AsgExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       AsgStepExecutorParams asgStepExecutorParams);
-  TaskChainResponse executeAsgPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeAsgPrepareRollbackDataTask(Ambiance ambiance, StepElementParameters stepParameters,
       AsgPrepareRollbackDataPassThroughData asgStepPassThroughData, UnitProgressData unitProgressData);
 }

@@ -190,9 +190,12 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     serverlessAwsLambdaRollbackResultBuilder.stage(serverlessAwsLambdaInfraConfig.getStage());
     ServerlessRollbackResponseBuilder serverlessRollbackResponseBuilder = ServerlessRollbackResponse.builder();
 
+    String cloudFormationStackName = serverlessAwsCommandTaskHelper.getCloudFormationStackName(serverlessManifestSchema,
+        serverlessClient, serverlessDelegateTaskParams, serverlessAwsLambdaInfraConfig, timeoutInMillis,
+        serverlessManifestConfig, environmentVariables, executionLogCallback);
     if (serverlessAwsLambdaRollbackConfig.isFirstDeployment()) {
       if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
-              executionLogCallback, serverlessRollbackRequest, serverlessRollbackRequest.getManifestContent())) {
+              cloudFormationStackName, serverlessAwsLambdaInfraConfig)) {
         executionLogCallback.saveExecutionLog(
             format("Nothing to Remove..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         serverlessRollbackResponseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS);

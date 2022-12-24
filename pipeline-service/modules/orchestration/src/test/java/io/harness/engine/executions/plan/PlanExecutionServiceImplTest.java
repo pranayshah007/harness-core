@@ -9,6 +9,8 @@ package io.harness.engine.executions.plan;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.execution.PlanExecution.PlanExecutionKeys;
+import static io.harness.pms.contracts.execution.Status.PAUSED;
+import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -186,6 +188,9 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     Consumer<Update> op = ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis());
     PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, true);
     assertNull(planExecution);
+    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(SUCCEEDED).build());
+    planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, false);
+    assertNull(planExecution);
   }
 
   @Test
@@ -196,8 +201,8 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     long endTs = System.currentTimeMillis();
     Consumer<Update> op = ops -> ops.set(PlanExecutionKeys.endTs, endTs);
-    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());
-    PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, true);
+    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(PAUSED).build());
+    PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, false);
     assertEquals(planExecution.getUuid(), planExecutionId);
     assertEquals(planExecution.getStatus(), Status.ABORTED);
     assertEquals(planExecution.getEndTs().longValue(), endTs);

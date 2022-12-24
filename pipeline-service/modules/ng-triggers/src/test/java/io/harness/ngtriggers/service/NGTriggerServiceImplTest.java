@@ -52,7 +52,6 @@ import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
-import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
@@ -437,19 +436,19 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(triggerCatalogHelper.getTriggerTypeToCategoryMapping(ACCOUNT_ID))
         .thenReturn(
             Arrays.asList(TriggerCatalogItem.builder()
-                              .category(TriggerCategory.ARTIFACT)
+                              .category(NGTriggerType.ARTIFACT)
                               .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.ACR)))
                               .build(),
                 TriggerCatalogItem.builder()
-                    .category(TriggerCategory.WEBHOOK)
+                    .category(NGTriggerType.WEBHOOK)
                     .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.GITHUB)))
                     .build(),
                 TriggerCatalogItem.builder()
-                    .category(TriggerCategory.SCHEDULED)
+                    .category(NGTriggerType.SCHEDULED)
                     .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.CRON)))
                     .build(),
                 TriggerCatalogItem.builder()
-                    .category(TriggerCategory.MANIFEST)
+                    .category(NGTriggerType.MANIFEST)
                     .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
                     .build()));
     List<TriggerCatalogItem> lst = ngTriggerServiceImpl.getTriggerCatalog(ACCOUNT_ID);

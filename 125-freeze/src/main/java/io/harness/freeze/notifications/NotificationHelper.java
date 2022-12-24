@@ -21,7 +21,6 @@ import io.harness.notification.FreezeEventType;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.api.client.util.ArrayMap;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class NotificationHelper {
@@ -47,7 +47,7 @@ public class NotificationHelper {
     }
     FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
-    if (freezeInfoConfig.getNotifications() == null) {
+    if (freezeInfoConfig == null || freezeInfoConfig.getNotifications() == null) {
       return;
     }
     for (FreezeNotifications freezeNotifications : freezeInfoConfig.getNotifications()) {
@@ -84,9 +84,9 @@ public class NotificationHelper {
       Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze) {
     Map<String, String> data = new ArrayMap<>();
     if (globalFreeze) {
-      data.put("BLACKOUT_WINDOW_URL", getGlobalFreezeUrl(baseUrl, ambiance));
+      data.put("BLACKOUT_WINDOW_URL", getGlobalFreezeUrl(baseUrl, freezeInfoConfig, accountId));
     } else {
-      data.put("BLACKOUT_WINDOW_URL", getManualFreezeUrl(baseUrl, ambiance, freezeInfoConfig));
+      data.put("BLACKOUT_WINDOW_URL", getManualFreezeUrl(baseUrl, freezeInfoConfig, accountId));
     }
     data.put("BLACKOUT_WINDOW_NAME", freezeInfoConfig.getName());
     if (freezeInfoConfig.getWindows().size() > 0) {
@@ -103,8 +103,11 @@ public class NotificationHelper {
         firstWindowEndTime =
             LocalDateTime.parse(freezeInfoConfig.getWindows().get(0).getEndTime(), FreezeTimeUtils.dtf);
       }
-      data.put("START_TIME", firstWindowStartTime.toString());
-      data.put("END_TIME", firstWindowEndTime.toString());
+      Pair<LocalDateTime, LocalDateTime> windowTimes =
+          FreezeTimeUtils.setCurrWindowStartAndEndTime(firstWindowStartTime, firstWindowEndTime,
+              freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType(), timeZone);
+      data.put("START_TIME", windowTimes.getLeft().toString());
+      data.put("END_TIME", windowTimes.getRight().toString());
       data.put("ACCOUNT_ID", accountId);
     }
     if (freezeEventType.equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE) && ambiance != null) {
@@ -129,7 +132,7 @@ public class NotificationHelper {
         try {
           sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, ambiance,
               freezeSummaryResponseDTO.getAccountId(), executionUrl, baseUrl, true);
-        } catch (IOException e) {
+        } catch (Exception e) {
           log.info("Unable to send pipeline rejected notifications for global freeze", e);
         }
       }
@@ -139,19 +142,18 @@ public class NotificationHelper {
         try {
           sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, ambiance,
               freezeSummaryResponseDTO.getAccountId(), executionUrl, baseUrl, false);
-        } catch (IOException e) {
+        } catch (Exception e) {
           log.info("Unable to send pipeline rejected notifications for manual freeze", e);
         }
       }
     }
   }
 
-  private String getManualFreezeUrl(String baseUrl, Ambiance ambiance, FreezeInfoConfig freezeInfoConfig) {
+  private String getManualFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
     String freezeUrl = "";
-    if (ambiance != null && freezeInfoConfig != null) {
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    if (freezeInfoConfig != null) {
+      String orgId = freezeInfoConfig.getOrgIdentifier();
+      String projectId = freezeInfoConfig.getProjectIdentifier();
       if (orgId != null) {
         if (projectId != null) {
           freezeUrl = String.format("%s/account/%s/cd/orgs/%s/projects/%s/setup/freeze-window-studio/window/%s",
@@ -168,12 +170,11 @@ public class NotificationHelper {
     return freezeUrl;
   }
 
-  private String getGlobalFreezeUrl(String baseUrl, Ambiance ambiance) {
+  private String getGlobalFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
     String freezeUrl = "";
-    if (ambiance != null) {
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    if (freezeInfoConfig != null) {
+      String orgId = freezeInfoConfig.getOrgIdentifier();
+      String projectId = freezeInfoConfig.getProjectIdentifier();
       if (orgId != null) {
         if (projectId != null) {
           freezeUrl = String.format(

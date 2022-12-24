@@ -38,6 +38,11 @@ enum Action {
   SYNC = 9;
   MERGE = 10;
   EDIT = 11;
+  // releases
+  PUBLISH = 12;
+  UNPUBLISH = 13;
+  PRERELEASE = 14;
+  RELEASE = 15;
 }
 
 // User represents a user account.
@@ -125,6 +130,17 @@ message PullRequest {
   string mergeSha = 19;
 }
 
+message Release {
+  string title = 1;
+  string description = 2;
+  string link = 3;
+  string tag = 4;
+  bool draft = 5;
+  bool prerelease = 6;
+  google.protobuf.Timestamp created = 7;
+  google.protobuf.Timestamp published = 8;
+}
+
 message PullRequestHook {
   Action action = 1;
   Repository repo = 2;
@@ -145,6 +161,13 @@ message BranchHook {
   Repository repo = 2;  // repository where the event occurred
   User sender = 3;      // user that triggered the event
   Reference ref = 4;    // git ref object
+}
+
+message ReleaseHook {
+  Action action = 1;
+  Repository repo = 2;
+  Release release = 3;
+  User sender = 4;
 }
 
 message Comment {
@@ -201,6 +224,7 @@ message ParseWebhookResponse {
     PushHook push = 2;
     IssueCommentHook comment = 3;
     BranchHook branch = 4;
+    ReleaseHook release = 5;
   }
 }
 
@@ -577,6 +601,7 @@ enum GithubWebhookEvent {
   GITHUB_PULL_REQUEST = 5;
   GITHUB_PULL_REQUEST_REVIEW = 6;
   GITHUB_PUSH = 7;
+  GITHUB_RELEASE = 8;
 }
 
 enum GitlabWebhookEvent {

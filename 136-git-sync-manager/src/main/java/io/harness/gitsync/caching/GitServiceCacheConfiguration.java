@@ -9,6 +9,7 @@ package io.harness.gitsync.caching;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.threading.ThreadPoolConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -20,4 +21,5 @@ import lombok.Value;
 public class GitServiceCacheConfiguration {
   @JsonProperty("validCacheDurationInMillis") long validCacheDurationInMillis;
   @JsonProperty("maxCacheDurationInMillis") long maxCacheDurationInMillis;
+  @JsonProperty("backgroundUpdateThreadPool") ThreadPoolConfig backgroundUpdateThreadPoolConfig;
 }

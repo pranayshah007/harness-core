@@ -52,8 +52,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
   public ValidationResult validate(TriggerDetails triggerDetails) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     try {
-      Optional<String> pipelineYmlOptional =
-          validationHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails.getNgTriggerEntity());
+      Optional<String> pipelineYmlOptional = validationHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails);
 
       if (!pipelineYmlOptional.isPresent()) {
         return builder.success(false).message("Pipeline doesn't exists").build();
@@ -93,7 +92,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
     return builder.build();
   }
 
-  private void validateBasedOnArtifactType(BuildTriggerOpsData buildTriggerOpsData) {
+  public void validateBasedOnArtifactType(BuildTriggerOpsData buildTriggerOpsData) {
     String typeFromTrigger = validationHelper.fetchBuildType(buildTriggerOpsData.getTriggerSpecMap());
     if (!artifactTypesSupported.contains(typeFromTrigger)) {
       throw new InvalidRequestException(

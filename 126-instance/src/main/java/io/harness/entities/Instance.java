@@ -186,7 +186,7 @@ public class Instance {
   private String envIdentifier;
   private String envName;
   private EnvironmentType envType;
-
+  private String envGroupRef;
   private String serviceIdentifier;
   private String serviceName;
 

@@ -203,7 +203,7 @@ public class AsgSdkManager {
     return resultList.get(0);
   }
 
-  public void deleteService(AutoScalingGroup autoScalingGroup) {
+  public void deleteAsgService(AutoScalingGroup autoScalingGroup) {
     String asgName = autoScalingGroup.getAutoScalingGroupName();
     String operationName = format("Delete Asg %s", asgName);
     info("Operation `%s` has started", operationName);
@@ -249,35 +249,6 @@ public class AsgSdkManager {
     info("Checking if service `%s` is deleted", asgName);
     AutoScalingGroup autoScalingGroup = getASG(asgName);
     return autoScalingGroup == null;
-  }
-
-  public String getLaunchTemplateVersion(String asgName, String launchTemplateContent) {
-    CreateLaunchTemplateRequest createLaunchTemplateRequest =
-        AsgContentParser.parseJson(launchTemplateContent, CreateLaunchTemplateRequest.class);
-    LaunchTemplate launchTemplate = getLaunchTemplate(asgName);
-    if (launchTemplate != null) {
-      LaunchTemplateVersion launchTemplateVersion =
-          createLaunchTemplateVersion(launchTemplate, createLaunchTemplateRequest.getLaunchTemplateData());
-      return launchTemplateVersion.getVersionNumber().toString();
-    } else {
-      launchTemplate = createLaunchTemplate(asgName, createLaunchTemplateRequest);
-      return launchTemplate.getLatestVersionNumber().toString();
-    }
-  }
-
-  public AutoScalingGroup createAsgService(String launchTemplateContent,
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest, Integer nrOfInstances) {
-    String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
-    String operationName = format("Create Asg %s", asgName);
-    info("Operation `%s` has started", operationName);
-    String launchTemplateVersion = getLaunchTemplateVersion(asgName, launchTemplateContent);
-    createAutoScalingGroupRequest.withMinSize(nrOfInstances)
-        .withMaxSize(nrOfInstances)
-        .withDesiredCapacity(nrOfInstances);
-    createASG(asgName, launchTemplateVersion, createAutoScalingGroupRequest);
-    waitReadyState(asgName, this::checkAllInstancesInReadyState, operationName);
-    infoBold("Operation `%s` ended successfully", operationName);
-    return getASG(asgName);
   }
 
   public void waitReadyState(String asgName, Predicate<String> predicate, String operationName) {

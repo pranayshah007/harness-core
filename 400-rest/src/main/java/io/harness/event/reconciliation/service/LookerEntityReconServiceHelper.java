@@ -265,4 +265,55 @@ public class LookerEntityReconServiceHelper {
     }
     return ReconciliationStatus.SUCCESS;
   }
+
+  public static ReconciliationStatus performReconciliationViaAPI(String accountId, long durationStartTs,
+      long durationEndTs, TimeScaleEntity timeScaleEntity, TimeScaleDBService timeScaleDBService,
+      HPersistence persistence) {
+    String sourceEntityClass = timeScaleEntity.getSourceEntityClass().getCanonicalName();
+    if (!timeScaleDBService.isValid()) {
+      log.info("TimeScaleDB is not valid, skipping reconciliation for accountID:[{}] entity: [{}] in duration:[{}-{}]",
+          accountId, sourceEntityClass, new Date(durationStartTs), new Date(durationEndTs));
+      return ReconciliationStatus.SUCCESS;
+    }
+
+    try {
+      Set<String> primaryIds =
+          timeScaleEntity.getReconService().getEntityIdsFromMongoDB(accountId, durationStartTs, durationEndTs);
+      Set<String> secondaryIds = getEntityIdsFromTSDB(
+          accountId, durationStartTs, durationEndTs, sourceEntityClass, timeScaleEntity, timeScaleDBService);
+      Set<String> allAppIds = new HashSet<>();
+      Set<String> idsMissingInTSDB = new HashSet<>();
+      Set<String> idsToBeDeletedFromTSDB = new HashSet<>();
+      allAppIds.addAll(primaryIds);
+      allAppIds.addAll(secondaryIds);
+      for (String appId : allAppIds) {
+        if (!secondaryIds.contains(appId)) {
+          idsMissingInTSDB.add(appId);
+        } else if (!primaryIds.contains(appId)) {
+          idsToBeDeletedFromTSDB.add(appId);
+        }
+      }
+      if (idsMissingInTSDB.size() > 0) {
+        log.info("Missing entries found for accountID:[{}] entity: [{}] in duration:[{}-{}]", accountId,
+            sourceEntityClass, new Date(durationStartTs), new Date(durationEndTs));
+        insertMissingRecords(idsMissingInTSDB, timeScaleEntity, persistence);
+      }
+      if (idsToBeDeletedFromTSDB.size() > 0) {
+        log.info("Deleted entries found for accountID:[{}] entity: [{}] in duration:[{}-{}]", accountId,
+            sourceEntityClass, new Date(durationStartTs), new Date(durationEndTs));
+        deleteRecords(idsToBeDeletedFromTSDB, timeScaleEntity);
+      }
+      if (!(idsMissingInTSDB.size() > 0 || idsToBeDeletedFromTSDB.size() > 0)) {
+        log.info("Everything is fine, no action required for accountID:[{}] entity: [{}] in duration:[{}-{}]",
+            accountId, sourceEntityClass, new Date(durationStartTs), new Date(durationEndTs));
+      }
+
+    } catch (Exception e) {
+      log.error("Exception occurred while running reconciliation for entity:[{}], accountID:[{}] in duration:[{}-{}]",
+          sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), e);
+      return ReconciliationStatus.FAILED;
+    }
+
+    return ReconciliationStatus.SUCCESS;
+  }
 }

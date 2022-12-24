@@ -107,7 +107,6 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
@@ -119,6 +118,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig.TasContainerArtifactConfigBuilder;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -968,7 +968,7 @@ public class TasStepHelper {
   public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
-    PcfManifestsPackage pcfManifestsPackage = getManifestFilesContents(ambiance,
+    TasManifestsPackage tasManifestsPackage = getManifestFilesContents(ambiance,
         tasStepPassThroughData.getGitFetchFilesResultMap(), tasStepPassThroughData.getCustomFetchContent(),
         tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
@@ -1009,10 +1009,10 @@ public class TasStepHelper {
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
-            .applicationName(fetchTasApplicationName(pcfManifestsPackage))
+            .applicationName(fetchTasApplicationName(tasManifestsPackage))
             .infrastructure(tasStepPassThroughData.getInfrastructure())
             .zippedManifestId(tasStepPassThroughData.getZippedManifestFileId())
-            .pcfManifestsPackage(pcfManifestsPackage)
+            .tasManifestsPackage(tasManifestsPackage)
             .repoRoot(tasStepPassThroughData.getRepoRoot())
             .cfCliVersion(tasStepPassThroughData.getTasManifestOutcome().getCfCliVersion())
             .pathsFromScript(tasStepPassThroughData.getPathsFromScript())
@@ -1024,12 +1024,12 @@ public class TasStepHelper {
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
   }
 
-  public PcfManifestsPackage getManifestFilesContents(Ambiance ambiance,
+  public TasManifestsPackage getManifestFilesContents(Ambiance ambiance,
       Map<String, FetchFilesResult> gitFetchFilesResultMap,
       Map<String, Collection<CustomSourceFile>> customFetchContent,
       Map<String, List<TasManifestFileContents>> localStoreFetchFilesResultMap,
       List<ManifestOutcome> manifestOutcomes) {
-    PcfManifestsPackage pcfManifestsPackage = PcfManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
     for (ManifestOutcome manifest : manifestOutcomes) {
       String identifier = manifest.getIdentifier();
       if (isNotEmpty(gitFetchFilesResultMap) && gitFetchFilesResultMap.containsKey(identifier)) {
@@ -1039,18 +1039,18 @@ public class TasStepHelper {
             GitStoreConfig gitStoreConfig = (GitStoreConfig) manifest.getStore();
             for (GitFile file : gitFetchFilesResult.getFiles()) {
               if (getParameterFieldValue(gitStoreConfig.getPaths()).get(0).equals(file.getFilePath())) {
-                addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), TAS_MANIFEST);
+                addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_MANIFEST);
               } else {
                 List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
                 if (!isEmpty(varsPaths) && varsPaths.contains(file.getFilePath())) {
-                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), TAS_VARS);
+                  addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_VARS);
                 } else {
-                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), TAS_AUTOSCALER);
+                  addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_AUTOSCALER);
                 }
               }
             }
           } else {
-            addToPcfManifestPackageByType(pcfManifestsPackage,
+            addToPcfManifestPackageByType(tasManifestsPackage,
                 gitFetchFilesResult.getFiles().stream().map(GitFile::getFileContent).collect(Collectors.toList()),
                 manifest.getType());
           }
@@ -1062,79 +1062,77 @@ public class TasStepHelper {
             CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) manifest.getStore();
             if (customSourceFile.getFilePath().equals(customRemoteStoreConfig.getFilePath().getValue())) {
               addToPcfManifestPackageByType(
-                  pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_MANIFEST);
+                  tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_MANIFEST);
             } else {
               List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
               if (!isEmpty(varsPaths) && varsPaths.contains(customSourceFile.getFilePath())) {
                 addToPcfManifestPackageByType(
-                    pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
+                    tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
               } else {
                 addToPcfManifestPackageByType(
-                    pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_AUTOSCALER);
+                    tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_AUTOSCALER);
               }
             }
           } else {
             addToPcfManifestPackageByType(
-                pcfManifestsPackage, List.of(customSourceFile.getFileContent()), manifest.getType());
+                tasManifestsPackage, List.of(customSourceFile.getFileContent()), manifest.getType());
           }
         }
       } else if (isNotEmpty(localStoreFetchFilesResultMap) && localStoreFetchFilesResultMap.containsKey(identifier)) {
         List<TasManifestFileContents> localStoreValuesFileContent = localStoreFetchFilesResultMap.get(identifier);
         for (TasManifestFileContents tasManifestFileContent : localStoreValuesFileContent) {
-          addToPcfManifestPackageByType(pcfManifestsPackage,
+          addToPcfManifestPackageByType(tasManifestsPackage,
               Collections.singletonList(tasManifestFileContent.getFileContent()),
               tasManifestFileContent.getManifestType());
         }
       }
     }
-    return resolveExpressionsInManifests(ambiance, pcfManifestsPackage);
+    return resolveExpressionsInManifests(ambiance, tasManifestsPackage);
   }
 
-  public PcfManifestsPackage resolveExpressionsInManifests(Ambiance ambiance, PcfManifestsPackage pcfManifestsPackage) {
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
-    PcfManifestsPackage resolvedPcfManifestsPackage = PcfManifestsPackage.builder().build();
-    if (!isNull(pcfManifestsPackage.getAutoscalarManifestYml())) {
-      resolvedPcfManifestsPackage.setAutoscalarManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          pcfManifestsPackage.getAutoscalarManifestYml(), cdExpressionResolveFunctor));
+  public TasManifestsPackage resolveExpressionsInManifests(Ambiance ambiance, TasManifestsPackage tasManifestsPackage) {
+    TasManifestsPackage resolvedTasManifestsPackage = TasManifestsPackage.builder().build();
+    if (!isNull(tasManifestsPackage.getAutoscalarManifestYml())) {
+      resolvedTasManifestsPackage.setAutoscalarManifestYml(
+          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getAutoscalarManifestYml()));
     }
-    if (!isEmpty(pcfManifestsPackage.getVariableYmls())) {
+    if (!isEmpty(tasManifestsPackage.getVariableYmls())) {
       List<String> resolvedVarsYaml = new ArrayList<>();
-      for (String varsYaml : pcfManifestsPackage.getVariableYmls()) {
-        resolvedVarsYaml.add((String) ExpressionEvaluatorUtils.updateExpressions(varsYaml, cdExpressionResolveFunctor));
+      for (String varsYaml : tasManifestsPackage.getVariableYmls()) {
+        resolvedVarsYaml.add(engineExpressionService.renderExpression(ambiance, varsYaml));
       }
-      resolvedPcfManifestsPackage.setVariableYmls(resolvedVarsYaml);
+      resolvedTasManifestsPackage.setVariableYmls(resolvedVarsYaml);
     }
-    if (!isNull(pcfManifestsPackage.getManifestYml())) {
-      resolvedPcfManifestsPackage.setManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          pcfManifestsPackage.getManifestYml(), cdExpressionResolveFunctor));
+    if (!isNull(tasManifestsPackage.getManifestYml())) {
+      resolvedTasManifestsPackage.setManifestYml(
+          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getManifestYml()));
     }
-    return resolvedPcfManifestsPackage;
+    return resolvedTasManifestsPackage;
   }
 
   public void addToPcfManifestPackageByType(
-      PcfManifestsPackage pcfManifestsPackage, List<String> fileContents, String manifestType) {
+      TasManifestsPackage tasManifestsPackage, List<String> fileContents, String manifestType) {
     if (fileContents.isEmpty()) {
       return;
     }
     switch (manifestType) {
       case TAS_AUTOSCALER:
-        if (!isNull(pcfManifestsPackage.getAutoscalarManifestYml()) || fileContents.size() > 1) {
+        if (!isNull(tasManifestsPackage.getAutoscalarManifestYml()) || fileContents.size() > 1) {
           throw new UnsupportedOperationException("Only one AutoScalar Yml is supported");
         }
-        pcfManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
+        tasManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
         break;
       case TAS_VARS:
-        if (isNull(pcfManifestsPackage.getVariableYmls())) {
-          pcfManifestsPackage.setVariableYmls(new ArrayList<>());
+        if (isNull(tasManifestsPackage.getVariableYmls())) {
+          tasManifestsPackage.setVariableYmls(new ArrayList<>());
         }
-        pcfManifestsPackage.getVariableYmls().addAll(fileContents);
+        tasManifestsPackage.getVariableYmls().addAll(fileContents);
         break;
       case TAS_MANIFEST:
-        if (!isNull(pcfManifestsPackage.getManifestYml()) || fileContents.size() > 1) {
+        if (!isNull(tasManifestsPackage.getManifestYml()) || fileContents.size() > 1) {
           throw new UnsupportedOperationException("Only one Tas Manifest Yml is supported");
         }
-        pcfManifestsPackage.setManifestYml(fileContents.get(0));
+        tasManifestsPackage.setManifestYml(fileContents.get(0));
         break;
       default:
         throw new UnsupportedOperationException(format("Unsupported Manifest type: %s", manifestType));
@@ -1167,25 +1165,25 @@ public class TasStepHelper {
     }
   }
 
-  public String fetchTasApplicationName(PcfManifestsPackage pcfManifestsPackage) {
-    Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
+  public String fetchTasApplicationName(TasManifestsPackage tasManifestsPackage) {
+    Map<String, Object> applicationYamlMap = getApplicationYamlMap(tasManifestsPackage.getManifestYml());
     String name = (String) applicationYamlMap.get(NAME_MANIFEST_YML_ELEMENT);
     if (isBlank(name)) {
       throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application name"));
     }
-    return finalizeSubstitution(pcfManifestsPackage, name);
+    return finalizeSubstitution(tasManifestsPackage, name);
   }
 
-  String finalizeSubstitution(PcfManifestsPackage pcfManifestsPackage, String name) {
+  String finalizeSubstitution(TasManifestsPackage tasManifestsPackage, String name) {
     if (name.contains("((") && name.contains("))")) {
-      if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
+      if (isEmpty(tasManifestsPackage.getVariableYmls())) {
         throw new InvalidRequestException(
             "No Valid Variable file Found, please verify var file is present and has valid structure");
       }
       String varName;
       String appName;
       Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(name);
-      List<String> varFiles = pcfManifestsPackage.getVariableYmls();
+      List<String> varFiles = tasManifestsPackage.getVariableYmls();
       while (m.find()) {
         varName = m.group(1);
         for (int i = varFiles.size() - 1; i >= 0; i--) {
@@ -1238,8 +1236,8 @@ public class TasStepHelper {
     }
   }
 
-  public Integer fetchMaxCountFromManifest(PcfManifestsPackage pcfManifestsPackage) {
-    Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
+  public Integer fetchMaxCountFromManifest(TasManifestsPackage tasManifestsPackage) {
+    Map<String, Object> applicationYamlMap = getApplicationYamlMap(tasManifestsPackage.getManifestYml());
     Map<String, Object> treeMap = generateCaseInsensitiveTreeMap(applicationYamlMap);
     Object maxCount = fetchInstanceCountFromWebProcess(treeMap);
 
@@ -1254,7 +1252,7 @@ public class TasStepHelper {
       return 0;
     }
 
-    maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
+    maxVal = finalizeSubstitution(tasManifestsPackage, maxVal);
     return Integer.parseInt(maxVal);
   }
 

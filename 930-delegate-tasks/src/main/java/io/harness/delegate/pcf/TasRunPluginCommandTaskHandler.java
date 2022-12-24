@@ -147,9 +147,9 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
     log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Run Plugin Command task [{}]",
         pluginCommandRequest);
     log.error("Exception is ", e);
+    Misc.logAllMessages(e, executionLogCallback);
     executionLogCallback.saveExecutionLog("\n\n ----------  PCF Run Plugin Command failed to complete successfully",
         ERROR, CommandExecutionStatus.FAILURE);
-    Misc.logAllMessages(e, executionLogCallback);
     return TasRunPluginResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
         .errorMessage(ExceptionUtils.getMessage(e))

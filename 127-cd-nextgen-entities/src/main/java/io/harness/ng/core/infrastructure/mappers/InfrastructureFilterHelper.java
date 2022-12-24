@@ -24,6 +24,7 @@ import io.harness.utils.IdentifierRefHelper;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -32,9 +33,9 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InfrastructureFilterHelper {
   public Criteria createListCriteria(String accountId, String orgIdentifier, String projectIdentifier,
       String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType) {
-    String[] envRefSplit = envIdentifier.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
-    if (envRefSplit.length == 1) {
+    if (envRefSplit == null || envRefSplit.length == 1) {
       criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
       criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
     } else {

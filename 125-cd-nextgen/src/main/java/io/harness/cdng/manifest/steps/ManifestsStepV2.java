@@ -254,8 +254,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     List<EntityDetail> entityDetails = new ArrayList<>();
 
     for (ManifestAttributes manifestAttribute : manifestAttributes) {
-      Set<EntityDetailProtoDTO> entityDetailsProto =
-          entityReferenceExtractorUtils.extractReferredEntities(ambiance, manifestAttribute);
+      Set<EntityDetailProtoDTO> entityDetailsProto = manifestAttribute == null
+          ? Set.of()
+          : entityReferenceExtractorUtils.extractReferredEntities(ambiance, manifestAttribute);
 
       List<EntityDetail> entityDetail =
           entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));

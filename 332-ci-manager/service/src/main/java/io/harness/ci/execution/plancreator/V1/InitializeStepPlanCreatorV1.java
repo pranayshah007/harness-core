@@ -41,6 +41,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CI)
 public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<InitializeStepNode> {
+  private final String InitializeDisplayName = "Initialize";
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
   public PlanCreationResponse createPlan(PlanCreationContext ctx, IntegrationStageNodeV1 integrationStageNodeV1,
@@ -80,7 +81,7 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
 
     return InitializeStepNode.builder()
         .identifier(InitializeStepInfo.STEP_TYPE.getType())
-        .name(InitializeStepInfo.STEP_TYPE.getType())
+        .name(InitializeDisplayName)
         .uuid(generateUuid())
         .type(InitializeStepNode.StepType.liteEngineTask)
         .timeout(getTimeout(infrastructure))

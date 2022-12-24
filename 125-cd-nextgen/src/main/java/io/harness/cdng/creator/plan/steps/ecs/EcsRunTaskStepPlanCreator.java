@@ -42,6 +42,7 @@ public class EcsRunTaskStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsRunTask
     EcsRunTaskStepParameters ecsRunTaskStepParameters =
         (EcsRunTaskStepParameters) ((StepElementParameters) stepParameters).getSpec();
     ecsRunTaskStepParameters.setTaskDefinition(stepElement.getEcsRunTaskStepInfo().getTaskDefinition());
+    ecsRunTaskStepParameters.setTaskDefinitionArn(stepElement.getEcsRunTaskStepInfo().getTaskDefinitionArn());
     ecsRunTaskStepParameters.setRunTaskRequestDefinition(
         stepElement.getEcsRunTaskStepInfo().getRunTaskRequestDefinition());
     ecsRunTaskStepParameters.setSkipSteadyStateCheck(stepElement.getEcsRunTaskStepInfo().getSkipSteadyStateCheck());

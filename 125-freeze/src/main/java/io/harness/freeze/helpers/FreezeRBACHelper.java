@@ -98,6 +98,9 @@ public class FreezeRBACHelper {
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient,
       io.harness.accesscontrol.acl.api.Principal principal) {
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
+      if (principal == null) {
+        return false;
+      }
       Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
       boolean overrideAccess =
           accessControlClient.hasAccess(io.harness.accesscontrol.acl.api.Principal.of(

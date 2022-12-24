@@ -49,7 +49,7 @@ public class PipelineInfoConfigV1 {
 
   @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
 
-  @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String id;
+  @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.PIPELINE_IDENTIFIER_PATTERN) String id;
 
   @Singular @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<StageElementWrapperConfig> stages;
 
