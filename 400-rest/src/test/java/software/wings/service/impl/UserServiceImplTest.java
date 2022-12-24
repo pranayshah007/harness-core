@@ -888,7 +888,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     UserGroup userGroup1_updated = builder()
                                        .accountId("ACCOUNT_ID")
                                        .uuid(UUIDGenerator.generateUuid())
-                                       .name("abcug" + System.currentTimeMillis())
+                                       .name("abcde" + System.currentTimeMillis())
                                        .description("dfgvhbjnhgf")
                                        .memberIds(new LinkedList<>(Arrays.asList(user2.getUuid())))
                                        .members(new LinkedList<>(Arrays.asList(user2)))
