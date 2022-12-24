@@ -72,6 +72,12 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -108,6 +114,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   private static final String JIRA_ISSUE_KEY = "issueKey";
   private static final String JIRA_ISSUE = "issue";
   private static final String DATETIME_ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXX";
+  private static final String DATETIME_UI_FORMAT = "yyyy/MM/dd HH:mm";
   private static final String MULTISELECT = "multiselect";
   private static final String ARRAY = "array";
   private static final String OPTION = "option";
@@ -124,6 +131,17 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   private static final String TIME_TRACKING_ORIGINAL_ESTIMATE = "TimeTracking:OriginalEstimate";
   private static final String TIME_TRACKING_REMAINING_ESTIMATE = "TimeTracking:RemainingEstimate";
   private static final String NUMBER = "number";
+
+  private static final HashMap<String, Long> MILLISECONDS_PER_UNIT = new HashMap<>() {
+    {
+      put("ms", Duration.ofMillis(1).toMillis());
+      put("s", Duration.ofSeconds(1).toMillis());
+      put("m", Duration.ofMinutes(1).toMillis());
+      put("h", Duration.ofHours(1).toMillis());
+      put("d", Duration.ofDays(1).toMillis());
+      put("w", Duration.ofDays(7).toMillis());
+    }
+  };
 
   @Inject private transient ActivityService activityService;
   @Inject @Transient private LogService logService;
@@ -151,6 +169,14 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   private Map<String, JiraCustomFieldValue> customFields;
   private static final Pattern currentPattern =
       Pattern.compile("(current\\(\\))(\\s*([+-])\\s*(\\d{0,13}))*", Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern uiPattern =
+      Pattern.compile("^\\d{4}\\/\\d{2}\\/\\d{2}\\s*\\d{2}:\\d{2}$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern uiCurrentPattern = Pattern.compile(
+      "(current\\(\\))(?:\\s*)([+\\-])((?:(\\d{1,2}(?:ms|[smhdw]|)(?:\\s*)))*)", Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern ISO8601Format = Pattern.compile(
+      "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?(?:\\s*)$");
   private static final Pattern varPattern =
       Pattern.compile("^(\\$\\{[a-z\\d._]*})(\\s*([+-])\\s*(\\d{0,13}))?", Pattern.CASE_INSENSITIVE);
   private static final Pattern fixedDatePattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
@@ -614,6 +640,65 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
                        }))));
   }
 
+  String parseUIDateTimeValue(String fieldValue) {
+    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                                      // date/time
+                                      .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                      // offset (hh:mm - "+00:00" when it's zero)
+                                      .optionalStart()
+                                      .appendOffset("+HH:MM", "+00:00")
+                                      .optionalEnd()
+                                      // offset (hhmm - "+0000" when it's zero)
+                                      .optionalStart()
+                                      .appendOffset("+HHMM", "+0000")
+                                      .optionalEnd()
+                                      // offset (hh - "Z" when it's zero)
+                                      .optionalStart()
+                                      .appendOffset("+HH", "Z")
+                                      .optionalEnd()
+                                      // create formatter
+                                      .toFormatter();
+    Matcher matcher = uiPattern.matcher(fieldValue);
+    if (matcher.matches()) {
+      try {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DATETIME_UI_FORMAT);
+        return String.valueOf(dateFormat.parse(matcher.group(0)).getTime());
+      } catch (ParseException e) {
+        throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
+      }
+    }
+    matcher = uiCurrentPattern.matcher(fieldValue);
+    if (matcher.matches() && matcher.groupCount() >= 3) {
+      long timestampAcc;
+      List<String> acc = List.of(matcher.group(3).trim().split(" "));
+      long msToAcc = acc.stream()
+                         .map(v -> {
+                           String[] part = v.split("(?<=\\d)(?=\\D)");
+                           return Long.parseLong(part[0]) * MILLISECONDS_PER_UNIT.get(part[1]);
+                         })
+                         .reduce(0L, Long::sum)
+                         .longValue();
+      if (matcher.group(2).equals("+")) {
+        timestampAcc = System.currentTimeMillis() + msToAcc;
+      } else if (matcher.group(2).equals("-")) {
+        timestampAcc = System.currentTimeMillis() - msToAcc;
+      } else {
+        throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
+      }
+      return String.valueOf(timestampAcc);
+    }
+    matcher = ISO8601Format.matcher(fieldValue);
+    if (matcher.matches()) {
+      try {
+        OffsetDateTime odt = OffsetDateTime.parse(matcher.group(0), formatter);
+        return String.valueOf(odt.atZoneSameInstant(ZoneOffset.UTC).toEpochSecond() * Duration.ofSeconds(1).toMillis());
+      } catch (DateTimeException e) {
+        throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
+      }
+    }
+    throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
+  }
+
   String parseDateTimeValue(String fieldValue, ExecutionContext context) {
     Matcher matcher = fixedDatetimePattern.matcher(fieldValue);
     if (matcher.matches()) {
@@ -641,6 +726,9 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
       }
       return getDateTime(matcher, val1);
     } else {
+      if (featureFlagService.isEnabled(FeatureName.SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD, context.getAccountId())) {
+        return parseUIDateTimeValue(fieldValue);
+      }
       throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
     }
   }

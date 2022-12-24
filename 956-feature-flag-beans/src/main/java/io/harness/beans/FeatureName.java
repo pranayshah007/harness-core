@@ -20,8 +20,13 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+
+  SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
+          + "continue pipeline execution",
+      HarnessTeam.SPG),
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
+  SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_USER_GITCONFIG(
       "Allow disabling local delegate user's .gitconfig when running git commands", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
@@ -417,9 +422,10 @@ public enum FeatureName {
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
-  PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
+  SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
+      "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH(
       "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
       HarnessTeam.PL),

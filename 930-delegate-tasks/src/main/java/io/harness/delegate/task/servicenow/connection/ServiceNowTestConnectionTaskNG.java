@@ -53,7 +53,8 @@ public class ServiceNowTestConnectionTaskNG extends AbstractDelegateRunnableTask
               .serviceNowConnectorDTO(serviceNowConnectionTaskParams.getServiceNowConnectorDTO())
               .encryptionDetails(serviceNowConnectionTaskParams.getEncryptionDetails())
               .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
-              .build());
+              .build(),
+          null);
       return ServiceNowTestConnectionTaskNGResponse.builder().canConnect(true).build();
     } catch (HintException ex) {
       throw ex;

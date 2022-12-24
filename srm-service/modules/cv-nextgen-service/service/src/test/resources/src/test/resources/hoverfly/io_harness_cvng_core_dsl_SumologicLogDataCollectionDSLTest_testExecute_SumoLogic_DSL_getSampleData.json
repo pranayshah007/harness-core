@@ -30,7 +30,7 @@
           "body": [
             {
               "matcher": "json",
-              "value": "{\"query\": \"_sourceCategory=windows/performance\",\"from\": \"2022-11-11T09:00:00\",\"to\": \"2022-11-11T09:05:00\",\"timeZone\": \"IST\"}"
+              "value": "{\"query\": \"_sourceCategory=windows/performance\",\"from\": \"2022-11-11T09:00:00\",\"to\": \"2022-11-11T09:05:00\"}"
             }
           ]
         },

@@ -39,12 +39,10 @@ import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.exception.CommandExecutionException;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -1357,16 +1355,9 @@ public class EcsCommandTaskNGHelper {
       return ecsCommandTaskHelper.describeTaskDefinition(
           describeTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
     } catch (Exception e) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Invalid Ecs Task Definition ", sanitizedException);
-      logCallback.saveExecutionLog(
-          "Invalid Ecs Task Definition \n" + ExceptionUtils.getMessage(sanitizedException), ERROR);
-      throw NestedExceptionUtils.hintWithExplanationException(format("Please check the following inputs\n"
-                                                                  + " Task Definition\n"
-                                                                  + " Aws Credentials\n"
-                                                                  + " Region\n"),
-          format("Invalid Ecs Task Definition [%s]", ecsTaskDefinition),
-          new InvalidRequestException("Invalid Ecs Task Definition ", sanitizedException));
+      log.error("Failed to describe Task Definition ", e);
+      logCallback.saveExecutionLog("Failed to describe Task Definition ", ERROR);
+      throw e;
     }
   }
 

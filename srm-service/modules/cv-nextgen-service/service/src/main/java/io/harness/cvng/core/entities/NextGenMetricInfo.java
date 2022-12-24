@@ -8,7 +8,6 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.cvng.beans.TimeSeriesMetricType;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -22,5 +21,5 @@ import lombok.experimental.SuperBuilder;
 public class NextGenMetricInfo extends AnalysisInfo {
   String query;
   TimeSeriesMetricType metricType;
-  QueryParams queryParams; // TODO new entity define
+  QueryParams queryParams;
 }

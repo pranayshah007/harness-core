@@ -24,6 +24,7 @@ import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
@@ -43,16 +44,17 @@ public class ApplicationEntityReconServiceImpl implements LookerEntityReconServi
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> appIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<Application> applications = persistence.createQuery(Application.class)
                                                        .field(ApplicationKeys.accountId)
                                                        .equal(accountId)
                                                        .field(ApplicationKeys.createdAt)
-                                                       .exists()
+                                                       .notEqual(null)
                                                        .field(ApplicationKeys.createdAt)
                                                        .greaterThanOrEq(durationStartTs)
                                                        .field(ApplicationKeys.createdAt)
                                                        .lessThanOrEq(durationEndTs)
-                                                       .fetchKeys();
+                                                       .fetchKeys(options);
     applications.forEachRemaining(applicationKey -> appIds.add((String) applicationKey.getId()));
 
     return appIds;

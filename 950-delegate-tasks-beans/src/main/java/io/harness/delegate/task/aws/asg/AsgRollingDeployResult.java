@@ -5,12 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.beans.healthsource;
+package io.harness.delegate.task.aws.asg;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class HealthSourceParams {
-  // TODO remove whats not required.
-  String region;
+@Builder
+@OwnedBy(HarnessTeam.CDP)
+public class AsgRollingDeployResult {
+  private String region;
+  private AutoScalingGroupContainer autoScalingGroupContainer;
 }

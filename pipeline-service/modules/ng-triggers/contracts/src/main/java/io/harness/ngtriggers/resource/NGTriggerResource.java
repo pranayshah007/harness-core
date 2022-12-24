@@ -187,7 +187,7 @@ public interface NGTriggerResource {
       })
   @Path("{triggerIdentifier}")
   @ApiOperation(value = "Delete a trigger by identifier", nickname = "deleteTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
   ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,

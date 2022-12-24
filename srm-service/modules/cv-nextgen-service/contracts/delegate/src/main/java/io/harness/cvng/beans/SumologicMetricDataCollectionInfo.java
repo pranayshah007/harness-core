@@ -28,7 +28,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class SumologicMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<SumoLogicConnectorDTO> {
-  private static final String GROUPING_CLAUSE = "avg by ";
+  private static final String GROUPING_CLAUSE_HOST = " | avg by ";
+  private static final String GROUPING_CLAUSE_NON_HOST = " | avg";
   String groupName;
   List<MetricCollectionInfo> metricDefinitions;
   public List<MetricCollectionInfo> getMetricDefinitions() {
@@ -39,11 +40,7 @@ public class SumologicMetricDataCollectionInfo extends TimeSeriesDataCollectionI
   }
   @Override
   public Map<String, Object> getDslEnvVariables(SumoLogicConnectorDTO connectorConfigDTO) {
-    // TODO fix the DSL param
     Map<String, Object> dslEnvVariables = new HashMap<>();
-    // TODO grouping not required for sumologic ?
-    List<String> queries = CollectionUtils.emptyIfNull(
-        getMetricDefinitions().stream().map(MetricCollectionInfo::getQuery).collect(Collectors.toList()));
     List<String> metricIdentifiers = CollectionUtils.emptyIfNull(
         getMetricDefinitions()
             .stream()
@@ -53,14 +50,25 @@ public class SumologicMetricDataCollectionInfo extends TimeSeriesDataCollectionI
     if (isCollectHostData()) {
       getMetricDefinitions().forEach((MetricCollectionInfo metric) -> {
         String fullQuery =
-            String.format("%s%s%s", metric.getQuery(), GROUPING_CLAUSE, metric.getServiceInstanceIdentifierTag());
+            String.format("%s%s%s", metric.getQuery(), GROUPING_CLAUSE_HOST, metric.getServiceInstanceIdentifierTag());
         metric.setQuery(fullQuery);
+        dslEnvVariables.put("serviceInstanceIdentifierTag", metric.getServiceInstanceIdentifierTag());
+      });
+    } else {
+      getMetricDefinitions().forEach((MetricCollectionInfo metric) -> {
+        String fullQuery = String.format("%s%s", metric.getQuery(), GROUPING_CLAUSE_NON_HOST);
+        metric.setQuery(fullQuery);
+        dslEnvVariables.put("serviceInstanceIdentifierTag", metric.getServiceInstanceIdentifierTag());
       });
     }
+    List<String> queries = CollectionUtils.emptyIfNull(
+        getMetricDefinitions().stream().map(MetricCollectionInfo::getQuery).collect(Collectors.toList()));
 
-    dslEnvVariables.put("query", queries.get(0)); // TODO FIx should process multiple queries.
+    dslEnvVariables.put("queries", queries);
     dslEnvVariables.put("groupName", groupName);
-    dslEnvVariables.put("metricIdentifiers", metricIdentifiers); // TODO how will be we use the multiples ?
+    dslEnvVariables.put("metricIdentifiers", metricIdentifiers);
+    dslEnvVariables.put("metricNames",
+        getMetricDefinitions().stream().map(MetricCollectionInfo::getMetricName).collect(Collectors.toList()));
     dslEnvVariables.put("collectHostData", isCollectHostData());
     return dslEnvVariables;
   }

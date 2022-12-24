@@ -24,6 +24,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.loginSettings.UserLockoutInfo;
@@ -97,6 +98,11 @@ public class User extends Base implements Principal {
                  .field(UserKeys.email)
                  .field(UserKeys.pendingAccounts)
                  .field(UserKeys.disabled)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountsCreatedAt")
+                 .field(UserKeys.accounts)
+                 .descSortField("createdAt")
                  .build())
         .build();
   }

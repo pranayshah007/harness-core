@@ -7,6 +7,8 @@
 
 package io.harness.delegate.aws.asg;
 
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -22,6 +24,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -43,6 +48,7 @@ import software.wings.beans.LogWeight;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
@@ -73,12 +79,9 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
-      String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-      AutoScalingGroupContainer autoScalingGroupContainer = executeCanaryDeploy(
-          asgSdkManager, asgLaunchTemplateContent, asgConfigurationContent, serviceSuffix, nrOfInstances);
+      AutoScalingGroupContainer autoScalingGroupContainer =
+          executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent, serviceSuffix, nrOfInstances);
 
       AsgCanaryDeployResult asgCanaryDeployResult = AsgCanaryDeployResult.builder()
                                                         .region(asgInfraConfig.getRegion())
@@ -100,8 +103,11 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
     }
   }
 
-  private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager, String asgLaunchTemplateContent,
-      String asgConfigurationContent, String serviceSuffix, Integer nrOfInstances) {
+  private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager,
+      Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances) {
+    String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
+    String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
+
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
         AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class);
     String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
@@ -110,7 +116,6 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
     }
 
     String canaryAsgName = format("%s__%s", asgName, serviceSuffix);
-    createAutoScalingGroupRequest.setAutoScalingGroupName(canaryAsgName);
 
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(canaryAsgName);
     if (autoScalingGroup != null) {
@@ -118,8 +123,24 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       asgSdkManager.deleteAsgService(autoScalingGroup);
     }
 
-    autoScalingGroup =
-        asgSdkManager.createAsgService(asgLaunchTemplateContent, createAutoScalingGroupRequest, nrOfInstances);
+    Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
+      {
+        put(AsgConfigurationManifestHandler.OverrideProperties.minSize, nrOfInstances);
+        put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, nrOfInstances);
+        put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, nrOfInstances);
+      }
+    };
+
+    AsgManifestHandlerChainState chainState =
+        AsgManifestHandlerChainFactory.builder()
+            .initialChainState(AsgManifestHandlerChainState.builder().asgName(canaryAsgName).build())
+            .asgSdkManager(asgSdkManager)
+            .build()
+            .addHandler(AsgLaunchTemplate, asgLaunchTemplateContent, null)
+            .addHandler(AsgConfiguration, asgConfigurationContent, asgConfigurationOverrideProperties)
+            .executeUpsert();
+
+    autoScalingGroup = chainState.getAutoScalingGroup();
 
     return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
   }

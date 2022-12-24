@@ -862,6 +862,48 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceWarmup": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "minimumHealthyPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "skipMatching": {
+              "type": "boolean"
+            },
+            "useAlreadyRunningInstances": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgScalingPolicyManifest": {
       "allOf": [
         {
@@ -11150,6 +11192,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgCanaryDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgRollingDeployStepInfo"
               }
             }
           }

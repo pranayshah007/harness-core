@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Slf4j
@@ -42,17 +43,18 @@ public class CloudProviderReconServiceImpl implements LookerEntityReconService {
   }
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> cloudProviderIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<SettingAttribute> settingAttributes = persistence.createQuery(SettingAttribute.class)
                                                                  .filter(SettingAttributeKeys.category, CLOUD_PROVIDER)
                                                                  .field(SettingAttributeKeys.accountId)
                                                                  .equal(accountId)
                                                                  .field(SettingAttributeKeys.createdAt)
-                                                                 .exists()
+                                                                 .notEqual(null)
                                                                  .field(SettingAttributeKeys.createdAt)
                                                                  .greaterThanOrEq(durationStartTs)
                                                                  .field(SettingAttributeKeys.createdAt)
                                                                  .lessThanOrEq(durationEndTs)
-                                                                 .fetchKeys();
+                                                                 .fetchKeys(options);
     settingAttributes.forEachRemaining(cloudProviderKey -> cloudProviderIds.add((String) cloudProviderKey.getId()));
 
     return cloudProviderIds;

@@ -16,10 +16,13 @@ import static io.harness.eraro.ErrorCode.AWS_ECS_SERVICE_NOT_ACTIVE;
 import static io.harness.eraro.ErrorCode.AWS_SERVICE_NOT_FOUND;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.AwsClientHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -142,6 +145,21 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return ecsClient.describeTaskDefinition(describeTaskDefinitionRequest);
     } catch (Exception exception) {
+      if (exception instanceof ClientException) {
+        if (((ClientException) exception)
+                .awsErrorDetails()
+                .errorMessage()
+                .equals("Unable to describe task definition.")) {
+          throw NestedExceptionUtils.hintWithExplanationException(format("Please check the following inputs\n"
+                                                                      + " Task Definition\n"
+                                                                      + " Region\n"),
+              format("Invalid Ecs Task Definition [%s] in region [%s] ", describeTaskDefinitionRequest.taskDefinition(),
+                  region),
+              new InvalidRequestException(format("Invalid Ecs Task Definition [%s] in region [%s] ",
+                                              describeTaskDefinitionRequest.taskDefinition(), region),
+                  exception));
+        }
+      }
       super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
       super.handleException(exception);
     }

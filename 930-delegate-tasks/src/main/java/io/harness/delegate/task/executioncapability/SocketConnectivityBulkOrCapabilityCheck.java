@@ -8,6 +8,7 @@
 package io.harness.delegate.task.executioncapability;
 
 import static io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck.connectableHost;
+import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission;
@@ -21,6 +22,7 @@ import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExe
 
 import com.google.inject.Singleton;
 import com.google.protobuf.ProtocolStringList;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,7 +37,12 @@ public class SocketConnectivityBulkOrCapabilityCheck implements CapabilityCheck,
 
       if (null != socketConnCapability.getPort() && EmptyPredicate.isNotEmpty(socketConnCapability.getHostNames())) {
         for (String host : socketConnCapability.getHostNames()) {
-          valid = connectableHost(host, socketConnCapability.getPort());
+          Optional<String> optionalHost = extractHostnameFromHost(host);
+          if (optionalHost.isEmpty()) {
+            log.error("Cannot extract hostname from the host {}", host);
+            break;
+          }
+          valid = connectableHost(optionalHost.get(), socketConnCapability.getPort());
           if (valid) {
             break;
           }
@@ -62,7 +69,12 @@ public class SocketConnectivityBulkOrCapabilityCheck implements CapabilityCheck,
 
       if (EmptyPredicate.isNotEmpty(hostNames)) {
         for (String host : hostNames) {
-          if (connectableHost(host, socketParameters.getPort())) {
+          Optional<String> optionalHost = extractHostnameFromHost(host);
+          if (optionalHost.isEmpty()) {
+            log.error("Cannot extract hostname from the host {}", host);
+            break;
+          }
+          if (connectableHost(optionalHost.get(), socketParameters.getPort())) {
             result = PermissionResult.ALLOWED;
             break;
           }
