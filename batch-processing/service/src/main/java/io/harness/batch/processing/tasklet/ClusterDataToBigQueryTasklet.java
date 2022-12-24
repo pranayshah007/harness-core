@@ -57,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.StepContribution;
@@ -153,6 +154,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     // Delete file once upload is complete
     File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
     File billingDataFile = new File(workingDirectory, billingDataFileName);
+    File destinationFile = new File(workingDirectory, billingDataFileName + "-" + Instant.now());
+    FileUtils.copyFile(billingDataFile, destinationFile);
     Files.delete(billingDataFile.toPath());
 
     return null;
