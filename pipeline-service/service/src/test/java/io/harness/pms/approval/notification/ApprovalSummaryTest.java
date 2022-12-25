@@ -40,8 +40,8 @@ public class ApprovalSummaryTest extends CategoryTest {
     long currentTimeMillis = System.currentTimeMillis();
     ApprovalSummary approvalSummary = ApprovalSummary.builder()
                                           .pipelineName("p1")
-                                          .orgIdentifier("default")
-                                          .projectIdentifier("dev")
+                                          .orgName("default")
+                                          .projectName("dev")
                                           .approvalMessage("approved")
                                           .startedAt(String.valueOf(currentTimeMillis))
                                           .expiresAt(String.valueOf(2L * currentTimeMillis))
@@ -56,8 +56,8 @@ public class ApprovalSummaryTest extends CategoryTest {
     Map<String, String> params = approvalSummary.toParams();
     assertThat(params).hasSize(12);
     assertThat(params.get("pipelineName")).isEqualTo("p1");
-    assertThat(params.get("orgIdentifier")).isEqualTo("default");
-    assertThat(params.get("projectIdentifier")).isEqualTo("dev");
+    assertThat(params.get("orgName")).isEqualTo("default");
+    assertThat(params.get("projectName")).isEqualTo("dev");
     assertThat(params.get("approvalMessage")).isEqualTo("approved");
     assertThat(params.get("startedAt")).isEqualTo(String.valueOf(currentTimeMillis));
     assertThat(params.get("expiresAt")).isEqualTo(String.valueOf(2L * currentTimeMillis));
