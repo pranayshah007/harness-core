@@ -62,6 +62,7 @@ public abstract class AbstractServicesApiImpl {
   @Inject private final ServiceEntityManagementService serviceEntityManagementService;
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final ServiceResourceApiUtils serviceResourceApiUtils;
+  @Inject private final ServiceEntityYamlSchemaHelper serviceSchemaHelper;
 
   private static final String projectScopedServiceUri = "/v1/orgs/%s/projects/%s/services)";
   private static final String orgScopedServiceUri = "/v1/orgs/%s/services)";
@@ -71,6 +72,7 @@ public abstract class AbstractServicesApiImpl {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity serviceEntity = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
@@ -182,6 +184,7 @@ public abstract class AbstractServicesApiImpl {
     }
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());

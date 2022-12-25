@@ -7,11 +7,14 @@
 
 package io.harness.cdng.azure.webapp;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
@@ -33,21 +36,28 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.After;
@@ -64,6 +74,9 @@ public class AzureServiceSettingsStepTest {
   @Mock private AzureHelperService azureHelperService;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDExpressionResolver expressionResolver;
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
 
   private final ApplicationSettingsConfiguration appSettingConfig =
       ApplicationSettingsConfiguration.builder()
@@ -103,6 +116,19 @@ public class AzureServiceSettingsStepTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeSync_0() {
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("applicationSettings").build());
+    listEntityDetail.add(EntityDetail.builder().name("connectionStrings").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
     doReturn(getServiceConfig(appSettingConfig, connectionStringConfig, startupCommandConfig))
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(any(Ambiance.class));
@@ -125,6 +151,7 @@ public class AzureServiceSettingsStepTest {
     assertThat(appSettingsOutcome.getStore()).isEqualTo(appSettingConfig.getStore().getSpec());
     assertThat(connStringsOutcome.getStore()).isEqualTo(connectionStringConfig.getStore().getSpec());
     assertThat(startupCommandOutcome.getStore()).isEqualTo(startupCommandConfig.getStore().getSpec());
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
   }
 
   @Test

@@ -216,7 +216,7 @@ public class EnvironmentPlanCreatorHelper {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
             environmentV2.getInfrastructureDefinitions().getValue()));
       }
-      infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
+      infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvRef(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
     }
 

@@ -15,6 +15,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -23,6 +24,8 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
+  PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops,
+      boolean forced, EnumSet<Status> allowedStartStatuses);
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status);
   PlanExecution markPlanExecutionErrored(String planExecutionId);
   PlanExecution updateStatus(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops);

@@ -34,10 +34,15 @@ public class TagsFilter implements FilterSpec {
   @NotNull
   @ApiModelProperty(required = true, dataType = SwaggerConstants.FILTERS_MATCHTYPE_ENUM_CLASSPATH)
   @YamlSchemaTypes(runtime)
-  private ParameterField<MatchType> matchType;
+  private ParameterField<String> matchType;
 
   @NotNull
   @ApiModelProperty(required = true, dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
   @YamlSchemaTypes(runtime)
   private ParameterField<Map<String, String>> tags;
+
+  @Override
+  public FilterSpec clone() {
+    return TagsFilter.builder().matchType(this.matchType).tags(this.tags).build();
+  }
 }

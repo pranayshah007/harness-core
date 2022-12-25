@@ -90,6 +90,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
             .accountId(accountId)
+            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
@@ -112,8 +113,6 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    // TODO
-
     AsgExecutionPassThroughData asgExecutionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
     InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();
     AsgCanaryDeployResponse asgCanaryDeployResponse;
@@ -125,19 +124,22 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
     }
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(asgCanaryDeployResponse.getUnitProgressData().getUnitProgresses());
+
     if (asgCanaryDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return AsgStepCommonHelper.getFailureResponseBuilder(asgCanaryDeployResponse, stepResponseBuilder).build();
     }
 
     AsgCanaryDeployOutcome asgCanaryDeployOutcome =
         AsgCanaryDeployOutcome.builder()
-            .canaryAsgName(asgCanaryDeployResponse.getAsgCanaryDeployResult().getCanaryAsgName())
+            .canaryAsgName(asgCanaryDeployResponse.getAsgCanaryDeployResult()
+                               .getAutoScalingGroupContainer()
+                               .getAutoScalingGroupName())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DEPLOY_OUTCOME,
         asgCanaryDeployOutcome, StepOutcomeGroup.STEP.name());
 
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED).build();
   }
 
   @Override

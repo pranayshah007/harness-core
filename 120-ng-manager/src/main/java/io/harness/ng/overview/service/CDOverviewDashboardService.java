@@ -16,17 +16,23 @@ import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
+import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
+import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
+import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
 import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
+import io.harness.ng.overview.dto.ServiceDeploymentInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
+import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
+import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
@@ -40,6 +46,9 @@ public interface CDOverviewDashboardService {
   HealthDeploymentDashboard getHealthDeploymentDashboard(String accountId, String orgId, String projectId,
       long startInterval, long endInterval, long previousStartInterval);
 
+  HealthDeploymentDashboardV2 getHealthDeploymentDashboardV2(String accountId, String orgId, String projectId,
+      long startInterval, long endInterval, long previousStartInterval);
+
   ExecutionDeploymentInfo getExecutionDeploymentDashboard(
       String accountId, String orgId, String projectId, long startInterval, long endInterval);
 
@@ -50,15 +59,29 @@ public interface CDOverviewDashboardService {
       String projectIdentifier, long startInterval, long endInterval, long previousStartInterval,
       EnvironmentType envType);
 
+  DashboardWorkloadDeploymentV2 getDashboardWorkloadDeploymentV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startInterval, long endInterval, long previousStartInterval,
+      EnvironmentType envType);
+
   ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays)
+      throws Exception;
+
+  ServiceDeploymentListInfoV2 getServiceDeploymentsInfoV2(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays)
       throws Exception;
 
   ServiceDeploymentInfoDTO getServiceDeployments(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays);
 
+  ServiceDeploymentInfoDTOV2 getServiceDeploymentsV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays);
+
   ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       long startTime, long endTime, List<String> sort) throws Exception;
+
+  ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception;
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getServicesGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTimeInMs, long endTimeInMs,
@@ -68,6 +91,8 @@ public interface CDOverviewDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceId);
 
   ActiveServiceInstanceSummary getActiveServiceInstanceSummary(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
+  ActiveServiceInstanceSummaryV2 getActiveServiceInstanceSummaryV2(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
   EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(

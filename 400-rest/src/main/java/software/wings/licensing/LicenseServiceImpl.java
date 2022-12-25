@@ -39,7 +39,7 @@ import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.authentication.MarketPlaceConfig;
 import software.wings.service.impl.AccountDao;
 import software.wings.service.impl.LicenseUtils;

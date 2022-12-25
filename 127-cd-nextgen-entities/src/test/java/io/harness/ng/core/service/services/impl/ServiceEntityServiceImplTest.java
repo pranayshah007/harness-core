@@ -42,6 +42,7 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
@@ -741,6 +742,117 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
       assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
     }
     assertThat(responseDto.getServiceYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetListCallForOrgAccountLevelService() {
+    ServiceEntity serviceEntity1 =
+        ServiceEntity.builder().accountId("ACCOUNT_ID").identifier("OS1").orgIdentifier("ORG_ID").name("OS1").build();
+
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("PS1")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("PS1")
+                                       .build();
+
+    ServiceEntity serviceEntity3 =
+        ServiceEntity.builder().accountId("ACCOUNT_ID").identifier("AS1").name("AS1").build();
+
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+    serviceEntityService.create(serviceEntity3);
+
+    // get by serviceRef
+    Optional<ServiceEntity> optionalService =
+        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "RANDOM_PIPELINE_PROJECT_ID", "org.OS1", false);
+    assertThat(optionalService).isPresent();
+    // get by serviceIdentifier
+    Optional<ServiceEntity> optionalServiceById = serviceEntityService.get("ACCOUNT_ID", "ORG_ID", null, "OS1", false);
+    assertThat(optionalServiceById).isPresent();
+
+    // List down all services accessible from that scope
+    // project level
+    Criteria criteriaFromServiceFilter =
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false, true);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    // services from all scopes
+    assertThat(list.getContent().size()).isEqualTo(3);
+
+    // org level
+    criteriaFromServiceFilter = ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, false, true);
+    list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    // services from org,account scopes
+    assertThat(list.getContent().size()).isEqualTo(2);
+
+    // account level
+    criteriaFromServiceFilter = ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, false, true);
+    list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    // services from acc scope
+    assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCRUDForAccountLevelService() {
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(Page.empty());
+    ServiceEntity serviceEntity =
+        ServiceEntity.builder().accountId("ACCOUNT_ID").identifier("IDENTIFIER").name("SERVICE").build();
+    // Create operations
+    ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+    assertThat(createdService).isNotNull();
+
+    // Update operations at org level
+    ServiceEntity updateServiceRequest = ServiceEntity.builder()
+                                             .accountId("ACCOUNT_ID")
+                                             .identifier("IDENTIFIER")
+                                             .name("UPDATED_SERVICE")
+                                             .description("NEW_DESCRIPTION")
+                                             .build();
+
+    ServiceEntity updatedServiceResponse = serviceEntityService.update(updateServiceRequest);
+    assertThat(updatedServiceResponse.getName()).isEqualTo(updateServiceRequest.getName());
+    assertThat(updatedServiceResponse.getDescription()).isEqualTo(updateServiceRequest.getDescription());
+
+    // Upsert operations at account level
+    ServiceEntity upsertServiceRequest = ServiceEntity.builder()
+                                             .accountId("ACCOUNT_ID")
+                                             .identifier("NEW_IDENTIFIER")
+                                             .name("UPSERTED_SERVICE")
+                                             .description("NEW_DESCRIPTION")
+                                             .build();
+
+    ServiceEntity upsertService = serviceEntityService.upsert(upsertServiceRequest, UpsertOptions.DEFAULT);
+    assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
+    assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
+    assertThat(upsertService.getProjectIdentifier()).isEqualTo(upsertServiceRequest.getProjectIdentifier());
+    assertThat(upsertService.getIdentifier()).isEqualTo(upsertServiceRequest.getIdentifier());
+    assertThat(upsertService.getName()).isEqualTo(upsertServiceRequest.getName());
+    assertThat(upsertService.getDescription()).isEqualTo(upsertServiceRequest.getDescription());
+
+    // List services operations.
+    Criteria criteriaFromServiceFilter = CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", null, null, false);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", null, null, "IDENTIFIER", 1L);
+    assertThat(delete).isTrue();
+    verify(serviceOverrideService).deleteAllInProjectForAService("ACCOUNT_ID", null, null, "IDENTIFIER");
+
+    Optional<ServiceEntity> deletedService =
+        serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "account.NEW_IDENTIFIER", false);
+    assertThat(deletedService.isPresent()).isTrue();
   }
 
   private String readFile(String filename) {

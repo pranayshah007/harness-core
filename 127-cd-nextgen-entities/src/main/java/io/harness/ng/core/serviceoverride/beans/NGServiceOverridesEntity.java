@@ -60,8 +60,8 @@ public class NGServiceOverridesEntity implements PersistentEntity {
   @Wither @Id @org.mongodb.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountId;
 
-  @NotNull @Trimmed String orgIdentifier;
-  @NotNull @Trimmed String projectIdentifier;
+  @Trimmed String orgIdentifier;
+  @Trimmed String projectIdentifier;
   @NotNull @Trimmed String serviceRef;
   @NotNull @Trimmed String environmentRef;
 

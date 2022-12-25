@@ -30,7 +30,7 @@ import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 

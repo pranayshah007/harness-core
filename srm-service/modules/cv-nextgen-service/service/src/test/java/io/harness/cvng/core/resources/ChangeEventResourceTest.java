@@ -150,13 +150,12 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
         NGACCOUNTRESOURCES.client()
             .target(getChangeEventAccountPath(builderFactory.getContext().getProjectParams()))
             .queryParam("accountId", builderFactory.getContext().getAccountId())
-            .queryParam("monitoredServiceIdentifiers",
+            .queryParam("scopedMonitoredServiceIdentifiers",
                 ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
                     builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
                     builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()))
             .queryParam("changeCategories", "Deployment", "Alert")
             .queryParam("changeSourceTypes", "HarnessCDNextGen", "K8sCluster")
-            .queryParam("isMonitoredServiceIdentifierScoped", true)
             .queryParam("startTime", 100000)
             .queryParam("endTime", 400000)
             .queryParam("pageIndex", 0)
@@ -317,7 +316,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
     Response response =
         NGACCOUNTRESOURCES.client()
             .target(getChangeEventAccountPath(builderFactory.getContext().getProjectParams()) + "/timeline")
-            .queryParam("monitoredServiceIdentifiers",
+            .queryParam("scopedMonitoredServiceIdentifiers",
                 ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
                     builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
                     builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()))
@@ -325,7 +324,6 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
             .queryParam("changeSourceTypes", "HarnessCDNextGen", "K8sCluster")
             .queryParam("startTime", 100000)
             .queryParam("endTime", 4900000)
-            .queryParam("isMonitoredServiceIdentifierScoped", true)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -476,7 +474,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
         NGACCOUNTRESOURCES.client()
             .target(getChangeEventAccountPath(builderFactory.getContext().getProjectParams())
                 + "/monitored-service-summary")
-            .queryParam("monitoredServiceIdentifiers",
+            .queryParam("scopedMonitoredServiceIdentifiers",
                 ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
                     builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
                     builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()),
@@ -485,7 +483,6 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
                     "service_env2"))
             .queryParam("changeCategories", "Deployment", "Alert")
             .queryParam("changeSourceTypes", "HarnessCDNextGen", "K8sCluster")
-            .queryParam("isMonitoredServiceIdentifierScoped", true)
             .queryParam("startTime", 100000)
             .queryParam("endTime", 400000)
             .request(MediaType.APPLICATION_JSON_TYPE)

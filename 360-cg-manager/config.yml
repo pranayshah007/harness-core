@@ -668,6 +668,13 @@ eventListenersCountConfig:
   notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
+delegateQueueServiceConfig:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    topic: "delegate-service"
+
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
     threadPoolSize: ${RESOURCE_CONSTRAINT_BACKUP_ITERATOR_THREAD_COUNT:-10}

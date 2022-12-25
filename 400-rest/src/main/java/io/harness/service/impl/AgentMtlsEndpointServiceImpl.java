@@ -181,6 +181,11 @@ public class AgentMtlsEndpointServiceImpl extends AgentMtlsEndpointServiceReadOn
   }
 
   @Override
+  public void deleteByAccountId(String accountId) {
+    deleteEndpointForAccount(accountId);
+  }
+
+  @Override
   public boolean isDomainPrefixAvailable(String domainPrefix) {
     this.validateDomainPrefix(domainPrefix);
 

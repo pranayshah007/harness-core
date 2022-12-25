@@ -130,7 +130,7 @@ public class ServiceFilterHelper {
       // select services at levels accessible at that level
       Criteria includeAllServicesCriteria = null;
       if (includeAllServicesAccessibleAtScope) {
-        includeAllServicesCriteria = getCriteriaToReturnAllServicesAccessible(orgIdentifier, projectIdentifier);
+        includeAllServicesCriteria = getCriteriaToReturnAllAccessibleServicesAtScope(orgIdentifier, projectIdentifier);
       } else {
         criteria.and(ORG_ID).is(orgIdentifier);
         criteria.and(PROJECT_ID).is(projectIdentifier);
@@ -145,11 +145,11 @@ public class ServiceFilterHelper {
       criteria.and(DELETED).is(deleted);
       return criteria;
     } else {
-      throw new InvalidRequestException("Account identifier cannot be null");
+      throw new InvalidRequestException("Account identifier cannot be null for services list");
     }
   }
 
-  private Criteria getCriteriaToReturnAllServicesAccessible(String orgIdentifier, String projectIdentifier) {
+  private Criteria getCriteriaToReturnAllAccessibleServicesAtScope(String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
       return new Criteria().orOperator(Criteria.where(ServiceEntityKeys.projectIdentifier)
                                            .is(projectIdentifier)

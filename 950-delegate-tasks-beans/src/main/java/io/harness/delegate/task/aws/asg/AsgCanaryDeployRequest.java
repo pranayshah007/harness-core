@@ -33,4 +33,5 @@ public class AsgCanaryDeployRequest implements AsgCommandRequest, NestedAnnotati
   Integer unitValue;
   String unitType;
   String serviceNameSuffix;
+  @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 }

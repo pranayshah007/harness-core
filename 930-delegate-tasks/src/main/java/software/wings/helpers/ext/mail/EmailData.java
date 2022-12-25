@@ -9,13 +9,9 @@ package software.wings.helpers.ext.mail;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
-import io.harness.annotation.HarnessEntity;
-import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.ng.DbAliases;
-import io.harness.queue.Queuable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,19 +20,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@StoreIn(DbAliases.HARNESS)
-@Entity(value = "emailQueue2", noClassnameStored = true)
 @TargetModule(HarnessModule._959_COMMON_ENTITIES)
-@HarnessEntity(exportable = false)
 @OwnedBy(DEL)
-public class EmailData extends Queuable {
+public class EmailData {
   private String accountId;
   @Builder.Default private List<String> to = new ArrayList<>();
   @Builder.Default private List<String> cc = new ArrayList<>();

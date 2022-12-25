@@ -127,4 +127,12 @@ public class GitAwareContextHelper {
     gitEntityInfo.setBranch(branch);
     updateGitEntityContext(gitEntityInfo);
   }
+
+  public String getBranchInSCMGitMetadata() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null) {
+      return null;
+    }
+    return scmGitMetaData.getBranchName();
+  }
 }

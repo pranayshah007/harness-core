@@ -1,6 +1,7 @@
 {
   "type": "object",
   "required": [
+    "failureStrategies",
     "identifier",
     "name",
     "type"
@@ -3424,6 +3425,7 @@
     "DeploymentStageNode": {
       "type": "object",
       "required": [
+        "failureStrategies",
         "identifier",
         "name",
         "type"
@@ -4553,6 +4555,21 @@
         "environmentRef": {
           "type": "string"
         },
+        "filters": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FilterYaml"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "gitOpsClusters": {
           "oneOf": [
             {
@@ -4849,6 +4866,7 @@
       "type": "object",
       "required": [
         "entities",
+        "identifier",
         "spec",
         "type"
       ],
@@ -4864,6 +4882,9 @@
               "environments"
             ]
           }
+        },
+        "identifier": {
+          "type": "string"
         },
         "spec": {
           "$ref": "#/definitions/FilterSpec"
@@ -10858,7 +10879,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "pipelineStatus": {
           "type": "string",
@@ -12055,7 +12077,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "stageStatus": {
           "type": "string",
@@ -12588,10 +12611,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12612,7 +12644,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",
@@ -12661,10 +12694,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12685,7 +12727,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",
@@ -12720,10 +12763,19 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12744,7 +12796,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 1
                 },
                 {
                   "type": "string",

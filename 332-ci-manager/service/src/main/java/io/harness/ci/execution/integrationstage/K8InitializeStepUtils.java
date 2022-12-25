@@ -350,7 +350,7 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(getEnvVariables(stageNode));
     envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
-        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8));
+        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false));
     setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 

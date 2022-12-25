@@ -164,8 +164,8 @@ public class EventJobScheduler {
     Stream.of(BatchJobBucket.values()).forEach(batchJobBucket -> runCloudEfficiencyEventJobs(batchJobBucket, false));
   }
 
-  // this job runs every 4 hours "0 0 */4 ? * *". For debugging, run every minute "0 * * ? * *"
-  @Scheduled(cron = "0 0 */4 ? * *")
+  // this job runs every 1 hour "0 0 */1 ? * *". For debugging, run every minute "0 * * ? * *"
+  @Scheduled(cron = "0 0 */1 ? * *")
   public void sendSegmentEvents() {
     runCloudEfficiencyEventJobs(BatchJobBucket.OTHERS, true);
   }

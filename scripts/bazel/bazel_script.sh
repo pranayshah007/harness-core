@@ -72,7 +72,6 @@ BAZEL_MODULES="\
   //420-delegate-agent:module \
   //420-delegate-service:module \
   //425-verification-commons:module \
-  //430-cv-nextgen-commons:module \
   //440-connector-nextgen:module \
   //440-secret-management-service:module \
   //441-cg-instance-sync:module \
@@ -138,7 +137,6 @@ BAZEL_MODULES="\
   //945-license-usage-sdk:module \
   //clients/audit:module \
   //947-scim-core:module \
-  //948-cv-nextgen-beans:module \
   //950-command-library-common:module \
   //959-common-entities:module \
   //950-delegate-tasks-beans/src/main/proto:all \
@@ -203,6 +201,9 @@ BAZEL_MODULES="\
   //access-control/contracts:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
+  //srm-service/modules/cv-nextgen-service/contracts/api:module \
+  //srm-service/modules/cv-nextgen-service/contracts/commons:module \
+  //srm-service/modules/cv-nextgen-service/contracts/delegate:module \
   //srm-service/modules/cv-nextgen-service/service:module \
 "
 
@@ -301,7 +302,6 @@ build_bazel_module 410-cg-rest
 build_bazel_module 420-delegate-agent
 build_bazel_module 420-delegate-service
 build_bazel_module 425-verification-commons
-build_bazel_module 430-cv-nextgen-commons
 build_bazel_module 440-connector-nextgen
 build_bazel_module 440-secret-management-service
 build_bazel_module 445-cg-connectors
@@ -328,7 +328,6 @@ build_bazel_module 933-ci-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core
-build_bazel_module 948-cv-nextgen-beans
 build_bazel_module 950-command-library-common
 build_bazel_module 959-common-entities
 build_bazel_module 950-delegate-tasks-beans

@@ -2365,6 +2365,16 @@
 573570:io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters
 573571:io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest
 573572:io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse
+573573:io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest
+573574:io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse
+573575:io.harness.delegate.task.aws.asg.AsgCanaryDeployResult
+573576:io.harness.delegate.task.aws.asg.AsgCanaryDeleteResult
+573577:io.harness.delegate.task.aws.asg.AsgCommandRequest
+573578:io.harness.delegate.task.aws.asg.AsgCommandResponse
+573579:io.harness.delegate.task.aws.asg.AsgInfraConfig
+573580:io.harness.delegate.exception.AsgNGException
+573581:io.harness.delegate.task.aws.asg.AutoScalingGroupContainer
+573582:io.harness.delegate.task.aws.asg.AutoScalingGroupInstance
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse

@@ -39,6 +39,7 @@ import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
@@ -117,38 +118,64 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
-      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch) {
+      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch,
+      Boolean validateAsync) {
     GitAwareContextHelper.populateGitDetails(
         GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
-    try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
+    String validationUUID = null;
+    if (validateAsync) {
+      // todo: add schema validations
+      pipelineEntity = pmsPipelineService.getPipeline(account, org, project, pipeline, false, false,
           Boolean.TRUE.equals(loadFromFallbackBranch),
           PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
-    } catch (PolicyEvaluationFailureException pe) {
-      pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
-      pipelineGetResponseBody.setGitDetails(
-          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-      pipelineGetResponseBody.setValid(false);
-      // GovMetaData needed here after redoing structure
-      return Response.status(200).entity(pipelineGetResponseBody).build();
-    } catch (InvalidYamlException e) {
-      pipelineGetResponseBody.setPipelineYaml(e.getYaml());
-      pipelineGetResponseBody.setGitDetails(
-          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-      pipelineGetResponseBody.setYamlErrorWrapper(
-          PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
-      pipelineGetResponseBody.setValid(false);
-      return Response.status(200).entity(pipelineGetResponseBody).build();
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
-      pipelineGetResponseBody.setGitDetails(
-          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
-      pipelineGetResponseBody.setValid(false);
-      return Response.status(200).entity(pipelineGetResponseBody).build();
+      if (pipelineEntity.isEmpty()) {
+        throw new EntityNotFoundException(
+            String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
+      }
+      // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
+      // inside the scm git metadata. Hence the branch from there is the actual branch we need
+      String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
+      String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity.get(), branchFromScm);
+      Optional<PipelineValidationEvent> optionalEvent =
+          pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
+      if (optionalEvent.isPresent()) {
+        validationUUID = optionalEvent.get().getUuid();
+      } else {
+        PipelineValidationEvent newEvent =
+            pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branchFromScm, Action.CRUD);
+        validationUUID = newEvent.getUuid();
+      }
+    } else {
+      try {
+        pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
+            Boolean.TRUE.equals(loadFromFallbackBranch),
+            PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+      } catch (PolicyEvaluationFailureException pe) {
+        pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
+        pipelineGetResponseBody.setGitDetails(
+            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+        pipelineGetResponseBody.setValid(false);
+        // GovMetaData needed here after redoing structure
+        return Response.status(200).entity(pipelineGetResponseBody).build();
+      } catch (InvalidYamlException e) {
+        pipelineGetResponseBody.setPipelineYaml(e.getYaml());
+        pipelineGetResponseBody.setGitDetails(
+            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+        pipelineGetResponseBody.setYamlErrorWrapper(
+            PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
+        pipelineGetResponseBody.setValid(false);
+        return Response.status(200).entity(pipelineGetResponseBody).build();
+      } catch (NGTemplateResolveExceptionV2 ne) {
+        pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
+        pipelineGetResponseBody.setGitDetails(
+            PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
+        pipelineGetResponseBody.setValid(false);
+        return Response.status(200).entity(pipelineGetResponseBody).build();
+      }
     }
     pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity.orElseThrow(
         ()
@@ -164,6 +191,9 @@ public class PipelinesApiImpl implements PipelinesApi {
       } catch (Exception e) {
         log.info("Cannot get resolved templates pipeline YAML");
       }
+    }
+    if (validateAsync) {
+      pipelineGetResponseBody.setValidationUuid(validationUUID);
     }
     return Response.ok().entity(pipelineGetResponseBody).build();
   }

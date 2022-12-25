@@ -15,7 +15,11 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILTER;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FREEZE_CONFIG;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_COMMIT;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_USAGE_ENTITY;
@@ -66,6 +70,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretEntityCRUDStreamListner,
       @Named(VARIABLE_ENTITY + ENTITY_CRUD) MessageListener variableEntityCRUDStreamListener,
       @Named(USER_GROUP + ENTITY_CRUD) MessageListener userGroupEntityCRUDStreamListener,
+      @Named(FILTER + ENTITY_CRUD) MessageListener filterEventListener,
+      @Named(FREEZE_CONFIG + ENTITY_CRUD) MessageListener freezeEventListener,
+      @Named(GIT_COMMIT + ENTITY_CRUD) MessageListener gitCommitEventListener,
+      @Named(GIT_PROCESS_REQUEST + ENTITY_CRUD) MessageListener gitProcessRequestEventListener,
       @Named(USER_SCOPE_RECONCILIATION) MessageListener userMembershipReconciliationMessageProcessor,
       @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
       @Named(GITOPS_CLUSTER_ENTITY + ENTITY_CRUD) MessageListener gitopsClusterCleanupProcessor,
@@ -82,6 +90,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(secretEntityCRUDStreamListner);
     messageListenersList.add(variableEntityCRUDStreamListener);
     messageListenersList.add(userGroupEntityCRUDStreamListener);
+    messageListenersList.add(filterEventListener);
+    messageListenersList.add(freezeEventListener);
+    messageListenersList.add(gitCommitEventListener);
+    messageListenersList.add(gitProcessRequestEventListener);
     messageListenersList.add(userMembershipReconciliationMessageProcessor);
     messageListenersList.add(gitopsClusterCleanupProcessor);
     messageListenersList.add(customDeploymentEntityCRUDStreamEventListener);

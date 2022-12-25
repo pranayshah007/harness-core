@@ -139,6 +139,10 @@ if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$HOSTED_VM_SPLIT_LINUX_ARM64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_LINUX_ARM64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxArm64Pool=env(HOSTED_VM_SPLIT_LINUX_ARM64_POOL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi

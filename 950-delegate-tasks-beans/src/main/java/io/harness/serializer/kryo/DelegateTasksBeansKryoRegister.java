@@ -380,6 +380,7 @@ import io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskRespo
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.exception.ElastigroupNGException;
@@ -431,8 +432,17 @@ import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.aws.LoadBalancerType;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
+import io.harness.delegate.task.aws.asg.AsgCommandRequest;
+import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2009,8 +2019,19 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
 
+    // ASG
     kryo.register(AsgCanaryDeployRequest.class, 573571);
     kryo.register(AsgCanaryDeployResponse.class, 573572);
+    kryo.register(AsgCanaryDeleteRequest.class, 573573);
+    kryo.register(AsgCanaryDeleteResponse.class, 573574);
+    kryo.register(AsgCanaryDeployResult.class, 573575);
+    kryo.register(AsgCanaryDeleteResult.class, 573576);
+    kryo.register(AsgCommandRequest.class, 573577);
+    kryo.register(AsgCommandResponse.class, 573578);
+    kryo.register(AsgInfraConfig.class, 573579);
+    kryo.register(AsgNGException.class, 573580);
+    kryo.register(AutoScalingGroupContainer.class, 573581);
+    kryo.register(AutoScalingGroupInstance.class, 573582);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

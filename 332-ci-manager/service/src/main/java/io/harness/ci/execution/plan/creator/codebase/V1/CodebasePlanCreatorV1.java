@@ -52,8 +52,8 @@ public class CodebasePlanCreatorV1 {
   private static PlanNode createPlanForCodeBaseTask(KryoSerializer kryoSerializer, CodeBase codeBase,
       ExecutionSource executionSource, String facilitatorType, String childNodeID) {
     CodeBaseTaskStepParameters codeBaseTaskStepParameters = CodeBaseTaskStepParameters.builder()
-                                                                .connectorRef(codeBase.getConnectorRef().getValue())
-                                                                .repoName(codeBase.getRepoName().getValue())
+                                                                .connectorRef(codeBase.getConnectorRef())
+                                                                .repoName(codeBase.getRepoName())
                                                                 .executionSource(executionSource)
                                                                 .build();
     return PlanNode.builder()

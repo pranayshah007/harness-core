@@ -34,6 +34,7 @@ import static software.wings.common.WorkflowConstants.PHASE_NAME_PREFIX;
 import static software.wings.service.impl.workflow.WorkflowServiceHelper.ROLLBACK_PREFIX;
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.FORK;
 import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
@@ -300,7 +301,8 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
             if (isNotEmpty(phaseStep.getFailureStrategies())) {
               FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
                   executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
-              if (failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION) {
+              if (failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
+                  && !state.getStateType().equals(APPROVAL.getType())) {
                 wingsPersistence.updateField(StateExecutionInstance.class, stateExecutionInstance.getUuid(),
                     StateExecutionInstanceKeys.manualInterventionCandidate, true);
               }

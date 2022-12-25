@@ -11,6 +11,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_D
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
@@ -22,9 +23,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -56,8 +55,8 @@ import org.mongodb.morphia.annotations.PrePersist;
 @Entity(value = "dataCollectionTasks")
 @HarnessEntity(exportable = false)
 public abstract class DataCollectionTask
-    implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable,
-               VerificationTaskExecutionInstance {
+    extends VerificationTaskBase implements PersistentEntity, UuidAware, AccountAccess, PersistentRegularIterable,
+                                            VerificationTaskExecutionInstance {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -70,7 +69,7 @@ public abstract class DataCollectionTask
         .add(CompoundMongoIndex.builder()
                  .name("worker_status_idx")
                  .field(DataCollectionTaskKeys.status)
-                 .field(DataCollectionTaskKeys.lastUpdatedAt)
+                 .field(VerificationTaskBaseKeys.lastUpdatedAt)
                  .field(DataCollectionTaskKeys.validAfter)
                  .field(DataCollectionTaskKeys.workerStatusIteration)
                  .build())
@@ -91,8 +90,6 @@ public abstract class DataCollectionTask
   private String nextTaskId;
   @FdIndex @NonNull private DataCollectionExecutionStatus status;
 
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
   private Instant lastPickedAt;
   private int retryCount;
 

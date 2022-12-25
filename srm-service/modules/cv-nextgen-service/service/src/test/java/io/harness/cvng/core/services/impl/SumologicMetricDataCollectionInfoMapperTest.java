@@ -16,13 +16,13 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
-import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricDefinition;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParams;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -43,7 +43,7 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
   private String identifier;
   private String name;
   private String monitoredServiceIdentifier;
-  private List<MetricDefinition> metricDefinitions;
+  private List<QueryDefinition> queryDefinitions;
   BuilderFactory builderFactory;
 
   @Before
@@ -58,23 +58,18 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
     identifier = "identifier";
     name = "some-name";
     groupName1 = "g1";
-    metricDefinitions = new ArrayList<>();
-    MetricDefinition metricDefinition1 = createSumologicMetricDefinition(groupName1);
-    metricDefinition1.setRiskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build());
-    metricDefinition1.setAnalysis(
-        HealthSourceMetricDefinition.AnalysisDTO.builder()
-            .deploymentVerification(
-                HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder().enabled(false).build())
-            .build());
-    metricDefinitions.add(metricDefinition1);
+    queryDefinitions = new ArrayList<>();
+    QueryDefinition queryDefinition1 = createSumologicQueryDefinition(groupName1);
+    queryDefinitions.add(queryDefinition1);
   }
 
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testToDataCollectionInfo_withoutHostCollection() {
-    SumologicMetricCVConfig cvConfig = (SumologicMetricCVConfig) createCVConfig(groupName1);
-    cvConfig.addMetricPackAndInfo(metricDefinitions);
+    NextGenMetricCVConfig cvConfig =
+        (NextGenMetricCVConfig) createCVConfig(groupName1, DataSourceType.SUMOLOGIC_METRICS);
+    cvConfig.addMetricPackAndInfo(queryDefinitions);
     populateBasicDetails(cvConfig);
     SumologicMetricDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig);
     assertCommons(dataCollectionInfo);
@@ -84,10 +79,12 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testToDataCollectionInfo_withHostCollection() {
-    metricDefinitions.get(0).setResponseMapping(
-        MetricResponseMapping.builder().serviceInstanceJsonPath("_sourcehost").build());
-    SumologicMetricCVConfig cvConfig = (SumologicMetricCVConfig) createCVConfig(groupName1);
-    cvConfig.addMetricPackAndInfo(metricDefinitions);
+    // TODO there are no setters now
+
+    queryDefinitions.get(0).setQueryParams(QueryParams.builder().serviceInstanceField("_sourcehost").build());
+    NextGenMetricCVConfig cvConfig =
+        (NextGenMetricCVConfig) createCVConfig(groupName1, DataSourceType.SUMOLOGIC_METRICS);
+    cvConfig.addMetricPackAndInfo(queryDefinitions);
     populateBasicDetails(cvConfig);
     SumologicMetricDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig);
     assertCommons(dataCollectionInfo);
@@ -98,14 +95,14 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
 
   private void assertCommons(SumologicMetricDataCollectionInfo info) {
     assertThat(info.getGroupName()).isEqualTo(groupName1);
-    assertThat(info.getMetricDefinitions().get(0).getMetricName()).isEqualTo(metricDefinitions.get(0).getMetricName());
+    assertThat(info.getMetricDefinitions().get(0).getMetricName()).isEqualTo(queryDefinitions.get(0).getName());
     assertThat(info.getMetricDefinitions().get(0).getMetricIdentifier())
-        .isEqualTo(metricDefinitions.get(0).getIdentifier());
-    assertThat(info.getMetricDefinitions().get(0).getQuery()).isEqualTo(metricDefinitions.get(0).getQuery());
+        .isEqualTo(queryDefinitions.get(0).getIdentifier());
+    assertThat(info.getMetricDefinitions().get(0).getQuery()).isEqualTo(queryDefinitions.get(0).getQuery());
   }
 
-  private CVConfig createCVConfig(String groupName) {
-    return builderFactory.sumologicMetricCVConfigBuilder()
+  private CVConfig createCVConfig(String groupName, DataSourceType dataSourceType) {
+    return builderFactory.nextGenMetricCVConfigBuilder(dataSourceType)
         .groupName(groupName)
         .connectorIdentifier(connectorIdentifier)
         .monitoringSourceName(name)
@@ -115,12 +112,14 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
         .build();
   }
 
-  private MetricDefinition createSumologicMetricDefinition(String group) {
+  private QueryDefinition createSumologicQueryDefinition(String group) {
     String metricDefinitionIdentifier = generateUuid();
-    return MetricDefinition.builder()
+    return QueryDefinition.builder()
         .query("query")
-        .metricName("metric_name")
+        .continuousVerificationEnabled(false)
+        .name("metric_name")
         .identifier(metricDefinitionIdentifier)
+        .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
         .groupName(group)
         .build();
   }

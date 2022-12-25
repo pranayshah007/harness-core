@@ -452,10 +452,6 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     assertThatThrownBy(() -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", null, "", "IDENTIFIER"))
         .isInstanceOf(NotFoundException.class)
         .hasMessage("Environment with identifier [IDENTIFIER] in account [ACCOUNT_ID] scope not found");
-
-    assertThatThrownBy(() -> environmentService.createEnvironmentInputsYaml("", null, "", "IDENTIFIER"))
-        .isInstanceOf(NotFoundException.class)
-        .hasMessage("Environment with identifier [IDENTIFIER] not found");
   }
 
   @Test

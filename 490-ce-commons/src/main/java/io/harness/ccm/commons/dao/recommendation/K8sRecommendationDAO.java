@@ -32,10 +32,12 @@ import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.RecommendationTelemetryStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceId;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
@@ -52,6 +54,8 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendat
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation.K8sWorkloadRecommendationKeys;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram.PartialRecommendationHistogramKeys;
+import io.harness.ccm.commons.entities.recommendations.RecommendationNodepoolId;
+import io.harness.ccm.commons.entities.recommendations.RecommendationWorkloadId;
 import io.harness.ccm.commons.utils.TimescaleUtils;
 import io.harness.persistence.HPersistence;
 import io.harness.timescaledb.Keys;
@@ -113,6 +117,16 @@ public class K8sRecommendationDAO {
                                    .filter(K8sWorkloadRecommendationKeys.accountId, accountIdentifier)
                                    .filter(K8sWorkloadRecommendationKeys.uuid, id)
                                    .get());
+  }
+
+  @NonNull
+  public void updateJiraInWorkloadRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sWorkloadRecommendation.class)
+                            .filter(K8sWorkloadRecommendationKeys.accountId, accountId)
+                            .filter(K8sWorkloadRecommendationKeys.uuid, id),
+        hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
+            .set(K8sWorkloadRecommendationKeys.jiraDetails, jiraDetails));
   }
 
   public List<PartialRecommendationHistogram> fetchPartialRecommendationHistograms(
@@ -431,6 +445,118 @@ public class K8sRecommendationDAO {
         .execute();
   }
 
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateJiraInTimescale(@NonNull String entityUuid, @Nullable String jiraConnectorRef,
+      @Nullable String jiraIssueKey, @Nullable String jiraStatus) {
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.JIRACONNECTORREF, jiraConnectorRef)
+        .set(CE_RECOMMENDATIONS.JIRAISSUEKEY, jiraIssueKey)
+        .set(CE_RECOMMENDATIONS.JIRASTATUS, jiraStatus)
+        .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public RecommendationState getRecommendationState(@NonNull String uuid) {
+    return dslContext.select(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE)
+        .from(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ID.eq(uuid))
+        .fetchOneInto(RecommendationState.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateRecommendationState(@NonNull String entityUuid, @NonNull RecommendationState recommendationState) {
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, recommendationState.name())
+        .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreWorkloadRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationWorkloadId> workloads) {
+    if (workloads.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.WORKLOAD.name()))
+                   .and(getWorkloadsCondition(workloads)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unignoreWorkloadRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationWorkloadId> workloads) {
+    if (workloads.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.WORKLOAD.name()))
+                   .and(getWorkloadsCondition(workloads)))
+        .execute();
+  }
+
+  private Condition getWorkloadsCondition(List<RecommendationWorkloadId> workloads) {
+    RecommendationWorkloadId workload = workloads.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(workload.getClusterName())
+                              .and(CE_RECOMMENDATIONS.NAMESPACE.eq(workload.getNamespace()))
+                              .and(CE_RECOMMENDATIONS.NAME.eq(workload.getWorkloadName()));
+    for (int i = 1; i < workloads.size(); i++) {
+      workload = workloads.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(workload.getClusterName())
+                       .and(CE_RECOMMENDATIONS.NAMESPACE.eq(workload.getNamespace()))
+                       .and(CE_RECOMMENDATIONS.NAME.eq(workload.getWorkloadName())));
+    }
+    return condition;
+  }
+
+  public void ignoreNodepoolRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationNodepoolId> nodepools) {
+    if (nodepools.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.NODE_POOL.name()))
+                   .and(getNodepoolCondition(nodepools)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unignoreNodepoolRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationNodepoolId> nodepools) {
+    if (nodepools.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.NODE_POOL.name()))
+                   .and(getNodepoolCondition(nodepools)))
+        .execute();
+  }
+
+  private Condition getNodepoolCondition(List<RecommendationNodepoolId> nodepools) {
+    RecommendationNodepoolId nodepool = nodepools.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(nodepool.getClusterName())
+                              .and(CE_RECOMMENDATIONS.NAME.eq(nodepool.getNodepoolName()));
+    for (int i = 1; i < nodepools.size(); i++) {
+      nodepool = nodepools.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(nodepool.getClusterName())
+                       .and(CE_RECOMMENDATIONS.NAME.eq(nodepool.getNodepoolName())));
+    }
+    return condition;
+  }
+
   /**
    * maximum overlapping problem with given start and end time, but in pure PSQL
    * https://stackoverflow.com/questions/66416245/postgresql-count-max-number-of-concurrent-user-sessions-per-hour
@@ -457,6 +583,16 @@ public class K8sRecommendationDAO {
                                    .filter(K8sNodeRecommendationKeys.accountId, accountIdentifier)
                                    .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(uuid))
                                    .get());
+  }
+
+  @NonNull
+  public void updateJiraInNodeRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sNodeRecommendation.class)
+                            .filter(K8sNodeRecommendationKeys.accountId, accountId)
+                            .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
+            .set(K8sNodeRecommendationKeys.jiraDetails, jiraDetails));
   }
 
   public int fetchRecommendationsCount(@NonNull String accountId, Condition condition) {
