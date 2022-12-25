@@ -31,8 +31,8 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.InfrastructureProvisionerMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -323,8 +323,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final InfrastructureOutcome infrastructureOutcome =
         (spec instanceof Provisionable && ((Provisionable) spec).isDynamicallyProvisioned())
         ? infrastructureProvisionerMapper.toOutcome(spec, environmentOutcome, serviceOutcome)
-        : infrastructureMapper.toOutcome(spec, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+        : infrastructureMapper.toOutcome(spec, environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(),
+            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,

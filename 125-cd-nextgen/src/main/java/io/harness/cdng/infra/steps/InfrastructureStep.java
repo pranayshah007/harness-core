@@ -28,8 +28,8 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.InfrastructureProvisionerMapper;
+import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -167,9 +167,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     InfrastructureOutcome infrastructureOutcome =
         (infrastructure instanceof Provisionable && ((Provisionable) infrastructure).isDynamicallyProvisioned())
         ? infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome)
-        : infrastructureMapper.toOutcome(infrastructure, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-        
+        : infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
     if (environmentOutcome != null) {
       if (isNotEmpty(environmentOutcome.getName())) {
         saveExecutionLogSafely(

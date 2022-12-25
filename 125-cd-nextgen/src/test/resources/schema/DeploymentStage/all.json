@@ -9148,6 +9148,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             }
@@ -9180,6 +9203,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             },
@@ -9193,6 +9239,73 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
+            "hostObjectArray"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "hostObjectArray": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/JsonNode"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             }
