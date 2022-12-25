@@ -7,8 +7,7 @@
 
 package io.harness.delegate.task.azure;
 
-import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
-import static io.harness.azure.model.AzureConstants.AZ_VERSION;
+import static io.harness.azure.model.AzureConstants.AZ_PATH;
 import static io.harness.azure.model.AzureConstants.KUBELOGIN_VERSION;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.FILIP;
@@ -90,6 +89,8 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnexpectedTypeException;
 import io.harness.filesystem.FileIo;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
+import io.harness.k8s.az.AuthType;
+import io.harness.k8s.az.Az;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -151,6 +152,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   private static String REPOSITORY = "test/appimage";
   private static String REGISTRY = "testreg";
   private static String REGISTRY_URL = format("%s.azurecr.io", REGISTRY.toLowerCase());
+  private static String AZ_VERSION = Az.client(AZ_PATH).version().command();
   MockedStatic<AzureAsyncTaskHelper> azureAsyncTaskHelperMockedStatic;
 
   @Before
@@ -1130,11 +1132,16 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   }
 
   private String AzureCliCommandToLogin(AzureConfig azureConfig) {
+    Az client = Az.client(AZ_PATH);
     switch (azureConfig.getAzureAuthenticationType()) {
       case SERVICE_PRINCIPAL_CERT:
-        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
-            .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
-            .replace("${TENANT_ID}", azureConfig.getTenantId());
+        return client.auth()
+            .clientId(azureConfig.getClientId())
+            .cert(azureConfig.getCert())
+            .tenantId(azureConfig.getTenantId())
+            .authType(AuthType.servicePrincipal)
+            .command();
+
       case SERVICE_PRINCIPAL_SECRET:
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
       case MANAGED_IDENTITY_USER_ASSIGNED:

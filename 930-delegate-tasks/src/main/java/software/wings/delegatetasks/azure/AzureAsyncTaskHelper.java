@@ -7,8 +7,7 @@
 
 package software.wings.delegatetasks.azure;
 
-import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
-import static io.harness.azure.model.AzureConstants.AZ_VERSION;
+import static io.harness.azure.model.AzureConstants.AZ_PATH;
 import static io.harness.azure.model.AzureConstants.CLIENT_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
@@ -73,6 +72,8 @@ import io.harness.exception.UnexpectedTypeException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.RegexFunctor;
+import io.harness.k8s.az.AuthType;
+import io.harness.k8s.az.Az;
 import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesAzureConfig.KubernetesAzureConfigBuilder;
 import io.harness.k8s.model.KubernetesClusterAuthType;
@@ -631,11 +632,11 @@ public class AzureAsyncTaskHelper {
       throw new AzureAKSException("CertificateAuthorityData was not found in the kube config content!!!");
     }
 
-    if (isEmpty(azureKubeConfig.getUsers().get(0).getName())) {
-      throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
-    }
-
     if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getName())) {
+        throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
+      }
+
       if (isEmpty(azureKubeConfig.getCurrentContext())) {
         throw new AzureAKSException("Current context was not found in the kube config content!!!");
       }
@@ -664,6 +665,10 @@ public class AzureAsyncTaskHelper {
         throw new AzureAKSException("Environment was not found in the kube config content!!!");
       }
     } else if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getName())) {
+        throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
+      }
+
       if (isEmpty(azureKubeConfig.getCurrentContext())) {
         throw new AzureAKSException("Current context was not found in the kube config content!!!");
       }
@@ -889,11 +894,15 @@ public class AzureAsyncTaskHelper {
   }
 
   private String AzureCliCommandToLogin(AzureConfig azureConfig) {
+    Az client = Az.client(AZ_PATH);
     switch (azureConfig.getAzureAuthenticationType()) {
       case SERVICE_PRINCIPAL_CERT:
-        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
-            .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
-            .replace("${TENANT_ID}", azureConfig.getTenantId());
+        return client.auth()
+            .clientId(azureConfig.getClientId())
+            .cert(azureConfig.getCert())
+            .tenantId(azureConfig.getTenantId())
+            .authType(AuthType.servicePrincipal)
+            .command();
 
       case SERVICE_PRINCIPAL_SECRET:
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
@@ -906,6 +915,7 @@ public class AzureAsyncTaskHelper {
   }
 
   private boolean isKubeloginInstalled(AzureAuthenticationType azureAuthenticationType) {
+    String AZ_VERSION = Az.client(AZ_PATH).version().command();
     return azureAuthenticationType.equals(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)
         ? runCommand(KUBELOGIN_VERSION) && runCommand(AZ_VERSION)
         : runCommand(KUBELOGIN_VERSION);
