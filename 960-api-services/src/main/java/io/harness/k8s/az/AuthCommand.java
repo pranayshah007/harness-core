@@ -64,11 +64,11 @@ public class AuthCommand extends AbstractExecutable {
     }
 
     if (this.password != null) {
-      command.append(Az.option(Option.password, String.valueOf(this.password)));
+      command.append(Az.option(Option.password, this.password.toString()));
     }
 
     if (this.cert != null) {
-      command.append(Az.option(Option.cert, new String(this.cert)));
+      command.append(Az.option(Option.cert, this.cert.toString()));
     }
 
     if (StringUtils.isNotBlank(this.tenantId)) {
