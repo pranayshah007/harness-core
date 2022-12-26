@@ -23,12 +23,15 @@ import io.harness.auditevent.streaming.entities.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchBuilder;
 import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.publishers.StreamingPublisher;
+import io.harness.auditevent.streaming.publishers.StreamingPublisherUtils;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
 import io.harness.exception.UnknownEnumTypeException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -44,13 +47,16 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
   private final BatchProcessorService batchProcessorService;
   private final StreamingBatchService streamingBatchService;
   private final AuditEventRepository auditEventRepository;
+  private final Map<String, StreamingPublisher> streamingPublisherMap;
 
   @Autowired
   public AuditEventStreamingServiceImpl(BatchProcessorService batchProcessorService,
-      StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository) {
+      StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository,
+      Map<String, StreamingPublisher> streamingPublisherMap) {
     this.batchProcessorService = batchProcessorService;
     this.streamingBatchService = streamingBatchService;
     this.auditEventRepository = auditEventRepository;
+    this.streamingPublisherMap = streamingPublisherMap;
   }
 
   @Override
@@ -71,7 +77,9 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
         break;
       } else {
         List<OutgoingAuditMessage> outgoingAuditMessages = batchProcessorService.processAuditEvent(auditEvents);
-        boolean successResult = true;
+        StreamingPublisher streamingPublisher =
+            StreamingPublisherUtils.getStreamingPublisher(streamingDestination.getType(), streamingPublisherMap);
+        boolean successResult = streamingPublisher.publish(streamingDestination, outgoingAuditMessages);
         streamingBatch = updateBatch(streamingBatch, auditEvents, successResult);
         log.info(getFullLogMessage(String.format("Published [%s] messages.", auditEvents.size()), streamingBatch));
       }
