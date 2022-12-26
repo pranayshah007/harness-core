@@ -5,17 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.auditevent.streaming;
+package io.harness.auditevent.streaming.repositories;
 
-import io.harness.audit.entities.AuditEvent;
+import io.harness.auditevent.streaming.entities.StreamingBatch;
 
-import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.stereotype.Repository;
 
-@Repository
-public interface AuditEventRepository {
-  List<AuditEvent> loadAuditEvents(Criteria criteria, Sort sort);
-  long countAuditEvents(Criteria criteria);
+public interface StreamingBatchRepositoryCustom {
+  StreamingBatch findOne(Criteria criteria, Sort sort);
 }

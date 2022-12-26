@@ -12,7 +12,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class AuditEventStreamingConstants {
   public static final String ACCOUNT_IDENTIFIER_PARAMETER_KEY = "accountIdentifier";
-  public static final String START_TIME_PARAMETER_KEY = "startTime";
+  public static final String JOB_START_TIME_PARAMETER_KEY = "startTime";
 
   public static final String AWS_S3_STREAMING_PUBLISHER = "awsS3StreamingPublisher";
 

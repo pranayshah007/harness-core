@@ -9,22 +9,32 @@ package io.harness.auditevent.streaming;
 
 import io.harness.audit.entities.AuditEvent;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
-import java.util.Collections;
 import java.util.List;
-import org.bson.Document;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class AuditEventRepositoryImpl implements AuditEventRepository {
-  @Autowired private MongoTemplate mongoTemplate;
+  private final MongoTemplate mongoTemplate;
+  private final BatchConfig batchConfig;
+
+  public AuditEventRepositoryImpl(MongoTemplate mongoTemplate, BatchConfig batchConfig) {
+    this.mongoTemplate = mongoTemplate;
+    this.batchConfig = batchConfig;
+  }
+
   @Override
-  public List<AuditEvent> loadAuditEvents() {
-    FindIterable<Document> auditEvents = mongoTemplate.getCollection("auditEvents").find().batchSize(1000);
-    MongoCursor<Document> cursor = auditEvents.cursor();
-    return Collections.EMPTY_LIST;
+  public List<AuditEvent> loadAuditEvents(Criteria criteria, Sort sort) {
+    Query query =
+        new Query(criteria).with(sort).cursorBatchSize(batchConfig.getCursorBatchSize()).limit(batchConfig.getLimit());
+    return mongoTemplate.find(query, AuditEvent.class);
+  }
+
+  @Override
+  public long countAuditEvents(Criteria criteria) {
+    return mongoTemplate.count(new Query(criteria), AuditEvent.class);
   }
 }
