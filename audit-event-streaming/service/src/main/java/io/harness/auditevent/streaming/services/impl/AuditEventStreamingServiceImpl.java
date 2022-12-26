@@ -22,7 +22,9 @@ import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.entities.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchBuilder;
+import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
+import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
 import io.harness.exception.UnknownEnumTypeException;
 
@@ -39,12 +41,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class AuditEventStreamingServiceImpl implements AuditEventStreamingService {
+  private final BatchProcessorService batchProcessorService;
   private final StreamingBatchService streamingBatchService;
   private final AuditEventRepository auditEventRepository;
 
   @Autowired
-  public AuditEventStreamingServiceImpl(
+  public AuditEventStreamingServiceImpl(BatchProcessorService batchProcessorService,
       StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository) {
+    this.batchProcessorService = batchProcessorService;
     this.streamingBatchService = streamingBatchService;
     this.auditEventRepository = auditEventRepository;
   }
@@ -66,7 +70,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
         streamingBatchService.update(streamingBatch.getAccountIdentifier(), streamingBatch);
         break;
       } else {
-        // TODO: Replace by publisher
+        List<OutgoingAuditMessage> outgoingAuditMessages = batchProcessorService.processAuditEvent(auditEvents);
         boolean successResult = true;
         streamingBatch = updateBatch(streamingBatch, auditEvents, successResult);
         log.info(getFullLogMessage(String.format("Published [%s] messages.", auditEvents.size()), streamingBatch));
