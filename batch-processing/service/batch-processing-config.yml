@@ -40,10 +40,10 @@ podInfo:
   isolatedReplica: 0
 
 awsS3SyncConfig:
-  awsS3BucketName: awsS3BucketNamePlaceHolder
-  awsAccessKey: awsS3SyncAccessKeyPlaceHolder
-  awsSecretKey: awsS3SyncSecretKeyPlaceHolder
-  region: awsS3SyncRegionPlaceHolder
+  awsS3BucketName: "cluster-data-avro-files"
+  awsAccessKey: "AKIARSVQGIYDCTPWB2DB"
+  awsSecretKey: "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"
+  region: "us-east-1"
   awsS3SyncTimeoutMinutes: 30
 
 azureStorageSyncConfig:
