@@ -14,10 +14,12 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.DecryptionHelperViaManager;
 import io.harness.connector.impl.ConnectorActivityServiceImpl;
@@ -151,6 +153,8 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
+        bind(AccessControlClient.class).toInstance(mock(AccessControlClient.class));
+        bind(ConnectorRbacHelper.class).toInstance(mock(ConnectorRbacHelper.class));
       }
     });
     modules.add(mongoTypeModule(annotations));

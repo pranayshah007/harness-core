@@ -36,9 +36,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.utils.IdentifierRefHelper;
-
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -46,36 +45,34 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Value;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 @OwnedBy(DX)
 public class ConnectorRbacHelper {
-  @Inject private AccessControlClient accessControlClient;
+  private AccessControlClient accessControlClient;
 
   public boolean checkSecretRuntimeAccessWithConnectorDTO(ConnectorInfoDTO connectorInfoDTO, String accountIdentifier) {
     List<DecryptableEntity> decryptableEntities = null;
     ConnectorConfigDTO connectorConfigDTO = connectorInfoDTO.getConnectorConfig();
     decryptableEntities = connectorConfigDTO.getDecryptableEntities();
     checkForSecretRuntimeAccess(decryptableEntities, accountIdentifier, connectorInfoDTO.getOrgIdentifier(),
-        connectorInfoDTO.getProjectIdentifier());
+            connectorInfoDTO.getProjectIdentifier());
     return true;
   }
 
   public void checkForSecretRuntimeAccess(List<DecryptableEntity> decryptableEntityList, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier) {
+                                          String orgIdentifier, String projectIdentifier) {
     if (isEmpty(decryptableEntityList)) {
       return;
     }
     NGAccess ngAccess = BaseNGAccess.builder()
-                            .accountIdentifier(accountIdentifier)
-                            .orgIdentifier(orgIdentifier)
-                            .projectIdentifier(projectIdentifier)
-                            .build();
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .build();
 
     for (DecryptableEntity decryptableEntity : decryptableEntityList) {
       List<Field> secretFields = decryptableEntity.getSecretReferenceFields();
@@ -91,11 +88,11 @@ public class ConnectorRbacHelper {
         if (secretRefData != null && !secretRefData.isNull()) {
           validateTheScopeOfTheSecret(secretRefData, ngAccess);
           IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
-              ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+                  ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
           accessControlClient.checkForAccessOrThrow(
-              ResourceScope.of(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
-                  identifierRef.getProjectIdentifier()),
-              Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION);
+                  ResourceScope.of(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+                          identifierRef.getProjectIdentifier()),
+                  Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION);
         }
       }
     }
@@ -114,7 +111,7 @@ public class ConnectorRbacHelper {
       // It is a account level entity
       if (secretRefData.getScope() == Scope.PROJECT || secretRefData.getScope() == Scope.ORG) {
         throw new InvalidRequestException(String.format(
-            "The %s level secret cannot be used at account level", secretRefData.getScope().getYamlRepresentation()));
+                "The %s level secret cannot be used at account level", secretRefData.getScope().getYamlRepresentation()));
       }
     }
   }
@@ -123,59 +120,50 @@ public class ConnectorRbacHelper {
     if (isEmpty(connectors)) {
       return Collections.emptyList();
     }
-    Map<ConnectorResource, List<Connector>> connectorsMap =
-        connectors.stream().collect(groupingBy(ConnectorResource::fromConnector));
+    Map<EntityScopeInfo, List<Connector>> connectorsMap =
+            connectors.stream().collect(groupingBy(ConnectorRbacHelper::getEntityScopeInfoFromConnector));
     List<PermissionCheckDTO> permissionChecks =
-        connectors.stream()
-            .map(connector
-                -> PermissionCheckDTO.builder()
-                       .permission(VIEW_CONNECTOR_PERMISSION)
-                       .resourceIdentifier(connector.getIdentifier())
-                       .resourceScope(ResourceScope.of(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
-                           connector.getProjectIdentifier()))
-                       .resourceType(ResourceTypes.CONNECTOR)
-                       .build())
-            .collect(Collectors.toList());
+            connectors.stream()
+                    .map(connector
+                            -> PermissionCheckDTO.builder()
+                            .permission(VIEW_CONNECTOR_PERMISSION)
+                            .resourceIdentifier(connector.getIdentifier())
+                            .resourceScope(ResourceScope.of(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+                                    connector.getProjectIdentifier()))
+                            .resourceType(ResourceTypes.CONNECTOR)
+                            .build())
+                    .collect(Collectors.toList());
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
     List<Connector> permittedConnectors = new ArrayList<>();
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
-        permittedConnectors.add(connectorsMap.get(ConnectorResource.fromAccessControlDTO(accessControlDTO)).get(0));
+        permittedConnectors.add(connectorsMap.get(ConnectorRbacHelper.getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
       }
     }
     return permittedConnectors;
   }
 
-  @Value
-  @Data
-  @Builder
-  private static class ConnectorResource {
-    String accountIdentifier;
-    String orgIdentifier;
-    String projectIdentifier;
-    String identifier;
+  private static EntityScopeInfo getEntityScopeInfoFromConnector(Connector connector)
+  {
+    return EntityScopeInfo.builder()
+            .accountIdentifier(connector.getAccountIdentifier())
+            .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
+            .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
+            .identifier(connector.getIdentifier())
+            .build();
+  }
 
-    static ConnectorResource fromConnector(Connector connector) {
-      return ConnectorResource.builder()
-          .accountIdentifier(connector.getAccountIdentifier())
-          .orgIdentifier(isBlank(connector.getOrgIdentifier()) ? null : connector.getOrgIdentifier())
-          .projectIdentifier(isBlank(connector.getProjectIdentifier()) ? null : connector.getProjectIdentifier())
-          .identifier(connector.getIdentifier())
-          .build();
-    }
-
-    static ConnectorResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
-      return ConnectorResource.builder()
-          .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
-          .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
-                  ? null
-                  : accessControlDTO.getResourceScope().getOrgIdentifier())
-          .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
-                  ? null
-                  : accessControlDTO.getResourceScope().getProjectIdentifier())
-          .identifier(accessControlDTO.getResourceIdentifier())
-          .build();
-    }
+  private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+            .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+            .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                    ? null
+                    : accessControlDTO.getResourceScope().getOrgIdentifier())
+            .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                    ? null
+                    : accessControlDTO.getResourceScope().getProjectIdentifier())
+            .identifier(accessControlDTO.getResourceIdentifier())
+            .build();
   }
 }

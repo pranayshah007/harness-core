@@ -7,27 +7,38 @@
 
 package io.harness.connector.impl;
 
+import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.connector.ConnectivityStatus.SUCCESS;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -37,9 +48,11 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorsTestBase;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.embedded.kubernetescluster.KubernetesClusterConfig;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
+import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.validator.ConnectionValidator;
 import io.harness.connector.validator.KubernetesConnectionValidator;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -56,6 +69,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
+import io.harness.gitsync.common.dtos.GitSyncConfigDTO;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -107,6 +121,9 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock NGSettingsClient settingsClient;
   @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock AccountClient accountClient;
+  @Mock ConnectorStatisticsHelper connectorStatisticsHelper;
+  @Mock AccessControlClient accessControlClient;
+  @Mock ConnectorRbacHelper connectorRbacHelper;
 
   @Mock Call<RestResponse<Boolean>> featureFlagCall1;
   @Mock Call<RestResponse<Boolean>> featureFlagCall2;
@@ -130,6 +147,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String updatedPasswordIdentifier = "updatedPasswordIdentifier";
   String dummyExceptionMessage = "DUMMY_MESSAGE";
 
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -137,6 +155,29 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     passwordSecretRef = SecretRefData.builder().identifier(passwordIdentifier).scope(Scope.ACCOUNT).build();
     doNothing().when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+
+    List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
+
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+            .resourceType(ResourceTypes.CONNECTOR)
+            .permission(VIEW_CONNECTOR_PERMISSION)
+            .resourceScope(ResourceScope.builder()
+                    .accountIdentifier(accountIdentifier)
+                    .orgIdentifier(null)
+                    .projectIdentifier(null)
+                    .build());
+
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("connectorIdentifier1").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("connectorIdentifier2").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(false).resourceIdentifier("connectorIdentifier3").build());
+
+    AccessCheckResponseDTO accessCheckResponseDTO =  AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+    //when(accessControlClient.checkForAccessOrThrow(anyList())).thenReturn(accessCheckResponseDTO);
+    doReturn(accessCheckResponseDTO).when(accessControlClient).checkForAccessOrThrow(anyList());
+
   }
 
   private ConnectorDTO createKubernetesConnectorRequestDTO(
@@ -161,6 +202,16 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
                                          .connectorConfig(k8sClusterConfig)
                                          .build();
     return ConnectorDTO.builder().connectorInfo(connectorInfo).build();
+  }
+
+  private Connector createKubernetesConnector(String connectorIdentifier, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    KubernetesClusterConfig connector = KubernetesClusterConfig.builder()
+            .build();
+    connector.setId(connectorIdentifier);
+    connector.setAccountIdentifier(accountIdentifier);
+    connector.setOrgIdentifier(orgIdentifier);
+    connector.setProjectIdentifier(projectIdentifier);
+    return connector;
   }
 
   private ConnectorResponseDTO createConnector(String connectorIdentifier, String name) {
@@ -305,7 +356,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category({UnitTests.class})
-  public void testList() throws IOException {
+  public void testListConnectors_WithViewPermissionOnAllConnectors() throws IOException {
     String connectorIdentifier1 = "connectorIdentifier1";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -321,6 +372,9 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    when(accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+            .thenReturn(true);
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
@@ -331,6 +385,57 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorIdentifierList).contains(connectorIdentifier1);
     assertThat(connectorIdentifierList).contains(connectorIdentifier2);
     assertThat(connectorIdentifierList).contains(connectorIdentifier3);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.DEEPAK)
+  @Category({UnitTests.class})
+  public void testListConnectors_WithViewPermissionOnSpecificConnectors() throws IOException {
+    String connectorIdentifier1 = "connectorIdentifier1";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+
+    Response<List<GitSyncConfigDTO>> response = Response.success(new ArrayList<>());
+    Call<List<GitSyncConfigDTO>> responseCall = mock(Call.class);
+    when(yamlGitConfigClient.getConfigs(accountIdentifier, null, null)).thenReturn(responseCall);
+    when(responseCall.execute()).thenReturn(response);
+
+    createConnector(connectorIdentifier1, name + "1");
+    createConnector(connectorIdentifier2, name + "2");
+    createConnector(connectorIdentifier3, name + "3");
+
+    ArgumentCaptor<Page> connectorsListArgumentCaptor = ArgumentCaptor.forClass(Page.class);
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+            SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+            .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+            SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    when(accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+            .thenReturn(false);
+
+    List<Connector> permittedConnectors = new ArrayList<>();
+    permittedConnectors.add(createKubernetesConnector(connectorIdentifier1, accountIdentifier, null, null));
+    permittedConnectors.add(createKubernetesConnector(connectorIdentifier2, accountIdentifier, null, null));
+   // MockedStatic<ConnectorRbacHelper> connectorRbacHelperMock = mockStatic(ConnectorRbacHelper.class);
+    //connectorRbacHelperMock.when().thenReturn(permittedConnectors)
+
+
+    when(connectorRbacHelper.getPermitted(anyList())).thenReturn(permittedConnectors);
+
+    Page<ConnectorResponseDTO> connectorSummaryDTOSList =
+            connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
+    assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
+    List<String> connectorIdentifierList =
+            connectorSummaryDTOSList.stream()
+                    .map(connectorSummaryDTO -> connectorSummaryDTO.getConnector().getIdentifier())
+                    .collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier1);
+    assertThat(connectorIdentifierList).contains(connectorIdentifier2);
+    assertThat(connectorIdentifierList).doesNotContain(connectorIdentifier3);
   }
 
   @Test
