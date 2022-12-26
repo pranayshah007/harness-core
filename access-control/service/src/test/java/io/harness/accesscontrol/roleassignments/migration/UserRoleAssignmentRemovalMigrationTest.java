@@ -95,6 +95,7 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
 
     Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
     assertEquals(1, postMigrationRoleAssignments.getTotalElements());
+    assertPostMigration(accountScopeUserRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
   }
 
   private RoleAssignmentDBO createAccountScopeUserRoleAssignment(
@@ -194,5 +195,19 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
 
     Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
     assertEquals(2, postMigrationRoleAssignments.getTotalElements());
+    assertPostMigration(accountScopeUserRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
+    assertPostMigration(accountScopeUserGroupRoleAssignment, postMigrationRoleAssignments.getContent().get(1));
+  }
+
+  private void assertPostMigration(
+      RoleAssignmentDBO existingRoleAssignmentDBO, RoleAssignmentDBO expectedRoleAssignmentDBO) {
+    assertEquals(existingRoleAssignmentDBO.getScopeIdentifier(), expectedRoleAssignmentDBO.getScopeIdentifier());
+    assertEquals(existingRoleAssignmentDBO.getScopeLevel(), expectedRoleAssignmentDBO.getScopeLevel());
+    assertEquals(existingRoleAssignmentDBO.getRoleIdentifier(), expectedRoleAssignmentDBO.getRoleIdentifier());
+    assertEquals(
+        existingRoleAssignmentDBO.getResourceGroupIdentifier(), expectedRoleAssignmentDBO.getResourceGroupIdentifier());
+    assertEquals(existingRoleAssignmentDBO.getPrincipalType(), expectedRoleAssignmentDBO.getPrincipalType());
+    assertEquals(
+        existingRoleAssignmentDBO.getPrincipalIdentifier(), expectedRoleAssignmentDBO.getPrincipalIdentifier());
   }
 }
