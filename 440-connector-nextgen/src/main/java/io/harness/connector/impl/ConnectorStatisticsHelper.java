@@ -11,6 +11,7 @@ import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.facet;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
@@ -73,7 +74,9 @@ public class ConnectorStatisticsHelper {
               .getContent();
       connectors = connectorRbacHelper.getPermitted(connectors);
       List<String> connectorIds = connectors.stream().map(Connector::getIdentifier).collect(Collectors.toList());
-      criteria.and(ConnectorKeys.identifier).in(connectorIds);
+      if (isNotEmpty(connectorIds)) {
+        criteria.and(ConnectorKeys.identifier).in(connectorIds);
+      }
     }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupByType = group(ConnectorKeys.type).count().as(ConnectorTypeStatsKeys.count);

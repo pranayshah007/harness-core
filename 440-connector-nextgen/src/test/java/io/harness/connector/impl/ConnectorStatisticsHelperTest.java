@@ -8,17 +8,22 @@
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorsTestBase;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.connector.stats.ConnectorStatusStats;
@@ -57,6 +62,7 @@ public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
   @Inject NGSettingsClient settingsClient;
   @Inject ConnectorStatisticsHelper connectorStatisticsHelper;
   @Inject OutboxService outboxService;
+  @Inject AccessControlClient accessControlClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   private static final String accountIdentifier = "accountIdentifier";
   private static final String orgIdentifier = "orgIdentifier";
@@ -102,7 +108,9 @@ public class ConnectorStatisticsHelperTest extends ConnectorsTestBase {
       setStatus(connector, ConnectivityStatus.SUCCESS);
       connectorRepository.save(connector, ChangeType.ADD);
     }
-
+    when(accessControlClient.hasAccess(ResourceScope.of(any(), any(), any()),
+             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
     ConnectorStatistics connectorStatistics =
         connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier);
     assertThat(connectorStatistics).isNotNull();
