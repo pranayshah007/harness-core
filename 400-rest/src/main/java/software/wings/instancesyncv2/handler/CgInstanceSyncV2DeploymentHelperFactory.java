@@ -7,11 +7,14 @@
 
 package software.wings.instancesyncv2.handler;
 
+import static java.util.Objects.isNull;
+
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.NotSupportedException;
 
 @Singleton
 public class CgInstanceSyncV2DeploymentHelperFactory {
@@ -32,6 +35,11 @@ public class CgInstanceSyncV2DeploymentHelperFactory {
   }
 
   public CgInstanceSyncV2DeploymentHelper getHelper(SettingVariableTypes cloudProviderType) {
-    return this.holder.getOrDefault(cloudProviderType, null);
+    if (isNull(this.holder.getOrDefault(cloudProviderType, null))) {
+      throw new NotSupportedException(
+          String.format("Cloud Provider Type [%s] is not supported for Instance sync V2", cloudProviderType));
+    } else {
+      return this.holder.getOrDefault(cloudProviderType, null);
+    }
   }
 }

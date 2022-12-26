@@ -154,7 +154,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
       return existingIdentifiers;
     }
 
-    Set<CgReleaseIdentifiers> identifiers = new HashSet<>();
+    Set<CgReleaseIdentifiers> identifiers = existingIdentifiers;
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {
         CgK8sReleaseIdentifier k8sNewIdentifier = (CgK8sReleaseIdentifier) newIdentifier;
