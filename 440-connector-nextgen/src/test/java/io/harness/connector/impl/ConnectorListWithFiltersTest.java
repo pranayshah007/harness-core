@@ -10,6 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.connector.ConnectorCategory.ARTIFACTORY;
 import static io.harness.connector.ConnectorCategory.CLOUD_PROVIDER;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.connector.impl.ConnectorFilterServiceImpl.CREDENTIAL_TYPE_KEY;
 import static io.harness.connector.impl.ConnectorFilterServiceImpl.INHERIT_FROM_DELEGATE_STRING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -25,9 +26,13 @@ import static io.harness.encryption.SecretRefData.SECRET_DOT_DELIMINITER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
@@ -38,6 +43,7 @@ import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorsTestBase;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.embedded.awsconnector.AwsConfig.AwsConfigKeys;
 import io.harness.connector.entities.embedded.gcpconnector.GcpConfig.GcpConfigKeys;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sUserNamePassword;
@@ -66,6 +72,8 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.clients.YamlGitConfigClient;
+import io.harness.gitsync.common.dtos.GitSyncConfigDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
@@ -81,6 +89,7 @@ import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -104,10 +113,12 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Mock ProjectService projectService;
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Inject OutboxService outboxService;
+  @Inject AccessControlClient accessControlClient;
   @Inject @InjectMocks @Spy DefaultConnectorServiceImpl connectorService;
   @Inject ConnectorRepository connectorRepository;
   @Inject FilterService filterService;
   @Mock NGSettingsClient settingsClient;
+  @Mock YamlGitConfigClient yamlGitConfigClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   String accountIdentifier = "accountIdentifier";
   String orgIdentifier = "orgIdentifier";
@@ -129,6 +140,13 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     mockStatic(CGRestUtils.class);
     when(CGRestUtils.getResponse(any())).thenReturn(true);
+    Response<List<GitSyncConfigDTO>> response = Response.success(new ArrayList<>());
+    Call<List<GitSyncConfigDTO>> responseCall = mock(Call.class);
+    when(yamlGitConfigClient.getConfigs(any(), any(), any())).thenReturn(responseCall);
+    when(responseCall.execute()).thenReturn(response);
+    when(accessControlClient.hasAccess(ResourceScope.of(any(), any(), any()),
+             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
   }
   private ConnectorInfoDTO getConnector(String name, String identifier, String description) {
     return ConnectorInfoDTO.builder()
@@ -162,6 +180,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testListWithOrgFilters() {
     createConnectorsWithGivenOrgs(Arrays.asList("org1", "org2", "org3", "org1", "org1", "org5"));
+
     Page<ConnectorResponseDTO> connectorDTOS =
         connectorService.list(0, 100, accountIdentifier, null, "org1", null, "", "", false, false);
     assertThat(connectorDTOS).isNotNull();
@@ -173,6 +192,9 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testListWithProjectFilters() {
     createConnectorsWithGivenProjects(Arrays.asList("proj1", "proj1", "proj1", "proj2", "proj3", "proj4"));
+    when(accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, null),
+             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
     Page<ConnectorResponseDTO> connectorDTOS =
         connectorService.list(0, 100, accountIdentifier, null, orgIdentifier, "proj1", "", "", false, false);
     assertThat(connectorDTOS).isNotNull();
@@ -203,6 +225,9 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     createAccountLevelConnectors();
     createConnectorsWithGivenOrgs(Arrays.asList("org1", "org2"));
     createConnectorsWithGivenProjects(Arrays.asList("proj1", "proj2"));
+    when(accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
     Page<ConnectorResponseDTO> connectorDTOS =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorDTOS).isNotNull();
