@@ -104,13 +104,13 @@ public class HQuery<T> extends QueryImpl<T> {
   @Override
   public void add(Criteria... criteria) {
     super.add(criteria);
-    children.addAll(Arrays.asList(criteria));
+    //children.addAll(Arrays.asList(criteria));
   }
 
   @Override
   public void remove(Criteria criteria) {
     super.remove(criteria);
-    this.children.remove(criteria);
+    //this.children.remove(criteria);
   }
 
   private void checkKeyListSize(List<Key<T>> list) {
