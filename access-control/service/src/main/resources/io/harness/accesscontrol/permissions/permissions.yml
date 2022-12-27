@@ -1105,6 +1105,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_setting_view
+    name: View Settings
+    status: INACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_setting_edit
     name: Edit a Setting
     status: ACTIVE
