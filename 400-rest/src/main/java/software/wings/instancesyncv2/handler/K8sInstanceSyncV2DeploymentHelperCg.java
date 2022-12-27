@@ -10,25 +10,12 @@ package software.wings.instancesyncv2.handler;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.validation.Validator.notNullCheck;
-
-import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
-
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
-import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
-import io.harness.delegate.task.helm.HelmChartInfo;
-import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluator;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
@@ -37,40 +24,22 @@ import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.serializer.KryoSerializer;
-import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
-import software.wings.beans.Application;
 import software.wings.beans.ContainerInfrastructureMapping;
-import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
-import software.wings.beans.infrastructure.instance.info.ContainerInfo;
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
-import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
-import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
-import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
-import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
-import software.wings.instancesyncv2.model.AbstractCgReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
-import software.wings.persistence.artifact.Artifact;
-import software.wings.persistence.artifact.Artifact.ArtifactKeys;
-import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.instance.InstanceUtils;
 import software.wings.service.impl.instance.sync.ContainerSync;
-import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
@@ -78,8 +47,6 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
@@ -92,7 +59,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -109,7 +75,7 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   private final InfrastructureMappingService infrastructureMappingService;
 
-  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(2);
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(5);
   private final KryoSerializer kryoSerializer;
   private final InstanceUtils instanceUtil;
   private final ServiceResourceService serviceResourceService;
@@ -154,7 +120,8 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
       return existingIdentifiers;
     }
 
-    Set<CgReleaseIdentifiers> identifiers = existingIdentifiers;
+    Set<CgReleaseIdentifiers> identifiers = new HashSet<>();
+    identifiers.addAll(existingIdentifiers);
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {
         CgK8sReleaseIdentifier k8sNewIdentifier = (CgK8sReleaseIdentifier) newIdentifier;

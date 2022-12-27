@@ -8,23 +8,23 @@
 package software.wings.instancesyncv2.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP;
-import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP_DESC;
-
-import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -33,17 +33,10 @@ import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
-import software.wings.beans.Application;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
-import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
-import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.infrastructure.instance.Instance;
-import software.wings.beans.infrastructure.instance.info.InstanceInfo;
-import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -60,9 +53,10 @@ import software.wings.service.intfc.ServiceResourceService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -123,7 +117,7 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
     Set<CgReleaseIdentifiers> result =
         k8SInstanceSyncV2DeploymentHelperCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
     assertThat(result).isNotNull();
-    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.size()).isEqualTo(2);
   }
 
   @Test

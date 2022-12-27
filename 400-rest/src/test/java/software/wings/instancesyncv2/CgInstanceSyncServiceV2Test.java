@@ -21,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
@@ -43,12 +45,14 @@ import software.wings.instancesyncv2.handler.K8sInstanceSyncV2DeploymentHelperCg
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.Arrays;
 import java.util.Collections;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,6 +79,16 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
 
   @Mock private InstanceService instanceService;
+  @Mock private PersistentLocker persistentLocker;
+  @Mock private AcquiredLock acquiredLock;
+
+  @Mock private InstanceHandlerFactoryService instanceHandlerFactory;
+
+  @Before
+  public void setup() {
+    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any(), any());
+    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any());
+  }
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
