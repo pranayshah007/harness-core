@@ -865,6 +865,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
+    set.add(CgK8sReleaseIdentifier.class);
     set.add(InstanceSyncTaskDetails.class);
     set.add(MigratedAccountTracker.class);
     set.add(YamlGitConfig.class);
