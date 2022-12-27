@@ -466,7 +466,6 @@ public enum FeatureName {
       HarnessTeam.PL),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS);
 
-
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
