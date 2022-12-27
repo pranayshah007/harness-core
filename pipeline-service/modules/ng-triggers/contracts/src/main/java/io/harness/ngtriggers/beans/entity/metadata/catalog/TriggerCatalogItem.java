@@ -8,11 +8,13 @@
 package io.harness.ngtriggers.beans.entity.metadata.catalog;
 
 import io.harness.ngtriggers.Constants;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,6 +31,6 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("TriggerCatalogItem")
 @Schema(description = "This has details of the Trigger Catalog.")
 public class TriggerCatalogItem {
-  @Schema(description = Constants.TRIGGER_CATEGORY) TriggerCategory category;
-  @Schema(description = Constants.TRIGGER_TYPE_LIST_BY_CATEGORY) List<TriggerCatalogType> triggerCatalogType;
+  @NotNull @Schema(description = Constants.TRIGGER_CATEGORY) NGTriggerType category;
+  @NotNull @Schema(description = Constants.TRIGGER_TYPE_LIST_BY_CATEGORY) List<TriggerCatalogType> triggerCatalogType;
 }

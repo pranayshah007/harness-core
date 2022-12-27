@@ -54,6 +54,7 @@ public class SQLOperationHelperTest extends WingsBaseTest {
     columnValueMapping.put("name", "Casey O'Kane");
     columnValueMapping.put("age", "81");
     String actual = SQLOperationHelper.deleteSQL(tableName, columnValueMapping);
-    assertThat(actual).isEqualTo("DELETE FROM cg_cloud_providers WHERE name='Casey O''Kane' AND age='81'");
+    assertThat(actual).isEqualTo(
+        "UPDATE cg_cloud_providers SET IS_DELETED = true WHERE name='Casey O''Kane' AND age='81'");
   }
 }

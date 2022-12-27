@@ -24,6 +24,7 @@ import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
@@ -43,16 +44,17 @@ public class PipelineEntityReconServiceImpl implements LookerEntityReconService 
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> pipelineIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<Pipeline> pipelines = persistence.createQuery(Pipeline.class)
                                                  .field(PipelineKeys.accountId)
                                                  .equal(accountId)
                                                  .field(PipelineKeys.createdAt)
-                                                 .exists()
+                                                 .notEqual(null)
                                                  .field(PipelineKeys.createdAt)
                                                  .greaterThanOrEq(durationStartTs)
                                                  .field(PipelineKeys.createdAt)
                                                  .lessThanOrEq(durationEndTs)
-                                                 .fetchKeys();
+                                                 .fetchKeys(options);
     pipelines.forEachRemaining(pipelineKey -> pipelineIds.add((String) pipelineKey.getId()));
 
     return pipelineIds;

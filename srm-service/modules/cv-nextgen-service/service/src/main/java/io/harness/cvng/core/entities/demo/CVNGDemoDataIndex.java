@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.CVConstants;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -44,7 +45,7 @@ import org.mongodb.morphia.annotations.Id;
 @Entity(value = "cvngDemoDataIndices")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class CVNGDemoDataIndex implements AccountAccess, PersistentEntity, UuidAware {
+public class CVNGDemoDataIndex extends VerificationTaskBase implements AccountAccess, PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

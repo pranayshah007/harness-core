@@ -48,7 +48,7 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBind() throws IOException {
     String inputsYaml =
-        "{\"inputs\":{\"repo\":\"harness-core\",\"image\":\"nginx\",\"password\":\"dockerPass\",\"count\":5,\"version\":\"V1\"}}";
+        "{\"inputs\":{\"repo\":\"harness-core\",\"image\":\"nginx\",\"password\":\"dockerPass\",\"count\":5,\"version\":\"V1\",\"defaultInput2\":\"inputSetValue\"}}";
 
     String pipelineYaml = readFile();
 
@@ -63,6 +63,10 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
     assertEquals(specNode.get("image").asText(), "nginx");
     assertEquals(specNode.get("settings").get("repo").asText(), "harness-core");
     assertEquals(specNode.get("settings").get("password").asText(), "<+secrets.getValue(\"dockerPass\")>");
+    // Default value provided in pipeline, but input not provided. So default will be returned.
+    assertEquals(specNode.get("settings").get("f1").asText(), "defaultValue");
+    // Default value provided in pipeline, but input provided. So provided value will be returned.
+    assertEquals(specNode.get("settings").get("f2").asText(), "inputSetValue");
   }
 
   private String readFile() {

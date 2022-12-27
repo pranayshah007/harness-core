@@ -194,4 +194,6 @@ public interface EntityTypeConstants {
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
+  String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
+  String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
 }

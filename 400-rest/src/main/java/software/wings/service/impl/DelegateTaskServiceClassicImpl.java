@@ -601,12 +601,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         }
         // save eligible delegate ids as part of task (will be used for rebroadcasting)
         task.setEligibleToExecuteDelegateIds(new LinkedList<>(eligibleListOfDelegates));
-        if (log.isDebugEnabled()) {
-          log.debug("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
-              task.getEligibleToExecuteDelegateIds() + "\n\n"
-                  + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
-                      task.getData().getTaskType(), task.getExecutionCapabilities()));
-        }
+        log.info("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
+            task.getEligibleToExecuteDelegateIds() + "\n\n"
+                + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
+                    task.getData().getTaskType(), task.getExecutionCapabilities()));
 
         // filter only connected ones from list
         List<String> connectedEligibleDelegates =
@@ -719,12 +717,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         }
         // save eligible delegate ids as part of task (will be used for rebroadcasting)
         task.setEligibleToExecuteDelegateIds(new LinkedList<>(eligibleListOfDelegates));
-        if (log.isDebugEnabled()) {
-          log.debug("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
-              task.getEligibleToExecuteDelegateIds() + "\n\n"
-                  + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
-                      task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
-        }
+        log.debug("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
+            task.getEligibleToExecuteDelegateIds() + "\n\n"
+                + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
+                    task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
 
         // filter only connected ones from list
         List<String> connectedEligibleDelegates =
@@ -1129,9 +1125,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return DelegateTaskPackage.builder().build();
       }
     } finally {
-      if (log.isDebugEnabled()) {
-        log.debug("Done with acquire delegate task{} ", taskId);
-      }
+      log.debug("Done with acquire delegate task{} ", taskId);
     }
   }
 
@@ -1269,8 +1263,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
           log.error(
-              "Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
@@ -1377,8 +1371,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
-          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+          log.warn(
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());

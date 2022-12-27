@@ -1,0 +1,92 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v1/metrics/results"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.in.sumologic.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\n    \"query\": [{\"query\":\"metric=Mem_UsedPercent | avg | quantize to 1m using avg\"}],\n    \"startTime\":1671736174000,\n    \"endTime\":1671737074000\n}"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"error\":false,\"errorMessage\":null,\"errorInstanceId\":null,\"errorKey\":null,\"keyedErrors\":[],\"response\":[{\"rowId\":\"\",\"results\":[{\"metric\":{\"dimensions\":[{\"key\":\"metric\",\"value\":\"avg\"}],\"algoId\":1},\"horAggs\":{\"min\":13.05850723964509,\"max\":13.153083715272464,\"avg\":13.101153990529504,\"sum\":196.51730985794256,\"count\":15,\"latest\":13.153083715272464},\"datapoints\":{\"timestamp\":[1671736200000,1671736260000,1671736320000,1671736380000,1671736440000,1671736500000,1671736560000,1671736620000,1671736680000,1671736740000,1671736800000,1671736860000,1671736920000,1671736980000,1671737040000],\"value\":[13.093769035542298,13.103672098894783,13.101552457281585,13.075796062866493,13.05850723964509,13.085772427946235,13.099197028445712,13.093665191428682,13.09192549710177,13.102810803599505,13.104661672212757,13.111064578088694,13.120380005927665,13.121452043688807,13.153083715272464],\"outlierParams\":[{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false}],\"max\":[13.093769035542298,13.103672098894783,13.101552457281585,13.075796062866493,13.05850723964509,13.085772427946235,13.099197028445712,13.093665191428682,13.09192549710177,13.102810803599505,13.104661672212757,13.111064578088694,13.120380005927665,13.121452043688807,13.153083715272464],\"min\":[13.093769035542298,13.103672098894783,13.101552457281585,13.075796062866493,13.05850723964509,13.085772427946235,13.099197028445712,13.093665191428682,13.09192549710177,13.102810803599505,13.104661672212757,13.111064578088694,13.120380005927665,13.121452043688807,13.153083715272464],\"avg\":[13.093769035542298,13.103672098894783,13.101552457281585,13.075796062866493,13.05850723964509,13.085772427946235,13.099197028445712,13.093665191428682,13.09192549710177,13.102810803599505,13.104661672212757,13.111064578088694,13.120380005927665,13.121452043688807,13.153083715272464],\"count\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"isFilled\":[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]}}]}],\"queryInfo\":{\"startTime\":1671736200000,\"endTime\":1671737100000,\"desiredQuantizationInSecs\":{\"empty\":false,\"defined\":true},\"actualQuantizationInSecs\":60,\"sessionIdStr\":\"\"}}",
+          "encodedBody": false,
+          "headers": {
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Type": [
+              "application/json;charset=utf-8"
+            ],
+            "Date": [
+              "Fri, 23 Dec 2022 02:30:25 GMT"
+            ],
+            "Expires": [
+              "Thu, 01 Jan 1970 00:00:00 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Set-Cookie": [
+              "AWSALB=hFab3cl/TinW/EHDaOYTtg/mGcjMeOO67X9y4Mb0kiox/XTHXCoUmMhqeZ7XlR6lYBYYBlwMOYR8Qgxp05YZBuHD5lHhsHc/H7riwLwyy92ynNc0yU4fOY59nFJj; Expires=Fri, 30 Dec 2022 02:30:25 GMT; Path=/",
+              "AWSALBCORS=hFab3cl/TinW/EHDaOYTtg/mGcjMeOO67X9y4Mb0kiox/XTHXCoUmMhqeZ7XlR6lYBYYBlwMOYR8Qgxp05YZBuHD5lHhsHc/H7riwLwyy92ynNc0yU4fOY59nFJj; Expires=Fri, 30 Dec 2022 02:30:25 GMT; Path=/; SameSite=None; Secure",
+              "SUMOAPIID=node0th67fmb350nu1vcdg4vsy1bbi168467.node0; Path=/; Secure; HttpOnly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15552000"
+            ],
+            "Vary": [
+              "Accept-Encoding, User-Agent"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "DENY"
+            ],
+            "X-Xss-Protection": [
+              "1; mode=block"
+            ]
+          },
+          "templated": false
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.4.0",
+    "timeExported": "2022-12-23T08:00:35+05:30"
+  }
+}

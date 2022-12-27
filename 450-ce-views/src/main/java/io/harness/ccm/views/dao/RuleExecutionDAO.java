@@ -61,7 +61,7 @@ public class RuleExecutionDAO {
       query.field(RuleExecutionKeys.rulePackIdentifier).in(ruleExecutionFilter.getRuleSetIds());
     }
     if (ruleExecutionFilter.getRuleEnforcementId() != null) {
-      query.field(RuleExecutionKeys.uuid).in(ruleExecutionFilter.getRuleEnforcementId());
+      query.field(RuleExecutionKeys.ruleEnforcementIdentifier).in(ruleExecutionFilter.getRuleEnforcementId());
     }
     if (ruleExecutionFilter.getRegion() != null) {
       query.field(RuleExecutionKeys.targetRegions).in(ruleExecutionFilter.getRegion());

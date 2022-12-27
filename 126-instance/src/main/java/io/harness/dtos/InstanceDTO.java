@@ -33,6 +33,7 @@ public class InstanceDTO {
   InstanceType instanceType;
   String envIdentifier;
   String envName;
+  String envGroupRef;
   EnvironmentType envType;
   String serviceIdentifier;
   String serviceName;

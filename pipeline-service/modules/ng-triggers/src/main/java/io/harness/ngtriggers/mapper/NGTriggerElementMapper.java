@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -37,6 +38,13 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
+import io.harness.beans.IdentifierRef;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
 import io.harness.ng.core.mapper.TagMapper;
@@ -89,14 +97,18 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.utils.RestCallToNGManagerClientUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.annotations.VisibleForTesting;
@@ -108,10 +120,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +142,7 @@ public class NGTriggerElementMapper {
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private WebhookConfigProvider webhookConfigProvider;
   private final PmsFeatureFlagService pmsFeatureFlagService;
+  private ConnectorResourceClient connectorResourceClient;
 
   public NGTriggerConfigV2 toTriggerConfigV2(String yaml) {
     try {
@@ -377,6 +392,11 @@ public class NGTriggerElementMapper {
   }
 
   public NGTriggerResponseDTO toResponseDTO(NGTriggerEntity ngTriggerEntity) {
+    if (pmsFeatureFlagService.isEnabled(
+            ngTriggerEntity.getAccountId(), FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
+      ngTriggerEntity = getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity);
+    }
+
     return NGTriggerResponseDTO.builder()
         .name(ngTriggerEntity.getName())
         .identifier(ngTriggerEntity.getIdentifier())
@@ -548,6 +568,110 @@ public class NGTriggerElementMapper {
     }
 
     return ngTriggerDetailsResponseDTO.build();
+  }
+
+  private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+    String triggerYaml = ngTriggerEntity.getYaml();
+    YamlNode node = validateAndGetYamlNode(triggerYaml);
+    Map<String, Object> resMap = getResMap(node, ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+        ngTriggerEntity.getProjectIdentifier());
+    ngTriggerEntity.setYaml(YamlPipelineUtils.writeYamlString(resMap));
+    return ngTriggerEntity;
+  }
+
+  private Map<String, Object> getResMap(
+      YamlNode yamlNode, String accountId, String orgIdentifier, String projectIdentifier) {
+    Map<String, Object> resMap = new LinkedHashMap<>();
+    List<YamlField> childFields = yamlNode.fields();
+    boolean connectorRefFlag = false;
+    String repo = "";
+    String artifactoryConnectorRef = "";
+    String repoFormat = "";
+    // Iterating over the YAML
+    for (YamlField childYamlField : childFields) {
+      String fieldName = childYamlField.getName();
+      JsonNode value = childYamlField.getNode().getCurrJsonNode();
+      if (fieldName.equals("connectorRef")) {
+        connectorRefFlag = true;
+        artifactoryConnectorRef = value.asText();
+      }
+      if (fieldName.equals("repository")) {
+        repo = value.asText();
+      }
+      if (fieldName.equals("repositoryFormat")) {
+        repoFormat = value.asText();
+      }
+      if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> ValueNode
+        resMap.put(fieldName, value);
+      } else if (value.isArray()) {
+        // Value -> ArrayNode
+        resMap.put(fieldName, getResMapInArray(childYamlField.getNode(), accountId, orgIdentifier, projectIdentifier));
+      } else {
+        // Value -> ObjectNode
+        resMap.put(fieldName, getResMap(childYamlField.getNode(), accountId, orgIdentifier, projectIdentifier));
+      }
+    }
+    if (connectorRefFlag == true && repoFormat.equals("docker")) {
+      IdentifierRef connectorRef =
+          IdentifierRefHelper.getIdentifierRef(artifactoryConnectorRef, accountId, orgIdentifier, projectIdentifier);
+      ArtifactoryConnectorDTO artifactoryConnectorDTO = getConnector(connectorRef);
+      String url = getArtifactoryRegistryUrl(artifactoryConnectorDTO.getArtifactoryServerUrl(), null, repo);
+      if (!resMap.containsKey("repositoryUrl") || !resMap.get("repositoryUrl").toString().isBlank()) {
+        resMap.put("repositoryUrl", new TextNode(url));
+      }
+    }
+    return resMap;
+  }
+
+  public ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
+    Optional<ConnectorDTO> connectorDTO = RestCallToNGManagerClientUtils.execute(connectorResourceClient.get(
+        artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getAccountIdentifier(),
+        artifactoryConnectorRef.getOrgIdentifier(), artifactoryConnectorRef.getProjectIdentifier()));
+
+    if (!connectorDTO.isPresent() || !isAArtifactoryConnector(connectorDTO.get())) {
+      throw new ArtifactoryRegistryException(String.format("Connector not found for identifier : [%s] with scope: [%s]",
+          artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getScope()));
+    }
+    ConnectorInfoDTO connectors = connectorDTO.get().getConnectorInfo();
+    return (ArtifactoryConnectorDTO) connectors.getConnectorConfig();
+  }
+
+  private static boolean isAArtifactoryConnector(@NotNull ConnectorDTO connectorDTO) {
+    return ConnectorType.ARTIFACTORY == connectorDTO.getConnectorInfo().getConnectorType();
+  }
+
+  // Gets the ResMap if the yamlNode is of the type Array
+  private List<Object> getResMapInArray(
+      YamlNode yamlNode, String accountId, String orgIdentifier, String projectIdentifier) {
+    List<Object> arrayList = new ArrayList<>();
+    // Iterate over the array
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (yamlNode.getCurrJsonNode().isValueNode()) {
+        // Value -> LeafNode
+        arrayList.add(arrayElement);
+      } else if (arrayElement.isArray()) {
+        // Value -> Array
+        arrayList.add(getResMapInArray(arrayElement, accountId, orgIdentifier, projectIdentifier));
+      } else {
+        // Value -> Object
+        arrayList.add(getResMap(arrayElement, accountId, orgIdentifier, projectIdentifier));
+      }
+    }
+    return arrayList;
+  }
+
+  private YamlNode validateAndGetYamlNode(String yaml) {
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Service YAML is empty.");
+    }
+    YamlNode yamlNode = null;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
+    }
+    return yamlNode;
   }
 
   private List<Integer> generateLastWeekActivityData(NGTriggerEntity ngTriggerEntity) {

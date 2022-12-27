@@ -11,6 +11,7 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -22,9 +23,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -53,8 +52,8 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "analysisStateMachines", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-public final class AnalysisStateMachine implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware,
-                                                   AccountAccess, VerificationTaskExecutionInstance {
+public final class AnalysisStateMachine extends VerificationTaskBase
+    implements PersistentEntity, UuidAware, AccountAccess, VerificationTaskExecutionInstance {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -66,7 +65,7 @@ public final class AnalysisStateMachine implements PersistentEntity, UuidAware, 
                  .name("verificationTaskIdQueryIdx")
                  .unique(false)
                  .field(AnalysisStateMachineKeys.verificationTaskId)
-                 .descSortField(AnalysisStateMachineKeys.createdAt)
+                 .descSortField(VerificationTaskBaseKeys.createdAt)
                  .build())
         .build();
   }
@@ -76,8 +75,7 @@ public final class AnalysisStateMachine implements PersistentEntity, UuidAware, 
 
   @Id private String uuid;
   @FdIndex private String accountId;
-  private long createdAt;
-  private long lastUpdatedAt;
+
   private Instant analysisStartTime;
   private Instant analysisEndTime;
   private String verificationTaskId;

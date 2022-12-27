@@ -560,8 +560,11 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     PageableUsageRequestParams usageRequestParam =
         DefaultPageableUsageRequestParams.builder()
             .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
-            .filterParams(
-                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .filterParams(ActiveServicesFilterParams.builder()
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .serviceIdentifier(serviceIdentifier)
+                              .build())
             .build();
     long currentTimeMillis = System.currentTimeMillis();
     when(utils.fetchActiveServices(any()))
@@ -595,6 +598,8 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     assertThat(content.size()).isEqualTo(1);
     ActiveServiceDTO activeServiceDTO = content.get(0);
     assertThat(activeServiceDTO.getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(activeServiceDTO.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(activeServiceDTO.getProjectIdentifier()).isEqualTo(projectIdentifier);
     assertThat(activeServiceDTO.getName()).isEqualTo(serviceName);
     assertThat(activeServiceDTO.getOrgName()).isEqualTo(orgName);
     assertThat(activeServiceDTO.getProjectName()).isEqualTo(projectName);
@@ -610,8 +615,11 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     PageableUsageRequestParams usageRequestParam =
         DefaultPageableUsageRequestParams.builder()
             .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
-            .filterParams(
-                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .filterParams(ActiveServicesFilterParams.builder()
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .serviceIdentifier(serviceIdentifier)
+                              .build())
             .build();
 
     when(utils.fetchActiveServices(any()))
@@ -631,8 +639,11 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     PageableUsageRequestParams usageRequestParam =
         DefaultPageableUsageRequestParams.builder()
             .pageRequest(PageableUtils.getPageRequest(0, 30, Arrays.asList("serviceInstances", "ASC")))
-            .filterParams(
-                ActiveServicesFilterParams.builder().serviceName("all").serviceName("all").projectName("all").build())
+            .filterParams(ActiveServicesFilterParams.builder()
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .serviceIdentifier(serviceIdentifier)
+                              .build())
             .build();
 
     assertThatThrownBy(

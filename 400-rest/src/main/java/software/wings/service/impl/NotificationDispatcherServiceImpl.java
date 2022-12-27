@@ -24,7 +24,7 @@ import software.wings.beans.alert.AlertNotificationRule;
 import software.wings.beans.security.UserGroup;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.common.NotificationMessageResolver.ChannelTemplate.EmailTemplate;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.notifications.EmailDispatcher;
 import software.wings.service.impl.notifications.NotificationDispatcher;
 import software.wings.service.impl.notifications.UseNotificationGroup;
@@ -117,10 +117,8 @@ public class NotificationDispatcherServiceImpl implements NotificationDispatcher
 
     for (NotificationReceiverInfo notificationReceiver : receivers) {
       if (notificationReceiver instanceof NotificationGroup) {
-        log.info("notification group dispatch");
         notificationGroupDispatcher.dispatch(notifications, (NotificationGroup) notificationReceiver);
       } else if (notificationReceiver instanceof UserGroup) {
-        log.info("user group dispatch");
         userGroupDispatcher.dispatch(notifications, (UserGroup) notificationReceiver);
       } else {
         log.error("Unhandled implementation of NotificationReceiverInfo. Class: {}",

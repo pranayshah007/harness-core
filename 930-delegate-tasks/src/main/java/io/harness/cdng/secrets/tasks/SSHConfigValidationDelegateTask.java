@@ -81,6 +81,7 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     SshSessionConfig sshSessionConfig =
         getSSHSessionConfig(sshTaskParams.getSshKeySpec(), sshTaskParams.getEncryptionDetails());
     sshSessionConfig.setHost(sshTaskParams.getHost());
+    sshSessionConfig.setPort(sshTaskParams.getSshKeySpec().getPort());
     try {
       Session session = SshSessionFactory.getSSHSession(sshSessionConfig);
       session.disconnect();

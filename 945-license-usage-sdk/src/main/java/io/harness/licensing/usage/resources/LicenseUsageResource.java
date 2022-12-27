@@ -52,7 +52,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Max;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -177,10 +177,9 @@ public class LicenseUsageResource {
       @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
           "0") int page,
       @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("30")
-      int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
+      @Max(50) int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
       @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
-      @NotNull @Valid @RequestBody(required = true,
-          description = ACTIVE_SERVICES_FILTER_PARAM_MESSAGE) ActiveServicesFilterParams filterParams) {
+      @Valid @RequestBody(description = ACTIVE_SERVICES_FILTER_PARAM_MESSAGE) ActiveServicesFilterParams filterParams) {
     currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
     Pageable pageRequest =
         PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));

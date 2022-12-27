@@ -67,6 +67,7 @@ paths:
         - x-api-key: []
       tags:
         - Streaming Destinations
+      x-internal: true
     delete:
       summary: Delete a Streaming Destination
       operationId: delete-disabled-streaming-destination

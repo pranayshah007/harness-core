@@ -8,10 +8,8 @@
 package software.wings.helpers.ext.azure.devops;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.CONNECT_TIMEOUT;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -21,8 +19,8 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.InvalidArtifactServerException;
-import io.harness.network.Http;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
@@ -34,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -48,12 +45,7 @@ import retrofit2.Response;
 @UtilityClass
 public class AzureArtifactsServiceHelper {
   static OkHttpClient getAzureArtifactsDownloadClient(String artifactDownloadUrl) {
-    return getOkHttpClientBuilder()
-        .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-        .proxy(Http.checkAndGetNonProxyIfApplicable(artifactDownloadUrl))
-        .retryOnConnectionFailure(true)
-        .followRedirects(true)
-        .build();
+    return AzureUtils.getOkHtttpClientWithProxy(artifactDownloadUrl);
   }
 
   public static String getAuthHeader(AzureArtifactsConfig azureArtifactsConfig) {

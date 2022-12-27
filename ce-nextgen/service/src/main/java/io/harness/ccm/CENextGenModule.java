@@ -46,6 +46,8 @@ import io.harness.ccm.audittrails.eventhandler.RuleEventHandler;
 import io.harness.ccm.audittrails.eventhandler.RuleSetEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -361,6 +363,7 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
+    bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -381,7 +384,7 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
         .to(CCMRecommendationFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.POLICYEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.RULEEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {

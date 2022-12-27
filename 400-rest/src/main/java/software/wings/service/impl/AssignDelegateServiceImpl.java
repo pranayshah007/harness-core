@@ -306,8 +306,16 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateScopes(Delegate delegate, DelegateTask task) {
-    TaskGroup taskGroup =
-        isNotBlank(task.getData().getTaskType()) ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup() : null;
+    TaskGroup taskGroup;
+    if (task.getTaskDataV2() != null) {
+      taskGroup = isNotBlank(task.getTaskDataV2().getTaskType())
+          ? TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup()
+          : null;
+    } else {
+      taskGroup = isNotBlank(task.getData().getTaskType())
+          ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup()
+          : null;
+    }
 
     String appId =
         task.getSetupAbstractions() == null ? null : task.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD);

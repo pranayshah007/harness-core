@@ -7,6 +7,8 @@
 
 package io.harness.yaml.utils;
 
+import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
@@ -16,6 +18,7 @@ import io.harness.utils.YamlPipelineUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,7 +29,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JsonPipelineUtils is used to convert arbitrary class from yaml file.
@@ -37,6 +43,7 @@ import lombok.experimental.UtilityClass;
  * with proper type name. This way framework is decoupled from concrete implementations.
  */
 @UtilityClass
+@Slf4j
 public class JsonPipelineUtils {
   private static final ObjectMapper mapper;
 
@@ -113,5 +120,26 @@ public class JsonPipelineUtils {
 
   public static JsonNode asTree(Object obj) {
     return mapper.valueToTree(obj);
+  }
+
+  /**
+   * Converts object to jsonNode for advanced processing.
+   *
+   * @param json         String
+   * @return the json node
+   */
+  public static JsonNode readTree(String json) {
+    try {
+      return NG_DEFAULT_OBJECT_MAPPER.readTree(json);
+    } catch (Exception e) {
+      for (StackTraceElement elem : e.getStackTrace()) {
+        log.error("Trace: {}", elem);
+      }
+      throw new InvalidRequestException(e.getMessage());
+    }
+  }
+
+  public static Map<String, Object> jsonNodeToMap(JsonNode node) {
+    return NG_DEFAULT_OBJECT_MAPPER.convertValue(node, new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 }

@@ -28,14 +28,14 @@ import io.harness.ccm.graphql.dto.currency.CurrencyData;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.BigQueryError;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValueList;
-import com.google.cloud.bigquery.InsertAllRequest;
-import com.google.cloud.bigquery.InsertAllResponse;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobInfo;
+import com.google.cloud.bigquery.JobStatistics.QueryStatistics;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableId;
@@ -52,7 +52,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -67,6 +66,7 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
   private static final String CURRENCY_CONVERSION_FACTOR_DEFAULT_TABLE_NAME = "currencyConversionFactorDefault";
   private static final String CURRENCY_CONVERSION_FACTOR_USER_INPUT_TABLE_NAME = "currencyConversionFactorUserInput";
   private static final String DEFAULT_LOCALE = "en-us";
+  private static final long THOUSAND = 1000L;
 
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private BigQueryService bigQueryService;
@@ -107,10 +107,10 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
 
   private CurrencyConversionFactorDTO getDestinationCurrencyConversionFactorDTO(
       final String accountId, final Currency destinationCurrency) {
+    checkValidDestinationCurrency(destinationCurrency, accountId);
+
     final List<CurrencyConversionFactorData> userEnteredConversionFactors =
         getUserEnteredCurrencyConversionFactors(accountId);
-    checkValidDestinationCurrency(destinationCurrency, userEnteredConversionFactors);
-
     final CurrencyConversionFactorDTO currencyConversionFactorDTO = getDefaultCurrencyConversionFactorDTO(accountId);
     final List<CurrencyConversionFactorData> sourceCurrencyConversionFactors =
         getSourceCurrencyConversionFactors(currencyConversionFactorDTO.getCurrencyConversionFactorDataList());
@@ -187,22 +187,14 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
     return convertToCurrencyConversionFactorDTO(getTableResultFromQuery(selectQuery));
   }
 
-  private void checkValidDestinationCurrency(
-      final Currency destinationCurrency, final List<CurrencyConversionFactorData> userEnteredConversionFactors) {
-    final Optional<Currency> savedDestinationCurrency = getSavedDestinationCurrency(userEnteredConversionFactors);
-    if (savedDestinationCurrency.isPresent() && !savedDestinationCurrency.get().equals(destinationCurrency)) {
+  private void checkValidDestinationCurrency(final Currency destinationCurrency, final String accountId) {
+    final Currency savedDestinationCurrency = ceMetadataRecordDao.getDestinationCurrency(accountId);
+    if (!Currency.NONE.equals(savedDestinationCurrency) && !savedDestinationCurrency.equals(destinationCurrency)) {
       throw new InvalidRequestException(
-          String.format("Can't set different destination currency %s. Saved destination currency is %s",
-              destinationCurrency.getCurrency(), savedDestinationCurrency.get().getCurrency()));
+          String.format("Can't get conversion factors for different destination currency %s. Saved destination "
+                  + "currency is %s",
+              destinationCurrency.getCurrency(), savedDestinationCurrency.getCurrency()));
     }
-  }
-
-  private Optional<Currency> getSavedDestinationCurrency(
-      final List<CurrencyConversionFactorData> userEnteredConversionFactors) {
-    if (Lists.isNullOrEmpty(userEnteredConversionFactors)) {
-      return Optional.empty();
-    }
-    return userEnteredConversionFactors.stream().map(CurrencyConversionFactorData::getDestinationCurrency).findFirst();
   }
 
   private Optional<CurrencyConversionFactorData> getUserEnteredTrueCurrencyConversionFactorData(
@@ -375,12 +367,11 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
         bigQueryHelper.getCloudProviderTableName(accountId, CURRENCY_CONVERSION_FACTOR_USER_INPUT_TABLE_NAME)
             .split("\\.");
     final TableId tableId = TableId.of(tableIds[0], tableIds[1], tableIds[2]);
-    final InsertAllRequest insertAllRequest =
-        CurrencyPreferenceQueryBuilder.getCurrencyConversionFactorInsertAllRequest(tableId, currencyConversionFactorDTO,
-            Currency.NONE.equals(setDestinationCurrency), currencyPreferencesConfig.getHistoricalUpdateMonthsCount(),
-            accountId);
-    final InsertAllResponse response = getCurrencyConversionFactorInsertAllResponse(insertAllRequest);
-    return !response.hasErrors();
+    final QueryJobConfiguration queryJobConfiguration =
+        CurrencyPreferenceQueryBuilder.getCurrencyConversionFactorQueryJobConfiguration(tableId,
+            currencyConversionFactorDTO, Currency.NONE.equals(setDestinationCurrency),
+            currencyPreferencesConfig.getHistoricalUpdateMonthsCount(), accountId);
+    return executeInsertQuery(queryJobConfiguration);
   }
 
   private void validateCreateCurrencyConversionFactorsRequest(final Currency setDestinationCurrency,
@@ -461,13 +452,11 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
             break;
           case CREATED_AT:
             currencyConversionFactorDataBuilder.createdAt(
-                Instant.ofEpochMilli(getNumericValue(row, field).longValue() * CurrencyPreferenceQueryBuilder.THOUSAND)
-                    .getEpochSecond());
+                Instant.ofEpochMilli(getNumericValue(row, field).longValue() * THOUSAND).getEpochSecond());
             break;
           case UPDATED_AT:
             currencyConversionFactorDataBuilder.updatedAt(
-                Instant.ofEpochMilli(getNumericValue(row, field).longValue() * CurrencyPreferenceQueryBuilder.THOUSAND)
-                    .getEpochSecond());
+                Instant.ofEpochMilli(getNumericValue(row, field).longValue() * THOUSAND).getEpochSecond());
             break;
           default:
             break;
@@ -521,17 +510,28 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
     return result;
   }
 
-  @NotNull
-  private InsertAllResponse getCurrencyConversionFactorInsertAllResponse(final InsertAllRequest insertAllRequest) {
-    final BigQuery bigQuery = bigQueryService.get();
-    final InsertAllResponse response = bigQuery.insertAll(insertAllRequest);
-    if (response.hasErrors()) {
-      for (Map.Entry<Long, List<BigQueryError>> entry : response.getInsertErrors().entrySet()) {
-        log.error("Currency conversion factor insertion failed for an entry: {}", entry);
-      }
-    } else {
-      log.info("Currency conversion factors insertion successful. InsertAllRequest: {}", insertAllRequest);
+  private boolean executeInsertQuery(final QueryJobConfiguration queryJobConfiguration) {
+    boolean successfulExecution = true;
+    Job queryJob = bigQueryService.get().create(JobInfo.newBuilder(queryJobConfiguration).build());
+    try {
+      queryJob = queryJob.waitFor();
+    } catch (final InterruptedException e) {
+      log.error("Unable to insert destination currency conversion factor for QueryJobConfiguration: {}",
+          queryJobConfiguration, e);
+      successfulExecution = false;
     }
-    return response;
+    if (queryJob == null) {
+      log.error("Job no longer exists for QueryJobConfiguration: {}", queryJobConfiguration);
+      successfulExecution = false;
+    } else if (queryJob.getStatus().getError() != null) {
+      log.error("Unable to insert destination currency conversion factor for QueryJobConfiguration: {}. "
+              + "Error: {}",
+          queryJobConfiguration, queryJob.getStatus().getError().toString());
+      successfulExecution = false;
+    } else {
+      final QueryStatistics stats = queryJob.getStatistics();
+      log.info("{} rows inserted successfully", stats.getNumDmlAffectedRows());
+    }
+    return successfulExecution;
   }
 }

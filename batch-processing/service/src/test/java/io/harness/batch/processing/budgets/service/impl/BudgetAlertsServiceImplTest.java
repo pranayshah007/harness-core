@@ -28,6 +28,8 @@ import io.harness.ccm.budget.AlertThresholdBase;
 import io.harness.ccm.budget.ApplicationBudgetScope;
 import io.harness.ccm.budget.EnvironmentType;
 import io.harness.ccm.budget.dao.BudgetDao;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
@@ -46,6 +48,7 @@ import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
 import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import com.google.common.collect.Lists;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -75,6 +78,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private AccountShardService accountShardService;
   @Mock private CloudBillingHelper cloudBillingHelper;
   @Mock private BudgetDao budgetDao;
+  @Mock private BudgetGroupDao budgetGroupDao;
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
   @InjectMocks private BudgetAlertsServiceImpl budgetAlertsService;
 
@@ -131,6 +135,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(mainConfiguration.getBillingDataPipelineConfig())
         .thenReturn(BillingDataPipelineConfig.builder().gcpProjectId("projectId").build());
     when(budgetDao.list(ACCOUNT_ID)).thenReturn(Collections.singletonList(budget));
+    when(budgetGroupDao.list(ACCOUNT_ID, Integer.MAX_VALUE, 0)).thenReturn(Lists.newArrayList(new BudgetGroup[0]));
     when(cloudToHarnessMappingService.getUserGroup(ACCOUNT_ID, userGroupIds[0], true)).thenReturn(userGroup);
     when(cloudToHarnessMappingService.getUser(MEMBER_ID)).thenReturn(user);
     when(ceSlackWebhookService.getByAccountId(budget.getAccountId())).thenReturn(ceSlackWebhook);
@@ -143,7 +148,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSendBudgetAlerts() {
     when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
-    budgetAlertsService.sendBudgetAlerts();
+    budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
     verify(notificationResourceClient, times(1)).sendNotification(any(), any());
   }
 }

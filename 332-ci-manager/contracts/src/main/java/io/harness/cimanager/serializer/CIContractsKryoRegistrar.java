@@ -56,15 +56,16 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.platform.V1.Arch;
 import io.harness.beans.yaml.extended.platform.V1.OS;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
-import io.harness.beans.yaml.extended.repository.Repository;
 import io.harness.beans.yaml.extended.runtime.CloudRuntime;
 import io.harness.beans.yaml.extended.runtime.DockerRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.beans.yaml.extended.runtime.V1.CloudRuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.CloudRuntimeV1.CloudRuntimeSpec;
-import io.harness.beans.yaml.extended.runtime.V1.DockerRuntimeV1;
-import io.harness.beans.yaml.extended.runtime.V1.DockerRuntimeV1.DockerRuntimeSpec;
+import io.harness.beans.yaml.extended.runtime.V1.MachineRuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.MachineRuntimeV1.MachineRuntimeSpec;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1.VMRuntimeSpec;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
@@ -146,7 +147,6 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(ArrayNode.class, 110125);
     kryo.register(IntNode.class, 110126);
     kryo.register(Clone.class, 110127);
-    kryo.register(Repository.class, 110128);
 
     kryo.register(PlatformV1.class, 110129);
     kryo.register(OS.class, 110130);
@@ -154,8 +154,8 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(RuntimeV1.class, 110132);
     kryo.register(CloudRuntimeV1.class, 110133);
     kryo.register(CloudRuntimeSpec.class, 110134);
-    kryo.register(DockerRuntimeV1.class, 110135);
-    kryo.register(DockerRuntimeSpec.class, 110136);
+    kryo.register(MachineRuntimeV1.class, 110135);
+    kryo.register(MachineRuntimeSpec.class, 110136);
     kryo.register(RuntimeV1.Type.class, 110137);
     kryo.register(HostedVmInfraSpec.class, 110138);
     kryo.register(Platform.class, 110139);
@@ -164,5 +164,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(BooleanNode.class, 110142);
     kryo.register(NullNode.class, 110145);
     kryo.register(DockerInfraSpec.class, 110146);
+    kryo.register(VMRuntimeV1.class, 110147);
+    kryo.register(VMRuntimeSpec.class, 110148);
   }
 }

@@ -26,6 +26,7 @@ var githubWebhookMap map[string]pb.GithubWebhookEvent = map[string]pb.GithubWebh
 	"pull_request":        pb.GithubWebhookEvent_GITHUB_PULL_REQUEST,
 	"pull_request_review": pb.GithubWebhookEvent_GITHUB_PULL_REQUEST_REVIEW,
 	"push":                pb.GithubWebhookEvent_GITHUB_PUSH,
+	"release":             pb.GithubWebhookEvent_GITHUB_RELEASE,
 }
 
 func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *zap.SugaredLogger) (out *pb.CreateWebhookResponse, err error) {
@@ -399,7 +400,7 @@ func convertStringsToAzureEnum(strings []string) (enums pb.NativeEvents_Azure) {
 			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED)
 		case "git.pullrequest.merged":
 			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED)
-		case "ms.vss-code.git-pullrequest-comment-event": 
+		case "ms.vss-code.git-pullrequest-comment-event":
 			array = append(array, pb.AzureWebhookEvent_AZURE_PULL_REQUEST_ISSUE_COMMENT)
 		}
 	}

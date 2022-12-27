@@ -13,8 +13,6 @@ import static io.harness.cdng.usage.mapper.ActiveServiceMapper.buildActiveServic
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.computeLicenseConsumed;
 import static io.harness.cdng.usage.utils.LicenseUsageUtils.getEpochMilliNDaysAgo;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DEFAULT_FILTER_PROPERTIES_VALUE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
 
@@ -62,10 +60,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
@@ -121,10 +119,8 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         (DefaultPageableUsageRequestParams) usageRequestParams;
     Pageable pageRequest = defaultUsageRequestParams.getPageRequest();
     ActiveServicesFilterParams filterParams = (ActiveServicesFilterParams) defaultUsageRequestParams.getFilterParams();
-    // the following filter calls are needed because ng_instance_stats and service_infra_info tables do not contain
-    // names only identifiers
-    Scope scope = getScopeFromFilterOrgAndProjectNames(accountIdentifier, filterParams);
-    String serviceIdentifier = getServiceIdentifierByFilterServiceName(scope, filterParams.getServiceName());
+    Scope scope = getScope(accountIdentifier, filterParams);
+    String serviceIdentifier = filterParams != null ? filterParams.getServiceIdentifier() : null;
 
     ActiveServiceFetchData activeServiceFetchData =
         buildActiveServiceFetchData(scope, serviceIdentifier, pageRequest, currentTsInMs);
@@ -153,32 +149,12 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     return new PageImpl<>(activeServiceDTOs, pageRequest, activeServiceBaseResponse.getTotalCountOfItems());
   }
 
-  private Scope getScopeFromFilterOrgAndProjectNames(
-      @NotNull final String accountIdentifier, ActiveServicesFilterParams filterParams) {
-    String orgIdentifier = null;
-    String projectIdentifier = null;
-    if (isNotEmpty(filterParams.getOrgName()) && !DEFAULT_FILTER_PROPERTIES_VALUE.equals(filterParams.getOrgName())) {
-      // TODO - getOrgIdentifier by account id and org name (will be done as part of CDS-47336)
-      throw new NotImplementedException("Not implemented filtering by org name");
+  private Scope getScope(@NotNull String accountIdentifier, @Nullable ActiveServicesFilterParams filterParams) {
+    if (filterParams == null) {
+      return Scope.of(accountIdentifier, null, null);
     }
 
-    if (!DEFAULT_FILTER_PROPERTIES_VALUE.equals(filterParams.getProjectName())
-        && isNotEmpty(filterParams.getProjectName())) {
-      // TODO - getProjectIdentifier by account id, org name and project name (will be done as part of CDS-47336)
-      throw new NotImplementedException("Not implemented filtering by project name");
-    }
-
-    return Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-  }
-
-  private String getServiceIdentifierByFilterServiceName(Scope scope, final String serviceName) {
-    String serviceIdentifier = null;
-    if (!DEFAULT_FILTER_PROPERTIES_VALUE.equals(serviceName) && isNotEmpty(serviceName)) {
-      // TODO - getOrgIdentifier by account id, org name and project name (will be done as part of CDS-47336)
-      throw new NotImplementedException("Not implemented filtering by service name");
-    }
-
-    return serviceIdentifier;
+    return Scope.of(accountIdentifier, filterParams.getOrgIdentifier(), filterParams.getProjectIdentifier());
   }
 
   private ServiceInstanceUsageDTO getServiceInstancesLicenseUsage(String accountIdentifier, ModuleType module) {

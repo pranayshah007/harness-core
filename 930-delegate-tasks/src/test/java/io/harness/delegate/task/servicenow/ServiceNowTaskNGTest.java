@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.exception.HintException;
 import io.harness.rule.Owner;
 
@@ -37,6 +38,7 @@ import org.mockito.MockitoAnnotations;
 
 public class ServiceNowTaskNGTest extends CategoryTest {
   @Mock private ServiceNowTaskNgHelper serviceNowTaskNgHelper;
+  @Mock private ILogStreamingTaskClient logStreamingTaskClient;
   @InjectMocks
   private final ServiceNowTaskNG serviceNowTaskNG =
       new ServiceNowTaskNG(DelegateTaskPackage.builder().data(TaskData.builder().build()).build(), null, null, null);
@@ -60,19 +62,21 @@ public class ServiceNowTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRun() {
     ServiceNowTaskNGResponse taskResponse = ServiceNowTaskNGResponse.builder().build();
-    when(serviceNowTaskNgHelper.getServiceNowResponse(any())).thenReturn(taskResponse);
+    when(serviceNowTaskNgHelper.getServiceNowResponse(any(), any())).thenReturn(taskResponse);
     assertThatCode(() -> serviceNowTaskNG.run(ServiceNowTaskNGParameters.builder().build())).doesNotThrowAnyException();
-    verify(serviceNowTaskNgHelper).getServiceNowResponse(ServiceNowTaskNGParameters.builder().build());
+    verify(serviceNowTaskNgHelper)
+        .getServiceNowResponse(ServiceNowTaskNGParameters.builder().build(), logStreamingTaskClient);
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testRunFailure() {
-    when(serviceNowTaskNgHelper.getServiceNowResponse(any())).thenThrow(new HintException("Exception"));
+    when(serviceNowTaskNgHelper.getServiceNowResponse(any(), any())).thenThrow(new HintException("Exception"));
     assertThatThrownBy(() -> serviceNowTaskNG.run(ServiceNowTaskNGParameters.builder().build()))
         .isInstanceOf(HintException.class);
-    verify(serviceNowTaskNgHelper).getServiceNowResponse(ServiceNowTaskNGParameters.builder().build());
+    verify(serviceNowTaskNgHelper)
+        .getServiceNowResponse(ServiceNowTaskNGParameters.builder().build(), logStreamingTaskClient);
   }
 
   @Test

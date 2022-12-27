@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -27,8 +27,12 @@ public class BudgetGroupDao {
     return hPersistence.save(budgetGroups);
   }
 
-  public void update(String uuid, BudgetGroup budgetGroup) {
-    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
+  public void update(String uuid, String accountId, BudgetGroup budgetGroup) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
+                                   .field(BudgetGroupKeys.uuid)
+                                   .equal(uuid)
+                                   .field(BudgetGroupKeys.accountId)
+                                   .equal(accountId);
     UpdateOperations<BudgetGroup> updateOperations =
         hPersistence.createUpdateOperations(BudgetGroup.class)
             .set(BudgetGroupKeys.name, budgetGroup.getName())
@@ -72,6 +76,15 @@ public class BudgetGroupDao {
     Query<BudgetGroup> query =
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId);
     return query.asList(new FindOptions().skip(startIndex).limit(count));
+  }
+
+  public List<BudgetGroup> list(String accountId, String budgetGroupName) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
+                                   .field(BudgetGroupKeys.accountId)
+                                   .equal(accountId)
+                                   .field(BudgetGroupKeys.name)
+                                   .equal(budgetGroupName);
+    return query.asList();
   }
 
   public boolean delete(String uuid, String accountId) {

@@ -23,7 +23,7 @@ import io.harness.rest.RestResponse;
 
 import software.wings.app.MainConfiguration;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.EmailNotificationServiceImpl;
 

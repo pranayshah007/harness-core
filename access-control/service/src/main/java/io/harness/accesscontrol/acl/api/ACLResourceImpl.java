@@ -20,6 +20,7 @@ import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.accesscontrol.acl.PermissionCheckResult;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
+import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessCheck;
@@ -27,6 +28,7 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessResul
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignmentService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -56,6 +58,7 @@ public class ACLResourceImpl implements ACLResource {
   private final AccessControlPreferenceService accessControlPreferenceService;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
   private final ResourceAttributeProvider resourceAttributeProvider;
+  private final FeatureFlagHelperService featureFlagHelperService;
 
   private Optional<String> getAccountIdentifier(List<PermissionCheckDTO> permissionCheckDTOList) {
     if (permissionCheckDTOList.isEmpty()) {
@@ -129,6 +132,11 @@ public class ACLResourceImpl implements ACLResource {
               .principal(principalToCheckPermissionsFor)
               .build());
     }
+    boolean useRoleAssignments = false;
+    if (accountIdentifierOptional.isPresent()) {
+      useRoleAssignments =
+          featureFlagHelperService.isEnabled(FeatureName.SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
+    }
 
     if (notPresent(principalToCheckPermissionsFor)) {
       principalToCheckPermissionsFor =
@@ -136,8 +144,10 @@ public class ACLResourceImpl implements ACLResource {
     }
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
-    List<PermissionCheckResult> permissionCheckResults =
-        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
+    List<PermissionCheckResult> permissionCheckResults = useRoleAssignments
+        ? aclService.checkAccessUsingRoleAssignments(
+            principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider)
+        : aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
 
     AccessCheckResponseDTO accessCheckResponseDTO =
         AccessCheckResponseDTO.builder()

@@ -762,13 +762,13 @@ public class CfCommandTaskHelperNG {
   private void configureAutoscalarIfNeeded(CfDeployCommandRequestNG cfCommandDeployRequest,
       ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
-    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
-        && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())
+    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getTasManifestsPackage() != null
+        && isNotEmpty(cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml())
         && cfCommandDeployRequest.getMaxCount() <= cfCommandDeployRequest.getUpsizeCount()) {
       // This is autoscalar file inside workingDirectory
       String filePath =
           appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-      createYamlFileLocally(filePath, cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml());
+      createYamlFileLocally(filePath, cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml());
 
       // upload autoscalar config
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());

@@ -82,30 +82,39 @@ import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
+import io.harness.threading.ThreadPool;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 
 @OwnedBy(DX)
 public class GitSyncModule extends AbstractModule {
-  private static final AtomicReference<GitSyncModule> instanceRef = new AtomicReference<>();
+  private static GitSyncModule gitSyncModule;
   public static final String SCM_ON_MANAGER = "scmOnManager";
   public static final String SCM_ON_DELEGATE = "scmOnDelegate";
+  public static final String GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME = "gitxBackgroundCacheUpdateExecutorName";
+  private final GitServiceConfiguration gitServiceConfiguration;
 
-  public static GitSyncModule getInstance() {
-    if (instanceRef.get() == null) {
-      instanceRef.compareAndSet(null, new GitSyncModule());
+  private GitSyncModule(GitServiceConfiguration gitServiceConfiguration) {
+    this.gitServiceConfiguration = gitServiceConfiguration;
+  }
+
+  public static GitSyncModule getInstance(GitServiceConfiguration gitServiceConfiguration) {
+    if (gitSyncModule == null) {
+      gitSyncModule = new GitSyncModule(gitServiceConfiguration);
     }
-    return instanceRef.get();
+    return gitSyncModule;
   }
 
   @Provides
@@ -181,5 +190,14 @@ public class GitSyncModule extends AbstractModule {
 
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
+  }
+
+  @Provides
+  @Singleton
+  @Named(GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME)
+  public ExecutorService orchestrationEventExecutorService() {
+    return ThreadPool.create(
+        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(),
+        new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build());
   }
 }

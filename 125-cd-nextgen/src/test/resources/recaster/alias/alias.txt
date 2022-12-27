@@ -614,6 +614,7 @@ io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome
 io.harness.cdng.provision.terragrunt.TerragruntInheritOutput
 io.harness.cdng.provision.terragrunt.TerragruntModuleConfig
 io.harness.cdng.provision.terragrunt.TerragruntApplyOutcome
+io.harness.cdng.provision.terragrunt.TerragruntConfigSweepingOutput
 io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
@@ -678,3 +679,11 @@ io.harness.cdng.tas.TasBGAppSetupStepParameters
 io.harness.cdng.tas.TasCanaryAppSetupStepInfo
 io.harness.cdng.tas.TasManifestFileContents
 io.harness.cdng.tas.TasStepPassThroughData
+io.harness.cdng.aws.asg.AsgRollingDeployStepNode
+io.harness.cdng.aws.asg.AsgRollingDeployStepParameters
+io.harness.cdng.aws.asg.AsgRollingDeployStepInfo
+io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome
+io.harness.cdng.aws.asg.AsgStepExceptionPassThroughData
+io.harness.cdng.aws.asg.AsgRollingRollbackStepNode
+io.harness.cdng.aws.asg.AsgRollingRollbackStepParameters
+io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo

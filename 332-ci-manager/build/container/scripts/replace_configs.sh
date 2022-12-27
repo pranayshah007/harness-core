@@ -171,13 +171,13 @@ if [[ "" != "$DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE" ]]; then
   export DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE; yq -i '.ciExecutionServiceConfig.delegateServiceEndpointVariableValue=env(DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE)' $CONFIG_FILE
 fi
 if [[ "" != "$MINING_GCS_PROJECT_ID" ]]; then
-  export $MINING_GCS_PROJECT_ID; yq -i '.ciExecutionServiceConfig.miningPatternConfig.projectId=env($MINING_GCS_PROJECT_ID)' $CONFIG_FILE
+  export MINING_GCS_PROJECT_ID; yq -i '.ciExecutionServiceConfig.miningPatternConfig.projectId=env(MINING_GCS_PROJECT_ID)' $CONFIG_FILE
 fi
 if [[ "" != "$MINING_GCS_BUCKET_NAME" ]]; then
-  export $MINING_GCS_BUCKET_NAME; yq -i '.ciExecutionServiceConfig.miningPatternConfig.bucketName=env($MINING_GCS_BUCKET_NAME)' $CONFIG_FILE
+  export MINING_GCS_BUCKET_NAME; yq -i '.ciExecutionServiceConfig.miningPatternConfig.bucketName=env(MINING_GCS_BUCKET_NAME)' $CONFIG_FILE
 fi
 if [[ "" != "$MINING_GCS_CREDS" ]]; then
-  export $MINING_GCS_CREDS; yq -i '.ciExecutionServiceConfig.miningPatternConfig.gcsCreds=env($MINING_GCS_CREDS)' $CONFIG_FILE
+  export MINING_GCS_CREDS; yq -i '.ciExecutionServiceConfig.miningPatternConfig.gcsCreds=env(MINING_GCS_CREDS)' $CONFIG_FILE
 fi
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE

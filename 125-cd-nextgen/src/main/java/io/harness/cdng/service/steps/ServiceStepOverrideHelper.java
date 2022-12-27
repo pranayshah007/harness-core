@@ -18,12 +18,17 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
+import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.WebAppSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -237,6 +242,142 @@ public class ServiceStepOverrideHelper {
         ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
   }
 
+  public void prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
+      String configFilesSweepingOutputName) {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+    if (ngServiceV2InfoConfig == null) {
+      throw new InvalidRequestException("No service configuration found in the service");
+    }
+    final List<ConnectionStringsConfiguration> svcConnectionStrings =
+        prepareFinalConnectionStrings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
+
+    if (isNotEmpty(svcConnectionStrings)) {
+      final NgConnectionStringsSweepingOutput connectionStringsSweepingOutput =
+          NgConnectionStringsSweepingOutput.builder()
+              .store(
+                  svcConnectionStrings.stream().findFirst().map(ConnectionStringsConfiguration::getStore).orElse(null))
+              .build();
+      if (connectionStringsSweepingOutput.getStore() != null) {
+        sweepingOutputService.consume(
+            ambiance, configFilesSweepingOutputName, connectionStringsSweepingOutput, StepCategory.STAGE.name());
+      }
+    }
+  }
+
+  public void prepareAndSaveFinalAppServiceMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
+      String appSettingsSweepingOutputName) {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+    if (ngServiceV2InfoConfig == null) {
+      throw new InvalidRequestException("No service configuration found in the service");
+    }
+    final List<ApplicationSettingsConfiguration> finalAppSettings =
+        prepareFinalAppSettings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
+
+    if (isNotEmpty(finalAppSettings)) {
+      final NgAppSettingsSweepingOutput appSettingsSweepingOutput =
+          NgAppSettingsSweepingOutput.builder()
+              .store(finalAppSettings.stream().findFirst().map(ApplicationSettingsConfiguration::getStore).orElse(null))
+              .build();
+      if (appSettingsSweepingOutput.getStore() != null) {
+        sweepingOutputService.consume(
+            ambiance, appSettingsSweepingOutputName, appSettingsSweepingOutput, StepCategory.STAGE.name());
+      }
+    }
+  }
+
+  @VisibleForTesting
+  public List<ConnectionStringsConfiguration> prepareFinalConnectionStrings(NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig environmentConfig) {
+    final List<ConnectionStringsConfiguration> svcOverrideConnectionStrings =
+        getSvcOverrideConnectionStrings(serviceOverrideConfig);
+    if (isNotEmpty(svcOverrideConnectionStrings)) {
+      return svcOverrideConnectionStrings;
+    }
+    final List<ConnectionStringsConfiguration> envGlobalConnectionStrings =
+        getEnvironmentGlobalConnectionStrings(environmentConfig);
+    if (isNotEmpty(envGlobalConnectionStrings)) {
+      return envGlobalConnectionStrings;
+    }
+    return getSvcConnectionStrings(serviceV2Config);
+  }
+
+  @VisibleForTesting
+  public List<ApplicationSettingsConfiguration> prepareFinalAppSettings(NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig environmentConfig) {
+    final List<ApplicationSettingsConfiguration> svcOverrideAppSettings =
+        getSvcOverrideAppSettings(serviceOverrideConfig);
+    if (isNotEmpty(svcOverrideAppSettings)) {
+      return svcOverrideAppSettings;
+    }
+    final List<ApplicationSettingsConfiguration> envGlobalAppSettings =
+        getEnvironmentGlobalAppSettings(environmentConfig);
+    if (isNotEmpty(envGlobalAppSettings)) {
+      return envGlobalAppSettings;
+    }
+    return getSvcAppSettings(serviceV2Config);
+  }
+
+  private List<ConnectionStringsConfiguration> getEnvironmentGlobalConnectionStrings(
+      NGEnvironmentConfig environmentConfig) {
+    if (isNoEnvGlobalConnectionStringsOverridePresent(environmentConfig)) {
+      return emptyList();
+    }
+    return Collections.singletonList(
+        environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConnectionStrings());
+  }
+
+  private List<ApplicationSettingsConfiguration> getEnvironmentGlobalAppSettings(
+      NGEnvironmentConfig environmentConfig) {
+    if (isNoEnvGlobalAppSettingsOverridePresent(environmentConfig)) {
+      return emptyList();
+    }
+    return Collections.singletonList(
+        environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getApplicationSettings());
+  }
+
+  private List<ConnectionStringsConfiguration> getSvcConnectionStrings(NGServiceV2InfoConfig serviceV2Config) {
+    if (hasWebAppSpec(serviceV2Config)
+        && ((WebAppSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getConnectionStrings() != null) {
+      return Collections.singletonList(
+          ((WebAppSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getConnectionStrings());
+    }
+    return Collections.emptyList();
+  }
+
+  private List<ApplicationSettingsConfiguration> getSvcAppSettings(NGServiceV2InfoConfig serviceV2Config) {
+    if (hasWebAppSpec(serviceV2Config)
+        && ((WebAppSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getApplicationSettings() != null) {
+      return Collections.singletonList(
+          ((WebAppSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getApplicationSettings());
+    }
+    return emptyList();
+  }
+
+  private boolean hasWebAppSpec(NGServiceV2InfoConfig serviceV2Config) {
+    return serviceV2Config != null && serviceV2Config.getServiceDefinition() != null
+        && WebAppSpec.class.isAssignableFrom(serviceV2Config.getServiceDefinition().getServiceSpec().getClass());
+  }
+
+  private List<ConnectionStringsConfiguration> getSvcOverrideConnectionStrings(
+      NGServiceOverrideConfig serviceOverrideConfig) {
+    if (serviceOverrideConfig == null || serviceOverrideConfig.getServiceOverrideInfoConfig() == null
+        || serviceOverrideConfig.getServiceOverrideInfoConfig().getConnectionStrings() == null) {
+      return emptyList();
+    }
+    return Collections.singletonList(serviceOverrideConfig.getServiceOverrideInfoConfig().getConnectionStrings());
+  }
+
+  private List<ApplicationSettingsConfiguration> getSvcOverrideAppSettings(
+      NGServiceOverrideConfig serviceOverrideConfig) {
+    if (serviceOverrideConfig == null || serviceOverrideConfig.getServiceOverrideInfoConfig() == null
+        || serviceOverrideConfig.getServiceOverrideInfoConfig().getApplicationSettings() == null) {
+      return emptyList();
+    }
+    return Collections.singletonList(serviceOverrideConfig.getServiceOverrideInfoConfig().getApplicationSettings());
+  }
+
   @VisibleForTesting
   public static List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride) {
@@ -282,5 +423,19 @@ public class ServiceStepOverrideHelper {
 
   private static boolean isNoEnvGlobalConfigFileOverridePresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
     return environmentGlobalOverride == null || environmentGlobalOverride.getConfigFiles() == null;
+  }
+
+  private boolean isNoEnvGlobalAppSettingsOverridePresent(NGEnvironmentConfig environmentConfig) {
+    return environmentConfig == null || environmentConfig.getNgEnvironmentInfoConfig() == null
+        || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
+        || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getApplicationSettings()
+        == null;
+  }
+
+  private boolean isNoEnvGlobalConnectionStringsOverridePresent(NGEnvironmentConfig environmentConfig) {
+    return environmentConfig == null || environmentConfig.getNgEnvironmentInfoConfig() == null
+        || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
+        || environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConnectionStrings()
+        == null;
   }
 }

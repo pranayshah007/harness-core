@@ -11,7 +11,6 @@ directories:
   400-rest
   420-delegate-service
   425-verification-commons
-  430-cv-nextgen-commons
   440-connector-nextgen
   450-ce-views
   470-alert
@@ -44,7 +43,6 @@ directories:
   945-account-mgmt
   948-access-control-admin-client
   948-access-control-sdk
-  948-cv-nextgen-beans
   949-access-control-commons
   950-command-library-common
   950-delegate-tasks-beans

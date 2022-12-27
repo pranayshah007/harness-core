@@ -22,6 +22,7 @@ import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesTestDataDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesTestDataDTO.MetricData;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -128,7 +129,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       UpdateOperations<TimeSeriesRecord> updateOperations =
           hPersistence.createUpdateOperations(TimeSeriesRecord.class)
               .setOnInsert(TimeSeriesRecordKeys.uuid, generateUuid())
-              .setOnInsert(TimeSeriesRecordKeys.createdAt, Instant.now().toEpochMilli())
+              .setOnInsert(VerificationTaskBaseKeys.createdAt, Instant.now().toEpochMilli())
               .setOnInsert(TimeSeriesRecordKeys.validUntil, TimeSeriesRecord.builder().build().getValidUntil())
               .set(TimeSeriesRecordKeys.accountId, timeSeriesRecord.getAccountId())
               .addToSet(TimeSeriesRecordKeys.timeSeriesGroupValues,

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
@@ -55,8 +56,9 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering);
+      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags);
   }
 
   @Override
@@ -78,6 +80,7 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
         .delegateSelectors(delegateSelectors)
         .overrides(overrides)
         .skipRendering(skipRendering)
+        .commandFlags(commandFlags)
         .build();
   }
 
