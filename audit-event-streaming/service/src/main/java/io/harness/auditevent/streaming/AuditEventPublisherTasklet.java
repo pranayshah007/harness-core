@@ -26,10 +26,10 @@ public class AuditEventPublisherTasklet implements Tasklet {
   private final StreamingDestinationsService streamingDestinationsService;
   private final AuditEventStreamingService auditEventStreamingService;
 
-  public AuditEventPublisherTasklet(
-      StreamingDestinationsService streamingDestinationsService, AuditEventStreamingService batchProcessorService) {
+  public AuditEventPublisherTasklet(StreamingDestinationsService streamingDestinationsService,
+      AuditEventStreamingService auditEventStreamingService) {
     this.streamingDestinationsService = streamingDestinationsService;
-    this.auditEventStreamingService = batchProcessorService;
+    this.auditEventStreamingService = auditEventStreamingService;
   }
 
   @Override
