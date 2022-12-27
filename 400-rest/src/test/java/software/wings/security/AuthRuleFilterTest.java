@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.AKRITI;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -18,9 +19,13 @@ import static io.harness.rule.OwnerRule.VIKAS;
 
 import static software.wings.security.AuthenticationFilter.API_KEY_HEADER;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
+import static software.wings.security.PermissionAttribute.PermissionType.APP;
+import static software.wings.security.PermissionAttribute.PermissionType.APP_TEMPLATE;
 import static software.wings.security.PermissionAttribute.PermissionType.AUDIT_VIEWER;
 import static software.wings.security.PermissionAttribute.PermissionType.CE_ADMIN;
 import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEWER;
+import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
+import static software.wings.security.PermissionAttribute.PermissionType.ENV;
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ACCOUNT_DEFAULTS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
@@ -40,9 +45,13 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SSH_AND_WINRM;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_TAGS;
+import static software.wings.security.PermissionAttribute.PermissionType.PIPELINE;
+import static software.wings.security.PermissionAttribute.PermissionType.PROVISIONER;
+import static software.wings.security.PermissionAttribute.PermissionType.SERVICE;
 import static software.wings.security.PermissionAttribute.PermissionType.TEMPLATE_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_READ;
+import static software.wings.security.PermissionAttribute.PermissionType.WORKFLOW;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
@@ -470,6 +479,44 @@ public class AuthRuleFilterTest extends WingsBaseTest {
     if (!exception) {
       assertThat(requestContext.getMethod()).isEqualTo(method);
     }
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetEntityClassNameWhenListHasElementInvalid() {
+    List<PermissionAttribute> permissionAttributes = Arrays.asList(new PermissionAttribute(AUDIT_VIEWER));
+    authRuleFilter.getParameterName(permissionAttributes);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetParameterNameWhenListIsEmpty() {
+    List<PermissionAttribute> permissionAttributes = Arrays.asList();
+
+    String entityClassName = authRuleFilter.getParameterName(permissionAttributes);
+    assertThat(entityClassName).isNull();
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetParameterClassNameWhenListIsValid() {
+    List<PermissionAttribute> permissionAttributes =
+        Arrays.asList(new PermissionAttribute(SERVICE), new PermissionAttribute(PROVISIONER),
+            new PermissionAttribute(ENV), new PermissionAttribute(WORKFLOW), new PermissionAttribute(PIPELINE),
+            new PermissionAttribute(DEPLOYMENT), new PermissionAttribute(APP_TEMPLATE), new PermissionAttribute(APP));
+
+    permissionAttributes.stream().map(v -> {
+      PermissionAttribute permissionAttribute = new PermissionAttribute(v.getPermissionType());
+      String entityClassName = authRuleFilter.getParameterName(List.of(permissionAttribute));
+      assertThat(entityClassName).isNotNull();
+      return null;
+    });
+
+    String entityClassName = authRuleFilter.getParameterName(permissionAttributes);
+    assertThat(entityClassName).isNotNull();
   }
 
   private Class getMockResourceClass() {

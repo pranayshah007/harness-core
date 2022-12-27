@@ -472,7 +472,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     return null;
   }
 
-  private String getParameterName(List<PermissionAttribute> permissionAttributes) {
+  @VisibleForTesting
+  String getParameterName(List<PermissionAttribute> permissionAttributes) {
     Optional<String> entityFieldNameOptional =
         permissionAttributes.stream()
             .map(permissionAttribute -> {
@@ -499,6 +500,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
                 fieldName = "templateId";
               } else if (permissionType == PermissionType.APP) {
                 fieldName = "appId";
+              } else {
+                throw new InvalidRequestException("Invalid permission type: " + permissionType);
               }
 
               return fieldName;

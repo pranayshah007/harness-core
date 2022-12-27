@@ -48,11 +48,11 @@ import io.harness.reflection.ReflectionUtils;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.audit.AuditHeader;
 import software.wings.beans.Base;
+import software.wings.beans.CGConstants;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.User;
-import software.wings.beans.alert.Alert;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRequestContext;
 import software.wings.security.UserRequestContext.EntityInfo;
@@ -71,7 +71,6 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import io.dropwizard.lifecycle.Managed;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,11 +105,9 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
     super(primaryDatastore, harnessConnectionPoolListener);
   }
 
-  public static final String GLOBAL_APP_ID = "__GLOBAL_APP_ID__";
-
   @Override
   public <T extends PersistentEntity> T getWithAppId(Class<T> cls, String appId, String id) {
-    return createQuery(cls).filter("appId", appId).filter(ID_KEY, id).get();
+    return createQuery(cls).filter(CGConstants.APP_ID_KEY, appId).filter(ID_KEY, id).get();
   }
 
   @Override
@@ -346,8 +343,8 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
           pageRequest.addFilter("accountId", Operator.EQ, userRequestContext.getAccountId());
         } else {
           Set<String> appIds = new HashSet(userRequestContext.getAppIds());
-          appIds.add(GLOBAL_APP_ID);
-          pageRequest.addFilter("appId", Operator.IN, appIds.toArray());
+          appIds.add(CGConstants.GLOBAL_APP_ID);
+          pageRequest.addFilter(CGConstants.APP_ID_KEY, Operator.IN, appIds.toArray());
         }
       } else {
         return false;

@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -24,6 +25,8 @@ import static software.wings.security.EnvFilter.FilterType.NON_PROD;
 import static software.wings.security.EnvFilter.FilterType.PROD;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
+import static software.wings.security.PermissionAttribute.PermissionType.APP;
+import static software.wings.security.PermissionAttribute.PermissionType.APP_TEMPLATE;
 import static software.wings.security.PermissionAttribute.PermissionType.AUDIT_VIEWER;
 import static software.wings.security.PermissionAttribute.PermissionType.CE_ADMIN;
 import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEWER;
@@ -52,6 +55,8 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SSH_AND_WINRM;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_TAGS;
 import static software.wings.security.PermissionAttribute.PermissionType.PIPELINE;
+import static software.wings.security.PermissionAttribute.PermissionType.PROVISIONER;
+import static software.wings.security.PermissionAttribute.PermissionType.SERVICE;
 import static software.wings.security.PermissionAttribute.PermissionType.TEMPLATE_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_READ;
@@ -75,6 +80,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -95,6 +101,7 @@ import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.GenericEntityFilter.FilterType;
+import software.wings.security.PermissionAttribute;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.UserPermissionInfo;
@@ -1278,6 +1285,44 @@ public class AuthHandlerTest extends WingsBaseTest {
     assertThat(userPermissionInfo.getAppPermissionMap().get(APP_ID).getDeploymentPermissions().get(workflow4.getUuid()))
         .isNotNull()
         .contains(Action.UPDATE, Action.READ, Action.DELETE);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetEntityClassNameWhenListIsEmpty() {
+    List<PermissionAttribute> permissionAttributes = asList();
+
+    String entityClassName = authHandler.getEntityClassName(permissionAttributes);
+    assertThat(entityClassName).isNull();
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetEntityClassNameWhenListHasElementInvalid() {
+    List<PermissionAttribute> permissionAttributes = asList(new PermissionAttribute(AUDIT_VIEWER));
+    authHandler.getEntityClassName(permissionAttributes);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetEntityClassNameWhenListIsValid() {
+    List<PermissionAttribute> permissionAttributes =
+        asList(new PermissionAttribute(SERVICE), new PermissionAttribute(PROVISIONER), new PermissionAttribute(ENV),
+            new PermissionAttribute(WORKFLOW), new PermissionAttribute(PIPELINE), new PermissionAttribute(DEPLOYMENT),
+            new PermissionAttribute(APP_TEMPLATE), new PermissionAttribute(APP));
+
+    permissionAttributes.stream().map(v -> {
+      PermissionAttribute permissionAttribute = new PermissionAttribute(v.getPermissionType());
+      String entityClassName = authHandler.getEntityClassName(List.of(permissionAttribute));
+      assertThat(entityClassName).isNotNull();
+      return null;
+    });
+
+    String entityClassName = authHandler.getEntityClassName(permissionAttributes);
+    assertThat(entityClassName).isNotNull();
   }
 
   @Test

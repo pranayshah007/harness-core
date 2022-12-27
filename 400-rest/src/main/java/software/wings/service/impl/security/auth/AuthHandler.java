@@ -138,6 +138,7 @@ import software.wings.service.intfc.template.TemplateService;
 import software.wings.sm.StateType;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -1187,7 +1188,8 @@ public class AuthHandler {
     return null;
   }
 
-  private String getEntityClassName(List<PermissionAttribute> permissionAttributes) {
+  @VisibleForTesting
+  String getEntityClassName(List<PermissionAttribute> permissionAttributes) {
     Optional<String> entityFieldNameOptional =
         permissionAttributes.stream()
             .map(permissionAttribute -> {
