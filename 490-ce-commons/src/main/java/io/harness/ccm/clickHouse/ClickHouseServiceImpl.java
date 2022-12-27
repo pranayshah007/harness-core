@@ -20,7 +20,7 @@ public class ClickHouseServiceImpl implements ClickHouseService {
   @Override
   public List<String> executeClickHouseQuery(String query, boolean returnResult) throws Exception {
     log.info(query);
-    String url = "jdbc:ch://clickhouse-shard0-0.clickhouse-shard0.harness.svc.cluster.local:8123,clickhouse-shard0-1.clickhouse-shard0.harness.svc.cluster.local:8123";
+    String url = "jdbc:ch://clickhouse.harness.svc.cluster.local:8123";
     Properties properties = new Properties();
     ClickHouseDataSource dataSource = new ClickHouseDataSource(url, properties);
     try (Connection connection = dataSource.getConnection("default", "ItmTozDqu0");
