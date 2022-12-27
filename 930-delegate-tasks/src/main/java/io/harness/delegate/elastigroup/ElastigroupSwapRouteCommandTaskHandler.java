@@ -17,7 +17,6 @@ import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAM
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -55,6 +54,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -89,6 +89,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
         ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true, commandUnitsProgress);
     try {
+      ElastigroupSwapRouteResultBuilder resultBuilder = ElastigroupSwapRouteResult.builder();
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
           elastigroupSwapRouteCommandRequest.getConnectorEncryptedDetails());
@@ -103,28 +104,30 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
           ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiToken = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
-      String prodElastiGroupName = elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix();
-      String stageElastiGroupName = format(
-          "%s__%s", elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
-      ElastiGroup newElastiGroup = elastigroupSwapRouteCommandRequest.getNewElastigroup();
-      String newElastiGroupId = (newElastiGroup != null) ? newElastiGroup.getId() : EMPTY;
-      ElastiGroup oldElastiGroup = elastigroupSwapRouteCommandRequest.getOldElastigroup();
-      String oldElastiGroupId = (oldElastiGroup != null) ? oldElastiGroup.getId() : EMPTY;
+      String prodElastigroupName = elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix();
+      ElastiGroup newElastigroup = elastigroupSwapRouteCommandRequest.getNewElastigroup();
 
-      if (isNotEmpty(newElastiGroupId)) {
-        deployLogCallback.saveExecutionLog(format(
-            "Sending request to rename Elastigroup with Id: [%s] to [%s]", newElastiGroupId, prodElastiGroupName));
-        spotInstHelperServiceDelegate.updateElastiGroup(spotInstApiTokenRef, spotInstAccountId, newElastiGroupId,
-            ElastiGroupRenameRequest.builder().name(prodElastiGroupName).build());
+      if (newElastigroup != null && isNotEmpty(newElastigroup.getId())) {
+        deployLogCallback.saveExecutionLog(format("Sending request to rename Elastigroup with Id: [%s] to [%s]",
+            newElastigroup.getId(), prodElastigroupName));
+        spotInstHelperServiceDelegate.updateElastiGroup(spotInstApiToken, spotInstAccountId, newElastigroup.getId(),
+            ElastiGroupRenameRequest.builder().name(prodElastigroupName).build());
+        newElastigroup.setName(prodElastigroupName);
+        resultBuilder.ec2InstanceIdsAdded(elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+            spotInstApiToken, spotInstAccountId, newElastigroup));
       }
 
-      if (isNotEmpty(oldElastiGroupId)) {
-        deployLogCallback.saveExecutionLog(format(
-            "Sending request to rename Elastigroup with Id: [%s] to [%s]", oldElastiGroupId, stageElastiGroupName));
-        spotInstHelperServiceDelegate.updateElastiGroup(spotInstApiTokenRef, spotInstAccountId, oldElastiGroupId,
-            ElastiGroupRenameRequest.builder().name(stageElastiGroupName).build());
+      String stageElastigroupName = format(
+          "%s__%s", elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
+      ElastiGroup oldElastigroup = elastigroupSwapRouteCommandRequest.getOldElastigroup();
+      if (oldElastigroup != null && isNotEmpty(oldElastigroup.getId())) {
+        deployLogCallback.saveExecutionLog(format("Sending request to rename Elastigroup with Id: [%s] to [%s]",
+            oldElastigroup.getId(), stageElastigroupName));
+        spotInstHelperServiceDelegate.updateElastiGroup(spotInstApiToken, spotInstAccountId, oldElastigroup.getId(),
+            ElastiGroupRenameRequest.builder().name(stageElastigroupName).build());
+        oldElastigroup.setName(stageElastigroupName);
       }
 
       String region = connectedCloudProvider.getRegion();
@@ -137,7 +140,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
       }
       deployLogCallback.saveExecutionLog("Route Updated Successfully", INFO, SUCCESS);
 
-      Boolean downsizeOldElastigroup;
+      boolean downsizeOldElastigroup;
       if ("true".equalsIgnoreCase(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
           || "false".equalsIgnoreCase(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())) {
         downsizeOldElastigroup = Boolean.parseBoolean(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup());
@@ -148,18 +151,17 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         throw new InvalidRequestException(errorMessage);
       }
 
-      if (downsizeOldElastigroup && elastigroupSwapRouteCommandRequest.getOldElastigroup() != null
-          && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
-        ElastiGroup temp = ElastiGroup.builder()
-                               .id(oldElastiGroupId)
-                               .name(stageElastiGroupName)
-                               .capacity(ElastiGroupCapacity.builder().minimum(0).maximum(0).target(0).build())
-                               .build();
+      if (downsizeOldElastigroup && oldElastigroup != null && isNotEmpty(oldElastigroup.getId())) {
+        ElastiGroup oldElastigroupWithCapacityZero = oldElastigroup.clone();
+        oldElastigroupWithCapacityZero.setCapacity(
+            ElastiGroupCapacity.builder().target(0).minimum(0).maximum(0).build());
         int steadyStateTimeOut =
             elastigroupDeployTaskHelper.getTimeOut(elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin());
-        elastigroupDeployTaskHelper.scaleElastigroup(temp, spotInstApiTokenRef, spotInstAccountId, steadyStateTimeOut,
-            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(),
+        elastigroupDeployTaskHelper.scaleElastigroup(oldElastigroupWithCapacityZero, spotInstApiToken,
+            spotInstAccountId, steadyStateTimeOut, iLogStreamingTaskClient,
+            ElastigroupCommandUnitConstants.DOWNSCALE.toString(),
             ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), commandUnitsProgress);
+        resultBuilder.ec2InstanceIdsExisting(new ArrayList<>());
       } else {
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
             iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(), true, commandUnitsProgress);
@@ -167,17 +169,18 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
             ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), true, commandUnitsProgress);
         deployLogCallback.saveExecutionLog("No downsize required", INFO, SUCCESS);
+        resultBuilder.ec2InstanceIdsExisting(elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+            spotInstApiToken, spotInstAccountId, oldElastigroup));
       }
 
       deployLogCallback.saveExecutionLog(
           "Completed Swap Target Group for Spotinst", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
-      ElastigroupSwapRouteResultBuilder elastigroupSwapRouteResult = ElastigroupSwapRouteResult.builder();
-      setElastigroupResult(elastigroupSwapRouteResult, elastigroupSwapRouteCommandRequest);
+      setElastigroupResult(resultBuilder, elastigroupSwapRouteCommandRequest);
 
       return ElastigroupSwapRouteResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .elastigroupSwapRouteResult(elastigroupSwapRouteResult.build())
+          .elastigroupSwapRouteResult(resultBuilder.build())
           .build();
 
     } catch (Exception ex) {

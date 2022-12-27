@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper.getElastigroupString;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -18,8 +17,6 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TA
 import static io.harness.spotinst.model.SpotInstConstants.defaultSteadyStateTimeout;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,11 +30,9 @@ import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
-import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,23 +59,6 @@ public class ElastigroupBGTaskHelper {
     updateElastigroup(spotInstToken, spotInstAccountId, elastiGroup, scaleLogCallback);
     elastigroupCommandTaskNGHelper.waitForSteadyState(
         elastiGroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
-  }
-
-  public List<String> getAllEc2InstanceIdsOfElastigroup(
-      String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup) throws Exception {
-    if (elastigroup == null) {
-      return emptyList();
-    }
-
-    final List<ElastiGroupInstanceHealth> elastigroupInstanceHealths =
-        spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
-            spotInstToken, spotInstAccountId, elastigroup.getId());
-
-    if (isEmpty(elastigroupInstanceHealths)) {
-      return emptyList();
-    }
-
-    return elastigroupInstanceHealths.stream().map(ElastiGroupInstanceHealth::getInstanceId).collect(toList());
   }
 
   private LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,

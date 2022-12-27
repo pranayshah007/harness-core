@@ -18,6 +18,9 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(PL)
 public interface ACLService {
+  List<PermissionCheckResult> checkAccessUsingRoleAssignments(
+      Principal principal, List<PermissionCheck> permissionChecks, ResourceAttributeProvider resourceAttributeProvider);
+
   List<PermissionCheckResult> checkAccess(@NotNull @Valid Principal principal,
       @NotNull List<PermissionCheck> permissions, ResourceAttributeProvider resourceAttributeProvider);
 }

@@ -862,6 +862,48 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceWarmup": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "minimumHealthyPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "skipMatching": {
+              "type": "boolean"
+            },
+            "useAlreadyRunningInstances": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgScalingPolicyManifest": {
       "allOf": [
         {
@@ -3947,6 +3989,9 @@
             },
             "taskDefinition": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "taskDefinitionArn": {
+              "type": "string"
             }
           }
         }
@@ -4626,6 +4671,12 @@
               "minLength": 1
             }
           ]
+        },
+        "servicesOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceOverrideInputsYaml"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6586,6 +6637,21 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/K8sStepCommandFlag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -6741,6 +6807,21 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/K8sStepCommandFlag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -6811,6 +6892,21 @@
             "instanceSelection"
           ],
           "properties": {
+            "commandFlags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/K8sStepCommandFlag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -6971,6 +7067,21 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/K8sStepCommandFlag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -7009,6 +7120,21 @@
         {
           "type": "object",
           "properties": {
+            "commandFlags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/K8sStepCommandFlag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -7096,6 +7222,24 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "K8sStepCommandFlag": {
+      "type": "object",
+      "required": [
+        "commandType"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "Apply"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KubernetesServiceSpec": {
@@ -10118,6 +10262,30 @@
         }
       ]
     },
+    "ServiceOverrideInputsYaml": {
+      "type": "object",
+      "required": [
+        "serviceRef"
+      ],
+      "properties": {
+        "serviceOverrideInputs": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/JsonNode"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "serviceRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServiceOverrides": {
       "type": "object",
       "properties": {
@@ -11024,6 +11192,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AsgCanaryDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgRollingDeployStepInfo"
               }
             }
           }

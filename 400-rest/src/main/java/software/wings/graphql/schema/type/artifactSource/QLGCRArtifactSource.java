@@ -16,20 +16,17 @@ import io.harness.annotations.dev.TargetModule;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDC)
 @Value
-@Builder
+@SuperBuilder
 @FieldNameConstants(innerTypeName = "QLGCRArtifactSourceKeys")
 @Scope(PermissionAttribute.ResourceType.SERVICE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLGCRArtifactSource implements QLArtifactSource {
-  String name;
-  String id;
-  Long createdAt;
+public class QLGCRArtifactSource extends QLArtifactSourceBase {
   String registryHostName;
   String dockerImageName;
   String gcpCloudProviderId;

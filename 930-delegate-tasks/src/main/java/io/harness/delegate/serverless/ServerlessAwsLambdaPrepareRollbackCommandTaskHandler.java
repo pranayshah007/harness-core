@@ -177,8 +177,11 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
         ServerlessPrepareRollbackDataResponse.builder();
     ServerlessAwsLambdaPrepareRollbackDataResultBuilder serverlessAwsLambdaPrepareRollbackDataResultBuilder =
         ServerlessAwsLambdaPrepareRollbackDataResult.builder();
-    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(executionLogCallback,
-            serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent())) {
+    String cloudFormationStackName = serverlessAwsCommandTaskHelper.getCloudFormationStackName(serverlessManifestSchema,
+        serverlessClient, serverlessDelegateTaskParams, serverlessAwsLambdaInfraConfig, timeoutInMillis,
+        serverlessManifestConfig, environmentVariables, executionLogCallback);
+    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
+            cloudFormationStackName, serverlessAwsLambdaInfraConfig)) {
       executionLogCallback.saveExecutionLog(format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO);
       serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(null);
       serverlessAwsLambdaPrepareRollbackDataResultBuilder.isFirstDeployment(true);
@@ -197,7 +200,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
       List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
       Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(
-          executionLogCallback, timeStamps, serverlessPrepareRollbackDataRequest);
+          timeStamps, serverlessPrepareRollbackDataRequest, cloudFormationStackName);
       previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
       if (previousVersionTimeStamp.isPresent()) {
         serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);

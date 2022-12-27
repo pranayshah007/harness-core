@@ -40,7 +40,7 @@ public class AsgStepHelper {
 
     // Check if ASG Manifests are empty
     if (isEmpty(asgManifests)) {
-      throw new InvalidRequestException("ASG Task Definition, Service Definition Manifests are mandatory.", USER);
+      throw new InvalidRequestException("ASG Launch Template & ASG Configuration Manifests are mandatory.", USER);
     }
 
     // Get AsgLaunchTemplate manifests and validate

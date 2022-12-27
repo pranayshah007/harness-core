@@ -8,7 +8,6 @@
 package io.harness.cdng.elastigroup.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
@@ -24,9 +23,9 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
+import io.harness.cdng.elastigroup.ElastigroupStepCommonHelper;
 import io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
-import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -39,6 +38,7 @@ import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTas
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SkipRollbackException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -61,6 +61,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,7 +82,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
 
   @Inject private ElastigroupEntityHelper entityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
   public ElastigroupRollbackTaskParameters getElastigroupRollbackTaskParameters(
       ElastigroupRollbackStepParameters elastigroupRollbackStepParameters, Ambiance ambiance,
@@ -236,24 +237,26 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
   }
 
   public StepResponse handleTaskResult(
-      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupRollbackTaskResponse taskResponse) {
+      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupRollbackTaskResponse response) {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
-    List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
-        ? emptyList()
-        : taskResponse.getUnitProgressData().getUnitProgresses();
+    List<UnitProgress> unitProgresses =
+        response.getUnitProgressData() == null ? emptyList() : response.getUnitProgressData().getUnitProgresses();
     stepResponseBuilder.unitProgressList(unitProgresses);
 
-    stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
+    stepResponseBuilder.status(StepUtils.getStepStatus(response.getStatus()));
 
-    if (isNotEmpty(taskResponse.getErrorMessage())) {
+    if (response.getStatus() != CommandExecutionStatus.SUCCESS) {
       FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
       failureInfoBuilder.addFailureData(FailureData.newBuilder()
                                             .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                             .setLevel(Level.ERROR.name())
                                             .setCode(GENERAL_ERROR.name())
-                                            .setMessage(taskResponse.getErrorMessage()));
+                                            .setMessage(response.getErrorMessage()));
       stepResponseBuilder.failureInfo(failureInfoBuilder.build());
+    } else {
+      elastigroupStepCommonHelper.saveSpotServerInstanceInfosToSweepingOutput(
+          Collections.emptyList(), response.getEc2InstanceIdsExisting(), ambiance);
     }
 
     return stepResponseBuilder.build();

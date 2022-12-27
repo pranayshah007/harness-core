@@ -29,7 +29,9 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.cronutils.utils.Preconditions;
 import com.google.inject.Inject;
+import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
@@ -49,60 +51,72 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
+  @ApiOperation(value = "get ChangeEvent List For Account", nickname = "changeEventListForAccount")
   public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       PageRequest pageRequest) {
-    Preconditions.checkArgument(
-        isMonitoredServiceIdentifierScoped, "Monitored Service Identifiers should be scoped for account");
+    Preconditions.checkArgument(!Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Scoped Monitored Service Identifiers should be present for account");
+    Preconditions.checkArgument(Lists.isNullOrEmpty(monitoredServiceIdentifiers),
+        "Only Scoped Monitored Service Identifiers need to be sent for account");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeEvents(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
+        scopedMonitoredServiceIdentifiers, true, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
   }
 
   @Override
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
+  @ApiOperation(value = "get ChangeEvent timeline For Account", nickname = "changeEventTimelineForAccount")
   public RestResponse<ChangeTimeline> get(@Valid ProjectPathParams projectPathParams, List<String> serviceIdentifiers,
-      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, String searchText,
-      @NotNull long startTime, @NotNull long endTime, Integer pointCount) {
-    Preconditions.checkArgument(
-        isMonitoredServiceIdentifierScoped, "Monitored Service Identifiers should be scoped for account");
+      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
+      Integer pointCount) {
+    Preconditions.checkArgument(!Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Scoped Monitored Service Identifiers should be present for account");
+    Preconditions.checkArgument(Lists.isNullOrEmpty(monitoredServiceIdentifiers),
+        "Only Scoped Monitored Service Identifiers need to be sent for account");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getTimeline(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
+        scopedMonitoredServiceIdentifiers, true, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
   }
 
   @Override
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeSummaryDTO> getSummary(@Valid ProjectPathParams projectPathParams,
-      String monitoredServiceIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime) {
-    Preconditions.checkArgument(
-        isMonitoredServiceIdentifierScoped, "Monitored Service Identifiers should be scoped for account");
+  @ApiOperation(value = "get ChangeEvent summary for monitored service For Account",
+      nickname = "getMonitoredServiceChangeEventSummaryForAccount")
+  public RestResponse<ChangeSummaryDTO>
+  getSummary(@Valid ProjectPathParams projectPathParams, String monitoredServiceIdentifier,
+      List<String> monitoredServiceIdentifiers, List<String> scopedMonitoredServiceIdentifiers,
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, @NotNull long startTime,
+      @NotNull long endTime) {
+    Preconditions.checkArgument(!Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Scoped Monitored Service Identifiers should be present for account");
+    Preconditions.checkArgument(Lists.isNullOrEmpty(monitoredServiceIdentifiers),
+        "Only Scoped Monitored Service Identifiers need to be sent for account");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+        scopedMonitoredServiceIdentifiers, true, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime)));
   }
 }

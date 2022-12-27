@@ -104,7 +104,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   }
 
   @Override
-  public TaskChainResponse executeAsgPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeAsgPrepareRollbackDataTask(Ambiance ambiance, StepElementParameters stepParameters,
       AsgPrepareRollbackDataPassThroughData asgStepPassThroughData, UnitProgressData unitProgressData) {
     // nothing to prepare
     return null;
@@ -113,6 +113,12 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof AsgStepExceptionPassThroughData) {
+      return asgStepCommonHelper.handleStepExceptionFailure((AsgStepExceptionPassThroughData) passThroughData);
+    }
+
+    log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
+
     AsgExecutionPassThroughData asgExecutionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
     InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();
     AsgCanaryDeployResponse asgCanaryDeployResponse;

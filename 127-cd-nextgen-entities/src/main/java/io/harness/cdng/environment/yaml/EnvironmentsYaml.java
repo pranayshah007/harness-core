@@ -26,12 +26,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
 @RecasterAlias("io.harness.cdng.environment.yaml.EnvironmentsYaml")
 @SimpleVisitorHelper(helperClass = EnvironmentsVisitorHelper.class)
@@ -71,5 +73,23 @@ public class EnvironmentsYaml implements Visitable {
   @JsonIgnore
   public String getMetadata() {
     return null;
+  }
+
+  public EnvironmentsYaml clone() {
+    ParameterField<List<FilterYaml>> filtersCloned = ParameterField.createValueField(Collections.emptyList());
+    if (ParameterField.isNotNull(this.filters) && this.filters.getValue() != null) {
+      filtersCloned = ParameterField.createValueField(
+          this.filters.getValue().stream().map(FilterYaml::clone).collect(Collectors.toList()));
+    }
+    ParameterField<List<EnvironmentYamlV2>> valuesCloned = ParameterField.createValueField(Collections.emptyList());
+    if (ParameterField.isNotNull(this.values) && this.values.getValue() != null) {
+      valuesCloned = ParameterField.createValueField(
+          this.getValues().getValue().stream().map(EnvironmentYamlV2::clone).collect(Collectors.toList()));
+    }
+    return EnvironmentsYaml.builder()
+        .filters(filtersCloned)
+        .environmentsMetadata(this.environmentsMetadata)
+        .values(valuesCloned)
+        .build();
   }
 }

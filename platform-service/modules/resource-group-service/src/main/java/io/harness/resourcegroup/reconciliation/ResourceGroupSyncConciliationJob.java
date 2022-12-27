@@ -31,7 +31,6 @@ import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.resourcegroup.v1.remote.dto.ResourceSelectorFilter;
-import io.harness.resourcegroup.v2.model.ResourceFilter;
 import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
@@ -203,20 +202,15 @@ public class ResourceGroupSyncConciliationJob extends RedisTraceConsumer {
   }
 
   private void deleteResourceFromResourceGroup(ResourceInfo resource, ResourceGroupDTO resourceGroup) {
-    List<ResourceSelector> resourceSelectors =
-        resourceGroup.getResourceFilter()
-            .getResources()
-            .stream()
-            .filter(Objects::nonNull)
-            .filter(rs -> rs.getResourceType().equals(resource.getResourceType()))
-            .collect(Collectors.toList());
+    List<ResourceSelector> resourceSelectors = resourceGroup.getResourceFilter().getResources();
     for (Iterator<ResourceSelector> iterator = resourceSelectors.iterator(); iterator.hasNext();) {
       ResourceSelector resourceSelector = iterator.next();
-      resourceSelector.getIdentifiers().remove(resource.getResourceIdentifier());
-      if (resourceSelector.getIdentifiers().isEmpty()) {
-        iterator.remove();
+      if (resourceSelector != null && resourceSelector.getResourceType().equals(resource.getResourceType())) {
+        resourceSelector.getIdentifiers().remove(resource.getResourceIdentifier());
+        if (resourceSelector.getIdentifiers().isEmpty()) {
+          iterator.remove();
+        }
       }
     }
-    resourceGroup.setResourceFilter(ResourceFilter.builder().resources(resourceSelectors).build());
   }
 }

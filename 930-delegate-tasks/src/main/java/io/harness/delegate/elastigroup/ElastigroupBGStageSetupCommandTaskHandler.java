@@ -47,6 +47,7 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.NoArgsConstructor;
@@ -59,7 +60,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupCommandTaskHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  @Inject private ElastigroupBGTaskHelper elastigroupDeployTaskHelper;
+  @Inject private ElastigroupBGTaskHelper elastigroupBGTaskHelper;
   private long timeoutInMillis;
 
   @Override
@@ -87,7 +88,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
-        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), false, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
@@ -120,26 +121,25 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
           ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiToken = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
       // Check if existing elastigroup with exists with same stage name
       deployLogCallback.saveExecutionLog(format("Querying to find Elastigroup with name: [%s]", stageElastigroupName));
-      Optional<ElastiGroup> stageOptionalElastiGroup = spotInstHelperServiceDelegate.getElastiGroupByName(
-          spotInstApiTokenRef, spotInstAccountId, stageElastigroupName);
+      Optional<ElastiGroup> stageOptionalElastiGroup =
+          spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiToken, spotInstAccountId, stageElastigroupName);
       ElastiGroup stageElastiGroup;
       if (stageOptionalElastiGroup.isPresent()) {
         stageElastiGroup = stageOptionalElastiGroup.get();
         deployLogCallback.saveExecutionLog(
             format("Found stage Elastigroup with id: [%s]. Deleting it. ", stageElastiGroup.getId()));
-        spotInstHelperServiceDelegate.deleteElastiGroup(
-            spotInstApiTokenRef, spotInstAccountId, stageElastiGroup.getId());
+        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiToken, spotInstAccountId, stageElastiGroup.getId());
       }
 
       // Create new elastigroup
       deployLogCallback.saveExecutionLog(
           format("Sending request to create new Elastigroup with name: [%s]", stageElastigroupName));
       stageElastiGroup =
-          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
+          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiToken, spotInstAccountId, finalJson);
       String stageElastiGroupId = stageElastiGroup.getId();
       deployLogCallback.saveExecutionLog(
           format("Created Elastigroup with name: [%s] and id: [%s]", stageElastigroupName, stageElastiGroupId));
@@ -149,8 +149,8 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       String prodElastiGroupName = elastigroupSetupCommandRequest.getElastigroupNamePrefix();
       deployLogCallback.saveExecutionLog(
           format("Querying Spotinst for Elastigroup with name: [%s]", prodElastiGroupName));
-      Optional<ElastiGroup> prodOptionalElastiGroup = spotInstHelperServiceDelegate.getElastiGroupByName(
-          spotInstApiTokenRef, spotInstAccountId, prodElastiGroupName);
+      Optional<ElastiGroup> prodOptionalElastiGroup =
+          spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiToken, spotInstAccountId, prodElastiGroupName);
       List<ElastiGroup> prodElastiGroupList;
       if (prodOptionalElastiGroup.isPresent()) {
         ElastiGroup prodElastiGroup = prodOptionalElastiGroup.get();
@@ -187,10 +187,20 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       elastigroupSetupResult.getNewElastigroup().getCapacity().setMinimum(min);
       elastigroupSetupResult.getNewElastigroup().getCapacity().setTarget(target);
 
-      elastigroupDeployTaskHelper.scaleElastigroup(stageElastiGroup, spotInstApiTokenRef, spotInstAccountId,
-          elastigroupDeployTaskHelper.getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin()),
+      elastigroupBGTaskHelper.scaleElastigroup(stageElastiGroup, spotInstApiToken, spotInstAccountId,
+          elastigroupBGTaskHelper.getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin()),
           iLogStreamingTaskClient, ElastigroupCommandUnitConstants.UPSCALE.toString(),
           ElastigroupCommandUnitConstants.UPSCALE_STEADY_STATE.toString(), commandUnitsProgress);
+
+      List<String> newEc2Instances = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+          spotInstApiToken, spotInstAccountId, stageElastiGroup);
+      List<String> existingEc2Instances = new ArrayList<>();
+      if (!prodElastiGroupList.isEmpty()) {
+        existingEc2Instances = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+            spotInstApiToken, spotInstAccountId, prodElastiGroupList.get(0));
+      }
+      elastigroupSetupResult.setEc2InstanceIdsAdded(newEc2Instances);
+      elastigroupSetupResult.setEc2InstanceIdsExisting(existingEc2Instances);
 
       return ElastigroupSetupResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

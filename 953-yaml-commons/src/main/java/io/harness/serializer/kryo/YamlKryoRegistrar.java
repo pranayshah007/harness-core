@@ -21,6 +21,7 @@ import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
@@ -47,5 +48,6 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(PRBuildSpec.class, 88507);
     kryo.register(TagBuildSpec.class, 88508);
     kryo.register(BuildType.class, 88509);
+    kryo.register(PRCloneStrategy.class, 88510);
   }
 }

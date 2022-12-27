@@ -130,7 +130,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -154,7 +153,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Global Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   manageGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -178,7 +176,6 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the updated Freeze Config")
       })
 
-  @Hidden
   public ResponseDTO<FreezeResponseDTO>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -201,7 +198,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseWrapperDTO>
   updateFreezeStatus(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -230,7 +226,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public void
   delete(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -252,7 +247,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeResponseWrapperDTO>
   deleteMany(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -279,7 +273,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
-  @Hidden
   public ResponseDTO<FreezeDetailedResponseDTO>
   get(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -332,7 +325,6 @@ public class FreezeCRUDResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Get Global Freeze Yaml")
       })
-  @Hidden
   public ResponseDTO<FreezeDetailedResponseDTO>
   getGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -388,7 +380,6 @@ public class FreezeCRUDResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Freeze for a Project")
       })
-  @Hidden
   public ResponseDTO<PageResponse<FreezeSummaryResponseDTO>>
   getFreezeList(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                     NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,

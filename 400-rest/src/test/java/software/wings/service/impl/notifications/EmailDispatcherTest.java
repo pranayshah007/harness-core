@@ -27,7 +27,7 @@ import software.wings.beans.InformationNotification;
 import software.wings.beans.Notification;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.common.NotificationMessageResolver.ChannelTemplate.EmailTemplate;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.intfc.EmailNotificationService;
 
 import com.google.common.collect.ImmutableMap;

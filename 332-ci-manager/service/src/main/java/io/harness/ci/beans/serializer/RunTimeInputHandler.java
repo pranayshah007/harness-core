@@ -28,7 +28,6 @@ import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
-import io.harness.beans.yaml.extended.repository.Repository;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
@@ -38,7 +37,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -404,13 +402,5 @@ public class RunTimeInputHandler {
     }
 
     return parameterField.getValue();
-  }
-
-  public static Optional<Repository> resolveRepository(ParameterField<Repository> repository) {
-    if (repository == null || repository.isExpression() || repository.getValue() == null) {
-      return Optional.empty();
-    } else {
-      return Optional.of(repository.getValue());
-    }
   }
 }

@@ -129,7 +129,7 @@ public class TerragruntTaskService {
 
     CommandUnitProgress unitProgress = commandUnitsProgress.getCommandUnitProgressMap().get(commandUnitName);
     if (unitProgress != null) {
-      return CommandExecutionStatus.RUNNING == unitProgress.getStatus();
+      return false;
     }
     return true;
   }

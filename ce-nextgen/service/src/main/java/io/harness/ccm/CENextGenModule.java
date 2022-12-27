@@ -381,7 +381,7 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
         .to(CCMRecommendationFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.POLICYEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.RULEEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {

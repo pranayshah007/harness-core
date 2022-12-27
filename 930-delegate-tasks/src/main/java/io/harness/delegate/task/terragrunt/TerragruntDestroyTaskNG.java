@@ -196,4 +196,9 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
           destroyTaskParameters.getPlanSecretManager(), baseDir, destroyLogCallback);
     }
   }
+
+  @Override
+  public boolean isSupportingErrorFramework() {
+    return true;
+  }
 }

@@ -16,6 +16,7 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -99,13 +100,14 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalPreviousVersionTimeStampCloudFormationStackExistsTest() throws Exception {
-    ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
-                                                            .timeoutIntervalInMin(timeout)
-                                                            .serverlessInfraConfig(serverlessInfraConfig)
-                                                            .serverlessManifestConfig(serverlessManifestConfig)
-                                                            .manifestContent(manifestContent)
-                                                            .accountId(accountId)
-                                                            .build();
+    ServerlessPrepareRollbackDataRequest serverlessCommandRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessManifestConfig(serverlessManifestConfig)
+            .manifestContent(manifestContent)
+            .accountId(accountId)
+            .build();
 
     doReturn(executionLogCallback)
         .when(serverlessTaskHelperBase)
@@ -119,12 +121,14 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
-    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
-        (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
+    doReturn("abc")
+        .when(serverlessAwsCommandTaskHelper)
+        .getCloudFormationStackName(any(), any(), any(), any(), anyLong(), any(), any(), any());
+
+    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest = serverlessCommandRequest;
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationStackExists(executionLogCallback, serverlessPrepareRollbackDataRequest,
-            serverlessPrepareRollbackDataRequest.getManifestContent());
+        .cloudFormationStackExists("abc", (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig);
 
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
@@ -204,13 +208,14 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalNoPreviousVersionTimeStampCloudFormationStackExistsTest() throws Exception {
-    ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
-                                                            .timeoutIntervalInMin(timeout)
-                                                            .serverlessInfraConfig(serverlessInfraConfig)
-                                                            .serverlessManifestConfig(serverlessManifestConfig)
-                                                            .manifestContent(manifestContent)
-                                                            .accountId(accountId)
-                                                            .build();
+    ServerlessPrepareRollbackDataRequest serverlessCommandRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessManifestConfig(serverlessManifestConfig)
+            .manifestContent(manifestContent)
+            .accountId(accountId)
+            .build();
 
     doReturn(executionLogCallback)
         .when(serverlessTaskHelperBase)
@@ -224,17 +229,18 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
-    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
-        (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
+    doReturn("abc")
+        .when(serverlessAwsCommandTaskHelper)
+        .getCloudFormationStackName(any(), any(), any(), any(), anyLong(), any(), any(), any());
+
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationStackExists(executionLogCallback, serverlessPrepareRollbackDataRequest,
-            serverlessPrepareRollbackDataRequest.getManifestContent());
+        .cloudFormationStackExists("abc", (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig);
 
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessCommandRequest.getServerlessInfraConfig();
     ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
-        (ServerlessAwsLambdaManifestConfig) serverlessPrepareRollbackDataRequest.getServerlessManifestConfig();
+        (ServerlessAwsLambdaManifestConfig) serverlessCommandRequest.getServerlessManifestConfig();
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
@@ -257,15 +263,14 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalPrepareRollbackDataExceptionTest() throws Exception {
-    ServerlessRollbackConfig serverlessRollbackConfig =
-        ServerlessAwsLambdaRollbackConfig.builder().isFirstDeployment(true).build();
-    ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
-                                                            .timeoutIntervalInMin(timeout)
-                                                            .serverlessInfraConfig(serverlessInfraConfig)
-                                                            .serverlessManifestConfig(serverlessManifestConfig)
-                                                            .manifestContent(manifestContent)
-                                                            .accountId(accountId)
-                                                            .build();
+    ServerlessPrepareRollbackDataRequest serverlessCommandRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessManifestConfig(serverlessManifestConfig)
+            .manifestContent(manifestContent)
+            .accountId(accountId)
+            .build();
 
     doReturn(executionLogCallback)
         .when(serverlessTaskHelperBase)
@@ -279,17 +284,18 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
-    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
-        (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
+    doReturn("abc")
+        .when(serverlessAwsCommandTaskHelper)
+        .getCloudFormationStackName(any(), any(), any(), any(), anyLong(), any(), any(), any());
+
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationStackExists(executionLogCallback, serverlessPrepareRollbackDataRequest,
-            serverlessPrepareRollbackDataRequest.getManifestContent());
+        .cloudFormationStackExists("abc", (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig);
 
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessCommandRequest.getServerlessInfraConfig();
     ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
-        (ServerlessAwsLambdaManifestConfig) serverlessPrepareRollbackDataRequest.getServerlessManifestConfig();
+        (ServerlessAwsLambdaManifestConfig) serverlessCommandRequest.getServerlessManifestConfig();
     doThrow(IOException.class)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
@@ -306,13 +312,14 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     ServerlessCliResponse response =
         ServerlessCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).output(output).build();
 
-    ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
-                                                            .timeoutIntervalInMin(timeout)
-                                                            .serverlessInfraConfig(serverlessInfraConfig)
-                                                            .serverlessManifestConfig(serverlessManifestConfig)
-                                                            .manifestContent(manifestContent)
-                                                            .accountId(accountId)
-                                                            .build();
+    ServerlessPrepareRollbackDataRequest serverlessCommandRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessManifestConfig(serverlessManifestConfig)
+            .manifestContent(manifestContent)
+            .accountId(accountId)
+            .build();
 
     doReturn(executionLogCallback)
         .when(serverlessTaskHelperBase)
@@ -326,17 +333,18 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
-    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
-        (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
+    doReturn("abc")
+        .when(serverlessAwsCommandTaskHelper)
+        .getCloudFormationStackName(any(), any(), any(), any(), anyLong(), any(), any(), any());
+
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationStackExists(executionLogCallback, serverlessPrepareRollbackDataRequest,
-            serverlessPrepareRollbackDataRequest.getManifestContent());
+        .cloudFormationStackExists("abc", (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig);
 
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessCommandRequest.getServerlessInfraConfig();
     ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
-        (ServerlessAwsLambdaManifestConfig) serverlessPrepareRollbackDataRequest.getServerlessManifestConfig();
+        (ServerlessAwsLambdaManifestConfig) serverlessCommandRequest.getServerlessManifestConfig();
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,

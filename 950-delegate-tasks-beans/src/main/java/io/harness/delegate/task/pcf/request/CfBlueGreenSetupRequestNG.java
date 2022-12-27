@@ -26,7 +26,6 @@ import io.harness.delegate.beans.executioncapability.PcfAutoScalarCapability;
 import io.harness.delegate.beans.executioncapability.PcfInstallationCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
@@ -54,7 +53,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
   @Expression(ALLOW_SECRETS) List<String> tempRoutes;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;
-  PcfManifestsPackage pcfManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
 
   @Builder
   public CfBlueGreenSetupRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
@@ -62,7 +61,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
       CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
       TasArtifactConfig tasArtifactConfig, Integer olderActiveVersionCountToKeep, Integer maxCount,
       Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoScalar,
-      PcfManifestsPackage pcfManifestsPackage, List<String> tempRoutes) {
+      TasManifestsPackage tasManifestsPackage, List<String> tempRoutes) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
     this.releaseNamePrefix = releaseNamePrefix;
@@ -73,7 +72,7 @@ public class CfBlueGreenSetupRequestNG extends AbstractTasTaskRequest {
     this.useCurrentCount = useCurrentCount;
     this.routeMaps = routeMaps;
     this.useAppAutoScalar = useAppAutoScalar;
-    this.pcfManifestsPackage = pcfManifestsPackage;
+    this.tasManifestsPackage = tasManifestsPackage;
     this.tempRoutes = tempRoutes;
   }
 

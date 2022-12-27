@@ -37,6 +37,7 @@ import static io.harness.beans.FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
 import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
@@ -4135,6 +4136,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   private Map<String, String> validateContinuePipeline(
       String appId, WorkflowExecution pipelineExecution, String pipelineStageElementId, ExecutionArgs executionArgs) {
     validatePipelineExecution(pipelineExecution.getUuid(), pipelineExecution);
+
+    if (featureFlagService.isEnabled(
+            SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE, pipelineExecution.getAccountId())) {
+      refreshPipelineExecution(pipelineExecution);
+    }
 
     PipelineStageExecution pipelineStageExecution =
         pipelineExecution.getPipelineExecution()

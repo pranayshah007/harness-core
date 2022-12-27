@@ -53,4 +53,8 @@ public class FilterYaml implements Visitable {
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+
+  public FilterYaml clone() {
+    return FilterYaml.builder().type(this.type).entities(this.entities).spec(this.spec.clone()).build();
+  }
 }

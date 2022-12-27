@@ -23,6 +23,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -141,22 +142,40 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
 
-    EcsRunTaskRequest ecsRunTaskRequest =
-        EcsRunTaskRequest.builder()
-            .accountId(accountId)
-            .ecsCommandType(EcsCommandTypeNG.ECS_RUN_TASK)
-            .commandName(ECS_RUN_TASK_COMMAND_NAME)
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
-            .ecsRunTaskRequestDefinitionManifestContent(
-                ecsStepExecutorParams.getEcsRunTaskRequestDefinitionManifestContent())
-            .skipSteadyStateCheck(ecsRunTaskStepParameters.getSkipSteadyStateCheck().getValue())
-            .build();
-
-    return ecsStepCommonHelper.queueEcsTask(
-        stepElementParameters, ecsRunTaskRequest, ambiance, executionPassThroughData, true);
+    if (ecsRunTaskStepParameters.getTaskDefinitionArn() == null
+        || ecsRunTaskStepParameters.getTaskDefinitionArn().getValue() == null) {
+      EcsRunTaskRequest ecsRunTaskRequest =
+          EcsRunTaskRequest.builder()
+              .accountId(accountId)
+              .ecsCommandType(EcsCommandTypeNG.ECS_RUN_TASK)
+              .commandName(ECS_RUN_TASK_COMMAND_NAME)
+              .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+              .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+              .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+              .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
+              .ecsRunTaskRequestDefinitionManifestContent(
+                  ecsStepExecutorParams.getEcsRunTaskRequestDefinitionManifestContent())
+              .skipSteadyStateCheck(ecsRunTaskStepParameters.getSkipSteadyStateCheck().getValue())
+              .build();
+      return ecsStepCommonHelper.queueEcsTask(
+          stepElementParameters, ecsRunTaskRequest, ambiance, executionPassThroughData, true);
+    } else {
+      EcsRunTaskArnRequest ecsRunTaskArnRequest =
+          EcsRunTaskArnRequest.builder()
+              .accountId(accountId)
+              .ecsCommandType(EcsCommandTypeNG.ECS_RUN_TASK_ARN)
+              .commandName(ECS_RUN_TASK_COMMAND_NAME)
+              .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+              .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+              .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+              .ecsTaskDefinition(ecsRunTaskStepParameters.getTaskDefinitionArn().getValue())
+              .ecsRunTaskRequestDefinitionManifestContent(
+                  ecsStepExecutorParams.getEcsRunTaskRequestDefinitionManifestContent())
+              .skipSteadyStateCheck(ecsRunTaskStepParameters.getSkipSteadyStateCheck().getValue())
+              .build();
+      return ecsStepCommonHelper.queueEcsRunTaskArnTask(
+          stepElementParameters, ecsRunTaskArnRequest, ambiance, executionPassThroughData, true);
+    }
   }
 
   @Override

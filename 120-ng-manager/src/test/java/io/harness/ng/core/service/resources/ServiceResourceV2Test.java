@@ -44,7 +44,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -310,6 +310,9 @@ public class ServiceResourceV2Test extends CategoryTest {
         .when(serviceEntityService)
         .getServices(anyString(), anyString(), anyString(), anyList());
     doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
+        .thenReturn(true);
 
     final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
         serviceResourceV2.getServicesYamlAndRuntimeInputs(
