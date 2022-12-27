@@ -60,6 +60,7 @@ public class GitOpsExecutionSummary {
 
   @Value
   @Builder
+  @RecasterAlias("io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Cluster")
   public static class Cluster {
     String envGroupId;
     String envGroupName;
