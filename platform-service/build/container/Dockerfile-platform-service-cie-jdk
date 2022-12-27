@@ -16,7 +16,7 @@ COPY --chown=65534:65534 default.jfc /opt/harness/
 COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 RUN chmod +x /opt/harness/*.sh
-CMD ["/bin/bash", "/opt/harness/run.sh"]
+CMD [ "/opt/harness/run.sh" ]
 
 ############################ON PREM#########################
 FROM base as onprem
