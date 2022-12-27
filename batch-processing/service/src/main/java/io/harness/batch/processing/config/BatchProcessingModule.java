@@ -30,6 +30,8 @@ import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.billing.bigquery.BigQueryServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudServiceImpl;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
@@ -184,6 +186,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(PerspectiveAnomalyService.class).to(PerspectiveAnomalyServiceImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(CurrencyPreferenceHelper.class).to(CurrencyPreferenceHelperImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
     install(new MetricsModule());
     install(new CENGGraphQLModule(batchMainConfig.getCurrencyPreferencesConfig()));
