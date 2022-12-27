@@ -10,13 +10,18 @@ package io.harness.cvng.core.utils.monitoredService;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class NextGenMetricSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<NextGenMetricCVConfig, NextGenHealthSourceSpec> {
@@ -36,7 +41,6 @@ public class NextGenMetricSourceSpecTransformer
                                     .thresholdTypes(nextGenMetricCVConfig.getThresholdTypeOfMetric(
                                         metricInfo.getMetricName(), nextGenMetricCVConfig))
                                     .build();
-
       QueryDefinition queryDefinition =
           QueryDefinition.builder()
               .groupName(nextGenMetricCVConfig.getGroupName())
@@ -47,11 +51,19 @@ public class NextGenMetricSourceSpecTransformer
               .riskProfile(riskProfile)
               .continuousVerificationEnabled(metricInfo.getDeploymentVerification().isEnabled())
               .liveMonitoringEnabled(metricInfo.getLiveMonitoring().isEnabled())
-              .queryParams(metricInfo.getQueryParams())
+              .queryParams(QueryParamsDTO.builder()
+                               .serviceInstanceField(metricInfo.getQueryParams().getServiceInstanceField())
+                               .build())
               .build();
+      List<MetricThreshold> metricThresholds =
+          Optional.ofNullable(nextGenMetricCVConfig.getMetricThresholdDTOs())
+              .orElse(Collections.emptyList())
+              .stream()
+              .filter(metricThreshold -> metricThreshold.getMetricName().equals(queryDefinition.getName()))
+              .collect(Collectors.toList());
+      queryDefinition.getMetricThresholds().addAll(metricThresholds);
       queryDefinitions.add(queryDefinition);
     }));
-
     return NextGenHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .dataSourceType(cvConfigs.get(0).getType())

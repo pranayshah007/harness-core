@@ -17,6 +17,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,20 +28,32 @@ import io.harness.category.element.UnitTests;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.dto.OrganizationDTO;
+import io.harness.ng.core.dto.OrganizationResponse;
+import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.ng.core.dto.ProjectResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.organization.remote.OrganizationClient;
+import io.harness.pms.approval.notification.ApprovalSummary.ApprovalSummaryKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -49,11 +62,13 @@ import io.harness.steps.approval.step.harness.beans.ApproversDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.usergroups.UserGroupClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +82,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 @RunWith(PowerMockRunner.class)
@@ -79,6 +96,8 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Mock private PMSExecutionService pmsExecutionService;
   @Mock private ApprovalInstance approvalInstance;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private ProjectClient projectClient;
+  @Mock private OrganizationClient organizationClient;
   @InjectMocks ApprovalNotificationHandlerImpl approvalNotificationHandler;
   private static String accountId = "accountId";
 
@@ -87,6 +106,11 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   private static String projectIdentifier = "projectIdentifier";
   private static String pipelineIdentifier = "pipelineIdentifier";
   private static String startingNodeId = "startingNodeId";
+  private static String pipelineName = "pipeline name";
+  private static String orgName = "org name";
+  private static String projectName = "project name";
+  private static String userUuid = "XXXX YYYY XXXX";
+  private static String userId = "userID";
   private NGLogCallback ngLogCallback;
 
   @Before
@@ -94,6 +118,26 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     ngLogCallback = Mockito.mock(NGLogCallback.class);
     PowerMockito.whenNew(NGLogCallback.class).withAnyArguments().thenReturn(ngLogCallback);
     //        MockitoAnnotations.initMocks(this);
+    Call<ResponseDTO<Optional<OrganizationResponse>>> orgDTOCall = mock(Call.class);
+    when(organizationClient.getOrganization(any(), any())).thenReturn(orgDTOCall);
+    OrganizationResponse organizationResponse =
+        OrganizationResponse.builder()
+            .organization(OrganizationDTO.builder().identifier(orgIdentifier).name(orgName).build())
+            .build();
+    ResponseDTO<Optional<OrganizationResponse>> orgRestResponse =
+        ResponseDTO.newResponse(Optional.of(organizationResponse));
+    Response<ResponseDTO<Optional<OrganizationResponse>>> orgResponse = Response.success(orgRestResponse);
+    when(orgDTOCall.execute()).thenReturn(orgResponse);
+
+    Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
+    when(projectClient.getProject(projectIdentifier, accountId, orgIdentifier)).thenReturn(projDTOCall);
+    ProjectResponse projectResponse =
+        ProjectResponse.builder()
+            .project(ProjectDTO.builder().identifier(projectIdentifier).name(projectName).build())
+            .build();
+    ResponseDTO<Optional<ProjectResponse>> projRestResponse = ResponseDTO.newResponse(Optional.of(projectResponse));
+    Response<ResponseDTO<Optional<ProjectResponse>>> projResponse = Response.success(projRestResponse);
+    when(projDTOCall.execute()).thenReturn(projResponse);
   }
 
   @Test
@@ -102,12 +146,15 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   public void testSendNotification() throws Exception {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    Mockito.mockStatic(NGRestUtils.class);
+    TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
                             .putSetupAbstractions("projectIdentifier", projectIdentifier)
                             .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .setMetadata(executionMetadata)
                             .build();
     HarnessApprovalInstance approvalInstance =
         HarnessApprovalInstance.builder()
@@ -127,6 +174,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                         .orgIdentifier(orgIdentifier)
                                                                         .projectIdentifier(projectIdentifier)
                                                                         .pipelineIdentifier(pipelineIdentifier)
+                                                                        .name(pipelineName)
                                                                         .build();
     doReturn(pipelineExecutionSummaryEntity)
         .when(pmsExecutionService)
@@ -154,14 +202,27 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                 .accountIdentifier(accountId)
                 .notificationConfigs(notificationSettingConfigDTOS)
                 .build()));
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+
+    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+    when(responseDTOCall.execute()).thenReturn(response);
+
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
 
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(6)).sendNotificationAsync(any());
+    ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+        ArgumentCaptor.forClass(NotificationChannel.class);
+    verify(notificationClient, times(6)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    NotificationChannel notificationChannel = notificationChannelArgumentCaptor.getValue();
+    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.pipelineName)).isEqualTo(pipelineName);
+    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.projectName)).isEqualTo(projectName);
+    // get userId in triggeredBy because email is not present
+    assertThat(notificationChannel.getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
     verify(pmsExecutionService, times(1))
         .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
@@ -184,10 +245,9 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testSendNotification1() {
+  public void testSendNotification1() throws IOException {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    Mockito.mockStatic(NGRestUtils.class);
 
     GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
                                           .setNodeIdentifier("nodeIdentifier")
@@ -235,8 +295,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .identifier(userGroupIdentifier)
                                                                      .notificationConfigs(notificationSettingConfigDTOS)
                                                                      .build());
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+    when(responseDTOCall.execute()).thenReturn(response);
+
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
@@ -248,10 +312,9 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testSendNotification2() {
+  public void testSendNotification2() throws IOException {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    Mockito.mockStatic(NGRestUtils.class);
 
     GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
                                           .setNodeIdentifier("nodeIdentifier")
@@ -304,8 +367,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .identifier(userGroupIdentifier)
                                                                      .notificationConfigs(notificationSettingConfigDTOS)
                                                                      .build());
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+    when(responseDTOCall.execute()).thenReturn(response);
+
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
@@ -318,10 +385,9 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testSendNotification3() {
+  public void testSendNotification3() throws IOException {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    Mockito.mockStatic(NGRestUtils.class);
 
     GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
                                           .setNodeIdentifier("nodeIdentifier")
@@ -374,8 +440,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .identifier(userGroupIdentifier)
                                                                      .notificationConfigs(notificationSettingConfigDTOS)
                                                                      .build());
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+    when(responseDTOCall.execute()).thenReturn(response);
+
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
@@ -388,10 +458,9 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testSendNotification4() {
+  public void testSendNotification4() throws IOException {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    Mockito.mockStatic(NGRestUtils.class);
 
     GraphLayoutNode graphLayoutNode1 =
         GraphLayoutNode.newBuilder()
@@ -451,8 +520,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .identifier(userGroupIdentifier)
                                                                      .notificationConfigs(notificationSettingConfigDTOS)
                                                                      .build());
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+    when(responseDTOCall.execute()).thenReturn(response);
+
     approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);

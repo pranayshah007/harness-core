@@ -441,6 +441,11 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
@@ -2035,6 +2040,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgNGException.class, 573580);
     kryo.register(AutoScalingGroupContainer.class, 573581);
     kryo.register(AutoScalingGroupInstance.class, 573582);
+    kryo.register(AsgPrepareRollbackDataRequest.class, 573584);
+    kryo.register(AsgPrepareRollbackDataResponse.class, 573585);
+    kryo.register(AsgPrepareRollbackDataResult.class, 573586);
+    kryo.register(AsgRollingDeployRequest.class, 573587);
+    kryo.register(AsgRollingDeployResponse.class, 573588);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

@@ -26,8 +26,8 @@ import lombok.experimental.NonFinal;
 @FieldNameConstants(innerTypeName = "ApprovalSummaryKeys")
 public class ApprovalSummary {
   String pipelineName;
-  String orgIdentifier;
-  String projectIdentifier;
+  String orgName;
+  String projectName;
   String approvalMessage;
   String startedAt;
   String expiresAt;
@@ -43,8 +43,8 @@ public class ApprovalSummary {
   public Map<String, String> toParams() {
     Map<String, String> params = new HashMap<>();
     params.put(ApprovalSummaryKeys.pipelineName, pipelineName);
-    params.put(ApprovalSummaryKeys.orgIdentifier, orgIdentifier);
-    params.put(ApprovalSummaryKeys.projectIdentifier, projectIdentifier);
+    params.put(ApprovalSummaryKeys.orgName, orgName);
+    params.put(ApprovalSummaryKeys.projectName, projectName);
     params.put(ApprovalSummaryKeys.approvalMessage, approvalMessage);
     params.put(ApprovalSummaryKeys.startedAt, startedAt);
     params.put(ApprovalSummaryKeys.expiresAt, expiresAt);

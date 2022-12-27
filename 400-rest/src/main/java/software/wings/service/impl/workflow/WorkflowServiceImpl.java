@@ -138,6 +138,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UndefinedValueException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
@@ -3290,6 +3291,11 @@ public class WorkflowServiceImpl implements WorkflowService {
       return false;
     }
     Service service = serviceResourceService.get(appId, serviceId);
+    if (service == null) {
+      String messageError = String.format("ServiceId: %s is empty or invalid for appId %s.", serviceId, appId);
+      log.error(messageError, serviceId, appId);
+      throw new UndefinedValueException(messageError);
+    }
     if (Boolean.TRUE.equals(service.getArtifactFromManifest())) {
       return true;
     }

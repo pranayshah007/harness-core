@@ -6,8 +6,8 @@ body: "
 <b>Approval message:</b><br>
 ${approvalMessage}<br><br>
 
-<b>Organization:</b> ${orgIdentifier}<br>
-<b>Project:</b> ${projectIdentifier}<br>
+<b>Organization:</b> ${orgName}<br>
+<b>Project:</b> ${projectName}<br>
 <b>Triggered by:</b> ${triggeredBy}<br><br>
 
 <b>Pipeline execution summary:</b><br>

@@ -124,6 +124,7 @@ import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -147,6 +148,7 @@ import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreat
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.AsgRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
@@ -397,6 +399,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // Asg
     planCreators.add(new AsgCanaryDeployStepPlanCreator());
     planCreators.add(new AsgCanaryDeleteStepPlanCreator());
+    planCreators.add(new AsgRollingDeployStepPlanCreator());
 
     // TAS
     planCreators.add(new TasCanaryAppSetupStepPlanCreator());
@@ -514,6 +517,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // Asg
     variableCreators.add(new AsgCanaryDeployStepVariableCreator());
     variableCreators.add(new AsgCanaryDeleteStepVariableCreator());
+    variableCreators.add(new AsgRollingDeployStepVariableCreator());
 
     // TAS
     variableCreators.add(new TasCanaryAppSetupStepVariableCreator());
@@ -1068,6 +1072,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                 .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
                                 .build();
 
+    StepInfo asgRollingDeploy =
+        StepInfo.newBuilder()
+            .setName("Asg Rolling Deploy")
+            .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -1133,6 +1145,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(tasRollback);
     stepInfos.add(elastigroupBGStageSetup);
     stepInfos.add(elastigroupSwapRoute);
+    stepInfos.add(asgRollingDeploy);
     return stepInfos;
   }
 }

@@ -14,7 +14,7 @@ function func() {
   words['x-tagGroups'] = xTags;
   const yamlStr = yaml.safeDump(words)
 
-  fs.writeFile('mergeV2/merged.yaml', yamlStr, (err) => {
+  fs.writeFile('_merged/merged.yaml', yamlStr, (err) => {
     if (err) {
         throw err;
     }

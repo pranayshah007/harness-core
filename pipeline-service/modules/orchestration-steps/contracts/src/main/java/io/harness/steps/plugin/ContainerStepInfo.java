@@ -37,7 +37,6 @@ import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.OutputNGVariable;
-import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -79,26 +78,29 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String identifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
-  @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
+  @ApiModelProperty(hidden = true)
+  @VariableExpression(skipVariableExpression = true)
+  @Min(MIN_RETRY)
+  @Max(MAX_RETRY)
+  private int retry;
 
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {string})
   private ParameterField<Map<String, JsonNode>> settings;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> uses;
-  @NotNull @Valid private ContainerResource resources;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true) private ParameterField<String> uses;
 
   @NotNull @Valid private ContainerStepInfra infrastructure;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  private ParameterField<Map<String, String>> envVariables;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> privileged;
 
-  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH, hidden = true)
+  private ParameterField<Integer> runAsUser;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.CIShellType")
   private ParameterField<CIShellType> shell;
@@ -113,7 +115,7 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public ContainerStepInfo(String uuid, String identifier, String name, int retry,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ParameterField<String> uses, ContainerResource resources, ParameterField<List<String>> entrypoint,
+      ParameterField<String> uses, ParameterField<List<String>> entrypoint,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<CIShellType> shellType, ParameterField<String> command,
@@ -126,7 +128,6 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
     this.image = image;
     this.connectorRef = connectorRef;
     this.uses = uses;
-    this.resources = resources;
     this.entrypoint = entrypoint;
     this.envVariables = envVariables;
     this.privileged = privileged;

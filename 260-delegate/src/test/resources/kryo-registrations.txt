@@ -2376,6 +2376,11 @@
 573581:io.harness.delegate.task.aws.asg.AutoScalingGroupContainer
 573582:io.harness.delegate.task.aws.asg.AutoScalingGroupInstance
 573583:io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest
+573584:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest
+573585:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse
+573586:io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult
+573587:io.harness.delegate.task.aws.asg.AsgRollingDeployRequest
+573588:io.harness.delegate.task.aws.asg.AsgRollingDeployResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2569,3 +2574,4 @@
 10000257:io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType
 10000258:io.harness.delegate.beans.pcf.TasResizeStrategyType
 10000259:io.harness.delegate.beans.pcf.TasConstants
+10000260:io.harness.delegate.task.pcf.request.TasManifestsPackage

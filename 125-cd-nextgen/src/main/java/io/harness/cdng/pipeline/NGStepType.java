@@ -194,11 +194,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
-  // asg steps
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
   ASG_CANARY_DEPLOY(
       "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
-
   @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE(
       "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
@@ -228,7 +226,10 @@ public enum NGStepType {
 
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
-      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
+      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE),
+  @JsonProperty(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
+  ASG_ROLLING_DEPLOY(
+      "Asg Rolling Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_ROLLING_DEPLOY);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

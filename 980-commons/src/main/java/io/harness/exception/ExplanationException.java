@@ -75,7 +75,7 @@ public class ExplanationException extends WingsException {
   public static String URL_NOT_FOUND = "Provided URL path does not exist.";
   public static String AUTHORIZATION_FAILURE = "Provided credentials are unauthorized.";
   public static String DELEGATE_TO_HOST_SOCKET_CONNECTION_FAILED =
-      "Delegate(s) is(are) not able to establish socket connection to host(s)";
+      "Delegate(s) is(are) not able to establish socket connection to host(s). If the port is not specified with the host, it will default to 22.";
   public static String EXPLANATION_FILE_CREATION_ERROR = "Unable to create a new file";
 
   // LDAP

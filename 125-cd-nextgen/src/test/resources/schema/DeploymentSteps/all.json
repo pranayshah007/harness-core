@@ -144,6 +144,48 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "instanceWarmup": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "minimumHealthyPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "skipMatching": {
+              "type": "boolean"
+            },
+            "useAlreadyRunningInstances": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgScalingPolicyManifest": {
       "allOf": [
         {
@@ -1005,9 +1047,6 @@
         "type"
       ],
       "properties": {
-        "spec": {
-          "$ref": "#/definitions/CloudProviderSpec"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -1015,7 +1054,25 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWS"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCloudProviderBasicConfig"
+              }
+            }
+          }
+        }
+      ]
     },
     "CloudProviderSpec": {
       "type": "object",
@@ -2383,10 +2440,19 @@
               "$ref": "#/definitions/CloudProvider"
             },
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "instances": {
               "$ref": "#/definitions/ElastigroupInstances"
@@ -2649,13 +2715,29 @@
           ],
           "properties": {
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "downsizeOldElastigroup": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -4166,9 +4248,6 @@
         "type"
       ],
       "properties": {
-        "spec": {
-          "$ref": "#/definitions/LoadBalancerSpec"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -4176,7 +4255,25 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWSLoadBalancerConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsLoadBalancerConfigYaml"
+              }
+            }
+          }
+        }
+      ]
     },
     "LoadBalancerSpec": {
       "type": "object",
@@ -5950,10 +6047,19 @@
           ],
           "properties": {
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "newAppInstances": {
               "$ref": "#/definitions/TasInstanceSelectionWrapper"
@@ -5980,21 +6086,48 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "existingVersionToKeep": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 1
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 1
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             },
             "tasInstanceCountType": {
               "type": "string",
@@ -6004,10 +6137,19 @@
               ]
             },
             "tempRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -6027,21 +6169,48 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "existingVersionToKeep": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 1
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 1
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             },
             "tasInstanceCountType": {
               "type": "string",
@@ -6069,21 +6238,48 @@
           ],
           "properties": {
             "additionalRoutes": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "existingVersionToKeep": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 1
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 1
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             },
             "resizeStrategy": {
               "type": "string",
@@ -6111,7 +6307,16 @@
       ],
       "properties": {
         "store": {
-          "$ref": "#/definitions/StoreConfigWrapper"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6128,13 +6333,31 @@
           ],
           "properties": {
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "script": {
-              "$ref": "#/definitions/TasCommandScript"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/TasCommandScript"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -6164,8 +6387,17 @@
       ],
       "properties": {
         "value": {
-          "type": "integer",
-          "format": "int32"
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6234,10 +6466,19 @@
           "type": "object",
           "properties": {
             "delegateSelectors": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
