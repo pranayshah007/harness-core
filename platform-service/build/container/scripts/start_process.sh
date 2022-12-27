@@ -54,7 +54,7 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
 fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
+    exec java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
 else
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/platform-service.log 2>&1
+    exec java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/platform-service.log 2>&1
 fi
