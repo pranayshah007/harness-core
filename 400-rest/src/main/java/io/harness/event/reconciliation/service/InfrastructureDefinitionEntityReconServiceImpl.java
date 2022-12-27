@@ -22,6 +22,7 @@ import software.wings.search.framework.TimeScaleEntity;
 import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 public class InfrastructureDefinitionEntityReconServiceImpl implements LookerEntityReconService {
@@ -40,17 +41,18 @@ public class InfrastructureDefinitionEntityReconServiceImpl implements LookerEnt
   @Override
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> infrastructureDefinitionIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<InfrastructureDefinition> infrastructureDefinitions =
         persistence.createQuery(InfrastructureDefinition.class)
             .field(InfrastructureDefinitionKeys.accountId)
             .equal(accountId)
             .field(InfrastructureDefinitionKeys.createdAt)
-            .exists()
+            .notEqual(null)
             .field(InfrastructureDefinitionKeys.createdAt)
             .greaterThanOrEq(durationStartTs)
             .field(InfrastructureDefinitionKeys.createdAt)
             .lessThanOrEq(durationEndTs)
-            .fetchKeys();
+            .fetchKeys(options);
     infrastructureDefinitions.forEachRemaining(
         infrastructureDefinitionKey -> infrastructureDefinitionIds.add((String) infrastructureDefinitionKey.getId()));
 

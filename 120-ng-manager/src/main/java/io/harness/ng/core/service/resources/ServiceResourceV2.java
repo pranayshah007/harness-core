@@ -46,6 +46,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -103,10 +104,12 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -668,6 +671,26 @@ public class ServiceResourceV2 {
       String oldServiceInputsYaml) {
     return ResponseDTO.newResponse(serviceEntityService.mergeServiceInputs(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier, oldServiceInputsYaml));
+  }
+
+  @GET
+  @Path("/k8s/command-flags")
+  @ApiOperation(value = "Get Command flags for K8s", nickname = "k8sCmdFlags")
+  @Operation(operationId = "k8sCmdFlags", summary = "Retrieving the list of Kubernetes Command Options",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Kubernetes Command Options")
+      })
+  public ResponseDTO<Set<K8sCommandFlagType>>
+  getK8sCommandFlags(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    Set<K8sCommandFlagType> k8sCmdFlags = new HashSet<>();
+    for (K8sCommandFlagType k8sCommandFlagType : K8sCommandFlagType.values()) {
+      if (k8sCommandFlagType.getServiceSpecTypes().contains(serviceSpecType)) {
+        k8sCmdFlags.add(k8sCommandFlagType);
+      }
+    }
+    return ResponseDTO.newResponse(k8sCmdFlags);
   }
 
   private ServiceEntity updateArtifactoryRegistryUrlIfEmpty(

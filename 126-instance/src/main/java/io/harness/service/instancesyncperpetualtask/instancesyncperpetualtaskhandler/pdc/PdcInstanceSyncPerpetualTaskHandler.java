@@ -7,6 +7,8 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.pdc;
 
+import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
+
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
@@ -15,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.dtos.InfrastructureMappingDTO;
@@ -59,8 +60,9 @@ public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
     List<PdcDeploymentInfoDTO> pdcDeploymentInfoDTOs = (List<PdcDeploymentInfoDTO>) (List<?>) deploymentInfoDTOList;
     List<String> hosts = pdcDeploymentInfoDTOs.stream()
-                             .map(PdcDeploymentInfoDTO::getHost)
-                             .filter(EmptyPredicate::isNotEmpty)
+                             .map(pdcDeploymentInfoDTO -> extractHostnameFromHost(pdcDeploymentInfoDTO.getHost()))
+                             .filter(Optional::isPresent)
+                             .map(Optional::get)
                              .distinct()
                              .collect(Collectors.toList());
 

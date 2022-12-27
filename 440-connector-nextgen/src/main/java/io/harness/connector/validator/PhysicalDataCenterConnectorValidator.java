@@ -8,6 +8,7 @@
 package io.harness.connector.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.getPortOrSSHDefault;
 
 import static java.lang.String.format;
 
@@ -98,9 +99,11 @@ public class PhysicalDataCenterConnectorValidator implements ConnectionValidator
   private String getFailedHostsList(@NotNull List<HostValidationDTO> hostValidationDTOS) {
     return hostValidationDTOS.stream()
         .filter(isHostValidationStatusFailed())
-        .map(hostValidationDTO
-            -> format(
-                "[host]: %s, [message]: %s", hostValidationDTO.getHost(), hostValidationDTO.getError().getMessage()))
+        .map(hostValidationDTO -> {
+          String host = hostValidationDTO.getHost();
+          return format("[host]: %s, [port]: %s,[message]: %s", host, getPortOrSSHDefault(host),
+              hostValidationDTO.getError().getMessage());
+        })
         .collect(Collectors.joining("\n"));
   }
 

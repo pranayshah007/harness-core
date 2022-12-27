@@ -257,7 +257,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
+import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -3208,8 +3208,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     List<ArtifactType> supportedArtifactTypes =
         DeploymentType.supportedArtifactTypes.get(DeploymentType.valueOf(deploymentType));
     Query<Service> query = wingsPersistence.createQuery(Service.class).field(ServiceKeys.appId).equal(appId);
-    final CriteriaContainerImpl deploymentTypeCriteria =
-        query.criteria(ServiceKeys.deploymentType).equal(deploymentType);
+    final CriteriaContainer deploymentTypeCriteria = query.criteria(ServiceKeys.deploymentType).equal(deploymentType);
     if (isNotBlank(deploymentTypeTemplateId)) {
       deploymentTypeCriteria.and(query.criteria(ServiceKeys.deploymentTypeTemplateId).equal(deploymentTypeTemplateId));
     }

@@ -36,6 +36,7 @@ import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
@@ -140,6 +141,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
 
   public TaskChainResponse startChainLink(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
@@ -398,6 +400,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
+    cdExpressionResolver.updateExpressions(ambiance, stepElementParameters);
+
     List<ManifestOutcome> ecsRunTaskManifestOutcomes = getEcsRunTaskManifestOutcomes(stepElementParameters);
 
     LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
@@ -448,9 +452,19 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   public List<ManifestOutcome> getEcsRunTaskManifestOutcomes(StepElementParameters stepElementParameters) {
     EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
 
-    if (ecsRunTaskStepParameters.getTaskDefinition() == null
-        || ecsRunTaskStepParameters.getTaskDefinition().getValue() == null) {
+    if ((ecsRunTaskStepParameters.getTaskDefinition() == null
+            || ecsRunTaskStepParameters.getTaskDefinition().getValue() == null)
+        && (ecsRunTaskStepParameters.getTaskDefinitionArn() == null
+            || ecsRunTaskStepParameters.getTaskDefinitionArn().getValue() == null)) {
       String errorMessage = "ECS Task Definition is empty in ECS Run Task Step";
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    if ((ecsRunTaskStepParameters.getTaskDefinition() != null
+            && ecsRunTaskStepParameters.getTaskDefinition().getValue() != null)
+        && (ecsRunTaskStepParameters.getTaskDefinitionArn() != null
+            && ecsRunTaskStepParameters.getTaskDefinitionArn().getValue() != null)) {
+      String errorMessage = "Both Task Definition, Task Definition Arn are configured. Only one of them is expected.";
       throw new InvalidRequestException(errorMessage);
     }
 
@@ -460,8 +474,13 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       throw new InvalidRequestException(errorMessage);
     }
 
-    StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskStepParameters.getTaskDefinition().getValue().getSpec();
-    ManifestOutcome ecsRunTaskDefinitionManifestOutcome =
+    StoreConfig ecsRunTaskDefinitionStoreConfig = null;
+    ManifestOutcome ecsRunTaskDefinitionManifestOutcome = null;
+    if (ecsRunTaskStepParameters.getTaskDefinition() != null
+        && ecsRunTaskStepParameters.getTaskDefinition().getValue() != null) {
+      ecsRunTaskDefinitionStoreConfig = ecsRunTaskStepParameters.getTaskDefinition().getValue().getSpec();
+    }
+    ecsRunTaskDefinitionManifestOutcome =
         EcsTaskDefinitionManifestOutcome.builder().store(ecsRunTaskDefinitionStoreConfig).build();
 
     StoreConfig ecsRunTaskRequestDefinitionStoreConfig =
@@ -549,7 +568,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsRunTaskManifestOutcomes);
     EcsS3FetchFileConfig taskDefinitionEcsS3FetchRunTaskFileConfig = null;
 
-    if (ManifestStoreType.S3.equals(ecsRunTaskDefinitionManifestOutcome.getStore().getKind())) {
+    if (ecsRunTaskDefinitionManifestOutcome.getStore() != null
+        && ManifestStoreType.S3.equals(ecsRunTaskDefinitionManifestOutcome.getStore().getKind())) {
       taskDefinitionEcsS3FetchRunTaskFileConfig =
           getEcsRunTaskS3FetchFilesConfigFromManifestOutcome(ambiance, ecsRunTaskDefinitionManifestOutcome);
     }
@@ -693,7 +713,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     String taskDefinitionFileContent = null;
 
-    if (ecsRunTaskDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE) {
+    if (ecsRunTaskDefinitionStoreConfig != null && ecsRunTaskDefinitionStoreConfig.getKind() == HARNESS_STORE_TYPE) {
       taskDefinitionFileContent =
           fetchFilesContentFromLocalStore(ambiance, ecsRunTaskDefinitionManifestOutcome, logCallback).get(0);
       taskDefinitionFileContent = engineExpressionService.renderExpression(ambiance, taskDefinitionFileContent);
@@ -725,7 +745,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskDefinitionManifestOutcome.getStore();
 
     EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig = null;
-    if (ManifestStoreType.isInGitSubset(ecsRunTaskDefinitionStoreConfig.getKind())) {
+    if (ecsRunTaskDefinitionStoreConfig != null
+        && ManifestStoreType.isInGitSubset(ecsRunTaskDefinitionStoreConfig.getKind())) {
       taskDefinitionEcsGitFetchRunTaskFileConfig =
           getEcsGitFetchRunTaskFileConfig(ecsRunTaskDefinitionManifestOutcome, ambiance);
     }
@@ -1086,6 +1107,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
+    cdExpressionResolver.updateExpressions(ambiance, stepElementParameters);
     try {
       if (responseData instanceof EcsGitFetchRunTaskResponse) { // if EcsGitFetchRunTaskResponse is received
 
@@ -1878,6 +1900,30 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                             .build();
 
     String taskName = TaskType.ECS_COMMAND_TASK_NG.getDisplayName() + " : " + ecsCommandRequest.getCommandName();
+
+    EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
+
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        ecsSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+    return TaskChainResponse.builder()
+        .taskRequest(taskRequest)
+        .chainEnd(isChainEnd)
+        .passThroughData(passThroughData)
+        .build();
+  }
+
+  public TaskChainResponse queueEcsRunTaskArnTask(StepElementParameters stepElementParameters,
+      EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
+    TaskData taskData = TaskData.builder()
+                            .parameters(new Object[] {ecsCommandRequest})
+                            .taskType(TaskType.ECS_RUN_TASK_ARN.name())
+                            .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                            .async(true)
+                            .build();
+
+    String taskName = TaskType.ECS_RUN_TASK_ARN.getDisplayName() + " : " + ecsCommandRequest.getCommandName();
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 

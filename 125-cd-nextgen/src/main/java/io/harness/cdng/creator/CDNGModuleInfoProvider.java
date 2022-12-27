@@ -46,6 +46,7 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
@@ -208,6 +209,14 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
 
         gitOpsOutcome.getClustersData()
             .stream()
+            .map(GitopsClustersOutcome.ClusterData::getEnvType)
+            .filter(EmptyPredicate::isNotEmpty)
+            .map(EnvironmentType::valueOf)
+            .collect(Collectors.toSet())
+            .forEach(cdPipelineModuleInfoBuilder::environmentType);
+
+        gitOpsOutcome.getClustersData()
+            .stream()
             .map(GitopsClustersOutcome.ClusterData::getEnvGroupId)
             .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toSet())
@@ -286,9 +295,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
           GitopsClustersOutcome.ClusterData data = cd.get(0);
           if (isNotEmpty(data.getEnvGroupId())) {
             gitOpsExecutionSummary.addSingleEnvironmentWithinEnvGroup(
-                data.getEnvGroupId(), data.getEnvGroupName(), data.getEnvId(), data.getEnvName());
+                data.getEnvGroupId(), data.getEnvGroupName(), data.getEnvId(), data.getEnvName(), data.getEnvType());
           } else if (isNotEmpty(data.getEnvId())) {
-            gitOpsExecutionSummary.addSingleEnvironment(data.getEnvId(), data.getEnvName());
+            gitOpsExecutionSummary.addSingleEnvironment(data.getEnvId(), data.getEnvName(), data.getEnvType());
           }
         });
         populateGitOpsClusters(clustersOutcome, gitOpsExecutionSummary);

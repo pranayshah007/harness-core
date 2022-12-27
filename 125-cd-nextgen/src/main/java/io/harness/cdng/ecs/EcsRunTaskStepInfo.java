@@ -52,9 +52,9 @@ public class EcsRunTaskStepInfo extends EcsRunTaskBaseStepInfo implements CDStep
 
   @Builder(builderMethodName = "infoBuilder")
   public EcsRunTaskStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<StoreConfigWrapper> taskDefinition, ParameterField<StoreConfigWrapper> runTaskRequestDefinition,
-      ParameterField<Boolean> skipSteadyStateCheck) {
-    super(delegateSelectors, taskDefinition, runTaskRequestDefinition, skipSteadyStateCheck);
+      ParameterField<StoreConfigWrapper> taskDefinition, ParameterField<String> taskDefinitionArn,
+      ParameterField<StoreConfigWrapper> runTaskRequestDefinition, ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, taskDefinition, taskDefinitionArn, runTaskRequestDefinition, skipSteadyStateCheck);
   }
   @Override
   public StepType getStepType() {

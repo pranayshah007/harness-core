@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingRollbackBaseStepInfo.K8sRollingRollbackBaseStepInfoKeys;
@@ -50,6 +52,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.Map;
 
 @OwnedBy(CDP)
 public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8sDeployResponse> {
@@ -66,6 +69,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -114,7 +118,11 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
     K8sRollingRollbackDeployRequestBuilder rollbackRequestBuilder = K8sRollingRollbackDeployRequest.builder();
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      Map<String, String> k8sCommandFlag =
+          k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags());
+      rollbackRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    }
     if (k8sRollingOptionalOutput.isFound()) {
       K8sRollingOutcome k8sRollingOutcome = (K8sRollingOutcome) k8sRollingOptionalOutput.getOutput();
       rollbackRequestBuilder.releaseName(k8sRollingOutcome.getReleaseName())

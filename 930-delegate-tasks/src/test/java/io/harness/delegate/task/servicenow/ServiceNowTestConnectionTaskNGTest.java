@@ -60,35 +60,35 @@ public class ServiceNowTestConnectionTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRun() {
     ServiceNowTaskNGResponse taskResponse = ServiceNowTaskNGResponse.builder().build();
-    when(serviceNowTaskNgHelper.getServiceNowResponse(any())).thenReturn(taskResponse);
+    when(serviceNowTaskNgHelper.getServiceNowResponse(any(), any())).thenReturn(taskResponse);
     DelegateResponseData response =
         serviceNowTestConnectionTaskNG.run(ServiceNowConnectionTaskParams.builder().build());
 
     assertThat(((ServiceNowTestConnectionTaskNGResponse) response).getCanConnect()).isEqualTo(true);
 
-    verify(serviceNowTaskNgHelper).getServiceNowResponse(any());
+    verify(serviceNowTaskNgHelper).getServiceNowResponse(any(), any());
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testRunWhenCantConnect() {
-    when(serviceNowTaskNgHelper.getServiceNowResponse(any())).thenThrow(new RuntimeException("exception"));
+    when(serviceNowTaskNgHelper.getServiceNowResponse(any(), any())).thenThrow(new RuntimeException("exception"));
     DelegateResponseData response =
         serviceNowTestConnectionTaskNG.run(ServiceNowConnectionTaskParams.builder().build());
 
     assertThat(((ServiceNowTestConnectionTaskNGResponse) response).getCanConnect()).isEqualTo(false);
 
-    verify(serviceNowTaskNgHelper).getServiceNowResponse(any());
+    verify(serviceNowTaskNgHelper).getServiceNowResponse(any(), any());
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testRunWhenCantConnectWithHintException() {
-    when(serviceNowTaskNgHelper.getServiceNowResponse(any())).thenThrow(new HintException("exception"));
+    when(serviceNowTaskNgHelper.getServiceNowResponse(any(), any())).thenThrow(new HintException("exception"));
     assertThatThrownBy(() -> serviceNowTestConnectionTaskNG.run(ServiceNowConnectionTaskParams.builder().build()))
         .isInstanceOf(HintException.class);
-    verify(serviceNowTaskNgHelper).getServiceNowResponse(any());
+    verify(serviceNowTaskNgHelper).getServiceNowResponse(any(), any());
   }
 }

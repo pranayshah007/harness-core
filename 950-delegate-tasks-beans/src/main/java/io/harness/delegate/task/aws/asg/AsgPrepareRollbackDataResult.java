@@ -5,16 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.beans.healthsource;
+package io.harness.delegate.task.aws.asg;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "QueryParamKeys")
-public class QueryParams {
-  // TODO this is entity and needs to be moved and mapped from DTO layer
-  String serviceInstanceField;
+@OwnedBy(HarnessTeam.CDP)
+public class AsgPrepareRollbackDataResult {
+  String asgName;
+  Map<String, List<String>> asgStoreManifestsContent;
 }

@@ -107,7 +107,7 @@ public class EnvGroupPlanCreatorHelper {
           environmentInfraFilterHelper.getClusterRefToNGGitOpsClusterMap(
               accountIdentifier, orgIdentifier, projectIdentifier, filteredEnvRefs);
 
-      Set<String> clsRefs = clsToCluster.values().stream().map(e -> e.getClusterRef()).collect(Collectors.toSet());
+      Set<String> clsRefs = clsToCluster.values().stream().map(Cluster::getClusterRef).collect(Collectors.toSet());
 
       // If no clusters exists for environment then we are done here
       if (isNotEmpty(clsRefs)) {

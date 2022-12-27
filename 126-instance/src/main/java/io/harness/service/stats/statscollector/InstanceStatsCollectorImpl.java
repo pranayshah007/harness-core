@@ -58,32 +58,38 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
     try (HIterator<ServiceEntity> services = new HIterator<>(getFetchServicesQuery(accountId).fetch())) {
       while (services.hasNext()) {
         ServiceEntity service = services.next();
-        Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
-            accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
-        if (null == lastSnapshot) {
-          boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
-              service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
-          ranAtLeastOnce = ranAtLeastOnce || success;
-        } else {
-          SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
-          int callsPerService = 0;
-          while (snapshotTimeProvider.hasNext()) {
-            if (callsPerService >= MAX_CALLS_PER_SERVICE) {
-              log.warn(
-                  "Tried publishing {} stats for service {}. Pending backlog will be published in the next iteration",
-                  MAX_CALLS_PER_SERVICE, service.getIdentifier());
-              break;
-            }
-            Instant nextTs = snapshotTimeProvider.next();
-            if (nextTs == null) {
-              throw new IllegalStateException(
-                  "nextTs is null even though hasNext() returned true. Shouldn't be possible");
-            }
-            boolean success = createStats(
-                accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+        try {
+          Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
+              accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
+          if (null == lastSnapshot) {
+            boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+                service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
             ranAtLeastOnce = ranAtLeastOnce || success;
-            ++callsPerService;
+          } else {
+            SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+            int callsPerService = 0;
+            while (snapshotTimeProvider.hasNext()) {
+              if (callsPerService >= MAX_CALLS_PER_SERVICE) {
+                log.warn(
+                    "Tried publishing {} stats for service {}. Pending backlog will be published in the next iteration",
+                    MAX_CALLS_PER_SERVICE, service.getIdentifier());
+                break;
+              }
+              Instant nextTs = snapshotTimeProvider.next();
+              if (nextTs == null) {
+                throw new IllegalStateException(
+                    "nextTs is null even though hasNext() returned true. Shouldn't be possible");
+              }
+              boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+                  service.getIdentifier(), nextTs);
+              ranAtLeastOnce = ranAtLeastOnce || success;
+              ++callsPerService;
+            }
           }
+        } catch (Exception ex) {
+          log.error("Could not create stats for service: {} (account: {}, org: {}, project: {})",
+              service.getIdentifier(), service.getAccountId(), service.getOrgIdentifier(),
+              service.getProjectIdentifier(), ex);
         }
       }
     }

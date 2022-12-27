@@ -24,6 +24,7 @@ import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
@@ -43,16 +44,17 @@ public class TagsEntityReconServiceImpl implements LookerEntityReconService {
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> serviceIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<HarnessTagLink> tags = persistence.createQuery(HarnessTagLink.class)
                                                   .field(HarnessTagLinkKeys.accountId)
                                                   .equal(accountId)
                                                   .field(HarnessTagLinkKeys.createdAt)
-                                                  .exists()
+                                                  .notEqual(null)
                                                   .field(HarnessTagLinkKeys.createdAt)
                                                   .greaterThanOrEq(durationStartTs)
                                                   .field(HarnessTagLinkKeys.createdAt)
                                                   .lessThanOrEq(durationEndTs)
-                                                  .fetchKeys();
+                                                  .fetchKeys(options);
     tags.forEachRemaining(tagLinkKey -> serviceIds.add((String) tagLinkKey.getId()));
 
     return serviceIds;

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sRollingStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -53,8 +54,9 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
 
   @Builder(builderMethodName = "infoBuilder")
   public K8sRollingStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn, commandFlags);
   }
 
   @Override
@@ -74,6 +76,7 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
         .pruningEnabled(pruningEnabled)
         .delegateSelectors(this.getDelegateSelectors())
         .canaryStepFqn(canaryStepFqn)
+        .commandFlags(commandFlags)
         .build();
   }
 

@@ -6,6 +6,23 @@
 
 set -ex
 
+function check_cmd_status() {
+  if [ $1 != 0 ]; then
+      echo "ERROR: $LINENO: $2. Exiting..."; exit 1
+  fi
+}
+
+function get_PR_Modules(){
+  GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+
+  PR_MODULES=()
+  PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+  check_cmd_status "$?" "Failed to get modules from commits."
+
+  echo "List of targets modules for your PR."
+  echo "${PR_MODULES[@]}"
+}
+
 #local_repo=${HOME}/.m2/repository
 BAZEL_ARGUMENTS=
 if [ "${PLATFORM}" == "jenkins" ]; then
@@ -43,14 +60,36 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  TARGETS=$(bazel query 'attr(tags, "checkstyle", //...:*)')
-  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
+  get_PR_Modules
+  TARGETS=()
+  for module in "${PR_MODULES[@]}"
+  do
+    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"':*)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"':*)'))
+    fi
+  done
+
+  echo "list of target to be build "
+  echo "${TARGETS[@]}"
+
+  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS[@]}
   exit $?
 fi
 
 if [ "${RUN_PMDS}" == "true" ]; then
-  TARGETS=$(bazel query 'attr(tags, "pmd", //...:*)')
-  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS}
+  get_PR_Modules
+  TARGETS=()
+  for module in "${PR_MODULES[@]}"
+  do
+    if [[ $(bazel query 'attr (tags,"pmd",//'"$module"':*)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"pmd",//'"$module"':*)'))
+    fi
+  done
+
+  echo "list of target to be build "
+  echo "${TARGETS[@]}"
+
+  bazel ${bazelrc} build ${BAZEL_ARGUMENTS} -k ${TARGETS[@]}
   exit $?
 fi
 

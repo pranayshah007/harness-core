@@ -10,10 +10,12 @@ package io.harness.delegate.task.serverless;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -124,11 +126,23 @@ public class GitFetchTaskHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void printFileNamesTestWhenCloseLogStreamIsTrue() {
+    List<String> filelist = Arrays.asList("path1", "path2");
+    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filelist, true);
+    verify(executionLogCallback).saveExecutionLog("\nFetching following Files :");
+    verify(gitFetchFilesTaskHelper, times(1)).printFileNamesInExecutionLogs(filelist, executionLogCallback, true);
+  }
+
+  @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void printFileNamesTest() {
-    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, Arrays.asList("path1", "path2"));
+  public void printFileNamesTestWhenCloseLogStreamIsFalse() {
+    List<String> filelist = Arrays.asList("path1", "path2");
+    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, filelist, false);
     verify(executionLogCallback).saveExecutionLog("\nFetching following Files :");
+    verify(gitFetchFilesTaskHelper, times(1)).printFileNamesInExecutionLogs(filelist, executionLogCallback, false);
   }
   @Test
   @Owner(developers = ALLU_VAMSI)

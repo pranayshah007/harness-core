@@ -3,7 +3,6 @@ Var maxRetryCount = 60
 Var jobUrl = concat(Env:baseUrl, "api/v1/search/jobs")
 Var bodyMap = {}
 Var:bodyMap.put("query", Env:query)
-Var:bodyMap.put("timeZone", "IST")
 Var:bodyMap.put("from", Env:from)
 Var:bodyMap.put("to", Env:to)
 Var job = sync-call(url=Var:jobUrl, header=Env:commonHeaders, body=Var:bodyMap)

@@ -39,6 +39,7 @@ import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
@@ -166,6 +167,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsRollingDeployStep ecsRollingDeployStep;
   @Mock private EcsCanaryDeployStep ecsCanaryDeployStep;
   @Mock private StepUtils stepUtils;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
 

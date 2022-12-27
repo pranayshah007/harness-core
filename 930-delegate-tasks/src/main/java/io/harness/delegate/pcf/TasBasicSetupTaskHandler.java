@@ -54,12 +54,12 @@ import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
 import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
 import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -208,10 +208,10 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]", basicSetupRequestNG,
           sanitizedException);
+      Misc.logAllMessages(sanitizedException, logCallback);
       logCallback.saveExecutionLog(
           "\n\n ----------  PCF Setup process failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
-      Misc.logAllMessages(sanitizedException, logCallback);
       return CfBasicSetupResponseNG.builder()
           .currentProdInfo(currentProdInfo)
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
@@ -257,9 +257,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       return;
     }
 
-    PcfManifestsPackage pcfManifestsPackage = setupRequest.getPcfManifestsPackage();
+    TasManifestsPackage tasManifestsPackage = setupRequest.getTasManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
-    pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
+    tasManifestsPackage.getVariableYmls().forEach(varFileYml -> {
       File varsYamlFile =
           pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
       if (varsYamlFile != null) {
@@ -508,11 +508,11 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   }
 
   boolean checkIfVarsFilePresent(CfBasicSetupRequestNG setupRequest) {
-    if (setupRequest.getPcfManifestsPackage() == null) {
+    if (setupRequest.getTasManifestsPackage() == null) {
       return false;
     }
 
-    List<String> varFiles = setupRequest.getPcfManifestsPackage().getVariableYmls();
+    List<String> varFiles = setupRequest.getTasManifestsPackage().getVariableYmls();
     if (isNotEmpty(varFiles)) {
       varFiles = varFiles.stream().filter(StringUtils::isNotBlank).collect(toList());
     }
@@ -523,7 +523,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   public String generateManifestYamlForPush(CfBasicSetupRequestNG cfCommandSetupRequest,
       CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = cfCommandSetupRequest.getPcfManifestsPackage().getManifestYml();
+    String manifestYaml = cfCommandSetupRequest.getTasManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {

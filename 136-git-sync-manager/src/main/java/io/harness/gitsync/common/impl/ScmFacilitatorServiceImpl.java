@@ -67,7 +67,6 @@ import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
-import io.harness.gitsync.core.runnable.GitFileFetchRunnable;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -772,9 +771,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
         log.info("CACHE HIT for cacheKey : {}", cacheKey);
-        if (gitFileCacheResponse.getCacheDetails().isStale()) {
-          executor.execute(new GitFileFetchRunnable(getGitFileFetchRunnableParams(scmGetFileByBranchRequestDTO)));
-        }
         return Optional.of(prepareScmGetFileCacheResponse(gitFileCacheResponse.getGitFileCacheObject().getFileContent(),
             gitFileCacheResponse.getGitFileCacheResponseMetadata().getRef(),
             gitFileCacheResponse.getGitFileCacheObject().getCommitId(),

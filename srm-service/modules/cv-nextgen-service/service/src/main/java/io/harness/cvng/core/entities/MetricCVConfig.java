@@ -23,6 +23,9 @@ import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria.MetricThresholdCriteriaSpec;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
@@ -136,8 +139,8 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
     return new ArrayList<>(thresholdTypes);
   }
 
-  public List<TimeSeriesMetricPackDTO.MetricThreshold> getMetricThresholdDTOs() {
-    List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = new ArrayList<>();
+  public List<MetricThreshold> getMetricThresholdDTOs() {
+    List<MetricThreshold> metricThresholds = new ArrayList<>();
     Map<String, List<TimeSeriesThreshold>> mapOfTimeSeriesThreshold = new HashMap<>();
     metricPack.getMetrics().forEach(metricDefinition -> {
       if (!isEmpty(metricDefinition.getThresholds())) {
@@ -190,20 +193,16 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
       }
       TimeSeriesThreshold baseMetricThreshold = customThresholds.get(0);
       metricThresholds.add(
-          TimeSeriesMetricPackDTO.MetricThreshold.builder()
+          MetricThreshold.builder()
               .metricName(baseMetricThreshold.getMetricName())
               .groupName(maybeGetGroupName().orElse(baseMetricThreshold.getMetricGroupName()))
               .metricIdentifier(baseMetricThreshold.getMetricIdentifier())
               .type(MetricThresholdActionType.getMetricThresholdActionType(customThresholds.get(0).getAction()))
               .spec(MetricThresholdSpecDTOTransformer.getDto(baseMetricThreshold))
               .criteria(
-                  TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.builder()
+                  MetricThresholdCriteria.builder()
                       .type(thresholdCriteriaType)
-                      .spec(TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.MetricThresholdCriteriaSpec
-                                .builder()
-                                .lessThan(lessThan)
-                                .greaterThan(greaterThan)
-                                .build())
+                      .spec(MetricThresholdCriteriaSpec.builder().lessThan(lessThan).greaterThan(greaterThan).build())
                       .build())
               .build());
     }

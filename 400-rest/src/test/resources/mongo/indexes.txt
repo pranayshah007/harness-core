@@ -50,6 +50,7 @@ applicationManifests {"name": "accountId_connectorId", "background": true} {"acc
 applicationManifests {"name": "appId_1", "background": true} {"appId": 1}
 applicationManifests {"name": "appManifestIdx2", "background": true} {"appId": 1, "envId": 1, "serviceId": 1, "kind": 1}
 applicationManifests {"name": "createdAt_1", "background": true} {"createdAt": 1}
+applications {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
 applications {"name": "appId_1", "background": true} {"appId": 1}
 applications {"name": "createdAt_1", "background": true} {"createdAt": 1}
 applications {"name": "yaml", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "name": 1}
@@ -379,6 +380,7 @@ importedTemplates {"name": "account_app_command_idx", "background": true} {"acco
 importedTemplates {"name": "appId_1", "background": true} {"appId": 1}
 importedTemplates {"name": "createdAt_1", "background": true} {"createdAt": 1}
 importedTemplates {"name": "template_idx", "unique": true} {"templateId": 1}
+infrastructureDefinitions {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
 infrastructureDefinitions {"name": "accountId_1", "background": true} {"accountId": 1}
 infrastructureDefinitions {"name": "infraDefinitionIdx", "unique": true} {"appId": 1, "envId": 1, "name": 1}
 infrastructureDefinitions {"name": "infrastructure_cloudProviderId", "background": true} {"infrastructure.cloudProviderId": 1}
@@ -655,6 +657,7 @@ services {"name": "createdAt_1", "background": true} {"createdAt": 1}
 services {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
+settingAttributes {"name": "accountIdCategoryCreatedAt", "background": true} {"accountId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdNameIdx", "background": true} {"name": 1, "accountId": 1}
 settingAttributes {"name": "accountId_appId_type", "background": true} {"accountId": 1, "appId": 1, "value.type": 1}
 settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
@@ -700,6 +703,7 @@ syncStatus {"name": "compositeIdx2", "background": true} {"appId": 1, "infraMapp
 syncStatus {"name": "createdAt_1", "background": true} {"createdAt": 1}
 systemCatalogs {"name": "appId_1", "background": true} {"appId": 1}
 systemCatalogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
+tagLinks {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
 tagLinks {"name": "entityTagIdx", "unique": true} {"accountId": 1, "entityId": 1, "key": 1}
 tagLinks {"name": "tagValueIdx", "background": true} {"accountId": 1, "key": 1, "value": 1}
 tags {"name": "tagIdx", "unique": true} {"accountId": 1, "key": 1}
@@ -802,6 +806,7 @@ userInvites {"name": "accountId_email_1", "background": true} {"accountId": 1, "
 userInvites {"name": "appId_1", "background": true} {"appId": 1}
 userInvites {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userInvites {"name": "email_createdAt", "background": true} {"email": 1, "createdAt": -1}
+users {"name": "accountsCreatedAt", "background": true} {"accounts": 1, "createdAt": -1}
 users {"name": "accountsIdx", "background": true} {"accounts": 1}
 users {"name": "appId_1", "background": true} {"appId": 1}
 users {"name": "createdAt_1", "background": true} {"createdAt": 1}
