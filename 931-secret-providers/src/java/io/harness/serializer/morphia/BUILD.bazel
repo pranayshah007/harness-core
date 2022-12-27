@@ -11,9 +11,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//929-secret-providers/src/java/software/wings/beans:module",
-        "//980-commons/src/main/java/io/harness/serializer:module",
-        "@maven//:com_esotericsoftware_kryo",
+        "//931-secret-providers/src/java/io/harness/beans:module",
+        "//931-secret-providers/src/java/software/wings/beans:module",
+        "//980-commons/src/main/java/io/harness/morphia:module",
     ],
 )
 
