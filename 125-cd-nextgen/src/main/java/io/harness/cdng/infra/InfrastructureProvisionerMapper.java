@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra;
 
+import static io.harness.cdng.ssh.SshWinRmConstants.HOSTNAME_HOST_ATTRIBUTE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -16,12 +17,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.expressionEvaluator.CDEngineExpressionEvaluator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostFilterSpec;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
-import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -50,8 +51,6 @@ import org.apache.commons.io.IOUtils;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class InfrastructureProvisionerMapper {
-  private static final String HOSTNAME_HOST_ATTRIBUTE = "hostname";
-
   @Inject private CDEngineExpressionEvaluator evaluator;
 
   @NotNull
@@ -155,9 +154,9 @@ public class InfrastructureProvisionerMapper {
 
     HostFilterType type = hostFilter.getType();
     HostFilterSpec spec = hostFilter.getSpec();
-    if (type == HostFilterType.HOST_NAMES) {
+    if (type == HostFilterType.HOST_ATTRIBUTES) {
       return HostFilterDTO.builder()
-          .spec(HostNamesFilterDTO.builder().value(((HostNamesFilter) spec).getValue()).build())
+          .spec(HostAttributesFilterDTO.builder().value(((HostAttributesFilter) spec).getValue()).build())
           .type(type)
           .build();
     } else if (type == HostFilterType.ALL) {
