@@ -2811,18 +2811,19 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void testFetchManifestFilesAndWriteToDirectoryLocalStoreWithEmptyManifestFiles() throws Exception {
     K8sTaskHelperBase spyHelperBase = spy(k8sTaskHelperBase);
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-            LocalFileStoreDelegateConfig.builder()
-                    .filePaths(asList("path/to/k8s/template/deploy.yaml"))
-                    .manifestIdentifier("identifier")
-                    .manifestType("K8sManifest")
-                    .manifestFiles(getEmptyManifestFiles())
-                    .build();
+        LocalFileStoreDelegateConfig.builder()
+            .filePaths(asList("path/to/k8s/template/deploy.yaml"))
+            .manifestIdentifier("identifier")
+            .manifestType("K8sManifest")
+            .manifestFiles(getEmptyManifestFiles())
+            .build();
 
     K8sManifestDelegateConfig manifestDelegateConfig =
-            K8sManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
+        K8sManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
 
     assertThat(spyHelperBase.fetchManifestFilesAndWriteToDirectory(
-            manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId")).isEqualTo(true);
+                   manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId"))
+        .isEqualTo(true);
   }
 
   @Test
@@ -3594,9 +3595,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
   private List<ManifestFiles> getEmptyManifestFiles() {
     return asList(ManifestFiles.builder()
-            .fileName("chart.yaml")
-            .filePath("path/to/helm/chart/chart.yaml")
-            .fileContent(null)
-            .build());
+                      .fileName("chart.yaml")
+                      .filePath("path/to/helm/chart/chart.yaml")
+                      .fileContent(null)
+                      .build());
   }
 }
