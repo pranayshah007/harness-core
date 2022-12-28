@@ -10,8 +10,10 @@ package io.harness.auditevent.streaming.entities.outgoing;
 import javax.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
+@Getter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Resource {
