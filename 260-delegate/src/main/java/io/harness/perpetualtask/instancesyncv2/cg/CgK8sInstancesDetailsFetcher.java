@@ -16,6 +16,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -127,12 +128,18 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private int getInstanceCount(boolean isHelm, DelegateTaskNotifyResponseData taskResponseData) {
     if (isHelm) {
       ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) taskResponseData;
+      if (isNull(containerSyncResponse)) {
+        return 0;
+      }
       return containerSyncResponse.getContainerInfoList() != null ? containerSyncResponse.getContainerInfoList().size()
                                                                   : 0;
 
     } else {
       K8sInstanceSyncResponse k8sInstanceSyncResponse =
           (K8sInstanceSyncResponse) ((K8sTaskExecutionResponse) taskResponseData).getK8sTaskResponse();
+      if (isNull(k8sInstanceSyncResponse)) {
+        return 0;
+      }
       return k8sInstanceSyncResponse.getK8sPodInfoList() != null ? k8sInstanceSyncResponse.getK8sPodInfoList().size()
                                                                  : 0;
     }
