@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class S3ToClickHouseSyncTasklet implements Tasklet {
   @Autowired AwsClientImpl awsClient;
   @Autowired ClickHouseServiceImpl clickHouseService;
-  @Inject BatchMainConfig configuration;
+  @Autowired BatchMainConfig configuration;
 
   private static final int timeIntervalHours = 10;
   private static final Properties properties = new Properties();
@@ -81,6 +81,8 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     Map<String, List<String>> uniqueMonthFolders = new HashMap<>();
     Map<String, Long> csvFolderSizeMap = new HashMap<>();
 
+    log.info((configuration.getAwsS3SyncConfig()!=null) + "_isConfigObjectNotNull");
+    log.info((configuration.getAwsS3SyncConfig().getAwsSecretKey()!=null) + "_isSecretKeyNotNull");
 
     AWSCredentialsProvider credentials = awsClient.constructStaticBasicAwsCredentials(configuration.getAwsS3SyncConfig().getAwsAccessKey(), configuration.getAwsS3SyncConfig().getAwsSecretKey());
     S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), "");
