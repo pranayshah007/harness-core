@@ -432,6 +432,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(392, "ECS_RUN_TASK_ARN");
     taskTypeOrdinalMapping.put(393, "AWS_ASG_ROLLING_DEPLOY_TASK_NG");
     taskTypeOrdinalMapping.put(394, "AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG");
+    taskTypeOrdinalMapping.put(395, "AWS_ASG_ROLLING_ROLLBACK_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

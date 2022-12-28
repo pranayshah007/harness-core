@@ -16,7 +16,7 @@ import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.ServiceSpec;
+import io.harness.cdng.service.WebAppSpec;
 import io.harness.cdng.visitor.helpers.serviceconfig.AzureWebAppServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = AzureWebAppServiceSpecVisitorHelper.class)
 @TypeAlias("azureWebAppServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.AzureWebAppServiceSpec")
-public class AzureWebAppServiceSpec implements ServiceSpec, Visitable {
+public class AzureWebAppServiceSpec implements Visitable, WebAppSpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

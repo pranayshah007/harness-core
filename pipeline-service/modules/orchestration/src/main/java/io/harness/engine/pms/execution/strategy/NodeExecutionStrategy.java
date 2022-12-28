@@ -19,9 +19,9 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 
-import com.google.protobuf.ByteString;
 import java.util.EnumSet;
 import java.util.Map;
 import lombok.NonNull;
@@ -48,7 +48,7 @@ public interface NodeExecutionStrategy<P extends Node, N extends PmsNodeExecutio
     throw new UnsupportedOperationException("Start execution node Supported for plan");
   }
 
-  default void resumeNodeExecution(Ambiance ambiance, Map<String, ByteString> response, boolean asyncError) {
+  default void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
     throw new UnsupportedOperationException("Start execution node Supported for plan");
   }
 

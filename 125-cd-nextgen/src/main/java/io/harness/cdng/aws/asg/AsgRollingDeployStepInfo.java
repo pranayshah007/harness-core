@@ -52,7 +52,7 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
   @Builder(builderMethodName = "infoBuilder")
   public AsgRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
-      ParameterField<Integer> instanceWarmup, ParameterField<Double> minimumHealthyPercentage) {
+      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
   }
 

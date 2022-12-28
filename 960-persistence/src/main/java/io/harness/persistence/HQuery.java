@@ -23,6 +23,8 @@ import io.harness.observer.Subject;
 import com.google.common.collect.Sets;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoExecutionTimeoutException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +61,7 @@ public class HQuery<T> extends QueryImpl<T> {
   private final Subject<Tracer> tracerSubject;
   private Set<QueryChecks> queryChecks = allChecks;
   private final int maxOperationTimeInMillis;
+  private List<Criteria> children;
 
   private static final Set<String> requiredFilterArgs = Sets.newHashSet("accountId", "accounts", "appId", "accountIds");
 
@@ -86,11 +89,28 @@ public class HQuery<T> extends QueryImpl<T> {
     this.traceMode = traceMode;
     this.tracerSubject = tracerSubject;
     this.maxOperationTimeInMillis = maxOperationTimeInMillis;
+    this.children = new ArrayList<>();
   }
 
   public MorphiaIterator<T, T> iterator() {
     log.error("Do not use the query as iterator directly.", new Exception(""));
     return this.fetch();
+  }
+
+  public List<Criteria> getChildren() {
+    return this.children;
+  }
+
+  @Override
+  public void add(Criteria... criteria) {
+    super.add(criteria);
+    children.addAll(Arrays.asList(criteria));
+  }
+
+  @Override
+  public void remove(Criteria criteria) {
+    super.remove(criteria);
+    this.children.remove(criteria);
   }
 
   private void checkKeyListSize(List<Key<T>> list) {

@@ -41,7 +41,8 @@ import lombok.experimental.SuperBuilder;
       @JsonSubTypes.Type(value = CDModuleLicenseDTO.class, name = "CD")
       , @JsonSubTypes.Type(value = CIModuleLicenseDTO.class, name = "CI"),
           @JsonSubTypes.Type(value = CEModuleLicenseDTO.class, name = "CE"),
-          @JsonSubTypes.Type(value = CVModuleLicenseDTO.class, name = "CV"),
+          @JsonSubTypes.Type(value = SRMModuleLicenseDTO.class, name = "CV"),
+          @JsonSubTypes.Type(value = SRMModuleLicenseDTO.class, name = "SRM"),
           @JsonSubTypes.Type(value = CFModuleLicenseDTO.class, name = "CF"),
           @JsonSubTypes.Type(value = STOModuleLicenseDTO.class, name = "STO"),
           @JsonSubTypes.Type(value = ChaosModuleLicenseDTO.class, name = "CHAOS"),

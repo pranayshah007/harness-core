@@ -491,7 +491,10 @@ public enum EntityType {
       EntityYamlRootNames.TANZU_COMMAND_STEP),
   @JsonProperty(EntityTypeConstants.ASG_ROLLING_DEPLOY)
   ASG_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_DEPLOY, IdentifierRef.class,
-      EntityYamlRootNames.ASG_ROLLING_DEPLOY);
+      EntityYamlRootNames.ASG_ROLLING_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_ROLLING_ROLLBACK)
+  ASG_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ASG_ROLLING_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

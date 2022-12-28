@@ -120,10 +120,8 @@ public class LogClusterServiceImpl implements LogClusterService {
     } else {
       Optional<String> baselineVerificationTaskId = verificationTaskService.findBaselineVerificationTaskId(
           input.getVerificationTaskId(), verificationJobInstance);
-      if (baselineVerificationTaskId.isPresent()) {
-        testDataUrl = buildTestDataUrlForLogClustering(baselineVerificationTaskId.get(), input.getVerificationTaskId(),
-            verificationJobInstance.getStartTime(), input.getEndTime());
-      }
+      testDataUrl = buildTestDataUrlForLogClustering(baselineVerificationTaskId.orElse(null),
+          input.getVerificationTaskId(), verificationJobInstance.getStartTime(), input.getEndTime());
     }
     return Optional.of(createLogClusterLearningEngineTask(
         input.getVerificationTaskId(), input.getStartTime(), input.getEndTime(), LogClusterLevel.L2, testDataUrl));

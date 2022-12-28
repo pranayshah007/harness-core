@@ -51,9 +51,7 @@ public class NextGenMetricSourceSpecTransformer
               .riskProfile(riskProfile)
               .continuousVerificationEnabled(metricInfo.getDeploymentVerification().isEnabled())
               .liveMonitoringEnabled(metricInfo.getLiveMonitoring().isEnabled())
-              .queryParams(QueryParamsDTO.builder()
-                               .serviceInstanceField(metricInfo.getQueryParams().getServiceInstanceField())
-                               .build())
+              .queryParams(QueryParamsDTO.getQueryParamsDTO(metricInfo.getQueryParams()))
               .build();
       List<MetricThreshold> metricThresholds =
           Optional.ofNullable(nextGenMetricCVConfig.getMetricThresholdDTOs())

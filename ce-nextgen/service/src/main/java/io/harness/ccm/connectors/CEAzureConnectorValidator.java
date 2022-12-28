@@ -20,7 +20,7 @@ import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
 import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.ng.core.dto.ErrorDetail;
 
-import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.HttpClient;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.profile.AzureProfile;
@@ -291,20 +291,24 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     List<ErrorDetail> errorDetails = new ArrayList<>();
     try {
       AzureProfile profile = new AzureProfile(tenantId, subscriptionId, AzureEnvironment.AZURE);
+      HttpClient httpClient = AzureUtils.getAzureHttpClient();
       ClientSecretCredential clientSecretCredential =
           new ClientSecretCredentialBuilder()
               .clientId(configuration.getCeAzureSetupConfig().getAzureAppClientId())
               .clientSecret(configuration.getCeAzureSetupConfig().getAzureAppClientSecret())
               .tenantId(profile.getTenantId())
+              .httpClient(httpClient)
               .build();
 
       AzureResourceManager azureResourceManager =
-          AzureResourceManager.configure()
-              .withLogLevel(HttpLogDetailLevel.BASIC)
-              .withRetryPolicy(
-                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-              .authenticate(clientSecretCredential, profile)
+          AzureResourceManager
+              .authenticate(
+                  AzureUtils.getAzureHttpPipeline(clientSecretCredential, profile,
+                      AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())),
+                      httpClient),
+                  profile)
               .withSubscription(subscriptionId);
+
       ServicePrincipal servicePrincipal = azureResourceManager.accessManagement().servicePrincipals().getByName(
           configuration.getCeAzureSetupConfig().getAzureAppClientId());
       PagedIterable<RoleAssignment> roles =

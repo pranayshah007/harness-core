@@ -1,4 +1,4 @@
-moduleType: CV
+moduleType: SRM
 clients:
   - name: cv-nextgen
     clientConfig: cvngClientConfig

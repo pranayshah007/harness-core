@@ -121,7 +121,7 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
       List<Child> children = parallelismStrategyConfigService.fetchChildren(
           stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
       int maxConcurrency =
-          Integer.valueOf(String.valueOf(stepParameters.getStrategyConfig().getParallelism().getValue()));
+          Double.valueOf(String.valueOf(stepParameters.getStrategyConfig().getParallelism().getValue())).intValue();
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }

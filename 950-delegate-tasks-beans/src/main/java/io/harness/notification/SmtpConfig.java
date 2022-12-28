@@ -35,6 +35,7 @@ public class SmtpConfig {
   @JsonProperty("port") private int port;
   @JsonProperty("fromAddress") private String fromAddress;
   @JsonProperty("useSSL") private boolean useSSL;
+  @JsonProperty("startTLS") private boolean startTLS;
   @JsonProperty("username") @ConfigSecret private String username;
   @JsonProperty("password") @ConfigSecret private char[] password;
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;

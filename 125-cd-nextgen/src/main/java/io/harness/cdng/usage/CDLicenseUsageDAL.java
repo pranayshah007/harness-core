@@ -37,6 +37,7 @@ import io.harness.cdng.usage.pojos.ActiveServiceResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -102,7 +103,7 @@ public class CDLicenseUsageDAL {
       + "           MAX(service_startts) as lastDeployedServiceTime,\n"
       + "           COUNT(*) OVER () AS totalCount\n"
       + "    FROM service_infra_info\n"
-      + "    WHERE (accountid = ? AND service_startts >= ? and service_startts <= ? :filterOnServiceInfraInfo)\n"
+      + "    WHERE (accountid = ? AND service_startts >= ? AND service_startts <= ? :filterOnServiceInfraInfo)\n"
       + "    GROUP BY orgidentifier, projectidentifier, service_id\n"
       + ") activeServices\n"
       + "    LEFT JOIN\n"
@@ -245,19 +246,23 @@ public class CDLicenseUsageDAL {
                 buildFilterOnNGInstanceStatsTable(
                     fetchData.getOrgIdentifier(), fetchData.getProjectIdentifier(), fetchData.getServiceIdentifier()))
             .replace(":sortCriteria", buildSortCriteria(fetchData.getSort()));
+
     int retry = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && retry <= MAX_RETRY) {
       try (Connection dbConnection = timeScaleDBService.getDBConnection();
            PreparedStatement fetchStatement = dbConnection.prepareStatement(fetchActiveServicesFinalQuery)) {
-        fetchStatement.setString(1, accountIdentifier);
-        fetchStatement.setLong(2, fetchData.getStartTSInMs());
-        fetchStatement.setLong(3, fetchData.getEndTSInMs());
-        fetchStatement.setDouble(4, INSTANCE_COUNT_PERCENTILE_DISC);
-        fetchStatement.setString(5, accountIdentifier);
-        fetchStatement.setInt(6, fetchData.getPageSize());
-        fetchStatement.setInt(7, fetchData.getPageNumber());
-        fetchStatement.setInt(8, fetchData.getPageSize());
+        int cursor = 0;
+        fetchStatement.setString(++cursor, accountIdentifier);
+        fetchStatement.setLong(++cursor, fetchData.getStartTSInMs());
+        fetchStatement.setLong(++cursor, fetchData.getEndTSInMs());
+        cursor = setStatementByOrgProjectServiceIdentifiers(fetchData, fetchStatement, cursor);
+        fetchStatement.setDouble(++cursor, INSTANCE_COUNT_PERCENTILE_DISC);
+        fetchStatement.setString(++cursor, accountIdentifier);
+        cursor = setStatementByOrgProjectServiceIdentifiers(fetchData, fetchStatement, cursor);
+        fetchStatement.setInt(++cursor, fetchData.getPageSize());
+        fetchStatement.setInt(++cursor, fetchData.getPageNumber());
+        fetchStatement.setInt(++cursor, fetchData.getPageSize());
 
         ResultSet resultSet = fetchStatement.executeQuery();
         activeServiceResponse = processActiveServiceBaseResultSet(resultSet);
@@ -338,42 +343,43 @@ public class CDLicenseUsageDAL {
     return instanceCountPerService;
   }
 
-  private String buildFilterOnServiceInfraInfoTable(
-      String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  @VisibleForTesting
+  String buildFilterOnServiceInfraInfoTable(String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     StringJoiner filterOnServiceInfraInfoTable = new StringJoiner(SPACE);
 
     if (isNotEmpty(orgIdentifier)) {
-      filterOnServiceInfraInfoTable.add(format("AND orgIdentifier = '%s'", orgIdentifier));
+      filterOnServiceInfraInfoTable.add("AND orgidentifier = ?");
     }
     if (isNotEmpty(projectIdentifier)) {
-      filterOnServiceInfraInfoTable.add(format("AND projectIdentifier = '%s'", projectIdentifier));
+      filterOnServiceInfraInfoTable.add("AND projectidentifier = ?");
     }
     if (isNotEmpty(serviceIdentifier)) {
-      filterOnServiceInfraInfoTable.add(format("AND service_id = '%s'", serviceIdentifier));
+      filterOnServiceInfraInfoTable.add("AND service_id = ?");
     }
 
     return filterOnServiceInfraInfoTable.toString();
   }
 
-  private String buildFilterOnNGInstanceStatsTable(
-      String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  @VisibleForTesting
+  String buildFilterOnNGInstanceStatsTable(String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     StringJoiner filterOnNGInstanceStatsTable = new StringJoiner(SPACE);
 
     if (isNotEmpty(orgIdentifier)) {
-      filterOnNGInstanceStatsTable.add(format("AND orgid = '%s'", orgIdentifier));
+      filterOnNGInstanceStatsTable.add("AND orgid = ?");
     }
     if (isNotEmpty(projectIdentifier)) {
-      filterOnNGInstanceStatsTable.add(format("AND projectId = '%s'", projectIdentifier));
+      filterOnNGInstanceStatsTable.add("AND projectid = ?");
     }
     if (isNotEmpty(serviceIdentifier)) {
-      filterOnNGInstanceStatsTable.add(format("AND serviceId = '%s'", serviceIdentifier));
+      filterOnNGInstanceStatsTable.add("AND serviceid = ?");
     }
 
     return filterOnNGInstanceStatsTable.toString();
   }
 
+  @VisibleForTesting
   @NotNull
-  private String buildSortCriteria(Sort sort) {
+  String buildSortCriteria(Sort sort) {
     String defaultSortCriteria = format("%s DESC NULLS LAST", SERVICE_INSTANCES_SORT_PROPERTY);
 
     Sort.Order serviceInstances = sort.getOrderFor(SERVICE_INSTANCES_QUERY_PROPERTY);
@@ -393,6 +399,20 @@ public class CDLicenseUsageDAL {
     }
 
     return defaultSortCriteria;
+  }
+
+  private int setStatementByOrgProjectServiceIdentifiers(
+      ActiveServiceFetchData fetchData, PreparedStatement fetchStatement, int cursor) throws SQLException {
+    if (isNotEmpty(fetchData.getOrgIdentifier())) {
+      fetchStatement.setString(++cursor, fetchData.getOrgIdentifier());
+    }
+    if (isNotEmpty(fetchData.getProjectIdentifier())) {
+      fetchStatement.setString(++cursor, fetchData.getProjectIdentifier());
+    }
+    if (isNotEmpty(fetchData.getServiceIdentifier())) {
+      fetchStatement.setString(++cursor, fetchData.getServiceIdentifier());
+    }
+    return cursor;
   }
 
   private ActiveServiceResponse<List<ActiveServiceBase>> processActiveServiceBaseResultSet(ResultSet resultSet)

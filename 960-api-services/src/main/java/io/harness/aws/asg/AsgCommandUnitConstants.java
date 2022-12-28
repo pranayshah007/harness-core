@@ -32,4 +32,10 @@ public enum AsgCommandUnitConstants {
       return "Prepare Rollback Data";
     }
   },
+  rollback {
+    @Override
+    public String toString() {
+      return "Rollback";
+    }
+  }
 }

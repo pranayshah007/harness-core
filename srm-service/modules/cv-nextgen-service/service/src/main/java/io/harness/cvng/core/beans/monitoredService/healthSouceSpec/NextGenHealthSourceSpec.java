@@ -17,7 +17,6 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.HealthSourceParams;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
-import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
@@ -195,7 +194,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
         return sumologicMetricCVConfigs;
       case LOG:
         return queryDefinitions.stream()
-            .map(queryDTO
+            .map(queryDefinition
                 -> NextGenLogCVConfig.builder()
                        .accountId(accountId)
                        .orgIdentifier(orgIdentifier)
@@ -204,11 +203,9 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                        .identifier(identifier)
                        .connectorIdentifier(getConnectorRef())
                        .monitoringSourceName(name)
-                       .queryName(queryDTO.getName())
-                       .query(queryDTO.getQuery())
-                       .queryParams(QueryParams.builder()
-                                        .serviceInstanceField(queryDTO.getQueryParams().getServiceInstanceField())
-                                        .build())
+                       .queryName(queryDefinition.getName())
+                       .query(queryDefinition.getQuery())
+                       .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                        .category(CVMonitoringCategory.ERRORS)
                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
                        .build())

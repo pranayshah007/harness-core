@@ -32,7 +32,7 @@ import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CV)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CVLicenseUsageImplTest extends CvNextGenTestBase {
+public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
   @Mock private MonitoredServiceService monitoredServiceService;
   @Inject private LicenseUsageInterface licenseUsageInterface;
 
@@ -46,9 +46,9 @@ public class CVLicenseUsageImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetLicenseUsage() {
     doReturn((long) 5).when(monitoredServiceService).countUniqueEnabledServices(any());
-    CVLicenseUsageDTO cvLicenseUsageDTO =
-        (CVLicenseUsageDTO) licenseUsageInterface.getLicenseUsage("testAccountId", ModuleType.CV, 1, null);
-    assertThat(cvLicenseUsageDTO.getActiveServices().getCount()).isEqualTo(5);
-    assertThat(cvLicenseUsageDTO.getActiveServices().getDisplayName()).isEqualTo("Total active SRM services");
+    SRMLicenseUsageDTO SRMLicenseUsageDTO =
+        (SRMLicenseUsageDTO) licenseUsageInterface.getLicenseUsage("testAccountId", ModuleType.CV, 1, null);
+    assertThat(SRMLicenseUsageDTO.getActiveServices().getCount()).isEqualTo(5);
+    assertThat(SRMLicenseUsageDTO.getActiveServices().getDisplayName()).isEqualTo("Total active SRM services");
   }
 }

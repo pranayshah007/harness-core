@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -26,6 +27,7 @@ import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.exception.HttpResponseException;
+import com.azure.core.http.HttpClient;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.keyvault.models.Vault;
 import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
@@ -82,13 +84,14 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
 
   private List<String> listVaultsInternal(AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO) throws IOException {
     List<Vault> vaultList = new ArrayList<>();
+    HttpClient httpClient = AzureUtils.getAzureHttpClient();
     TokenCredential credentials =
         KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
             String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
-            azureKeyVaultConnectorDTO.getTenantId());
+            azureKeyVaultConnectorDTO.getTenantId(), httpClient);
 
     AzureResourceManager azureResourceManager =
-        KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO);
+        KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO, httpClient);
 
     for (ResourceGroup rGroup : azureResourceManager.resourceGroups().list()) {
       vaultList.addAll(

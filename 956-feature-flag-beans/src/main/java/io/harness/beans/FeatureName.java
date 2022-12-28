@@ -319,7 +319,7 @@ public enum FeatureName {
   GITOPS_BYO_ARGO,
   CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
   CVNG_LICENSE_ENFORCEMENT,
-  CVNG_SLO_DISABLE_ENABLE,
+  SRM_SLO_TOGGLE,
   SERVICE_DASHBOARD_V2,
   CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_DASHBOARD_ENHANCEMENT_NG("New APIs added to send trend object in response for change rates", HarnessTeam.CDC),
@@ -441,7 +441,6 @@ public enum FeatureName {
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
   SPG_OPTIMIZE_CONCILIATION_QUERY(
       "Change the conciliation query from using notExists to use equal null", HarnessTeam.SPG),
-  CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
@@ -550,7 +549,9 @@ public enum FeatureName {
   CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY(
       "FF to make the Artifactory Repository Url as mandatory in case of docker repositoryFormat", HarnessTeam.CDC),
   VALIDATE_SERVICE_NAME_IN_FILE_PATH("Validate the service name in yaml file path", HarnessTeam.SPG),
-  NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP);
+  NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
+  CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
+      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
