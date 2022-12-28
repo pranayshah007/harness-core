@@ -16,7 +16,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE;
 import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -98,11 +97,9 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     HashSet<String> targetAccounts = new HashSet<>();
     HashSet<String> targetAccountsWithOrganizationAndProject = new HashSet<>();
     for (AccountDTO accountDTO : ngEnabledAccounts) {
-      boolean isAccountBasicRoleEnabled =
-          featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE, accountDTO.getIdentifier());
       boolean isAccountBasicRoleOnlyEnabled =
           featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountDTO.getIdentifier());
-      if (!(isAccountBasicRoleEnabled || isAccountBasicRoleOnlyEnabled)) {
+      if (!isAccountBasicRoleOnlyEnabled) {
         targetAccounts.add(accountDTO.getIdentifier());
       }
       targetAccountsWithOrganizationAndProject.add(accountDTO.getIdentifier());

@@ -1,13 +1,13 @@
 package io.harness.accesscontrol.roleassignments.migration;
 
 import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE;
 import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
@@ -22,10 +22,12 @@ import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOBuilder;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -71,7 +73,6 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
 
-    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE, accountIdentifier)).thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
 
     List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -82,7 +83,7 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment =
-        createAccountScopeUserRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
+        createAccountScopeRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
     roleAssignmentRepository.save(accountScopeUserRoleAssignment);
     RoleAssignmentDBO orgScopeUserRoleAssignment =
         createOrganizationScopeUserRoleAssignment(accountIdentifier, orgIdentifier);
@@ -98,13 +99,13 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     assertPostMigration(accountScopeUserRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
   }
 
-  private RoleAssignmentDBO createAccountScopeUserRoleAssignment(
+  private RoleAssignmentDBO createAccountScopeRoleAssignment(
       String accountIdentifier, PrincipalType principalType, String principalIdentifier) {
     Scope scope = ScopeMapper.fromDTO(
         ScopeDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build());
 
     String roleAssignmentIdentifier = randomAlphabetic(10);
-    RoleAssignmentDBO existingRoleAssignmentDBO =
+    RoleAssignmentDBOBuilder existingRoleAssignmentDBOBuilder =
         RoleAssignmentDBO.builder()
             .scopeIdentifier(scope.toString())
             .scopeLevel(scope.getLevel().toString())
@@ -112,8 +113,12 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
             .principalIdentifier(principalIdentifier)
             .principalType(principalType)
             .roleIdentifier(ACCOUNT_VIEWER_ROLE)
-            .resourceGroupIdentifier(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-            .build();
+            .resourceGroupIdentifier(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+
+    if (principalType == PrincipalType.USER_GROUP) {
+      existingRoleAssignmentDBOBuilder.principalScopeLevel(HarnessScopeLevel.ACCOUNT.getName());
+    }
+    RoleAssignmentDBO existingRoleAssignmentDBO = existingRoleAssignmentDBOBuilder.build();
     return existingRoleAssignmentDBO;
   }
 
@@ -167,7 +172,6 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
 
-    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE, accountIdentifier)).thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
 
     List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -178,7 +182,7 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment =
-        createAccountScopeUserRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
+        createAccountScopeRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
     roleAssignmentRepository.save(accountScopeUserRoleAssignment);
     RoleAssignmentDBO orgScopeUserRoleAssignment =
         createOrganizationScopeUserRoleAssignment(accountIdentifier, orgIdentifier);
@@ -187,8 +191,47 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
         createProjectScopeUserRoleAssignment(accountIdentifier, orgIdentifier, projectIdentifier);
     roleAssignmentRepository.save(projectScopeUserRoleAssignment);
 
-    RoleAssignmentDBO accountScopeUserGroupRoleAssignment =
-        createAccountScopeUserRoleAssignment(accountIdentifier, PrincipalType.USER_GROUP, principalIdentifier);
+    RoleAssignmentDBO accountScopeUserGroupRoleAssignment = createAccountScopeRoleAssignment(
+        accountIdentifier, PrincipalType.USER_GROUP, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
+    roleAssignmentRepository.save(accountScopeUserGroupRoleAssignment);
+
+    userRoleAssignmentRemovalMigration.migrate();
+
+    Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
+    assertEquals(1, postMigrationRoleAssignments.getTotalElements());
+    assertPostMigration(accountScopeUserGroupRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void
+  testMigrateAccounts_WhenAccountScopeUserGroupRoleAssignmentExistsButAccountBasicRoleOnlyFFIsOn_ThenSkipsDeletingAccountScopeUserRoleAssignment() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(true);
+
+    List<AccountDTO> accountDTOs = new ArrayList<>();
+    accountDTOs.add(AccountDTO.builder().identifier(accountIdentifier).isNextGenEnabled(true).build());
+    Call<RestResponse<List<AccountDTO>>> responseCall = mock(Call.class);
+    when(accountClient.getAllAccounts()).thenReturn(responseCall);
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(accountDTOs);
+    String principalIdentifier = randomAlphabetic(10);
+    RoleAssignmentDBO accountScopeUserRoleAssignment =
+        createAccountScopeRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
+    roleAssignmentRepository.save(accountScopeUserRoleAssignment);
+    RoleAssignmentDBO orgScopeUserRoleAssignment =
+        createOrganizationScopeUserRoleAssignment(accountIdentifier, orgIdentifier);
+    roleAssignmentRepository.save(orgScopeUserRoleAssignment);
+    RoleAssignmentDBO projectScopeUserRoleAssignment =
+        createProjectScopeUserRoleAssignment(accountIdentifier, orgIdentifier, projectIdentifier);
+    roleAssignmentRepository.save(projectScopeUserRoleAssignment);
+
+    RoleAssignmentDBO accountScopeUserGroupRoleAssignment = createAccountScopeRoleAssignment(
+        accountIdentifier, PrincipalType.USER_GROUP, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
     roleAssignmentRepository.save(accountScopeUserGroupRoleAssignment);
 
     userRoleAssignmentRemovalMigration.migrate();
