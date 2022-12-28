@@ -421,7 +421,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   public void shutdown(final boolean shouldUnregister) throws InterruptedException {
     shutdownExecutors();
     if (shouldUnregister) {
-      unregisterDelegate();
+      //unregisterDelegate();
     }
   }
 
