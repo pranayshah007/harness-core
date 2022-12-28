@@ -106,12 +106,24 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
     }
     List<String> filteredAccounts = filterAccounts(targetAccounts);
     if (isNotEmpty(filteredAccounts)) {
-      deleteAccountScopeRoleAssignments(filteredAccounts);
+      deleteAccountScopeRoleAssignmentsInBatch(filteredAccounts);
     }
     if (isNotEmpty(targetAccountsWithOrganizationAndProject)) {
       deleteOrganizationScopeRoleAssignments(targetAccountsWithOrganizationAndProject);
       deleteProjectScopeRoleAssignments(targetAccountsWithOrganizationAndProject);
     }
+  }
+
+  private void deleteAccountScopeRoleAssignmentsInBatch(List<String> accountIds) {
+    Streams.stream(Iterables.partition(accountIds, 1)).forEach(list -> {
+      try {
+        deleteAccountScopeRoleAssignments(list);
+        Thread.sleep(10000);
+      } catch (Exception ex) {
+        log.error(DEBUG_MESSAGE
+            + String.format("Error while waking up. Failed to delete Role assignments for accounts %s", list));
+      }
+    });
   }
 
   private void deleteAccountScopeRoleAssignments(List<String> accountIds) {
@@ -132,7 +144,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
       long count = roleAssignmentRepository.deleteMulti(criteria);
       log.info(DEBUG_MESSAGE + String.format("removed Account scope %s Role Assignments", count));
     } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to delete Role assignments for accounts");
+      log.error(DEBUG_MESSAGE + String.format("Failed to delete Role assignments for accounts %s", accountIds));
     }
   }
 
@@ -156,6 +168,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
         long count = roleAssignmentRepository.deleteMulti(criteria);
         log.info(DEBUG_MESSAGE
             + String.format("removed Organization scope %s Role Assignment in account %s", count, accountId));
+        Thread.sleep(100);
       } catch (Exception ex) {
         log.error(DEBUG_MESSAGE
             + String.format("Failed to delete role assignments for organization of account %s", accountId));
@@ -183,6 +196,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
         long count = roleAssignmentRepository.deleteMulti(criteria);
         log.info(
             DEBUG_MESSAGE + String.format("Removed Project scope %s role assignments in account %s", count, accountId));
+        Thread.sleep(100);
       } catch (Exception ex) {
         log.error(
             DEBUG_MESSAGE + String.format("Failed to delete role assignments for project of account %s", accountId));
