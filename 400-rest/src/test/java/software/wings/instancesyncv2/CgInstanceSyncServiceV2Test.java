@@ -51,6 +51,7 @@ import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.instance.ContainerInstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
@@ -90,6 +91,8 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private ContainerInstanceHandler containerInstanceHandler;
 
   @Mock private InstanceHandlerFactoryService instanceHandlerFactory;
+
+  @Mock private DeploymentService deploymentService;
 
   @Before
   public void setup() {
