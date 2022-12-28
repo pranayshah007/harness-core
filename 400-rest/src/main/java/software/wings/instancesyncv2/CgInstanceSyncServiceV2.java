@@ -7,6 +7,8 @@
 
 package software.wings.instancesyncv2;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -42,6 +44,7 @@ import software.wings.service.impl.instance.InstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -60,6 +63,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -79,6 +83,7 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceService instanceService;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
+  private final DeploymentService deploymentService;
   public static final String AUTO_SCALE = "AUTO_SCALE";
   public static final int PERPETUAL_TASK_INTERVAL = 2;
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
@@ -104,6 +109,21 @@ public class CgInstanceSyncServiceV2 {
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(200), Duration.ofSeconds(220))) {
+      List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
+
+      if (isEmpty(deploymentSummaries)) {
+        log.error("Deployment Summaries can not be empty or null");
+        return;
+      }
+
+      deploymentSummaries = deploymentSummaries.stream().filter(this::hasDeploymentKey).collect(Collectors.toList());
+
+      deploymentSummaries.forEach(deploymentSummary -> saveDeploymentSummary(deploymentSummary, false));
+
+      InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infrastructureMapping);
+      instanceHandler.handleNewDeployment(
+          event.getDeploymentSummaries(), event.isRollback(), event.getOnDemandRollbackInfo());
+
       event.getDeploymentSummaries()
           .stream()
           .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
@@ -123,9 +143,6 @@ public class CgInstanceSyncServiceV2 {
             }
           });
 
-      InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infrastructureMapping);
-      instanceHandler.handleNewDeployment(
-          event.getDeploymentSummaries(), event.isRollback(), event.getOnDemandRollbackInfo());
     } catch (Exception ex) {
       // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
       // forever in case of exception
@@ -137,11 +154,11 @@ public class CgInstanceSyncServiceV2 {
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
-    log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
+    log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-      log.error(
-          "Instance Sync failed for perpetual task: [{}], with error: [{}]", perpetualTaskId, result.getErrorMessage());
+      log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
+          result, result.getErrorMessage());
       return;
     }
 
@@ -212,6 +229,26 @@ public class CgInstanceSyncServiceV2 {
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }
     }
+  }
+
+  @VisibleForTesting
+  DeploymentSummary saveDeploymentSummary(DeploymentSummary deploymentSummary, boolean rollback) {
+    if (shouldSaveDeploymentSummary(deploymentSummary, rollback)) {
+      return deploymentService.save(deploymentSummary);
+    }
+    return deploymentSummary;
+  }
+
+  @VisibleForTesting
+  boolean shouldSaveDeploymentSummary(DeploymentSummary summary, boolean isRollback) {
+    if (summary == null) {
+      return false;
+    }
+    if (!isRollback) {
+      return true;
+    }
+    // save rollback for lambda deployments
+    return summary.getAwsLambdaDeploymentKey() != null;
   }
 
   @VisibleForTesting

@@ -17,6 +17,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.Capability;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
@@ -314,7 +315,8 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
 
   @Override
   public long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData) {
-    if (instanceSyncData.getInstanceCount() == 0) {
+    if (instanceSyncData.getInstanceCount() == 0
+        || !instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
       return releaseIdentifier.getDeleteAfter();
     }
     return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
