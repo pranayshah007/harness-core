@@ -31,7 +31,6 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.InfrastructureProvisionerMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -135,7 +134,6 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
-  @Inject private InfrastructureProvisionerMapper infrastructureProvisionerMapper;
 
   @Inject private CDExpressionResolver resolver;
 

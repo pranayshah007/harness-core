@@ -345,7 +345,7 @@ public class SshEntityHelper {
   }
 
   private boolean matchAllFilterAttrs(Map<String, String> hostAttrsFilter, Map<String, Object> hostAttrs) {
-    return hostAttrsFilter.entrySet().stream().allMatch(hostAttrFilter -> {
+    return hostAttrsFilter.entrySet().stream().allMatch((Map.Entry<String, String> hostAttrFilter) -> {
       String filterKey = hostAttrFilter.getKey();
       return hostAttrs.containsKey(filterKey) && hostAttrs.get(filterKey).equals(hostAttrFilter.getValue());
     });
