@@ -3113,8 +3113,12 @@ public class K8sTaskHelperBase {
         }
 
         createDirectoryIfDoesNotExist(parent.toString());
-        FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
-        executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+        if (isNotEmpty(manifestFile.getFileContent())) {
+          FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
+          executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+        } else {
+          executionLogCallback.saveExecutionLog(color(format("- %s is empty", manifestFile.getFilePath()), Yellow));
+        }
       }
       executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
       return true;
