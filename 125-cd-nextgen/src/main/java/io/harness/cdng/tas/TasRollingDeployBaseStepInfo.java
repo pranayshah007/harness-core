@@ -30,11 +30,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 @AllArgsConstructor
 @TypeAlias("tasRollingDeployBaseStepInfo")
 public class TasRollingDeployBaseStepInfo {
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH)
-  TasCommandScript script;
-
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

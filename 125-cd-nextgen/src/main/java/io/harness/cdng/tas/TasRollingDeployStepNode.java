@@ -35,7 +35,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @TypeAlias("tasRollingDeployStepNode")
 @RecasterAlias("io.harness.cdng.tas.TasRollingDeployStepNode")
 public class TasRollingDeployStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasRollingDeployStepNode.StepType type = StepType.TAS_ROLLING_DEPLOY;
+  @JsonProperty("type") @NotNull TasRollingDeployStepNode.StepType type = StepType.TasRollingDeploy;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class TasRollingDeployStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TAS_ROLLING_DEPLOY(StepSpecTypeConstants.TAS_ROLLING_DEPLOY);
+    TasRollingDeploy(StepSpecTypeConstants.TAS_ROLLING_DEPLOY);
     @Getter String name;
     StepType(String name) {
       this.name = name;

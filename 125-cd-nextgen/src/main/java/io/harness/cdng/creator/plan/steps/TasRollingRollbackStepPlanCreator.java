@@ -27,6 +27,7 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SE
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -51,7 +52,7 @@ public class TasRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Ta
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
     TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
         (TasRollingRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    String tasRollingDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_ROLLING_DEPLOY);
+    String tasRollingDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_ROLLING_ROLLBACK);
     tasRollingRollbackStepParameters.setTasRollingDeployFqn(tasRollingDeployFqn);
     return stepParameters;
   }
