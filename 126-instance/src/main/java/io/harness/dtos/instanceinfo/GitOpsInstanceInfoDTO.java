@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.util.InstanceSyncKey;
 
+import java.util.Comparator;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -33,7 +34,14 @@ public class GitOpsInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceKey() {
-    return InstanceSyncKey.builder().part(podName).part(namespace).build().toString();
+    containerList.sort(Comparator.comparing(K8sContainer::getImage));
+    InstanceSyncKey.InstanceSyncKeyBuilder instanceKeyBuilder = InstanceSyncKey.builder().part(podName).part(namespace);
+    for (K8sContainer k8sContainer : containerList) {
+      if (k8sContainer.getImage() != null) {
+        instanceKeyBuilder.part(k8sContainer.getImage());
+      }
+    }
+    return instanceKeyBuilder.build().toString();
   }
 
   @Override
