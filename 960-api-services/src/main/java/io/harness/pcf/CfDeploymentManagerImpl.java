@@ -41,7 +41,6 @@ import io.harness.pcf.model.CfConfig;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
-import io.harness.pcf.model.CfRevertApplicationRequestData;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 import io.harness.pcf.model.PcfConstants;
 
@@ -59,7 +58,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.cloudfoundry.client.v3.deployments.Deployment;
 import org.cloudfoundry.client.v3.deployments.DeploymentResource;
 import org.cloudfoundry.client.v3.deployments.DeploymentStatusReason;
 import org.cloudfoundry.client.v3.deployments.DeploymentStatusValue;

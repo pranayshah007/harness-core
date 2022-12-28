@@ -52,7 +52,7 @@ public class TasRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Ta
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
     TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
         (TasRollingRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    String tasRollingDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_ROLLING_ROLLBACK);
+    String tasRollingDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_ROLLING_DEPLOY);
     tasRollingRollbackStepParameters.setTasRollingDeployFqn(tasRollingDeployFqn);
     return stepParameters;
   }

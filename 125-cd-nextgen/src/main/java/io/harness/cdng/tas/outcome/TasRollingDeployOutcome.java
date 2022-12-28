@@ -24,9 +24,9 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("TasSetupVariablesOutcome")
-@JsonTypeName("TasSetupVariablesOutcome")
-@RecasterAlias("io.harness.cdng.tas.outcome.TasSetupVariablesOutcome")
+@TypeAlias("TasRollingDeployOutcome")
+@JsonTypeName("TasRollingDeployOutcome")
+@RecasterAlias("io.harness.cdng.tas.outcome.TasRollingDeployOutcome")
 public class TasRollingDeployOutcome implements Outcome, ExecutionSweepingOutput {
   @Setter @NonFinal String appName;
   @Setter @NonFinal String appGuid;

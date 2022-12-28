@@ -13,7 +13,6 @@ import io.harness.logging.LogCallback;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRequestConfig;
-import io.harness.pcf.model.CfRevertApplicationRequestData;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 
 import java.util.List;
