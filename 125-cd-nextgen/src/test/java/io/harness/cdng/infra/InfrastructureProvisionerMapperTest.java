@@ -163,18 +163,17 @@ public class InfrastructureProvisionerMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToOutcomeWithInvalidHostFilter() {
     HashMap<String, String> hostAttributes = populateHostAttributes();
-    Infrastructure pdcInfrastructure =
-        PdcInfrastructure.builder()
-            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
-            .hostObjectArray(ParameterField.createValueField(hostObjectArray))
-            .hostAttributes(ParameterField.createValueField(hostAttributes))
-            .hostFilter(HostFilter.builder().type(HostFilterType.HOST_ATTRIBUTES).build())
-            .build();
+    Infrastructure pdcInfrastructure = PdcInfrastructure.builder()
+                                           .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+                                           .hostObjectArray(ParameterField.createValueField(hostObjectArray))
+                                           .hostAttributes(ParameterField.createValueField(hostAttributes))
+                                           .hostFilter(HostFilter.builder().type(HostFilterType.HOST_NAMES).build())
+                                           .build();
 
     assertThatThrownBy(()
                            -> infrastructureProvisionerMapper.toOutcome(pdcInfrastructure,
                                EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
-        .hasMessage("Unsupported host filter type found for dynamically provisioned infrastructure: HostAttributes")
+        .hasMessage("Unsupported host filter type found for dynamically provisioned infrastructure: HostNames")
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
