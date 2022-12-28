@@ -367,8 +367,7 @@ public class InfrastructureMapper {
     } else if (type == HostFilterType.ALL) {
       return HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(type).build();
     } else {
-      throw new InvalidArgumentsException(
-          format("Unsupported host filter type found for dynamic PDC infrastructure: %s", type));
+      throw new InvalidArgumentsException(format("Unsupported host filter type found: %s", type));
     }
   }
 
