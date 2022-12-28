@@ -9,8 +9,10 @@ package io.harness.auditevent.streaming.entities.outgoing;
 
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.FieldNameConstants;
 
+@Getter
 @Builder
 @FieldNameConstants(level = AccessLevel.PRIVATE)
 public class HttpRequestInfo {
