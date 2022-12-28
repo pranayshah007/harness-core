@@ -7,8 +7,9 @@
 
 package io.harness.service.instancesync;
 
-import static io.harness.annotations.dev.HarnessTeam.GITOPS;
-
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.logging.AutoLogContext;
@@ -19,17 +20,16 @@ import io.harness.service.instance.InstanceService;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
 import io.harness.util.logging.InstanceSyncLogContext;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 @Slf4j
 @OwnedBy(GITOPS)
@@ -40,7 +40,7 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
   @Inject private InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
   @Override
   public void processInstanceSync(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<InstanceDTO> instanceList) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String agentIdentifier, List<InstanceDTO> instanceList) {
     try (AutoLogContext ignore1 = new NGProjectLogContext(
              accountIdentifier, orgIdentifier, projectIdentifier, AutoLogContext.OverrideBehavior.OVERRIDE_ERROR);
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
@@ -55,7 +55,7 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
       for (Map.Entry<String, List<InstanceDTO>> instanceDTOList : instancesGroupedByService.entrySet()) {
         List<InstanceDTO> instances = instanceDTOList.getValue();
         Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified =
-            handleInstanceSync(instances, instanceSyncHandler);
+            handleInstanceSync(agentIdentifier, instances, instanceSyncHandler);
         utils.processInstances(instancesToBeModified);
       }
       log.info("Instance Sync completed");
@@ -64,16 +64,30 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
     }
   }
 
-  private Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(
+  @Override
+  public void deleteInstancesForAgent(String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    log.info("Deleting service instances for account {}, org {}, project {} and agent {} since no instance data was published", accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+    instanceService.deleteForAgent(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+  }
+
+  private Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(String agentIdentifier,
       List<InstanceDTO> instancesFromServer, AbstractInstanceSyncHandler instanceSyncHandler) {
+    //all instances for a specific service, for a specific agent - instancesFromServer
     InstanceDTO instanceDTO = instancesFromServer.get(0);
+
+    //all instances for a specific service, for all agents - instancesInDB
+    //svc at acc level
     List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByServiceId(instanceDTO.getAccountIdentifier(),
-        instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier());
+        instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier(), agentIdentifier);
+
     // map all instances and server instances infos to instance sync handler key (corresponding to deployment info)
     // basically trying to group instances corresponding to a "cluster" together
+
+    // key - app and agent combo, value - instances for an app, agent in db --> app and agent combo for a service for all agents
     Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap =
         utils.getSyncKeyToInstances(instanceSyncHandler, instancesInDB);
 
+    // key - app and agent combo, value - instances for an app, agent in request --> app and agent combo for a service for an agent
     Map<String, List<InstanceDTO>> syncKeyToInstancesFromServerMap =
         utils.getSyncKeyToInstances(instanceSyncHandler, instancesFromServer);
 
@@ -85,17 +99,35 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
     processInstanceSyncForSyncKeysFromServerInstances(
         instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstancesFromServerMap, instancesToBeModified);
 
+    // find the diff between db and server and delete all that do not match the ones from server
+    processInstanceSyncForSyncKeysFromDBInstances(
+            instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstancesFromServerMap, instancesToBeModified);
+
     return instancesToBeModified;
+  }
+
+  private void processInstanceSyncForSyncKeysFromDBInstances(AbstractInstanceSyncHandler instanceSyncHandler, Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap,
+                                                             Map<String, List<InstanceDTO>> syncKeyToInstancesFromServerMap, Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
+    Sets.SetView<String> syncKeyToInstancesInDB =
+            Sets.difference(syncKeyToInstancesInDBMap.keySet(), syncKeyToInstancesFromServerMap.keySet());
+    syncKeyToInstancesInDB.forEach(instanceSyncHandlerKey
+            -> processInstancesByInstanceSyncHandlerKey(instanceSyncHandler,
+            syncKeyToInstancesInDBMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
+            syncKeyToInstancesFromServerMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
+            instancesToBeModified));
   }
 
   private void processInstanceSyncForSyncKeysFromServerInstances(AbstractInstanceSyncHandler instanceSyncHandler,
       Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap,
       Map<String, List<InstanceDTO>> syncKeyToInstanceFromServerMap,
       Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
+    //app, agent combo in current request
     Set<String> instanceSyncHandlerKeys = syncKeyToInstanceFromServerMap.keySet();
     instanceSyncHandlerKeys.forEach(instanceSyncHandlerKey
         -> processInstancesByInstanceSyncHandlerKey(instanceSyncHandler,
+            //instances in db for current request
             syncKeyToInstancesInDBMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
+            //instances from request for current request
             syncKeyToInstanceFromServerMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
             instancesToBeModified));
   }
@@ -104,8 +136,15 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
       List<InstanceDTO> instancesInDB, List<InstanceDTO> instancesDTOsFromServer,
       Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
     // Now, map all instances by instance key and find out instances to be deleted/added/updated
+
+    // instances in db for app, agent combo in current request
+    // key - podname, ns, value - instance
     Map<String, InstanceDTO> instancesInDBMap = new HashMap<>();
+
+    // instances in request for app, agent combo in current request
+    // key - podname, ns, value - instance
     Map<String, InstanceDTO> instancesFromServerMap = new HashMap<>();
+
     instancesInDB.forEach(instanceDTO
         -> instancesInDBMap.put(instanceSyncHandler.getInstanceKey(instanceDTO.getInstanceInfoDTO()), instanceDTO));
     instancesDTOsFromServer.forEach(instanceDTO

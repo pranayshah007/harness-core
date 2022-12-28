@@ -7,8 +7,7 @@
 
 package io.harness.ng.instancesync.resources;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,7 +15,6 @@ import io.harness.cdng.gitops.beans.DeleteInstancesRequest;
 import io.harness.cdng.gitops.beans.GitOpsInstance;
 import io.harness.cdng.gitops.beans.GitOpsInstanceRequest;
 import io.harness.dtos.InstanceDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.helper.GitOpsRequestDTOMapper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -25,30 +23,26 @@ import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancesync.GitopsInstanceSyncService;
-
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 @Api("gitOpsInstanceSync")
 @Path("instancesync/gitops")
@@ -75,17 +69,26 @@ public class GitOpsInstanceSyncResource {
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotEmpty @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-
+      @NotEmpty @QueryParam(NGCommonEntityConstants.AGENT_KEY) String agentIdentifier,
       @NotNull @Valid List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     if (isEmpty(gitOpsInstanceRequestList)) {
-      throw new InvalidRequestException("GitopsInstanceRequestList cannot be empty");
+      deleteInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+    } else {
+      processInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier, gitOpsInstanceRequestList);
     }
-    List<GitOpsInstance> processedInstances =
-        prepareInstanceSync(accountId, orgIdentifier, projectIdentifier, gitOpsInstanceRequestList);
-    final List<InstanceDTO> instanceDTOs =
-        gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgIdentifier, projectIdentifier, processedInstances);
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgIdentifier, projectIdentifier, instanceDTOs);
     return ResponseDTO.newResponse(Boolean.TRUE);
+  }
+
+  private void processInstances(String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+    List<GitOpsInstance> processedInstances =
+            prepareInstanceSync(accountId, orgIdentifier, projectIdentifier, gitOpsInstanceRequestList);
+    final List<InstanceDTO> instanceDTOs =
+            gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgIdentifier, projectIdentifier, processedInstances);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgIdentifier, projectIdentifier, agentIdentifier, instanceDTOs);
+  }
+
+  private void deleteInstances(String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    gitopsInstanceSyncService.deleteInstancesForAgent(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
   }
 
   @DELETE
@@ -102,6 +105,7 @@ public class GitOpsInstanceSyncResource {
 
   List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+    log.info("Processing {} Gitops instances for sync to NG", gitOpsInstanceRequestList.size());
     List<GitOpsInstance> instanceDTOs = new ArrayList<>();
 
     final List<GitOpsInstance> gitOpsInstanceDTOs = gitOpsRequestDTOMapper.toGitOpsInstanceList(

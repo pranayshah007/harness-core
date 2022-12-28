@@ -138,6 +138,7 @@ public class GitOpsRequestDTOMapper {
         .lastPipelineExecutionId(gitOpsInstance.getPipelineExecutionId())
         .lastDeployedByName(gitOpsInstance.getLastDeployedByName())
         .lastDeployedById(gitOpsInstance.getLastDeployedById())
+            .lastExecutedAt(gitOpsInstance.getLastExecutedAt())
         .build();
   }
 

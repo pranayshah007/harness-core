@@ -205,6 +205,7 @@ public class Instance {
 
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;
+  private Long lastExecutedAt;
 
   private InstanceInfo instanceInfo;
 

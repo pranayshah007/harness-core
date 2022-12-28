@@ -7,19 +7,19 @@
 
 package io.harness.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.InstanceType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.DX)
 @Value
@@ -53,5 +53,6 @@ public class InstanceDTO {
   long deletedAt;
   long createdAt;
   long lastModifiedAt;
+  Long lastExecutedAt;
   Map<String, String> metadata;
 }

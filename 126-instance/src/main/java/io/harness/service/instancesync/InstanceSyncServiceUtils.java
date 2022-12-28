@@ -61,6 +61,7 @@ class InstanceSyncServiceUtils {
       AbstractInstanceSyncHandler instanceSyncHandler, List<InstanceDTO> instanceDTOS) {
     Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap = new HashMap<>();
     instanceDTOS.forEach(instanceDTO -> {
+      //has app and agent identifiers
       String instanceSyncHandlerKey = instanceSyncHandler.getInstanceSyncHandlerKey(instanceDTO.getInstanceInfoDTO());
       List<InstanceDTO> existingInstanceDTOList =
           syncKeyToInstancesInDBMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>());

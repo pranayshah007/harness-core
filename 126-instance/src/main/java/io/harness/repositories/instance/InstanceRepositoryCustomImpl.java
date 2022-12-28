@@ -7,43 +7,35 @@
 
 package io.harness.repositories.instance;
 
-import static io.harness.entities.Instance.InstanceKeysAdditional;
-
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
-import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.models.CountByOrgIdProjectIdAndServiceId;
-import io.harness.models.CountByServiceIdAndEnvType;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstancesByBuildId;
+import io.harness.models.*;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.FindAndReplaceOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.FindAndReplaceOptions;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+
+import static io.harness.entities.Instance.InstanceKeysAdditional;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 @Singleton
 @OwnedBy(HarnessTeam.DX)
@@ -332,7 +324,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
         InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastPipelineExecutionId,
         InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
-        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.lastExecutedAt)
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
@@ -585,5 +577,21 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             CountByOrgIdProjectIdAndServiceId.class)
         .getMappedResults()
         .size();
+  }
+
+  @Override
+  public UpdateResult updateMany(Criteria criteria, Update update) {
+    return mongoTemplate.updateMulti(query(criteria), update, Instance.class);
+  }
+
+  @Override
+  public List<Instance> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
+            .and(InstanceKeys.serviceIdentifier)
+            .is(serviceIdentifier)
+            .and(InstanceKeysAdditional.instanceInfoAgentIdentifier)
+            .is(agentIdentifier);
+    Query query = new Query(criteria);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 }

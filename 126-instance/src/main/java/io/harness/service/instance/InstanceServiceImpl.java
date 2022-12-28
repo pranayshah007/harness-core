@@ -7,34 +7,30 @@
 
 package io.harness.service.instance;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
-import static com.google.common.base.Preconditions.checkArgument;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.mappers.InstanceMapper;
-import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.models.CountByServiceIdAndEnvType;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstancesByBuildId;
+import io.harness.models.*;
 import io.harness.repositories.instance.InstanceRepository;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 @Singleton
 @OwnedBy(HarnessTeam.DX)
@@ -123,6 +119,28 @@ public class InstanceServiceImpl implements InstanceService {
       return Optional.empty();
     }
     return Optional.of(InstanceMapper.toDTO(instance));
+  }
+
+  @Override
+  public void deleteForAgent(String accountIdentifier, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+            .is(accountIdentifier)
+            .and(InstanceKeys.orgIdentifier)
+            .is(orgIdentifier)
+            .and(InstanceKeys.projectIdentifier)
+            .is(projectIdentifier)
+            .and(Instance.InstanceKeysAdditional.instanceInfoAgentIdentifier)
+            .is(agentIdentifier)
+            .and(InstanceKeys.isDeleted)
+            .is(false);
+    Update update =
+            new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
+    UpdateResult updateResult = instanceRepository.updateMany(criteria, update);
+    if(updateResult == null || !updateResult.wasAcknowledged()){
+      log.error("Failed to delete instances for agent {}", agentIdentifier);
+    } else {
+        log.info("Total instances count for agent {} is {} and instances deleted count is {}", agentIdentifier, updateResult.getMatchedCount(), updateResult.getModifiedCount());
+    }
   }
 
   /**
@@ -297,6 +315,12 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS) {
     return instanceRepository.countDistinctActiveServicesDeployedInInterval(accountId, startTS, endTS);
+  }
+
+  @Override
+  public List<InstanceDTO> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceId(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, agentIdentifier));
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

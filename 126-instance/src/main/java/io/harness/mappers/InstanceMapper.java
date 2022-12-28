@@ -89,6 +89,7 @@ public class InstanceMapper {
         .instanceKey(instanceDTO.getInstanceKey())
         .infraIdentifier(instanceDTO.getInfraIdentifier())
         .infraName(instanceDTO.getInfraName())
+            .lastExecutedAt(instanceDTO.getLastExecutedAt())
         .build();
   }
 }

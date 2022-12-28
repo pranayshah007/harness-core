@@ -7,16 +7,7 @@
 
 package io.harness.service.instancedashboardservice;
 
-import static io.harness.rule.OwnerRule.ABHISHEK;
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import com.google.inject.Inject;
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.dtos.InstanceDTO;
@@ -27,13 +18,7 @@ import io.harness.entities.InstanceType;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
-import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.models.BuildsByEnvironment;
-import io.harness.models.CountByServiceIdAndEnvType;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstanceDetailsByBuildId;
-import io.harness.models.InstanceDetailsDTO;
-import io.harness.models.InstancesByBuildId;
+import io.harness.models.*;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.dashboard.InstanceCountDetails;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -42,19 +27,23 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
-
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+
+import java.util.*;
+
+import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private final String ACCOUNT_IDENTIFIER = "acc";
@@ -194,16 +183,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfo(String serviceId, String serviceName) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
     ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 2l, "1", "artifact1:1", 2);
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 2l, "1", "artifact1:1", 2, 2l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "2", "b", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "2", "b", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", "infra2", "infra2", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", "infra2", "infra2", null, null, "1", "a", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -211,7 +200,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoEnv2(String serviceId, String serviceName) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
     ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1);
+        serviceId, serviceName, "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -219,16 +208,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoGitOps(String serviceId, String serviceName) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
     ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 2l, "1", "artifact1:1", 2);
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 2l, "1", "artifact1:1", 2, 2l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "2", "b", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "2", "b", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env1", "env1", null, null, "infra2", "infra2", "1", "a", 1l, "1", "artifact1:1", 1);
+        serviceId, serviceName, "env1", "env1", null, null, "infra2", "infra2", "1", "a", 1l, "1", "artifact1:1", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -237,7 +226,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
       String serviceId, String serviceName) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
     ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
-        serviceId, serviceName, "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1);
+        serviceId, serviceName, "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1, 1l);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }

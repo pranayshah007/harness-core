@@ -2274,12 +2274,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList;
-    if (!Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
+    if (Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
       activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
-          accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, false);
+              accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, true);
     } else {
       activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
-          accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, true);
+              accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, false);
     }
 
     InstanceGroupedByServiceList instanceGroupedByServiceList =
@@ -2333,15 +2333,18 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String buildId = activeServiceInstanceInfo.getTag();
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
 
-      if (serviceId == null || buildId == null || envId == null || lastDeployedAt == null) {
+      //to have it backward compatible for gitops services
+      final Long lastExecutedAt = (clusterIdentifier != null && activeServiceInstanceInfo.getLastExecutedAt() == null)? activeServiceInstanceInfo.getLastDeployedAt() : activeServiceInstanceInfo.getLastExecutedAt();
+
+      if (serviceId == null || buildId == null || envId == null || (infraIdentifier != null && lastDeployedAt == null) || (clusterIdentifier != null && lastExecutedAt == null)) {
         return;
       }
 
       final String serviceName = activeServiceInstanceInfo.getServiceName();
-      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
-      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
       final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
       final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
@@ -2349,10 +2352,19 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String artifactPath = getArtifactPathFromDisplayName(activeServiceInstanceInfo.getDisplayName());
       final Integer count = activeServiceInstanceInfo.getCount();
 
-      if ((!serviceIdToLastDeployed.containsKey(serviceId))
-          || (lastDeployedAt > serviceIdToLastDeployed.get(serviceId))) {
-        serviceIdToLatestBuildMap.put(serviceId, buildId);
-        serviceIdToLastDeployed.put(serviceId, lastDeployedAt);
+
+      if(infraIdentifier != null) {
+        if ((!serviceIdToLastDeployed.containsKey(serviceId))
+                || (lastDeployedAt > serviceIdToLastDeployed.get(serviceId))) {
+          serviceIdToLatestBuildMap.put(serviceId, buildId);
+          serviceIdToLastDeployed.put(serviceId, lastDeployedAt);
+        }
+      } else {
+        if ((!serviceIdToLastDeployed.containsKey(serviceId))
+                || (lastExecutedAt > serviceIdToLastDeployed.get(serviceId))) {
+          serviceIdToLatestBuildMap.put(serviceId, buildId);
+          serviceIdToLastDeployed.put(serviceId, lastExecutedAt);
+        }
       }
 
       serviceBuildEnvInfraMap.putIfAbsent(serviceId, new HashMap<>());
@@ -2366,7 +2378,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         map.putIfAbsent(clusterIdentifier, new ArrayList<>());
         map.get(clusterIdentifier)
             .add(new InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution(
-                count, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt));
+                count, lastPipelineExecutionId, lastPipelineExecutionName, lastExecutedAt));
         clusterIdToAgentIdMap.putIfAbsent(clusterIdentifier, agentIdentifier);
       } else {
         Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> map =
@@ -2982,7 +2994,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
       activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfoV2(serviceId, serviceName, envId, envName,
           infrastructureIdentifier, infrastructureName, null, null, lastPipelineExecutionId, lastPipelineExecutionName,
-          lastDeployedAt, artifact, displayName, null));
+          lastDeployedAt, artifact, displayName, null, lastDeployedAt));
     });
 
     return getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoList);

@@ -11,16 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
-import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.models.CountByServiceIdAndEnvType;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstancesByBuildId;
+import io.harness.models.*;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.constraints.NotEmpty;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceService {
@@ -38,6 +34,9 @@ public interface InstanceService {
 
   Optional<InstanceDTO> delete(@NotEmpty String instanceKey, @NotEmpty String accountIdentifier,
       @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier, String infrastructureMappingId);
+
+  void deleteForAgent(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
+                              @NotEmpty String projectIdentifier, @NotEmpty String agentIdentifier);
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
@@ -97,4 +96,6 @@ public interface InstanceService {
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
   long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  List<InstanceDTO> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String agentIdentifier);
 }

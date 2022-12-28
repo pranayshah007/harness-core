@@ -7,19 +7,16 @@
 
 package io.harness.repositories.instance;
 
+import com.mongodb.client.result.UpdateResult;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.Instance;
-import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.models.CountByServiceIdAndEnvType;
-import io.harness.models.EnvBuildInstanceCount;
-import io.harness.models.InstancesByBuildId;
-
-import java.util.List;
+import io.harness.models.*;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.util.List;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceRepositoryCustom {
@@ -85,4 +82,8 @@ public interface InstanceRepositoryCustom {
 
   long countDistinctActiveServicesDeployedInInterval(
       String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  UpdateResult updateMany(Criteria criteria, Update update);
+
+  List<Instance>  getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String agentIdentifier);
 }

@@ -23,6 +23,7 @@ public class NGCommonEntityConstants {
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
+  public static final String AGENT_KEY = "agentIdentifier";
 
   public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
