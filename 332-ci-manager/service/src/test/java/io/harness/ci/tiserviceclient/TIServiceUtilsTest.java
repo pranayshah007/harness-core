@@ -60,6 +60,7 @@ public class TIServiceUtilsTest extends CIExecutionTestBase {
     String baseUrl = "http://localhost:8078";
     String accountID = "account";
     String globalToken = "token";
+    String globalToken1 = "token1";
     Call<String> tiServiceTokenCall = mock(Call.class);
     when(tiServiceTokenCall.execute()).thenThrow(new IOException("Got error while trying to process!"));
     when(tiServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(tiServiceTokenCall);
