@@ -10,7 +10,7 @@ package io.harness.cdng.customDeployment;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.customDeployment.FetchInstanceScriptStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -43,7 +43,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT)
 @TypeAlias("fetchInstanceScriptStepInfo")
 @RecasterAlias("io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo")
-public class FetchInstanceScriptStepInfo extends FetchInstanceScriptBaseStepInfo implements CDStepInfo, Visitable {
+public class FetchInstanceScriptStepInfo
+    extends FetchInstanceScriptBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.common.capacity.Capacity;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgCanaryDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
 @TypeAlias("asgCanaryDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo")
-public class AsgCanaryDeployStepInfo extends AsgCanaryDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class AsgCanaryDeployStepInfo extends AsgCanaryDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
