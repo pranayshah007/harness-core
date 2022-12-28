@@ -432,7 +432,9 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(sumoConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("SumoClientException: Error reading server response");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("SumoClientException: Error reading server response; "
+            + "Cause: UnknownHostException: sumo-example.com: Name or service not known");
   }
 
   @Test

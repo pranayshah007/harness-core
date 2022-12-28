@@ -31,6 +31,7 @@ import com.cronutils.utils.Preconditions;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
@@ -50,6 +51,7 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
+  @ApiOperation(value = "get ChangeEvent List For Account", nickname = "changeEventListForAccount")
   public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
@@ -73,6 +75,7 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
+  @ApiOperation(value = "get ChangeEvent timeline For Account", nickname = "changeEventTimelineForAccount")
   public RestResponse<ChangeTimeline> get(@Valid ProjectPathParams projectPathParams, List<String> serviceIdentifiers,
       List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
@@ -96,10 +99,13 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeSummaryDTO> getSummary(@Valid ProjectPathParams projectPathParams,
-      String monitoredServiceIdentifier, List<String> monitoredServiceIdentifiers,
-      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime) {
+  @ApiOperation(value = "get ChangeEvent summary for monitored service For Account",
+      nickname = "getMonitoredServiceChangeEventSummaryForAccount")
+  public RestResponse<ChangeSummaryDTO>
+  getSummary(@Valid ProjectPathParams projectPathParams, String monitoredServiceIdentifier,
+      List<String> monitoredServiceIdentifiers, List<String> scopedMonitoredServiceIdentifiers,
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, @NotNull long startTime,
+      @NotNull long endTime) {
     Preconditions.checkArgument(!Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
         "Scoped Monitored Service Identifiers should be present for account");
     Preconditions.checkArgument(Lists.isNullOrEmpty(monitoredServiceIdentifiers),

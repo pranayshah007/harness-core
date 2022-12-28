@@ -435,8 +435,8 @@ public enum TaskType {
 
   ECS_RUN_TASK_ARN(TaskGroup.ECS, "ECS Run Task Arn"),
   AWS_ASG_ROLLING_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Deploy"),
-  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Prepare Rollback Data");
-
+  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Prepare Rollback Data"),
+  AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback");
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

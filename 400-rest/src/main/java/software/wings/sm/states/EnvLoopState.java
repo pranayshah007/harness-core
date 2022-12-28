@@ -216,7 +216,7 @@ public class EnvLoopState extends State implements WorkflowState {
   @Override
   public Integer getTimeoutMillis() {
     if (super.getTimeoutMillis() == null) {
-      return EnvState.ENV_STATE_TIMEOUT_MILLIS;
+      return INFINITE_TIMEOUT;
     }
     return super.getTimeoutMillis();
   }

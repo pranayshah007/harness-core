@@ -7,8 +7,6 @@
 
 package io.harness.azure;
 
-import static io.harness.network.Http.getOkHttpClientBuilder;
-
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -20,35 +18,21 @@ import io.harness.azure.client.AzureKubernetesRestClient;
 import io.harness.azure.client.AzureManagementRestClient;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
-import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureAuthenticationException;
-import io.harness.network.Http;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpPipeline;
-import com.azure.core.http.policy.HttpLogOptions;
-import com.azure.core.http.policy.RetryPolicy;
-import com.azure.core.management.profile.AzureProfile;
-import com.azure.core.util.Configuration;
-import com.azure.core.util.HttpClientOptions;
 import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredentialBuilder;
 import com.azure.identity.implementation.util.ScopeUtil;
 import com.azure.resourcemanager.AzureResourceManager;
-import com.azure.resourcemanager.resources.fluentcore.utils.HttpPipelineProvider;
 import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.inject.Singleton;
 import com.jakewharton.retrofit2.adapter.reactor.ReactorCallAdapterFactory;
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @Singleton
 @Slf4j
@@ -63,35 +47,19 @@ public class AzureClient extends AzureClientBase {
     return getAzureClient(azureConfig, null);
   }
 
-  protected HttpPipeline getAzureHttpPipeline(
-      TokenCredential tokenCredential, AzureProfile azureProfile, RetryPolicy retryPolicy, HttpClient httpClient) {
-    return HttpPipelineProvider.buildHttpPipeline(tokenCredential, azureProfile, (String[]) null,
-        (new HttpLogOptions()).setLogLevel(AzureUtils.getAzureLogLevel(log)), (Configuration) null, retryPolicy,
-        (List) null, httpClient);
-  }
-
-  protected HttpPipeline getAzureHttpPipeline(TokenCredential tokenCredential, AzureProfile azureProfile) {
-    return HttpPipelineProvider.buildHttpPipeline(tokenCredential, azureProfile);
-  }
-
   protected HttpPipeline getAzureHttpPipeline(AzureConfig azureConfig, String subscriptionId) {
-    return getAzureHttpPipeline(getAuthenticationTokenCredentials(azureConfig),
+    return AzureUtils.getAzureHttpPipeline(getAuthenticationTokenCredentials(azureConfig),
         AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId,
             AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())),
         AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())),
-        getAzureHttpClient());
+        AzureUtils.getAzureHttpClient());
   }
 
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
     try {
       AzureResourceManager.Authenticated authenticated =
-          AzureResourceManager.configure()
-              .withLogLevel(AzureUtils.getAzureLogLevel(log))
-              .withHttpClient(getAzureHttpClient())
-              .withRetryPolicy(
-                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-              .authenticate(getAuthenticationTokenCredentials(azureConfig),
-                  AzureUtils.getAzureProfile(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
+          AzureResourceManager.authenticate(getAzureHttpPipeline(azureConfig, subscriptionId),
+              AzureUtils.getAzureProfile(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
 
       if (isBlank(subscriptionId)) {
         Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
@@ -127,22 +95,7 @@ public class AzureClient extends AzureClientBase {
   }
 
   protected <T> T getAzureRestClient(String url, Class<T> clazz) {
-    OkHttpClient.Builder okHttpClientBuilder =
-        getOkHttpClientBuilder()
-            .connectTimeout(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(AzureConstants.REST_CLIENT_READ_TIMEOUT, TimeUnit.SECONDS)
-            .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-            .retryOnConnectionFailure(true);
-
-    OkHttpClient okHttpClient = okHttpClientBuilder.build();
-
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addCallAdapterFactory(ReactorCallAdapterFactory.create())
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(clazz);
+    return AzureUtils.getAzureRestClient(url, clazz, ReactorCallAdapterFactory.create());
   }
 
   protected String getAzureBearerAuthToken(AzureConfig azureConfig) {
@@ -172,6 +125,7 @@ public class AzureClient extends AzureClientBase {
   }
 
   protected TokenCredential getAuthenticationTokenCredentials(AzureConfig azureConfig) {
+    HttpClient httpClient = AzureUtils.getAzureHttpClient();
     switch (azureConfig.getAzureAuthenticationType()) {
       case SERVICE_PRINCIPAL_CERT:
         switch (azureConfig.getAzureCertAuthenticationType()) {
@@ -180,12 +134,14 @@ public class AzureClient extends AzureClientBase {
                 .clientId(azureConfig.getClientId())
                 .tenantId(azureConfig.getTenantId())
                 .pemCertificate(azureConfig.getCertFilePath())
+                .httpClient(httpClient)
                 .build();
           case PFX:
             return new ClientCertificateCredentialBuilder()
                 .clientId(azureConfig.getClientId())
                 .tenantId(azureConfig.getTenantId())
                 .pfxCertificate(azureConfig.getCertFilePath(), azureConfig.getCertPassword())
+                .httpClient(httpClient)
                 .build();
           default:
             throw new AzureAuthenticationException(
@@ -193,31 +149,20 @@ public class AzureClient extends AzureClientBase {
                     azureConfig.getAzureCertAuthenticationType().name()));
         }
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
-        return new ManagedIdentityCredentialBuilder().build();
+        return new ManagedIdentityCredentialBuilder().httpClient(httpClient).build();
       case MANAGED_IDENTITY_USER_ASSIGNED:
-        return new ManagedIdentityCredentialBuilder().clientId(azureConfig.getClientId()).build();
+        return new ManagedIdentityCredentialBuilder()
+            .clientId(azureConfig.getClientId())
+            .httpClient(httpClient)
+            .build();
       default:
         // by default, it should be SERVICE_PRINCIPAL_SECRET
         return new ClientSecretCredentialBuilder()
             .clientId(azureConfig.getClientId())
             .tenantId(azureConfig.getTenantId())
             .clientSecret(String.valueOf(azureConfig.getKey()))
+            .httpClient(httpClient)
             .build();
     }
-  }
-
-  protected HttpClient getAzureHttpClient() {
-    HttpClientOptions httpClientOptions = new HttpClientOptions();
-    httpClientOptions.setConnectTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT))
-        .setReadTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_READ_TIMEOUT));
-    return HttpClient.createDefault(httpClientOptions);
-  }
-
-  protected HttpClient getAzureHttpClient(HttpClientOptions httpClientOptions) {
-    if (httpClientOptions == null) {
-      return getAzureHttpClient();
-    }
-
-    return HttpClient.createDefault(httpClientOptions);
   }
 }

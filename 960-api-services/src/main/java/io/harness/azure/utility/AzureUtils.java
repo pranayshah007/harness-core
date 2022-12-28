@@ -7,32 +7,39 @@
 
 package io.harness.azure.utility;
 
+import static io.harness.network.Http.getOkHttpClientBuilder;
+
+import static java.lang.String.format;
+
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.model.AzureConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.network.Http;
 
+import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
+import com.azure.core.http.HttpClient;
+import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.ProxyOptions;
+import com.azure.core.http.okhttp.OkHttpAsyncClientProvider;
 import com.azure.core.http.okhttp.implementation.ProxyAuthenticator;
 import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.Region;
 import com.azure.core.management.profile.AzureProfile;
+import com.azure.core.util.Configuration;
+import com.azure.core.util.HttpClientOptions;
+import com.azure.resourcemanager.resources.fluentcore.utils.HttpPipelineProvider;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URL;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -44,16 +51,20 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 import javax.xml.bind.DatatypeConverter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Authenticator;
+import okhttp3.OkHttpClient;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpHost;
 import org.slf4j.Logger;
+import retrofit2.CallAdapter;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @UtilityClass
 @Slf4j
@@ -63,6 +74,8 @@ public class AzureUtils {
           Region.GOV_US_TEXAS.name(), Region.GOV_US_DOD_EAST.name(), Region.GOV_US_DOD_CENTRAL.name());
 
   private static String SCOPE_SUFFIX = ".default";
+
+  private static HttpClient cachedAzureHttpClient;
 
   static String BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----";
   static String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
@@ -205,100 +218,51 @@ public class AzureUtils {
   }
 
   public Proxy getProxyForRestClient(String url) {
-    Proxy proxy = Http.checkAndGetNonProxyIfApplicable(url);
-    if (proxy != null) {
-      return proxy;
+    HttpHost httpHost = Http.getHttpProxyHost(url);
+    if (httpHost != null) {
+      return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(httpHost.getHostName(), httpHost.getPort()));
     }
-    URL proxyUrl = getProxyUrl();
-    if (proxyUrl != null) {
-      return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort()));
-    }
+
+    log.info(format("Request with destination %s will not go through proxy", url));
     return null;
   }
 
   public Authenticator getProxyAuthenticatorForRestClient() {
-    String proxyUsername = System.getenv("PROXY_USER");
-    String proxyPassword = System.getenv("PROXY_PASSWORD");
+    String proxyUsername = Http.getProxyUserName();
+    String proxyPassword = Http.getProxyPassword();
     if (EmptyPredicate.isNotEmpty(proxyUsername) && EmptyPredicate.isNotEmpty(proxyPassword)) {
       return new ProxyAuthenticator(proxyUsername, proxyPassword);
     }
     return null;
   }
 
-  public ProxySelector getProxySelectorForRestClient() {
-    String nonProxyHostsConfig = System.getenv("NO_PROXY");
-    List<String> nonProxyHosts = Arrays.stream(nonProxyHostsConfig.split("|")).collect(Collectors.toList());
-
-    return new ProxySelector() {
-      @Override
-      public List<Proxy> select(URI uri) {
-        final List<Proxy> proxyList = new ArrayList<>(1);
-        final String host = uri.getHost();
-        if (nonProxyHosts.contains(host)) {
-          proxyList.add(Proxy.NO_PROXY);
-        } else {
-          proxyList.add(getProxyForRestClient(host));
-        }
-        return proxyList;
-      }
-
-      @Override
-      public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Connection to proxy failed.", "Please check your proxy parameters.", ioe);
-      }
-    };
-  }
-
-  public ProxySelector getProxySelectorForRestClient2() {
-    return new ProxySelector() {
-      @Override
-      public List<Proxy> select(URI url) {
-        return Arrays.asList(Http.checkAndGetNonProxyIfApplicable(url.getHost()));
-      }
-
-      @Override
-      public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Connection to proxy failed.", "Please check your proxy parameters.", ioe);
-      }
-    };
-  }
-
   public ProxyOptions getProxyOptions() {
-    URL proxyUrl = getProxyUrl();
-    String nonProxyHosts = System.getenv("NO_PROXY");
-    if (proxyUrl != null) {
-      ProxyOptions proxyOptions =
-          new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort()));
+    HttpHost httpHost = Http.getHttpProxyHost();
+    if (httpHost != null) {
+      String hostName = httpHost.getHostName();
+      if (hostName != null) {
+        ProxyOptions proxyOptions =
+            new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(hostName, httpHost.getPort()));
 
-      proxyOptions.setNonProxyHosts(EmptyPredicate.isEmpty(nonProxyHosts) ? null : nonProxyHosts);
+        String proxyUsername = Http.getProxyUserName();
+        String proxyPassword = Http.getProxyPassword();
+        if (EmptyPredicate.isNotEmpty(proxyUsername) && EmptyPredicate.isNotEmpty(proxyPassword)) {
+          log.info(format("Using Proxy(%s:%s) for AzureSDK with auth", hostName, httpHost.getPort()));
+          proxyOptions.setCredentials(proxyUsername, proxyPassword);
+        } else {
+          log.info(format("Using Proxy(%s:%s) for AzureSDK without auth", hostName, httpHost.getPort()));
+        }
 
-      String proxyUsername = System.getenv("PROXY_USER");
-      String proxyPassword = System.getenv("PROXY_PASSWORD");
-      if (EmptyPredicate.isNotEmpty(proxyUsername) && EmptyPredicate.isNotEmpty(proxyPassword)) {
-        proxyOptions.setCredentials(proxyUsername, proxyPassword);
+        String nonProxyHosts = System.getProperty("http.nonProxyHosts");
+        if (EmptyPredicate.isNotEmpty(nonProxyHosts)) {
+          log.info(format("Proxy will not be used for following destinations: %s", nonProxyHosts));
+          proxyOptions.setNonProxyHosts(nonProxyHosts);
+        }
+
+        return proxyOptions;
       }
-      return proxyOptions;
     }
     return null;
-  }
-
-  public URL getProxyUrl() {
-    String httpProxy = System.getenv("HTTP_PROXY");
-    String httpsProxy = System.getenv("HTTPS_PROXY");
-    if (EmptyPredicate.isEmpty(httpProxy) && EmptyPredicate.isEmpty(httpsProxy)) {
-      return null;
-    }
-
-    String actualProxy = EmptyPredicate.isNotEmpty(httpsProxy) ? httpsProxy : httpProxy;
-
-    try {
-      return new URL(actualProxy);
-    } catch (MalformedURLException e) {
-      log.error("HTTP_PROXY/HTTPS_PROXY wrongly configured.", e);
-      return null;
-    }
   }
 
   public TokenRequestContext getTokenRequestContext(String[] resourceToScopes) {
@@ -308,7 +272,7 @@ public class AzureUtils {
   }
 
   public FixedDelayOptions getDefaultDelayOptions() {
-    return getFixedDelayOptions(0, Duration.ofSeconds(1));
+    return getFixedDelayOptions(1, Duration.ofSeconds(3));
   }
 
   public FixedDelayOptions getFixedDelayOptions(int maxRetries, Duration delay) {
@@ -321,5 +285,73 @@ public class AzureUtils {
 
   public RetryPolicy getRetryPolicy(RetryOptions retryOptions) {
     return new RetryPolicy(retryOptions);
+  }
+
+  public synchronized HttpClient getAzureHttpClient() {
+    if (cachedAzureHttpClient != null) {
+      return cachedAzureHttpClient;
+    }
+
+    HttpClientOptions httpClientOptions = new HttpClientOptions();
+    httpClientOptions.setConnectTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT_SECONDS))
+        .setReadTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_READ_TIMEOUT_SECONDS))
+        .setWriteTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_WRITE_TIMEOUT_SECONDS))
+        .setConnectionIdleTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_IDLE_TIMEOUT_SECONDS))
+        .setMaximumConnectionPoolSize(AzureConstants.REST_CONNECTION_POOL_SIZE);
+
+    ProxyOptions proxyOptions = AzureUtils.getProxyOptions();
+    if (proxyOptions != null) {
+      httpClientOptions.setProxyOptions(proxyOptions);
+    }
+
+    cachedAzureHttpClient = new OkHttpAsyncClientProvider().createInstance(httpClientOptions);
+    return cachedAzureHttpClient;
+  }
+
+  public HttpPipeline getAzureHttpPipeline(
+      TokenCredential tokenCredential, AzureProfile azureProfile, RetryPolicy retryPolicy, HttpClient httpClient) {
+    return HttpPipelineProvider.buildHttpPipeline(tokenCredential, azureProfile, (String[]) null,
+        (new HttpLogOptions()).setLogLevel(AzureUtils.getAzureLogLevel(log)), (Configuration) null, retryPolicy,
+        (List) null, httpClient);
+  }
+
+  public OkHttpClient getOkHtttpClientWithProxy(String url) {
+    OkHttpClient.Builder okHttpClientBuilder =
+        getOkHttpClientBuilder()
+            .connectTimeout(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(AzureConstants.REST_CLIENT_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .followRedirects(true);
+
+    Proxy proxy = AzureUtils.getProxyForRestClient(url);
+    if (proxy != null) {
+      okHttpClientBuilder.proxy(proxy);
+      Authenticator authenticator = AzureUtils.getProxyAuthenticatorForRestClient();
+      if (authenticator != null) {
+        log.info(format("Using Proxy(%s) for AzureRest with auth", proxy.address()));
+        okHttpClientBuilder.proxyAuthenticator(authenticator);
+      } else {
+        log.info(format("Using Proxy(%s) for AzureRest without auth", proxy.address()));
+      }
+    }
+
+    return okHttpClientBuilder.build();
+  }
+
+  public <T> T getAzureRestClient(String url, Class<T> clazz) {
+    return getAzureRestClient(url, clazz, null);
+  }
+
+  public <T> T getAzureRestClient(String url, Class<T> clazz, CallAdapter.Factory callAdapterFactory) {
+    OkHttpClient okHttpClient = AzureUtils.getOkHtttpClientWithProxy(url);
+
+    Retrofit.Builder retrofitBuilder =
+        new Retrofit.Builder().client(okHttpClient).baseUrl(url).addConverterFactory(JacksonConverterFactory.create());
+
+    if (callAdapterFactory != null) {
+      retrofitBuilder.addCallAdapterFactory(callAdapterFactory);
+    }
+
+    return retrofitBuilder.build().create(clazz);
   }
 }

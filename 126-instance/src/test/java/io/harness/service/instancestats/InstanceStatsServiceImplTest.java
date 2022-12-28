@@ -34,7 +34,7 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLastSnapshotTimeTestIfRecordReturnedNotNull() {
+  public void getLastSnapshotTimeTestIfRecordReturnedNotNull() throws Exception {
     InstanceStats instanceStats = InstanceStats.builder().reportedAt(Timestamp.valueOf("2012-07-07 01:01:01")).build();
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(instanceStats);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
@@ -44,7 +44,7 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLastSnapshotTimeTestIfRecordReturnedNull() {
+  public void getLastSnapshotTimeTestIfRecordReturnedNull() throws Exception {
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(null);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).isNull();
   }

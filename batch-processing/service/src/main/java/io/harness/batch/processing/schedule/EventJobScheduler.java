@@ -325,7 +325,7 @@ public class EventJobScheduler {
   @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
   public void runBudgetAlertsJob() {
     try {
-      budgetAlertsService.sendBudgetAlerts();
+      budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
       log.info("Budget alerts send");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);

@@ -52,6 +52,7 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.TAS_BASIC_APP_SETUP, StepSpecTypeConstants.TANZU_COMMAND,
         StepSpecTypeConstants.TAS_APP_RESIZE, StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK,
         StepSpecTypeConstants.SWAP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP,
-        StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.ASG_ROLLING_DEPLOY);
+        StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.ASG_ROLLING_DEPLOY,
+        StepSpecTypeConstants.ASG_ROLLING_ROLLBACK);
   }
 }

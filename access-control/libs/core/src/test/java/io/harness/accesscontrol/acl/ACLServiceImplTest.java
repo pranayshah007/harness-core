@@ -38,19 +38,22 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @OwnedBy(PL)
 public class ACLServiceImplTest extends AccessControlCoreTestBase {
   private ACLDAO aclDAO;
   private PermissionService permissionService;
   private ACLServiceImpl aclService;
+  private MongoTemplate mongoTemplate;
 
   @Before
   public void setup() {
     aclDAO = mock(ACLDAO.class);
     permissionService = mock(PermissionService.class);
+    mongoTemplate = mock(MongoTemplate.class);
     ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider = mock(ACLExpressionEvaluatorProvider.class);
-    aclService = new ACLServiceImpl(aclDAO, permissionService, aclExpressionEvaluatorProvider);
+    aclService = new ACLServiceImpl(aclDAO, permissionService, aclExpressionEvaluatorProvider, mongoTemplate);
   }
 
   @Test

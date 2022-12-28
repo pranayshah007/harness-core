@@ -45,4 +45,20 @@ public class ProjectParams {
   @QueryParam("projectIdentifier")
   @Valid
   String projectIdentifier;
+
+  public static ProjectParams fromProjectPathParams(ProjectPathParams projectPathParams) {
+    return ProjectParams.builder()
+        .accountIdentifier(projectPathParams.getAccountIdentifier())
+        .orgIdentifier(projectPathParams.getOrgIdentifier())
+        .projectIdentifier(projectPathParams.getProjectIdentifier())
+        .build();
+  }
+
+  public static ProjectParams fromResourcePathParams(ResourcePathParams resourcePathParams) {
+    return ProjectParams.builder()
+        .accountIdentifier(resourcePathParams.getAccountIdentifier())
+        .orgIdentifier(resourcePathParams.getOrgIdentifier())
+        .projectIdentifier(resourcePathParams.getProjectIdentifier())
+        .build();
+  }
 }

@@ -117,10 +117,8 @@ public class NotificationDispatcherServiceImpl implements NotificationDispatcher
 
     for (NotificationReceiverInfo notificationReceiver : receivers) {
       if (notificationReceiver instanceof NotificationGroup) {
-        log.info("notification group dispatch");
         notificationGroupDispatcher.dispatch(notifications, (NotificationGroup) notificationReceiver);
       } else if (notificationReceiver instanceof UserGroup) {
-        log.info("user group dispatch");
         userGroupDispatcher.dispatch(notifications, (UserGroup) notificationReceiver);
       } else {
         log.error("Unhandled implementation of NotificationReceiverInfo. Class: {}",

@@ -229,7 +229,10 @@ public enum NGStepType {
       StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE),
   @JsonProperty(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
   ASG_ROLLING_DEPLOY(
-      "Asg Rolling Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_ROLLING_DEPLOY);
+      "Asg Rolling Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_ROLLING_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
+  ASG_ROLLING_ROLLBACK("Asg Rolling Rollback", Arrays.asList(ServiceDefinitionType.ASG), "ASG",
+      StepSpecTypeConstants.ASG_ROLLING_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

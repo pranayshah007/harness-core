@@ -16,12 +16,14 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.contracts.resume.ChainDetails;
 import io.harness.pms.contracts.resume.NodeResumeEvent;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.events.base.PmsEventCategory;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -33,13 +35,17 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
   @Inject private PmsEventSender eventSender;
 
   @Override
-  public void publishEvent(ResumeMetadata resumeMetadata, Map<String, ByteString> responseMap, boolean isError) {
-    NodeResumeEvent.Builder resumeEventBuilder = NodeResumeEvent.newBuilder()
-                                                     .setAmbiance(resumeMetadata.getAmbiance())
-                                                     .setExecutionMode(resumeMetadata.getMode())
-                                                     .setStepParameters(resumeMetadata.getResolvedStepParameters())
-                                                     .setAsyncError(isError)
-                                                     .putAllResponse(responseMap);
+  public void publishEvent(ResumeMetadata resumeMetadata, Map<String, ResponseDataProto> responseMap, boolean isError) {
+    Map<String, ByteString> responseByteStringMap = new HashMap<>();
+    responseMap.forEach((key, value) -> responseByteStringMap.put(key, value.getResponse()));
+    NodeResumeEvent.Builder resumeEventBuilder =
+        NodeResumeEvent.newBuilder()
+            .setAmbiance(resumeMetadata.getAmbiance())
+            .setExecutionMode(resumeMetadata.getMode())
+            .setStepParameters(resumeMetadata.getResolvedStepParameters())
+            .setAsyncError(isError)
+            // Todo: After first release in Jan, this should be removed and responseData should be used.
+            .putAllResponse(responseByteStringMap);
 
     ChainDetails chainDetails = buildChainDetails(resumeMetadata);
     if (chainDetails != null) {
@@ -52,14 +58,14 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
 
   @Override
   public void publishEventForIdentityNode(
-      ResumeMetadata resumeMetadata, Map<String, ByteString> responseMap, boolean isError, String serviceName) {
+      ResumeMetadata resumeMetadata, Map<String, ResponseDataProto> responseMap, boolean isError, String serviceName) {
     NodeResumeEvent.Builder resumeEventBuilder =
         NodeResumeEvent.newBuilder()
             .setAmbiance(IdentityStep.modifyAmbiance(resumeMetadata.getAmbiance()))
             .setExecutionMode(resumeMetadata.getMode())
             .setStepParameters(resumeMetadata.getResolvedStepParameters())
             .setAsyncError(isError)
-            .putAllResponse(responseMap);
+            .putAllResponseData(responseMap);
 
     ChainDetails chainDetails = buildChainDetails(resumeMetadata);
     if (chainDetails != null) {

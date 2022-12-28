@@ -13,6 +13,7 @@ import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.BudgetCommon;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.AlertThresholdBase;
 import io.harness.ccm.budget.BudgetBreakdown;
@@ -433,7 +434,7 @@ public class BudgetUtils {
     return alerts.toArray(new AlertThreshold[0]);
   }
 
-  public static boolean isAlertSentInCurrentPeriod(Budget budget, long crossedAt, long startOfBudgetPeriod) {
+  public static boolean isAlertSentInCurrentPeriod(BudgetCommon budget, long crossedAt, long startOfBudgetPeriod) {
     if (budget.getBudgetMonthlyBreakdown() != null
         && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
       int lastAlertMonth =

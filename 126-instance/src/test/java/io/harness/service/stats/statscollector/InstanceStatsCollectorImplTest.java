@@ -8,6 +8,7 @@
 package io.harness.service.stats.statscollector;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +60,7 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void createStatsTest() {
+  public void createStatsTest() throws Exception {
     Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES + 5) * 60L);
     InstanceDTO instanceDTO = InstanceDTO.builder().build();
     mockServices();
@@ -118,6 +119,21 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
     verify(instanceService, times(MAX_CALLS_PER_SERVICE))
         .getActiveInstancesByAccountOrgProjectAndService(
             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void createStatsLimitTestException() throws Exception {
+    List<InstanceDTO> instances = Collections.singletonList(InstanceDTO.builder().build());
+    mockServices();
+    when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
+             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
+        .thenReturn(instances);
+    doThrow(new Exception("Cannot connect to redis stream"))
+        .when(instanceStatsService)
+        .getLastSnapshotTime(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID));
+    assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isFalse();
   }
 
   private void mockServices() {

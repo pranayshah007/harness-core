@@ -30,7 +30,7 @@ public enum FilterType {
   @JsonProperty("CCMRecommendation") CCMRECOMMENDATION("CCMRecommendation"),
   @JsonProperty("Anomaly") ANOMALY("Anomaly"),
   @JsonProperty("Environment") ENVIRONMENT("Environment"),
-  @JsonProperty("RuleExecution") POLICYEXECUTION("RuleExecution");
+  @JsonProperty("RuleExecution") RULEEXECUTION("RuleExecution");
 
   private String value;
 

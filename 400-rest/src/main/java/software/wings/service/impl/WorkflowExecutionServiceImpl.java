@@ -408,7 +408,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
+import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -4659,8 +4659,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     // SubGraphFilterId is the instance (host element) Id.
     // For older execution this will be null.
-    CriteriaContainerImpl nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
-    CriteriaContainerImpl existsCriteria =
+    CriteriaContainer nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
+    CriteriaContainer existsCriteria =
         query.criteria(StateExecutionInstanceKeys.subGraphFilterId).in(selectedInstances);
     query.or(nullCriteria, existsCriteria);
     return query;

@@ -34,6 +34,8 @@ public class RedisProgressEventPublisher implements ProgressEventPublisher {
                                       .setExecutionMode(nodeExecution.getMode())
                                       .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                       .setProgressBytes(ByteString.copyFrom(progressData.getData()))
+                                      // Uncomment the below line after first release in Jan.
+                                      // .setUsingKryoWithoutReference(progressData.getUsingKryoWithoutReference())
                                       .build();
 
     return eventSender.sendEvent(nodeExecution.getAmbiance(), progressEvent.toByteString(),

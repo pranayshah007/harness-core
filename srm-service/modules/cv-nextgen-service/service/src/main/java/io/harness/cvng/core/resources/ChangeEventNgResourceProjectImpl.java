@@ -89,12 +89,12 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
 
   @GET
   @Timed
-  @Path("/{activityId}")
   @NextGenManagerAuth
+  @Path("/{activityId}")
   @ExceptionMetered
   @ApiOperation(value = "get ChangeEvent detail", nickname = "getChangeEventDetail")
   public RestResponse<ChangeEventDTO> getChangeEventDetail(
-      @Valid ProjectPathParams projectPathParams, @PathParam("activityId") String activityId) {
+      @Valid @BeanParam ProjectPathParams projectPathParams, @PathParam("activityId") String activityId) {
     return new RestResponse<>(changeEventService.get(activityId));
   }
 
@@ -102,7 +102,8 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid ProjectPathParams projectPathParams,
+  @ApiOperation(value = "get ChangeEvent List For Project", nickname = "changeEventList")
+  public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
@@ -123,8 +124,9 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeTimeline> get(@Valid ProjectPathParams projectPathParams, List<String> serviceIdentifiers,
-      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+  @ApiOperation(value = "get ChangeEvent timeline For Project", nickname = "changeEventTimeline")
+  public RestResponse<ChangeTimeline> get(@Valid @BeanParam ProjectPathParams projectPathParams,
+      List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       Integer pointCount) {
@@ -144,10 +146,13 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeSummaryDTO> getSummary(@Valid ProjectPathParams projectPathParams,
-      String monitoredServiceIdentifier, List<String> monitoredServiceIdentifiers,
-      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime) {
+  @ApiOperation(value = "get ChangeEvent summary for monitored service For Project",
+      nickname = "getMonitoredServiceChangeEventSummary")
+  public RestResponse<ChangeSummaryDTO>
+  getSummary(@Valid @BeanParam ProjectPathParams projectPathParams, String monitoredServiceIdentifier,
+      List<String> monitoredServiceIdentifiers, List<String> scopedMonitoredServiceIdentifiers,
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, @NotNull long startTime,
+      @NotNull long endTime) {
     Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
         "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()

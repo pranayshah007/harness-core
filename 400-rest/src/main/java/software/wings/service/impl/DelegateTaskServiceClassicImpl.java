@@ -1263,8 +1263,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
           log.error(
-              "Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
@@ -1371,8 +1371,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
-          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+          log.warn(
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
