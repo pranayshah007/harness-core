@@ -26,6 +26,7 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -50,16 +51,8 @@ public class TasRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Ta
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
     TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
         (TasRollingRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    String tasSwapRoutesFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_SWAP_ROUTES);
-    tasRollingRollbackStepParameters.setTasSwapRoutesFqn(tasSwapRoutesFqn);
-    String tasBGSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
-    tasRollingRollbackStepParameters.setTasBGSetupFqn(tasBGSetupFqn);
-    String tasBasicSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BASIC_APP_SETUP);
-    tasRollingRollbackStepParameters.setTasBasicSetupFqn(tasBasicSetupFqn);
-    String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
-    tasRollingRollbackStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
-    String tasAppResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
-    tasRollingRollbackStepParameters.setTasResizeFqn(tasAppResizeFqn);
+    String tasRollingDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_ROLLING_DEPLOY);
+    tasRollingRollbackStepParameters.setTasRollingDeployFqn(tasRollingDeployFqn);
     return stepParameters;
   }
 }

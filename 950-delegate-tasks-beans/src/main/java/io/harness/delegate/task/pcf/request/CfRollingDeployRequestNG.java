@@ -44,12 +44,8 @@ import static java.lang.String.format;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
-  String releaseNamePrefix;
+  String applicationName;
   TasArtifactConfig tasArtifactConfig;
-  Integer olderActiveVersionCountToKeep;
-  Integer maxCount;
-  Integer currentRunningCount;
-  boolean useCurrentCount;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;
   PcfManifestsPackage pcfManifestsPackage;
@@ -57,18 +53,13 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
   @Builder
   public CfRollingDeployRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
                                   CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
-                                  CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String releaseNamePrefix,
-                                  TasArtifactConfig tasArtifactConfig, Integer olderActiveVersionCountToKeep, Integer maxCount,
-                                  Integer currentRunningCount, boolean useCurrentCount, List<String> routeMaps, boolean useAppAutoScalar,
-                                  PcfManifestsPackage pcfManifestsPackage) {
+                                  CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
+                                  TasArtifactConfig tasArtifactConfig, List<String> routeMaps, boolean useAppAutoScalar,
+                                  PcfManifestsPackage pcfManifestsPackage, String applicationName) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
-    this.releaseNamePrefix = releaseNamePrefix;
+    this.applicationName = applicationName;
     this.tasArtifactConfig = tasArtifactConfig;
-    this.olderActiveVersionCountToKeep = olderActiveVersionCountToKeep;
-    this.maxCount = maxCount;
-    this.currentRunningCount = currentRunningCount;
-    this.useCurrentCount = useCurrentCount;
     this.routeMaps = routeMaps;
     this.useAppAutoScalar = useAppAutoScalar;
     this.pcfManifestsPackage = pcfManifestsPackage;

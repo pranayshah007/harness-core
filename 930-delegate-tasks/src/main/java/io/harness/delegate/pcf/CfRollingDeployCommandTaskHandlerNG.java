@@ -38,6 +38,7 @@ import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
@@ -120,9 +121,9 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
-    if (!(cfCommandRequestNG instanceof CfDeployCommandRequestNG)) {
+    if (!(cfCommandRequestNG instanceof CfRollingDeployRequestNG)) {
       throw new InvalidArgumentsException(
-          Pair.of("cfCommandRequestNG", "Must be instance of CfDeployCommandRequestNG"));
+          Pair.of("cfCommandRequestNG", "Must be instance of CfRollingDeployRequestNG"));
     }
 
     LogCallback logCallback = tasTaskHelperBase.getLogCallback(
@@ -156,12 +157,12 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       CfCreateApplicationRequestData requestData =
               CfCreateApplicationRequestData.builder()
                       .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
-                              .applicationName(cfRollingDeployRequestNG.getReleaseNamePrefix())
+                              .applicationName(cfRollingDeployRequestNG.getApplicationName())
                               .routeMaps(cfRollingDeployRequestNG.getRouteMaps())
                               .build())
                       .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
                       .configPathVar(workingDirectory.getAbsolutePath())
-                      .newReleaseName(cfRollingDeployRequestNG.getReleaseNamePrefix())
+                      .newReleaseName(cfRollingDeployRequestNG.getApplicationName())
                       .pcfManifestFileData(pcfManifestFileData)
                       .varsYmlFilePresent(varsYmlPresent)
                       .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
@@ -192,8 +193,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
         cfCommandTaskHelperNG.enableAutoscalerIfNeeded(applicationDetail, cfAppAutoscalarRequestData, logCallback);
       }
 
-      CfBasicSetupResponseNG cfSetupCommandResponse =
-              CfBasicSetupResponseNG.builder()
+      CfRollingDeployResponseNG cfRollingDeployResponseNG =
+              CfRollingDeployResponseNG.builder()
                       .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                       .newApplicationInfo(TasApplicationInfo.builder()
                               .applicationGuid(applicationDetail.getId())
@@ -202,21 +203,21 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                               .runningCount(applicationDetail.getRunningInstances())
                               .build())
                       .currentProdInfo(currentProdInfo)
+                      .useAppAutoScalar(cfRollingDeployRequestNG.isUseAppAutoScalar())
                       .build();
 
-      logCallback.saveExecutionLog("\n ----------  PCF Setup process completed successfully", INFO, SUCCESS);
-      return cfSetupCommandResponse;
-
+      logCallback.saveExecutionLog("\n ----------  PCF Rolling Deployment completed successfully", INFO, SUCCESS);
+      return cfRollingDeployResponseNG;
 
     } catch (RuntimeException | PivotalClientApiException | IOException e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]", cfRollingDeployRequestNG,
+      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Rolling Deployment task [{}]", cfRollingDeployRequestNG,
               sanitizedException);
       logCallback.saveExecutionLog(
-              "\n\n ----------  PCF Setup process failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
+              "\n\n ----------  PCF Rolling Deployment failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return CfBasicSetupResponseNG.builder()
+      return CfRollingDeployResponseNG.builder()
               .currentProdInfo(currentProdInfo)
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(ExceptionUtils.getMessage(sanitizedException))

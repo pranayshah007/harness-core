@@ -51,11 +51,8 @@ public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo i
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasSwapRoutesFqn,
-                                    String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn, String tasResizeFqn,
-                                    ParameterField<Boolean> upsizeInActiveApp) {
-    super(delegateSelectors, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn, tasResizeFqn,
-        upsizeInActiveApp);
+  public TasRollingRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollingDeployFqn) {
+    super(delegateSelectors, tasRollingDeployFqn);
   }
 
   @Override
@@ -71,12 +68,7 @@ public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo i
   @Override
   public SpecParameters getSpecParameters() {
     return TasRollingRollbackStepParameters.infoBuilder()
-        .upsizeInActiveApp(upsizeInActiveApp)
-        .tasCanarySetupFqn(tasCanarySetupFqn)
-        .tasResizeFqn(tasResizeFqn)
-        .tasSwapRoutesFqn(tasSwapRoutesFqn)
-        .tasBGSetupFqn(tasBGSetupFqn)
-        .tasBasicSetupFqn(tasBasicSetupFqn)
+        .tasRollingDeployFqn(this.tasRollingDeployFqn)
         .delegateSelectors(this.delegateSelectors)
         .build();
   }

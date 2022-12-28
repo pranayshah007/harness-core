@@ -431,7 +431,9 @@ public enum TaskType {
   TAS_BASIC_SETUP(TaskGroup.TAS, "Tas Basic Setup task"),
   TAS_BG_SETUP(TaskGroup.TAS, "Tas BG Setup task"),
   TAS_SWAP_ROLLBACK(TaskGroup.TAS, "Tas Swap Rollback task"),
-  TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task");
+  TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task"),
+  TAS_ROLLING_DEPLOY(TaskGroup.TAS, "Tas Rolling Deploy task"),
+  TAS_ROLLING_ROLLBACK(TaskGroup.TAS, "Tas Rolling Rollback task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

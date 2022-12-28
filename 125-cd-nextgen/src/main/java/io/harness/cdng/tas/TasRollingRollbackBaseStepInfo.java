@@ -35,14 +35,5 @@ public class TasRollingRollbackBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-  @JsonIgnore String tasSwapRoutesFqn;
-  @JsonIgnore String tasBGSetupFqn;
-  @JsonIgnore String tasBasicSetupFqn;
-  @JsonIgnore String tasCanarySetupFqn;
-  @JsonIgnore String tasResizeFqn;
-
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  @YamlSchemaTypes({string})
-  ParameterField<Boolean> upsizeInActiveApp;
+  @JsonIgnore String tasRollingDeployFqn;
 }

@@ -12,11 +12,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
+import io.harness.cdng.tas.outcome.TasRollingDeployOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
@@ -29,6 +31,8 @@ import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
+import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
+import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
@@ -90,7 +94,7 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  public static final String COMMAND_UNIT = "Swap Rollback";
+
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
@@ -102,96 +106,45 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
-        (TasSwapRollbackStepParameters) stepParameters.getSpec();
+    TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
+        (TasRollingRollbackStepParameters) stepParameters.getSpec();
 
-    OptionalSweepingOutput tasSetupDataOptional =
-        tasEntityHelper.getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
-            tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
-            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
-
-    if (!tasSetupDataOptional.isFound()) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas Setup Step was not executed. Skipping .").build())
-          .build();
-    }
-    TasSetupDataOutcome tasSetupDataOutcome =
-        (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
-    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasSwapRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+    OptionalSweepingOutput tasRollingDeployOutcomeOptional = executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                    tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "." + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
 
-    TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
-    List<CfServiceData> instanceData = new ArrayList<>();
-    if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
-      tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
-        int temp = cfServiceData.getDesiredCount();
-        cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
-        cfServiceData.setPreviousCount(temp);
-        instanceData.add(cfServiceData);
-      });
-    }
+    TasRollingDeployOutcome tasRollingDeployOutcome = (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
 
-    boolean swapRouteOccurred = false;
-    boolean downsizeOldApplication = false;
-    OptionalSweepingOutput tasSwapRouteDataOptional = OptionalSweepingOutput.builder().found(false).build();
-    if (!isNull(tasSwapRollbackStepParameters.getTasSwapRoutesFqn())) {
-      tasSwapRouteDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "."
-              + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
-    }
+    TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
+    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, tasStageExecutionDetails.getArtifactsOutcome().get(0));
 
-    if (tasSwapRouteDataOptional.isFound()) {
-      TasSwapRouteDataOutcome tasSwapRouteDataOutcome = (TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
-      swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
-      downsizeOldApplication = tasSwapRouteDataOutcome.isDownsizeOldApplication();
-    }
-
-    CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
-        CfSwapRollbackCommandRequestNG.builder()
+    CfRollingRollbackRequestNG cfRollingRollbackRequestNG =
+            CfRollingRollbackRequestNG.builder()
             .accountId(accountId)
             .useCfCLI(true)
-            .commandName(CfCommandTypeNG.SWAP_ROLLBACK.name())
-            .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
-            .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
+            .commandName(CfCommandTypeNG.TAS_ROLLING_ROLLBACK.name())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .tasInfraConfig(tasInfraConfig)
-            .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
-            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
-            .downsizeOldApplication(downsizeOldApplication)
-            .timeoutIntervalInMin(10)
-            .swapRouteOccurred(swapRouteOccurred)
-            .useAppAutoScalar(tasSetupDataOutcome.isUseAppAutoScalar())
-            .activeApplicationDetails(tasSetupDataOutcome.getActiveApplicationDetails() == null
-                    ? null
-                    : tasSetupDataOutcome.getActiveApplicationDetails().cloneObject())
-            .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails() == null
-                    ? tasSetupDataOutcome.getNewApplicationDetails()
-                    : tasSetupDataOutcome.getNewApplicationDetails().cloneObject())
-            .inActiveApplicationDetails(tasSetupDataOutcome.getInActiveApplicationDetails() == null
-                    ? null
-                    : tasSetupDataOutcome.getInActiveApplicationDetails().cloneObject())
-            .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
-            .routeMaps(tasSetupDataOutcome.getRouteMaps())
-            .instanceData(instanceData)
-            .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
+            .tasArtifactConfig(tasArtifactConfig)
+            .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_ROLLBACK)
+            .pcfManifestsPackage(tasStageExecutionDetails.getPcfManifestsPackage())
+            .timeoutIntervalInMin(tasRollingDeployOutcome.getTimeoutIntervalInMin())
+            .routeMaps(tasStageExecutionDetails.getRouteMaps())
             .build();
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(TaskType.TAS_SWAP_ROLLBACK.name())
-                                  .parameters(new Object[] {cfRollbackCommandRequestNG})
+                                  .taskType(TaskType.TAS_ROLLING_ROLLBACK.name())
+                                  .parameters(new Object[] {cfRollingRollbackRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(CfCommandUnitConstants.SwapRollback, CfCommandUnitConstants.Upsize,
-            CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Wrapup),
-        TaskType.TAS_SWAP_ROLLBACK.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(tasSwapRollbackStepParameters.getDelegateSelectors()),
+        Arrays.asList(CfCommandUnitConstants.Rollback, CfCommandUnitConstants.Wrapup),
+        TaskType.TAS_ROLLING_ROLLBACK.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(tasRollingRollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 
@@ -236,65 +189,9 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
                   .getUnitProgresses())
           .build();
     }
-    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
-        (TasSwapRollbackStepParameters) stepElementParameters.getSpec();
-    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-    //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
-    //    TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
-    //        TasSetupVariablesOutcome.builder().newAppName(null).newAppGuid(null).newAppRoutes(null);
-    //    if (!isNull(response.getCfRollbackCommandResult())) {
-    //      if (!isNull(response.getCfRollbackCommandResult().getUpdatedValues())) {
-    //        tasSetupVariablesOutcome
-    //            .activeAppName(response.getCfRollbackCommandResult().getUpdatedValues().getActiveAppName())
-    //            .inActiveAppName(response.getCfRollbackCommandResult().getUpdatedValues().getInActiveAppName())
-    //            .oldAppName(response.getCfRollbackCommandResult().getUpdatedValues().getOldAppName())
-    //            .oldAppGuid(response.getCfRollbackCommandResult().getUpdatedValues().getOldAppGuid());
-    //      }
-    //      tasSetupVariablesOutcome.finalRoutes(response.getCfRollbackCommandResult().getActiveAppAttachedRoutes())
-    //          .tempRoutes(response.getCfRollbackCommandResult().getInActiveAppAttachedRoutes())
-    //          .oldAppRoutes(response.getCfRollbackCommandResult().getActiveAppAttachedRoutes());
-    //    }
-    builder.stepOutcome(stepOutcome);
-    //    builder.stepOutcome(StepResponse.StepOutcome.builder()
-    //                            .outcome(tasSetupVariablesOutcome.build())
-    //                            .name(OutcomeExpressionConstants.TAS_INBUILT_VARIABLES_OUTCOME)
-    //                            .group(StepCategory.STAGE.name())
-    //                            .build());
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
-  }
-
-  private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollbackCommandResponseNG response, Ambiance ambiance) {
-    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
-        (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    CfRollbackCommandResult cfRollbackCommandResult = response.getCfRollbackCommandResult();
-    if (cfRollbackCommandResult == null) {
-      log.error("Could not generate server instance info for app resize step");
-      return Collections.emptyList();
-    }
-    List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
-    if (!isNull(instances)) {
-      return instances.stream()
-          .map(instance -> getServerInstance(instance, infrastructureOutcome))
-          .collect(Collectors.toList());
-    }
-    return new ArrayList<>();
-  }
-
-  private ServerInstanceInfo getServerInstance(
-      CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
-    return TasServerInstanceInfo.builder()
-        .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
-        .instanceIndex(instance.getInstanceIndex())
-        .tasApplicationName(instance.getDisplayName())
-        .tasApplicationGuid(instance.getApplicationId())
-        .organization(infrastructureOutcome.getOrganization())
-        .space(infrastructureOutcome.getSpace())
-        .build();
   }
 
   @Override

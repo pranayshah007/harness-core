@@ -28,9 +28,7 @@ import java.util.List;
 public class TasRollingRollbackStepParameters extends TasRollingRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public TasRollingRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                          String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn,
-                                          String tasResizeFqn, ParameterField<Boolean> upsizeInActiveApp) {
-    super(delegateSelectors, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn, tasResizeFqn,
-        upsizeInActiveApp);
+                                          String tasRollingDeployFqn) {
+    super(delegateSelectors, tasRollingDeployFqn);
   }
 }
