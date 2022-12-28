@@ -150,7 +150,4 @@ public interface CfCliClient {
    */
   StartedProcess tailLogsForPcf(CfRequestConfig pcfRequestConfig, LogCallback logCallback)
       throws PivotalClientApiException;
-
-  void revertAppByRevisionIdUsingCli(CfRevertApplicationRequestData requestData, LogCallback logCallback)
-          throws PivotalClientApiException;
 }

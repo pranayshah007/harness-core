@@ -126,16 +126,6 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     }
   }
 
-  private ApplicationDetail rollbackApplicationByRevisionId(
-          CfRevertApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException {
-    try {
-        cfCliClient.revertAppByRevisionIdUsingCli(requestData, executionLogCallback);
-        return getApplicationByName(requestData.getCfRequestConfig());
-    } catch (Exception e) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
-    }
-  }
-
   @Override
   public ApplicationDetail getApplicationByName(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
     try {
@@ -234,70 +224,6 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     ApplicationDetail applicationDetail = createApplication(requestData, executionLogCallback);
     List<DeploymentResource> deploymentResourceList = cfSdkClient.listDeployments(cfRequestConfig);
     String deploymentId = deploymentResourceList.get(0).getId();
-    GetDeploymentResponse getDeploymentResponse = cfSdkClient.getDeployment(cfRequestConfig, deploymentId);
-    while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
-      try {
-        startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, startedProcess);
-
-        getDeploymentResponse = cfSdkClient.getDeployment(cfRequestConfig, deploymentId);
-        if (DeploymentStatusValue.FINALIZED.equals(getDeploymentResponse.getStatus().getValue())) {
-          steadyStateReached = true;
-          destroyProcess(startedProcess);
-        } else if(DeploymentStatusValue.ACTIVE.equals(getDeploymentResponse.getStatus().getValue())){
-          Thread.sleep(THREAD_SLEEP_INTERVAL_FOR_STEADY_STATE_CHECK);
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt(); // restore the flag
-        throw new PivotalClientApiException("Thread Was Interrupted, stopping execution");
-      } catch (Exception e) {
-        executionLogCallback.saveExecutionLog(
-                "Error while waiting for steadyStateCheck." + e.getMessage() + ", Continuing with steadyStateCheck");
-      }
-    }
-
-    if (!steadyStateReached) {
-      executionLogCallback.saveExecutionLog(color("# Steady State Check Failed", White, Bold));
-      destroyProcess(startedProcess);
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed to reach steady state");
-    }
-
-    if(DeploymentStatusReason.CANCELED.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was cancelled.");
-    } else if(DeploymentStatusReason.SUPERSEDED.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was stopped and did not finish deploying because there was another deployment created for the app.");
-    } else if(DeploymentStatusReason.DEGENERATE.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was created incorrectly by the system.");
-    } else if(DeploymentStatusReason.DEPLOYED.equals(getDeploymentResponse.getStatus().getReason())) {
-      return applicationDetail;
-    }
-
-    return applicationDetail;
-  }
-
-  @Override
-  public ApplicationDetail rollbackRollingApplicationWithSteadyStateCheck(
-          CfRevertApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
-    boolean steadyStateReached = false;
-    CfRequestConfig cfRequestConfig = requestData.getCfRequestConfig();
-    long timeout = cfRequestConfig.getTimeOutIntervalInMins() <= 0 ? 10 : cfRequestConfig.getTimeOutIntervalInMins();
-    long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(timeout);
-
-    List<DeploymentResource> beforeRollbackdeploymentResourceList = cfSdkClient.listDeployments(cfRequestConfig);
-    String revisionId = beforeRollbackdeploymentResourceList.get(0).getRevision().getId();
-    executionLogCallback.saveExecutionLog(color("\n# Revision Id before starting Rollback - " + revisionId, White, Bold));
-    executionLogCallback.saveExecutionLog(color("\n# Revision Id before starting the pipeline - " + requestData.getRevisionId(), White, Bold));
-
-    if(revisionId != null && revisionId.equals(requestData.getRevisionId())) {
-      executionLogCallback.saveExecutionLog(color("\n# Nothing to rollback since both revision id's are same " + requestData.getRevisionId(), White, Bold));
-      return getApplicationByName(requestData.getCfRequestConfig());
-    }
-
-    executionLogCallback.saveExecutionLog(color("\n# Streaming Logs From PCF -", White, Bold));
-    StartedProcess startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, null);
-
-    ApplicationDetail applicationDetail = rollbackApplicationByRevisionId(requestData, executionLogCallback);
-    List<DeploymentResource> afterRollbackdeploymentResourceList = cfSdkClient.listDeployments(cfRequestConfig);
-    String deploymentId = afterRollbackdeploymentResourceList.get(0).getId();
     GetDeploymentResponse getDeploymentResponse = cfSdkClient.getDeployment(cfRequestConfig, deploymentId);
     while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
       try {

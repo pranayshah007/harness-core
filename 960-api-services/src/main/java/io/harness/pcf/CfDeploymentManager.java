@@ -98,7 +98,4 @@ public interface CfDeploymentManager {
 
   ApplicationDetail createRollingApplicationWithSteadyStateCheck(
           CfCreateApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
-
-  ApplicationDetail rollbackRollingApplicationWithSteadyStateCheck(
-          CfRevertApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
 }

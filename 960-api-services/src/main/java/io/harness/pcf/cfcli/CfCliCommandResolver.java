@@ -14,7 +14,6 @@ import io.harness.pcf.cfcli.command.ApiCliCommand.ApiOptions;
 import io.harness.pcf.cfcli.command.AuthCliCommand;
 import io.harness.pcf.cfcli.command.AutoscalingAppsCliCommand;
 import io.harness.pcf.cfcli.command.ConfigureAutoscalingCliCommand;
-import io.harness.pcf.cfcli.command.CurlCliCommand;
 import io.harness.pcf.cfcli.command.DisableAutoscalingCliCommand;
 import io.harness.pcf.cfcli.command.EnableAutoscalingCliCommand;
 import io.harness.pcf.cfcli.command.LogsCliCommand;
@@ -226,17 +225,6 @@ public interface CfCliCommandResolver {
             .cliPath(cfCliPath)
             .cliVersion(cfCliVersion)
             .options(PushCliCommand.PushOptionsV7.builder().pathToManifest(pathToManifest).variableFilePaths(variableFilePaths).strategy(strategy).build())
-            .build()
-            .getCommand();
-  }
-
-  static String getCurlCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String httpMethod,
-                                  final String apiPath, final String httpData) {
-    return CurlCliCommand.builder()
-            .cliPath(cfCliPath)
-            .cliVersion(cfCliVersion)
-            .arguments(Collections.singletonList(apiPath))
-            .options(CurlCliCommand.CurlOptions.builder().httpMethod(httpMethod).httpData(httpData).build())
             .build()
             .getCommand();
   }
