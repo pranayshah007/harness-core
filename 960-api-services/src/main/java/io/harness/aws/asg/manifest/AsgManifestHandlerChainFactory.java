@@ -20,6 +20,8 @@ import io.harness.manifest.handler.ManifestHandlerChainFactory;
 
 import java.util.List;
 import java.util.Map;
+
+import io.harness.manifest.handler.ManifestRequest;
 import lombok.Builder;
 
 @OwnedBy(CDP)
@@ -34,14 +36,14 @@ public class AsgManifestHandlerChainFactory extends ManifestHandlerChainFactory<
 
   @Override
   public ManifestHandler createHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties) {
+          String manifestType, ManifestRequest manifestRequest, Map<String, Object> overrideProperties) {
     switch (manifestType) {
       case AsgLaunchTemplate:
-        return new AsgLaunchTemplateManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgLaunchTemplateManifestHandler(this.asgSdkManager, manifestRequest, overrideProperties);
       case AsgConfiguration:
-        return new AsgConfigurationManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgConfigurationManifestHandler(this.asgSdkManager, manifestRequest, overrideProperties);
       case AsgScalingPolicy:
-        return new AsgScalingPolicyManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgScalingPolicyManifestHandler(this.asgSdkManager, manifestRequest, overrideProperties);
       default:
         throw new InvalidArgumentsException("Invalid asgManifestType provided");
     }

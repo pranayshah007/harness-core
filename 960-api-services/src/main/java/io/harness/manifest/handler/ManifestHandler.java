@@ -24,8 +24,8 @@ public abstract class ManifestHandler<M, S> {
 
   @Getter @Setter protected ManifestHandler nextHandler;
 
-  protected ManifestHandler(List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    this.manifestList = createManifests(manifestContentList, overrideProperties);
+  protected ManifestHandler(ManifestRequest manifestRequest, Map<String, Object> overrideProperties) {
+    this.manifestList = createManifests(manifestRequest.getManifests(), overrideProperties);
   }
 
   public abstract Class<M> getManifestContentUnmarshallClass();

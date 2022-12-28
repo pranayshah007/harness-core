@@ -28,7 +28,7 @@ public abstract class ManifestHandlerChainFactory<S> {
   }
 
   public abstract ManifestHandler createHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties);
+      String manifestType, ManifestRequest request, Map<String, Object> overrideProperties);
 
   public ManifestHandlerChainFactory<S> addHandler(ManifestHandler handler) {
     if (firstHandler == null) {
@@ -42,14 +42,9 @@ public abstract class ManifestHandlerChainFactory<S> {
   }
 
   public ManifestHandlerChainFactory<S> addHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    ManifestHandler handler = createHandler(manifestType, manifestContentList, overrideProperties);
+      String manifestType, ManifestRequest manifestRequest, Map<String, Object> overrideProperties) {
+    ManifestHandler handler = createHandler(manifestType, manifestRequest, overrideProperties);
     return addHandler(handler);
-  }
-
-  public ManifestHandlerChainFactory<S> addHandler(
-      String manifestType, String manifestContent, Map<String, Object> overrideProperties) {
-    return addHandler(manifestType, Arrays.asList(manifestContent), overrideProperties);
   }
 
   public S executeUpsert() {

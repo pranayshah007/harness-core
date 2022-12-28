@@ -15,14 +15,16 @@ import io.harness.aws.asg.AsgSdkManager;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
+import io.harness.manifest.handler.ManifestRequest;
+
 import java.util.List;
 import java.util.Map;
 
 @OwnedBy(CDP)
 public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateLaunchTemplateRequest> {
   public AsgLaunchTemplateManifestHandler(
-      AsgSdkManager asgSdkManager, List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    super(asgSdkManager, manifestContentList, overrideProperties);
+          AsgSdkManager asgSdkManager, ManifestRequest manifestRequest, Map<String, Object> overrideProperties) {
+    super(asgSdkManager, manifestRequest, overrideProperties);
   }
 
   @Override
