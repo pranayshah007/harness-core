@@ -53,10 +53,10 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
   // util file similar to CFs' bq_schema
   private static final String createCCMDBQuery = "create database if not exists ccm;";
-  private static final String createAwsCurTableQuery = "CREATE TABLE IF NOT EXISTS ccm.awscur ( `resourceid` String NULL, `usagestartdate` DateTime NULL, `productname` String NULL, `productfamily` String NULL, `servicecode` String NULL, `servicename` String NULL, `blendedrate` String NULL, `blendedcost` Float NULL, `unblendedrate` String NULL, `unblendedcost` Float NULL, `region` String NULL, `availabilityzone` String NULL, `usageaccountid` String NULL, `instancetype` String NULL, `usagetype` String NULL, `lineitemtype` String NULL, `effectivecost` Float NULL, `billingentity` String NULL, `instanceFamily` String NULL, `marketOption` String NULL, `amortisedCost` Float NULL, `netAmortisedCost` Float NULL, `tags` Array(Map(String, String)) ) ENGINE = MergeTree ORDER BY tuple(usagestartdate) SETTINGS allow_nullable_key = 1;";
-  private static final String createUnifiedTableTableQuery = "CREATE TABLE IF NOT EXISTS ccm.unifiedTable ( `startTime` DateTime NOT NULL, `cost` Float NULL, `gcpProduct` String NULL, `gcpSkuId` String NULL, `gcpSkuDescription` String NULL, `gcpProjectId` String NULL, `region` String NULL, `zone` String NULL, `gcpBillingAccountId` String NULL, `cloudProvider` String NULL, `fxRateSrcToDest` Float NULL, `awsBlendedRate` String NULL, `awsBlendedCost` Float NULL, `awsUnblendedRate` String NULL, `awsUnblendedCost` Float NULL, `awsServicecode` String NULL, `awsAvailabilityzone` String NULL, `awsUsageaccountid` String NULL, `awsInstancetype` String NULL, `awsUsagetype` String NULL, `awsBillingEntity` String NULL, `discount` Float NULL, `endtime` DateTime NULL, `accountid` String NULL, `instancetype` String NULL, `clusterid` String NULL, `clustername` String NULL, `appid` String NULL, `serviceid` String NULL, `envid` String NULL, `cloudproviderid` String NULL, `launchtype` String NULL, `clustertype` String NULL, `workloadname` String NULL, `workloadtype` String NULL, `namespace` String NULL, `cloudservicename` String NULL, `taskid` String NULL, `clustercloudprovider` String NULL, `billingamount` Float NULL, `cpubillingamount` Float NULL, `memorybillingamount` Float NULL, `idlecost` Float NULL, `maxcpuutilization` Float NULL, `avgcpuutilization` Float NULL, `systemcost` Float NULL, `actualidlecost` Float NULL, `unallocatedcost` Float NULL, `networkcost` Float NULL, `product` String NULL, `azureMeterCategory` String NULL, `azureMeterSubcategory` String NULL, `azureMeterId` String NULL, `azureMeterName` String NULL, `azureResourceType` String NULL, `azureServiceTier` String NULL, `azureInstanceId` String NULL, `azureResourceGroup` String NULL, `azureSubscriptionGuid` String NULL, `azureAccountName` String NULL, `azureFrequency` String NULL, `azurePublisherType` String NULL, `azurePublisherName` String NULL, `azureServiceName` String NULL, `azureSubscriptionName` String NULL, `azureReservationId` String NULL, `azureReservationName` String NULL, `azureResource` String NULL, `azureVMProviderId` String NULL, `azureTenantId` String NULL, `azureBillingCurrency` String NULL, `azureCustomerName` String NULL, `azureResourceRate` Float NULL, `orgIdentifier` String NULL, `projectIdentifier` String NULL, `labels` Array(Map(String, String)) ) ENGINE = MergeTree ORDER BY tuple(startTime) SETTINGS allow_nullable_key = 1;";
-  private static final String createPreAggregatedTableQuery = "CREATE TABLE IF NOT EXISTS ccm.preAggregated ( `cost` Float NULL, `gcpProduct` String NULL, `gcpSkuId` String NULL, `gcpSkuDescription` String NULL, `startTime` DateTime NULL, `gcpProjectId` String NULL, `region` String NULL, `zone` String NULL, `gcpBillingAccountId` String NULL, `cloudProvider` String NULL, `fxRateSrcToDest` Float NULL, `awsBlendedRate` String NULL, `awsBlendedCost` Float NULL, `awsUnblendedRate` String NULL, `awsUnblendedCost` Float NULL, `awsServicecode` String NULL, `awsAvailabilityzone` String NULL, `awsUsageaccountid` String NULL, `awsInstancetype` String NULL, `awsUsagetype` String NULL, `discount` Float NULL, `azureServiceName` String NULL, `azureResourceRate` Float NULL, `azureSubscriptionGuid` String NULL, `azureTenantId` String NULL ) ENGINE = MergeTree ORDER BY tuple(startTime) SETTINGS allow_nullable_key = 1;";
-  private static final String createCostAggregatedTableQuery = "CREATE TABLE IF NOT EXISTS ccm.costAggregated ( `accountId` String NOT NULL, `cloudProvider` String NOT NULL, `cost` Float NOT NULL, `day` DateTime NOT NULL ) ENGINE = MergeTree ORDER BY tuple(day) SETTINGS allow_nullable_key = 1;";
+  private static final String createAwsCurTableQuery = "CREATE TABLE IF NOT EXISTS ccm.awscur ( `resourceid` String NULL, `usagestartdate` DateTime('UTC') NULL, `productname` String NULL, `productfamily` String NULL, `servicecode` String NULL, `servicename` String NULL, `blendedrate` String NULL, `blendedcost` Float NULL, `unblendedrate` String NULL, `unblendedcost` Float NULL, `region` String NULL, `availabilityzone` String NULL, `usageaccountid` String NULL, `instancetype` String NULL, `usagetype` String NULL, `lineitemtype` String NULL, `effectivecost` Float NULL, `usageamount` Float NULL, `billingentity` String NULL, `instanceFamily` String NULL, `marketOption` String NULL, `amortisedCost` Float NULL, `netAmortisedCost` Float NULL, `tags` Map(String, String) ) ENGINE = MergeTree ORDER BY tuple(usagestartdate) SETTINGS allow_nullable_key = 1;";
+  private static final String createUnifiedTableTableQuery = "CREATE TABLE IF NOT EXISTS ccm.unifiedTable ( `startTime` DateTime('UTC') NOT NULL, `cost` Float NULL, `gcpProduct` String NULL, `gcpSkuId` String NULL, `gcpSkuDescription` String NULL, `gcpProjectId` String NULL, `region` String NULL, `zone` String NULL, `gcpBillingAccountId` String NULL, `cloudProvider` String NULL, `awsBlendedRate` String NULL, `awsBlendedCost` Float NULL, `awsUnblendedRate` String NULL, `awsUnblendedCost` Float NULL, `awsServicecode` String NULL, `awsAvailabilityzone` String NULL, `awsUsageaccountid` String NULL, `awsInstancetype` String NULL, `awsUsagetype` String NULL, `awsBillingEntity` String NULL, `discount` Float NULL, `endtime` DateTime('UTC') NULL, `accountid` String NULL, `instancetype` String NULL, `clusterid` String NULL, `clustername` String NULL, `appid` String NULL, `serviceid` String NULL, `envid` String NULL, `cloudproviderid` String NULL, `launchtype` String NULL, `clustertype` String NULL, `workloadname` String NULL, `workloadtype` String NULL, `namespace` String NULL, `cloudservicename` String NULL, `taskid` String NULL, `clustercloudprovider` String NULL, `billingamount` Float NULL, `cpubillingamount` Float NULL, `memorybillingamount` Float NULL, `idlecost` Float NULL, `maxcpuutilization` Float NULL, `avgcpuutilization` Float NULL, `systemcost` Float NULL, `actualidlecost` Float NULL, `unallocatedcost` Float NULL, `networkcost` Float NULL, `product` String NULL, `azureMeterCategory` String NULL, `azureMeterSubcategory` String NULL, `azureMeterId` String NULL, `azureMeterName` String NULL, `azureResourceType` String NULL, `azureServiceTier` String NULL, `azureInstanceId` String NULL, `azureResourceGroup` String NULL, `azureSubscriptionGuid` String NULL, `azureAccountName` String NULL, `azureFrequency` String NULL, `azurePublisherType` String NULL, `azurePublisherName` String NULL, `azureServiceName` String NULL, `azureSubscriptionName` String NULL, `azureReservationId` String NULL, `azureReservationName` String NULL, `azureResource` String NULL, `azureVMProviderId` String NULL, `azureTenantId` String NULL, `azureBillingCurrency` String NULL, `azureCustomerName` String NULL, `azureResourceRate` Float NULL, `orgIdentifier` String NULL, `projectIdentifier` String NULL, `labels` Map(String, String) ) ENGINE = MergeTree ORDER BY tuple(startTime) SETTINGS allow_nullable_key = 1;";
+  private static final String createPreAggregatedTableQuery = "CREATE TABLE IF NOT EXISTS ccm.preAggregated ( `cost` Float NULL, `gcpProduct` String NULL, `gcpSkuId` String NULL, `gcpSkuDescription` String NULL, `startTime` DateTime('UTC') NULL, `gcpProjectId` String NULL, `region` String NULL, `zone` String NULL, `gcpBillingAccountId` String NULL, `cloudProvider` String NULL, `awsBlendedRate` String NULL, `awsBlendedCost` Float NULL, `awsUnblendedRate` String NULL, `awsUnblendedCost` Float NULL, `awsServicecode` String NULL, `awsAvailabilityzone` String NULL, `awsUsageaccountid` String NULL, `awsInstancetype` String NULL, `awsUsagetype` String NULL, `discount` Float NULL, `azureServiceName` String NULL, `azureResourceRate` Float NULL, `azureSubscriptionGuid` String NULL, `azureTenantId` String NULL ) ENGINE = MergeTree ORDER BY tuple(startTime) SETTINGS allow_nullable_key = 1;";
+  private static final String createCostAggregatedTableQuery = "CREATE TABLE IF NOT EXISTS ccm.costAggregated ( `accountId` String NOT NULL, `cloudProvider` String NOT NULL, `cost` Float NOT NULL, `day` DateTime('UTC') NOT NULL ) ENGINE = MergeTree ORDER BY tuple(day) SETTINGS allow_nullable_key = 1;";
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -65,6 +65,8 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 //    String accountId = jobConstants.getAccountId();
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
+//     Instant endTime = Instant.now();
+//     Instant startTime = endTime.minus(4, ChronoUnit.HOURS);
 
     // 0. create database/dataset from accountid "if not exists" if possible using query. else use ccm db.
     //     - and then use this DB. or use ccm db.
@@ -254,28 +256,28 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
   public void ingestDataIntoPreAgg(List<String> usageAccountIds, String month) throws Exception {
     String deleteQuery = "DELETE from ccm.preAggregated WHERE DATE_TRUNC('month', startTime) = DATE_TRUNC('month', toDateTime('" +
-            month + " 00:00:00')) AND cloudProvider = 'AWS' AND awsUsageAccountId IN (" +
+            month + " 00:00:00')) AND cloudProvider = 'AWS' AND awsUsageaccountid IN (" +
             String.join(", ", usageAccountIds.stream().map(usageAccountId -> "'" + usageAccountId + "'").collect(Collectors.toList())) + ");";
     clickHouseService.executeClickHouseQuery(deleteQuery, Boolean.FALSE);
 
     String insertQuery = "INSERT INTO ccm.preAggregated (startTime, awsBlendedRate, awsBlendedCost, awsUnblendedRate, awsUnblendedCost, cost, " +
             "        awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, " +
-            "        awsUsagetype, cloudProvider, awsinstancetype) " +
+            "        awsUsagetype, cloudProvider, awsInstancetype) " +
             "  SELECT date_trunc('day', usagestartdate) as startTime, min(blendedrate) AS awsBlendedRate, sum(blendedcost) AS awsBlendedCost, " +
             "  min(unblendedrate) AS awsUnblendedRate, sum(unblendedcost) AS awsUnblendedCost, sum(unblendedcost) AS cost, " +
             "  servicename AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid, " +
-            "  usagetype AS awsUsagetype, 'AWS' AS cloudProvider, instancetype as awsinstancetype  " +
+            "  usagetype AS awsUsagetype, 'AWS' AS cloudProvider, instancetype as awsInstancetype  " +
             "  FROM ccm.awscur " +
             "  WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" + month + " 00:00:00')) AND usageaccountid IN (" +
             String.join(", ", usageAccountIds.stream().map(usageAccountId -> "'" + usageAccountId + "'").collect(Collectors.toList())) + ")" +
-            "  GROUP BY awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, awsUsagetype, startTime, awsinstancetype;";
+            "  GROUP BY awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, awsUsagetype, startTime, awsInstancetype;";
     clickHouseService.executeClickHouseQuery(insertQuery, Boolean.FALSE);
   }
 
 
   public void ingestDataIntoUnified(List<String> usageAccountIds, String month) throws Exception {
     String deleteQuery = "DELETE from ccm.unifiedTable WHERE DATE_TRUNC('month', startTime) = DATE_TRUNC('month', toDateTime('" +
-            month + " 00:00:00')) AND cloudProvider = 'AWS' AND awsUsageAccountId IN (" +
+            month + " 00:00:00')) AND cloudProvider = 'AWS' AND awsUsageaccountid IN (" +
             String.join(", ", usageAccountIds.stream().map(usageAccountId -> "'" + usageAccountId + "'").collect(Collectors.toList())) + ");";
     clickHouseService.executeClickHouseQuery(deleteQuery, Boolean.FALSE);
 
@@ -283,12 +285,12 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
             "      awsBlendedRate, awsBlendedCost,awsUnblendedRate,  " +
             "      awsUnblendedCost, cost, awsServicecode, region,  " +
             "      awsAvailabilityzone, awsUsageaccountid,  " +
-            "      cloudProvider, awsBillingEntity, labels, awsinstancetype, awsusagetype) " +
+            "      cloudProvider, awsBillingEntity, awsInstancetype, awsUsagetype) " +
             "  SELECT productname AS product, date_trunc('day', usagestartdate) as startTime,  " +
             "      blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate,  " +
             "      unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region,  " +
             "      availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,  " +
-            "      'AWS' AS cloudProvider, billingentity as awsBillingEntity, tags AS labels, instancetype as awsinstancetype, usagetype as awsusagetype  " +
+            "      'AWS' AS cloudProvider, billingentity as awsBillingEntity, instancetype as awsInstancetype, usagetype as awsUsagetype  " +
             "  FROM ccm.awscur  " +
             "  WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" +
             month + " 00:00:00')) AND usageaccountid IN (" +
@@ -298,12 +300,25 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
 
   public void ingestDataIntoAwsCur(String awsBillingTableId, List<String> usageAccountIds, String month) throws Exception {
+    String tagColumnsQuery = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS " +
+            "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableId + "')";
+    List<String> tagColumns = clickHouseService.executeClickHouseQuery(tagColumnsQuery, Boolean.TRUE);
+    String tagsQueryStatement1 = "";
+    String tagsQueryStatement2 = "";
+    for (String tagColumn : tagColumns) {
+      tagsQueryStatement1 += (tagsQueryStatement1.isEmpty() ? "" : ", ");
+      tagsQueryStatement1 += ("'" + tagColumn.replaceFirst("TAG_", "") + "'");
+
+      tagsQueryStatement2 += (tagsQueryStatement2.isEmpty() ? "" : ", ");
+      tagsQueryStatement2 += ("ifNull(" + tagColumn + ", toString(NULL))");
+    }
+
     String deleteQuery = "DELETE from ccm.awscur WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" +
             month + " 00:00:00')) AND usageaccountid IN (" +
             String.join(", ", usageAccountIds.stream().map(usageAccountId -> "'" + usageAccountId + "'").collect(Collectors.toList())) + ");";
     clickHouseService.executeClickHouseQuery(deleteQuery, Boolean.FALSE);
     // TODO: generate the tags query programmatically using separate query to awsBilling table - currently using hardcoded values.
-    String insertQuery = "INSERT INTO ccm.awscur (productfamily, unblendedrate, billingentity, usagetype, servicecode, region, blendedcost, unblendedcost, resourceid, productname, availabilityzone, servicename, effectivecost, usageamount, lineitemtype, usagestartdate, instancetype, usageaccountid, blendedrate, amortisedCost, netAmortisedCost, tagsKey, tagsValue)  " +
+    String insertQuery = "INSERT INTO ccm.awscur (productfamily, unblendedrate, billingentity, usagetype, servicecode, region, blendedcost, unblendedcost, resourceid, productname, availabilityzone, servicename, effectivecost, usageamount, lineitemtype, usagestartdate, instancetype, usageaccountid, blendedrate, amortisedCost, netAmortisedCost, tags)  " +
              "SELECT * EXCEPT (tagsKey, tagsAllKey, tagsValue, tagsPresent) " +
              "FROM " +
              "( " +
@@ -329,14 +344,15 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
              "        blendedrate, " +
              "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanCoveredUsage', savingsplaneffectivecost, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, lineitemtype = 'DiscountedUsage', effectivecost, lineitemtype = 'RIFee', unusedamortizedupfrontfeeforbillingperiod + unusedrecurringfee, unblendedcost) AS amortisedCost, " +
              "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, 0) AS netAmortisedCost, " +
-             "        arrayFilter(x -> isNotNull(x), arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL), tagsAllKey[i]), arrayEnumerate(tagsPresent))) AS tagsKey, " +
-             "        array('aws_createdby', 'user_kubernetescluster', 'user_name', 'user_role', 'user_terraformpath', 'user_rockset_name', 'build_pipeline') AS tagsAllKey, " +
-             "        arrayFilter(x -> isNotNull(x), array(ifNull(TAG_aws_createdby, toString(NULL)), ifNull(TAG_user_kubernetescluster, toString(NULL)), ifNull(TAG_user_name, toString(NULL)), ifNull(TAG_user_role, toString(NULL)), ifNull(TAG_user_terraformpath, toString(NULL)), ifNull(TAG_user_rockset_name, toString(NULL)), ifNull(TAG_build_pipeline, toString(NULL)))) AS tagsValue, " +
-             "        arrayMap(x -> isNotNull(x), array(ifNull(TAG_aws_createdby, toString(NULL)), ifNull(TAG_user_kubernetescluster, toString(NULL)), ifNull(TAG_user_name, toString(NULL)), ifNull(TAG_user_role, toString(NULL)), ifNull(TAG_user_terraformpath, toString(NULL)), ifNull(TAG_user_rockset_name, toString(NULL)), ifNull(TAG_build_pipeline, toString(NULL)))) AS tagsPresent, " +
-             "        CAST((tagsKey, tagsValue), 'Map(String, String)') AS tags, " +
+             "        array() AS tagsKey, " +
+//             "        arrayFilter(x -> isNotNull(x), arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL), tagsAllKey[i]), arrayEnumerate(tagsPresent))) AS tagsKey, " +
+             "        array(" + tagsQueryStatement1 + ") AS tagsAllKey, " +
+             "        arrayFilter(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsValue, " +
+             "        arrayMap(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsPresent, " +
+             "        map() AS tags " +
              "    FROM " + awsBillingTableId +
              "    WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" + month + " 00:00:00') ) " +
-             ")";
+             ");";
     clickHouseService.executeClickHouseQuery(insertQuery, Boolean.FALSE);
   }
 
@@ -369,7 +385,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       modifiedDataType = "String";
     }
     else if (dataType.equals("DateTime")) {
-      modifiedDataType = "DateTime";
+      modifiedDataType = "DateTime('UTC')";
     }
     else if (dataType.equals("BigDecimal")) {
       modifiedDataType = "Float";
