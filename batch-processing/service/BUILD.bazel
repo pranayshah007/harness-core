@@ -94,7 +94,6 @@ filegroup(
     srcs = ["batch-processing-config.yml"],
 )
 
-
 java_library(
     name = "tests",
     testonly = True,
