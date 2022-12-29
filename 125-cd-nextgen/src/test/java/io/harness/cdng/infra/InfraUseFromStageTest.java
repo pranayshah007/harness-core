@@ -16,8 +16,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.infra.InfraUseFromStage;
-import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
