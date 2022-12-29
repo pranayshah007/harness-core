@@ -301,7 +301,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
             if (isNotEmpty(phaseStep.getFailureStrategies())) {
               FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
                   executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
-              if (failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
+              if (failureStrategy != null && failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
                   && !state.getStateType().equals(APPROVAL.getType())) {
                 wingsPersistence.updateField(StateExecutionInstance.class, stateExecutionInstance.getUuid(),
                     StateExecutionInstanceKeys.manualInterventionCandidate, true);
