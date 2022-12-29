@@ -11,16 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScalingPolicyRequest> {
-  public AsgScalingPolicyManifestHandler(
-      AsgSdkManager asgSdkManager, List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    super(asgSdkManager, manifestContentList, overrideProperties);
+  public AsgScalingPolicyManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
+    super(asgSdkManager, manifestRequest);
   }
 
   @Override
@@ -29,21 +29,18 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
   }
 
   @Override
-  public void applyOverrideProperties(List<PutScalingPolicyRequest> manifests, Map<String, Object> overrideProperties) {
-  }
-
-  @Override
-  public AsgManifestHandlerChainState upsert(
-      AsgManifestHandlerChainState chainState, List<PutScalingPolicyRequest> manifests) {
+  public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    List<PutScalingPolicyRequest> manifests =
+        manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
     String asgName = chainState.getAsgName();
-    manifests.stream().forEach(manifest -> { manifest.setAutoScalingGroupName(asgName); });
-    // TODO
+    asgSdkManager.clearAllScalingPoliciesForAsg(asgName);
+    asgSdkManager.attachScalingPoliciesToAsg(asgName, manifests);
+    asgSdkManager.infoBold("All required scaling policies are attached to the Asg: [%s]", asgName);
     return chainState;
   }
 
   @Override
-  public AsgManifestHandlerChainState delete(
-      AsgManifestHandlerChainState chainState, List<PutScalingPolicyRequest> manifests) {
+  public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     return chainState;
   }
 }

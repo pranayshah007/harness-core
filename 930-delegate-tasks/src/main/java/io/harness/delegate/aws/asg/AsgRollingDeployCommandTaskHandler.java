@@ -8,7 +8,9 @@
 package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgInstanceRefresh;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -24,19 +26,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceRefreshRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.aws.asg.AsgTaskHelper;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.exception.InvalidArgumentsException;
@@ -50,7 +53,6 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
@@ -60,38 +62,41 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
+public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
   @Inject private AsgTaskHelper asgTaskHelper;
 
   @Override
   protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
       throws AsgNGException {
-    if (!(asgCommandRequest instanceof AsgCanaryDeployRequest)) {
-      throw new InvalidArgumentsException(Pair.of("asgCommandRequest", "Must be instance of AsgCanaryDeployRequest"));
+    if (!(asgCommandRequest instanceof AsgRollingDeployRequest)) {
+      throw new InvalidArgumentsException(Pair.of("asgCommandRequest", "Must be instance of AsgRollingDeployRequest"));
     }
 
-    AsgCanaryDeployRequest asgCanaryDeployRequest = (AsgCanaryDeployRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent = asgCanaryDeployRequest.getAsgStoreManifestsContent();
-    String serviceSuffix = asgCanaryDeployRequest.getServiceNameSuffix();
-    Integer nrOfInstances = asgCanaryDeployRequest.getUnitValue();
+    AsgRollingDeployRequest asgRollingDeployRequest = (AsgRollingDeployRequest) asgCommandRequest;
+    Map<String, List<String>> asgStoreManifestsContent = asgRollingDeployRequest.getAsgStoreManifestsContent();
+    Boolean skipMatching = asgRollingDeployRequest.isSkipMatching();
+    Boolean useAlreadyRunningInstances = asgRollingDeployRequest.isUseAlreadyRunningInstances();
+    Integer instanceWarmup = asgRollingDeployRequest.getInstanceWarmup();
+    Integer minimumHealthyPercentage = asgRollingDeployRequest.getMinimumHealthyPercentage();
 
     LogCallback logCallback = asgTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-      AutoScalingGroupContainer autoScalingGroupContainer =
-          executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent, serviceSuffix, nrOfInstances);
 
-      AsgCanaryDeployResult asgCanaryDeployResult =
-          AsgCanaryDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+      AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
+          asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
+
+      AsgRollingDeployResult asgRollingDeployResult =
+          AsgRollingDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
 
       logCallback.saveExecutionLog(
           color("Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
 
-      return AsgCanaryDeployResponse.builder()
-          .asgCanaryDeployResult(asgCanaryDeployResult)
+      return AsgRollingDeployResponse.builder()
+          .asgRollingDeployResult(asgRollingDeployResult)
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
 
@@ -102,11 +107,15 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
     }
   }
 
-  private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager,
-      Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances) {
+  private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
+      Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
+      Integer instanceWarmup, Integer minimumHealthyPercentage) {
+    // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
+    List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
 
+    // Get ASG name from asg configuration manifest
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
         AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class);
     String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
@@ -114,25 +123,10 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
 
-    String canaryAsgName = format("%s__%s", asgName, serviceSuffix);
-
-    AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(canaryAsgName);
-    if (autoScalingGroup != null) {
-      asgSdkManager.info("Service with name `%s` already exists. Trying to delete it.", canaryAsgName);
-      asgSdkManager.deleteAsgService(autoScalingGroup);
-    }
-
-    Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
-      {
-        put(AsgConfigurationManifestHandler.OverrideProperties.minSize, nrOfInstances);
-        put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, nrOfInstances);
-        put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, nrOfInstances);
-      }
-    };
-
+    // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =
         AsgManifestHandlerChainFactory.builder()
-            .initialChainState(AsgManifestHandlerChainState.builder().asgName(canaryAsgName).build())
+            .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
@@ -140,11 +134,18 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
             .addHandler(AsgConfiguration,
                 AsgConfigurationRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
-                    .overrideProperties(asgConfigurationOverrideProperties)
+                    .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                    .build())
+            .addHandler(AsgScalingPolicy, AsgScalingPolicyRequest.builder().manifests(asgScalingPolicyContent).build())
+            .addHandler(AsgInstanceRefresh,
+                AsgInstanceRefreshRequest.builder()
+                    .skipMatching(skipMatching)
+                    .instanceWarmup(instanceWarmup)
+                    .minimumHealthyPercentage(minimumHealthyPercentage)
                     .build())
             .executeUpsert();
 
-    autoScalingGroup = chainState.getAutoScalingGroup();
+    AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
 
     return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
   }
