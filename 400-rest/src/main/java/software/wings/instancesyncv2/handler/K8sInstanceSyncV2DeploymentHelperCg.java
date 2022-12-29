@@ -33,18 +33,12 @@ import software.wings.api.K8sDeploymentInfo;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
-import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
-import software.wings.service.impl.instance.InstanceUtils;
-import software.wings.service.impl.instance.sync.ContainerSync;
-import software.wings.service.intfc.AppService;
-import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
-import software.wings.service.intfc.ServiceResourceService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -78,12 +72,6 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
 
   @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(5);
   private final KryoSerializer kryoSerializer;
-  private final InstanceUtils instanceUtil;
-  private final ServiceResourceService serviceResourceService;
-  private final EnvironmentService environmentService;
-  private final AppService appService;
-  private final WingsMongoPersistence wingsPersistence;
-  private final ContainerSync containerSync;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {
@@ -262,8 +250,8 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
     List<CgDeploymentReleaseDetails> releaseDetails = new ArrayList<>();
     taskDetails.getReleaseIdentifiers()
         .stream()
-        .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
-        .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
+        .filter(CgK8sReleaseIdentifier.class ::isInstance)
+        .map(CgK8sReleaseIdentifier.class ::cast)
         .forEach(releaseIdentifier
             -> releaseDetails.add(CgDeploymentReleaseDetails.newBuilder()
                                       .setTaskDetailsId(taskDetails.getUuid())

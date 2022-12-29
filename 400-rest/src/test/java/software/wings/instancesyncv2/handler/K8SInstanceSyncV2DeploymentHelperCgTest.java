@@ -11,20 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -37,26 +32,18 @@ import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
-import software.wings.service.impl.instance.InstanceUtils;
-import software.wings.service.impl.instance.sync.ContainerSync;
-import software.wings.service.intfc.AppService;
-import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
-import software.wings.service.intfc.ServiceResourceService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.joor.Reflect;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,12 +58,6 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Mock private KryoSerializer kryoSerializer;
-  @Mock private InstanceUtils instanceUtil;
-  @Mock private ServiceResourceService serviceResourceService;
-  @Mock private EnvironmentService environmentService;
-  @Mock private AppService appService;
-  @Mock private WingsMongoPersistence wingsPersistence;
-  @Mock private ContainerSync containerSync;
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)

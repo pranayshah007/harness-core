@@ -342,7 +342,6 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
-import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
 import software.wings.persistence.AppContainer;
@@ -865,7 +864,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
-    set.add(CgK8sReleaseIdentifier.class);
     set.add(InstanceSyncTaskDetails.class);
     set.add(MigratedAccountTracker.class);
     set.add(YamlGitConfig.class);

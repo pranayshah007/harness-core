@@ -128,7 +128,7 @@ public class CgInstanceSyncServiceV2 {
           .stream()
           .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
           .filter(this::hasDeploymentKey)
-          .forEach(deploymentSummary -> {
+          .forEach((DeploymentSummary deploymentSummary) -> {
             SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
             CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
                 helperFactory.getHelper(cloudProvider.getValue().getSettingType());
@@ -146,7 +146,7 @@ public class CgInstanceSyncServiceV2 {
     } catch (Exception ex) {
       // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
       throw new RuntimeException(
-          format("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
+          format("Exception while handling deployment event for executionId [%s], infraMappingId [%s]",
               event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
           ex);
     }
@@ -336,7 +336,7 @@ public class CgInstanceSyncServiceV2 {
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
 
     List<CgDeploymentReleaseDetails> deploymentReleaseDetails = new ArrayList<>();
-    instanceSyncTaskDetails.stream().forEach(taskDetails -> {
+    instanceSyncTaskDetails.stream().forEach((InstanceSyncTaskDetails taskDetails) -> {
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
