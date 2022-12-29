@@ -9,7 +9,7 @@ package io.harness.cvng.usage.impl.resources;
 
 import io.harness.ModuleType;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.cvng.usage.impl.CVLicenseUsageDTO;
+import io.harness.cvng.usage.impl.SRMLicenseUsageDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.UsageRequestParams;
@@ -28,19 +28,35 @@ import javax.ws.rs.QueryParam;
 @Path("/usage")
 @Produces("application/json")
 @NextGenManagerAuth
-public class CVLicenseUsageResource {
+public class SRMLicenseUsageResource {
   @Inject LicenseUsageInterface licenseUsageInterface;
 
   @GET
   @Path("/CV")
   @ApiOperation(value = "Gets License Usage for CV", nickname = "getLicenseUsage")
-  public ResponseDTO<CVLicenseUsageDTO> getLicenseUsage(
+  public ResponseDTO<SRMLicenseUsageDTO> getLicenseUsage(
       @QueryParam("accountIdentifier") @AccountIdentifier @NotNull String accountIdentifier,
       @QueryParam("timestamp") long timestamp) {
     try {
       ModuleType moduleType = ModuleType.fromString("CV");
 
-      return ResponseDTO.newResponse((CVLicenseUsageDTO) licenseUsageInterface.getLicenseUsage(
+      return ResponseDTO.newResponse((SRMLicenseUsageDTO) licenseUsageInterface.getLicenseUsage(
+          accountIdentifier, moduleType, timestamp, UsageRequestParams.builder().build()));
+    } catch (IllegalArgumentException e) {
+      throw new InvalidRequestException("Module is invalid", e);
+    }
+  }
+
+  @GET
+  @Path("/SRM")
+  @ApiOperation(value = "Gets License Usage for SRM", nickname = "getSRMLicenseUsage")
+  public ResponseDTO<SRMLicenseUsageDTO> getSRMLicenseUsage(
+      @QueryParam("accountIdentifier") @AccountIdentifier @NotNull String accountIdentifier,
+      @QueryParam("timestamp") long timestamp) {
+    try {
+      ModuleType moduleType = ModuleType.fromString("SRM");
+
+      return ResponseDTO.newResponse((SRMLicenseUsageDTO) licenseUsageInterface.getLicenseUsage(
           accountIdentifier, moduleType, timestamp, UsageRequestParams.builder().build()));
     } catch (IllegalArgumentException e) {
       throw new InvalidRequestException("Module is invalid", e);

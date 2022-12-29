@@ -101,6 +101,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private static final String RESOURCE_GROUPS = "resourcegroups";
   private static final String USER_GROUPS = "usergroups";
   private static final String UNKNOWN_PROPERTIES_IGNORED = "unknown.properties.ignored";
+  private static final String MAX_STREAM_BATCH_SIZE = "max.batch.size";
 
   public enum AggregatorJobType {
     PRIMARY,
@@ -171,6 +172,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     props.setProperty(TRANSFORMS_UNWRAP_DROP_TOMBSTONES, "false");
     props.setProperty(TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
     props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
+    props.setProperty(MAX_STREAM_BATCH_SIZE, debeziumConfig.getMaxStreamBatchSize());
 
     return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }

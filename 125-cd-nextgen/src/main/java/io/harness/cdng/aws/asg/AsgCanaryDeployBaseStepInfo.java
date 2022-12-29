@@ -29,8 +29,8 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("AsgCanaryBaseStepInfo")
-public class AsgCanaryBaseStepInfo {
+@TypeAlias("AsgCanaryDeployBaseStepInfo")
+public class AsgCanaryDeployBaseStepInfo {
   @NotNull Capacity instanceSelection;
 
   @YamlSchemaTypes({runtime})

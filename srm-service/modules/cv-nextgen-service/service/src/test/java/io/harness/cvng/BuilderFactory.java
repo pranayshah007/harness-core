@@ -538,13 +538,14 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .dataSourceType(dataSourceType)
         .orgIdentifier(context.getOrgIdentifier())
+        .queryIdentifier(generateUuid())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
         .query(randomAlphabetic(10))
         .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
         .enabled(true)
-        .category(CVMonitoringCategory.ERRORS) // TODO Why fix it.
+        .category(CVMonitoringCategory.ERRORS)
         .connectorIdentifier("connectorRef")
         .productName(generateUuid())
         .createdAt(clock.millis());

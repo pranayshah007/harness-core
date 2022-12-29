@@ -30,8 +30,13 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class JenkinsParameterField implements Visitable {
   @NotEmpty @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD) String name;
+
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
   ParameterField<String> value;
+
+  @ApiModelProperty(dataType = SwaggerConstants.JENKINS_PARAMETER_FIELD_TYPE_ENUM_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  ParameterField<JenkinsParameterFieldType> type;
 }

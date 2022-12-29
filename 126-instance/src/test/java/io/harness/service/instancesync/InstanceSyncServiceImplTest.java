@@ -474,15 +474,24 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
         K8sInstanceSyncPerpetualTaskResponse.builder().serverInstanceDetails(Arrays.asList(serverInstanceInfo)).build();
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         InstanceSyncPerpetualTaskInfoDTO.builder().infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID).build();
+    List<InstanceDTO> instancesList =
+        Arrays.asList(InstanceDTO.builder().serviceName(SERVICE_IDENTIFIER).envName(ENV_IDENTIFIER).build());
+
     when(instanceSyncPerpetualTaskInfoService.findByPerpetualTaskId(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(infrastructureMappingService.getByInfrastructureMappingId(
              instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId()))
         .thenReturn(Optional.of(infrastructureMappingDTO));
     when(instanceSyncHelper.fetchService(infrastructureMappingDTO)).thenThrow(entityNotFoundException);
+    when(instanceService.getActiveInstancesByInfrastructureMappingId(
+             eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER), eq(ID)))
+        .thenReturn(instancesList);
+
+    doNothing().when(instanceService).deleteAll(instancesList);
 
     instanceSyncService.processInstanceSyncByPerpetualTask(
         ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncPerpetualTaskResponse);
     verify(instanceSyncHelper, times(1)).cleanUpInstanceSyncPerpetualTaskInfo(any());
+    verify(instanceService, times(1)).deleteAll(eq(instancesList));
   }
 }

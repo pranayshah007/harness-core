@@ -19,6 +19,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,19 +35,24 @@ public class AsgRollingDeployBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipMatching")
   ParameterField<Boolean> skipMatching;
 
+  @NotNull
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
   ParameterField<Boolean> useAlreadyRunningInstances;
 
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("instanceWarmup")
   ParameterField<Integer> instanceWarmup;
 
-  @ApiModelProperty(dataType = SwaggerConstants.DOUBLE_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("minimumHealthyPercentage")
-  ParameterField<Double> minimumHealthyPercentage;
+  ParameterField<Integer> minimumHealthyPercentage;
 }

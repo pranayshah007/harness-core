@@ -14,26 +14,26 @@ import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
-import io.harness.licensing.beans.modules.CVModuleLicenseDTO;
-import io.harness.licensing.beans.modules.CVModuleLicenseDTO.CVModuleLicenseDTOBuilder;
-import io.harness.licensing.interfaces.clients.CVModuleLicenseClient;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO.SRMModuleLicenseDTOBuilder;
+import io.harness.licensing.interfaces.clients.SRMModuleLicenseClient;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-public class CVLocalClient implements CVModuleLicenseClient {
+public class SRMLocalClient implements SRMModuleLicenseClient {
   private static final int FREE_TRIAL_SERVICES = 5;
   private static final int TEAM_TRIAL_SERVICES = 100;
   @Override
-  public CVModuleLicenseDTO createTrialLicense(Edition edition, String accountId) {
+  public SRMModuleLicenseDTO createTrialLicense(Edition edition, String accountId) {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
     long currentTime = Instant.now().toEpochMilli();
 
-    CVModuleLicenseDTOBuilder<?, ?> builder = CVModuleLicenseDTO.builder()
-                                                  .startTime(currentTime)
-                                                  .expiryTime(expiryTime)
-                                                  .selfService(true)
-                                                  .status(LicenseStatus.ACTIVE);
+    SRMModuleLicenseDTOBuilder<?, ?> builder = SRMModuleLicenseDTO.builder()
+                                                   .startTime(currentTime)
+                                                   .expiryTime(expiryTime)
+                                                   .selfService(true)
+                                                   .status(LicenseStatus.ACTIVE);
 
     switch (edition) {
       case ENTERPRISE:

@@ -22,26 +22,27 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 
-public class CVLicenseUsageImpl implements LicenseUsageInterface<CVLicenseUsageDTO, UsageRequestParams> {
+public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsageDTO, UsageRequestParams> {
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Override
-  public CVLicenseUsageDTO getLicenseUsage(
+  public SRMLicenseUsageDTO getLicenseUsage(
       String accountIdentifier, ModuleType module, long timestamp, UsageRequestParams usageRequest) {
     Preconditions.checkArgument(timestamp > 0, format("Invalid timestamp %d while fetching LicenseUsages.", timestamp));
-    Preconditions.checkArgument(ModuleType.CV == module, format("Invalid Module type %s provided", module.toString()));
+    Preconditions.checkArgument(ModuleType.CV == module || ModuleType.SRM == module,
+        format("Invalid Module type %s provided", module.toString()));
     Preconditions.checkArgument(
         StringUtils.isNotBlank(accountIdentifier), "Account Identifier cannot be null or blank");
 
     long count = monitoredServiceService.countUniqueEnabledServices(accountIdentifier);
 
-    return CVLicenseUsageDTO.builder()
+    return SRMLicenseUsageDTO.builder()
         .activeServices(UsageDataDTO.builder().count(count).displayName("Total active SRM services").build())
         .build();
   }
 
   @Override
-  public Page<CVLicenseUsageDTO> listLicenseUsage(
+  public Page<SRMLicenseUsageDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest) {
     throw new NotImplementedException("not implemented");
   }

@@ -289,15 +289,19 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     Query<DelegateProfile> query = persistence.createQuery(DelegateProfile.class)
                                        .filter(DelegateProfileKeys.accountId, accountId)
                                        .filter(DelegateProfileKeys.ng, true);
+    Query<DelegateProfile> filterIdentifiersQuery = persistence.createQuery(DelegateProfile.class)
+                                                        .filter(DelegateProfileKeys.accountId, accountId)
+                                                        .filter(DelegateProfileKeys.ng, true);
 
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
     if (owner != null) {
       query.field(DelegateProfileKeys.owner).equal(owner);
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).equal(owner);
     } else {
       // Account level delegate configurations
       query.field(DelegateProfileKeys.owner).doesNotExist();
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).doesNotExist();
     }
-    Query<DelegateProfile> filterIdentifiersQuery = query.cloneQuery();
     query.field(DelegateProfileKeys.uuid).in(identifiers);
     List<String> existingRecordsKeys = query.asKeyList().stream().map(key -> (String) key.getId()).collect(toList());
 
