@@ -144,8 +144,7 @@ public class CgInstanceSyncServiceV2 {
           });
 
     } catch (Exception ex) {
-      // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
-      // forever in case of exception
+      // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
       throw new RuntimeException(
           format("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
               event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
@@ -191,13 +190,10 @@ public class CgInstanceSyncServiceV2 {
           log.warn("Couldn't acquire infra lock. appId [{}]", infraMapping.getAppId());
           return;
         }
-        Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-        SettingAttribute cloudProvider =
-            cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
-
+        SettingAttribute cloudProvider = cloudProviderService.get(taskDetails.getCloudProviderId());
+        CgInstanceSyncV2DeploymentHelper helper = helperFactory.getHelper(cloudProvider.getValue().getSettingType());
         Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
-            helperFactory.getHelper(cloudProvider.getValue().getSettingType())
-                .getCgReleaseIdentifiersList(instancesPerTask.get(taskDetailsId));
+            helper.getCgReleaseIdentifiersList(instancesPerTask.get(taskDetailsId));
 
         Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
             Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
@@ -205,9 +201,8 @@ public class CgInstanceSyncServiceV2 {
         Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
         Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
         for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
-          long deleteReleaseAfter = helperFactory.getHelper(cloudProvider.getValue().getSettingType())
-                                        .getDeleteReleaseAfter(cgReleaseIdentifiers,
-                                            cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
+          long deleteReleaseAfter = helper.getDeleteReleaseAfter(
+              cgReleaseIdentifiers, cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
           cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
           if (deleteReleaseAfter > System.currentTimeMillis()) {
             releasesToUpdate.add(cgReleaseIdentifiers);
@@ -225,6 +220,7 @@ public class CgInstanceSyncServiceV2 {
         } catch (NoInstancesException e) {
           log.error(e.getMessage());
           taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
+          return;
         }
         taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
       }

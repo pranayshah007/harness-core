@@ -19,10 +19,12 @@ public abstract class AbstractCgReleaseIdentifier implements CgReleaseIdentifier
   @Builder.Default
   @EqualsAndHashCode.Exclude
   private CgReleaseMetadata metadata = CgReleaseMetadata.builder().deleteAfter(0).build();
+
   @Override
   public long getDeleteAfter() {
     return this.metadata.getDeleteAfter();
   }
+
   @Override
   public void setDeleteAfter(long timestamp) {
     this.metadata.setDeleteAfter(timestamp);
