@@ -27,7 +27,7 @@ import lombok.experimental.NonFinal;
 public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotationResolver {
   String accountId;
   String commandName;
-
+  @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   Map<String, List<String>> asgStoreManifestsContent;
@@ -35,5 +35,4 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) boolean useAlreadyRunningInstances;
   @NonFinal @Expression(ALLOW_SECRETS) Integer instanceWarmup;
   @NonFinal @Expression(ALLOW_SECRETS) Integer minimumHealthyPercentage;
-  @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 }

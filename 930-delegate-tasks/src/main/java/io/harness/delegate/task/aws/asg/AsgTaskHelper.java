@@ -52,6 +52,10 @@ public class AsgTaskHelper {
     return asgStoreManifestsContent.get("AsgConfiguration").get(0);
   }
 
+  public List<String> getAsgScalingPolicyContent(Map<String, List<String>> asgStoreManifestsContent) {
+    return asgStoreManifestsContent.get("AsgScalingPolicy");
+  }
+
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {
     return AutoScalingGroupContainer.builder()
         .autoScalingGroupName(autoScalingGroup.getAutoScalingGroupName())

@@ -5,17 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.aws.asg;
+package io.harness.aws.asg.manifest.request;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.manifest.request.ManifestRequest;
 
+import java.util.List;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
-@Builder
-@OwnedBy(HarnessTeam.CDP)
-public class AsgCanaryDeployResult {
-  private AutoScalingGroupContainer autoScalingGroupContainer;
+@Getter
+public class AsgScalingPolicyRequest extends ManifestRequest {
+  @Builder
+  public AsgScalingPolicyRequest(List<String> manifests) {
+    super(manifests);
+  }
 }

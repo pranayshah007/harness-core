@@ -15,7 +15,6 @@ import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -27,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgRollingPrepareRollbackDataOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome")
 public class AsgRollingPrepareRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
-  String asgName;
-  Map<String, List<String>> asgStoreManifestsContent;
+  String launchTemplateVersion;
+  String asgConfiguration;
+  List<String> scalingPolicies;
 }

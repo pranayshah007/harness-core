@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,6 +18,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgPrepareRollbackDataResult {
-  String asgName;
-  Map<String, List<String>> asgStoreManifestsContent;
+  String launchTemplateVersion;
+  String asgConfiguration;
+  List<String> scalingPolicies;
 }
