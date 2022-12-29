@@ -67,10 +67,10 @@ import org.apache.groovy.util.Maps;
 @Singleton
 @Slf4j
 public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2DeploymentHelper {
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
   private final ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   private final InfrastructureMappingService infrastructureMappingService;
 
-  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(5);
   private final KryoSerializer kryoSerializer;
 
   @Override

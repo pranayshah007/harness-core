@@ -45,7 +45,6 @@ import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
-import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
@@ -74,19 +73,18 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class CgInstanceSyncServiceV2 {
+  private final DeploymentService deploymentService;
+  public static final String AUTO_SCALE = "AUTO_SCALE";
+  public static final int PERPETUAL_TASK_INTERVAL = 10;
+  public static final int PERPETUAL_TASK_TIMEOUT = 5;
   private final CgInstanceSyncV2DeploymentHelperFactory helperFactory;
   private final DelegateServiceGrpcClient delegateServiceClient;
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final InfrastructureMappingService infrastructureMappingService;
   private final SettingsServiceImpl cloudProviderService;
   private final KryoSerializer kryoSerializer;
-  private final InstanceService instanceService;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
-  private final DeploymentService deploymentService;
-  public static final String AUTO_SCALE = "AUTO_SCALE";
-  public static final int PERPETUAL_TASK_INTERVAL = 2;
-  public static final int PERPETUAL_TASK_TIMEOUT = 5;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -128,20 +126,7 @@ public class CgInstanceSyncServiceV2 {
           .stream()
           .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
           .filter(this::hasDeploymentKey)
-          .forEach((DeploymentSummary deploymentSummary) -> {
-            SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
-            CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
-                helperFactory.getHelper(cloudProvider.getValue().getSettingType());
-            String configuredPerpetualTaskId = getConfiguredPerpetualTaskId(
-                deploymentSummary, cloudProvider.getUuid(), instanceSyncV2DeploymentHelper);
-            if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
-              String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-              trackDeploymentRelease(
-                  cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncV2DeploymentHelper);
-            } else {
-              updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
-            }
-          });
+          .forEach(this::handlePerpetualTask);
 
     } catch (Exception ex) {
       // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
@@ -149,6 +134,21 @@ public class CgInstanceSyncServiceV2 {
           format("Exception while handling deployment event for executionId [%s], infraMappingId [%s]",
               event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
           ex);
+    }
+  }
+
+  private void handlePerpetualTask(DeploymentSummary deploymentSummary) {
+    SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
+    CgInstanceSyncV2DeploymentHelper instanceSyncV2DeploymentHelper =
+        helperFactory.getHelper(cloudProvider.getValue().getSettingType());
+    String configuredPerpetualTaskId =
+        getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncV2DeploymentHelper);
+    if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
+      String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
+      trackDeploymentRelease(
+          cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncV2DeploymentHelper);
+    } else {
+      updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
     }
   }
 
