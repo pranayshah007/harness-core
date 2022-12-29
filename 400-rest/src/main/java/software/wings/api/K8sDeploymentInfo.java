@@ -14,12 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.helm.HelmChartInfo;
 
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
