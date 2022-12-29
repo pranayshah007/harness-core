@@ -10,6 +10,7 @@ package io.harness.batch.processing.config;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
+import io.harness.clickhouse.ClickHouseConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
@@ -32,6 +33,7 @@ import lombok.Data;
 @Builder
 public class BatchMainConfig {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("clickhouse") private ClickHouseConfig clickHouseConfig;
   @JsonProperty("harness-mongo") private MongoConfig harnessMongo;
   @JsonProperty("events-mongo") private MongoConfig eventsMongo;
   @JsonProperty("batchQueryConfig") private BatchQueryConfig batchQueryConfig;

@@ -34,6 +34,7 @@ java_library(
         "@maven//:org_json_json",
         "@maven//:org_jsr107_ri_cache_annotations_ri_guice",
         "@maven//:org_redisson_redisson",
+        "@maven//:com_clickhouse_clickhouse_jdbc",
     ],
 )
 

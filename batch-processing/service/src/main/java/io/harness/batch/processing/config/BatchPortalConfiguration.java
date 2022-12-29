@@ -83,6 +83,11 @@ public class BatchPortalConfiguration {
   }
 
   @Bean
+  public BatchProcessingClickHouseModule batchProcessingClickHouseModule(BatchMainConfig batchMainConfig) {
+    return new BatchProcessingClickHouseModule(batchMainConfig.getClickHouseConfig());
+  }
+
+  @Bean
   @Profile("!test")
   AbstractCfModule cfModule(BatchMainConfig batchMainConfig) {
     return new AbstractCfModule() {

@@ -17,10 +17,22 @@ events-mongo:
   indexManagerMode: AUTO
   aliasDBName: events
 
+#timescaledb:
+#  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
+#  timescaledbUsername: "admin"
+#  timescaledbPassword: "password"
+#  connectTimeout: 300
+#  socketTimeout: 900
+#  logUnclosedConnections: false
+#  loggerLevel: OFF
+#  isHealthCheckNeeded: false
+#  sslMode: disable
+#  sslRootCert: ""
+
 timescaledb:
-  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: "admin"
-  timescaledbPassword: "password"
+  timescaledbUrl: "jdbc:postgresql://timescaledb-qa.harness.io:5432/harnessccmdev"
+  timescaledbUsername: "harnessapp"
+  timescaledbPassword: "Qa$napp"
   connectTimeout: 300
   socketTimeout: 900
   logUnclosedConnections: false
@@ -28,6 +40,13 @@ timescaledb:
   isHealthCheckNeeded: false
   sslMode: disable
   sslRootCert: ""
+
+clickhouse:
+  clickhouseUrl: jdbc:clickhouse://127.0.0.1:9000
+  clickhouseUsername:
+  clickhousePassword:
+  connectTimeout:
+  socketTimeout:
 
 batchQueryConfig:
   queryBatchSize: 4000

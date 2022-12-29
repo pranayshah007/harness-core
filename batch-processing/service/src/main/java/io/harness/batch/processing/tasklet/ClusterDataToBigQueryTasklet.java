@@ -29,6 +29,7 @@ import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.clickhouse.ClickHouseService;
 import io.harness.ff.FeatureFlagService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -40,16 +41,11 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.sql.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -76,12 +72,16 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   @Autowired private HarnessEntitiesService harnessEntitiesService;
   @Autowired private WorkloadRepository workloadRepository;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private ClickHouseService clickHouseService;
 
+  @Autowired BatchMainConfig configuration;
   private static final String defaultParentWorkingDirectory = "./avro/";
   private static final String defaultBillingDataFileNameDaily = "billing_data_%s_%s_%s.avro";
   private static final String defaultBillingDataFileNameHourly = "billing_data_hourly_%s_%s_%s_%s.avro";
   private static final String gcsObjectNameFormat = "%s/%s";
   public static final long CACHE_SIZE = 10000;
+
+  private boolean onPrem = true;
 
   LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
       Caffeine.newBuilder()
@@ -119,7 +119,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
-    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    //    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    int batchSize = 100;
 
     BillingDataReader billingDataReader = new BillingDataReader(billingDataService, jobConstants.getAccountId(),
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()),
@@ -127,35 +128,670 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
 
     ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobStartTime()), ZoneId.of("GMT"));
     String billingDataFileName = "";
+    String clusterDataTableName = "";
+    String clusterDataAggregatedTableName = "";
     if (batchJobType == BatchJobType.CLUSTER_DATA_TO_BIG_QUERY) {
       billingDataFileName =
           String.format(defaultBillingDataFileNameDaily, zdt.getYear(), zdt.getMonth(), zdt.getDayOfMonth());
+      clusterDataTableName = "clusterData";
+      clusterDataAggregatedTableName = "clusterDataAggregated";
     } else if (batchJobType == BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
       billingDataFileName = String.format(
           defaultBillingDataFileNameHourly, zdt.getYear(), zdt.getMonth(), zdt.getDayOfMonth(), zdt.getHour());
+      clusterDataTableName = "clusterDataHourly";
+      clusterDataAggregatedTableName = "clusterDataHourlyAggregated";
     }
-
     List<InstanceBillingData> instanceBillingDataList;
-    boolean avroFileWithSchemaExists = false;
-    do {
-      instanceBillingDataList = billingDataReader.getNext();
-      List<ClusterBillingData> clusterBillingDataList =
-          getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-      log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
-      writeDataToAvro(
-          jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
-      avroFileWithSchemaExists = true;
-    } while (instanceBillingDataList.size() == batchSize);
 
-    final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
-    googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
+    if (!onPrem) {
+      boolean avroFileWithSchemaExists = false;
+      do {
+        instanceBillingDataList = billingDataReader.getNext();
+        List<ClusterBillingData> clusterBillingDataList =
+            getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
+        log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
+        writeDataToAvro(
+            jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
+        avroFileWithSchemaExists = true;
+      } while (instanceBillingDataList.size() == batchSize);
 
-    // Delete file once upload is complete
-    File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
-    File billingDataFile = new File(workingDirectory, billingDataFileName);
-    Files.delete(billingDataFile.toPath());
+      final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
+      googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
 
+      // Delete file once upload is complete
+      File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
+      File billingDataFile = new File(workingDirectory, billingDataFileName);
+      Files.delete(billingDataFile.toPath());
+
+    } else {
+      List<ClusterBillingData> allClusterBillingData = new ArrayList<>();
+      do {
+        instanceBillingDataList = billingDataReader.getNext();
+        List<ClusterBillingData> clusterBillingDataList =
+            getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
+        log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
+        allClusterBillingData.addAll(clusterBillingDataList);
+
+      } while (instanceBillingDataList.size() == batchSize);
+
+      log.info("onPrem ::: allClusterBillingData size: {}", allClusterBillingData.size());
+
+      processClusterDataTable(jobConstants, clusterDataTableName, allClusterBillingData);
+
+      // Delete old data and ingest in unifiedTable
+      processUnifiedTable(zdt, clusterDataTableName);
+
+      // Ingest data to clusterDataAggregated/clusterDataHourlyAggregated
+      processAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+
+      // Ingest data to costAggregated Table
+      processCostAggregaredTable(jobConstants, zdt);
+    }
     return null;
+  }
+
+  private void processCostAggregaredTable(JobConstants jobConstants, ZonedDateTime zdt) throws Exception {
+    clickHouseService.executeClickHouseQuery(getCreateCostAggregatedQuery(), false);
+    clickHouseService.executeClickHouseQuery(
+        deleteDataFromClickHouse(zdt.toLocalDate().toString(), jobConstants.getAccountId()), false);
+    ingestToCostAggregatedTable(zdt.toLocalDate().toString());
+  }
+
+  private void ingestToCostAggregatedTable(String startTime) throws Exception {
+    String costAggregatedIngestionQuery =
+        "INSERT INTO ccm.costAggregated (day, cost, cloudProvider, accountId) SELECT date_trunc('day', startTime) AS day, sum(cost) AS cost, concat(clustertype, '_', clustercloudprovider) AS cloudProvider, accountid AS accountId FROM ccm.unifiedTable WHERE (toDate(startTime) = toDate('"
+        + startTime
+        + "')) AND (clustercloudprovider = 'CLUSTER') AND (clustertype = 'K8S') GROUP BY day, clustertype, accountid, clustercloudprovider";
+
+    //    String costAggregatedIngestionQuery = "INSERT INTO ccm.costAggregated (day, cost, cloudProvider, accountId)
+    //    \n"
+    //        + "    SELECT date_trunc('day', startTime) AS day, sum(cost) AS cost, concat(clustertype, '_',
+    //        clustercloudprovider) AS cloudProvider, accountid as accountId \n"
+    //        + "    FROM ccm.unifiedTable  \n"
+    //        + "    WHERE toDate(startTime) = toDate('" + startTime + "')"
+    //        + "    and clustercloudprovider = 'CLUSTER' AND clustertype = 'K8S'\n"
+    //        + "    GROUP BY day, clustercloudprovider;";
+    clickHouseService.executeClickHouseQuery(costAggregatedIngestionQuery, false);
+  }
+
+  private static String deleteDataFromClickHouse(final String startTime, final String accountId) {
+    return "DELETE FROM ccm.costAggregated WHERE toDate(day) = toDate('" + startTime
+        + "') AND cloudProvider like 'K8S_%' AND accountId = '" + accountId + "';";
+  }
+
+  private void processAggregatedTable(
+      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
+    createOrDeleteExistingDataFromTable(jobConstants, clusterDataAggregatedTableName);
+    ingestAggregatedData(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+  }
+
+  private void processUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+    clickHouseService.executeClickHouseQuery(getUnifiedTableCreateQuery(), false);
+    clickHouseService.executeClickHouseQuery(
+        deleteDataFromClickHouseForUnifiedTable(zdt.toLocalDate().toString()), false);
+    ingestIntoUnifiedTable(zdt, clusterDataTableName);
+  }
+
+  private void processClusterDataTable(JobConstants jobConstants, String clusterDataTableName,
+      List<ClusterBillingData> allClusterBillingData) throws Exception {
+    // Ingesting data to clusterData/clusterDataHourly table in clickhouse.
+    createOrDeleteExistingDataFromTable(jobConstants, clusterDataTableName);
+    ingestClusterData(clusterDataTableName, allClusterBillingData);
+  }
+
+  private void ingestIntoUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+    String unifiedtableIngestQuery =
+        "INSERT INTO ccm.unifiedTable (cloudProvider, product, startTime, endtime, cost, cpubillingamount, memorybillingamount, actualidlecost, systemcost, unallocatedcost, networkcost, clustercloudprovider, accountid, clusterid, clustername, clustertype, region, namespace, workloadname, workloadtype, instancetype, appid, serviceid, envid, cloudproviderid, launchtype, cloudservicename, orgIdentifier, projectIdentifier, labels)\n"
+        + "  SELECT\n"
+        + "      'CLUSTER' AS cloudProvider,\n"
+        + "      if(clustertype = 'K8S', 'Kubernetes Cluster', 'ECS Cluster') AS product,\n"
+        + "      date_trunc('day', toDateTime64(starttime / 1000, 3, 'UTC')) AS startTime,\n"
+        + "      date_trunc('day', toDateTime64(endtime / 1000, 3, 'UTC')) AS endtime,\n"
+        + "      SUM(billingamount) AS cost,\n"
+        + "      SUM(cpubillingamount) AS cpubillingamount,\n"
+        + "      SUM(memorybillingamount) AS memorybillingamount,\n"
+        + "      SUM(actualidlecost) AS actualidlecost,\n"
+        + "      SUM(systemcost) AS systemcost,\n"
+        + "      SUM(unallocatedcost) AS unallocatedcost,\n"
+        + "      SUM(networkcost) AS networkcost,\n"
+        + "      cloudprovider AS clustercloudprovider,\n"
+        + "      accountid AS accountid,\n"
+        + "      clusterid AS clusterid,\n"
+        + "      clustername AS clustername,\n"
+        + "      clustertype AS clustertype,\n"
+        + "      region AS region,\n"
+        + "      namespace AS namespace,\n"
+        + "      workloadname AS workloadname,\n"
+        + "      workloadtype AS workloadtype,\n"
+        + "      instancetype AS instancetype,\n"
+        + "      appname AS appid,\n"
+        + "      servicename AS serviceid,\n"
+        + "      envname AS envid,\n"
+        + "      cloudproviderid AS cloudproviderid,\n"
+        + "      launchtype AS launchtype,\n"
+        + "      cloudservicename AS cloudservicename,\n"
+        + "      orgIdentifier,\n"
+        + "      projectIdentifier,\n"
+        + "      any(labels) AS labels\n"
+        + "  FROM ccm." + clusterDataTableName + "\n"
+        + "  WHERE (toDate(date_trunc('day', toDateTime64(starttime / 1000, 3, 'UTC'))) = toDate('" + zdt.toLocalDate()
+        + "')) AND (instancetype != 'CLUSTER_UNALLOCATED')\n"
+        + "  GROUP BY\n"
+        + "      accountid,\n"
+        + "      clusterid,\n"
+        + "      clustername,\n"
+        + "      clustertype,\n"
+        + "      region,\n"
+        + "      namespace,\n"
+        + "      workloadname,\n"
+        + "      workloadtype,\n"
+        + "      instancetype,\n"
+        + "      appid,\n"
+        + "      serviceid,\n"
+        + "      envid,\n"
+        + "      cloudproviderid,\n"
+        + "      launchtype,\n"
+        + "      cloudservicename,\n"
+        + "      startTime,\n"
+        + "      endtime,\n"
+        + "      clustercloudprovider,\n"
+        + "      orgIdentifier,\n"
+        + "      projectIdentifier\n";
+
+    clickHouseService.executeClickHouseQuery(unifiedtableIngestQuery, false);
+  }
+
+  private String deleteDataFromClickHouseForUnifiedTable(String jobStartTime) {
+    return "DELETE FROM ccm.unifiedTable WHERE toDate(startTime) = toDate('" + jobStartTime
+        + "') AND cloudProvider = 'CLUSTER'";
+  }
+
+  private void ingestAggregatedData(
+      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
+    String insertQueryForPods = "INSERT INTO ccm." + clusterDataAggregatedTableName
+        + " (memoryactualidlecost, cpuactualidlecost, starttime, endtime, billingamount, actualidlecost, unallocatedcost, systemcost, storageactualidlecost, storageunallocatedcost, storageutilizationvalue, storagerequest, storagecost, memoryunallocatedcost, cpuunallocatedcost, cpubillingamount, memorybillingamount, accountid, clusterid, clustername, clustertype, region, namespace, workloadname, workloadtype, instancetype, appid, serviceid, envid, cloudproviderid, launchtype, cloudservicename, instancename, cloudprovider, networkcost, appname, servicename, envname, orgIdentifier, projectIdentifier, labels) SELECT\n"
+        + "    SUM(memoryactualidlecost) AS memoryactualidlecost,\n"
+        + "    SUM(cpuactualidlecost) AS cpuactualidlecost,\n"
+        + "    starttime,\n"
+        + "    max(endtime) AS endtime,\n"
+        + "    sum(billingamount) AS billingamount,\n"
+        + "    sum(actualidlecost) AS actualidlecost,\n"
+        + "    sum(unallocatedcost) AS unallocatedcost,\n"
+        + "    sum(systemcost) AS systemcost,\n"
+        + "    SUM(storageactualidlecost) AS storageactualidlecost,\n"
+        + "    SUM(storageunallocatedcost) AS storageunallocatedcost,\n"
+        + "    MAX(storageutilizationvalue) AS storageutilizationvalue,\n"
+        + "    MAX(storagerequest) AS storagerequest,\n"
+        + "    SUM(storagecost) AS storagecost,\n"
+        + "    SUM(memoryunallocatedcost) AS memoryunallocatedcost,\n"
+        + "    SUM(cpuunallocatedcost) AS cpuunallocatedcost,\n"
+        + "    SUM(cpubillingamount) AS cpubillingamount,\n"
+        + "    SUM(memorybillingamount) AS memorybillingamount,\n"
+        + "    accountid,\n"
+        + "    clusterid,\n"
+        + "    clustername,\n"
+        + "    clustertype,\n"
+        + "    region,\n"
+        + "    namespace,\n"
+        + "    workloadname,\n"
+        + "    workloadtype,\n"
+        + "    instancetype,\n"
+        + "    appid,\n"
+        + "    serviceid,\n"
+        + "    envid,\n"
+        + "    cloudproviderid,\n"
+        + "    launchtype,\n"
+        + "    cloudservicename,\n"
+        + "    instancename,\n"
+        + "    cloudprovider,\n"
+        + "    SUM(networkcost) AS networkcost,\n"
+        + "    appname,\n"
+        + "    servicename,\n"
+        + "    envname,\n"
+        + "    orgIdentifier,\n"
+        + "    projectIdentifier,\n"
+        + "    any(labels) AS labels\n"
+        + "FROM ccm." + clusterDataTableName + "\n"
+        + "WHERE starttime = " + jobConstants.getJobStartTime()
+        + " AND (instancetype IN ('K8S_POD', 'ECS_CONTAINER_INSTANCE', 'ECS_TASK_EC2', 'ECS_TASK_FARGATE', 'K8S_POD_FARGATE'))\n"
+        + "GROUP BY\n"
+        + "    starttime,\n"
+        + "    accountid,\n"
+        + "    clusterid,\n"
+        + "    clustername,\n"
+        + "    clustertype,\n"
+        + "    region,\n"
+        + "    namespace,\n"
+        + "    workloadname,\n"
+        + "    workloadtype,\n"
+        + "    instancetype,\n"
+        + "    appid,\n"
+        + "    serviceid,\n"
+        + "    envid,\n"
+        + "    cloudproviderid,\n"
+        + "    launchtype,\n"
+        + "    cloudservicename,\n"
+        + "    instancename,\n"
+        + "    cloudprovider,\n"
+        + "    appname,\n"
+        + "    servicename,\n"
+        + "    envname,\n"
+        + "    orgIdentifier,\n"
+        + "    projectIdentifier\n"
+        + "\n";
+
+    String insertQueryForPodAndPv = "INSERT INTO ccm." + clusterDataAggregatedTableName
+        + " (memoryactualidlecost, cpuactualidlecost, starttime, endtime, billingamount, actualidlecost, unallocatedcost, systemcost, storageactualidlecost, storageunallocatedcost, storageutilizationvalue, storagerequest, storagecost, memoryunallocatedcost, cpuunallocatedcost, cpubillingamount, memorybillingamount, accountid, clusterid, clustername, clustertype, region, namespace, workloadname, workloadtype, instancetype, appid, serviceid, envid, cloudproviderid, launchtype, cloudservicename, instanceid, instancename, cloudprovider, networkcost, appname, servicename, envname, orgIdentifier, projectIdentifier, labels) SELECT\n"
+        + "    SUM(memoryactualidlecost) AS memoryactualidlecost,\n"
+        + "    SUM(cpuactualidlecost) AS cpuactualidlecost,\n"
+        + "    starttime,\n"
+        + "    max(endtime) AS endtime,\n"
+        + "    sum(billingamount) AS billingamount,\n"
+        + "    sum(actualidlecost) AS actualidlecost,\n"
+        + "    sum(unallocatedcost) AS unallocatedcost,\n"
+        + "    sum(systemcost) AS systemcost,\n"
+        + "    SUM(storageactualidlecost) AS storageactualidlecost,\n"
+        + "    SUM(storageunallocatedcost) AS storageunallocatedcost,\n"
+        + "    MAX(storageutilizationvalue) AS storageutilizationvalue,\n"
+        + "    MAX(storagerequest) AS storagerequest,\n"
+        + "    SUM(storagecost) AS storagecost,\n"
+        + "    SUM(memoryunallocatedcost) AS memoryunallocatedcost,\n"
+        + "    SUM(cpuunallocatedcost) AS cpuunallocatedcost,\n"
+        + "    SUM(cpubillingamount) AS cpubillingamount,\n"
+        + "    SUM(memorybillingamount) AS memorybillingamount,\n"
+        + "    accountid,\n"
+        + "    clusterid,\n"
+        + "    clustername,\n"
+        + "    clustertype,\n"
+        + "    region,\n"
+        + "    namespace,\n"
+        + "    workloadname,\n"
+        + "    workloadtype,\n"
+        + "    instancetype,\n"
+        + "    appid,\n"
+        + "    serviceid,\n"
+        + "    envid,\n"
+        + "    cloudproviderid,\n"
+        + "    launchtype,\n"
+        + "    cloudservicename,\n"
+        + "    instanceid,\n"
+        + "    instancename,\n"
+        + "    cloudprovider,\n"
+        + "    SUM(networkcost) AS networkcost,\n"
+        + "    appname,\n"
+        + "    servicename,\n"
+        + "    envname,\n"
+        + "    orgIdentifier,\n"
+        + "    projectIdentifier,\n"
+        + "    any(labels) AS labels\n"
+        + "FROM ccm." + clusterDataTableName + "\n"
+        + "WHERE starttime = " + jobConstants.getJobStartTime() + " AND (instancetype IN ('K8S_NODE', 'K8S_PV'))\n"
+        + "GROUP BY\n"
+        + "    starttime,\n"
+        + "    accountid,\n"
+        + "    clusterid,\n"
+        + "    clustername,\n"
+        + "    clustertype,\n"
+        + "    region,\n"
+        + "    namespace,\n"
+        + "    workloadname,\n"
+        + "    workloadtype,\n"
+        + "    instancetype,\n"
+        + "    appid,\n"
+        + "    serviceid,\n"
+        + "    envid,\n"
+        + "    cloudproviderid,\n"
+        + "    launchtype,\n"
+        + "    cloudservicename,\n"
+        + "    instanceid,\n"
+        + "    instancename,\n"
+        + "    cloudprovider,\n"
+        + "    appname,\n"
+        + "    servicename,\n"
+        + "    envname,\n"
+        + "    orgIdentifier,\n"
+        + "    projectIdentifier\n";
+
+    clickHouseService.executeClickHouseQuery(insertQueryForPods, false);
+    clickHouseService.executeClickHouseQuery(insertQueryForPodAndPv, false);
+  }
+
+  private void ingestClusterData(String clusterDataTableName, List<ClusterBillingData> allClusterBillingData)
+      throws SQLException {
+    try (Connection connection = clickHouseService.getConnection()) {
+      String query = "INSERT INTO ccm." + clusterDataTableName
+          + " ( starttime,  endtime,  accountid,  settingid,  instanceid,  instancetype,  billingaccountid,  clusterid,  clustername,  appid,  serviceid,  envid,  appname,  servicename,  envname,  cloudproviderid,  parentinstanceid,  region,  launchtype,  clustertype,  workloadname,  workloadtype,  namespace,  cloudservicename,  taskid,  cloudprovider,  billingamount,  cpubillingamount,  memorybillingamount,  idlecost,  cpuidlecost,  memoryidlecost,  usagedurationseconds,  cpuunitseconds,  memorymbseconds,  maxcpuutilization,  maxmemoryutilization,  avgcpuutilization,  avgmemoryutilization,  systemcost,  cpusystemcost,  memorysystemcost,  actualidlecost,  cpuactualidlecost,  memoryactualidlecost,  unallocatedcost,  cpuunallocatedcost,  memoryunallocatedcost,  instancename,  cpurequest,  memoryrequest,  cpulimit,  memorylimit,  maxcpuutilizationvalue,  maxmemoryutilizationvalue,  avgcpuutilizationvalue,  avgmemoryutilizationvalue,  networkcost,  pricingsource,  storageactualidlecost,  storageunallocatedcost,  storageutilizationvalue,  storagerequest,  storagembseconds,  storagecost,  maxstorageutilizationvalue,  maxstoragerequest,  orgIdentifier,  projectIdentifier,  labels) VALUES ( ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?,  ?)";
+      PreparedStatement prepareStatement = connection.prepareStatement(query);
+      connection.setAutoCommit(false);
+
+      for (ClusterBillingData billingData : allClusterBillingData) {
+        getBatchedPreparedStatement(prepareStatement, billingData);
+      }
+      int[] ints = prepareStatement.executeBatch();
+      log.info(":::::::::::::::::::::::::::::::::::::: Ingested in " + clusterDataTableName + ",  results length: {}",
+          ints.length);
+    }
+  }
+
+  private void createOrDeleteExistingDataFromTable(JobConstants jobConstants, String tableName) throws Exception {
+    if (!tableName.contains("Aggregated")) {
+      clickHouseService.executeClickHouseQuery(getClusterDataCreationQuery(tableName), true);
+    } else {
+      clickHouseService.executeClickHouseQuery(getClusterDataAggregatedCreationQuery(tableName), true);
+    }
+    clickHouseService.executeClickHouseQuery(
+        deleteDataFromClickHouse(tableName, jobConstants.getJobStartTime()), false);
+  }
+
+  private static void getBatchedPreparedStatement(PreparedStatement prepareStatement, ClusterBillingData billingData)
+      throws SQLException {
+    prepareStatement.setLong(1, billingData.getStarttime());
+    prepareStatement.setLong(2, billingData.getEndtime());
+    prepareStatement.setString(3, (String) billingData.getAccountid());
+    prepareStatement.setString(4, (String) billingData.getSettingid());
+    prepareStatement.setString(5, (String) billingData.getInstanceid());
+    prepareStatement.setString(6, (String) billingData.getInstancetype());
+    prepareStatement.setString(7, (String) billingData.getBillingaccountid());
+    prepareStatement.setString(8, (String) billingData.getClusterid());
+    prepareStatement.setString(9, (String) billingData.getClustername());
+    prepareStatement.setString(10, (String) billingData.getAppid());
+    prepareStatement.setString(11, (String) billingData.getServiceid());
+    prepareStatement.setString(12, (String) billingData.getEnvid());
+    prepareStatement.setString(13, (String) billingData.getAppname());
+    prepareStatement.setString(14, (String) billingData.getServicename());
+    prepareStatement.setString(15, (String) billingData.getEnvname());
+    prepareStatement.setString(16, (String) billingData.getCloudproviderid());
+    prepareStatement.setString(17, (String) billingData.getParentinstanceid());
+    prepareStatement.setString(18, (String) billingData.getRegion());
+    prepareStatement.setString(19, (String) billingData.getLaunchtype());
+    prepareStatement.setString(20, (String) billingData.getClustertype());
+    prepareStatement.setString(21, (String) billingData.getWorkloadname());
+    prepareStatement.setString(22, (String) billingData.getWorkloadtype());
+    prepareStatement.setString(23, (String) billingData.getNamespace());
+    prepareStatement.setString(24, (String) billingData.getCloudservicename());
+    prepareStatement.setString(25, (String) billingData.getTaskid());
+    prepareStatement.setString(26, "CLUSTER");
+    prepareStatement.setBigDecimal(27, BigDecimal.valueOf(billingData.getBillingamount()));
+    prepareStatement.setBigDecimal(28, BigDecimal.valueOf(billingData.getCpubillingamount()));
+    prepareStatement.setBigDecimal(29, BigDecimal.valueOf(billingData.getMemorybillingamount()));
+    prepareStatement.setBigDecimal(30, BigDecimal.valueOf(billingData.getIdlecost()));
+    prepareStatement.setBigDecimal(31, BigDecimal.valueOf(billingData.getCpuidlecost()));
+    prepareStatement.setBigDecimal(32, BigDecimal.valueOf(billingData.getMemoryidlecost()));
+    prepareStatement.setBigDecimal(33, BigDecimal.valueOf(billingData.getUsagedurationseconds()));
+    prepareStatement.setBigDecimal(34, BigDecimal.valueOf(billingData.getCpuunitseconds()));
+    prepareStatement.setBigDecimal(35, BigDecimal.valueOf(billingData.getMemorymbseconds()));
+    prepareStatement.setBigDecimal(36, BigDecimal.valueOf(billingData.getMaxcpuutilization()));
+    prepareStatement.setBigDecimal(37, BigDecimal.valueOf(billingData.getMaxmemoryutilization()));
+    prepareStatement.setBigDecimal(38, BigDecimal.valueOf(billingData.getAvgcpuutilization()));
+    prepareStatement.setBigDecimal(39, BigDecimal.valueOf(billingData.getAvgmemoryutilization()));
+    prepareStatement.setBigDecimal(40, BigDecimal.valueOf(billingData.getSystemcost()));
+    prepareStatement.setBigDecimal(41, BigDecimal.valueOf(billingData.getCpusystemcost()));
+    prepareStatement.setBigDecimal(42, BigDecimal.valueOf(billingData.getMemorysystemcost()));
+    prepareStatement.setBigDecimal(43, BigDecimal.valueOf(billingData.getActualidlecost()));
+    prepareStatement.setBigDecimal(44, BigDecimal.valueOf(billingData.getCpuactualidlecost()));
+    prepareStatement.setBigDecimal(45, BigDecimal.valueOf(billingData.getMemoryactualidlecost()));
+    prepareStatement.setBigDecimal(46, BigDecimal.valueOf(billingData.getUnallocatedcost()));
+    prepareStatement.setBigDecimal(47, BigDecimal.valueOf(billingData.getCpuunallocatedcost()));
+    prepareStatement.setBigDecimal(48, BigDecimal.valueOf(billingData.getMemoryunallocatedcost()));
+    prepareStatement.setString(49, (String) billingData.getInstancename());
+    prepareStatement.setBigDecimal(50, BigDecimal.valueOf(billingData.getCpurequest()));
+    prepareStatement.setBigDecimal(51, BigDecimal.valueOf(billingData.getMemoryrequest()));
+    prepareStatement.setBigDecimal(52, BigDecimal.valueOf(billingData.getCpulimit()));
+    prepareStatement.setBigDecimal(53, BigDecimal.valueOf(billingData.getMemorylimit()));
+    prepareStatement.setBigDecimal(54, BigDecimal.valueOf(billingData.getMaxcpuutilizationvalue()));
+    prepareStatement.setBigDecimal(55, BigDecimal.valueOf(billingData.getMaxmemoryutilizationvalue()));
+    prepareStatement.setBigDecimal(56, BigDecimal.valueOf(billingData.getAvgcpuutilizationvalue()));
+    prepareStatement.setBigDecimal(57, BigDecimal.valueOf(billingData.getAvgmemoryutilizationvalue()));
+    prepareStatement.setBigDecimal(58, BigDecimal.valueOf(billingData.getNetworkcost()));
+    prepareStatement.setString(59, (String) billingData.getPricingsource());
+    prepareStatement.setBigDecimal(60, BigDecimal.valueOf(billingData.getStorageactualidlecost()));
+    prepareStatement.setBigDecimal(61, BigDecimal.valueOf(billingData.getStorageunallocatedcost()));
+    prepareStatement.setBigDecimal(62, BigDecimal.valueOf(billingData.getStorageutilizationvalue()));
+    prepareStatement.setBigDecimal(63, BigDecimal.valueOf(billingData.getStoragerequest()));
+    prepareStatement.setBigDecimal(64, BigDecimal.valueOf(billingData.getMemorymbseconds())); // storagembseconds
+    prepareStatement.setBigDecimal(65, BigDecimal.valueOf(billingData.getStoragecost()));
+    prepareStatement.setBigDecimal(66, BigDecimal.valueOf(billingData.getMaxstorageutilizationvalue()));
+    prepareStatement.setBigDecimal(67, BigDecimal.valueOf(billingData.getMaxstoragerequest()));
+    prepareStatement.setString(68, (String) billingData.getOrgIdentifier());
+    prepareStatement.setString(69, (String) billingData.getProjectIdentifier());
+    prepareStatement.setObject(70, billingData.getLabels());
+
+    prepareStatement.addBatch();
+  }
+
+  private static String deleteDataFromClickHouse(String clusterDataTableName, long startTime) {
+    return "DELETE FROM ccm." + clusterDataTableName + " WHERE starttime = " + startTime;
+  }
+
+  public static String getUnifiedTableCreateQuery() {
+    return "CREATE TABLE IF NOT EXISTS ccm.unifiedTable\n"
+        + "(\n"
+        + "    `startTime` DateTime('UTC') NOT NULL,\n"
+        + "    `cost` Float NULL,\n"
+        + "    `gcpProduct` String NULL,\n"
+        + "    `gcpSkuId` String NULL,\n"
+        + "    `gcpSkuDescription` String NULL,\n"
+        + "    `gcpProjectId` String NULL,\n"
+        + "    `region` String NULL,\n"
+        + "    `zone` String NULL,\n"
+        + "    `gcpBillingAccountId` String NULL,\n"
+        + "    `cloudProvider` String NULL,\n"
+        + "    `awsBlendedRate` String NULL,\n"
+        + "    `awsBlendedCost` Float NULL,\n"
+        + "    `awsUnblendedRate` String NULL,\n"
+        + "    `awsUnblendedCost` Float NULL,\n"
+        + "    `awsServicecode` String NULL,\n"
+        + "    `awsAvailabilityzone` String NULL,\n"
+        + "    `awsUsageaccountid` String NULL,\n"
+        + "    `awsInstancetype` String NULL,\n"
+        + "    `awsUsagetype` String NULL,\n"
+        + "    `awsBillingEntity` String NULL,\n"
+        + "    `discount` Float NULL,\n"
+        + "    `endtime` DateTime('UTC') NULL,\n"
+        + "    `accountid` String NULL,\n"
+        + "    `instancetype` String NULL,\n"
+        + "    `clusterid` String NULL,\n"
+        + "    `clustername` String NULL,\n"
+        + "    `appid` String NULL,\n"
+        + "    `serviceid` String NULL,\n"
+        + "    `envid` String NULL,\n"
+        + "    `cloudproviderid` String NULL,\n"
+        + "    `launchtype` String NULL,\n"
+        + "    `clustertype` String NULL,\n"
+        + "    `workloadname` String NULL,\n"
+        + "    `workloadtype` String NULL,\n"
+        + "    `namespace` String NULL,\n"
+        + "    `cloudservicename` String NULL,\n"
+        + "    `taskid` String NULL,\n"
+        + "    `clustercloudprovider` String NULL,\n"
+        + "    `billingamount` Float NULL,\n"
+        + "    `cpubillingamount` Float NULL,\n"
+        + "    `memorybillingamount` Float NULL,\n"
+        + "    `idlecost` Float NULL,\n"
+        + "    `maxcpuutilization` Float NULL,\n"
+        + "    `avgcpuutilization` Float NULL,\n"
+        + "    `systemcost` Float NULL,\n"
+        + "    `actualidlecost` Float NULL,\n"
+        + "    `unallocatedcost` Float NULL,\n"
+        + "    `networkcost` Float NULL,\n"
+        + "    `product` String NULL,\n"
+        + "    `labels` Map(String, String),\n"
+        + "    `azureMeterCategory` String NULL,\n"
+        + "    `azureMeterSubcategory` String NULL,\n"
+        + "    `azureMeterId` String NULL,\n"
+        + "    `azureMeterName` String NULL,\n"
+        + "    `azureResourceType` String NULL,\n"
+        + "    `azureServiceTier` String NULL,\n"
+        + "    `azureInstanceId` String NULL,\n"
+        + "    `azureResourceGroup` String NULL,\n"
+        + "    `azureSubscriptionGuid` String NULL,\n"
+        + "    `azureAccountName` String NULL,\n"
+        + "    `azureFrequency` String NULL,\n"
+        + "    `azurePublisherType` String NULL,\n"
+        + "    `azurePublisherName` String NULL,\n"
+        + "    `azureServiceName` String NULL,\n"
+        + "    `azureSubscriptionName` String NULL,\n"
+        + "    `azureReservationId` String NULL,\n"
+        + "    `azureReservationName` String NULL,\n"
+        + "    `azureResource` String NULL,\n"
+        + "    `azureVMProviderId` String NULL,\n"
+        + "    `azureTenantId` String NULL,\n"
+        + "    `azureBillingCurrency` String NULL,\n"
+        + "    `azureCustomerName` String NULL,\n"
+        + "    `azureResourceRate` Float NULL,\n"
+        + "    `orgIdentifier` String NULL,\n"
+        + "    `projectIdentifier` String NULL\n"
+        + ")\n"
+        + "ENGINE = MergeTree\n"
+        + "PARTITION BY toYYYYMMDD(startTime)\n"
+        + "ORDER BY tuple()\n";
+  }
+
+  private static String getCreateCostAggregatedQuery() {
+    return "CREATE TABLE IF NOT EXISTS ccm.costAggregated"
+        + "              (\n"
+        + "                  `accountId` String NOT NULL, \n"
+        + "                  `cloudProvider` String NOT NULL, \n"
+        + "                  `cost` Float NOT NULL, \n"
+        + "                  `day` DateTime('UTC') NOT NULL \n"
+        + "              )\n"
+        + "              ENGINE = MergeTree \n"
+        + "              PARTITION BY toYYYYMMDD(day) \n"
+        + "              ORDER BY tuple()";
+  }
+
+  private static String getClusterDataCreationQuery(String clusterDataTableName) {
+    String clusterDataAggregatedCreateQuery = "CREATE TABLE IF NOT EXISTS ccm." + clusterDataTableName + "\n"
+        + "(\n"
+        + "    `starttime` Int64 NOT NULL,\n"
+        + "    `endtime` Int64 NOT NULL,\n"
+        + "    `accountid` String NOT NULL,\n"
+        + "    `settingid` String NULL,\n"
+        + "    `instanceid` String NOT NULL,\n"
+        + "    `instancetype` String NOT NULL,\n"
+        + "    `billingaccountid` String NULL,\n"
+        + "    `clusterid` String NULL,\n"
+        + "    `clustername` String NULL,\n"
+        + "    `appid` String NULL,\n"
+        + "    `serviceid` String NULL,\n"
+        + "    `envid` String NULL,\n"
+        + "    `appname` String NULL,\n"
+        + "    `servicename` String NULL,\n"
+        + "    `envname` String NULL,\n"
+        + "    `cloudproviderid` String NULL,\n"
+        + "    `parentinstanceid` String NULL,\n"
+        + "    `region` String NULL,\n"
+        + "    `launchtype` String NULL,\n"
+        + "    `clustertype` String NULL,\n"
+        + "    `workloadname` String NULL,\n"
+        + "    `workloadtype` String NULL,\n"
+        + "    `namespace` String NULL,\n"
+        + "    `cloudservicename` String NULL,\n"
+        + "    `taskid` String NULL,\n"
+        + "    `cloudprovider` String NULL,\n"
+        + "    `billingamount` Float NOT NULL,\n"
+        + "    `cpubillingamount` Float NULL,\n"
+        + "    `memorybillingamount` Float NULL,\n"
+        + "    `idlecost` Float NULL,\n"
+        + "    `cpuidlecost` Float NULL,\n"
+        + "    `memoryidlecost` Float NULL,\n"
+        + "    `usagedurationseconds` Float NULL,\n"
+        + "    `cpuunitseconds` Float NULL,\n"
+        + "    `memorymbseconds` Float NULL,\n"
+        + "    `maxcpuutilization` Float NULL,\n"
+        + "    `maxmemoryutilization` Float NULL,\n"
+        + "    `avgcpuutilization` Float NULL,\n"
+        + "    `avgmemoryutilization` Float NULL,\n"
+        + "    `systemcost` Float NULL,\n"
+        + "    `cpusystemcost` Float NULL,\n"
+        + "    `memorysystemcost` Float NULL,\n"
+        + "    `actualidlecost` Float NULL,\n"
+        + "    `cpuactualidlecost` Float NULL,\n"
+        + "    `memoryactualidlecost` Float NULL,\n"
+        + "    `unallocatedcost` Float NULL,\n"
+        + "    `cpuunallocatedcost` Float NULL,\n"
+        + "    `memoryunallocatedcost` Float NULL,\n"
+        + "    `instancename` String NULL,\n"
+        + "    `cpurequest` Float NULL,\n"
+        + "    `memoryrequest` Float NULL,\n"
+        + "    `cpulimit` Float NULL,\n"
+        + "    `memorylimit` Float NULL,\n"
+        + "    `maxcpuutilizationvalue` Float NULL,\n"
+        + "    `maxmemoryutilizationvalue` Float NULL,\n"
+        + "    `avgcpuutilizationvalue` Float NULL,\n"
+        + "    `avgmemoryutilizationvalue` Float NULL,\n"
+        + "    `networkcost` Float NULL,\n"
+        + "    `pricingsource` String NULL,\n"
+        + "    `storageactualidlecost` Float NULL,\n"
+        + "    `storageunallocatedcost` Float NULL,\n"
+        + "    `storageutilizationvalue` Float NULL,\n"
+        + "    `storagerequest` Float NULL,\n"
+        + "    `storagembseconds` Float NULL,\n"
+        + "    `storagecost` Float NULL,\n"
+        + "    `maxstorageutilizationvalue` Float NULL,\n"
+        + "    `maxstoragerequest` Float NULL,\n"
+        + "    `orgIdentifier` String NULL,\n"
+        + "    `projectIdentifier` String NULL,\n"
+        + "    `labels` Map(String, String)\n"
+        + ")\n"
+        + "ENGINE = MergeTree\n"
+        + "PARTITION BY toStartOfInterval(toDate(starttime), toIntervalDay(1))\n"
+        + "ORDER BY tuple()";
+    return clusterDataAggregatedCreateQuery;
+  }
+
+  private static String getClusterDataAggregatedCreationQuery(String clusterDataTableName) {
+    String clusterDataCreateQuery = "CREATE TABLE IF NOT EXISTS ccm." + clusterDataTableName + "\n"
+        + "(\n"
+        + "    `starttime` Int64 NOT NULL,\n"
+        + "    `endtime` Int64 NOT NULL,\n"
+        + "    `accountid` String NOT NULL,\n"
+        + "    `instancetype` String NOT NULL,\n"
+        + "    `instancename` String NULL,\n"
+        + "    `clustername` String NULL,\n"
+        + "    `billingamount` Float NOT NULL,\n"
+        + "    `actualidlecost` Float NULL,\n"
+        + "    `unallocatedcost` Float NULL,\n"
+        + "    `systemcost` Float NULL,\n"
+        + "    `clusterid` String NULL,\n"
+        + "    `clustertype` String NULL,\n"
+        + "    `region` String NULL,\n"
+        + "    `workloadname` String NULL,\n"
+        + "    `workloadtype` String NULL,\n"
+        + "    `namespace` String NULL,\n"
+        + "    `appid` String NULL,\n"
+        + "    `serviceid` String NULL,\n"
+        + "    `envid` String NULL,\n"
+        + "    `cloudproviderid` String NULL,\n"
+        + "    `launchtype` String NULL,\n"
+        + "    `cloudservicename` String NULL,\n"
+        + "    `storageactualidlecost` Float NULL,\n"
+        + "    `cpuactualidlecost` Float NULL,\n"
+        + "    `memoryactualidlecost` Float NULL,\n"
+        + "    `storageunallocatedcost` Float NULL,\n"
+        + "    `memoryunallocatedcost` Float NULL,\n"
+        + "    `cpuunallocatedcost` Float NULL,\n"
+        + "    `storagecost` Float NULL,\n"
+        + "    `cpubillingamount` Float NULL,\n"
+        + "    `memorybillingamount` Float NULL,\n"
+        + "    `storagerequest` Float NULL,\n"
+        + "    `storageutilizationvalue` Float NULL,\n"
+        + "    `instanceid` String NULL,\n"
+        + "    `networkcost` Float NULL,\n"
+        + "    `appname` String NULL,\n"
+        + "    `servicename` String NULL,\n"
+        + "    `envname` String NULL,\n"
+        + "    `cloudprovider` String NULL,\n"
+        + "    `maxstorageutilizationvalue` Float NULL,\n"
+        + "    `maxstoragerequest` Float NULL,\n"
+        + "    `orgIdentifier` String NULL,\n"
+        + "    `projectIdentifier` String NULL,\n"
+        + "    `labels` Map(String, String)\n"
+        + ")\n"
+        + "ENGINE = MergeTree\n"
+        + "PARTITION BY toStartOfInterval(toDate(starttime), toIntervalDay(1))\n"
+        + "ORDER BY tuple()";
+    return clusterDataCreateQuery;
   }
 
   @VisibleForTesting

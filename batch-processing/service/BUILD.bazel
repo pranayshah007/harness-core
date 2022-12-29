@@ -93,6 +93,12 @@ filegroup(
     srcs = ["batch-processing-config.yml"],
 )
 
+maven_jar(
+    name = "clickhouse-jdbc",
+    artifact = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2",
+    sha1 = "fa9a1ccda7d78edb51a3a33d3493566092786a30",
+)
+
 java_library(
     name = "tests",
     testonly = True,
@@ -116,6 +122,7 @@ java_library(
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:com_clickhouse_clickhouse_jdbc",
     ],
 )
 
