@@ -89,7 +89,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     doReturn(expandableFieldsPerService).when(expansionRequestsHelper).getExpandableFieldsPerService(any());
 
     LocalFQNExpansionInfo sloExpansion =
-        LocalFQNExpansionInfo.builder().module(ModuleType.CV).stageType("Deployment").localFQN("stage/spec").build();
+        LocalFQNExpansionInfo.builder().module(ModuleType.SRM).stageType("Deployment").localFQN("stage/spec").build();
     LocalFQNExpansionInfo effExpansion = LocalFQNExpansionInfo.builder()
                                              .module(ModuleType.CE)
                                              .stageType("Deployment")
@@ -172,7 +172,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     assertThat(serviceCalls).hasSize(2);
     List<ExpansionRequest> serviceCallsList = new ArrayList<>(serviceCalls);
     ExpansionRequest expansionRequest0 = serviceCallsList.get(0);
-    if (expansionRequest0.getModule().equals(ModuleType.CV)) {
+    if (expansionRequest0.getModule().equals(ModuleType.SRM)) {
       assertThat(expansionRequest0.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec");
       ExpansionRequest expansionRequest1 = serviceCallsList.get(1);
       assertThat(expansionRequest1.getModule()).isEqualTo(ModuleType.CE);
@@ -182,7 +182,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
     assertThat(expansionRequest0.getModule()).isEqualTo(ModuleType.CE);
     assertThat(expansionRequest0.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
     ExpansionRequest expansionRequest1 = serviceCallsList.get(1);
-    assertThat(expansionRequest1.getModule()).isEqualTo(ModuleType.CV);
+    assertThat(expansionRequest1.getModule()).isEqualTo(ModuleType.SRM);
     assertThat(expansionRequest1.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec");
   }
 

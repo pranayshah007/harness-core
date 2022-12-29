@@ -61,7 +61,7 @@ public class CVNGYamlSchemaServiceImpl implements CVNGYamlSchemaService {
   public List<YamlSchemaWithDetails> getDeploymentStageYamlSchemaWithDetails(
       String projectIdentifier, String orgIdentifier, Scope scope) {
     return yamlSchemaProvider.getCrossFunctionalStepsSchemaDetails(projectIdentifier, orgIdentifier, scope,
-        YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()), ModuleType.CV);
+        YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()), ModuleType.SRM);
   }
 
   @Override
@@ -94,7 +94,7 @@ public class CVNGYamlSchemaServiceImpl implements CVNGYamlSchemaService {
         .nodeName("CVNGStageInfo")
         .schema(partialCVNGSchema)
         .nodeType(getVerifyStepTypeName())
-        .moduleType(ModuleType.CV)
+        .moduleType(ModuleType.SRM)
         .skipStageSchema(true)
         .build();
   }

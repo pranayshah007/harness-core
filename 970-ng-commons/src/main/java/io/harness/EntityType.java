@@ -130,16 +130,16 @@ public enum EntityType {
   INPUT_SETS(ModuleType.CORE, EntityTypeConstants.INPUT_SETS, InputSetReference.class, EntityYamlRootNames.INPUT_SET,
       EntityYamlRootNames.OVERLAY_INPUT_SET),
   @JsonProperty(EntityTypeConstants.CV_CONFIG)
-  CV_CONFIG(ModuleType.CV, EntityTypeConstants.CV_CONFIG, IdentifierRef.class, EntityYamlRootNames.CV_CONFIG),
+  CV_CONFIG(ModuleType.SRM, EntityTypeConstants.CV_CONFIG, IdentifierRef.class, EntityYamlRootNames.CV_CONFIG),
   @JsonProperty(EntityTypeConstants.Verify)
-  VERIFY_STEP(ModuleType.CV, EntityTypeConstants.Verify, IdentifierRef.class, EntityYamlRootNames.VERIFY),
+  VERIFY_STEP(ModuleType.SRM, EntityTypeConstants.Verify, IdentifierRef.class, EntityYamlRootNames.VERIFY),
   @JsonProperty(EntityTypeConstants.DELEGATES)
   DELEGATES(ModuleType.CORE, EntityTypeConstants.DELEGATES, IdentifierRef.class, EntityYamlRootNames.DELEGATE),
   @JsonProperty(EntityTypeConstants.DELEGATE_CONFIGURATIONS)
   DELEGATE_CONFIGURATIONS(ModuleType.CORE, EntityTypeConstants.DELEGATE_CONFIGURATIONS, IdentifierRef.class,
       EntityYamlRootNames.DELEGATE_CONFIGURATION),
   @JsonProperty(EntityTypeConstants.CV_VERIFICATION_JOB)
-  CV_VERIFICATION_JOB(ModuleType.CV, EntityTypeConstants.CV_VERIFICATION_JOB, IdentifierRef.class,
+  CV_VERIFICATION_JOB(ModuleType.SRM, EntityTypeConstants.CV_VERIFICATION_JOB, IdentifierRef.class,
       EntityYamlRootNames.CV_VERIFICATION_JOB),
   @JsonProperty(EntityTypeConstants.INTEGRATION_STAGE)
   INTEGRATION_STAGE(
@@ -154,7 +154,7 @@ public enum EntityType {
   SECURITY_STEPS(
       ModuleType.STO, EntityTypeConstants.SECURITY_STEPS, IdentifierRef.class, EntityYamlRootNames.SECURITY_STEP),
   @JsonProperty(EntityTypeConstants.CV_KUBERNETES_ACTIVITY_SOURCE)
-  CV_KUBERNETES_ACTIVITY_SOURCE(ModuleType.CV, EntityTypeConstants.CV_KUBERNETES_ACTIVITY_SOURCE, IdentifierRef.class,
+  CV_KUBERNETES_ACTIVITY_SOURCE(ModuleType.SRM, EntityTypeConstants.CV_KUBERNETES_ACTIVITY_SOURCE, IdentifierRef.class,
       EntityYamlRootNames.CV_KUBERNETES_ACTIVITY_SOURCE),
 
   @JsonProperty(EntityTypeConstants.DEPLOYMENT_STEPS)
@@ -184,8 +184,8 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TRIGGERS)
   TRIGGERS(ModuleType.CD, EntityTypeConstants.TRIGGERS, TriggerReference.class, EntityYamlRootNames.TRIGGERS),
   @JsonProperty(EntityTypeConstants.MONITORED_SERVICE)
-  MONITORED_SERVICE(
-      ModuleType.CV, EntityTypeConstants.MONITORED_SERVICE, IdentifierRef.class, EntityYamlRootNames.MONITORED_SERVICE),
+  MONITORED_SERVICE(ModuleType.SRM, EntityTypeConstants.MONITORED_SERVICE, IdentifierRef.class,
+      EntityYamlRootNames.MONITORED_SERVICE),
   @JsonProperty(EntityTypeConstants.GIT_REPOSITORIES)
   GIT_REPOSITORIES(
       ModuleType.CORE, EntityTypeConstants.GIT_REPOSITORIES, IdentifierRef.class, EntityYamlRootNames.GIT_REPOSITORY),
