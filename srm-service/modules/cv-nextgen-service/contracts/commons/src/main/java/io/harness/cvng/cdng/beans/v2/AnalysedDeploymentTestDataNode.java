@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder
-public class AnalysedTestDataNode {
+public class AnalysedDeploymentTestDataNode {
   String nodeIdentifier;
   AnalysisResult analysisResult;
   AnalysisReason analysisReason;

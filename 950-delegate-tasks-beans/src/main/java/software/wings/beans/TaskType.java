@@ -436,7 +436,10 @@ public enum TaskType {
   ECS_RUN_TASK_ARN(TaskGroup.ECS, "ECS Run Task Arn"),
   AWS_ASG_ROLLING_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Deploy"),
   AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Prepare Rollback Data"),
-  AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback");
+  AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback"),
+  TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
+  TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
+  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2");
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

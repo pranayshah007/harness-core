@@ -22,13 +22,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -38,8 +36,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class TerraformInfrastructureProvisioner extends InfrastructureProvisioner implements TerraGroupProvisioners {
   public static final String VARIABLE_KEY = "terraform";
-  @NotEmpty private String sourceRepoSettingId;
-
+  private String sourceRepoSettingId;
+  private TerraformSourceType sourceType = TerraformSourceType.GIT;
+  private String awsConfigId;
+  private String s3URI;
   /**
    * This could be either a branch or a commit id or any other reference which
    * can be checked out.
@@ -47,7 +47,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
   private String sourceRepoBranch;
   private String commitId;
   @Trimmed(message = "repoName should not contain leading and trailing spaces") @Nullable private String repoName;
-  @NotNull private String path;
+  private String path;
   private String normalizedPath;
   private List<NameValuePair> backendConfigs;
   private List<NameValuePair> environmentVariables;
@@ -76,12 +76,16 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       List<InfrastructureMappingBlueprint> mappingBlueprints, String accountId, String description,
       EmbeddedUser createdBy, long createdAt, EmbeddedUser lastUpdatedBy, long lastUpdatedAt, String entityYamlPath,
       List<NameValuePair> backendConfigs, String repoName, List<NameValuePair> environmentVariables,
-      boolean skipRefreshBeforeApplyingPlan, String kmsId) {
+      boolean skipRefreshBeforeApplyingPlan, String kmsId, String s3URI, String awsConfigId,
+      TerraformSourceType terraformSourceType) {
     super(name, description, TERRAFORM.name(), variables, mappingBlueprints, accountId, uuid, appId, createdBy,
         createdAt, lastUpdatedBy, lastUpdatedAt, entityYamlPath);
     setSourceRepoSettingId(sourceRepoSettingId);
     setSourceRepoBranch(sourceRepoBranch);
     setCommitId(commitId);
+    setS3URI(s3URI);
+    setAwsConfigId(awsConfigId);
+    setSourceType(terraformSourceType);
     setPath(path);
     setNormalizedPath(FilenameUtils.normalize(path));
     this.backendConfigs = backendConfigs;
@@ -109,13 +113,18 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
     private String repoName;
     private String secretMangerName;
     private boolean skipRefreshBeforeApplyingPlan;
+    private TerraformSourceType sourceType;
+
+    private String awsSourceConfigName;
+    private String s3URI;
 
     @Builder
     public Yaml(String type, String harnessApiVersion, String description, String infrastructureProvisionerType,
         List<NameValuePair.Yaml> variables, List<InfrastructureMappingBlueprint.Yaml> mappingBlueprints,
         String sourceRepoSettingName, String sourceRepoBranch, String path, List<NameValuePair.Yaml> backendConfigs,
         String repoName, List<NameValuePair.Yaml> environmentVariables, String commitId,
-        boolean skipRefreshBeforeApplyingPlan, String secretMangerName) {
+        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3URI, TerraformSourceType sourceType,
+        String awsSourceConfigName) {
       super(type, harnessApiVersion, description, infrastructureProvisionerType, variables, mappingBlueprints);
       this.sourceRepoSettingName = sourceRepoSettingName;
       this.sourceRepoBranch = sourceRepoBranch;
@@ -127,6 +136,9 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       this.environmentVariables = environmentVariables;
       this.secretMangerName = secretMangerName;
       this.skipRefreshBeforeApplyingPlan = skipRefreshBeforeApplyingPlan;
+      this.s3URI = s3URI;
+      this.sourceType = sourceType;
+      this.awsSourceConfigName = awsSourceConfigName;
     }
   }
 }

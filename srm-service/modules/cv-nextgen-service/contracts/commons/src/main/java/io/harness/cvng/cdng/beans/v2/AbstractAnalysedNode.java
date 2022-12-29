@@ -7,13 +7,7 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
-@Value
 @SuperBuilder
-public class ErrorsAnalysisOverview {
-  int knownClusters;
-  int unknownClusters;
-  int unexpectedFrequencyClusters;
-}
+public abstract class AbstractAnalysedNode {}

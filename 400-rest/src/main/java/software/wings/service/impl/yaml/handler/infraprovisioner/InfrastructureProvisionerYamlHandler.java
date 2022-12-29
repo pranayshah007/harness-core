@@ -204,4 +204,16 @@ public abstract class InfrastructureProvisionerYamlHandler<Y extends InfraProvis
       throw new InvalidRequestException("Cannot specify both sourceRepoBranch and commitId", USER);
     }
   }
+
+  protected void validateS3Source(String awsSourceConfigName, String s3URI, String sourceRepoName) {
+    if (isNotEmpty(awsSourceConfigName) && isNotEmpty(s3URI) && (isEmpty(sourceRepoName))) {
+      return;
+    }
+    if (isEmpty(awsSourceConfigName) || isEmpty(s3URI)) {
+      throw new InvalidRequestException("Both AWS Cloud Provider and S3 URI must be specified", USER);
+    }
+    if (isNotEmpty(sourceRepoName) && isNotEmpty(awsSourceConfigName)) {
+      throw new InvalidRequestException("Cannot specify both AWS Cloud Provider and GIT repo", USER);
+    }
+  }
 }

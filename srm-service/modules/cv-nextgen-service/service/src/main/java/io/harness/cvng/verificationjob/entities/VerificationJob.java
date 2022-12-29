@@ -21,6 +21,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -119,6 +120,8 @@ public abstract class VerificationJob
   private List<CVConfig> cvConfigs;
 
   public abstract VerificationJobType getType();
+
+  public abstract Sensitivity getSensitivity();
 
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));

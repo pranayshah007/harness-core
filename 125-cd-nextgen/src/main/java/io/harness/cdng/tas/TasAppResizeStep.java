@@ -75,6 +75,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -189,14 +190,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
               SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
           .build();
     }
-    Integer upsizeInstanceCount =
-        new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getNewAppInstances().getSpec().getValue()))
-            .intValueExact();
+    Integer upsizeInstanceCount = getValue(tasAppResizeStepParameters.getNewAppInstances());
     Integer downsizeInstanceCount = null;
     if (!isNull(tasAppResizeStepParameters.getOldAppInstances())) {
-      downsizeInstanceCount =
-          new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getOldAppInstances().getSpec().getValue()))
-              .intValueExact();
+      downsizeInstanceCount = getValue(tasAppResizeStepParameters.getOldAppInstances());
     }
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
     TasInstanceUnitType downsizeCountType = isNull(tasAppResizeStepParameters.getOldAppInstances())
@@ -207,7 +204,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
 
     Integer upsizeCount = getUpsizeCount(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount);
     Integer downsizeCount = getDownsizeCount(downsizeCountType, downsizeInstanceCount, totalDesiredCount, upsizeCount);
-
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
         (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -258,6 +254,19 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
         getCommandUnitList(tasSetupDataOutcome.getResizeStrategy()), TaskType.TAS_APP_RESIZE.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasAppResizeStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
+  }
+
+  @NotNull
+  private Integer getValue(TasInstanceSelectionWrapper tasInstanceSelectionWrapper) {
+    if (tasInstanceSelectionWrapper.getType().equals(TasInstanceUnitType.COUNT)) {
+      return new BigDecimal(
+          getParameterFieldValue(((TasCountInstanceSelection) tasInstanceSelectionWrapper.getSpec()).getValue()))
+          .intValueExact();
+    } else {
+      return new BigDecimal(
+          getParameterFieldValue(((TasPercentageInstanceSelection) tasInstanceSelectionWrapper.getSpec()).getValue()))
+          .intValueExact();
+    }
   }
 
   private List<String> getCommandUnitList(TasResizeStrategyType resizeStrategy) {

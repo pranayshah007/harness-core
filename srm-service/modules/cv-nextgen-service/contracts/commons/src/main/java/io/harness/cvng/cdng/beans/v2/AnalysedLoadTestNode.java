@@ -7,13 +7,14 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
+@EqualsAndHashCode(callSuper = false)
 @SuperBuilder
-public class LogsAnalysisOverview {
-  int knownClusters;
-  int unknownClusters;
-  int unexpectedFrequencyClusters;
+public class AnalysedLoadTestNode extends AbstractAnalysedNode {
+  String deploymentTag;
+  Long testStartTimestamp;
 }

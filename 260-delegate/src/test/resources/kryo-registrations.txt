@@ -958,6 +958,8 @@
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
 7473:io.harness.exception.ShellExecutionException
+7474:software.wings.beans.TerraformSourceType
+7475:software.wings.beans.S3FileConfig
 7490:io.harness.k8s.model.response.CEK8sDelegatePrerequisite
 7491:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.MetricsServerCheck
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
@@ -2385,6 +2387,7 @@
 573590:io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest
 573591:io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse
 573592:io.harness.delegate.task.aws.asg.AsgRollingRollbackResult
+573593:software.wings.api.terraform.TfVarS3Source
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse

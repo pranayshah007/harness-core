@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
@@ -39,7 +40,11 @@ import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_CONNE
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY;
+import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY;
+import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_S3_URI_KEY;
+import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_S3_URI_LIST_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
+import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TARGETS_KEY;
 import static io.harness.provision.TerraformConstants.TF_APPLY_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
@@ -55,6 +60,9 @@ import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_FILE_PATH
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_REPO_NAME_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_USE_BRANCH_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_CONFIG_ID_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_URI_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_URI_LIST_KEY;
 import static io.harness.provision.TerraformConstants.VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.WORKSPACE_KEY;
 import static io.harness.validation.Validator.notNullCheck;
@@ -65,6 +73,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK;
+import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK_V2;
 import static software.wings.beans.delegation.TerraformProvisionParameters.TIMEOUT_IN_MINUTES;
 import static software.wings.utils.Utils.splitCommaSeparatedFilePath;
 
@@ -121,6 +130,7 @@ import software.wings.api.TerraformOutputInfoElement;
 import software.wings.api.terraform.TerraformOutputVariables;
 import software.wings.api.terraform.TerraformProvisionInheritPlanElement;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityBuilder;
@@ -133,10 +143,12 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.S3FileConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.TerraformBackendConfig;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.command.Command.Builder;
 import software.wings.beans.command.CommandType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
@@ -248,6 +260,8 @@ public abstract class TerraformProvisionState extends State {
   @Getter @Setter private List<String> targets;
 
   @Getter @Setter private List<String> tfVarFiles;
+
+  @Getter @Setter private S3FileConfig tfVarS3FileConfig;
   @Getter @Setter private GitFileConfig tfVarGitFileConfig;
 
   @Getter @Setter private boolean runPlanOnly;
@@ -334,6 +348,7 @@ public abstract class TerraformProvisionState extends State {
     saveTerraformPlanJson(terraformExecutionData, context, command());
 
     GitFileConfig remoteBackendConfig = null;
+    S3FileConfig remoteBackendS3Config = null;
     String backendConfigStoreType = null;
     if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
         && terraformExecutionData.getRemoteBackendConfig() != null) {
@@ -343,6 +358,10 @@ public abstract class TerraformProvisionState extends State {
         backendConfigStoreType = REMOTE_STORE_TYPE;
         remoteBackendConfig = terraformExecutionData.getRemoteBackendConfig().getGitFileConfig();
       }
+    } else if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
+        && terraformExecutionData.getRemoteS3BackendConfig() != null) {
+      backendConfigStoreType = S3_STORE_TYPE;
+      remoteBackendS3Config = terraformExecutionData.getRemoteS3BackendConfig().getS3FileConfig();
     }
 
     TerraformProvisionInheritPlanElement inheritPlanElement =
@@ -359,6 +378,7 @@ public abstract class TerraformProvisionState extends State {
             .backendConfigs(terraformExecutionData.getBackendConfigs())
             .backendConfigStoreType(backendConfigStoreType)
             .remoteBackendConfig(remoteBackendConfig)
+            .remoteBackendS3Config(remoteBackendS3Config)
             .environmentVariables(terraformExecutionData.getEnvironmentVariables())
             .workspace(terraformExecutionData.getWorkspace())
             // In case of OPTIMIZED_TF_PLAN FF enabled we don't want to store encryptedTfPlan record in context element
@@ -628,24 +648,30 @@ public abstract class TerraformProvisionState extends State {
       others.put("qualifier", QUALIFIER_APPLY);
       collectVariables(others, terraformExecutionData.getVariables(), VARIABLES_KEY, ENCRYPTED_VARIABLES_KEY, true);
 
-      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-        if (backendConfig != null) {
-          if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-            collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
-                ENCRYPTED_BACKEND_CONFIG_KEY, false);
-          } else {
-            // remote backend config
-            if (backendConfig.getRemoteBackendConfig() != null) {
-              GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
-              others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
-              others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
-              others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
-              others.put(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
-              others.put(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
-              others.put(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
-            }
+      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId()) && backendConfig != null
+          && !backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
+        if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
+              ENCRYPTED_BACKEND_CONFIG_KEY, false);
+        } else {
+          // remote backend config
+          if (backendConfig.getRemoteBackendConfig() != null) {
+            GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
+            others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
+            others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
+            others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
+            others.put(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
+            others.put(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
+            others.put(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
           }
         }
+      } else if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
+          && terraformExecutionData.getRemoteS3BackendConfig() != null
+          && terraformExecutionData.getBackendConfigStoreType().equals(S3_STORE_TYPE)) {
+        S3FileConfig s3FileConfig = terraformExecutionData.getRemoteS3BackendConfig().getS3FileConfig();
+        others.put(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
+        others.put(REMOTE_BE_CONFIG_S3_URI_LIST_KEY, s3FileConfig.getS3URIList());
+        others.put(REMOTE_BE_CONFIG_S3_URI_KEY, s3FileConfig.getS3URI());
       } else {
         collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
             ENCRYPTED_BACKEND_CONFIGS_KEY, false);
@@ -674,6 +700,11 @@ public abstract class TerraformProvisionState extends State {
           others.put(TF_VAR_FILES_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
           others.put(TF_VAR_FILES_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
           others.put(TF_VAR_FILES_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
+        } else if (tfVarSource.getTfVarSourceType() == TfVarSourceType.S3) {
+          S3FileConfig s3FileConfig = ((TfVarS3Source) tfVarSource).getS3FileConfig();
+          others.put(TF_VAR_FILES_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
+          others.put(TF_VAR_FILES_S3_URI_KEY, s3FileConfig.getS3URI());
+          others.put(TF_VAR_FILES_S3_URI_LIST_KEY, s3FileConfig.getS3URIList());
         }
       }
 
@@ -822,12 +853,31 @@ public abstract class TerraformProvisionState extends State {
     TerraformProvisionInheritPlanElement element = elementOptional.get();
 
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
-    String path = context.renderExpression(terraformProvisioner.getNormalizedPath());
-    if (path == null) {
-      path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+    GitConfig gitConfig = null;
+    String path = null;
+
+    if (terraformProvisioner.getSourceType() != null
+        && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+      path = context.renderExpression(terraformProvisioner.getNormalizedPath());
       if (path == null) {
-        throw new InvalidRequestException("Invalid Terraform script path", USER);
+        path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+        if (path == null) {
+          throw new InvalidRequestException("Invalid Terraform script path", USER);
+        }
       }
+      gitConfig = gitUtilsManager.getGitConfig(element.getSourceRepoSettingId());
+      if (isNotEmpty(element.getSourceRepoReference())) {
+        gitConfig.setReference(element.getSourceRepoReference());
+        String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
+        if (isNotEmpty(branch)) {
+          gitConfig.setBranch(branch);
+        }
+
+      } else {
+        throw new InvalidRequestException("No commit id found in context inherit tf plan element.");
+      }
+      gitConfigHelperService.convertToRepoGitConfig(
+          gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
     }
 
     String workspace = context.renderExpression(element.getWorkspace());
@@ -839,32 +889,24 @@ public abstract class TerraformProvisionState extends State {
           generateEntityId(context, workspace, terraformProvisioner, false), TERRAFORM_STATE);
       log.info("{} fileId with old entityId", fileId == null ? "Didn't retrieve" : "Retrieved");
     }
-    GitConfig gitConfig = gitUtilsManager.getGitConfig(element.getSourceRepoSettingId());
-    if (isNotEmpty(element.getSourceRepoReference())) {
-      gitConfig.setReference(element.getSourceRepoReference());
-      String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
-      if (isNotEmpty(branch)) {
-        gitConfig.setBranch(branch);
-      }
-
-    } else {
-      throw new InvalidRequestException("No commit id found in context inherit tf plan element.");
-    }
 
     List<NameValuePair> allBackendConfigs = element.getBackendConfigs();
     Map<String, String> backendConfigs = null;
     Map<String, EncryptedDataDetail> encryptedBackendConfigs = null;
     String storeType = null;
     TfVarGitSource remoteBackendConfig = null;
-
+    TfVarS3Source remoteBackendS3Config = null;
     if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
       storeType = element.getBackendConfigStoreType();
       TerraformBackendConfig inhertiedConfig = new TerraformBackendConfig();
       inhertiedConfig.setStoreType(storeType != null ? storeType : LOCAL_STORE_TYPE);
       inhertiedConfig.setRemoteBackendConfig(element.getRemoteBackendConfig());
+      inhertiedConfig.setS3BackendConfig(element.getRemoteBackendS3Config());
       if (REMOTE_STORE_TYPE.equals(storeType)) {
         setBackendConfig(inhertiedConfig);
         remoteBackendConfig = fetchRemoteConfigGitSource(context);
+      } else if (S3_STORE_TYPE.equals(storeType)) {
+        remoteBackendS3Config = fetchRemoteConfigS3Source(context, element.getRemoteBackendS3Config());
       } else {
         backendConfigs = infrastructureProvisionerService.extractTextVariables(element.getBackendConfigs(), context);
         encryptedBackendConfigs = infrastructureProvisionerService.extractEncryptedTextVariables(
@@ -899,9 +941,6 @@ public abstract class TerraformProvisionState extends State {
     List<String> targets = element.getTargets();
     targets = resolveTargets(targets, context);
 
-    gitConfigHelperService.convertToRepoGitConfig(
-        gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
-
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
@@ -912,6 +951,9 @@ public abstract class TerraformProvisionState extends State {
       if (getTfVarGitFileConfig() != null) {
         tfVarSource = fetchTfVarGitSource(context);
       }
+    } else if (tfVarSource != null && TfVarSourceType.S3.equals(tfVarSource.getTfVarSourceType())) {
+      setTfVarS3FileConfig(((TfVarS3Source) element.getTfVarSource()).getS3FileConfig());
+      tfVarSource = fetchTfVarS3Source(context);
     }
 
     EncryptedRecordData encryptedTfPlan =
@@ -922,6 +964,7 @@ public abstract class TerraformProvisionState extends State {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .activityId(activityId)
@@ -933,14 +976,16 @@ public abstract class TerraformProvisionState extends State {
             .commandUnit(commandUnit())
             .sourceRepoSettingId(element.getSourceRepoSettingId())
             .sourceRepo(gitConfig)
-            .sourceRepoEncryptionDetails(
-                secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
+            .sourceRepoEncryptionDetails(terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)
+                    ? secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId())
+                    : null)
             .scriptPath(path)
             .variables(textVariables)
             .encryptedVariables(encryptedTextVariables)
             .backendConfigs(backendConfigs)
             .encryptedBackendConfigs(encryptedBackendConfigs)
             .remoteBackendConfig(remoteBackendConfig)
+            .remoteS3BackendConfig(remoteBackendS3Config)
             .backendConfigStoreType(storeType)
             .environmentVariables(envVars)
             .encryptedEnvironmentVariables(encryptedEnvVars)
@@ -969,6 +1014,18 @@ public abstract class TerraformProvisionState extends State {
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
+    if (terraformProvisioner.getSourceType() != null
+            && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)
+        || remoteBackendS3Config != null
+        || (tfVarSource != null && tfVarSource.getTfVarSourceType().equals(TfVarSourceType.S3))) {
+      if (!featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())) {
+        throw new InvalidRequestException(
+            "Unable to execute this workflow because either the input Terraform config files or tfvars files or backend config are stored in S3, and are unreachable due to a disabled feature flag CDS_TERRAFORM_S3_SUPPORT");
+      }
+    }
+
+    setAWSS3SourceConfigSourceIfPresent(terraformProvisioner, context, terraformProvisionParametersBuilder);
+
     return createAndRunTask(
         activityId, executionContext, terraformProvisionParametersBuilder.build(), element.getDelegateTag());
   }
@@ -999,7 +1056,7 @@ public abstract class TerraformProvisionState extends State {
             .description("Terraform provision task execution")
             .data(TaskData.builder()
                       .async(true)
-                      .taskType(TERRAFORM_PROVISION_TASK.name())
+                      .taskType(getTaskType(parameters))
                       .parameters(new Object[] {parameters})
                       .timeout(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
                       .expressionFunctorToken(expressionFunctorToken)
@@ -1025,31 +1082,49 @@ public abstract class TerraformProvisionState extends State {
         .build();
   }
 
+  protected String getTaskType(TerraformProvisionParameters parameters) {
+    if (parameters.getSourceType().equals(TerraformSourceType.S3) || parameters.getRemoteS3BackendConfig() != null
+        || (parameters.getTfVarSource() != null
+            && parameters.getTfVarSource().getTfVarSourceType().equals(TfVarSourceType.S3))) {
+      return TERRAFORM_PROVISION_TASK_V2.name();
+    }
+    return TERRAFORM_PROVISION_TASK.name();
+  }
+
   private ExecutionResponse executeInternalRegular(ExecutionContext context, String activityId) {
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
-    GitConfig gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
+    GitConfig gitConfig = null;
+    String path = null;
+
+    if (terraformProvisioner.getSourceType() == null
+        || (terraformProvisioner.getSourceType() != null
+            && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT))) {
+      gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
+
+      String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
+      if (isNotEmpty(branch)) {
+        gitConfig.setBranch(branch);
+      }
+      if (isNotEmpty(terraformProvisioner.getCommitId())) {
+        String commitId = context.renderExpression(terraformProvisioner.getCommitId());
+        if (isNotEmpty(commitId)) {
+          gitConfig.setReference(commitId);
+        }
+      }
+      path = context.renderExpression(terraformProvisioner.getNormalizedPath());
+      if (path == null) {
+        path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+        if (path == null) {
+          throw new InvalidRequestException("Invalid Terraform script path", USER);
+        }
+      }
+      gitConfigHelperService.convertToRepoGitConfig(
+          gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
+    }
 
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
-
-    String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
-    if (isNotEmpty(branch)) {
-      gitConfig.setBranch(branch);
-    }
-    if (isNotEmpty(terraformProvisioner.getCommitId())) {
-      String commitId = context.renderExpression(terraformProvisioner.getCommitId());
-      if (isNotEmpty(commitId)) {
-        gitConfig.setReference(commitId);
-      }
-    }
-    String path = context.renderExpression(terraformProvisioner.getNormalizedPath());
-    if (path == null) {
-      path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
-      if (path == null) {
-        throw new InvalidRequestException("Invalid Terraform script path", USER);
-      }
-    }
 
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     String workspace = context.renderExpression(this.workspace);
@@ -1072,6 +1147,7 @@ public abstract class TerraformProvisionState extends State {
     List<NameValuePair> rawVariablesList = new ArrayList<>();
     String backendConfigStoreType = null;
     TfVarGitSource remoteBackendGitFileConfig = null;
+    TfVarS3Source remoteS3BackendConfig = null;
 
     validateTerraformVariables();
 
@@ -1081,8 +1157,10 @@ public abstract class TerraformProvisionState extends State {
       backendConfigStoreType = getBackendConfig().getStoreType();
       if (LOCAL_STORE_TYPE.equals(backendConfigStoreType)) {
         inlineBackendConfig = this.backendConfig.getInlineBackendConfig();
-      } else {
+      } else if (REMOTE_STORE_TYPE.equals(backendConfigStoreType)) {
         remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context, this.backendConfig.getRemoteBackendConfig());
+      } else if (S3_STORE_TYPE.equals(backendConfigStoreType)) {
+        remoteS3BackendConfig = fetchRemoteConfigS3Source(context, this.backendConfig.getS3BackendConfig());
       }
     }
 
@@ -1118,7 +1196,7 @@ public abstract class TerraformProvisionState extends State {
       }
 
       if (fileId != null) {
-        FileMetadata fileMetadata = fileService.getFileMetadata(fileId, FileBucket.TERRAFORM_STATE);
+        FileMetadata fileMetadata = fileService.getFileMetadata(fileId, TERRAFORM_STATE);
 
         if (fileMetadata != null && fileMetadata.getMetadata() != null) {
           variables = extractData(fileMetadata, VARIABLES_KEY);
@@ -1166,19 +1244,46 @@ public abstract class TerraformProvisionState extends State {
           if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
               && backendConfig != null) {
             backendConfigStoreType = backendConfig.getStoreType();
-            String gitFileConnectorId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
-            if (isNotEmpty(gitFileConnectorId)) {
-              GitFileConfig gitFileConfig =
-                  GitFileConfig.builder()
-                      .connectorId(gitFileConnectorId)
-                      .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
-                      .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
-                      .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
-                      .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
-                      .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+
+            if (!backendConfigStoreType.equals(S3_STORE_TYPE)) {
+              String gitFileConnectorId =
+                  (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
+              if (isNotEmpty(gitFileConnectorId)) {
+                GitFileConfig gitFileConfig =
+                    GitFileConfig.builder()
+                        .connectorId(gitFileConnectorId)
+                        .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
+                        .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
+                        .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
+                        .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
+                        .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+                        .build();
+                backendConfig.setRemoteBackendConfig(gitFileConfig);
+                remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
+              }
+            }
+          }
+
+          if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())) {
+            String backendAwsConfigId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY);
+            if (backendAwsConfigId != null) {
+              S3FileConfig s3FileConfig =
+                  S3FileConfig.builder()
+                      .awsConfigId(backendAwsConfigId)
+                      .s3URI((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_KEY))
+                      .s3URIList((List<String>) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_LIST_KEY))
                       .build();
-              backendConfig.setRemoteBackendConfig(gitFileConfig);
-              remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
+
+              AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(backendAwsConfigId).getValue();
+              List<EncryptedDataDetail> encryptionDetails =
+                  secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
+
+              remoteS3BackendConfig = TfVarS3Source.builder()
+                                          .awsConfig(awsConfig)
+                                          .encryptedDataDetails(encryptionDetails)
+                                          .s3FileConfig(s3FileConfig)
+                                          .build();
+              backendConfigStoreType = S3_STORE_TYPE;
             }
           }
 
@@ -1195,6 +1300,18 @@ public abstract class TerraformProvisionState extends State {
                     .build();
             setTfVarGitFileConfig(gitFileConfig);
           }
+
+          String tfVarS3FileConfigId = (String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_CONFIG_ID_KEY);
+          if (isNotEmpty(tfVarS3FileConfigId)) {
+            S3FileConfig s3FileConfig =
+                S3FileConfig.builder()
+                    .awsConfigId(tfVarS3FileConfigId)
+                    .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
+                    .s3URIList((List<String>) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_LIST_KEY))
+                    .build();
+
+            setTfVarS3FileConfig(s3FileConfig);
+          }
         }
       }
     }
@@ -1206,11 +1323,11 @@ public abstract class TerraformProvisionState extends State {
       tfVarSource = fetchTfVarScriptRepositorySource(context);
     } else if (null != tfVarGitFileConfig) {
       tfVarSource = fetchTfVarGitSource(context);
+    } else if (null != tfVarS3FileConfig) {
+      tfVarSource = fetchTfVarS3Source(context);
     }
 
     targets = resolveTargets(targets, context);
-    gitConfigHelperService.convertToRepoGitConfig(
-        gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
 
     if (runPlanOnly && this instanceof DestroyTerraformProvisionState) {
       exportPlanToApplyStep = true;
@@ -1218,6 +1335,7 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
@@ -1228,14 +1346,16 @@ public abstract class TerraformProvisionState extends State {
             .commandUnit(commandUnit())
             .sourceRepoSettingId(terraformProvisioner.getSourceRepoSettingId())
             .sourceRepo(gitConfig)
-            .sourceRepoEncryptionDetails(
-                secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
+            .sourceRepoEncryptionDetails(gitConfig != null
+                    ? secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId())
+                    : null)
             .scriptPath(path)
             .variables(variables)
             .rawVariables(rawVariablesList)
             .encryptedVariables(encryptedVariables)
             .backendConfigs(backendConfigs)
             .remoteBackendConfig(remoteBackendGitFileConfig)
+            .remoteS3BackendConfig(remoteS3BackendConfig)
             .backendConfigStoreType(backendConfigStoreType)
             .encryptedBackendConfigs(encryptedBackendConfigs)
             .environmentVariables(environmentVars)
@@ -1262,15 +1382,42 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
             .syncGitCloneAndCopyToDestDir(
                 featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
-            .analyseTfPlanSummary(
-                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
+            .analyseTfPlanSummary(featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
+
+    if (terraformProvisioner.getSourceType() != null
+            && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)
+        || remoteS3BackendConfig != null
+        || (tfVarSource != null && tfVarSource.getTfVarSourceType().equals(TfVarSourceType.S3))) {
+      if (!featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())) {
+        throw new InvalidRequestException(
+            "Unable to execute this workflow because either the input Terraform config files or tfvars files or backend config are stored in S3, and are unreachable due to a disabled feature flag CDS_TERRAFORM_S3_SUPPORT");
+      }
+    }
+    setAWSS3SourceConfigSourceIfPresent(terraformProvisioner, context, terraformProvisionParametersBuilder);
+
     return createAndRunTask(activityId, executionContext, terraformProvisionParametersBuilder.build(), delegateTag);
   }
 
+  protected void setAWSS3SourceConfigSourceIfPresent(
+      TerraformInfrastructureProvisioner terraformInfrastructureProvisioner, ExecutionContext context,
+      TerraformProvisionParametersBuilder terraformProvisionParametersBuilder) {
+    if (terraformInfrastructureProvisioner.getAwsConfigId() == null
+        || !terraformInfrastructureProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
+      return;
+    }
+    AwsConfig awsS3SourceBucketConfig =
+        (AwsConfig) getAwsConfigSettingAttribute(terraformInfrastructureProvisioner.getAwsConfigId()).getValue();
+    if (awsS3SourceBucketConfig != null) {
+      terraformProvisionParametersBuilder.configFilesAwsSourceConfig(awsS3SourceBucketConfig)
+          .configFileAWSEncryptionDetails(secretManager.getEncryptionDetails(
+              awsS3SourceBucketConfig, context.getAppId(), context.getWorkflowExecutionId()))
+          .configFilesS3URI(terraformInfrastructureProvisioner.getS3URI());
+    }
+  }
   protected void setAWSAuthParamsIfPresent(
       ExecutionContext context, TerraformProvisionParametersBuilder terraformProvisionParametersBuilder) {
     SettingAttribute settingAttribute = resolveAwsConfig(context);
@@ -1291,6 +1438,8 @@ public abstract class TerraformProvisionState extends State {
       tfVarSource = fetchTfVarScriptRepositorySource(context);
     } else if (null != tfVarGitFileConfig) {
       tfVarSource = fetchTfVarGitSource(context);
+    } else if (null != tfVarS3FileConfig) {
+      tfVarSource = fetchTfVarS3Source(context);
     }
     return tfVarSource;
   }
@@ -1329,6 +1478,45 @@ public abstract class TerraformProvisionState extends State {
   TfVarGitSource fetchRemoteConfigGitSource(ExecutionContext context) {
     GitFileConfig config = backendConfig.getRemoteBackendConfig();
     return fetchRemoteConfigGitSource(context, config);
+  }
+
+  @VisibleForTesting
+  TfVarS3Source fetchRemoteConfigS3Source(ExecutionContext context, S3FileConfig config) {
+    AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(config.getAwsConfigId()).getValue();
+    List<EncryptedDataDetail> encryptionDetails =
+        secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
+
+    String s3URI = config.getS3URI();
+
+    if (isNotEmpty(s3URI)) {
+      config.setS3URIList(splitCommaSeparatedFilePath(s3URI));
+    }
+
+    return TfVarS3Source.builder()
+        .awsConfig(awsConfig)
+        .encryptedDataDetails(encryptionDetails)
+        .s3FileConfig(config)
+        .build();
+  }
+
+  @VisibleForTesting
+  TfVarS3Source fetchTfVarS3Source(ExecutionContext context) {
+    AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(tfVarS3FileConfig.getAwsConfigId()).getValue();
+    List<EncryptedDataDetail> encryptionDetails =
+        secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
+
+    String s3URI = tfVarS3FileConfig.getS3URI();
+
+    if (isNotEmpty(s3URI)) {
+      List<String> multipleFiles = splitCommaSeparatedFilePath(s3URI);
+      tfVarS3FileConfig.setS3URIList(multipleFiles);
+    }
+
+    return TfVarS3Source.builder()
+        .awsConfig(awsConfig)
+        .encryptedDataDetails(encryptionDetails)
+        .s3FileConfig(tfVarS3FileConfig)
+        .build();
   }
 
   @VisibleForTesting
@@ -1428,10 +1616,19 @@ public abstract class TerraformProvisionState extends State {
     GitFileConfig gitFileConfig = null != tfVarSource && tfVarSource.getTfVarSourceType() == TfVarSourceType.GIT
         ? ((TfVarGitSource) tfVarSource).getGitFileConfig()
         : null;
+    S3FileConfig s3FileConfig = null != tfVarSource && tfVarSource.getTfVarSourceType() == TfVarSourceType.S3
+        ? ((TfVarS3Source) tfVarSource).getS3FileConfig()
+        : null;
 
+    S3FileConfig s3RemoteBackendConfig = null;
     GitFileConfig remoteBackendConfig = null;
+
     if (executionData.getRemoteBackendConfig() != null) {
       remoteBackendConfig = executionData.getRemoteBackendConfig().getGitFileConfig();
+    }
+
+    if (executionData.getRemoteS3BackendConfig() != null) {
+      s3RemoteBackendConfig = executionData.getRemoteS3BackendConfig().getS3FileConfig();
     }
 
     TerraformConfig terraformConfig =
@@ -1447,6 +1644,8 @@ public abstract class TerraformProvisionState extends State {
             .environmentVariables(executionData.getEnvironmentVariables())
             .tfVarFiles(executionData.getTfVarFiles())
             .tfVarGitFileConfig(gitFileConfig)
+            .tfVarS3FileConfig(s3FileConfig)
+            .s3BackendFileConfig(s3RemoteBackendConfig)
             .workflowExecutionId(context.getWorkflowExecutionId())
             .targets(executionData.getTargets())
             .command(executionData.getCommandExecuted())
@@ -1597,7 +1796,7 @@ public abstract class TerraformProvisionState extends State {
 
   protected SettingAttribute getAwsConfigSettingAttribute(String awsConfigId) {
     SettingAttribute awsSettingAttribute = settingsService.get(awsConfigId);
-    if (!(awsSettingAttribute.getValue() instanceof AwsConfig)) {
+    if (awsSettingAttribute != null && !(awsSettingAttribute.getValue() instanceof AwsConfig)) {
       throw new InvalidRequestException("Setting attribute is not of type AwsConfig");
     }
     return awsSettingAttribute;

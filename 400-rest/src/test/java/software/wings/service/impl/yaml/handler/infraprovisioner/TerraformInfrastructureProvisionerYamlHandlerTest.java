@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml.handler.infraprovisioner;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 
@@ -39,6 +40,7 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner.Yaml;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.YamlType;
@@ -75,6 +77,10 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
 
   @InjectMocks @Inject private TerraformInfrastructureProvisionerYamlHandler handler;
   private String validYamlFilePath = "Setup/Applications/APP_NAME/Infrastructure Provisioners/TF_Name.yaml";
+  private String validS3YamlFilePath = "Setup/Applications/APP_NAME/Infrastructure Provisioners/TF_S3_Name.yaml";
+
+  private String validS3SourceURI = "s3://iis-website-quickstart/terraform-manifest/variableOutputScript/";
+
   private String inValidYamlContent = "harnessApiVersion: '1.0'\n"
       + "type: TERRAFORM\n"
       + "backendConfigs:\n"
@@ -86,6 +92,7 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
       + "secretMangerName: SECRET_MANAGER\n"
       + "skipRefreshBeforeApplyingPlan: true\n"
       + "sourceRepoBranch: master\n"
+      + "sourceType: GIT\n"
       + "sourceRepoSettingName: TERRAFORM_TEST_GIT_REPO\n"
       + "variables:\n"
       + "- name: access_key\n"
@@ -98,7 +105,15 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
       + "secretMangerName: SECRET_MANAGER\n"
       + "skipRefreshBeforeApplyingPlan: true\n"
       + "sourceRepoBranch: master\n"
-      + "sourceRepoSettingName: TERRAFORM_TEST_GIT_REPO\n";
+      + "sourceRepoSettingName: TERRAFORM_TEST_GIT_REPO\n"
+      + "sourceType: GIT\n";
+
+  private String validS3SourceYamlContent = "harnessApiVersion: '1.0'\n"
+      + "type: TERRAFORM\n"
+      + "awsSourceConfigName: S3_AWS_CONFIG\n"
+      + "s3URI: s3://iis-website-quickstart/terraform-manifest/variableOutputScript/\n"
+      + "skipRefreshBeforeApplyingPlan: true\n"
+      + "sourceType: S3\n";
 
   @Test
   @Owner(developers = GEORGE)
@@ -131,7 +146,6 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     assertThat(TestConstants.SETTING_ID).isEqualTo(provisionerSaved.getSourceRepoSettingId());
     assertThat(provisionerSaved.getRepoName()).isEqualTo("REPO_NAME");
     assertThat(provisionerSaved.getKmsId()).isEqualTo("KMSID");
-
     Yaml yamlFromObject = handler.toYaml(provisionerSaved, APP_ID);
     String yamlContent = getYamlContent(yamlFromObject);
     assertThat(yamlContent).isEqualTo(validYamlContent);
@@ -146,6 +160,7 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
                                                          .description("Desc1")
                                                          .sourceRepoSettingId(SETTING_ID)
                                                          .sourceRepoBranch("master")
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .repoName("REPO_NAME")
                                                          .kmsId("KMSID")
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -167,6 +182,83 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     assertThatThrownBy(() -> handler.toYaml(provisioner, APP_ID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("No secret manager found");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testCRUDAndGetWithS3SourceType() throws IOException {
+    ChangeContext<Yaml> changeContext = getS3ChangeContext();
+    Yaml yaml = (Yaml) getYaml(validS3SourceYamlContent, Yaml.class);
+    changeContext.setYaml(yaml);
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
+    doReturn(null).when(mockInfrastructureProvisionerService).getByName(any(), any());
+    Service service = Service.builder().name("ServiceName").uuid(SERVICE_ID).build();
+    doReturn(service).when(mockServiceResourceService).get(any(), any());
+    doReturn(service).when(mockServiceResourceService).getServiceByName(any(), any());
+    SettingAttribute settingAttribute =
+        SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).withName("S3_AWS_CONFIG").build();
+
+    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(any(), any());
+    doReturn(settingAttribute).when(mockSettingsService).get(any(), any());
+    doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(appService).get(any());
+
+    handler.upsertFromYaml(changeContext, asList(changeContext));
+    ArgumentCaptor<TerraformInfrastructureProvisioner> captor =
+        ArgumentCaptor.forClass(TerraformInfrastructureProvisioner.class);
+    verify(mockInfrastructureProvisionerService).save(captor.capture());
+    TerraformInfrastructureProvisioner provisionerSaved = captor.getValue();
+    assertThat(provisionerSaved).isNotNull();
+    assertThat("TERRAFORM").isEqualTo(provisionerSaved.getInfrastructureProvisionerType());
+    assertThat(APP_ID).isEqualTo(provisionerSaved.getAppId());
+    assertThat(TestConstants.SETTING_ID).isEqualTo(provisionerSaved.getAwsConfigId());
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testToYAMLWithS3() throws IOException {
+    Service service = Service.builder().name("ServiceName").uuid(SERVICE_ID).build();
+
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
+    doReturn(null).when(mockInfrastructureProvisionerService).getByName(any(), any());
+    doReturn(service).when(mockServiceResourceService).get(any(), any());
+    doReturn(service).when(mockServiceResourceService).getServiceByName(any(), any());
+    SettingAttribute settingAttribute =
+        SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).withName("S3_AWS_CONFIG").build();
+
+    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(any(), any());
+    doReturn(settingAttribute).when(mockSettingsService).get(any(), any());
+    doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(appService).get(any());
+
+    ChangeContext<Yaml> changeContext = getS3ChangeContext();
+    Yaml yaml = (Yaml) getYaml(validS3SourceYamlContent, Yaml.class);
+    changeContext.setYaml(yaml);
+    TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
+                                                         .appId(APP_ID)
+                                                         .uuid("UUID1")
+                                                         .name("Name1")
+                                                         .description("Desc1")
+                                                         .terraformSourceType(TerraformSourceType.S3)
+                                                         .s3URI(validS3SourceURI)
+                                                         .awsConfigId("SETTING_ID")
+                                                         .skipRefreshBeforeApplyingPlan(true)
+                                                         .build();
+    TerraformInfrastructureProvisioner.Yaml yaml1 = handler.toYaml(provisioner, APP_ID);
+    ArgumentCaptor<TerraformInfrastructureProvisioner> captor =
+        ArgumentCaptor.forClass(TerraformInfrastructureProvisioner.class);
+    assertThat(yaml1).isNotNull();
+    assertThat(yaml1.getVariables()).isNull();
+    assertThat(yaml1.getBackendConfigs()).isNull();
+    assertThat("TERRAFORM").isEqualTo(yaml1.getType());
+    assertThat("1.0").isEqualTo(yaml1.getHarnessApiVersion());
+    assertThat(TerraformSourceType.S3).isEqualTo(yaml1.getSourceType());
+    assertThat(validS3SourceURI).isEqualTo(yaml1.getS3URI());
+    assertThat("S3_AWS_CONFIG").isEqualTo(yaml1.getAwsSourceConfigName());
+    handler.upsertFromYaml(changeContext, asList(changeContext));
+    verify(mockInfrastructureProvisionerService).save(captor.capture());
+    TerraformInfrastructureProvisioner provisioner1 = captor.getValue();
+    assertThat(provisioner).isEqualToIgnoringGivenFields(provisioner1, "uuid", "name", "description", "kmsId");
   }
 
   @Test
@@ -196,6 +288,7 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
         TerraformInfrastructureProvisioner.builder()
             .variables(asList(NameValuePair.builder().name("region").valueType("TEXT").value("us-east-1").build()))
             .repoName("REPO_NAME")
+            .terraformSourceType(TerraformSourceType.GIT)
             .build();
 
     Yaml tfYaml = handler.toYaml(provisionerSaved, WingsTestConstants.APP_ID);
@@ -251,6 +344,20 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
                                       .withAccountId(TestConstants.ACCOUNT_ID)
                                       .withFilePath(validYamlFilePath)
                                       .withFileContent(validYamlContent)
+                                      .build();
+
+    ChangeContext<Yaml> changeContext = new ChangeContext();
+    changeContext.setChange(gitFileChange);
+    changeContext.setYamlType(YamlType.PROVISIONER);
+    changeContext.setYamlSyncHandler(handler);
+    return changeContext;
+  }
+
+  private ChangeContext<Yaml> getS3ChangeContext() {
+    GitFileChange gitFileChange = GitFileChange.Builder.aGitFileChange()
+                                      .withAccountId(TestConstants.ACCOUNT_ID)
+                                      .withFilePath(validS3YamlFilePath)
+                                      .withFileContent(validS3SourceYamlContent)
                                       .build();
 
     ChangeContext<Yaml> changeContext = new ChangeContext();

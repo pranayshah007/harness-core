@@ -7,15 +7,21 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-import lombok.Value;
-import lombok.experimental.SuperBuilder;
+import io.harness.cvng.models.VerificationType;
 
-@Value
-@SuperBuilder
-public class AnalysedNode {
-  String nodeIdentifier;
-  VerificationResult verificationResult;
-  int failedMetrics;
-  int failedLogClusters;
-  int failedErrorClusters;
+public enum ProviderType {
+  ERRORS,
+  LOGS,
+  METRICS;
+
+  public static ProviderType fromVerificationType(VerificationType verificationType) {
+    switch (verificationType) {
+      case LOG:
+        return LOGS;
+      case TIME_SERIES:
+        return METRICS;
+      default:
+        return ERRORS;
+    }
+  }
 }

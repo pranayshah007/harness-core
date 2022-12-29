@@ -46,4 +46,5 @@ public class NGResourceFilterConstants {
   public static final String IGNORE_CASE =
       "This is true if the case of the searched phrase should be ignored when filtering the Entity. Else, it is false.";
   public static final String INCLUDE_ALL_ENV_GROUPS_ACCESSIBLE_AT_SCOPE = "includeAllEnvGroupsAccessibleAtScope";
+  public static final String INCLUDE_ALL_ACCESSIBLE_AT_SCOPE = "includeAllAccessibleAtScope";
 }

@@ -21,5 +21,5 @@ public class MetricsAnalysis {
   String healthSourceIdentifier;
   List<MetricThreshold> thresholds;
   AnalysisResult analysisResult;
-  List<AnalysedTestDataNode> testDataNodes;
+  List<AnalysedDeploymentTestDataNode> testDataNodes;
 }
