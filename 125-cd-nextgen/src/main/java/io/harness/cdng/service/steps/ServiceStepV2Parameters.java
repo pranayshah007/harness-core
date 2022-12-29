@@ -19,7 +19,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ServiceStepV3Parameters implements StepParameters {
+public class ServiceStepV2Parameters implements StepParameters {
   private ParameterField<String> serviceRef;
   private ParameterField<Map<String, Object>> inputs;
   private ParameterField<String> envRef;

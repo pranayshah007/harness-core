@@ -26,7 +26,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepV2;
-import io.harness.cdng.service.steps.ServiceStepV3Parameters;
+import io.harness.cdng.service.steps.ServiceStepV2Parameters;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -65,8 +65,8 @@ import lombok.experimental.UtilityClass;
 public class ServiceAllInOnePlanCreatorUtils {
   /**
    * Add the following plan nodes
-   * ServiceStepV3 ( 3 children )
-   *      artifactsV2
+   * ServiceStepV2 ( 3 children )
+   *      artifacts
    *      manifests
    *      config files
    *      azure settings
@@ -88,7 +88,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       serviceOverrideInputs =
           ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
     }
-    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
+    final ServiceStepV2Parameters stepParameters = ServiceStepV2Parameters.builder()
                                                        .serviceRef(finalServiceYaml.getServiceRef())
                                                        .inputs(finalServiceYaml.getServiceInputs())
                                                        .envRef(environmentYamlV2.getEnvironmentRef())
@@ -113,8 +113,8 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
-        ServiceStepV3Parameters.builder()
+    final ServiceStepV2Parameters stepParameters =
+        ServiceStepV2Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
             .inputs(finalServiceYaml.getServiceInputs())
             .envGroupRef(environmentGroupYaml.getEnvGroupRef())
@@ -144,8 +144,8 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
-        ServiceStepV3Parameters.builder()
+    final ServiceStepV2Parameters stepParameters =
+        ServiceStepV2Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
             .envRefs(environmentsYaml.getValues()
                          .getValue()
@@ -165,7 +165,7 @@ public class ServiceAllInOnePlanCreatorUtils {
 
   private static LinkedHashMap<String, PlanCreationResponse> createPlanNode(KryoSerializer kryoSerializer,
       String serviceNodeId, String nextNodeId, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      ServiceStepV3Parameters stepParameters) {
+      ServiceStepV2Parameters stepParameters) {
     final PlanNode node =
         PlanNode.builder()
             .uuid(serviceNodeId)

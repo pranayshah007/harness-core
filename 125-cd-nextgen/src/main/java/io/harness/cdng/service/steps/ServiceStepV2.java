@@ -116,7 +116,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters> {
+public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV2Parameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
@@ -143,12 +143,12 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
-  public Class<ServiceStepV3Parameters> getStepParametersClass() {
-    return ServiceStepV3Parameters.class;
+  public Class<ServiceStepV2Parameters> getStepParametersClass() {
+    return ServiceStepV2Parameters.class;
   }
 
   public ChildrenExecutableResponse obtainChildren(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
+          Ambiance ambiance, ServiceStepV2Parameters stepParameters, StepInputPackage inputPackage) {
     validate(stepParameters);
     try {
       final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
@@ -193,7 +193,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
     }
   }
 
-  private void validate(ServiceStepV3Parameters stepParameters) {
+  private void validate(ServiceStepV2Parameters stepParameters) {
     if (ParameterField.isNull(stepParameters.getServiceRef())) {
       throw new InvalidRequestException("service ref not provided");
     }
@@ -211,7 +211,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
    * Function handles processing envInputs and serviceInputs for multiple environments. Currently,
    * the flow is being used for GitOps Flows deploying to multiple environments.
    */
-  private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
+  private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV2Parameters parameters,
       ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
     Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
     Map<String, Map<String, Object>> envToSvcVariables = new HashMap<>();
@@ -309,7 +309,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
     return ngEnvironmentConfig;
   }
 
-  private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
+  private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV2Parameters parameters,
       ServicePartResponse servicePartResponse, NGLogCallback logCallback,
       Map<FreezeEntityType, List<String>> entityMap) {
     final ParameterField<String> envRef = parameters.getEnvRef();
@@ -458,7 +458,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
 
   @Override
   public StepResponse handleChildrenResponse(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
+          Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
 
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
@@ -538,7 +538,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private ServicePartResponse executeServicePart(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
+          Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);

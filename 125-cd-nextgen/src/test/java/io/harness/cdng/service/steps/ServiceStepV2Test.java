@@ -152,7 +152,7 @@ public class ServiceStepV2Test {
     assertThatExceptionOfType(UnresolvedExpressionsException.class)
         .isThrownBy(()
                         -> step.obtainChildren(buildAmbiance(),
-                            ServiceStepV3Parameters.builder()
+                            ServiceStepV2Parameters.builder()
                                 .serviceRef(ParameterField.<String>builder()
                                                 .expression(true)
                                                 .expressionValue("<+randomExpression>")
@@ -172,7 +172,7 @@ public class ServiceStepV2Test {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
                         -> step.obtainChildren(buildAmbiance(),
-                            ServiceStepV3Parameters.builder()
+                            ServiceStepV2Parameters.builder()
                                 .serviceRef(ParameterField.createValueField("svcid"))
                                 .deploymentType(ServiceDefinitionType.ECS)
                                 .build(),
@@ -191,7 +191,7 @@ public class ServiceStepV2Test {
     mockEnv(environment);
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -238,7 +238,7 @@ public class ServiceStepV2Test {
     mockEnv(environment);
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -262,7 +262,7 @@ public class ServiceStepV2Test {
     mockOverrides(serviceOverrides);
 
     step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -311,7 +311,7 @@ public class ServiceStepV2Test {
     mockEnv(environment);
 
     step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -368,7 +368,7 @@ public class ServiceStepV2Test {
         .fetchesNonDeletedEnvironmentFromListOfIdentifiers(anyString(), anyString(), anyString(), anyList());
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRefs(envRefs)
             .gitOpsMultiSvcEnvEnabled(ParameterField.createValueField(true))
@@ -420,7 +420,7 @@ public class ServiceStepV2Test {
     mergedEnvironmentInputs.put("envId", ParameterField.createValueField(Map.of("h1", "k1")));
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
             .envRefs(envRefs)
             .envToEnvInputs(mergedEnvironmentInputs)
@@ -468,7 +468,7 @@ public class ServiceStepV2Test {
         .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(service.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -509,7 +509,7 @@ public class ServiceStepV2Test {
             eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.CONFIG_FILES)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(service.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
@@ -538,7 +538,7 @@ public class ServiceStepV2Test {
         .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
-        ServiceStepV3Parameters.builder()
+        ServiceStepV2Parameters.builder()
             .serviceRef(ParameterField.createValueField(service.getIdentifier()))
             .envRef(ParameterField.createValueField(environment.getIdentifier()))
             .childrenNodeIds(new ArrayList<>())
