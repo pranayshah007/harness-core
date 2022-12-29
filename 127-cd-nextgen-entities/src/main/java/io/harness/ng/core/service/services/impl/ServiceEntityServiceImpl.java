@@ -921,6 +921,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   private void modifyServiceRequest(ServiceEntity requestService) {
     requestService.setName(requestService.getName().trim());
+    // create scoped service with correct params
+    String[] serviceRefSplit = StringUtils.split(requestService.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (serviceRefSplit != null && serviceRefSplit.length == 2) {
+      IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRef(requestService.getIdentifier(),
+              requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier());
+      requestService.setOrgIdentifier(serviceIdentifierRef.getOrgIdentifier());
+      requestService.setProjectIdentifier(serviceIdentifierRef.getProjectIdentifier());
+      requestService.setIdentifier(serviceIdentifierRef.getIdentifier());
+    }
   }
 
   private void modifyServiceRequestBatch(List<ServiceEntity> serviceEntities) {

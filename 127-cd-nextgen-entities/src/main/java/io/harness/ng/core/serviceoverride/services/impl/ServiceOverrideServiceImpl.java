@@ -116,6 +116,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     validatePresenceOfRequiredFields(requestServiceOverride.getAccountId(), requestServiceOverride.getEnvironmentRef(),
         requestServiceOverride.getServiceRef());
     validateOverrideValues(requestServiceOverride);
+    modifyServiceOverrideRequest(requestServiceOverride);
     Criteria criteria = getServiceOverrideEqualityCriteria(requestServiceOverride);
 
     Optional<NGServiceOverridesEntity> serviceOverrideOptional = get(requestServiceOverride.getAccountId(),
@@ -153,6 +154,20 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
 
       return tempResult;
     }));
+  }
+
+  private void modifyServiceOverrideRequest(NGServiceOverridesEntity requestServiceOverride) {
+    // scoped environment
+    String[] envRefSplit =
+        StringUtils.split(requestServiceOverride.getEnvironmentRef(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit != null && envRefSplit.length == 2) {
+      IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(requestServiceOverride.getEnvironmentRef(),
+          requestServiceOverride.getAccountId(), requestServiceOverride.getOrgIdentifier(),
+          requestServiceOverride.getProjectIdentifier());
+      requestServiceOverride.setOrgIdentifier(envIdentifierRef.getOrgIdentifier());
+      requestServiceOverride.setProjectIdentifier(envIdentifierRef.getProjectIdentifier());
+      requestServiceOverride.setEnvironmentRef(envIdentifierRef.getIdentifier());
+    }
   }
 
   void validateOverrideValues(NGServiceOverridesEntity requestServiceOverride) {
