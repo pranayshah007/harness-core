@@ -137,7 +137,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 portalUrl: https://localhost:8181/
 

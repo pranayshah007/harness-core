@@ -67,7 +67,7 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveCreateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .newYaml(getYamlString(sloCreateEvent.getNewServiceLevelObjectiveDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -83,7 +83,7 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .oldYaml(getYamlString(sloUpdateEvent.getOldServiceLevelObjectiveDTO()))
                                 .newYaml(getYamlString(sloUpdateEvent.getNewServiceLevelObjectiveDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -100,7 +100,7 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .oldYaml(getYamlString(sloDeleteEvent.getOldServiceLevelObjectiveDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -114,7 +114,7 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
       throws IOException {
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.ERROR_BUDGET_RESET)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

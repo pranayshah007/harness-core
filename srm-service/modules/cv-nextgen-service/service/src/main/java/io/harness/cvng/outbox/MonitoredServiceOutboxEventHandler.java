@@ -68,7 +68,7 @@ public class MonitoredServiceOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), MonitoredServiceCreateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .newYaml(getYamlString(monitoredServiceCreateEvent.getNewMonitoredServiceYamlDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -84,7 +84,7 @@ public class MonitoredServiceOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), MonitoredServiceUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .oldYaml(getYamlString(monitoredServiceUpdateEvent.getOldMonitoredServiceYamlDTO()))
                                 .newYaml(getYamlString(monitoredServiceUpdateEvent.getNewMonitoredServiceYamlDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -101,7 +101,7 @@ public class MonitoredServiceOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), MonitoredServiceToggleEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .oldYaml(getYamlString(monitoredServiceToggleEvent.getOldMonitoredServiceYamlDTO()))
                                 .newYaml(getYamlString(monitoredServiceToggleEvent.getNewMonitoredServiceYamlDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -118,7 +118,7 @@ public class MonitoredServiceOutboxEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), MonitoredServiceDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CV)
+                                .module(ModuleType.SRM)
                                 .oldYaml(getYamlString(monitoredServiceDeleteEvent.getOldMonitoredServiceYamlDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

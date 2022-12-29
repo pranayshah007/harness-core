@@ -51,4 +51,15 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     assertThat(SRMLicenseUsageDTO.getActiveServices().getCount()).isEqualTo(5);
     assertThat(SRMLicenseUsageDTO.getActiveServices().getDisplayName()).isEqualTo("Total active SRM services");
   }
+
+  @Test
+  @Owner(developers = OwnerRule.ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetSRMLicenseUsage() {
+    doReturn((long) 5).when(monitoredServiceService).countUniqueEnabledServices(any());
+    SRMLicenseUsageDTO SRMLicenseUsageDTO =
+        (SRMLicenseUsageDTO) licenseUsageInterface.getLicenseUsage("testAccountId", ModuleType.SRM, 1, null);
+    assertThat(SRMLicenseUsageDTO.getActiveServices().getCount()).isEqualTo(5);
+    assertThat(SRMLicenseUsageDTO.getActiveServices().getDisplayName()).isEqualTo("Total active SRM services");
+  }
 }

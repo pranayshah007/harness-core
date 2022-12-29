@@ -104,7 +104,7 @@ public class FakeNextGenService implements NextGenService {
         .orgIdentifier(orgIdentifier)
         .identifier(projectIdentifier)
         .name("Mocked project name")
-        .modules(Collections.singletonList(ModuleType.CV))
+        .modules(Collections.singletonList(ModuleType.SRM))
         .build();
   }
 
