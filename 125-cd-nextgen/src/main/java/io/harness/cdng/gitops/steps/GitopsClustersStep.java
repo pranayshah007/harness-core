@@ -7,6 +7,8 @@
 
 package io.harness.cdng.gitops.steps;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -77,11 +79,8 @@ import retrofit2.Response;
 
 @Slf4j
 public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepParameters> {
-  public static final String GITOPS_SWEEPING_OUTPUT = "gitops";
   private static final int UNLIMITED_SIZE = 100000;
   private static final int STRINGS_LOGGING_LIMIT = 500;
-
-  public static final String GITOPS_ENV_OUTCOME = "gitopsEnvOutcome";
 
   @Inject private ClusterService clusterService;
   @Inject private GitopsResourceClient gitopsResourceClient;

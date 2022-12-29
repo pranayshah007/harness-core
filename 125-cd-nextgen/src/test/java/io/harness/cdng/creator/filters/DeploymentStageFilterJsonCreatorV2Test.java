@@ -23,7 +23,7 @@ import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.InfrastructureDef;
-import io.harness.cdng.infra.beans.InfraUseFromStage;
+import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;

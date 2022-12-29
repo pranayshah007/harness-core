@@ -8,6 +8,7 @@
 package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -181,7 +182,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
 
     // Read environment outcome and iterate over clusterData to replace the cluster and env name
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
 
     Map<String, Map<String, String>> filePathsToVariables = new HashMap<>();
 

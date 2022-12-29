@@ -55,7 +55,7 @@ io.harness.cdng.provision.terraform.TerraformPlanExecutionData
 io.harness.when.beans.StageWhenCondition
 io.harness.cdng.pipeline.beans.DeploymentStageStepParameters
 io.harness.cdng.k8s.beans.StepExceptionPassThroughData
-io.harness.cdng.infra.beans.InfraUseFromStage$Overrides
+io.harness.cdng.infra.InfraUseFromStage$Overrides
 io.harness.cdng.provision.terraform.TerraformDestroyStepParameters
 io.harness.cdng.k8s.K8sCanaryOutcome
 io.harness.cdng.k8s.K8sRollingRollbackStepParameters
@@ -100,7 +100,7 @@ io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome
 io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome
 io.harness.cdng.manifest.yaml.S3StoreConfig
 io.harness.cdng.manifest.yaml.InlineStoreConfig
-io.harness.cdng.infra.beans.InfraUseFromStage
+io.harness.cdng.infra.InfraUseFromStage
 io.harness.cdng.k8s.K8sRollingStepParameters
 io.harness.advisers.rollback.OnFailRollbackOutput
 io.harness.cdng.provision.terraform.TerraformStepConfiguration
@@ -171,7 +171,7 @@ io.harness.cdng.k8s.K8sBGSwapServicesOutcome
 io.harness.cdng.k8s.DeleteManifestPathSpec
 io.harness.cdng.provision.terraform.TerraformDestroyStepInfo
 io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepParameters
-io.harness.cdng.infra.steps.InfraSectionStepParameters
+io.harness.cdng.infra.InfraSectionStepParameters
 io.harness.cdng.provision.terraform.TerraformExecutionData
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.cdng.provision.terraform.steps.rolllback.TerraformConfigSweepingOutput

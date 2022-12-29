@@ -14,7 +14,7 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
-import io.harness.cdng.infra.beans.InfraUseFromStage;
+import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;

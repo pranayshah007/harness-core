@@ -12,6 +12,7 @@ import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildRespo
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraStepUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;

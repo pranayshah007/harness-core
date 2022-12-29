@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,7 +108,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
     doReturn(optionalSweepingOutput)
         .when(executionSweepingOutputService)
-        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT)));
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
 
     Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables);
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_NAME/CLUSTER_NAME");
@@ -180,7 +181,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
     doReturn(optionalSweepingOutput)
         .when(executionSweepingOutputService)
-        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT)));
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
 
     Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables);
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");

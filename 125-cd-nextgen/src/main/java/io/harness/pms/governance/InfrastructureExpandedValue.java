@@ -12,7 +12,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfraUseFromStage;
+import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.governance.ExpansionKeysConstants;

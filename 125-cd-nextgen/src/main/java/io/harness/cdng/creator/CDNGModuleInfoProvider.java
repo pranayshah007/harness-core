@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
 
@@ -196,8 +197,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         }
       }
     } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
-      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+      OptionalOutcome optionalOutcome =
+          outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
         GitopsClustersOutcome gitOpsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         gitOpsOutcome.getClustersData()
@@ -285,7 +286,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       });
     } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
         GitopsClustersOutcome clustersOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         final Map<String, List<GitopsClustersOutcome.ClusterData>> clusterData = groupGitOpsClusters(optionalOutcome);
