@@ -7,7 +7,6 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
-import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
@@ -50,7 +49,7 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
                             .and(StreamingBatchKeys.streamingDestinationIdentifier)
                             .is(streamingDestinationIdentifier);
     Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchKeys.endTime);
-    return Optional.of(streamingBatchRepository.findOne(criteria, sort));
+    return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 
   @Override
@@ -67,7 +66,7 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
   public StreamingBatch getLastStreamingBatch(StreamingDestination streamingDestination, Long timestamp) {
     Optional<StreamingBatch> lastStreamingBatch =
         getLatest(streamingDestination.getAccountIdentifier(), streamingDestination.getIdentifier());
-    if (lastStreamingBatch.map(batch -> batch.getStatus().equals(IN_PROGRESS)).orElse(true)) {
+    if (lastStreamingBatch.isEmpty()) {
       return createInitialBatch(streamingDestination, timestamp);
     }
     @NotNull BatchStatus status = lastStreamingBatch.get().getStatus();
