@@ -10,6 +10,10 @@ package io.harness.delegate.task.ecs;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.SAINATH;
 
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.trim;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,8 +37,10 @@ import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.exception.HintException;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.util.concurrent.TimeLimiter;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -518,11 +524,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
     doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(awsConnectorDTO);
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
-    doNothing()
-        .when(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(),
-            createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback,
-            timeoutInMillis);
 
     doNothing()
         .when(ecsCommandTaskNGHelper)
@@ -545,10 +546,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
 
     verify(ecsCommandTaskNGHelper)
         .createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-    verify(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-            ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-            eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     verify(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
@@ -605,10 +602,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
         .updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
-    doNothing()
-        .when(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(), updateServiceRequest.service(),
-            ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     doNothing()
         .when(ecsCommandTaskNGHelper)
@@ -634,10 +627,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
             ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
     verify(ecsCommandTaskNGHelper)
         .updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-    verify(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-            ecsInfraConfig.getCluster(), updateServiceRequest.service(), ecsInfraConfig.getRegion(),
-            eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     verify(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
@@ -653,18 +642,76 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void waitForTasksToBeInRunningStateTest() {
-    long timeOut = 100000L;
-    Service service = Service.builder().status("ACTIVE").build();
-    UpdateServiceResponse updateServiceResponse = UpdateServiceResponse.builder().service(service).build();
-    List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
+  public void createOrUpdateServiceNotEmptyServiceActiveSkipUpdateServiceTest() {
+    boolean forceNewDeployment = false;
+    String taskArn = "taskArn";
+    CreateServiceRequest createServiceRequest = CreateServiceRequest.builder()
+                                                    .serviceName(serviceName)
+                                                    .taskDefinition(taskArn)
+                                                    .desiredCount(1)
+                                                    .cluster(cluster)
+                                                    .build();
+    List<String> ecsScalableTargetManifestContentList = Arrays.asList("content");
+    List<String> ecsScalingPolicyManifestContentList = Arrays.asList("content");
+
+    Service service =
+        Service.builder().status("ACTIVE").serviceName(serviceName).desiredCount(1).taskDefinition(taskArn).build();
     DescribeServicesResponse describeServicesResponse =
-        DescribeServicesResponse.builder().services(Arrays.asList(Service.builder().build())).build();
-    doReturn(describeServicesResponse)
-        .when(ecsV2Client)
-        .describeService(awsInternalConfig, cluster, serviceName, region);
-    ecsCommandTaskNGHelper.waitForTasksToBeInRunningState(
-        awsInternalConfig, cluster, serviceName, region, eventsAlreadyProcessed, logCallback, timeOut);
+        DescribeServicesResponse.builder().services(Arrays.asList(service)).build();
+    doReturn(Optional.of(describeServicesResponse.services().get(0)))
+        .when(ecsCommandTaskNGHelper)
+        .describeService(cluster, serviceName, region, awsConnectorDTO);
+
+    CreateServiceResponse createServiceResponse = CreateServiceResponse.builder().service(service).build();
+    doReturn(createServiceResponse)
+        .when(ecsCommandTaskNGHelper)
+        .createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(awsConnectorDTO);
+
+    doNothing()
+        .when(ecsCommandTaskNGHelper)
+        .deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(), ecsInfraConfig.getCluster(),
+            ecsInfraConfig.getRegion(), logCallback);
+    doNothing()
+        .when(ecsCommandTaskNGHelper)
+        .deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(),
+            ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+
+    UpdateServiceRequest updateServiceRequest =
+        EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequest, forceNewDeployment);
+    UpdateServiceResponse updateServiceResponse = UpdateServiceResponse.builder().service(service).build();
+    doReturn(updateServiceResponse)
+        .when(ecsCommandTaskNGHelper)
+        .updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    doNothing()
+        .when(ecsCommandTaskNGHelper)
+        .registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+            service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+
+    doNothing()
+        .when(ecsCommandTaskNGHelper)
+        .attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+            service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+    ecsCommandTaskNGHelper.createOrUpdateService(createServiceRequest, ecsScalableTargetManifestContentList,
+        ecsScalingPolicyManifestContentList, ecsInfraConfig, logCallback, timeoutInMillis, true, forceNewDeployment);
+
+    verify(ecsCommandTaskNGHelper)
+        .deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(), ecsInfraConfig.getCluster(),
+            ecsInfraConfig.getRegion(), logCallback);
+    verify(ecsCommandTaskNGHelper)
+        .deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(),
+            ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+    verify(ecsCommandTaskNGHelper)
+        .registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+            service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+    verify(ecsCommandTaskNGHelper)
+        .attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+            service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
+
+    verify(logCallback)
+        .saveExecutionLog(color(format("Service %s is already up to date", serviceName), White, Bold), LogLevel.INFO);
   }
 
   @Test
@@ -707,11 +754,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
     doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(awsConnectorDTO);
-    doNothing()
-        .when(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(),
-            createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback,
-            timeoutInMillis);
     doNothing()
         .when(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
@@ -894,10 +936,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
         .when(ecsCommandTaskNGHelper)
         .createService(any(), eq(ecsInfraConfig.getRegion()), eq(ecsInfraConfig.getAwsConnectorDTO()));
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
-    doNothing()
-        .when(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(), stageServiceName,
-            ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     doNothing()
         .when(ecsCommandTaskNGHelper)
@@ -923,11 +961,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
     verify(ecsCommandTaskNGHelper)
         .ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
             service.serviceName(), ecsInfraConfig.getRegion(), (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
-
-    verify(ecsCommandTaskNGHelper)
-        .waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-            ecsInfraConfig.getCluster(), stageServiceName, ecsInfraConfig.getRegion(), eventsAlreadyProcessed,
-            logCallback, timeoutInMillis);
   }
 
   @Test
@@ -1050,5 +1083,16 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
 
     assertThat(ecsLoadBalancerConfigWithEmptyListenerRules.getProdListenerRuleArn()).isEqualTo(defaultRuleArn);
     assertThat(ecsLoadBalancerConfigWithEmptyListenerRules.getStageListenerRuleArn()).isEqualTo(defaultRuleArn);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void toYamlTest() throws JsonProcessingException {
+    CreateServiceRequest.Builder createServiceRequestBuilder =
+        CreateServiceRequest.builder().serviceName(serviceName).cluster(cluster);
+    String serviceRequest = ecsCommandTaskNGHelper.toYaml(createServiceRequestBuilder);
+    assertThat(serviceRequest).contains(cluster);
+    assertThat(serviceRequest).contains(serviceName);
   }
 }

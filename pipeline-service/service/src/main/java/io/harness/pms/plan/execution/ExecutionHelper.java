@@ -333,6 +333,7 @@ public class ExecutionHelper {
     String pipelineYamlForSchemaValidations = pipelineYamlConfigForSchemaValidations.getYaml();
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
+    String unresolvedPipelineYaml = pipelineYaml;
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -354,7 +355,7 @@ public class ExecutionHelper {
       // RBAC checks can't be provided for remote pipelines
       pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          pipelineYaml);
+          unresolvedPipelineYaml);
     }
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)

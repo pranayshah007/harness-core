@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task;
+package io.harness.delegate.task.slack;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -14,10 +14,11 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
-import io.harness.delegate.beans.PagerDutyTaskParams;
+import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.notification.senders.PagerDutySenderImpl;
+import io.harness.notification.senders.SlackSenderImpl;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
@@ -27,10 +28,10 @@ import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class PagerDutySenderDelegateTask extends AbstractDelegateRunnableTask {
-  @Inject private PagerDutySenderImpl pagerDutySender;
+public class SlackSenderDelegateTask extends AbstractDelegateRunnableTask {
+  @Inject private SlackSenderImpl slackSender;
 
-  public PagerDutySenderDelegateTask(DelegateTaskPackage delegateTaskPackage,
+  public SlackSenderDelegateTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -43,10 +44,10 @@ public class PagerDutySenderDelegateTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    PagerDutyTaskParams pagerDutyTaskParams = (PagerDutyTaskParams) parameters;
+    SlackTaskParams slackTaskParams = (SlackTaskParams) parameters;
     try {
-      NotificationProcessingResponse processingResponse = pagerDutySender.send(pagerDutyTaskParams.getPagerDutyKeys(),
-          pagerDutyTaskParams.getPayload(), pagerDutyTaskParams.getLinks(), pagerDutyTaskParams.getNotificationId());
+      NotificationProcessingResponse processingResponse = slackSender.send(
+          slackTaskParams.getSlackWebhookUrls(), slackTaskParams.getMessage(), slackTaskParams.getNotificationId());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

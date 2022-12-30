@@ -542,7 +542,7 @@ public enum FeatureName {
   DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED(
       "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
       HarnessTeam.PL),
-  SIMPLIFY_ACL_CHECK("Evaluate access using role assignments instead of ACL's.", HarnessTeam.PL),
+  PL_SIMPLIFY_ACL_CHECK("Evaluate access using role assignments instead of ACL's.", HarnessTeam.PL),
   ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
   CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP),
   SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV),

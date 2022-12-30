@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.exception;
+package io.harness.exception.violation;
 
 import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import static io.harness.rest.RestResponse.Builder.aRestResponse;

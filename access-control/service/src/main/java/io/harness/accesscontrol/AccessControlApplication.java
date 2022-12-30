@@ -48,7 +48,7 @@ import io.harness.enforcement.client.custom.CustomRestrictionInterface;
 import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
-import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;

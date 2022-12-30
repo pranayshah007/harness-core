@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -51,6 +52,9 @@ import io.harness.serializer.YamlUtils;
 import software.wings.beans.LogColor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -196,8 +200,9 @@ public class EcsCommandTaskNGHelper {
             deployLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
             throw new RuntimeException(msg);
           }
-
+          printAwsEcsDeployments(service, deployLogCallback);
           printAwsEvent(service, eventsAlreadyProcessed, deployLogCallback);
+          sleep(ofSeconds(10));
         } while (!hasServiceReachedSteadyState(service));
 
         return true;
@@ -283,8 +288,6 @@ public class EcsCommandTaskNGHelper {
 
   public void deleteScalingPolicies(
       AwsConnectorDTO awsConnectorDTO, String serviceName, String cluster, String region, LogCallback logCallback) {
-    logCallback.saveExecutionLog(format("Deleting Scaling Policies from service %s..%n", serviceName), LogLevel.INFO);
-
     DescribeScalingPoliciesRequest describeScalingPoliciesRequest =
         DescribeScalingPoliciesRequest.builder()
             .maxResults(100)
@@ -297,6 +300,7 @@ public class EcsCommandTaskNGHelper {
 
     if (describeScalingPoliciesResponse != null
         && CollectionUtils.isNotEmpty(describeScalingPoliciesResponse.scalingPolicies())) {
+      logCallback.saveExecutionLog(format("Deleting Scaling Policies from service %s..%n", serviceName), LogLevel.INFO);
       describeScalingPoliciesResponse.scalingPolicies().forEach(scalingPolicy -> {
         DeleteScalingPolicyRequest deleteScalingPolicyRequest =
             DeleteScalingPolicyRequest.builder()
@@ -312,9 +316,6 @@ public class EcsCommandTaskNGHelper {
       });
 
       logCallback.saveExecutionLog(format("Deleted Scaling Policies from service %s %n%n", serviceName), LogLevel.INFO);
-    } else {
-      logCallback.saveExecutionLog(
-          format("Didn't find any Scaling Policies attached to service %s %n%n", serviceName), LogLevel.INFO);
     }
   }
 
@@ -347,9 +348,6 @@ public class EcsCommandTaskNGHelper {
 
   public void deregisterScalableTargets(
       AwsConnectorDTO awsConnectorDTO, String serviceName, String cluster, String region, LogCallback logCallback) {
-    logCallback.saveExecutionLog(
-        format("Deregistering Scalable Targets from service %s..%n", serviceName), LogLevel.INFO);
-
     DescribeScalableTargetsRequest describeScalableTargetsRequest =
         DescribeScalableTargetsRequest.builder()
             .maxResults(100)
@@ -363,6 +361,8 @@ public class EcsCommandTaskNGHelper {
 
     if (describeScalableTargetsResponse != null
         && CollectionUtils.isNotEmpty(describeScalableTargetsResponse.scalableTargets())) {
+      logCallback.saveExecutionLog(
+          format("Deregistering Scalable Targets from service %s..%n", serviceName), LogLevel.INFO);
       describeScalableTargetsResponse.scalableTargets().forEach(scalableTarget -> {
         DeregisterScalableTargetRequest deregisterScalableTargetRequest =
             DeregisterScalableTargetRequest.builder()
@@ -379,9 +379,6 @@ public class EcsCommandTaskNGHelper {
       });
       logCallback.saveExecutionLog(
           format("Deregistered Scalable Targets from service %s %n%n", serviceName), LogLevel.INFO);
-    } else {
-      logCallback.saveExecutionLog(
-          format("Didn't find any Scalable Targets on service %s %n%n", serviceName), LogLevel.INFO);
     }
   }
 
@@ -503,10 +500,6 @@ public class EcsCommandTaskNGHelper {
 
       List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
 
-      waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-          ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-          eventsAlreadyProcessed, logCallback, timeoutInMillis);
-
       ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
           createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
 
@@ -532,32 +525,33 @@ public class EcsCommandTaskNGHelper {
       UpdateServiceRequest updateServiceRequest =
           EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequest, forceNewDeployment);
 
-      // same as already running instances
-      if (sameAsAlreadyRunningInstances) {
-        updateServiceRequest = updateServiceRequest.toBuilder().desiredCount(null).build();
+      if (isSameAsCurrentService(updateServiceRequest, optionalService, ecsInfraConfig)) {
+        logCallback.saveExecutionLog(
+            color(format("Service %s is already up to date", optionalService.get().serviceName()), White, Bold),
+            LogLevel.INFO);
+      } else {
+        // same as already running instances
+        if (sameAsAlreadyRunningInstances) {
+          updateServiceRequest = updateServiceRequest.toBuilder().desiredCount(null).build();
+        }
+
+        logCallback.saveExecutionLog(
+            format("Updating Service %s with task definition %s and desired count %s %n",
+                updateServiceRequest.service(), updateServiceRequest.taskDefinition(),
+                updateServiceRequest.desiredCount() == null ? "same as existing" : updateServiceRequest.desiredCount()),
+            LogLevel.INFO);
+        UpdateServiceResponse updateServiceResponse =
+            updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+        List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
+
+        ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+            createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
+
+        logCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(),
+                                         updateServiceResponse.service().serviceArn()),
+            LogLevel.INFO);
       }
-
-      logCallback.saveExecutionLog(
-          format("Updating Service %s with task definition %s and desired count %s %n", updateServiceRequest.service(),
-              updateServiceRequest.taskDefinition(),
-              updateServiceRequest.desiredCount() == null ? "same as existing" : updateServiceRequest.desiredCount()),
-          LogLevel.INFO);
-      UpdateServiceResponse updateServiceResponse =
-          updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-      List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
-
-      waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-          ecsInfraConfig.getCluster(), updateServiceRequest.service(), ecsInfraConfig.getRegion(),
-          eventsAlreadyProcessed, logCallback, timeoutInMillis);
-
-      ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
-          createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
-
-      logCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(),
-                                       updateServiceResponse.service().serviceArn()),
-          LogLevel.INFO);
-
       registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
           service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
 
@@ -566,21 +560,15 @@ public class EcsCommandTaskNGHelper {
     }
   }
 
-  public void waitForTasksToBeInRunningState(AwsInternalConfig awsConfig, String clusterName, String serviceName,
-      String region, List<ServiceEvent> eventsAlreadyProcessed, LogCallback logCallback, long timeOut) {
-    try {
-      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(timeOut), () -> {
-        while (notAllDesiredTasksRunning(
-            awsConfig, clusterName, serviceName, region, eventsAlreadyProcessed, logCallback)) {
-          sleep(ofSeconds(10));
-        }
-        return true;
-      });
-    } catch (UncheckedTimeoutException e) {
-      throw new InvalidRequestException("Timed out waiting for tasks to be in running state", e);
-    } catch (Exception e) {
-      throw new InvalidRequestException("Error while waiting for tasks to be in running state", e);
-    }
+  private boolean isSameAsCurrentService(
+      UpdateServiceRequest updateServiceRequest, Optional<Service> optionalService, EcsInfraConfig ecsInfraConfig) {
+    Service service = optionalService.get();
+    CreateServiceRequest.Builder createServiceRequestBuilder =
+        EcsMapper.createCreateServiceRequestBuilderFromService(service);
+    createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster());
+    UpdateServiceRequest currentUpdateServiceRequest =
+        EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequestBuilder.build(), false);
+    return currentUpdateServiceRequest.equals(updateServiceRequest);
   }
 
   private boolean notAllDesiredTasksRunning(AwsInternalConfig awsConfig, String clusterName, String serviceName,
@@ -618,6 +606,24 @@ public class EcsCommandTaskNGHelper {
     }
 
     eventsAlreadyProcessed.addAll(events);
+  }
+
+  private void printAwsEcsDeployments(Service service, LogCallback logCallback) {
+    logCallback.saveExecutionLog(format("%nCurrent Deployment Status"));
+    logCallback.saveExecutionLog(format("Service %s Overall Status DesiredCount=%s PendingCount=%s RunningCount=%s ",
+        service.serviceName(), service.desiredCount(), service.pendingCount(), service.runningCount()));
+    logCallback.saveExecutionLog("Service Deployments Status");
+    for (Deployment deployment : service.deployments()) {
+      logCallback.saveExecutionLog(color(getDeploymentDetails(deployment), White, Bold));
+    }
+  }
+
+  private String getDeploymentDetails(Deployment deployment) {
+    return format("Deployment Id=%s, Status=%s, "
+            + "TaskDefinition=%s, DesiredCount=%s, PendingCount=%s, RunningCount=%s, FailedTasks=%s, "
+            + "RolloutState=%s",
+        deployment.id(), deployment.status(), deployment.taskDefinition(), deployment.desiredCount(),
+        deployment.pendingCount(), deployment.runningCount(), deployment.failedTasks(), deployment.rolloutState());
   }
 
   public void createCanaryService(CreateServiceRequest createServiceRequest,
@@ -664,9 +670,6 @@ public class EcsCommandTaskNGHelper {
         createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
-    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-        ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-        eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
@@ -813,10 +816,6 @@ public class EcsCommandTaskNGHelper {
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
 
-    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-        ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-        eventsAlreadyProcessed, logCallback, timeoutInMillis);
-
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
 
@@ -896,10 +895,6 @@ public class EcsCommandTaskNGHelper {
           createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
       eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
     }
-
-    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
-        ecsInfraConfig.getCluster(), ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig.getRegion(),
-        eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     // steady state check to reach stable state
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(),
@@ -1283,6 +1278,8 @@ public class EcsCommandTaskNGHelper {
   public EcsRunTaskResponse getEcsRunTaskResponse(TaskDefinition taskDefinition,
       String ecsRunTaskRequestDefinitionManifestContent, boolean isSkipSteadyStateCheck, long timeoutInMillis,
       EcsInfraConfig ecsInfraConfig, LogCallback runTaskLogCallback) {
+    runTaskLogCallback.saveExecutionLog(color(format("%n ECS Task Request Definition Content %n"), White, Bold));
+    ecsCommandTaskHelper.printManifestContent(ecsRunTaskRequestDefinitionManifestContent, runTaskLogCallback);
     String taskDefinitionArn = taskDefinition.taskDefinitionArn();
     String taskDefinitionName = getEcsTaskDefinitionName(taskDefinition);
 
@@ -1440,5 +1437,35 @@ public class EcsCommandTaskNGHelper {
   public boolean isEcsTaskContainerFailed(Container container) {
     return (container.exitCode() != null && container.exitCode() != 0)
         || (container.lastStatus() != null && container.lastStatus().equals("STOPPED") && container.exitCode() == null);
+  }
+
+  public void printEcsManifestsContent(String taskDefinition, String serviceDefinition, List<String> scalableTargets,
+      List<String> scalingPolicy, LogCallback logCallback) {
+    logCallback.saveExecutionLog(color(format("%n ECS Task Definition Content %n"), White, Bold) + taskDefinition);
+    logCallback.saveExecutionLog(
+        color(format("%n ECS Service Definition Content %n"), White, Bold) + serviceDefinition);
+
+    if (scalableTargets != null && isNotEmpty(scalableTargets)) {
+      scalableTargets.forEach(content -> {
+        logCallback.saveExecutionLog(color(format("%n ECS Scalable Target Content %n"), White, Bold) + content);
+      });
+    }
+
+    if (scalingPolicy != null && isNotEmpty(scalingPolicy)) {
+      scalingPolicy.forEach(content -> {
+        logCallback.saveExecutionLog(color(format("%n ECS Scaling Policy Content %n"), White, Bold) + content);
+      });
+    }
+  }
+
+  public void printManifestContent(String manifestContent, LogCallback logCallback) {
+    logCallback.saveExecutionLog(manifestContent);
+  }
+
+  public String toYaml(Object obj) throws JsonProcessingException {
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    return objectMapper.writeValueAsString(obj);
   }
 }

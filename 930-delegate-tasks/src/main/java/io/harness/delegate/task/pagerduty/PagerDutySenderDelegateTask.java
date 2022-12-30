@@ -5,19 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task;
+package io.harness.delegate.task.pagerduty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.delegate.beans.PagerDutyTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.notification.senders.MSTeamsSenderImpl;
+import io.harness.notification.senders.PagerDutySenderImpl;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
@@ -27,10 +28,10 @@ import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class MicrosoftTeamsSenderDelegateTask extends AbstractDelegateRunnableTask {
-  @Inject private MSTeamsSenderImpl microsoftTeamsSender;
+public class PagerDutySenderDelegateTask extends AbstractDelegateRunnableTask {
+  @Inject private PagerDutySenderImpl pagerDutySender;
 
-  public MicrosoftTeamsSenderDelegateTask(DelegateTaskPackage delegateTaskPackage,
+  public PagerDutySenderDelegateTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -43,11 +44,10 @@ public class MicrosoftTeamsSenderDelegateTask extends AbstractDelegateRunnableTa
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    MicrosoftTeamsTaskParams microsoftTeamsTaskParams = (MicrosoftTeamsTaskParams) parameters;
+    PagerDutyTaskParams pagerDutyTaskParams = (PagerDutyTaskParams) parameters;
     try {
-      NotificationProcessingResponse processingResponse =
-          microsoftTeamsSender.send(microsoftTeamsTaskParams.getMicrosoftTeamsWebhookUrls(),
-              microsoftTeamsTaskParams.getMessage(), microsoftTeamsTaskParams.getNotificationId());
+      NotificationProcessingResponse processingResponse = pagerDutySender.send(pagerDutyTaskParams.getPagerDutyKeys(),
+          pagerDutyTaskParams.getPayload(), pagerDutyTaskParams.getLinks(), pagerDutyTaskParams.getNotificationId());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

@@ -23,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
@@ -73,6 +74,7 @@ public class EcsRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                           .ecsServiceDefinitionManifestContent("serviceDef")
                                                           .ecsScalableTargetManifestContentList(Arrays.asList("scale"))
                                                           .ecsScalingPolicyManifestContentList(Arrays.asList("policy"))
+                                                          .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_DEPLOY)
                                                           .build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =

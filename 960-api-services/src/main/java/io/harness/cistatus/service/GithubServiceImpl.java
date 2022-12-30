@@ -82,8 +82,9 @@ public class GithubServiceImpl implements GithubService {
       GithubAppTokenCreationResponse response = executeRestCall(responseCall);
       return response.getToken();
     } catch (Exception ex) {
-      throw new InvalidRequestException(format("Failed to generate token for url %s, installation id %s",
-                                            githubAppConfig.getGithubUrl(), githubAppConfig.getInstallationId()),
+      throw new InvalidRequestException(
+          format("Failed to generate token for url %s, installation id %s, cause: %s", githubAppConfig.getGithubUrl(),
+              githubAppConfig.getInstallationId(), ex.getMessage()),
           ex);
     }
   }

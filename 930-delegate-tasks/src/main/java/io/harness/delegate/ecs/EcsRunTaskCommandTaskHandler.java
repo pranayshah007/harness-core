@@ -7,6 +7,10 @@
 
 package io.harness.delegate.ecs;
 
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -60,8 +64,10 @@ public class EcsRunTaskCommandTaskHandler extends EcsCommandTaskNGHandler {
         iLogStreamingTaskClient, EcsCommandUnitConstants.runTask.toString(), true, commandUnitsProgress);
 
     try {
+      runTaskLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       String ecsTaskDefinitionManifestContent = ecsRunTaskRequest.getEcsTaskDefinitionManifestContent();
-
+      runTaskLogCallback.saveExecutionLog(color(format("ECS Task Definition Content %n"), White, Bold));
+      ecsCommandTaskHelper.printManifestContent(ecsTaskDefinitionManifestContent, runTaskLogCallback);
       RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
           ecsCommandTaskHelper.parseYamlAsObject(
               ecsTaskDefinitionManifestContent, RegisterTaskDefinitionRequest.serializableBuilderClass());

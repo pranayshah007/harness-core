@@ -7,6 +7,8 @@
 
 package io.harness.delegate.ecs;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -14,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfigHelper;
@@ -27,6 +30,9 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.Optional;
@@ -62,44 +68,51 @@ public class EcsCanaryDeleteCommandTaskHandler extends EcsCommandTaskNGHandler {
     LogCallback canaryDeleteLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.deleteService.toString(), true, commandUnitsProgress);
 
-    String ecsServiceDefinitionManifestContent = ecsCanaryDeleteRequest.getEcsServiceDefinitionManifestContent();
+    try {
+      canaryDeleteLogCallback.saveExecutionLog(format("Canary Delete..%n%n"), LogLevel.INFO);
+      String ecsServiceDefinitionManifestContent = ecsCanaryDeleteRequest.getEcsServiceDefinitionManifestContent();
 
-    CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
-        ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
+      CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
+          ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
 
-    CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
+      CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
 
-    String canaryServiceName = createServiceRequest.serviceName() + ecsCanaryDeleteRequest.getEcsServiceNameSuffix();
+      String canaryServiceName = createServiceRequest.serviceName() + ecsCanaryDeleteRequest.getEcsServiceNameSuffix();
 
-    Optional<Service> optionalService = ecsCommandTaskHelper.describeService(ecsInfraConfig.getCluster(),
-        canaryServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+      Optional<Service> optionalService = ecsCommandTaskHelper.describeService(ecsInfraConfig.getCluster(),
+          canaryServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
-    EcsCanaryDeleteResult ecsCanaryDeleteResult = null;
+      EcsCanaryDeleteResult ecsCanaryDeleteResult = null;
 
-    if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
-      canaryDeleteLogCallback.saveExecutionLog(format("Deleting service %s..", canaryServiceName), LogLevel.INFO);
+      if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
+        canaryDeleteLogCallback.saveExecutionLog(format("Deleting service %s..", canaryServiceName), LogLevel.INFO);
 
-      ecsCommandTaskHelper.deleteService(canaryServiceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
-          ecsInfraConfig.getAwsConnectorDTO());
+        ecsCommandTaskHelper.deleteService(canaryServiceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+            ecsInfraConfig.getAwsConnectorDTO());
 
-      ecsCommandTaskHelper.ecsServiceInactiveStateCheck(canaryDeleteLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
-          ecsInfraConfig.getCluster(), canaryServiceName, ecsInfraConfig.getRegion(),
-          (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+        ecsCommandTaskHelper.ecsServiceInactiveStateCheck(canaryDeleteLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
+            ecsInfraConfig.getCluster(), canaryServiceName, ecsInfraConfig.getRegion(),
+            (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
-      ecsCanaryDeleteResult =
-          EcsCanaryDeleteResult.builder().canaryDeleted(true).canaryServiceName(canaryServiceName).build();
+        ecsCanaryDeleteResult =
+            EcsCanaryDeleteResult.builder().canaryDeleted(true).canaryServiceName(canaryServiceName).build();
 
-      canaryDeleteLogCallback.saveExecutionLog(
-          format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      canaryDeleteLogCallback.saveExecutionLog(
-          format("Canary service %s doesn't exist", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      ecsCanaryDeleteResult =
-          EcsCanaryDeleteResult.builder().canaryDeleted(false).canaryServiceName(canaryServiceName).build();
+        canaryDeleteLogCallback.saveExecutionLog(
+            format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      } else {
+        canaryDeleteLogCallback.saveExecutionLog(format("Canary service %s doesn't exist", canaryServiceName),
+            LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        ecsCanaryDeleteResult =
+            EcsCanaryDeleteResult.builder().canaryDeleted(false).canaryServiceName(canaryServiceName).build();
+      }
+      return EcsCanaryDeleteResponse.builder()
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .ecsCanaryDeleteResult(ecsCanaryDeleteResult)
+          .build();
+    } catch (Exception ex) {
+      canaryDeleteLogCallback.saveExecutionLog(color(format("%n Canary Delete Failed."), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw new EcsNGException(ex);
     }
-    return EcsCanaryDeleteResponse.builder()
-        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .ecsCanaryDeleteResult(ecsCanaryDeleteResult)
-        .build();
   }
 }

@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 
 import software.wings.jersey.KryoMessageBodyProvider;
 

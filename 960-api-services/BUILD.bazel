@@ -59,6 +59,7 @@ java_library(
         "@maven//:io_fabric8_istio_client",
         "@maven//:io_fabric8_kubernetes_api",
         "@maven//:io_github_resilience4j_resilience4j_retry",
+        "@maven//:io_kubernetes_client_java_api_fluent",
         "@maven//:javax_xml_ws_jaxws_api",
         "@maven//:net_jodah_expiringmap",
         "@maven//:org_cloudfoundry_cloudfoundry_client_reactor",
