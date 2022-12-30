@@ -32,7 +32,7 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
 
   @Override
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
-    if (chainState.getLaunchTemplateVersion() != null) {
+    if (chainState.getLaunchTemplateVersion() == null) {
       List<CreateLaunchTemplateRequest> manifests =
           manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
       String asgName = chainState.getAsgName();

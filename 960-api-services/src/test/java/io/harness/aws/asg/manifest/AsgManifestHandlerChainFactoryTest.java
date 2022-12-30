@@ -7,10 +7,34 @@
 
 package io.harness.aws.asg.manifest;
 
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.rule.OwnerRule.VITALIE;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import io.harness.CategoryTest;
+import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyRequest;
+import io.harness.category.element.UnitTests;
+import io.harness.rule.Owner;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 public class AsgManifestHandlerChainFactoryTest extends CategoryTest {
-  /*
   static String asgName = "testAsg";
   static String launchTemplateManifestContent =
       "{\"LaunchTemplateData\": {\"ImageId\": \"ami-05fa00d4c63e32376\",\"InstanceType\": \"t2.micro\"}}";
@@ -95,7 +119,7 @@ public class AsgManifestHandlerChainFactoryTest extends CategoryTest {
   public void shouldAddHandlersUnmarshallContentsAndOverrideProperties() {
     AsgManifestHandlerChainFactory.builder()
         .build()
-        .addHandler(AsgManifestType.AsgLaunchTemplate,
+        .addHandler(AsgLaunchTemplate,
             AsgLaunchTemplateRequest.builder().manifests(Arrays.asList(launchTemplateManifestContent)).build())
         .addHandler(AsgManifestType.AsgConfiguration,
             AsgConfigurationRequest.builder()
@@ -107,5 +131,4 @@ public class AsgManifestHandlerChainFactoryTest extends CategoryTest {
                 .manifests(Arrays.asList(scalingPolicyManifestContent1, scalingPolicyManifestContent2))
                 .build());
   }
-*/
 }

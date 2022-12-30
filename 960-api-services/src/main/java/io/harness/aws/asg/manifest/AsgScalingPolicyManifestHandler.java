@@ -9,6 +9,8 @@ package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.manifest.request.ManifestRequest;
@@ -33,9 +35,11 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
     List<PutScalingPolicyRequest> manifests =
         manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
     String asgName = chainState.getAsgName();
+    String operationName = format("Attach required scaling policies to Asg %s", asgName);
+    asgSdkManager.info("Operation `%s` has started", operationName);
     asgSdkManager.clearAllScalingPoliciesForAsg(asgName);
     asgSdkManager.attachScalingPoliciesToAsg(asgName, manifests);
-    asgSdkManager.infoBold("All required scaling policies are attached to the Asg: [%s]", asgName);
+    asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     return chainState;
   }
 
