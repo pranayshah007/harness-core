@@ -61,11 +61,6 @@ public class ModulesResourceNG {
         enabledModuleTypes.add(moduleType);
       }
     });
-    addEnabledModuleTypesByDefault(enabledModuleTypes);
     return new RestResponse<>(enabledModuleTypes);
-  }
-
-  private void addEnabledModuleTypesByDefault(List<ModuleType> enabledModuleTypes) {
-    enabledModuleTypes.add(ModuleType.CD);
   }
 }
