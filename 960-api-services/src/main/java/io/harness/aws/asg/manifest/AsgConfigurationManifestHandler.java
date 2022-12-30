@@ -19,7 +19,6 @@ import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
-import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,17 +97,15 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     createAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
 
     if (autoScalingGroup == null) {
-      String operationName = format("Create Asg [%s]", asgName);
+      String operationName = format("Create Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
       asgSdkManager.createASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
       asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     } else {
-      UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
-          createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
       String operationName = format("Update Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
-      asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), updateAutoScalingGroupRequest);
+      asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
       asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     }
@@ -122,34 +119,5 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
   @Override
   public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     return chainState;
-  }
-
-  private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest = new UpdateAutoScalingGroupRequest();
-    updateAutoScalingGroupRequest.setAutoScalingGroupName(createAutoScalingGroupRequest.getAutoScalingGroupName());
-    updateAutoScalingGroupRequest.setLaunchConfigurationName(createAutoScalingGroupRequest.getAutoScalingGroupName());
-    updateAutoScalingGroupRequest.setLaunchTemplate(createAutoScalingGroupRequest.getLaunchTemplate());
-    updateAutoScalingGroupRequest.setMixedInstancesPolicy(createAutoScalingGroupRequest.getMixedInstancesPolicy());
-    updateAutoScalingGroupRequest.setMinSize(createAutoScalingGroupRequest.getMinSize());
-    updateAutoScalingGroupRequest.setMaxSize(createAutoScalingGroupRequest.getMaxSize());
-    updateAutoScalingGroupRequest.setDesiredCapacity(createAutoScalingGroupRequest.getDesiredCapacity());
-    updateAutoScalingGroupRequest.setDefaultCooldown(createAutoScalingGroupRequest.getDefaultCooldown());
-    updateAutoScalingGroupRequest.setAvailabilityZones(createAutoScalingGroupRequest.getAvailabilityZones());
-    updateAutoScalingGroupRequest.setHealthCheckType(createAutoScalingGroupRequest.getHealthCheckType());
-    updateAutoScalingGroupRequest.setHealthCheckGracePeriod(createAutoScalingGroupRequest.getHealthCheckGracePeriod());
-    updateAutoScalingGroupRequest.setPlacementGroup(createAutoScalingGroupRequest.getPlacementGroup());
-    updateAutoScalingGroupRequest.setVPCZoneIdentifier(createAutoScalingGroupRequest.getVPCZoneIdentifier());
-    updateAutoScalingGroupRequest.setTerminationPolicies(createAutoScalingGroupRequest.getTerminationPolicies());
-    updateAutoScalingGroupRequest.setNewInstancesProtectedFromScaleIn(
-        createAutoScalingGroupRequest.getNewInstancesProtectedFromScaleIn());
-    updateAutoScalingGroupRequest.setServiceLinkedRoleARN(createAutoScalingGroupRequest.getServiceLinkedRoleARN());
-    updateAutoScalingGroupRequest.setMaxInstanceLifetime(createAutoScalingGroupRequest.getMaxInstanceLifetime());
-    updateAutoScalingGroupRequest.setCapacityRebalance(createAutoScalingGroupRequest.getCapacityRebalance());
-    updateAutoScalingGroupRequest.setContext(createAutoScalingGroupRequest.getContext());
-    updateAutoScalingGroupRequest.setDesiredCapacity(createAutoScalingGroupRequest.getDesiredCapacity());
-    updateAutoScalingGroupRequest.setDefaultInstanceWarmup(createAutoScalingGroupRequest.getDefaultInstanceWarmup());
-
-    return updateAutoScalingGroupRequest;
   }
 }

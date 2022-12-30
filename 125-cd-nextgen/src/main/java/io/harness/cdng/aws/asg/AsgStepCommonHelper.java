@@ -409,10 +409,8 @@ public class AsgStepCommonHelper extends CDStepHelper {
       AsgRollingPrepareRollbackDataOutcomeBuilder asgPrepareRollbackDataOutcomeBuilder =
           AsgRollingPrepareRollbackDataOutcome.builder();
 
-      asgPrepareRollbackDataOutcomeBuilder.launchTemplateVersion(
-          asgPrepareRollbackDataResult.getLaunchTemplateVersion());
-      asgPrepareRollbackDataOutcomeBuilder.asgConfiguration(asgPrepareRollbackDataResult.getAsgConfiguration());
-      asgPrepareRollbackDataOutcomeBuilder.scalingPolicies(asgPrepareRollbackDataResult.getScalingPolicies());
+      asgPrepareRollbackDataOutcomeBuilder.asgStoreManifestsContent(
+          asgPrepareRollbackDataResult.getAsgStoreManifestsContent());
 
       executionSweepingOutputService.consume(ambiance,
           OutcomeExpressionConstants.ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME,

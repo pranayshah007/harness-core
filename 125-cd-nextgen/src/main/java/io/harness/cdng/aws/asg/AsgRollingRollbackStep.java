@@ -148,9 +148,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
     AsgRollingRollbackRequest asgRollingRollbackRequest =
         AsgRollingRollbackRequest.builder()
             .accountId(accountId)
-            .launchTemplateVersion(asgRollingPrepareRollbackDataOutcome.getLaunchTemplateVersion())
-            .asgConfiguration(asgRollingPrepareRollbackDataOutcome.getAsgConfiguration())
-            .scalingPolicies(asgRollingPrepareRollbackDataOutcome.getScalingPolicies())
+            .asgStoreManifestsContent(asgRollingPrepareRollbackDataOutcome.getAsgStoreManifestsContent())
             .commandName(ASG_ROLLING_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))

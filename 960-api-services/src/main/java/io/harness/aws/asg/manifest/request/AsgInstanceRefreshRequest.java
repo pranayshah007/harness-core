@@ -10,7 +10,6 @@ package io.harness.aws.asg.manifest.request;
 import io.harness.manifest.request.ManifestRequest;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,7 +18,6 @@ public class AsgInstanceRefreshRequest extends ManifestRequest {
   public boolean skipMatching;
   public Integer instanceWarmup;
   public Integer minimumHealthyPercentage;
-  Map<String, Object> overrideProperties = null;
   @Builder
   public AsgInstanceRefreshRequest(
       List<String> manifests, boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {

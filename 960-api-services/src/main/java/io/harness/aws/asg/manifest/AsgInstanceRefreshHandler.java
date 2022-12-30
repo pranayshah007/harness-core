@@ -18,6 +18,7 @@ import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
 
 @OwnedBy(CDP)
 public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPolicyRequest> {
@@ -38,11 +39,13 @@ public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPoli
     if (autoScalingGroup == null) {
       asgSdkManager.info("Asg with name [%s] does not exist. Skipping instance refresh operation", asgName);
     } else {
-      String operationName = format("Instance Refresh Asg [%s]", asgName);
+      String operationName = format("Instance Refresh Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
-      asgSdkManager.startInstanceRefresh(asgName, asgInstanceRefreshRequest.isSkipMatching(),
-          asgInstanceRefreshRequest.getInstanceWarmup(), asgInstanceRefreshRequest.getMinimumHealthyPercentage());
-      asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
+      StartInstanceRefreshResult startInstanceRefreshResult =
+          asgSdkManager.startInstanceRefresh(asgName, asgInstanceRefreshRequest.isSkipMatching(),
+              asgInstanceRefreshRequest.getInstanceWarmup(), asgInstanceRefreshRequest.getMinimumHealthyPercentage());
+      String instanceRefreshId = startInstanceRefreshResult.getInstanceRefreshId();
+      asgSdkManager.waitInstanceRefreshSteadyState(asgName, instanceRefreshId, operationName);
       asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     }
 
