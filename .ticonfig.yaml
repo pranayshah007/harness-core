@@ -20,3 +20,4 @@ config:
     - "**/*.hash"
     - "toolset/git-hooks/**/*"
     - "**/build.properties"
+    - "schema-generator/**/*"
