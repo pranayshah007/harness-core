@@ -1041,5 +1041,5 @@
   "nodeName": "CVNGStageInfo",
   "namespace": "cvng",
   "skipStageSchema": true,
-  "moduleType": "CV"
+  "moduleType": "SRM"
 }
