@@ -8,8 +8,8 @@
 package io.harness.cdng.customdeploymentng;
 
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
-import static io.harness.cdng.customDeployment.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
-import static io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDEventHandler.STABLE_VERSION;
+import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
+import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.STABLE_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;

@@ -11,7 +11,6 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentAbstractStageNode;
-import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;

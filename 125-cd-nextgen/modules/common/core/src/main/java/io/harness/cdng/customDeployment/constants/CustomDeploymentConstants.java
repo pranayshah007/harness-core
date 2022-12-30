@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.customDeployment;
+package io.harness.cdng.customDeployment.constants;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,4 +17,5 @@ public class CustomDeploymentConstants {
   public static final String VARIABLES = "variables";
   public static final String INFRASTRUCTURE_DEFINITION = "infrastructureDefinition";
   public static final String FETCH_INSTANCE_SCRIPT = "Fetch Instance Script";
+  public static final String STABLE_VERSION = "__STABLE__";
 }

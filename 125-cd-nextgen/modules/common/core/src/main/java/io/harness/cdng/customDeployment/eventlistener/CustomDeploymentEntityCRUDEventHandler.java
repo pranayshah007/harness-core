@@ -7,6 +7,8 @@
 
 package io.harness.cdng.customDeployment.eventlistener;
 
+import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.STABLE_VERSION;
+
 import static software.wings.beans.AccountType.log;
 
 import static java.lang.String.format;
@@ -39,7 +41,6 @@ public class CustomDeploymentEntityCRUDEventHandler {
   @Inject EntitySetupUsageService entitySetupUsageService;
   @Inject InfrastructureEntityService infrastructureEntityService;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
-  public static final String STABLE_VERSION = "__STABLE__";
 
   public boolean updateInfraAsObsolete(
       String accountRef, String orgRef, String projectRef, String identifier, String versionLabel) {

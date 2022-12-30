@@ -5,9 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.visitor.helpers.customDeployment;
+package io.harness.cdng.customDeployment;
 
-import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 

@@ -1,4 +1,4 @@
-package io.harness.cdng;
+package io.harness.cdng.helpers;
 
 import io.harness.account.AccountClient;
 import io.harness.data.structure.EmptyPredicate;
