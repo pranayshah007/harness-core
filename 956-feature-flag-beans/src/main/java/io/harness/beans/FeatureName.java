@@ -419,6 +419,8 @@ public enum FeatureName {
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
+  SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
+      "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH(
       "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
       HarnessTeam.PL),
