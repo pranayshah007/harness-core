@@ -11,6 +11,7 @@ java_binary(
     main_class = "io.harness.SchemaGeneratorTool",
     visibility = ["//visibility:public"],
     deps = [
+        "//970-ng-commons:module",
         "//999-annotations:module",
     ],
 )
