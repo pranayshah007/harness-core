@@ -19,5 +19,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgPrepareRollbackDataResult {
+  String asgName;
   Map<String, List<String>> asgStoreManifestsContent;
 }

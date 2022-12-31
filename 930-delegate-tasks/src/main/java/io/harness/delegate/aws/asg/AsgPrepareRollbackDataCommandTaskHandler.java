@@ -135,6 +135,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
       return AsgPrepareRollbackDataResult
           .builder()
+          //  .asgName(asgName)
           //.asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
           .build();
 
@@ -143,7 +144,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
           color(
               format("Asg %s doesn't exist. Skipping Prepare Rollback Data Operation", asgName), White, LogWeight.Bold),
           INFO, CommandExecutionStatus.SUCCESS);
-      return AsgPrepareRollbackDataResult.builder().build();
+      return AsgPrepareRollbackDataResult.builder().asgName(asgName).build();
     }
   }
 }

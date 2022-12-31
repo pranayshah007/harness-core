@@ -411,9 +411,8 @@ public class AsgSdkManager {
     return resultList.get(0);
   }
 
-  public void deleteAsgService(AutoScalingGroup autoScalingGroup) {
-    String asgName = autoScalingGroup.getAutoScalingGroupName();
-    String operationName = format("Delete Asg %s", asgName);
+  public void deleteAsg(String asgName) {
+    String operationName = format("Deleting Asg %s", asgName);
     info("Operation `%s` has started", operationName);
     DeleteAutoScalingGroupRequest deleteAutoScalingGroupRequest =
         new DeleteAutoScalingGroupRequest().withAutoScalingGroupName(asgName).withForceDelete(true);
