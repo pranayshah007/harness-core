@@ -42,6 +42,7 @@ import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
 import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
 import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesRequest;
@@ -57,8 +58,11 @@ import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
 import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.Filter;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.InstanceRefresh;
 import com.amazonaws.services.autoscaling.model.LaunchConfiguration;
@@ -75,6 +79,7 @@ import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
 import com.amazonaws.services.autoscaling.model.Tag;
+import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
@@ -224,6 +229,38 @@ public class AsgSdkManager {
     updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
+    List<TagDescription> currentTagDescriptionsList = new ArrayList<>();
+    String nextToken = null;
+    Filter filter = new Filter().withName("auto-scaling-group").withValues(asgName);
+
+    do {
+      DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest().withFilters(filter).withNextToken(nextToken);
+
+      DescribeTagsResult describeTagsResult = asgCall(asgClient -> asgClient.describeTags(describeTagsRequest));
+      if (isNotEmpty(describeTagsResult.getTags())) {
+        currentTagDescriptionsList.addAll(describeTagsResult.getTags());
+      }
+      nextToken = describeTagsResult.getNextToken();
+    } while (nextToken != null);
+
+    List<Tag> currentTagsList = new ArrayList<>();
+    if (isNotEmpty(currentTagDescriptionsList)) {
+      currentTagDescriptionsList.forEach(currentTagDescription -> {
+        Tag tagTemp = new Tag();
+        tagTemp.setKey(currentTagDescription.getKey());
+        tagTemp.setResourceId(currentTagDescription.getResourceId());
+        tagTemp.setResourceType(currentTagDescription.getResourceType());
+        tagTemp.setValue(currentTagDescription.getValue());
+        tagTemp.setPropagateAtLaunch(currentTagDescription.getPropagateAtLaunch());
+        currentTagsList.add(tagTemp);
+      });
+    }
+
+    if (isNotEmpty(currentTagsList)) {
+      DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest().withTags(currentTagsList);
+      asgCall(asgClient -> asgClient.deleteTags(deleteTagsRequest));
+    }
+
     List<Tag> tags = createAutoScalingGroupRequest.getTags();
     List<Tag> tagsList = new ArrayList<>();
     if (isNotEmpty(tags)) {
@@ -240,6 +277,7 @@ public class AsgSdkManager {
         tagsList.add(tag);
       });
     }
+
     CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
     createOrUpdateTagsRequest.setTags(tagsList);
     asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
@@ -275,18 +313,18 @@ public class AsgSdkManager {
     }
 
     List<LoadBalancerState> loadBalancerStates = new ArrayList<>();
-    String nextToken = null;
+    String nextToken1 = null;
     do {
       DescribeLoadBalancersRequest describeloadBalancersRequest =
-          new DescribeLoadBalancersRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
+          new DescribeLoadBalancersRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken1);
 
       DescribeLoadBalancersResult describeLoadBalancersResult =
           asgCall(asgClient -> asgClient.describeLoadBalancers(describeloadBalancersRequest));
       if (isNotEmpty(describeLoadBalancersResult.getLoadBalancers())) {
         loadBalancerStates.addAll(describeLoadBalancersResult.getLoadBalancers());
       }
-      nextToken = describeLoadBalancersResult.getNextToken();
-    } while (nextToken != null);
+      nextToken1 = describeLoadBalancersResult.getNextToken();
+    } while (nextToken1 != null);
 
     if (isNotEmpty(loadBalancerStates)) {
       loadBalancerStates.forEach(loadBalancerState -> {
@@ -307,7 +345,7 @@ public class AsgSdkManager {
     }
 
     List<LoadBalancerTargetGroupState> loadBalancerTargetGroupStates = new ArrayList<>();
-    String nextToken2 = null;
+    String nextToken2;
     do {
       DescribeLoadBalancerTargetGroupsRequest describeLoadBalancerTargetGroupsRequest =
           new DescribeLoadBalancerTargetGroupsRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
@@ -338,8 +376,6 @@ public class AsgSdkManager {
         asgCall(asgClient -> asgClient.attachLoadBalancerTargetGroups(attachLoadBalancerTargetGroupsRequest));
       });
     }
-
-    return;
   }
 
   public AutoScalingGroup getASG(String asgName) {
@@ -526,7 +562,6 @@ public class AsgSdkManager {
           asgCall(asgClient -> asgClient.putScalingPolicy(putScalingPolicyRequest));
       logCallback.saveExecutionLog(format("Attached policy with Arn: %s", putScalingPolicyResult.getPolicyARN()));
     });
-    return;
   }
 
   public LaunchConfiguration getLaunchConfiguration(String asgName) {
@@ -566,50 +601,50 @@ public class AsgSdkManager {
 
     return updateAutoScalingGroupRequest;
   }
+  /*
+    public CreateLaunchTemplateRequest createLaunchTemplateRequestfromAsgName(String asgName) {
+      CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
+      return createLaunchTemplateRequest;
 
-  public CreateLaunchTemplateRequest createLaunchTemplateRequestfromAsgName(String asgName) {
-    CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
-    return createLaunchTemplateRequest;
-    /*
-    LaunchTemplate launchTemplate = getLaunchTemplate(asgName);
-    CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
-    createLaunchTemplateRequest.setLaunchTemplateName(launchTemplate.getLaunchTemplateName());
+      LaunchTemplate launchTemplate = getLaunchTemplate(asgName);
+      CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
+      createLaunchTemplateRequest.setLaunchTemplateName(launchTemplate.getLaunchTemplateName());
 
-            DescribeAutoScalingInstancesRequest describeAutoScalingInstancesRequest = new
-    DescribeAutoScalingInstancesRequest(); List<AutoScalingInstanceDetails> autoScalingInstanceDetails =
-    (asgCall(asgClient ->
-    asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest))).getAutoScalingInstances();
+              DescribeAutoScalingInstancesRequest describeAutoScalingInstancesRequest = new
+      DescribeAutoScalingInstancesRequest(); List<AutoScalingInstanceDetails> autoScalingInstanceDetails =
+      (asgCall(asgClient ->
+      asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest))).getAutoScalingInstances();
 
-    AutoScalingInstanceDetails autoScalingInstanceDetails1 = new AutoScalingInstanceDetails();
-    if (isNotEmpty(autoScalingInstanceDetails)) {
-      autoScalingInstanceDetails1 =
-              autoScalingInstanceDetails.stream()
-                      .filter(autoScalingInstance ->
-    asgName.equalsIgnoreCase(autoScalingInstance.getAutoScalingGroupName())) .findFirst().get();
+      AutoScalingInstanceDetails autoScalingInstanceDetails1 = new AutoScalingInstanceDetails();
+      if (isNotEmpty(autoScalingInstanceDetails)) {
+        autoScalingInstanceDetails1 =
+                autoScalingInstanceDetails.stream()
+                        .filter(autoScalingInstance ->
+      asgName.equalsIgnoreCase(autoScalingInstance.getAutoScalingGroupName())) .findFirst().get();
+      }
+
+      String InstanceId = autoScalingInstanceDetails1.getInstanceId();
+      DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(InstanceId);
+      DescribeInstancesResult describeInstancesResult = ec2Call(ec2Client ->
+      ec2Client.describeInstances(describeInstancesRequest));
+
+
+      Reservation reservation = (Reservation) describeInstancesResult.getReservations();
+      com.amazonaws.services.ec2.model.Instance instance = (com.amazonaws.services.ec2.model.Instance)
+      reservation.getInstances();
+
+      RequestLaunchTemplateData requestLaunchTemplateData = new RequestLaunchTemplateData();
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+      requestLaunchTemplateData.setKernelId(instance.getKernelId());
+
     }
-
-    String InstanceId = autoScalingInstanceDetails1.getInstanceId();
-    DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(InstanceId);
-    DescribeInstancesResult describeInstancesResult = ec2Call(ec2Client ->
-    ec2Client.describeInstances(describeInstancesRequest));
-
-
-    Reservation reservation = (Reservation) describeInstancesResult.getReservations();
-    com.amazonaws.services.ec2.model.Instance instance = (com.amazonaws.services.ec2.model.Instance)
-    reservation.getInstances();
-
-    RequestLaunchTemplateData requestLaunchTemplateData = new RequestLaunchTemplateData();
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    requestLaunchTemplateData.setKernelId(instance.getKernelId());
-    */
-  }
-
+  */
   public void info(String msg, Object... params) {
     info(msg, false, params);
   }
