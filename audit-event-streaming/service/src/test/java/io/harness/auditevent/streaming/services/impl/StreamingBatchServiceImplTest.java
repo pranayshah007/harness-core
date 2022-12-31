@@ -7,6 +7,8 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
+import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
+import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
 import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
@@ -27,6 +29,7 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import io.harness.CategoryTest;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.entities.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.repositories.StreamingBatchRepository;
@@ -37,6 +40,7 @@ import io.harness.rule.Owner;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.RandomUtils;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Rule;
@@ -51,6 +55,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 public class StreamingBatchServiceImplTest extends CategoryTest {
   @Mock private StreamingBatchRepository streamingBatchRepository;
+  @Mock private AuditEventRepository auditEventRepository;
   StreamingBatchServiceImpl streamingBatchService;
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
@@ -68,7 +73,7 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.streamingBatchService = new StreamingBatchServiceImpl(streamingBatchRepository);
+    this.streamingBatchService = new StreamingBatchServiceImpl(streamingBatchRepository, auditEventRepository);
   }
 
   @Test
@@ -139,13 +144,23 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastStreamingBatch_whenNotInDB() {
     long now = System.currentTimeMillis();
+    long numberOfRecords = RandomUtils.nextLong();
     StreamingDestination streamingDestination = getStreamingDestination(now);
+
     when(streamingBatchRepository.findOne(any(), any())).thenReturn(null);
+    when(auditEventRepository.countAuditEvents(any())).thenReturn(numberOfRecords);
+
     StreamingBatch expectedStreamingBatch = getStreamingBatch(now, streamingDestination, READY);
+    expectedStreamingBatch.setNumberOfRecords(numberOfRecords);
+
     streamingBatchService.getLastStreamingBatch(streamingDestination, now);
+
     verify(streamingBatchRepository, times(1)).save(streamingBatchArgumentCaptor.capture());
     StreamingBatch savedStreamingBatch = streamingBatchArgumentCaptor.getValue();
     assertThat(savedStreamingBatch).isEqualToComparingFieldByField(expectedStreamingBatch);
+
+    verify(auditEventRepository, times(1)).countAuditEvents(criteriaArgumentCaptor.capture());
+    assertAuditRecordsCountCriteria(expectedStreamingBatch, criteriaArgumentCaptor.getValue());
   }
 
   @Test
@@ -180,20 +195,26 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
   public void testGetLastStreamingBatch_whenStatusSuccess() {
     long now = System.currentTimeMillis();
     long previousBatchExecutionTime = now - MINUTES_30_IN_MILLS;
+    long numberOfRecords = RandomUtils.nextLong();
     StreamingDestination streamingDestination = getStreamingDestination(previousBatchExecutionTime);
     StreamingBatch previousStreamingBatch =
         getStreamingBatch(previousBatchExecutionTime, streamingDestination, SUCCESS);
     previousStreamingBatch.setLastSuccessfulRecordTimestamp(previousBatchExecutionTime - MINUTES_15_IN_MILLS);
     when(streamingBatchRepository.findOne(any(), any())).thenReturn(previousStreamingBatch);
+    when(auditEventRepository.countAuditEvents(any())).thenReturn(numberOfRecords);
 
     streamingBatchService.getLastStreamingBatch(streamingDestination, now);
 
     StreamingBatch expectedStreamingBatch = getStreamingBatch(now, streamingDestination, READY);
     expectedStreamingBatch.setStartTime(previousStreamingBatch.getEndTime());
+    expectedStreamingBatch.setNumberOfRecords(numberOfRecords);
 
     verify(streamingBatchRepository, times(1)).save(streamingBatchArgumentCaptor.capture());
     StreamingBatch savedStreamingBatch = streamingBatchArgumentCaptor.getValue();
     assertThat(savedStreamingBatch).isEqualToComparingFieldByField(expectedStreamingBatch);
+
+    verify(auditEventRepository, times(1)).countAuditEvents(criteriaArgumentCaptor.capture());
+    assertAuditRecordsCountCriteria(expectedStreamingBatch, criteriaArgumentCaptor.getValue());
   }
 
   private StreamingDestination getStreamingDestination(long updatedAt) {
@@ -224,5 +245,15 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
     assertThat(document).containsExactlyInAnyOrderEntriesOf(
         Map.ofEntries(Map.entry(accountIdentifier, ACCOUNT_IDENTIFIER),
             Map.entry(streamingDestinationIdentifier, STREAMING_DESTINATION_IDENTIFIER)));
+  }
+
+  private void assertAuditRecordsCountCriteria(StreamingBatch expectedStreamingBatch, Criteria criteria) {
+    Document document = criteria.getCriteriaObject();
+    assertThat(document).containsEntry(ACCOUNT_IDENTIFIER_KEY, ACCOUNT_IDENTIFIER);
+    assertThat(document).containsKey(createdAt);
+    Document createdAtDocument = (Document) document.get(createdAt);
+    assertThat(createdAtDocument)
+        .containsExactlyInAnyOrderEntriesOf(Map.ofEntries(Map.entry("$gt", expectedStreamingBatch.getStartTime()),
+            Map.entry("$lte", expectedStreamingBatch.getEndTime())));
   }
 }
