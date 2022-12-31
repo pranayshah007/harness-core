@@ -118,8 +118,8 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
 
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(canaryAsgName);
     if (autoScalingGroup != null) {
-      asgSdkManager.info("Service with name `%s` already exists. Trying to delete it.", canaryAsgName);
-      asgSdkManager.deleteAsgService(autoScalingGroup);
+      asgSdkManager.info("Asg with name `%s` already exists. Trying to delete it.", canaryAsgName);
+      asgSdkManager.deleteAsg(canaryAsgName);
     }
 
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
