@@ -133,16 +133,17 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
         }
       };
 
-      return (AsgPrepareRollbackDataResult.builder()
-                  .asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
-                  .build());
+      return AsgPrepareRollbackDataResult
+          .builder()
+          //.asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
+          .build();
 
     } else {
       logCallback.saveExecutionLog(
           color(
               format("Asg %s doesn't exist. Skipping Prepare Rollback Data Operation", asgName), White, LogWeight.Bold),
           INFO, CommandExecutionStatus.SUCCESS);
-      return (AsgPrepareRollbackDataResult.builder().build());
+      return AsgPrepareRollbackDataResult.builder().build();
     }
   }
 }
