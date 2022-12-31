@@ -7,9 +7,12 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
+import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
+import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.entities.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.StreamingBatch.StreamingBatchKeys;
@@ -28,11 +31,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class StreamingBatchServiceImpl implements StreamingBatchService {
-  private StreamingBatchRepository streamingBatchRepository;
+  private final StreamingBatchRepository streamingBatchRepository;
+  private final AuditEventRepository auditEventRepository;
 
   @Autowired
-  public StreamingBatchServiceImpl(StreamingBatchRepository streamingBatchRepository) {
+  public StreamingBatchServiceImpl(
+      StreamingBatchRepository streamingBatchRepository, AuditEventRepository auditEventRepository) {
     this.streamingBatchRepository = streamingBatchRepository;
+    this.auditEventRepository = auditEventRepository;
   }
 
   @Override
@@ -88,7 +94,8 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
     StreamingBatch streamingBatch = newBatchBuilder(streamingDestination, timestamp)
                                         .startTime(streamingDestination.getLastStatusChangedAt())
                                         .build();
-    // TODO: Add total number of records
+    long numberOfRecords = getTotalNumberOfAuditRecords(streamingDestination, streamingBatch);
+    streamingBatch.setNumberOfRecords(numberOfRecords);
     return update(streamingDestination.getAccountIdentifier(), streamingBatch);
   }
 
@@ -96,7 +103,8 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
       StreamingBatch previousStreamingBatch, StreamingDestination streamingDestination, Long timestamp) {
     StreamingBatch streamingBatch =
         newBatchBuilder(streamingDestination, timestamp).startTime(previousStreamingBatch.getEndTime()).build();
-    // TODO: Add total number of records
+    long numberOfRecords = getTotalNumberOfAuditRecords(streamingDestination, streamingBatch);
+    streamingBatch.setNumberOfRecords(numberOfRecords);
     return update(streamingDestination.getAccountIdentifier(), streamingBatch);
   }
 
@@ -107,5 +115,14 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
         .streamingDestinationIdentifier(streamingDestination.getIdentifier())
         .status(READY)
         .endTime(timestamp);
+  }
+
+  private long getTotalNumberOfAuditRecords(StreamingDestination streamingDestination, StreamingBatch streamingBatch) {
+    Criteria criteria = Criteria.where(ACCOUNT_IDENTIFIER_KEY)
+                            .is(streamingDestination.getAccountIdentifier())
+                            .and(createdAt)
+                            .gt(streamingBatch.getStartTime())
+                            .lte(streamingBatch.getEndTime());
+    return auditEventRepository.countAuditEvents(criteria);
   }
 }
