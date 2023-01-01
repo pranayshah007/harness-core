@@ -9,7 +9,6 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 
-import java.util.List;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
@@ -20,11 +19,11 @@ public class VerificationOverview {
   AppliedDeploymentAnalysisType appliedDeploymentAnalysisType;
   ActivityVerificationStatus verificationStatus;
   int verificationProgressPercentage;
-  long verificationStartTimestamp;
-  long verificationEndTimestamp;
-  List<AnalysedNodeOverview> testNodes;
-  List<AnalysedNodeOverview> controlNodes;
+  Long verificationStartTimestamp;
+  Long verificationEndTimestamp;
+  AnalysedNodeOverview testNodes;
+  AnalysedNodeOverview controlNodes;
   MetricsAnalysisOverview metricsAnalysis;
-  LogsAnalysisOverview logClusters;
-  ErrorsAnalysisOverview errorClusters;
+  ClusterAnalysisOverview logClusters;
+  ClusterAnalysisOverview errorClusters;
 }

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.VERIFICATION_IDENTIFIER_KEY;
+
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 
 import javax.validation.constraints.NotBlank;
@@ -27,5 +29,5 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class VerifyStepPathParams extends ProjectPathParams {
-  @PathParam("verifyStepExecutionId") @NotNull @NotBlank String verifyStepExecutionId;
+  @PathParam(VERIFICATION_IDENTIFIER_KEY) @NotNull @NotBlank String verifyStepExecutionId;
 }

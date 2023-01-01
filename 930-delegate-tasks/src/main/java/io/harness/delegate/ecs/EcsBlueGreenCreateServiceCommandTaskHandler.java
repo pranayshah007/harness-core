@@ -73,6 +73,7 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
+      deployLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       String ecsServiceDefinitionManifestContent =
           ecsBlueGreenCreateServiceRequest.getEcsServiceDefinitionManifestContent();
       List<String> ecsScalableTargetManifestContentList =
@@ -80,6 +81,10 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
       List<String> ecsScalingPolicyManifestContentList =
           ecsBlueGreenCreateServiceRequest.getEcsScalingPolicyManifestContentList();
       String ecsTaskDefinitionManifestContent = ecsBlueGreenCreateServiceRequest.getEcsTaskDefinitionManifestContent();
+
+      ecsCommandTaskHelper.printEcsManifestsContent(ecsTaskDefinitionManifestContent,
+          ecsServiceDefinitionManifestContent, ecsScalableTargetManifestContentList,
+          ecsScalingPolicyManifestContentList, deployLogCallback);
 
       RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
           ecsCommandTaskHelper.parseYamlAsObject(
@@ -123,7 +128,7 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
               .build();
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return ecsBlueGreenCreateServiceResponse;
     } catch (Exception e) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),

@@ -172,7 +172,6 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.reflection.HarnessReflections;
@@ -577,7 +576,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     JsonExpansionInfo sloPolicyInfo =
         JsonExpansionInfo.newBuilder()
             .setExpansionType(ExpansionRequestType.LOCAL_FQN)
-            .setKey(YAMLFieldNameConstants.STAGE + YamlNode.PATH_SEP + YAMLFieldNameConstants.SPEC)
+            .setKey(YAMLFieldNameConstants.STAGE)
             .setExpansionKey(ExpansionKeysConstants.SLO_POLICY_EXPANSION_KEY)
             .setStageType(StepType.newBuilder().setType("Deployment").setStepCategory(StepCategory.STAGE).build())
             .build();

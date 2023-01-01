@@ -57,6 +57,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception/runtime/azure:module",
         "//980-commons/src/main/java/io/harness/exception/runtime/hashicorp:module",
         "//980-commons/src/main/java/io/harness/exception/runtime/serverless:module",
+        "//980-commons/src/main/java/io/harness/exception/violation:module",
         "//980-commons/src/main/java/io/harness/expression:module",
         "//980-commons/src/main/java/io/harness/expression/common:module",
         "//980-commons/src/main/java/io/harness/expression/functors:module",

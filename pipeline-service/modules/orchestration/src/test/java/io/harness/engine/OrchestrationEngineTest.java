@@ -41,6 +41,7 @@ import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -48,7 +49,6 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -230,7 +230,7 @@ public class OrchestrationEngineTest extends OrchestrationTestBase {
             .addLevels(Level.newBuilder().setRuntimeId(generateUuid()).setNodeType(PLAN_NODE.toString()).build())
             .build();
     doNothing().when(planNodeExecutionStrategy).startExecution(ambiance);
-    Map<String, ByteString> response = new HashMap<>();
+    Map<String, ResponseDataProto> response = new HashMap<>();
     orchestrationEngine.resumeNodeExecution(ambiance, response, false);
     verify(planNodeExecutionStrategy).resumeNodeExecution(eq(ambiance), eq(response), eq(false));
   }

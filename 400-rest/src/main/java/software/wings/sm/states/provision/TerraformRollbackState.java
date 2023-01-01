@@ -17,6 +17,7 @@ import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_STATE;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
+import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -39,12 +40,14 @@ import io.harness.tasks.ResponseData;
 import software.wings.api.TerraformApplyMarkerParam;
 import software.wings.api.TerraformExecutionData;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
 import software.wings.beans.infrastructure.TerraformConfig;
@@ -170,13 +173,21 @@ public class TerraformRollbackState extends TerraformProvisionState {
     }
 
     notNullCheck("TerraformConfig cannot be null", configParameter);
-    final GitConfig gitConfig = gitUtilsManager.getGitConfig(configParameter.getSourceRepoSettingId());
-    if (StringUtils.isNotEmpty(configParameter.getSourceRepoReference())) {
-      gitConfig.setReference(configParameter.getSourceRepoReference());
-      String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
-      if (isNotEmpty(branch)) {
-        gitConfig.setBranch(branch);
+
+    GitConfig gitConfig = null;
+
+    if (terraformProvisioner.getSourceType() != null
+        && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+      gitConfig = gitUtilsManager.getGitConfig(configParameter.getSourceRepoSettingId());
+      if (StringUtils.isNotEmpty(configParameter.getSourceRepoReference())) {
+        gitConfig.setReference(configParameter.getSourceRepoReference());
+        String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
+        if (isNotEmpty(branch)) {
+          gitConfig.setBranch(branch);
+        }
       }
+      gitConfigHelperService.convertToRepoGitConfig(
+          gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
     }
 
     List<NameValuePair> allVariables = configParameter.getVariables();
@@ -193,11 +204,14 @@ public class TerraformRollbackState extends TerraformProvisionState {
     Map<String, EncryptedDataDetail> encryptedBackendConfigs = null;
     String backendConfigStoreType = null;
     TfVarGitSource remoteBackendConfig = null;
+    TfVarS3Source remoteS3BackendConfig = null;
 
     if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
       backendConfigStoreType = configParameter.getBackendConfigStoreType();
       if (REMOTE_STORE_TYPE.equals(backendConfigStoreType)) {
         remoteBackendConfig = fetchRemoteConfigGitSource(context, configParameter.getRemoteBackendConfig());
+      } else if (S3_STORE_TYPE.equals(backendConfigStoreType)) {
+        remoteS3BackendConfig = fetchRemoteConfigS3Source(context, configParameter.getS3BackendFileConfig());
       }
     }
 
@@ -218,14 +232,13 @@ public class TerraformRollbackState extends TerraformProvisionState {
 
     List<String> targets = configParameter.getTargets();
     targets = resolveTargets(targets, context);
-    gitConfigHelperService.convertToRepoGitConfig(
-        gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
 
     ManagerExecutionLogCallback executionLogCallback = infrastructureProvisionerService.getManagerExecutionCallback(
         terraformProvisioner.getAppId(), activityId, commandUnit().name());
     executionLogCallback.saveExecutionLog(rollbackMessage.toString());
 
     setTfVarGitFileConfig(configParameter.getTfVarGitFileConfig());
+    setTfVarS3FileConfig(configParameter.getTfVarS3FileConfig());
     setTfVarFiles(configParameter.getTfVarFiles());
 
     String fileId =
@@ -240,6 +253,7 @@ public class TerraformRollbackState extends TerraformProvisionState {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.getSourceType())
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
@@ -251,8 +265,9 @@ public class TerraformRollbackState extends TerraformProvisionState {
             .commandUnit(TerraformCommandUnit.Rollback)
             .sourceRepoSettingId(configParameter.getSourceRepoSettingId())
             .sourceRepo(gitConfig)
-            .sourceRepoEncryptionDetails(
-                secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
+            .sourceRepoEncryptionDetails(terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)
+                    ? secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId())
+                    : null)
             .scriptPath(path)
             .variables(textVariables)
             .encryptedVariables(encryptedTextVariables)
@@ -265,6 +280,7 @@ public class TerraformRollbackState extends TerraformProvisionState {
             .targets(targets)
             .runPlanOnly(false)
             .tfVarFiles(configParameter.getTfVarFiles())
+            .remoteS3BackendConfig(remoteS3BackendConfig)
             .tfVarSource(getTfVarSource(context))
             .workspace(workspace)
             .delegateTag(configParameter.getDelegateTag())
@@ -284,6 +300,17 @@ public class TerraformRollbackState extends TerraformProvisionState {
               secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
           .awsRoleArn(configParameter.getAwsRoleArn())
           .awsRegion(configParameter.getAwsRegion());
+    }
+    if (terraformProvisioner.getSourceType() != null
+        && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
+      AwsConfig awsS3SourceBucketConfig =
+          (AwsConfig) getAwsConfigSettingAttribute(terraformProvisioner.getAwsConfigId()).getValue();
+      if (awsS3SourceBucketConfig != null) {
+        terraformProvisionParametersBuilder.configFilesAwsSourceConfig(awsS3SourceBucketConfig)
+            .configFileAWSEncryptionDetails(secretManager.getEncryptionDetails(
+                awsS3SourceBucketConfig, context.getAppId(), context.getWorkflowExecutionId()))
+            .configFilesS3URI(terraformProvisioner.getS3URI());
+      }
     }
 
     return createAndRunTask(

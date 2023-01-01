@@ -32,6 +32,7 @@ import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis.DeploymentLogAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.cdng.beans.v2.ClusterAnalysisOverview;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -362,6 +363,46 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                    .map(DeploymentLogAnalysisDTO.HostSummary::getHost)
                    .filter(host -> !DataSourceType.ERROR_TRACKING.getDisplayName().equals(host)))
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public ClusterAnalysisOverview getLogsAnalysisOverview(String accountId, String verifyStepExecutionId) {
+    return getFilteredClusterAnalysisOverview(
+        accountId, verifyStepExecutionId, DeploymentLogAnalysisFilter.builder().build());
+  }
+
+  @Override
+  public ClusterAnalysisOverview getErrorsAnalysisOverview(String accountId, String verifyStepExecutionId) {
+    DeploymentLogAnalysisFilter filter =
+        DeploymentLogAnalysisFilter.builder()
+            .hostNames(Collections.singletonList(DataSourceType.ERROR_TRACKING.getDisplayName()))
+            .build();
+    return getFilteredClusterAnalysisOverview(accountId, verifyStepExecutionId, filter);
+  }
+
+  private ClusterAnalysisOverview getFilteredClusterAnalysisOverview(
+      String accountId, String verifyStepExecutionId, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter) {
+    List<LogAnalysisClusterDTO> logAnalysisClusters =
+        getLogAnalysisResult(accountId, verifyStepExecutionId, null, deploymentLogAnalysisFilter);
+    int knownClusters = getClusterCount(logAnalysisClusters, ClusterType.KNOWN_EVENT);
+    int unknownClusters = getClusterCount(logAnalysisClusters, ClusterType.UNKNOWN_EVENT);
+    int unexpectedFrequencyClusters = getClusterCount(logAnalysisClusters, ClusterType.UNEXPECTED_FREQUENCY);
+
+    return ClusterAnalysisOverview.builder()
+        .knownClustersCount(knownClusters)
+        .unknownClustersCount(unknownClusters)
+        .unexpectedFrequencyClustersCount(unexpectedFrequencyClusters)
+        .build();
+  }
+
+  private static int getClusterCount(List<LogAnalysisClusterDTO> logAnalysisClusters, ClusterType clusterType) {
+    int count = 0;
+    for (LogAnalysisClusterDTO logAnalysisClusterDTO : logAnalysisClusters) {
+      if (clusterType == logAnalysisClusterDTO.getClusterType()) {
+        count++;
+      }
+    }
+    return count;
   }
 
   private List<LogAnalysisClusterChartDTO> getLogAnalysisClusterChartList(

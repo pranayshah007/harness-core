@@ -304,19 +304,19 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   @Override
   public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String infraRef) {
+      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String infraIdentifier) {
     InfrastructureEntity infraEntity = InfrastructureEntity.builder()
                                            .accountId(accountId)
                                            .orgIdentifier(orgIdentifier)
                                            .projectIdentifier(projectIdentifier)
                                            .envIdentifier(envRef)
-                                           .identifier(infraRef)
+                                           .identifier(infraIdentifier)
                                            .build();
     // todo: check for infra usage in pipelines
     // todo: outbox events
     Criteria criteria = getInfrastructureEqualityCriteria(infraEntity);
     Optional<InfrastructureEntity> infraEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, envRef, infraRef);
+        get(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
 
     if (infraEntityOptional.isPresent()) {
       if (infraEntityOptional.get().getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
@@ -327,7 +327,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         if (!deleteResult.wasAcknowledged() || deleteResult.getDeletedCount() != 1) {
           throw new InvalidRequestException(String.format(
               "Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
-              infraRef, envRef, projectIdentifier, orgIdentifier));
+              infraIdentifier, envRef, projectIdentifier, orgIdentifier));
         }
 
         infraEntityOptional.ifPresent(
@@ -346,7 +346,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     } else {
       throw new InvalidRequestException(
           String.format("Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] doesn't exist.",
-              infraRef, envRef, projectIdentifier, orgIdentifier));
+              infraIdentifier, envRef, projectIdentifier, orgIdentifier));
     }
   }
 

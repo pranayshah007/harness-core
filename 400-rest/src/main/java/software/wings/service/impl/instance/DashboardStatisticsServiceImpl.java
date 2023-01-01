@@ -139,6 +139,7 @@ import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -152,6 +153,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.mongodb.morphia.aggregation.AggregationPipeline;
 import org.mongodb.morphia.aggregation.Group;
@@ -401,29 +403,30 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   @Override
   @Nonnull
   public List<Instance> getAppInstancesForAccount(String accountId, long timestamp) {
-    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
-    return getInstancesForAccount(accountId, timestamp, query);
+    return getInstancesForAccount(accountId, timestamp, new ArrayList<>());
   }
 
-  private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
+  private List<Instance> getInstancesForAccount(String accountId, long timestamp, List<String> projectedFields) {
     Set<Instance> instanceSet = new HashSet<>();
-    query.field(InstanceKeys.accountId).equal(accountId);
+    Query<Instance> query = constructInstanceQueryForAccount(accountId, projectedFields);
+
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
-      Query<Instance> clonedQuery_1 = query.cloneQuery();
-      Query<Instance> clonedQuery_2 = query.cloneQuery();
-      clonedQuery_1.field(InstanceKeys.isDeleted).equal(false);
-      clonedQuery_2.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
-      FindOptions findOptions2 = wingsPersistence.analyticNodePreferenceOptions();
+
+      Query<Instance> cloneQuery = constructInstanceQueryForAccount(accountId, projectedFields);
+      cloneQuery.field(Instance.CREATED_AT_KEY)
+          .lessThanOrEq(timestamp)
+          .field(InstanceKeys.deletedAt)
+          .greaterThanOrEq(timestamp);
+      FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
       if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
-        findOptions2.modifier("$hint", "instance_index7");
+        findOptions.modifier("$hint", "instance_index7");
       }
-      instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
-      instanceSet.addAll(clonedQuery_2.asList(findOptions2));
-    } else {
-      instanceSet.addAll(
-          query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(cloneQuery.asList(findOptions));
     }
+
+    instanceSet.addAll(
+        query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
 
     int counter = instanceSet.size();
 
@@ -433,6 +436,18 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       log.info("Instances reported {}", counter);
     }
     return new ArrayList<>(instanceSet);
+  }
+
+  private Query<Instance> constructInstanceQueryForAccount(String accountId, List<String> projectedFields) {
+    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
+    if (!CollectionUtils.isEmpty(projectedFields)) {
+      for (String field : projectedFields) {
+        query.project(field, true);
+      }
+    }
+    query.field(InstanceKeys.accountId).equal(accountId);
+
+    return query;
   }
 
   private long getCreatedTimeOfInstanceAtTimestamp(
@@ -1061,9 +1076,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   @Override
   public Set<String> getDeletedAppIds(String accountId, long timestamp) {
-    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
-    query.project("appId", true);
-    List<Instance> instancesForAccount = getInstancesForAccount(accountId, timestamp, query);
+    List<Instance> instancesForAccount =
+        getInstancesForAccount(accountId, timestamp, Collections.singletonList("appId"));
     Set<String> appIdsFromInstances = instancesForAccount.stream().map(Instance::getAppId).collect(Collectors.toSet());
 
     List<Application> appsByAccountId = appService.getAppsByAccountId(accountId);

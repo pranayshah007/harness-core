@@ -58,6 +58,7 @@ public class EcsRunTaskArnCommandTaskHandler extends EcsCommandTaskNGHandler {
     LogCallback runTaskLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.runTask.toString(), true, commandUnitsProgress);
     try {
+      runTaskLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       String ecsTaskDefinition = ecsRunTaskArnRequest.getEcsTaskDefinition();
       runTaskLogCallback.saveExecutionLog(format("TaskDefinition: %s %n", ecsTaskDefinition), LogLevel.INFO);
       DescribeTaskDefinitionResponse describeTaskDefinitionResponse =

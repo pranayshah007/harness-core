@@ -33,8 +33,13 @@ This is the event when batch ingests:
     "sourceDataSetRegion": "eu",
     "connectorId": "1234",
     "sourceGcpTableName": "gcp_billing_export_v1_01E207_52C4CA_2CF8E2",
-    "triggerHistoricalCostUpdateInPreferredCurrency": "True",
-    "disableHistoricalUpdateForMonths": ['2022-12-01', '2022-11-01']
+    "triggerHistoricalCostUpdateInPreferredCurrency": "False"
+}
+
+Below is the event we send from batch for triggering historical update if required.
+{
+    "accountId": "ustest_gcp_ng",
+    "triggerHistoricalCostUpdateInPreferredCurrency": "True"
 }
 
 Below is the event when BQ Data Transfer finishes for non us regions
@@ -86,12 +91,25 @@ def main(event, context):
     jsonData = json.loads(data)
     jsonData["cloudProvider"] = "GCP"
     print(jsonData)
+    jsonData["gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME"
     if jsonData.get("dataSourceId") == "cross_region_copy":
         # Event is from BQ DT service. Ingest in gcp_cost_export, unified and preaggregated
         jsonData["datasetName"] = jsonData["destinationDatasetId"]
         get_preferred_currency(jsonData)
         fetch_acc_from_gcp_conn_info(jsonData)
         util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
+
+        # obtain/set partition column from the gcp_billing_export table to be used for all subsequent queries
+        gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+        try:
+            gcp_billing_export_bq_table = client.get_table(gcp_billing_export_bq_table_name)
+            jsonData["gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
+        except:
+            # table doesn't exist yet, use usage_start_time as partition column for new table
+            # however, for cross_region_copy, table will always exist
+            jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
+        print_(f"Partition column for gcp_billing_export table: {jsonData['gcpBillingExportTablePartitionColumnName']}")
+
         get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
         if jsonData.get("isFreshSync"):
@@ -159,8 +177,21 @@ def main(event, context):
         # trigger historical CF and exit
         trigger_historical_cost_update_in_preferred_currency(jsonData)
         return
+    elif jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") == "True":
+        # no historical costs to update since currency is not set. exit.
+        return
 
     get_impersonated_credentials(jsonData)
+
+    # obtain/set partition column from the gcp_billing_export table to be used for all subsequent queries
+    gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+    try:
+        gcp_billing_export_bq_table = client.get_table(gcp_billing_export_bq_table_name)
+        jsonData["gcpBillingExportTablePartitionColumnName"] = "_PARTITIONTIME" if gcp_billing_export_bq_table.time_partitioning.field is None else gcp_billing_export_bq_table.time_partitioning.field
+    except:
+        # table doesn't exist yet, use usage_start_time as partition column for new table
+        jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
+    print_(f"Partition column for gcp_billing_export table: {jsonData['gcpBillingExportTablePartitionColumnName']}")
 
     # Sync dataset
     jsonData["isFreshSync"] = isFreshSync(jsonData)
@@ -173,7 +204,7 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
     current_timestamp = datetime.datetime.utcnow()
     currentMonth = current_timestamp.month
     currentYear = current_timestamp.year
-    if not jsonData["disableHistoricalUpdateForMonths"]:
+    if "disableHistoricalUpdateForMonths" not in jsonData or not jsonData["disableHistoricalUpdateForMonths"]:
         jsonData["disableHistoricalUpdateForMonths"] = [f"{currentYear}-{currentMonth}-01"]
 
     # get months for which historical update needs to be triggered, and custom conversion factors
@@ -184,7 +215,7 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
                 AND cloudServiceProvider = "GCP"
                 AND month NOT IN (%s);
                 """ % (ds, CURRENCYCONVERSIONFACTORUSERINPUT, jsonData.get("accountId"),
-                       ", ".join(f"{month}" for month in jsonData["disableHistoricalUpdateForMonths"]))
+                       ", ".join(f"DATE('{month}')" for month in jsonData["disableHistoricalUpdateForMonths"]))
     print_(query)
     historical_update_months = set()
     custom_factors_dict = {}
@@ -192,7 +223,7 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
         query_job = client.query(query)
         results = query_job.result()  # wait for job to complete
         for row in results:
-            historical_update_months.add(row.month)
+            historical_update_months.add(str(row.month))
             if row.conversionType == "CUSTOM":
                 custom_factors_dict[row.sourceCurrency] = float(row.conversionFactor)
     except Exception as e:
@@ -215,6 +246,8 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
     except Exception as e:
         print_(e)
         print_("Failed to unset isHistoricalUpdateRequired flags in CURRENCYCONVERSIONFACTORUSERINPUT table", "WARN")
+        # updates on table are disallowed after streaming insert from currency APIs. retry in next run.
+        return
 
     # trigger historical update CF if required
     if list(historical_update_months):
@@ -301,7 +334,7 @@ def insert_currencies_with_unit_conversion_factors_in_bq(jsonData):
                    "BILLING_EXPORT_SRC_CCY" as conversionSource,
                    TIMESTAMP('%s') as createdAt, TIMESTAMP('%s') as updatedAt 
                    FROM `%s.%s.%s`
-                   WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY)  
+                   WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY)  
                    AND DATE(usage_start_time) >= '%s' and DATE(usage_start_time) <= '%s'
                    AND currency not in (select distinct sourceCurrency FROM `%s.CE_INTERNAL.currencyConversionFactorDefault` 
                    WHERE accountId = '%s' AND cloudServiceProvider = "GCP" AND sourceCurrency = destinationCurrency 
@@ -314,6 +347,7 @@ def insert_currencies_with_unit_conversion_factors_in_bq(jsonData):
            date_start,
            current_timestamp, current_timestamp,
            PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+           jsonData["gcpBillingExportTablePartitionColumnName"],
            str(datetime.datetime.utcnow().date().day-1),
            date_start, date_end,
            PROJECTID,
@@ -345,9 +379,10 @@ def initialize_fx_rates_dict(jsonData):
 
     query = """SELECT distinct DATE_TRUNC(DATE(usage_start_time), month) as billing_month, currency
                 FROM `%s.%s.%s` 
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY);
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+                       jsonData["gcpBillingExportTablePartitionColumnName"],
                        str(int(jsonData["interval"])+7),
                        jsonData["interval"])
     try:
@@ -482,9 +517,10 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     fx_rates_from_billing_export = []
     query = """SELECT distinct DATE_TRUNC(DATE(usage_start_time), month) as billing_month, currency, currency_conversion_rate 
                 from `%s.%s.%s` 
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY);
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+                       jsonData["gcpBillingExportTablePartitionColumnName"],
                        str(int(jsonData["interval"])+7),
                        jsonData["interval"])
     try:
@@ -653,10 +689,11 @@ def update_fx_rate_column_in_raw_table(jsonData):
 
     query = """UPDATE `%s.%s.%s` 
                 SET fxRateSrcToDest = (%s) 
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) 
                 AND currency IS NOT NULL;
                 """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"], fx_rate_case_when_query,
+                       jsonData["gcpBillingExportTablePartitionColumnName"],
                        str(int(jsonData["interval"])+7),
                        jsonData["interval"])
     try:
@@ -714,8 +751,9 @@ def isFreshSync(jsonData):
     else:
         # Only applicable for US regions
         query = """  SELECT count(*) as count from %s.%s.%s
-                   WHERE DATE(_PARTITIONTIME) >= DATE_SUB(CURRENT_DATE(), INTERVAL 10 DAY) AND usage_start_time >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY);
-                   """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+                   WHERE DATE(%s) >= DATE_SUB(CURRENT_DATE(), INTERVAL 10 DAY) AND usage_start_time >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY);
+                   """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+                          jsonData["gcpBillingExportTablePartitionColumnName"])
     print_(query)
     try:
         query_job = client.query(query)
@@ -749,7 +787,7 @@ def syncDataset(jsonData):
         job_config = bigquery.QueryJobConfig(
             destination=destination,
             write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
-            time_partitioning=bigquery.table.TimePartitioning(),
+            time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
             query_parameters=[
                 bigquery.ScalarQueryParameter(
                     "run_date",
@@ -759,14 +797,16 @@ def syncDataset(jsonData):
             ]
         )
     else:
+        # keeping this 3 days for currency customers also
+        # only tables other than gcp_billing_export require to be updated with current month currency factors
         # Sync past 3 days only. Specify columns here explicitely.
         query = """  DELETE FROM `%s` 
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
             INSERT INTO `%s` (billing_account_id,service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info)
                 SELECT billing_account_id,service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info 
                 FROM `%s.%s.%s`
                 WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
-        """ % (destination, destination,
+        """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"], destination,
                jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
 
         # Configure the query job.
@@ -920,7 +960,7 @@ def ingest_into_gcp_cost_export_table(jsonData):
            INSERT INTO `%s` (%s, fxRateSrcToDest, ccmPreferredCurrency)
                 SELECT %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency  
                 FROM `%s.%s.%s`
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND 
                 DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY);
         """ % (gcpCostExportTableTableName, jsonData["interval"], jsonData["billingAccountIds"],
                gcpCostExportTableTableName, insert_columns_query,
@@ -928,6 +968,7 @@ def ingest_into_gcp_cost_export_table(jsonData):
                ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
                (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
                PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+               jsonData["gcpBillingExportTablePartitionColumnName"],
                str(int(jsonData["interval"])+7),
                jsonData["interval"])
 
@@ -992,13 +1033,14 @@ def ingest_into_unified(jsonData):
                      location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount %s) FROM UNNEST(credits) c) as discount, labels AS labels,
                      %s as fxRateSrcToDest, %s as ccmPreferredCurrency 
                 FROM `%s.%s`
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
                      DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
         """ % ( jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
                 fx_rate_multiplier_query, fx_rate_multiplier_query,
                 ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
                 (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
-                jsonData["datasetName"], jsonData["tableName"], str(int(jsonData["interval"])+7), jsonData["interval"])
+                jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
+                str(int(jsonData["interval"])+7), jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1032,14 +1074,15 @@ def ingest_into_preaggregated(jsonData):
              location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, SUM(IFNULL((SELECT SUM(c.amount %s) FROM UNNEST(credits) c), 0)) as discount,
              %s as fxRateSrcToDest, %s as ccmPreferredCurrency 
            FROM `%s.%s`
-           WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
+           WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
              DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY)
            GROUP BY service.description, sku.id, sku.description, startTime, project.id, location.region, location.zone, billing_account_id;
         """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
                fx_rate_multiplier_query, fx_rate_multiplier_query,
                ("max(fxRateSrcToDest)" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
                (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
-               jsonData["datasetName"], jsonData["tableName"], str(int(jsonData["interval"])+7), jsonData["interval"])
+               jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
+               str(int(jsonData["interval"])+7), jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1065,8 +1108,9 @@ def get_unique_billingaccount_id(jsonData):
     # Get unique billingAccountIds from main gcp table
     print_("Getting unique billingAccountIds from %s" % jsonData["tableName"])
     query = """  SELECT DISTINCT(billing_account_id) as billing_account_id FROM `%s.%s.%s` 
-            WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY);
-            """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+            WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY);
+            """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
+                   jsonData["gcpBillingExportTablePartitionColumnName"])
     # Configure the query job.
     job_config = bigquery.QueryJobConfig(   
         query_parameters=[

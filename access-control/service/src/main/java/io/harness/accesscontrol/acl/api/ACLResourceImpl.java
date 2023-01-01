@@ -135,7 +135,7 @@ public class ACLResourceImpl implements ACLResource {
     boolean useRoleAssignments = false;
     if (accountIdentifierOptional.isPresent()) {
       useRoleAssignments =
-          featureFlagHelperService.isEnabled(FeatureName.SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
+          featureFlagHelperService.isEnabled(FeatureName.PL_SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
     }
 
     if (notPresent(principalToCheckPermissionsFor)) {
@@ -145,8 +145,8 @@ public class ACLResourceImpl implements ACLResource {
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
     List<PermissionCheckResult> permissionCheckResults = useRoleAssignments
-        ? aclService.checkAccessUsingRoleAssignments(
-            principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider)
+        ? aclService.checkAccessUsingRoleAssignments(accountIdentifierOptional.get(), principalToCheckPermissionsFor,
+            permissionChecks, resourceAttributeProvider)
         : aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
 
     AccessCheckResponseDTO accessCheckResponseDTO =

@@ -18,6 +18,6 @@ import lombok.experimental.SuperBuilder;
 public class VerificationSpec {
   VerificationJobType analysisType;
   Sensitivity sensitivity;
-  int durationInMinutes;
+  long durationInMinutes;
   Boolean isFailOnNoAnalysis;
 }

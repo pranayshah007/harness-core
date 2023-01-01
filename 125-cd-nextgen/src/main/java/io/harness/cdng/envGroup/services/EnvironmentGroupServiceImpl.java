@@ -13,6 +13,7 @@ import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLI
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.EntityType;
@@ -274,33 +275,26 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   }
 
   private Criteria getCriteriaToReturnAllAccessibleEnvGroups(String orgIdentifier, String projectIdentifier) {
-    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
-      return new Criteria().orOperator(Criteria.where(EnvironmentGroupKeys.projectIdentifier)
-                                           .is(projectIdentifier)
-                                           .and(EnvironmentGroupKeys.orgIdentifier)
-                                           .is(orgIdentifier),
-          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
-              .is(orgIdentifier)
-              .and(EnvironmentGroupKeys.projectIdentifier)
-              .is(null),
-          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
-              .is(null)
-              .and(EnvironmentGroupKeys.projectIdentifier)
-              .is(null));
-    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
-      return new Criteria().orOperator(Criteria.where(EnvironmentGroupKeys.orgIdentifier)
-                                           .is(orgIdentifier)
-                                           .and(EnvironmentGroupKeys.projectIdentifier)
-                                           .is(null),
-          Criteria.where(EnvironmentGroupKeys.orgIdentifier)
-              .is(null)
-              .and(EnvironmentGroupKeys.projectIdentifier)
-              .is(null));
+    Criteria criteria = new Criteria();
+    Criteria accountCriteria = Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+                                   .is(null)
+                                   .and(EnvironmentGroupKeys.projectIdentifier)
+                                   .is(null);
+    Criteria orgCriteria = Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+                               .is(orgIdentifier)
+                               .and(EnvironmentGroupKeys.projectIdentifier)
+                               .is(null);
+    Criteria projectCriteria = Criteria.where(EnvironmentGroupKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(EnvironmentGroupKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      return criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      return criteria.orOperator(orgCriteria, accountCriteria);
     } else {
-      return Criteria.where(EnvironmentGroupKeys.orgIdentifier)
-          .is(null)
-          .and(EnvironmentGroupKeys.projectIdentifier)
-          .is(null);
+      return criteria.orOperator(accountCriteria);
     }
   }
 

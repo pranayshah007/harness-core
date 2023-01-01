@@ -17,6 +17,7 @@ import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.url.HarnessUrl;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.communication.entities.CommunicationMedium;
 import io.harness.ccm.currency.Currency;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
@@ -226,7 +227,8 @@ public class SlackMessageGenerator {
     templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
         + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*";
 
-    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomaly, currency));
+    templateString =
+        " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomaly, currency, CommunicationMedium.SLACK));
     templateString = replace(templateString, AnomalyUtility.getURLMap(anomaly, mainConfiguration.getBaseUrl()));
     return SectionBlock.builder().text(MarkdownTextObject.builder().text(templateString).build()).build();
   }
@@ -247,7 +249,8 @@ public class SlackMessageGenerator {
     templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
         + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
-    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency));
+    templateString = " *`"
+        + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency, CommunicationMedium.SLACK));
     templateString = replace(templateString,
         AnomalyUtility.getNgURLMap(accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));
     return templateString;

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cvng;
+
 import static io.harness.cvng.CVConstants.SERVICE_BASE_URL;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
@@ -18,6 +19,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.notification.config.ErrorTrackingClientConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
@@ -67,7 +69,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.model.Resource;
 import org.reflections.Reflections;
 
 @Data
@@ -146,7 +147,7 @@ public class VerificationConfiguration extends Configuration {
       if (!resource.getPackage().getName().endsWith("resources")) {
         throw new IllegalStateException("Resource classes should be in resources package." + resource);
       }
-      if (Resource.isAcceptable(resource)) {
+      if (resource.isInterface() || EmptyPredicate.isEmpty(resource.getInterfaces())) {
         resourcePackages.add(resource.getPackage().getName());
       }
     });

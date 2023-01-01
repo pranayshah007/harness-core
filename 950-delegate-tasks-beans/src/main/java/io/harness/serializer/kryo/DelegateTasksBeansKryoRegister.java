@@ -909,6 +909,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsElbConfig;
@@ -2162,7 +2163,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
 
-    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
 
@@ -2174,10 +2174,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
+    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntCommandType.class, 573568);
     kryo.register(TerragruntApplyTaskParameters.class, 573569);
     kryo.register(TerragruntDestroyTaskParameters.class, 573570);
     kryo.register(EcsRunTaskArnRequest.class, 573583);
+    kryo.register(TfVarS3Source.class, 573593);
     kryo.register(ConcurrentHashMap.class, 673567);
   }
 }

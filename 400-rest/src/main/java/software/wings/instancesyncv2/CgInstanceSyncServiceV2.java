@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -216,15 +215,15 @@ public class CgInstanceSyncServiceV2 {
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
-    log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
-    result.getInstanceDataList().forEach(instanceSyncData -> {
-      log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
-          instanceSyncData.getTaskDetailsId(),
-          instanceSyncData.getInstanceDataList()
-              .parallelStream()
-              .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
-              .collect(Collectors.toList()));
-    });
+    /*    log.info("Got the result. Starting to process. Perpetual Task Id: [{}]", perpetualTaskId);
+        result.getInstanceDataList().forEach(instanceSyncData -> {
+          log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
+              instanceSyncData.getTaskDetailsId(),
+              instanceSyncData.getInstanceDataList()
+                  .parallelStream()
+                  .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
+                  .collect(Collectors.toList()));
+        });*/
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
       log.error(
@@ -244,11 +243,11 @@ public class CgInstanceSyncServiceV2 {
         instancesPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
       }
 
-      instancesPerTask.get(instanceSyncData.getTaskDetailsId())
-          .addAll(instanceSyncData.getInstanceDataList()
-                      .parallelStream()
-                      .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
-                      .collect(Collectors.toList()));
+      /*      instancesPerTask.get(instanceSyncData.getTaskDetailsId())
+                .addAll(instanceSyncData.getInstanceDataList()
+                            .parallelStream()
+                            .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
+                            .collect(Collectors.toList()));*/
     }
 
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();

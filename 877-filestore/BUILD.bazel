@@ -14,6 +14,8 @@ java_library(
     deps = [
         "//:lombok",
         "//878-ng-common-utilities:module",
+        "//945-account-mgmt:module",
+        "//950-ng-project-n-orgs:module",
         "//958-ng-file-service-sdk:module",
         "//clients/audit:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
@@ -42,6 +44,8 @@ java_library(
         ":module",
         "//:lombok",
         "//878-ng-common-utilities:module",
+        "//945-account-mgmt:module",
+        "//950-ng-project-n-orgs:module",
         "//958-ng-file-service-sdk:module",
         "//990-commons-test:module",
         "//clients/audit:module",

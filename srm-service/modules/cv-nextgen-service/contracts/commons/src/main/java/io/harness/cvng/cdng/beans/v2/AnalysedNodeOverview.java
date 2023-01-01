@@ -15,5 +15,5 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class AnalysedNodeOverview {
   AnalysedNodeType nodeType;
-  List<AnalysedNode> nodes;
+  List<AbstractAnalysedNode> nodes;
 }

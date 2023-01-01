@@ -1292,7 +1292,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         projectParams, monitoredService.getIdentifier(), enable);
     if (enable
         && featureFlagService.isFeatureFlagEnabled(
-            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_SLO_DISABLE_ENABLE)) {
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_SLO_TOGGLE)) {
       entityDisabledTimeService.save(EntityDisableTime.builder()
                                          .entityUUID(monitoredService.getUuid())
                                          .accountId(monitoredService.getAccountId())

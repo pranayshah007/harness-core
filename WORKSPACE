@@ -4955,7 +4955,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.3",
+    "io.harness:ff-java-server-sdk:1.1.9",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5596,15 +5596,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.0.0.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.1.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.0.0.Final",
-        "io.debezium:debezium-connector-mongodb:2.0.0.Final",
-        "io.debezium:debezium-core:2.0.0.Final",
+        "io.debezium:debezium-api:2.1.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.1.1.Final",
+        "io.debezium:debezium-core:2.1.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5612,7 +5612,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.0.0.Final",
+            version = "2.1.1.Final",
         ),
     ],
     repositories = [

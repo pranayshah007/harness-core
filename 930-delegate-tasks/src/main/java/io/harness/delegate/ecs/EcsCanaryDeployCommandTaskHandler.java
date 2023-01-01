@@ -68,12 +68,17 @@ public class EcsCanaryDeployCommandTaskHandler extends EcsCommandTaskNGHandler {
     LogCallback deployLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
+      deployLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       String ecsTaskDefinitionManifestContent = ecsCanaryDeployRequest.getEcsTaskDefinitionManifestContent();
       String ecsServiceDefinitionManifestContent = ecsCanaryDeployRequest.getEcsServiceDefinitionManifestContent();
       List<String> ecsScalableTargetManifestContentList =
           ecsCanaryDeployRequest.getEcsScalableTargetManifestContentList();
       List<String> ecsScalingPolicyManifestContentList =
           ecsCanaryDeployRequest.getEcsScalingPolicyManifestContentList();
+
+      ecsCommandTaskHelper.printEcsManifestsContent(ecsTaskDefinitionManifestContent,
+          ecsServiceDefinitionManifestContent, ecsScalableTargetManifestContentList,
+          ecsScalingPolicyManifestContentList, deployLogCallback);
 
       RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
           ecsCommandTaskHelper.parseYamlAsObject(
@@ -123,6 +128,7 @@ public class EcsCanaryDeployCommandTaskHandler extends EcsCommandTaskNGHandler {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return EcsCanaryDeployResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .ecsCanaryDeployResult(ecsCanaryDeployResult)

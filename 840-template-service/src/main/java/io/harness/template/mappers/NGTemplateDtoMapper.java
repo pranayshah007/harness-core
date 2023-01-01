@@ -25,7 +25,6 @@ import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
-import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateListType;
@@ -199,9 +198,7 @@ public class NGTemplateDtoMapper {
         .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
         .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
-        .childType(templateConfig.getTemplateInfoConfig().getSpec() != null
-                ? JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type")
-                : null)
+        .childType(templateConfig.getTemplateInfoConfig().fetchChildType())
         .build();
   }
 
@@ -273,7 +270,7 @@ public class NGTemplateDtoMapper {
 
   public TemplateEntity toTemplateEntity(String accountId, String templateYaml) {
     try {
-      NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
       return toTemplateEntityResponse(accountId, templateConfig.getTemplateInfoConfig().getOrgIdentifier(),
           templateConfig.getTemplateInfoConfig().getProjectIdentifier(), templateConfig, templateYaml);
     } catch (IOException e) {
@@ -283,7 +280,7 @@ public class NGTemplateDtoMapper {
 
   public TemplateEntity toTemplateEntity(String accountId, String orgId, String projectId, String templateYaml) {
     try {
-      NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
       return toTemplateEntityResponse(accountId, orgId, projectId, templateConfig, templateYaml);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
@@ -293,7 +290,7 @@ public class NGTemplateDtoMapper {
   public TemplateEntity toTemplateEntity(String accountId, String orgId, String projectId, String templateIdentifier,
       String versionLabel, String templateYaml) {
     try {
-      NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
       validateTemplateYaml(templateConfig, orgId, projectId, templateIdentifier, versionLabel);
       return toTemplateEntityResponse(accountId, orgId, projectId, templateConfig, templateYaml);
     } catch (IOException e) {
@@ -301,9 +298,18 @@ public class NGTemplateDtoMapper {
     }
   }
 
+  private NGTemplateConfig getTemplateConfigOrThrow(String templateYaml) throws IOException {
+    NGTemplateConfig config = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+    if (config.getTemplateInfoConfig() == null) {
+      throw new InvalidRequestException(
+          "The provided template yaml does not contain the \"template\" keyword at the root level");
+    }
+    return config;
+  }
+
   public NGTemplateConfig toDTO(String yaml) {
     try {
-      return YamlPipelineUtils.read(yaml, NGTemplateConfig.class);
+      return getTemplateConfigOrThrow(yaml);
     } catch (IOException ex) {
       throw new InvalidRequestException("Cannot create template yaml: " + ex.getMessage(), ex);
     }
@@ -355,7 +361,8 @@ public class NGTemplateDtoMapper {
     if (iconWithFormat == null || iconWithFormat.length() == 0) {
       return;
     }
-    String format, icon;
+    String format;
+    String icon;
     try {
       String[] strings = iconWithFormat.split(",");
       format = strings[0];

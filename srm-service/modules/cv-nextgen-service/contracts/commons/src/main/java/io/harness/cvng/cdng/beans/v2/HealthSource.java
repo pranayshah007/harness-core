@@ -17,6 +17,6 @@ import lombok.experimental.SuperBuilder;
 public class HealthSource {
   String healthSourceIdentifier;
   String healthSourceName;
-  String providerName;
-  DataSourceType providerType;
+  DataSourceType providerName;
+  ProviderType providerType;
 }

@@ -124,20 +124,17 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
 
   private void setMetricPackFromQueryDefinition(MetricPack metricPack, QueryDefinition queryDefinition) {
     TimeSeriesMetricType metricType = queryDefinition.getRiskProfile().getMetricType();
-    metricInfos.add(
-        NextGenMetricInfo.builder()
-            .metricName(queryDefinition.getName())
-            .metricType(metricType)
-            .query(queryDefinition.getQuery())
-            .queryParams(QueryParams.builder()
-                             .serviceInstanceField(queryDefinition.getQueryParams().getServiceInstanceField())
-                             .build())
-            .identifier(queryDefinition.getIdentifier())
-            .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
-            .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))
-            .deploymentVerification(
-                DevelopmentVerificationTransformer.transformQueryDefinitiontoEntity(queryDefinition))
-            .build());
+    metricInfos.add(NextGenMetricInfo.builder()
+                        .metricName(queryDefinition.getName())
+                        .metricType(metricType)
+                        .query(queryDefinition.getQuery())
+                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
+                        .identifier(queryDefinition.getIdentifier())
+                        .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
+                        .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))
+                        .deploymentVerification(
+                            DevelopmentVerificationTransformer.transformQueryDefinitiontoEntity(queryDefinition))
+                        .build());
     Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
         queryDefinition.getName(), metricType, queryDefinition.getRiskProfile().getThresholdTypes());
     metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
@@ -210,9 +207,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                       .identifier(queryDefinition.getIdentifier())
                       .metricName(queryDefinition.getName())
                       .query(queryDefinition.getQuery())
-                      .queryParams(QueryParams.builder()
-                                       .serviceInstanceField(queryDefinition.getQueryParams().getServiceInstanceField())
-                                       .build())
+                      .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                       .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                       .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                       .deploymentVerification(

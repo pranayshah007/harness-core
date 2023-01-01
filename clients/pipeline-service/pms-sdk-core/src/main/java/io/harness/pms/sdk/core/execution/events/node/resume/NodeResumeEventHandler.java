@@ -41,6 +41,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   @Inject private EngineObtainmentHelper engineObtainmentHelper;
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   protected String getMetricPrefix(NodeResumeEvent message) {
@@ -76,9 +78,19 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   protected void handleEventWithContext(NodeResumeEvent event) {
     ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
     Map<String, ResponseData> response = new HashMap<>();
+    // Todo: Remove this after the deployment in first jan 23
     if (EmptyPredicate.isNotEmpty(event.getResponseMap())) {
       event.getResponseMap().forEach(
           (k, v) -> response.put(k, (ResponseData) kryoSerializer.asInflatedObject(v.toByteArray())));
+    }
+    if (EmptyPredicate.isNotEmpty(event.getResponseDataMap())) {
+      event.getResponseDataMap().forEach((k, v) -> {
+        if (v.getUsingKryoWithoutReference()) {
+          response.put(k, (ResponseData) referenceFalseKryoSerializer.asInflatedObject(v.getResponse().toByteArray()));
+        } else {
+          response.put(k, (ResponseData) kryoSerializer.asInflatedObject(v.getResponse().toByteArray()));
+        }
+      });
     }
 
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance());

@@ -518,7 +518,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     return getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
   }
 
-  @org.jetbrains.annotations.NotNull
   private List<ServiceEntity> getScopedServiceEntities(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceRefs) {
     List<ServiceEntity> entities = new ArrayList<>();

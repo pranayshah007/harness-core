@@ -33,7 +33,7 @@ cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh 
 cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
 
 cp -R ../../srm-service/build/container/scripts/ .
-cp ../../srm-service-protocol.info .
+cp ../../protocol.info .
 
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt

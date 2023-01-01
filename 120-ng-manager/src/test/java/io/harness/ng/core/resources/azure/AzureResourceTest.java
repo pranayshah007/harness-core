@@ -9,6 +9,7 @@ package io.harness.ng.core.resources.azure;
 
 import static io.harness.ng.core.Status.SUCCESS;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -116,6 +117,19 @@ public class AzureResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void getAppServiceNamesV2Test() {
+    when(azureResourceService.getWebAppNames(
+             eq(identifierRef), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER), eq(SUBSCRIPTION_ID), eq(RESOURCE_GROUP)))
+        .thenReturn(AzureWebAppNamesDTO.builder().webAppNames(Arrays.asList("name")).build());
+    ResponseDTO<AzureWebAppNamesDTO> result = azureResource.getAppServiceNamesV2(CONNECTOR_REF, ACCOUNT_IDENTIFIER,
+        ORG_IDENTIFIER, PROJECT_IDENTIFIER, SUBSCRIPTION_ID, RESOURCE_GROUP, ENV_ID, INFRA_DEFINITION_ID);
+    assertThat(result.getStatus()).isEqualTo(SUCCESS);
+    assertThat(result.getData().getWebAppNames().get(0)).isEqualTo("name");
+  }
+
+  @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void getAppServiceDeploymentSlotNamesTest() {
@@ -126,6 +140,22 @@ public class AzureResourceTest extends CategoryTest {
                         .build());
     ResponseDTO<AzureDeploymentSlotsDTO> result = azureResource.getAppServiceDeploymentSlotNames(CONNECTOR_REF,
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SUBSCRIPTION_ID, RESOURCE_GROUP, "webApp");
+    assertThat(result.getStatus()).isEqualTo(SUCCESS);
+    assertThat(result.getData().getDeploymentSlots().get(0).getName()).isEqualTo("name");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void getAppServiceDeploymentSlotNamesV2Test() {
+    when(azureResourceService.getAppServiceDeploymentSlots(eq(identifierRef), eq(ORG_IDENTIFIER),
+             eq(PROJECT_IDENTIFIER), eq(SUBSCRIPTION_ID), eq(RESOURCE_GROUP), anyString()))
+        .thenReturn(AzureDeploymentSlotsDTO.builder()
+                        .deploymentSlots(Arrays.asList(AzureDeploymentSlotDTO.builder().name("name").build()))
+                        .build());
+    ResponseDTO<AzureDeploymentSlotsDTO> result =
+        azureResource.getAppServiceDeploymentSlotNamesV2(CONNECTOR_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, SUBSCRIPTION_ID, RESOURCE_GROUP, ENV_ID, INFRA_DEFINITION_ID, "webApp");
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
     assertThat(result.getData().getDeploymentSlots().get(0).getName()).isEqualTo("name");
   }

@@ -23,6 +23,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.KmsConfig;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.dto.SettingAttribute;
 
 import java.util.stream.Collectors;
@@ -111,6 +112,7 @@ public class TerraformProvisionParametersTest extends WingsBaseTest {
       String repoUrl, SettingAttribute sshSettingAttribute, SecretManagerConfig secretManagerConfig) {
     return TerraformProvisionParameters.builder()
         .sourceRepo(GitConfig.builder().repoUrl(repoUrl).sshSettingAttribute(sshSettingAttribute).build())
+        .sourceType(TerraformSourceType.GIT)
         .secretManagerConfig(secretManagerConfig)
         .isGitHostConnectivityCheck(isGitHostConnectivityCheck)
         .build();

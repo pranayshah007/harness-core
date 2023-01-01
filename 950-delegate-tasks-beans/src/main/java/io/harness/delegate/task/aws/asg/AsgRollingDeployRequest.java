@@ -34,6 +34,6 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) boolean skipMatching;
   @NonFinal @Expression(ALLOW_SECRETS) boolean useAlreadyRunningInstances;
   @NonFinal @Expression(ALLOW_SECRETS) Integer instanceWarmup;
-  @NonFinal @Expression(ALLOW_SECRETS) Double minimumHealthyPercentage;
+  @NonFinal @Expression(ALLOW_SECRETS) Integer minimumHealthyPercentage;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 }

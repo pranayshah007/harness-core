@@ -122,6 +122,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
@@ -497,6 +498,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                                   .repoUrl("https://github.com/testtp")
                                                                   .sshSettingAttribute(sshSettingAttribute.toDTO())
                                                                   .build())
+                                                  .sourceType(TerraformSourceType.GIT)
                                                   .secretManagerConfig(null)
                                                   .isGitHostConnectivityCheck(true)
                                                   .build();

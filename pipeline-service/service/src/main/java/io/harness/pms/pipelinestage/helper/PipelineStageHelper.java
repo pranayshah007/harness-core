@@ -142,19 +142,19 @@ public class PipelineStageHelper {
 
   public PipelineExecutionDetailDTO getResponseDTOWithChildGraph(String accountId, String childStageNodeId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
-      NodeExecution nodeExecution) {
+      NodeExecution nodeExecution, String stageNodeExecutionId) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
     PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
     String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
     String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
-    return getExecutionDetailDTO(
-        accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, childExecutionId, orgId, projectId);
+    return getExecutionDetailDTO(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
+        childExecutionId, orgId, projectId, stageNodeExecutionId);
   }
 
   private PipelineExecutionDetailDTO getExecutionDetailDTO(String accountId, String childStageNodeId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childExecutionId,
-      String orgId, String projectId) {
+      String orgId, String projectId, String stageNodeExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
@@ -176,13 +176,14 @@ public class PipelineStageHelper {
         PipelineExecutionDetailDTO.builder().pipelineExecutionSummary(
             PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails));
 
-    ChildExecutionDetailDTO childGraph =
-        getChildGraph(childStageNodeId, childExecutionId, executionSummaryEntityForChild, entityGitDetailsForChild);
+    ChildExecutionDetailDTO childGraph = getChildGraph(childStageNodeId, childExecutionId,
+        executionSummaryEntityForChild, entityGitDetailsForChild, stageNodeExecutionId);
     return pipelineStageGraphBuilder.childGraph(childGraph).build();
   }
 
   private ChildExecutionDetailDTO getChildGraph(String childStageNodeId, String childExecutionId,
-      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild) {
+      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild,
+      String stageNodeExecutionId) {
     // Top graph for child execution
     ChildExecutionDetailDTOBuilder childGraphBuilder = ChildExecutionDetailDTO.builder().pipelineExecutionSummary(
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetailsForChild));
@@ -190,7 +191,7 @@ public class PipelineStageHelper {
     // if child stage node id is not null, add bottom graph for child execution
     if (childStageNodeId != null) {
       childGraphBuilder.executionGraph(ExecutionGraphMapper.toExecutionGraph(
-          pmsExecutionService.getOrchestrationGraph(childStageNodeId, childExecutionId, null),
+          pmsExecutionService.getOrchestrationGraph(childStageNodeId, childExecutionId, stageNodeExecutionId),
           executionSummaryEntityForChild));
     }
     return childGraphBuilder.build();

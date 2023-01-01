@@ -158,17 +158,27 @@ public class MultiDeploymentSpawnerUtils {
           return;
         }
         if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
-          throw new InvalidRequestException(
-              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
-                      + " at least one value of environment",
-                  environmentYamlV2.getEnvironmentRef()));
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
         }
         if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()
             && isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
-          throw new InvalidRequestException(
-              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
-                      + " at least one value of environment",
-                  environmentYamlV2.getEnvironmentRef()));
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
         }
       }
     }

@@ -210,7 +210,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
                                          .asList();
     assertThat(tasks.size()).isEqualTo(1);
     LogClusterLearningEngineTask testLogClusterLearningEngineTask = (LogClusterLearningEngineTask) tasks.get(0);
-    assertThat(testLogClusterLearningEngineTask.getTestDataUrl()).isNull();
+    assertThat(testLogClusterLearningEngineTask.getTestDataUrl()).isNotEmpty();
     assertThat(testLogClusterLearningEngineTask.getVerificationTaskId()).isEqualTo(verificationTaskId);
   }
   @Test

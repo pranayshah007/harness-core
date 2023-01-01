@@ -2896,6 +2896,13 @@ public class K8sTaskHelperBase {
     } catch (KubernetesValuesException exception) {
       String message = exception.getParams().get("reason").toString();
       logCallback.saveExecutionLog(message, ERROR);
+      if (isNotEmpty(message) && message.contains(KubernetesExceptionExplanation.EXPECTED_BLOCK_END)) {
+        throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_VALUES_YAML,
+            KubernetesExceptionExplanation.INVALID_VALUES_YAML,
+            NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.BASE_64_ENCODED_CHECK,
+                KubernetesExceptionExplanation.EXPECTED_BLOCK_END,
+                new KubernetesValuesException(message, exception.getCause())));
+      }
       throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_VALUES_YAML,
           KubernetesExceptionExplanation.INVALID_VALUES_YAML,
           new KubernetesValuesException(message, exception.getCause()));
@@ -3106,8 +3113,12 @@ public class K8sTaskHelperBase {
         }
 
         createDirectoryIfDoesNotExist(parent.toString());
-        FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
-        executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+        if (isNotEmpty(manifestFile.getFileContent())) {
+          FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
+          executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+        } else {
+          executionLogCallback.saveExecutionLog(color(format("- %s is empty", manifestFile.getFilePath()), Yellow));
+        }
       }
       executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
       return true;

@@ -9,8 +9,13 @@ package software.wings.delegatetasks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.provision.TerraformConstants.BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
+import static io.harness.provision.TerraformConstants.TF_BACKEND_CONFIG_DIR;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_KEY;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -67,13 +72,17 @@ import io.harness.terraform.beans.TerraformVersion;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.TerraformExecutionData;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.KmsConfig;
+import software.wings.beans.S3FileConfig;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
@@ -81,6 +90,7 @@ import software.wings.utils.WingsTestConstants;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
@@ -89,6 +99,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -124,6 +135,8 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   @Mock private AwsHelperService awsHelperService;
   @Mock private TerraformClient terraformClient;
   @InjectMocks private TerraformBaseHelperImpl terraformBaseHelper;
+
+  @Mock private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   private static final String GIT_BRANCH = "test/git_branch";
   private static final String GIT_REPO_DIRECTORY = "repository/terraformTest";
@@ -172,6 +185,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     on(terraformProvisionTask).set("awsHelperService", awsHelperService);
     on(terraformProvisionTask).set("terraformBaseHelper", spyTerraformBaseHelperImpl);
     on(terraformProvisionTask).set("terraformClient", terraformClient);
+    on(terraformProvisionTask).set("awsS3HelperServiceDelegate", awsS3HelperServiceDelegate);
 
     gitConfig = GitConfig.builder().branch(GIT_BRANCH).build();
     gitConfig.setReference(COMMIT_REFERENCE);
@@ -411,6 +425,13 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         GIT_REPO_DIRECTORY.concat("/scriptPath/terraform-" + ENTITY_ID.hashCode() + ".tfvars"), new byte[] {});
   }
 
+  private void setupForS3Apply() throws IOException {
+    FileIo.createDirectoryIfDoesNotExist(GIT_REPO_DIRECTORY.concat("/scriptPath"));
+    FileIo.writeFile(GIT_REPO_DIRECTORY.concat("/scriptPath/backend_configs-" + ENTITY_ID.hashCode()), new byte[] {});
+    FileIo.writeFile(
+        GIT_REPO_DIRECTORY.concat("/scriptPath/terraform-" + ENTITY_ID.hashCode() + ".tfvars"), new byte[] {});
+  }
+
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
@@ -629,6 +650,123 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
     FileIo.deleteDirectoryAndItsContentIfExists(GIT_REPO_DIRECTORY);
     FileIo.deleteDirectoryAndItsContentIfExists("./terraform-working-dir");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testRunApplyWithS3Details() throws IOException, TimeoutException, InterruptedException {
+    setupForApply();
+    String awsConfigID = "AWS_CONFIG_ID";
+    String varFileURI = "s3://iis-website-quickstart/terraform-manifest/variableOutputScript/tfvar/script.tfvars";
+    TfVarS3Source remoteS3BackendConfig = null;
+    TfVarS3Source tfVarS3Source;
+    S3FileConfig tfVarsS3FileConfig =
+        S3FileConfig.builder().s3URI(varFileURI).awsConfigId(awsConfigID).s3URIList(List.of(varFileURI)).build();
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .accountId("ACCT_ID")
+                              .accessKey("accessKeyId".toCharArray())
+                              .secretKey("secretAccessKey".toCharArray())
+                              .defaultRegion("us-east-1")
+                              .build();
+    List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
+    tfVarS3Source = TfVarS3Source.builder()
+                        .s3FileConfig(tfVarsS3FileConfig)
+                        .awsConfig(awsConfig)
+                        .encryptedDataDetails(awsConfigEncryptionDetails)
+                        .build();
+
+    String s3SourceURI = "s3://iis-website-quickstart/terraform-manifest/variablesAndNullResources/";
+
+    String baseDir = terraformBaseHelper.resolveBaseDir("ACCOUNT_ID", "HASH_CODE");
+    doReturn(null).when(mockEncryptionService).decrypt(awsConfig, awsConfigEncryptionDetails, false);
+    doReturn(true).when(awsS3HelperServiceDelegate).downloadS3Directory(any(), any(), any());
+
+    TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
+        getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
+            false, false, null, null, null, null, false, true)
+            .remoteS3BackendConfig(remoteS3BackendConfig)
+            .sourceType(TerraformSourceType.S3)
+            .configFilesS3URI(s3SourceURI)
+            .configFilesAwsSourceConfig(awsConfig)
+            .configFileAWSEncryptionDetails(awsConfigEncryptionDetails)
+            .tfVarSource(tfVarS3Source)
+            .encryptedBackendConfigs(null)
+            .awsConfigEncryptionDetails(awsConfigEncryptionDetails);
+    TerraformProvisionParameters parameters = terraformProvisionParametersBuilder.build();
+    TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(parameters);
+
+    assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    Mockito.verify(terraformProvisionTaskSpy, atLeastOnce()).executeShellCommand(any(), any(), any(), any(), any());
+    Mockito.verify(awsS3HelperServiceDelegate, atLeastOnce()).downloadS3Directory(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testS3FetchBackendConfig() {
+    String s3Uri = "s3://iis-website-quickstart/remote-backend/s3-backend.tf";
+    AmazonS3URI amazonS3URI = new AmazonS3URI(s3Uri);
+    String dir = Paths.get("./terraform-working-dir/", TF_BACKEND_CONFIG_DIR).toString();
+    String awsConfigId = "BACKEND_CONFIG_AWS_CONFIG_ID";
+    S3FileConfig s3FileConfig =
+        S3FileConfig.builder().s3URI(s3Uri).s3URIList(List.of(s3Uri)).awsConfigId(awsConfigId).build();
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+    TfVarS3Source s3BackendConfig = TfVarS3Source.builder()
+                                        .s3FileConfig(s3FileConfig)
+                                        .awsConfig(awsConfig)
+                                        .encryptedDataDetails(encryptedRecordDataList)
+                                        .build();
+
+    TerraformProvisionParameters terraformProvisionParameters =
+        TerraformProvisionParameters.builder().remoteS3BackendConfig(s3BackendConfig).build();
+
+    terraformProvisionTaskSpy.fetchS3Files(terraformProvisionParameters, dir, logCallback, BACKEND_CONFIG_KEY);
+
+    Mockito.verify(mockEncryptionService, times(1))
+        .decrypt(terraformProvisionParameters.getRemoteS3BackendConfig().getAwsConfig(),
+            terraformProvisionParameters.getRemoteS3BackendConfig().getEncryptedDataDetails(), false);
+    Mockito.verify(awsS3HelperServiceDelegate, times(1))
+        .downloadObjectFromS3(s3BackendConfig.getAwsConfig(), encryptedRecordDataList, amazonS3URI.getBucket(),
+            amazonS3URI.getKey(), new File(dir + "/" + amazonS3URI.getKey()));
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testS3FetchTfVarFiles() {
+    String file1 = "s3://iis-website-quickstart/terraform-manifest/variableOutputScript/tfvar/script.tfvars";
+    String file2 = "s3://iis-website-quickstart/terraform-manifest/variableOutputScript/tfvar/script2.tfvars";
+    String awsConfigId = "BACKEND_CONFIG_AWS_CONFIG_ID";
+    AmazonS3URI amazonS3URI = new AmazonS3URI(file1);
+
+    S3FileConfig s3FileConfig = S3FileConfig.builder()
+                                    .s3URI(file1 + "," + file2)
+                                    .s3URIList(List.of(file1, file2))
+                                    .awsConfigId(awsConfigId)
+                                    .build();
+
+    String dir = Paths.get("./terraform-working-dir/", TF_VAR_FILES_DIR).toString();
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+    TfVarS3Source s3VarSource = TfVarS3Source.builder()
+                                    .s3FileConfig(s3FileConfig)
+                                    .awsConfig(awsConfig)
+                                    .encryptedDataDetails(encryptedRecordDataList)
+                                    .build();
+
+    TerraformProvisionParameters terraformProvisionParameters =
+        TerraformProvisionParameters.builder().tfVarSource(s3VarSource).build();
+
+    terraformProvisionTaskSpy.fetchS3Files(terraformProvisionParameters, dir, logCallback, TF_VAR_FILES_KEY);
+
+    Mockito.verify(mockEncryptionService, atLeastOnce())
+        .decrypt(s3VarSource.getAwsConfig(), s3VarSource.getEncryptedDataDetails(), false);
+
+    Mockito.verify(awsS3HelperServiceDelegate, atLeastOnce())
+        .downloadObjectFromS3(s3VarSource.getAwsConfig(), null, amazonS3URI.getBucket(), amazonS3URI.getKey(),
+            new File(dir + "/" + amazonS3URI.getKey()));
   }
 
   /**

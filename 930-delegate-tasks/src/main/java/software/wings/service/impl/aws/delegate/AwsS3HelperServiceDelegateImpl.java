@@ -36,6 +36,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -164,20 +165,35 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     return null;
   }
 
+  public void downloadObjectFromS3(
+      AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String key, File file) {
+    try {
+      encryptionService.decrypt(awsConfig, encryptionDetails, false);
+      tracker.trackS3Call("Download Object");
+      getAmazonS3Client(getBucketRegion(awsConfig, encryptionDetails, bucketName), awsConfig)
+          .getObject(new GetObjectRequest(bucketName, key), file);
+    } catch (AmazonServiceException amazonServiceException) {
+      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      awsApiHelperService.handleAmazonClientException(amazonClientException);
+    }
+  }
+
   /***
    *
    * @param awsConfig
-   * @param bucketName
-   * @param key
+   * @param s3URI
    * @param destinationDirectory
    * @return
    */
   @Override
-  public boolean downloadS3Directory(AwsConfig awsConfig, String bucketName, String key, File destinationDirectory)
+  public boolean downloadS3Directory(AwsConfig awsConfig, String s3URI, File destinationDirectory)
       throws InterruptedException {
+    AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
     TransferManager transferManager =
         TransferManagerBuilder.standard().withS3Client(getAmazonS3Client(awsConfig)).build();
-    MultipleFileDownload download = transferManager.downloadDirectory(bucketName, key, destinationDirectory);
+    MultipleFileDownload download =
+        transferManager.downloadDirectory(amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationDirectory);
     try {
       download.waitForCompletion();
     } catch (InterruptedException e) {
@@ -192,33 +208,6 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     }
 
     return true;
-  }
-
-  @Override
-  public boolean downloadS3DirectoryUsingS3URI(AwsConfig awsConfig, String s3URI, File destinationDirectory)
-      throws InterruptedException {
-    /**
-     *
-     *    Example of s3URI = "s3://iis-website-quickstart/foo/bar/baz";
-     *    thus,
-     *    String bucket = substr(5, length) = "iis-website-quickstart/foo/bar/baz";
-     *    String key = s3URI.substring(bucket.length()+1, s3URI.length()) = "foo/bar/baz";
-     *
-     */
-    AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
-    boolean downloadSuccess = false;
-    try {
-      downloadSuccess =
-          downloadS3Directory(awsConfig, amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationDirectory);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new InterruptedException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
-    } catch (AmazonServiceException amazonServiceException) {
-      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      awsApiHelperService.handleAmazonClientException(amazonClientException);
-    }
-    return downloadSuccess;
   }
 
   private AmazonS3Client getAmazonS3Client(String region, AwsConfig awsConfig) {

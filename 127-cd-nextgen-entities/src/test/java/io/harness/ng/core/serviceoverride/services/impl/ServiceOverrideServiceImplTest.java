@@ -382,10 +382,10 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         NGServiceOverridesEntity.builder()
             .accountId(ACCOUNT_ID)
             .orgIdentifier(ORG_IDENTIFIER)
-            .environmentRef(ORG_ENV_REF)
+            .environmentRef(ENV_REF)
             .serviceRef(ACCOUNT_SERVICE_REF)
             .yaml(
-                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: org.envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: envIdentifier\n  serviceRef: account.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
     assertThat(upsertedServiceOverridesEntity).isNotNull();
@@ -401,10 +401,10 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         NGServiceOverridesEntity.builder()
             .accountId(ACCOUNT_ID)
             .orgIdentifier(ORG_IDENTIFIER)
-            .environmentRef(ORG_ENV_REF)
+            .environmentRef(ENV_REF)
             .serviceRef(ORG_SERVICE_REF)
             .yaml(
-                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: org.envIdentifier\n  serviceRef: org.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  environmentRef: envIdentifier\n  serviceRef: org.serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     serviceOverrideService.upsert(serviceOverridesEntity2);
     // list

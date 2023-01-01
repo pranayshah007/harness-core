@@ -9,13 +9,17 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static software.wings.service.impl.yaml.handler.infraprovisioner.TestConstants.SETTING_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -23,6 +27,7 @@ import static software.wings.utils.WingsTestConstants.ENTITY_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_ID;
+import static software.wings.utils.WingsTestConstants.S3_URI;
 import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.UUID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
@@ -60,13 +65,16 @@ import software.wings.WingsBaseTest;
 import software.wings.api.ScriptStateExecutionData;
 import software.wings.api.TerraformApplyMarkerParam;
 import software.wings.api.TerraformExecutionData;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.S3FileConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.infrastructure.TerraformConfig;
 import software.wings.dl.WingsPersistence;
@@ -84,6 +92,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.utils.GitUtilsManager;
+import software.wings.utils.WingsTestConstants;
 
 import com.mongodb.DBCursor;
 import java.util.ArrayList;
@@ -190,7 +199,10 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     when(executionContext.getAppId()).thenReturn(APP_ID);
     terraformRollbackState.setProvisionerId(PROVISIONER_ID);
     TerraformInfrastructureProvisioner terraformInfrastructureProvisioner =
-        TerraformInfrastructureProvisioner.builder().name("Terraform Provisioner").build();
+        TerraformInfrastructureProvisioner.builder()
+            .name("Terraform Provisioner")
+            .terraformSourceType(TerraformSourceType.GIT)
+            .build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terraformInfrastructureProvisioner);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
     SweepingOutputInstance sweepingOutputInstance =
@@ -233,6 +245,20 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testExecuteInternalForS3Workflow() {
+    when(featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, ACCOUNT_ID)).thenReturn(true);
+    when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
+
+    s3SetUp(true, WORKFLOW_EXECUTION_ID);
+
+    ExecutionResponse executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
+
+    assertThat(executionResponse.getExecutionStatus().equals(ExecutionStatus.SUCCESS));
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testExecuteInternalAwsCPAuthEnabled() {
@@ -264,16 +290,88 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     assertThat(parameters.isSyncGitCloneAndCopyToDestDir()).isTrue();
   }
 
+  private void s3SetUp(boolean setVarsAndBackendConfigs, String workflowExecutionId) {
+    SettingAttribute settingAttribute = new SettingAttribute();
+    settingAttribute.setUuid("UUID");
+    settingAttribute.setValue(new AwsConfig());
+
+    doReturn(settingAttribute).when(settingsService).get(any());
+    terraformRollbackState.setWorkspace(WORKSPACE);
+    when(executionContext.getWorkflowExecutionId()).thenReturn(workflowExecutionId);
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    terraformRollbackState.setProvisionerId(PROVISIONER_ID);
+    TerraformInfrastructureProvisioner terraformInfrastructureProvisioner =
+        TerraformInfrastructureProvisioner.builder()
+            .name("Terraform Provisioner")
+            .terraformSourceType(TerraformSourceType.S3)
+            .s3URI(S3_URI)
+            .awsConfigId(UUID)
+            .appId("appId")
+            .build();
+    when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terraformInfrastructureProvisioner);
+    when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
+    SweepingOutputInstance sweepingOutputInstance =
+        SweepingOutputInstance.builder()
+            .value(TerraformApplyMarkerParam.builder().applyCompleted(true).build())
+            .build();
+    when(sweepingOutputService.find(any(SweepingOutputInquiry.class))).thenReturn(sweepingOutputInstance);
+    Environment environment = new Environment();
+    environment.setUuid(UUID);
+    doReturn(environment).when(executionContext).getEnv();
+    QueryImpl<TerraformConfig> query = mock(QueryImpl.class);
+    FieldEndImpl fieldEnd = mock(FieldEndImpl.class);
+    when(fieldEnd.in(any())).thenReturn(query);
+    when(wingsPersistence.createQuery(any(Class.class))).thenReturn(query);
+    when(query.filter(anyString(), any(Object.class))).thenReturn(query);
+    when(query.field(anyString())).thenReturn(fieldEnd);
+    when(query.order(any(Sort.class))).thenReturn(query);
+
+    S3FileConfig s3FileConfig = S3FileConfig.builder().awsConfigId(SETTING_ID).s3URI(WingsTestConstants.S3_URI).build();
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+
+    TfVarS3Source remoteS3BackendConfig = TfVarS3Source.builder()
+                                              .s3FileConfig(s3FileConfig)
+                                              .awsConfig(awsConfig)
+                                              .encryptedDataDetails(encryptedRecordDataList)
+                                              .build();
+
+    TerraformConfig terraformConfig =
+        TerraformConfig.builder()
+            .workflowExecutionId(WORKFLOW_EXECUTION_ID)
+            .s3BackendFileConfig(s3FileConfig)
+            .tfVarS3FileConfig(s3FileConfig)
+            .variables(setVarsAndBackendConfigs ? getTerraformVariables() : null)
+            .environmentVariables(setVarsAndBackendConfigs ? getTerraformEnvironmentVariables() : null)
+            .awsRegion("region")
+            .awsConfigId("UUID")
+            .awsRoleArn("arn")
+            .build();
+
+    MorphiaIterator<TerraformConfig, TerraformConfig> morphiaIterator = mock(MorphiaIterator.class);
+    DBCursor dbCursor = mock(DBCursor.class);
+    when(morphiaIterator.hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
+    when(morphiaIterator.next()).thenReturn(terraformConfig);
+    when(morphiaIterator.getCursor()).thenReturn(dbCursor);
+    when(query.fetch()).thenReturn(morphiaIterator);
+
+    when(fileService.getLatestFileId(anyString(), any(FileBucket.class))).thenReturn("fileId");
+    when(gitUtilsManager.getGitConfig(anyString())).thenReturn(GitConfig.builder().build());
+    when(infrastructureProvisionerService.getManagerExecutionCallback(anyString(), anyString(), anyString()))
+        .thenReturn(mock(ManagerExecutionLogCallback.class));
+  }
   private void setUp(String sourceRepoBranch, boolean setVarsAndBackendConfigs, String workflowExecutionId) {
     terraformRollbackState.setWorkspace(WORKSPACE);
     when(executionContext.getWorkflowExecutionId()).thenReturn(workflowExecutionId);
     when(executionContext.getAppId()).thenReturn(APP_ID);
     terraformRollbackState.setProvisionerId(PROVISIONER_ID);
-    TerraformInfrastructureProvisioner terraformInfrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
-                                                                                .name("Terraform Provisioner")
-                                                                                .sourceRepoBranch(sourceRepoBranch)
-                                                                                .appId("appId")
-                                                                                .build();
+    TerraformInfrastructureProvisioner terraformInfrastructureProvisioner =
+        TerraformInfrastructureProvisioner.builder()
+            .name("Terraform Provisioner")
+            .terraformSourceType(TerraformSourceType.GIT)
+            .sourceRepoBranch(sourceRepoBranch)
+            .appId("appId")
+            .build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terraformInfrastructureProvisioner);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
     SweepingOutputInstance sweepingOutputInstance =
@@ -361,10 +459,12 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     environment.setUuid(UUID);
     when(executionContext.getEnv()).thenReturn(environment);
     terraformRollbackState.setProvisionerId(PROVISIONER_ID);
-    TerraformInfrastructureProvisioner terraformInfrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
-                                                                                .name("Terraform Provisioner")
-                                                                                .sourceRepoBranch("sourceRepoBranch")
-                                                                                .build();
+    TerraformInfrastructureProvisioner terraformInfrastructureProvisioner =
+        TerraformInfrastructureProvisioner.builder()
+            .name("Terraform Provisioner")
+            .terraformSourceType(TerraformSourceType.GIT)
+            .sourceRepoBranch("sourceRepoBranch")
+            .build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terraformInfrastructureProvisioner);
     Map<String, ResponseData> response = new HashMap<>();
     TerraformExecutionData terraformExecutionData = TerraformExecutionData.builder()

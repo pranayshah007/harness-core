@@ -199,6 +199,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         }
 
         if (!doSvcAndEnvExist(infrastructureMappingDTO.get())) {
+          // as either or both of svc and env don't exist, we delete the instances before deleting the perpetual task
+          deleteInstances(infrastructureMappingDTO.get());
           instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
           return;
         }
@@ -628,5 +630,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       return false;
     }
     return true;
+  }
+
+  private void deleteInstances(InfrastructureMappingDTO mappingDTO) {
+    List<InstanceDTO> instancesInDB =
+        instanceService.getActiveInstancesByInfrastructureMappingId(mappingDTO.getAccountIdentifier(),
+            mappingDTO.getOrgIdentifier(), mappingDTO.getProjectIdentifier(), mappingDTO.getId());
+    instanceService.deleteAll(instancesInDB);
   }
 }
