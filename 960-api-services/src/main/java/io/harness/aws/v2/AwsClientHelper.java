@@ -132,17 +132,17 @@ public abstract class AwsClientHelper {
                         .build();
     }
     return ClientOverrideConfiguration.builder().retryPolicy(retryPolicy).build();
-
-    // todo: good review needed
   }
 
   private AwsCredentialsProvider getIamRoleAwsCredentialsProvider() {
     try {
       if (System.getenv("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") != null
           || System.getenv("AWS_CONTAINER_CREDENTIALS_FULL_URI") != null) {
+        log.info("Instantiating ContainerCredentialsProvider");
         return ContainerCredentialsProvider.builder().build();
       } else {
-        return InstanceProfileCredentialsProvider.create();
+        log.info("Instantiating InstanceProfileCredentialsProvider");
+        return InstanceProfileCredentialsProvider.create().toBuilder().asyncCredentialUpdateEnabled(true).build();
       }
     } catch (SecurityException var2) {
       if (log.isDebugEnabled()) {
@@ -151,7 +151,8 @@ public abstract class AwsClientHelper {
             + " AWS_CONTAINER_CREDENTIALS_FULL_URI. Please provide access to this environment variable "
             + "if you want to load credentials from ECS Container.");
       }
-      return InstanceProfileCredentialsProvider.create();
+      log.info("Instantiating InstanceProfileCredentialsProvider");
+      return InstanceProfileCredentialsProvider.create().toBuilder().asyncCredentialUpdateEnabled(true).build();
     }
   }
 
