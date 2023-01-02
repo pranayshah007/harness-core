@@ -7,11 +7,15 @@
 
 package io.harness.token;
 
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.exception.WingsException.USER;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.TokenDTO;
 
@@ -27,16 +31,19 @@ public class TokenValidationHelper {
 
   private void checkIfApiKeyHasExpired(String tokenId, TokenDTO tokenDTO) {
     if (!tokenDTO.isValid()) {
-      throw new InvalidRequestException(
-          "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
+      logAndThrowTokenException(String.format("Incoming API token %s has expired. Token id: %s", tokenDTO.getName(), tokenId), EXPIRED_TOKEN);
     }
+  }
+
+  private void logAndThrowTokenException(String errorMessage, ErrorCode errorCode) {
+    log.error(errorMessage);
+    throw new InvalidRequestException(errorMessage, errorCode, USER);
   }
 
   private void checkIfPrefixMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
     if (!tokenDTO.getApiKeyType().getValue().equals(splitToken[0])) {
       String message = "Invalid prefix for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
     }
   }
 
@@ -44,25 +51,22 @@ public class TokenValidationHelper {
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
     if (isOldApiKeyToken(splitToken) && !bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
       String message = "Raw password not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
-    } else if (isNewApiKeyToken(splitToken)
-        && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
+    } else if (isNewApiKeyToken(splitToken) && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
       String message = "Raw password not matching for new API token format";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
     }
   }
 
   private void checkIfAccountIdInTokenMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
     if (isNewApiKeyToken(splitToken) && !splitToken[1].equals(tokenDTO.getAccountIdentifier())) {
-      throw new InvalidRequestException(String.format("Invalid accountId in token %s", tokenId));
+      logAndThrowTokenException(String.format("Invalid accountId in token %s", tokenId), INVALID_TOKEN);
     }
   }
 
   private void checkIfAccountIdMatches(String accountIdentifier, TokenDTO tokenDTO, String tokenId) {
     if (!accountIdentifier.equals(tokenDTO.getAccountIdentifier())) {
-      throw new InvalidRequestException(String.format("Invalid account token access %s", tokenId));
+      logAndThrowTokenException(String.format("Invalid account token access %s", tokenId), INVALID_TOKEN);
     }
   }
 
@@ -104,8 +108,7 @@ public class TokenValidationHelper {
     }
     if (!(isOldApiKeyToken(splitToken) || isNewApiKeyToken(splitToken))) {
       message = "Token length not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
+      logAndThrowTokenException(String.format("Invalid API Token: %s", message), INVALID_TOKEN);
     }
     return isOldApiKeyToken(splitToken) ? splitToken[1] : splitToken[2];
   }
