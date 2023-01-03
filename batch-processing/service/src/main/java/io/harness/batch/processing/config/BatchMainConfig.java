@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.config;
 
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
@@ -61,6 +62,7 @@ public class BatchMainConfig {
   @JsonProperty("gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
+  @JsonProperty("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();
