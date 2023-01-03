@@ -94,99 +94,99 @@ import org.apache.commons.lang3.tuple.Pair;
 @NoArgsConstructor
 @Slf4j
 public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandler {
-  @Inject private AsgTaskHelper asgTaskHelper;
+    @Inject private AsgTaskHelper asgTaskHelper;
 
-  @Override
-  protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
-      throws AsgNGException {
-    if (!(asgCommandRequest instanceof AsgRollingRollbackRequest)) {
-      throw new InvalidArgumentsException(
-          Pair.of("asgCommandRequest", "Must be instance of AsgRollingRollbackRequest"));
+    @Override
+    protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
+                                                     ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
+            throws AsgNGException {
+        if (!(asgCommandRequest instanceof AsgRollingRollbackRequest)) {
+            throw new InvalidArgumentsException(
+                    Pair.of("asgCommandRequest", "Must be instance of AsgRollingRollbackRequest"));
+        }
+
+        AsgRollingRollbackRequest asgRollingRollbackRequest = (AsgRollingRollbackRequest) asgCommandRequest;
+        Map<String, List<String>> asgStoreManifestsContent = asgRollingRollbackRequest.getAsgStoreManifestsContent();
+        String asgName = asgRollingRollbackRequest.getAsgName();
+        Boolean skipMatching = true;
+        Boolean useAlreadyRunningInstances = false;
+
+        LogCallback logCallback = asgTaskHelper.getLogCallback(
+                iLogStreamingTaskClient, AsgCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
+
+        try {
+            AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+
+            asgSdkManager.info(format("Starting Rolling Rollback", Bold));
+
+            AutoScalingGroupContainer autoScalingGroupContainer = executeRollingRollbackWithInstanceRefresh(
+                    asgSdkManager, asgStoreManifestsContent, asgName, skipMatching, useAlreadyRunningInstances);
+
+            AsgRollingRollbackResult asgRollingRollbackResult =
+                    AsgRollingRollbackResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+
+            logCallback.saveExecutionLog(
+                    color("Rolling Rollback Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
+
+            return AsgRollingRollbackResponse.builder()
+                    .asgRollingRollbackResult(asgRollingRollbackResult)
+                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                    .build();
+
+        } catch (Exception e) {
+            logCallback.saveExecutionLog(
+                    color(format("Rollback Failed"), LogColor.Red, LogWeight.Bold), ERROR, CommandExecutionStatus.FAILURE);
+            throw new AsgNGException(e);
+        }
     }
 
-    AsgRollingRollbackRequest asgRollingRollbackRequest = (AsgRollingRollbackRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent = asgRollingRollbackRequest.getAsgStoreManifestsContent();
-    String asgName = asgRollingRollbackRequest.getAsgName();
-    Boolean skipMatching = true;
-    Boolean useAlreadyRunningInstances = false;
+    private AutoScalingGroupContainer executeRollingRollbackWithInstanceRefresh(AsgSdkManager asgSdkManager,
+                                                                                Map<String, List<String>> asgStoreManifestsContent, String asgName, Boolean skipMatching,
+                                                                                Boolean useAlreadyRunningInstances) {
+        if (isNotEmpty(asgStoreManifestsContent)) {
+            String operationName = format("Rollback to previous version of asg %s", asgName);
+            asgSdkManager.info("Operation `%s` has started", operationName);
 
-    LogCallback logCallback = asgTaskHelper.getLogCallback(
-        iLogStreamingTaskClient, AsgCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
+            // Get the content of all required manifest files
+            String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
+            String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
+            List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
 
-    try {
-      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+            // Get ASG name from asg configuration manifest
+            CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
+                    AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, false);
 
-      asgSdkManager.info(format("Starting Rolling Rollback", Bold));
+            AsgManifestHandlerChainState initialChainState = AsgManifestHandlerChainState.builder().asgName(asgName).build();
 
-      AutoScalingGroupContainer autoScalingGroupContainer = executeRollingRollbackWithInstanceRefresh(
-          asgSdkManager, asgStoreManifestsContent, asgName, skipMatching, useAlreadyRunningInstances);
+            if (isNotEmpty(createAutoScalingGroupRequest.getLaunchTemplate().getVersion())) {
+                initialChainState.setLaunchTemplateVersion(createAutoScalingGroupRequest.getLaunchTemplate().getVersion());
+            }
+            // Chain factory code to handle each manifest one by one in a chain
+            AsgManifestHandlerChainState chainState =
+                    AsgManifestHandlerChainFactory.builder()
+                            .initialChainState(initialChainState)
+                            .asgSdkManager(asgSdkManager)
+                            .build()
+                            .addHandler(AsgLaunchTemplate,
+                                    AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
+                            .addHandler(AsgConfiguration,
+                                    AsgConfigurationManifestRequest.builder()
+                                            .manifests(Arrays.asList(asgConfigurationContent))
+                                            .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                                            .build())
+                            .addHandler(AsgScalingPolicy,
+                                    AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
+                            .addHandler(
+                                    AsgInstanceRefresh, AsgInstanceRefreshManifestRequest.builder().skipMatching(skipMatching).build())
+                            .executeUpsert();
 
-      AsgRollingRollbackResult asgRollingRollbackResult =
-          AsgRollingRollbackResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+            AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
+            asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
 
-      logCallback.saveExecutionLog(
-          color("Rolling Rollback Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
-
-      return AsgRollingRollbackResponse.builder()
-          .asgRollingRollbackResult(asgRollingRollbackResult)
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .build();
-
-    } catch (Exception e) {
-      logCallback.saveExecutionLog(
-          color(format("Rollback Failed"), LogColor.Red, LogWeight.Bold), ERROR, CommandExecutionStatus.FAILURE);
-      throw new AsgNGException(e);
+            return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
+        } else {
+            asgSdkManager.deleteAsg(asgName);
+            return AutoScalingGroupContainer.builder().build();
+        }
     }
-  }
-
-  private AutoScalingGroupContainer executeRollingRollbackWithInstanceRefresh(AsgSdkManager asgSdkManager,
-      Map<String, List<String>> asgStoreManifestsContent, String asgName, Boolean skipMatching,
-      Boolean useAlreadyRunningInstances) {
-    if (isNotEmpty(asgStoreManifestsContent)) {
-      String operationName = format("Rollback to previous version of asg %s", asgName);
-      asgSdkManager.info("Operation `%s` has started", operationName);
-
-      // Get the content of all required manifest files
-      String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-      List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
-
-      // Get ASG name from asg configuration manifest
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, false);
-
-      AsgManifestHandlerChainState initialChainState = AsgManifestHandlerChainState.builder().asgName(asgName).build();
-
-      if (isNotEmpty(createAutoScalingGroupRequest.getLaunchTemplate().getVersion())) {
-        initialChainState.setLaunchTemplateVersion(createAutoScalingGroupRequest.getLaunchTemplate().getVersion());
-      }
-      // Chain factory code to handle each manifest one by one in a chain
-      AsgManifestHandlerChainState chainState =
-          AsgManifestHandlerChainFactory.builder()
-              .initialChainState(initialChainState)
-              .asgSdkManager(asgSdkManager)
-              .build()
-              .addHandler(AsgLaunchTemplate,
-                  AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
-              .addHandler(AsgConfiguration,
-                  AsgConfigurationManifestRequest.builder()
-                      .manifests(Arrays.asList(asgConfigurationContent))
-                      .useAlreadyRunningInstances(useAlreadyRunningInstances)
-                      .build())
-              .addHandler(AsgScalingPolicy,
-                  AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
-              .addHandler(
-                  AsgInstanceRefresh, AsgInstanceRefreshManifestRequest.builder().skipMatching(skipMatching).build())
-              .executeUpsert();
-
-      AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
-      asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
-
-      return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
-    } else {
-      asgSdkManager.deleteAsg(asgName);
-      return AutoScalingGroupContainer.builder().build();
-    }
-  }
 }

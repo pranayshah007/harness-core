@@ -117,6 +117,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
         (AsgRollingRollbackStepParameters) stepElementParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(asgRollingRollbackStepParameters.getAsgRollingDeployFqn())) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
@@ -130,6 +131,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
                 + OutcomeExpressionConstants.ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME));
 
     if (!asgRollingPrepareRollbackDataOptionalOutput.isFound()) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
