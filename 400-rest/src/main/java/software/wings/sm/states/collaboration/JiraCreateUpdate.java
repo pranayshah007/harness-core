@@ -629,8 +629,9 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
             -> Arrays.stream(jiraField.getAllowedValues().toArray())
                    .map(json -> (JSONObject) json)
                    .collect(toMap(ob
-                       -> ob.get(VALUE) != null ? ((String) ob.get(VALUE)).toLowerCase()
-                                                : ((String) ob.get("name")).toLowerCase(),
+                       -> (ob.get(VALUE) != null && !((String) ob.get(VALUE)).isEmpty())
+                           ? ((String) ob.get(VALUE)).toLowerCase()
+                           : ((String) ob.get("name")).toLowerCase(),
                        ob -> ob.get("id"), (id, duplicateId) -> {
                          throw new HarnessJiraException(
                              String.format(
