@@ -19,9 +19,9 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateRequest;
-import io.harness.aws.asg.manifest.request.AsgScalingPolicyRequest;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -120,14 +120,14 @@ public class AsgManifestHandlerChainFactoryTest extends CategoryTest {
     AsgManifestHandlerChainFactory.builder()
         .build()
         .addHandler(AsgLaunchTemplate,
-            AsgLaunchTemplateRequest.builder().manifests(Arrays.asList(launchTemplateManifestContent)).build())
+            AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(launchTemplateManifestContent)).build())
         .addHandler(AsgManifestType.AsgConfiguration,
-            AsgConfigurationRequest.builder()
+            AsgConfigurationManifestRequest.builder()
                 .manifests(Arrays.asList(asgConfigurationManifestContent))
                 .overrideProperties(asgConfigurationOverrideProperties)
                 .build())
         .addHandler(AsgManifestType.AsgScalingPolicy,
-            AsgScalingPolicyRequest.builder()
+            AsgScalingPolicyManifestRequest.builder()
                 .manifests(Arrays.asList(scalingPolicyManifestContent1, scalingPolicyManifestContent2))
                 .build());
   }

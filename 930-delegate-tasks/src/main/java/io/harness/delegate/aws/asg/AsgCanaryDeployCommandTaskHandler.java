@@ -27,8 +27,8 @@ import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
-import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateRequest;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -136,9 +136,9 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
-                AsgLaunchTemplateRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
+                AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
             .addHandler(AsgConfiguration,
-                AsgConfigurationRequest.builder()
+                AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
                     .overrideProperties(asgConfigurationOverrideProperties)
                     .build())

@@ -16,6 +16,8 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -27,5 +29,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgRollingDeployOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgRollingDeployOutcome")
 public class AsgRollingDeployOutcome implements Outcome, ExecutionSweepingOutput {
+  Map<String, List<String>> asgStoreManifestsContent;
   AutoScalingGroupContainer autoScalingGroupContainer;
 }
