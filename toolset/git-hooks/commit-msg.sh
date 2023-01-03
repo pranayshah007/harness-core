@@ -16,7 +16,7 @@ SHDIR=$(dirname "$0")
 PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
-COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]\[HotfixPreQA]|feat|fix|techdebt|HotfixPreQA"
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]\[hotfixpreqa]|feat|fix|techdebt|hotfixpreqa"
 CHECK_MESSAGE=hook.commit-msg.check
 if [ "`git config $CHECK_MESSAGE`" == "false" ]
 then
