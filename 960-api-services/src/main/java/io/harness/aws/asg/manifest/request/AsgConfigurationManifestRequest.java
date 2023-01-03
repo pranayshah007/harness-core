@@ -15,11 +15,11 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class AsgConfigurationRequest extends ManifestRequest {
+public class AsgConfigurationManifestRequest extends ManifestRequest {
   public boolean useAlreadyRunningInstances;
   Map<String, Object> overrideProperties;
   @Builder
-  public AsgConfigurationRequest(
+  public AsgConfigurationManifestRequest(
       List<String> manifests, boolean useAlreadyRunningInstances, Map<String, Object> overrideProperties) {
     super(manifests);
     this.useAlreadyRunningInstances = useAlreadyRunningInstances;

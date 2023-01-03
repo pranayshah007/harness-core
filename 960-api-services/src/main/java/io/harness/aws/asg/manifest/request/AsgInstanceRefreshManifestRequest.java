@@ -14,12 +14,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class AsgInstanceRefreshRequest extends ManifestRequest {
+public class AsgInstanceRefreshManifestRequest extends ManifestRequest {
   public boolean skipMatching;
   public Integer instanceWarmup;
   public Integer minimumHealthyPercentage;
   @Builder
-  public AsgInstanceRefreshRequest(
+  public AsgInstanceRefreshManifestRequest(
       List<String> manifests, boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {
     super(manifests);
     this.skipMatching = skipMatching;

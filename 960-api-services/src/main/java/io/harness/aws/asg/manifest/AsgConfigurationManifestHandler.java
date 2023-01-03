@@ -14,7 +14,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -66,12 +66,12 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     List<CreateAutoScalingGroupRequest> manifests =
         manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
 
-    AsgConfigurationRequest asgConfigurationRequest = (AsgConfigurationRequest) manifestRequest;
+    AsgConfigurationManifestRequest asgConfigurationManifestRequest = (AsgConfigurationManifestRequest) manifestRequest;
 
     String asgName = chainState.getAsgName();
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgName);
 
-    if (asgConfigurationRequest.isUseAlreadyRunningInstances()) {
+    if (asgConfigurationManifestRequest.isUseAlreadyRunningInstances()) {
       if (autoScalingGroup != null) {
         Integer currentAsgMinSize = autoScalingGroup.getMinSize();
         Integer currentAsgMaxSize = autoScalingGroup.getMaxSize();
@@ -83,11 +83,11 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
             put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, currentAsgDesiredCapacity);
           }
         };
-        asgConfigurationRequest.setOverrideProperties(asgConfigurationOverrideProperties);
+        asgConfigurationManifestRequest.setOverrideProperties(asgConfigurationOverrideProperties);
       }
     }
 
-    Map<String, Object> overrideProperties = asgConfigurationRequest.getOverrideProperties();
+    Map<String, Object> overrideProperties = asgConfigurationManifestRequest.getOverrideProperties();
 
     if (isNotEmpty(overrideProperties)) {
       applyOverrideProperties(manifests, overrideProperties);

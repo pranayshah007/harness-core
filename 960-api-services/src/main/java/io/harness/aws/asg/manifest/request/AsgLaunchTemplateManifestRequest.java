@@ -14,9 +14,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class AsgScalingPolicyRequest extends ManifestRequest {
+public class AsgLaunchTemplateManifestRequest extends ManifestRequest {
   @Builder
-  public AsgScalingPolicyRequest(List<String> manifests) {
+  public AsgLaunchTemplateManifestRequest(List<String> manifests) {
     super(manifests);
   }
 }

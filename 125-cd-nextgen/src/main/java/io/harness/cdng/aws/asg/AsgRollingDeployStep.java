@@ -148,6 +148,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
     AsgRollingDeployOutcome asgRollingDeployOutcome =
         AsgRollingDeployOutcome.builder()
+            .asgStoreManifestsContent(
+                asgRollingDeployResponse.getAsgRollingDeployResult().getAsgStoreManifestsContent())
             .autoScalingGroupContainer(
                 asgRollingDeployResponse.getAsgRollingDeployResult().getAutoScalingGroupContainer())
             .build();

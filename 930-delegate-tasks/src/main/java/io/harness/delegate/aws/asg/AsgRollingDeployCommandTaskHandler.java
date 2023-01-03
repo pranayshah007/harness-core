@@ -28,10 +28,10 @@ import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
-import io.harness.aws.asg.manifest.request.AsgConfigurationRequest;
-import io.harness.aws.asg.manifest.request.AsgInstanceRefreshRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateRequest;
-import io.harness.aws.asg.manifest.request.AsgScalingPolicyRequest;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -89,8 +89,10 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
 
-      AsgRollingDeployResult asgRollingDeployResult =
-          AsgRollingDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
+      AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
+                                                          .autoScalingGroupContainer(autoScalingGroupContainer)
+                                                          .asgStoreManifestsContent(asgStoreManifestsContent)
+                                                          .build();
 
       logCallback.saveExecutionLog(
           color("Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
@@ -130,15 +132,16 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
-                AsgLaunchTemplateRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
+                AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
             .addHandler(AsgConfiguration,
-                AsgConfigurationRequest.builder()
+                AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
                     .build())
-            .addHandler(AsgScalingPolicy, AsgScalingPolicyRequest.builder().manifests(asgScalingPolicyContent).build())
+            .addHandler(
+                AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
             .addHandler(AsgInstanceRefresh,
-                AsgInstanceRefreshRequest.builder()
+                AsgInstanceRefreshManifestRequest.builder()
                     .skipMatching(skipMatching)
                     .instanceWarmup(instanceWarmup)
                     .minimumHealthyPercentage(minimumHealthyPercentage)

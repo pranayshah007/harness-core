@@ -229,6 +229,16 @@ public class AsgSdkManager {
     updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
+    updateTags(asgName, createAutoScalingGroupRequest);
+
+    updateLifecyleHooks(asgName, createAutoScalingGroupRequest);
+
+    updateLoadBalancers(asgName, createAutoScalingGroupRequest);
+
+    updateLoadBalancerTargetGroups(asgName, createAutoScalingGroupRequest);
+  }
+
+  private void updateTags(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     List<TagDescription> currentTagDescriptionsList = new ArrayList<>();
     String nextToken = null;
     Filter filter = new Filter().withName("auto-scaling-group").withValues(asgName);
@@ -281,9 +291,12 @@ public class AsgSdkManager {
     CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
     createOrUpdateTagsRequest.setTags(tagsList);
     asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
+  }
 
+  private void updateLifecyleHooks(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
     describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
+
     List<LifecycleHook> lifecycleHooks =
         (asgCall(asgClient -> asgClient.describeLifecycleHooks(describeLifecycleHooksRequest))).getLifecycleHooks();
     if (isNotEmpty(lifecycleHooks)) {
@@ -311,20 +324,22 @@ public class AsgSdkManager {
         asgCall(asgClient -> asgClient.putLifecycleHook(putLifecycleHookRequest));
       });
     }
+  }
 
+  private void updateLoadBalancers(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     List<LoadBalancerState> loadBalancerStates = new ArrayList<>();
-    String nextToken1 = null;
+    String nextToken = null;
     do {
       DescribeLoadBalancersRequest describeloadBalancersRequest =
-          new DescribeLoadBalancersRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken1);
+          new DescribeLoadBalancersRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
 
       DescribeLoadBalancersResult describeLoadBalancersResult =
           asgCall(asgClient -> asgClient.describeLoadBalancers(describeloadBalancersRequest));
       if (isNotEmpty(describeLoadBalancersResult.getLoadBalancers())) {
         loadBalancerStates.addAll(describeLoadBalancersResult.getLoadBalancers());
       }
-      nextToken1 = describeLoadBalancersResult.getNextToken();
-    } while (nextToken1 != null);
+      nextToken = describeLoadBalancersResult.getNextToken();
+    } while (nextToken != null);
 
     if (isNotEmpty(loadBalancerStates)) {
       loadBalancerStates.forEach(loadBalancerState -> {
@@ -343,9 +358,11 @@ public class AsgSdkManager {
         asgCall(asgClient -> asgClient.attachLoadBalancers(attachLoadBalancersRequest));
       });
     }
-
+  }
+  private void updateLoadBalancerTargetGroups(
+      String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     List<LoadBalancerTargetGroupState> loadBalancerTargetGroupStates = new ArrayList<>();
-    String nextToken2;
+    String nextToken = null;
     do {
       DescribeLoadBalancerTargetGroupsRequest describeLoadBalancerTargetGroupsRequest =
           new DescribeLoadBalancerTargetGroupsRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
@@ -355,8 +372,8 @@ public class AsgSdkManager {
       if (isNotEmpty(describeLoadBalancerTargetGroupsResult.getLoadBalancerTargetGroups())) {
         loadBalancerTargetGroupStates.addAll(describeLoadBalancerTargetGroupsResult.getLoadBalancerTargetGroups());
       }
-      nextToken2 = describeLoadBalancerTargetGroupsResult.getNextToken();
-    } while (nextToken2 != null);
+      nextToken = describeLoadBalancerTargetGroupsResult.getNextToken();
+    } while (nextToken != null);
 
     if (isNotEmpty(loadBalancerTargetGroupStates)) {
       loadBalancerTargetGroupStates.forEach(loadBalancerTargetGroupState -> {
@@ -481,7 +498,7 @@ public class AsgSdkManager {
     return asgCall(asgClient -> asgClient.startInstanceRefresh(startInstanceRefreshRequest));
   }
 
-  private boolean checkInstanceRefreshReady(String asgName, String instanceRefreshId) {
+  public boolean checkInstanceRefreshReady(String asgName, String instanceRefreshId) {
     DescribeInstanceRefreshesRequest describeInstanceRefreshesRequest =
         new DescribeInstanceRefreshesRequest()
             .withInstanceRefreshIds(Arrays.asList(instanceRefreshId))

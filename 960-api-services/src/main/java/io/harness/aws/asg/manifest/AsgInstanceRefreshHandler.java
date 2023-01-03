@@ -13,7 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.request.AsgInstanceRefreshRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -33,7 +33,8 @@ public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPoli
 
   @Override
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
-    AsgInstanceRefreshRequest asgInstanceRefreshRequest = (AsgInstanceRefreshRequest) manifestRequest;
+    AsgInstanceRefreshManifestRequest asgInstanceRefreshManifestRequest =
+        (AsgInstanceRefreshManifestRequest) manifestRequest;
     String asgName = chainState.getAsgName();
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
     if (autoScalingGroup == null) {
@@ -41,9 +42,9 @@ public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPoli
     } else {
       String operationName = format("Instance Refresh Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
-      StartInstanceRefreshResult startInstanceRefreshResult =
-          asgSdkManager.startInstanceRefresh(asgName, asgInstanceRefreshRequest.isSkipMatching(),
-              asgInstanceRefreshRequest.getInstanceWarmup(), asgInstanceRefreshRequest.getMinimumHealthyPercentage());
+      StartInstanceRefreshResult startInstanceRefreshResult = asgSdkManager.startInstanceRefresh(asgName,
+          asgInstanceRefreshManifestRequest.isSkipMatching(), asgInstanceRefreshManifestRequest.getInstanceWarmup(),
+          asgInstanceRefreshManifestRequest.getMinimumHealthyPercentage());
       String instanceRefreshId = startInstanceRefreshResult.getInstanceRefreshId();
       asgSdkManager.waitInstanceRefreshSteadyState(asgName, instanceRefreshId, operationName);
       asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
