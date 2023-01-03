@@ -89,22 +89,11 @@ java_library(
     ],
 )
 
-maven_jar(
-    name = "clickhouse-jdbc",
-    artifact = "ru.yandex.clickhouse:clickhouse-jdbc:0.2.6",
-    sha1 = "24b839ca14335123581d111d20dc90b390e60c0d",
-)
-
 filegroup(
     name = "resource",
     srcs = ["batch-processing-config.yml"],
 )
 
-maven_jar(
-    name = "clickhouse-jdbc",
-    artifact = "ru.yandex.clickhouse:clickhouse-jdbc:0.3.2",
-    sha1 = "fa9a1ccda7d78edb51a3a33d3493566092786a30",
-)
 
 java_library(
     name = "tests",
