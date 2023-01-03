@@ -8,14 +8,17 @@
 package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.manifest.request.ManifestRequest;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,6 +59,24 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
 
   @Override
   public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    return chainState;
+  }
+
+  @Override
+  public AsgManifestHandlerChainState getManifestTypeContent(
+      AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    if (chainState.getAutoScalingGroup() == null) {
+      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(chainState.getAsgName());
+      chainState.setAutoScalingGroup(autoScalingGroup);
+    }
+
+    AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
+    if (autoScalingGroup != null) {
+      String launchTemplateVersion = autoScalingGroup.getLaunchTemplate().getVersion();
+
+      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(
+          AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion));
+    }
     return chainState;
   }
 }

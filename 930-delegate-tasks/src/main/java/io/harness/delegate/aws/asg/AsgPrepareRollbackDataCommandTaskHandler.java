@@ -27,6 +27,11 @@ import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgMapper;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
@@ -43,12 +48,8 @@ import io.harness.logging.LogCallback;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
-import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
-import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.google.inject.Inject;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
@@ -107,43 +108,29 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
 
-    // Check if an ASG with this name already exists
-    AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgName);
+    // Chain factory code to handle each manifest one by one in a chain
+    AsgManifestHandlerChainState chainState =
+        AsgManifestHandlerChainFactory.builder()
+            .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
+            .asgSdkManager(asgSdkManager)
+            .build()
+            .addHandler(AsgLaunchTemplate, AsgLaunchTemplateManifestRequest.builder().build())
+            .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
+            .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
+            .getContent();
 
-    // If ASG with given name already exists then get the details of launchtemplate version, asg configuration & scaling
-    // policies attached to it as string data type
-    // & pass those values to prepare rollback data sweeping output
-    if (autoScalingGroup != null) {
-      List<ScalingPolicy> scalingPoliciesList = asgSdkManager.listAllScalingPoliciesOfAsg(asgName);
-
-      String launchTemplateVersion = autoScalingGroup.getLaunchTemplate().getVersion();
-      String asgConfiguration =
-          asgMapper.createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(autoScalingGroup);
-      List<String> scalingPolicies =
-          asgMapper.createScalingPolicyRequestsListFromScalingPoliciesList(scalingPoliciesList);
-
-      logCallback.saveExecutionLog(color("Prepare Rollback Data Operation Finished Successfully", Green, Bold), INFO,
-          CommandExecutionStatus.SUCCESS);
-
-      Map<String, List<String>> prepareRollbackDataAsgStoreManifestsContent = new HashMap<>() {
-        {
-          put(AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion));
-          put(AsgConfiguration, Collections.singletonList(asgConfiguration));
-          put(AsgScalingPolicy, scalingPolicies);
-        }
-      };
-
-      return AsgPrepareRollbackDataResult
-          .builder()
-          //.asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
-          .build();
-
-    } else {
+    if (chainState.getAutoScalingGroup() == null) {
       logCallback.saveExecutionLog(
           color(
               format("Asg %s doesn't exist. Skipping Prepare Rollback Data Operation", asgName), White, LogWeight.Bold),
           INFO, CommandExecutionStatus.SUCCESS);
-      return AsgPrepareRollbackDataResult.builder().build();
+    } else {
+      logCallback.saveExecutionLog(color("Prepare Rollback Data Operation Finished Successfully", Green, Bold), INFO,
+          CommandExecutionStatus.SUCCESS);
     }
+    return AsgPrepareRollbackDataResult
+        .builder()
+        //.asgStoreManifestsContent(chainState.getPrepareRollbackDataAsgStoreManifestsContent)
+        .build();
   }
 }

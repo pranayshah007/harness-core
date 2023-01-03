@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.experimental.UtilityClass;
@@ -20,17 +21,39 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CDP)
 public class AsgContentParser {
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper defaultMapper = new ObjectMapper();
+  private static final ObjectMapper mapperWithFailOnUnknownPropertiesFalse = new ObjectMapper();
 
   static {
-    mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    defaultMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+  }
+
+  static {
+    mapperWithFailOnUnknownPropertiesFalse.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   public <T> T parseJson(String json, Class<T> clazz) {
     try {
-      return mapper.readValue(json, clazz);
+      return defaultMapper.readValue(json, clazz);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Cannot parse json with error", e);
+    }
+  }
+
+  public String toString(Object object, boolean failOnUnknownProperties) {
+    try {
+      ObjectMapper objectMapper = getMapper(failOnUnknownProperties);
+      return objectMapper.writeValueAsString(object);
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Cannot convert the request object to json due to following error:", e);
+    }
+  }
+
+  private ObjectMapper getMapper(boolean failOnUnknownProperties) {
+    if (failOnUnknownProperties) {
+      return mapperWithFailOnUnknownPropertiesFalse;
+    } else {
+      return defaultMapper;
     }
   }
 }

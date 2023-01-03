@@ -50,6 +50,10 @@ public abstract class ManifestHandlerChainFactory<S> {
     return processChain((handler, chainState) -> (S) handler.delete(chainState));
   }
 
+  public S getContent() {
+    return processChain((handler, chainState) -> (S) handler.getManifestTypeContent(chainState));
+  }
+
   private S processChain(BiFunction<ManifestHandler, S, S> callHandlerOperation) {
     ManifestHandler handler = firstHandler;
     S chainState = this.initialChainState;

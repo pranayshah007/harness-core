@@ -8,19 +8,25 @@
 package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.asg.AsgMapper;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.manifest.request.ManifestRequest;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.google.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScalingPolicyRequest> {
+  @Inject private AsgMapper asgMapper;
   public AsgScalingPolicyManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
     super(asgSdkManager, manifestRequest);
   }
@@ -45,6 +51,25 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
 
   @Override
   public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    return chainState;
+  }
+
+  @Override
+  public AsgManifestHandlerChainState getManifestTypeContent(
+      AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    if (chainState.getAutoScalingGroup() == null) {
+      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(chainState.getAsgName());
+      chainState.setAutoScalingGroup(autoScalingGroup);
+    }
+
+    AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
+    if (autoScalingGroup != null) {
+      List<ScalingPolicy> scalingPoliciesList = asgSdkManager.listAllScalingPoliciesOfAsg(chainState.getAsgName());
+      List<String> scalingPolicies =
+          asgMapper.createScalingPolicyRequestsListFromScalingPoliciesList(scalingPoliciesList);
+
+      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(AsgScalingPolicy, scalingPolicies);
+    }
     return chainState;
   }
 }

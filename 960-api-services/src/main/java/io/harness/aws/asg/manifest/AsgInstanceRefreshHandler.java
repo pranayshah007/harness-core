@@ -57,4 +57,10 @@ public class AsgInstanceRefreshHandler extends AsgManifestHandler<PutScalingPoli
   public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     return chainState;
   }
+
+  @Override
+  public AsgManifestHandlerChainState getManifestTypeContent(
+      AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    return chainState;
+  }
 }

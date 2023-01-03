@@ -21,9 +21,6 @@ import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.amazonaws.services.autoscaling.model.Tag;
 import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +59,7 @@ public class AsgMapper {
     createAutoScalingGroupRequest.setDefaultInstanceWarmup(autoScalingGroup.getDefaultInstanceWarmup());
     createAutoScalingGroupRequest.setTags(tagDescriptionToTagMapper(autoScalingGroup.getTags()));
 
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-    return objectMapper.writeValueAsString(createAutoScalingGroupRequest);
+    return AsgContentParser.toString(CreateAutoScalingGroupRequest.class, true);
   }
 
   private List<Tag> tagDescriptionToTagMapper(List<TagDescription> tags) {
@@ -110,10 +104,7 @@ public class AsgMapper {
     putScalingPolicyRequest.setEnabled(scalingPolicy.getEnabled());
     putScalingPolicyRequest.setPredictiveScalingConfiguration(scalingPolicy.getPredictiveScalingConfiguration());
 
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-    return objectMapper.writeValueAsString(putScalingPolicyRequest);
+    return AsgContentParser.toString(PutScalingPolicyRequest.class, true);
   }
 
   public List<String> createScalingPolicyRequestsListFromScalingPoliciesList(List<ScalingPolicy> scalingPolicies) {

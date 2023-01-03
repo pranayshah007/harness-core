@@ -8,17 +8,21 @@
 package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.asg.AsgMapper;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAutoScalingGroupRequest> {
+  @Inject private AsgMapper asgMapper;
   public interface OverrideProperties {
     String minSize = "minSize";
     String maxSize = "maxSize";
@@ -118,6 +123,25 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
 
   @Override
   public AsgManifestHandlerChainState delete(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    return chainState;
+  }
+
+  @Override
+  public AsgManifestHandlerChainState getManifestTypeContent(
+      AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
+    if (chainState.getAutoScalingGroup() == null) {
+      AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(chainState.getAsgName());
+      chainState.setAutoScalingGroup(autoScalingGroup);
+    }
+
+    AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
+    if (autoScalingGroup != null) {
+      String asgConfiguration =
+          asgMapper.createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(autoScalingGroup);
+
+      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(
+          AsgConfiguration, Collections.singletonList(asgConfiguration));
+    }
     return chainState;
   }
 }

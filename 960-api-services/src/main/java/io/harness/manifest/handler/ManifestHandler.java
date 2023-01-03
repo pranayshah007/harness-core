@@ -28,6 +28,7 @@ public abstract class ManifestHandler<M, S> {
   public abstract Class<M> getManifestContentUnmarshallClass();
   public abstract S upsert(S chainState, ManifestRequest manifestRequest);
   public abstract S delete(S chainState, ManifestRequest manifestRequest);
+  public abstract S getManifestTypeContent(S chainState, ManifestRequest manifestRequest);
 
   public S upsert(S chainState) {
     return this.upsert(chainState, manifestRequest);
@@ -39,5 +40,8 @@ public abstract class ManifestHandler<M, S> {
 
   protected M parseContentToManifest(String manifestContent) {
     return DefaultManifestContentParser.parseJson(manifestContent, getManifestContentUnmarshallClass());
+  }
+  public S getManifestTypeContent(S chainState) {
+    return this.getManifestTypeContent(chainState, manifestRequest);
   }
 }
